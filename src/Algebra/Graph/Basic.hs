@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies, DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
-module Algebra.Graph.Basic (Basic (..), foldBasic) where
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+module Algebra.Graph.Basic (Basic (..), foldBasic, Undirected (..)) where
 
 import Algebra.Graph
 import Algebra.Graph.Relation
@@ -36,3 +37,5 @@ foldBasic Empty         = empty
 foldBasic (Vertex  x  ) = vertex x
 foldBasic (Overlay x y) = overlay (foldBasic x) (foldBasic y)
 foldBasic (Connect x y) = connect (foldBasic x) (foldBasic y)
+
+newtype Undirected a = Undirected { graph :: Basic a } deriving (Num, Show)
