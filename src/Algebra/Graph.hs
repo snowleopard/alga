@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module Algebra.Graph (
-    Graph (..), vertices, clique, fromEdgeList, foldg, overlays, connects
+    Graph (..), vertices, clique, fromEdgeList, path, loop, isSubgraphOf,
+    foldg, overlays, connects
     ) where
 
 class Graph g where
@@ -20,6 +21,15 @@ fromEdgeList :: Graph g => [(Vertex g, Vertex g)] -> g
 fromEdgeList = overlays . map edge
   where
     edge (x, y) = vertex x `connect` vertex y
+
+isSubgraphOf :: (Graph g, Eq g) => g -> g -> Bool
+isSubgraphOf x y = overlay x y == y
+
+path :: Graph g => [Vertex g] -> g
+path xs = fromEdgeList $ zip xs (tail xs)
+
+loop :: Graph g => [Vertex g] -> g
+loop xs = path $ xs ++ take 1 xs
 
 -- 'foldr f empty' adds a redundant empty to the result; foldg avoids this
 foldg :: Graph g => (g -> g -> g) -> [g] -> g
