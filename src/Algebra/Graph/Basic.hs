@@ -2,6 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.Basic (Basic (..), foldBasic, Undirected (..)) where
 
+import qualified Data.Set as Set
 import Test.QuickCheck
 
 import Algebra.Graph
@@ -47,9 +48,9 @@ instance Num a => Num (Basic a) where
 
 instance Ord a => Eq (Basic a) where
     x == y = toRelation x == toRelation y
-      where
-        toRelation :: Ord a => Basic a -> Relation a
-        toRelation = foldBasic
+
+toRelation :: Ord a => Basic a -> Relation a
+toRelation = foldBasic
 
 foldBasic :: (Vertex g ~ a, Graph g) => Basic a -> g
 foldBasic Empty         = empty
@@ -59,3 +60,20 @@ foldBasic (Connect x y) = connect (foldBasic x) (foldBasic y)
 
 newtype Undirected a = Undirected { basic :: Basic a }
     deriving (Arbitrary, Num, Show)
+
+instance Ord a => Eq (Undirected a) where
+    x == y = toUndirectedRelation x == toUndirectedRelation y
+
+toUndirectedRelation :: Ord a => Undirected a -> Relation a
+toUndirectedRelation u = Relation d (Set.map sortPair r)
+  where
+    Relation d r = toRelation $ basic u
+    sortPair (x, y) = if x <= y then (x, y) else (y, x)
+
+-- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
+instance Graph (Undirected a) where
+    type Vertex (Undirected a) = a
+    empty       = Undirected empty
+    vertex      = Undirected . vertex
+    overlay x y = Undirected $ overlay (basic x) (basic y)
+    connect x y = Undirected $ connect (basic x) (basic y)
