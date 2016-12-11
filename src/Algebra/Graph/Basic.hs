@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeFamilies, DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Algebra.Graph.Basic (Basic (..), foldBasic, Undirected (..)) where
+module Algebra.Graph.Basic (Basic (..), Undirected (..), Transitive (..)) where
 
 import qualified Data.Set as Set
 import Test.QuickCheck
@@ -58,7 +58,7 @@ foldBasic (Vertex  x  ) = vertex x
 foldBasic (Overlay x y) = overlay (foldBasic x) (foldBasic y)
 foldBasic (Connect x y) = connect (foldBasic x) (foldBasic y)
 
-newtype Undirected a = Undirected { basic :: Basic a }
+newtype Undirected a = Undirected { fromUndirected :: Basic a }
     deriving (Arbitrary, Num, Show)
 
 instance Ord a => Eq (Undirected a) where
@@ -67,13 +67,30 @@ instance Ord a => Eq (Undirected a) where
 toUndirectedRelation :: Ord a => Undirected a -> Relation a
 toUndirectedRelation u = Relation d (Set.map sortPair r)
   where
-    Relation d r = toRelation $ basic u
+    Relation d r = toRelation $ fromUndirected u
     sortPair (x, y) = if x <= y then (x, y) else (y, x)
+
+newtype Transitive a = Transitive { fromTransitive :: Basic a }
+    deriving (Arbitrary, Num, Show)
+
+instance Ord a => Eq (Transitive a) where
+    x == y = toTransitiveRelation x == toTransitiveRelation y
+
+toTransitiveRelation :: Ord a => Transitive a -> Relation a
+toTransitiveRelation = transitiveClosure . toRelation . fromTransitive
 
 -- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Graph (Undirected a) where
     type Vertex (Undirected a) = a
     empty       = Undirected empty
     vertex      = Undirected . vertex
-    overlay x y = Undirected $ overlay (basic x) (basic y)
-    connect x y = Undirected $ connect (basic x) (basic y)
+    overlay x y = Undirected $ overlay (fromUndirected x) (fromUndirected y)
+    connect x y = Undirected $ connect (fromUndirected x) (fromUndirected y)
+
+-- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
+instance Graph (Transitive a) where
+    type Vertex (Transitive a) = a
+    empty       = Transitive empty
+    vertex      = Transitive . vertex
+    overlay x y = Transitive $ overlay (fromTransitive x) (fromTransitive y)
+    connect x y = Transitive $ connect (fromTransitive x) (fromTransitive y)
