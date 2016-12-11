@@ -21,7 +21,8 @@ library
                       Algebra.Graph.Basic,
                       Algebra.Graph.Relation
     build-depends:    base       >= 4.8 && < 5,
-                      containers == 0.5.*
+                      containers == 0.5.*,
+                      QuickCheck >= 2.6 && < 2.9
     default-language: Haskell2010
     other-extensions: DeriveFunctor
                       DeriveFoldable
