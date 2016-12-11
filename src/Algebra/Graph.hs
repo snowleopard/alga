@@ -1,8 +1,10 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, TupleSections #-}
 module Algebra.Graph (
-    Graph (..), vertices, clique, fromEdgeList, path, loop, isSubgraphOf,
+    Graph (..), vertices, clique, fromEdgeList, path, loop, box, isSubgraphOf,
     foldg, overlays, connects
     ) where
+
+import Data.Foldable
 
 class Graph g where
     type Vertex g
@@ -30,6 +32,12 @@ path xs = fromEdgeList $ zip xs (tail xs)
 
 loop :: Graph g => [Vertex g] -> g
 loop xs = path $ xs ++ take 1 xs
+
+box :: (Functor f, Foldable f, Graph (f (a, b))) => f a -> f b -> f (a, b)
+box x y = overlays $ xs ++ ys
+  where
+    xs = map (\b -> fmap (,b) x) $ toList y
+    ys = map (\a -> fmap (a,) y) $ toList x
 
 -- 'foldr f empty' adds a redundant empty to the result; foldg avoids this
 foldg :: Graph g => (g -> g -> g) -> [g] -> g

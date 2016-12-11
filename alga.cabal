@@ -28,4 +28,5 @@ library
                       DeriveFoldable
                       DeriveTraversable
                       TypeFamilies
+                      TupleSections
     GHC-options:      -O2 -Wall -fwarn-tabs
