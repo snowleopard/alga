@@ -53,7 +53,7 @@ foldBasic (Overlay x y) = overlay (foldBasic x) (foldBasic y)
 foldBasic (Connect x y) = connect (foldBasic x) (foldBasic y)
 
 newtype Reflexive a = Reflexive { fromReflexive :: Basic a }
-    deriving (Arbitrary, Num, Show)
+    deriving (Arbitrary, Functor, Foldable, Num, Show)
 
 instance Ord a => Eq (Reflexive a) where
     x == y = toReflexiveRelation x == toReflexiveRelation y
@@ -62,7 +62,7 @@ toReflexiveRelation :: Ord a => Reflexive a -> Relation a
 toReflexiveRelation = reflexiveClosure . toRelation . fromReflexive
 
 newtype Undirected a = Undirected { fromUndirected :: Basic a }
-    deriving (Arbitrary, Num, Show)
+    deriving (Arbitrary, Functor, Foldable, Num, Show)
 
 instance Ord a => Eq (Undirected a) where
     x == y = toSymmetricRelation x == toSymmetricRelation y
@@ -71,7 +71,7 @@ toSymmetricRelation :: Ord a => Undirected a -> Relation a
 toSymmetricRelation = symmetricClosure . toRelation . fromUndirected
 
 newtype PartialOrder a = PartialOrder { fromPartialOrder :: Basic a }
-    deriving (Arbitrary, Num, Show)
+    deriving (Arbitrary, Functor, Foldable, Num, Show)
 
 instance Ord a => Eq (PartialOrder a) where
     x == y = toTransitiveRelation x == toTransitiveRelation y
