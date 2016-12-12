@@ -71,5 +71,8 @@ main = do
         x * y == y * x
 
     putStrLn "============ Partial Orders ============"
-    test "Closure axiom" $ mapSize (min 20) $ \(x :: P) y z ->
+    test "Closure" $ mapSize (min 20) $ \(x :: P) y z ->
         y == empty || x * y * z == x * y + y * z
+
+    test "Path equals clique" $ mapSize (min 20) $ \xs ->
+        path xs == (clique xs :: P)

@@ -29,7 +29,7 @@ isSubgraphOf :: (Graph g, Eq g) => g -> g -> Bool
 isSubgraphOf x y = overlay x y == y
 
 path :: Graph g => [Vertex g] -> g
-path xs = fromEdgeList $ zip xs (tail xs)
+path xs = vertices xs `overlay` fromEdgeList (zip xs $ tail xs)
 
 loop :: Graph g => [Vertex g] -> g
 loop xs = path $ xs ++ take 1 xs
