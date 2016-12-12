@@ -1,8 +1,11 @@
 {-# LANGUAGE TypeFamilies #-}
-module Algebra.Graph.Relation (Relation (..), transitiveClosure) where
+module Algebra.Graph.Relation (
+    Relation (..), symmetricClosure, transitiveClosure
+    ) where
 
 import           Data.Set (Set)
 import qualified Data.Set as Set
+import Data.Tuple
 
 import Algebra.Graph
 
@@ -30,11 +33,8 @@ instance (Ord a, Num a) => Num (Relation a) where
     abs         = id
     negate      = id
 
-preset :: Ord a => a -> Relation a -> Set a
-preset x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
-
-postset :: Ord a => a -> Relation a -> Set a
-postset x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation
+symmetricClosure :: Ord a => Relation a -> Relation a
+symmetricClosure (Relation d r) = Relation d $ r `Set.union` (Set.map swap r)
 
 transitiveClosure :: Ord a => Relation a -> Relation a
 transitiveClosure old@(Relation d r)
@@ -42,3 +42,9 @@ transitiveClosure old@(Relation d r)
     | otherwise = transitiveClosure $ Relation d newR
   where
     newR = Set.unions $ r : [ preset x old >< postset x old | x <- Set.elems d ]
+
+preset :: Ord a => a -> Relation a -> Set a
+preset x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
+
+postset :: Ord a => a -> Relation a -> Set a
+postset x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation

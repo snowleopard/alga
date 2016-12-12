@@ -2,7 +2,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.Basic (Basic (..), Undirected (..), Transitive (..)) where
 
-import qualified Data.Set as Set
 import Test.QuickCheck
 
 import Algebra.Graph
@@ -62,13 +61,10 @@ newtype Undirected a = Undirected { fromUndirected :: Basic a }
     deriving (Arbitrary, Num, Show)
 
 instance Ord a => Eq (Undirected a) where
-    x == y = toUndirectedRelation x == toUndirectedRelation y
+    x == y = toSymmetricRelation x == toSymmetricRelation y
 
-toUndirectedRelation :: Ord a => Undirected a -> Relation a
-toUndirectedRelation u = Relation d (Set.map sortPair r)
-  where
-    Relation d r = toRelation $ fromUndirected u
-    sortPair (x, y) = if x <= y then (x, y) else (y, x)
+toSymmetricRelation :: Ord a => Undirected a -> Relation a
+toSymmetricRelation = symmetricClosure . toRelation . fromUndirected
 
 newtype Transitive a = Transitive { fromTransitive :: Basic a }
     deriving (Arbitrary, Num, Show)
