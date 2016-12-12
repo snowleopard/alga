@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies, TupleSections #-}
 module Algebra.Graph (
-    Graph (..), vertices, clique, fromEdgeList, path, loop, box, arbitraryGraph,
-    isSubgraphOf, foldg, overlays, connects
+    Graph (..), vertices, clique, fromEdgeList, path, circuit, box,
+    arbitraryGraph, isSubgraphOf, foldg, overlays, connects
     ) where
 
 import Data.Foldable
@@ -29,10 +29,13 @@ isSubgraphOf :: (Graph g, Eq g) => g -> g -> Bool
 isSubgraphOf x y = overlay x y == y
 
 path :: Graph g => [Vertex g] -> g
-path xs = vertices xs `overlay` fromEdgeList (zip xs $ tail xs)
+path []  = empty
+path [x] = vertex x
+path xs  = fromEdgeList $ zip xs (tail xs)
 
-loop :: Graph g => [Vertex g] -> g
-loop xs = path $ xs ++ take 1 xs
+circuit :: Graph g => [Vertex g] -> g
+circuit []     = empty
+circuit (x:xs) = path $ [x] ++ xs ++ [x]
 
 arbitraryGraph :: (Graph g, Arbitrary (Vertex g)) => Gen g
 arbitraryGraph = sized graph
