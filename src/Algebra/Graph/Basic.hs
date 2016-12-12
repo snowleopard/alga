@@ -21,14 +21,7 @@ instance Graph (Basic a) where
     connect = Connect
 
 instance Arbitrary a => Arbitrary (Basic a) where
-    arbitrary = sized graph
-      where
-        graph 0 = return Empty
-        graph 1 = Vertex <$> arbitrary
-        graph n = do
-            left <- choose (0, n)
-            oneof [ Overlay <$> (graph left) <*> (graph $ n - left)
-                  , Connect <$> (graph left) <*> (graph $ n - left) ]
+    arbitrary = arbitraryGraph
 
     shrink Empty         = []
     shrink (Vertex    _) = [Empty]

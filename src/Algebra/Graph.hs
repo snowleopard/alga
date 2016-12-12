@@ -1,10 +1,11 @@
-{-# LANGUAGE TypeFamilies, TupleSections #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies, TupleSections #-}
 module Algebra.Graph (
-    Graph (..), vertices, clique, fromEdgeList, path, loop, box, isSubgraphOf,
-    foldg, overlays, connects
+    Graph (..), vertices, clique, fromEdgeList, path, loop, box, arbitraryGraph,
+    isSubgraphOf, foldg, overlays, connects
     ) where
 
 import Data.Foldable
+import Test.QuickCheck
 
 class Graph g where
     type Vertex g
@@ -32,6 +33,16 @@ path xs = fromEdgeList $ zip xs (tail xs)
 
 loop :: Graph g => [Vertex g] -> g
 loop xs = path $ xs ++ take 1 xs
+
+arbitraryGraph :: (Graph g, Arbitrary (Vertex g)) => Gen g
+arbitraryGraph = sized graph
+  where
+    graph 0 = return empty
+    graph 1 = vertex <$> arbitrary
+    graph n = do
+        left <- choose (0, n)
+        oneof [ overlay <$> (graph left) <*> (graph $ n - left)
+              , connect <$> (graph left) <*> (graph $ n - left) ]
 
 box :: (Functor f, Foldable f, Graph (f (a, b))) => f a -> f b -> f (a, b)
 box x y = overlays $ xs ++ ys

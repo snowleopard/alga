@@ -27,6 +27,7 @@ library
     other-extensions: DeriveFunctor
                       DeriveFoldable
                       DeriveTraversable
+                      FlexibleContexts
                       TypeFamilies
                       TupleSections
     GHC-options:      -O2 -Wall -fwarn-tabs
