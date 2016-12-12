@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 module Algebra.Graph.Relation (
-    Relation (..), symmetricClosure, transitiveClosure
+    Relation (..), reflexiveClosure, symmetricClosure, transitiveClosure
     ) where
 
 import           Data.Set (Set)
@@ -32,6 +32,10 @@ instance (Ord a, Num a) => Num (Relation a) where
     signum      = const empty
     abs         = id
     negate      = id
+
+reflexiveClosure :: Ord a => Relation a -> Relation a
+reflexiveClosure (Relation d r) = Relation d $ r `Set.union`
+    Set.fromDistinctAscList [ (a, a) | a <- Set.elems d ]
 
 symmetricClosure :: Ord a => Relation a -> Relation a
 symmetricClosure (Relation d r) = Relation d $ r `Set.union` (Set.map swap r)

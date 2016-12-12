@@ -1,6 +1,8 @@
 {-# LANGUAGE TypeFamilies, DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Algebra.Graph.Basic (Basic (..), Undirected (..), Transitive (..)) where
+module Algebra.Graph.Basic (
+    Basic (..), Reflexive (..), Undirected (..), Transitive (..)
+    ) where
 
 import Test.QuickCheck
 
@@ -50,6 +52,15 @@ foldBasic (Vertex  x  ) = vertex x
 foldBasic (Overlay x y) = overlay (foldBasic x) (foldBasic y)
 foldBasic (Connect x y) = connect (foldBasic x) (foldBasic y)
 
+newtype Reflexive a = Reflexive { fromReflexive :: Basic a }
+    deriving (Arbitrary, Num, Show)
+
+instance Ord a => Eq (Reflexive a) where
+    x == y = toReflexiveRelation x == toReflexiveRelation y
+
+toReflexiveRelation :: Ord a => Reflexive a -> Relation a
+toReflexiveRelation = reflexiveClosure . toRelation . fromReflexive
+
 newtype Undirected a = Undirected { fromUndirected :: Basic a }
     deriving (Arbitrary, Num, Show)
 
@@ -67,6 +78,14 @@ instance Ord a => Eq (Transitive a) where
 
 toTransitiveRelation :: Ord a => Transitive a -> Relation a
 toTransitiveRelation = transitiveClosure . toRelation . fromTransitive
+
+-- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
+instance Graph (Reflexive a) where
+    type Vertex (Reflexive a) = a
+    empty       = Reflexive empty
+    vertex      = Reflexive . vertex
+    overlay x y = Reflexive $ overlay (fromReflexive x) (fromReflexive y)
+    connect x y = Reflexive $ connect (fromReflexive x) (fromReflexive y)
 
 -- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Graph (Undirected a) where
