@@ -62,7 +62,7 @@ main = do
     test "Overlay-connect order" $ \(x :: G) y ->
         (x + y) `isSubgraphOf` (x * y)
 
-    test "Path-circuit order" $ mapSize (min 20) $ \xs ->
+    test "Path-circuit order" $ \xs ->
         path xs `isSubgraphOf` (circuit xs :: G)
 
     let comm  = fmap $ \(a, b) -> (b, a)
