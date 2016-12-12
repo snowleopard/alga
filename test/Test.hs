@@ -62,6 +62,13 @@ main = do
     test "Overlay-connect order" $ \(x :: G) y ->
         (x + y) `isSubgraphOf` (x * y)
 
+    let comm  = fmap $ \(a, b) -> (b, a)
+        assoc = fmap $ \(a, (b, c)) -> ((a, b), c)
+    test "Box commutativity" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
+        x `box` y == comm (y `box` x)
+    test "Box associativity" $ mapSize (min 10) $ \(x :: G) (y :: G) (z :: G) ->
+        (x `box` y) `box` z == assoc (x `box` (y `box` z))
+
     putStrLn "============ Reflexive graphs ============"
     test "Vertex self-loop" $ \x ->
         (vertex x :: R) == vertex x * vertex x
