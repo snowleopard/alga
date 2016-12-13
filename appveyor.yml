@@ -3,7 +3,7 @@ build: off
 before_test:
   - curl -ostack.tar.gz -L --insecure http://www.stackage.org/stack/windows-i386
   - 7z e stack.tar.gz
-  - 7z x stack.tar stack.exe
+  - 7z x -y stack.tar
 
 test_script:
   - stack setup > nul
