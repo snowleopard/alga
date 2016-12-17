@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies, TupleSections #-}
 module Algebra.Graph (
     Graph (..), vertices, clique, fromEdgeList, path, circuit, box, induce,
-    arbitraryGraph, isSubgraphOf, foldg, overlays, connects
+    removeVertex, arbitraryGraph, isSubgraphOf, foldg, overlays, connects
     ) where
 
 import Data.Foldable
@@ -55,6 +55,9 @@ box x y = overlays $ xs ++ ys
 
 induce :: (Monad m, Graph (m a)) => (a -> Bool) -> m a -> m a
 induce p = (>>= \x -> if p x then return x else empty)
+
+removeVertex :: (Eq a, Monad m, Graph (m a)) => a -> m a -> m a
+removeVertex x = induce (/= x)
 
 -- 'foldr f empty' adds a redundant empty to the result; foldg avoids this
 foldg :: Graph g => (g -> g -> g) -> [g] -> g

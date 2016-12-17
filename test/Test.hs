@@ -79,11 +79,18 @@ main = do
     test "Induce empty graph" $ \(x :: G) ->
         induce (const False) x == empty
 
-    test "Induced subgraph" $ \(xs :: [Int]) (y :: G) ->
+    test "Induce subgraph" $ \(xs :: [Int]) (y :: G) ->
         induce (`elem` xs) y `isSubgraphOf` y
 
-    test "Induce idempotence" $ \(xs :: [Int]) (y :: G) ->
-        induce (`elem` xs) (induce (`elem` xs) y) == induce (`elem` xs) y
+    let i x as = induce (`elem` (as :: [Int])) x
+    test "Induce commutativity" $ \(x :: G) as bs ->
+        x `i` as `i` bs == x `i` bs `i` as
+
+    test "Induce idempotence" $ \(x :: G) as ->
+        x `i` as `i` as == x `i` as
+
+    test "Remove single vertex" $ \x ->
+        removeVertex x (vertex x) == (empty :: G)
 
     putStrLn "============ Reflexive graphs ============"
     test "Vertex self-loop" $ \x ->
