@@ -69,8 +69,21 @@ main = do
         assoc = fmap $ \(a, (b, c)) -> ((a, b), c)
     test "Box commutativity" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
         x `box` y == comm (y `box` x)
+
     test "Box associativity" $ mapSize (min 10) $ \(x :: G) (y :: G) (z :: G) ->
         (x `box` y) `box` z == assoc (x `box` (y `box` z))
+
+    test "Induce full graph" $ \(x :: G) ->
+        induce (const True) x == x
+
+    test "Induce empty graph" $ \(x :: G) ->
+        induce (const False) x == empty
+
+    test "Induced subgraph" $ \(xs :: [Int]) (y :: G) ->
+        induce (`elem` xs) y `isSubgraphOf` y
+
+    test "Induce idempotence" $ \(xs :: [Int]) (y :: G) ->
+        induce (`elem` xs) (induce (`elem` xs) y) == induce (`elem` xs) y
 
     putStrLn "============ Reflexive graphs ============"
     test "Vertex self-loop" $ \x ->

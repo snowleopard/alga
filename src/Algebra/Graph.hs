@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies, TupleSections #-}
 module Algebra.Graph (
-    Graph (..), vertices, clique, fromEdgeList, path, circuit, box,
+    Graph (..), vertices, clique, fromEdgeList, path, circuit, box, induce,
     arbitraryGraph, isSubgraphOf, foldg, overlays, connects
     ) where
 
@@ -52,6 +52,9 @@ box x y = overlays $ xs ++ ys
   where
     xs = map (\b -> fmap (,b) x) $ toList y
     ys = map (\a -> fmap (a,) y) $ toList x
+
+induce :: (Monad m, Graph (m a)) => (a -> Bool) -> m a -> m a
+induce p = (>>= \x -> if p x then return x else empty)
 
 -- 'foldr f empty' adds a redundant empty to the result; foldg avoids this
 foldg :: Graph g => (g -> g -> g) -> [g] -> g
