@@ -4,6 +4,7 @@ module Algebra.Graph.Basic (
     Basic (..), Reflexive (..), Undirected (..), PartialOrder (..)
     ) where
 
+import Control.Monad
 import Test.QuickCheck
 
 import Algebra.Graph
@@ -45,6 +46,17 @@ instance Ord a => Eq (Basic a) where
 
 toRelation :: Ord a => Basic a -> Relation a
 toRelation = foldBasic
+
+instance Applicative Basic where
+    pure  = vertex
+    (<*>) = ap
+
+instance Monad Basic where
+    return = vertex
+    Empty       >>= _ = empty
+    Vertex  x   >>= f = f x
+    Overlay x y >>= f = overlay (x >>= f) (y >>= f)
+    Connect x y >>= f = connect (x >>= f) (y >>= f)
 
 foldBasic :: (Vertex g ~ a, Graph g) => Basic a -> g
 foldBasic Empty         = empty
