@@ -79,21 +79,28 @@ main = do
     test "Induce empty graph" $ \(x :: G) ->
         induce (const False) x == empty
 
-    test "Induce subgraph" $ \(xs :: [Int]) (y :: G) ->
-        induce (`elem` xs) y `isSubgraphOf` y
+    let i x (s :: [Int]) = induce (`elem` s) x
+    test "Induce subgraph" $ \s (x :: G) ->
+        (x `i` s) `isSubgraphOf` x
 
-    let i x as = induce (`elem` (as :: [Int])) x
-    test "Induce commutativity" $ \(x :: G) as bs ->
-        x `i` as `i` bs == x `i` bs `i` as
+    test "Induce commutativity" $ \(x :: G) s t ->
+        x `i` s `i` t == x `i` t `i` s
 
-    test "Induce idempotence" $ \(x :: G) as ->
-        x `i` as `i` as == x `i` as
+    test "Induce idempotence" $ \(x :: G) s ->
+        x `i` s `i` s == x `i` s
+
+    test "Induce homomorphism" $ \(x :: G) y s ->
+        x `i` s + y `i` s == (x + y) `i` s && x `i` s * y `i` s == (x * y) `i` s
 
     test "Remove single vertex" $ \x ->
         removeVertex x (vertex x) == (empty :: G)
 
-    test "Transpose inverse" $ \(x :: G) ->
-        transpose (transpose $ foldBasic x) == x
+    let t x = transpose (foldBasic x) :: G
+    test "Transpose self-inverse" $ \x ->
+        t (t x) == x
+
+    test "Transpose antihomomorphism" $ \x y ->
+        t x + t y == t (x + y) && t x * t y == t (y * x)
 
     putStrLn "============ Reflexive graphs ============"
     test "Vertex self-loop" $ \x ->
