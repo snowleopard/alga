@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies, TupleSections #-}
 module Algebra.Graph (
-    Graph (..), vertices, clique, fromEdgeList, path, circuit, box, induce,
+    Graph (..), edge, vertices, clique, fromEdgeList, path, circuit, box, induce,
     removeVertex, arbitraryGraph, isSubgraphOf, foldg, overlays, connects
     ) where
 
@@ -14,6 +14,9 @@ class Graph g where
     overlay :: g -> g -> g
     connect :: g -> g -> g
 
+edge :: Graph g => Vertex g -> Vertex g -> g
+edge x y = vertex x `connect` vertex y
+
 vertices :: Graph g => [Vertex g] -> g
 vertices = overlays . map vertex
 
@@ -21,9 +24,7 @@ clique :: Graph g => [Vertex g] -> g
 clique = connects . map vertex
 
 fromEdgeList :: Graph g => [(Vertex g, Vertex g)] -> g
-fromEdgeList = overlays . map edge
-  where
-    edge (x, y) = vertex x `connect` vertex y
+fromEdgeList = overlays . map (uncurry edge)
 
 isSubgraphOf :: (Graph g, Eq g) => g -> g -> Bool
 isSubgraphOf x y = overlay x y == y
