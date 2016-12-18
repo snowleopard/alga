@@ -53,16 +53,16 @@ instance Applicative Basic where
 
 instance Monad Basic where
     return = vertex
-    Empty       >>= _ = empty
-    Vertex  x   >>= f = f x
-    Overlay x y >>= f = overlay (x >>= f) (y >>= f)
-    Connect x y >>= f = connect (x >>= f) (y >>= f)
+    (>>=)  = flip foldMapBasic
 
 foldBasic :: (Vertex g ~ a, Graph g) => Basic a -> g
-foldBasic Empty         = empty
-foldBasic (Vertex  x  ) = vertex x
-foldBasic (Overlay x y) = overlay (foldBasic x) (foldBasic y)
-foldBasic (Connect x y) = connect (foldBasic x) (foldBasic y)
+foldBasic = foldMapBasic vertex
+
+foldMapBasic :: (Vertex g ~ b, Graph g) => (a -> g) -> Basic a -> g
+foldMapBasic _ Empty         = empty
+foldMapBasic f (Vertex  x  ) = f x
+foldMapBasic f (Overlay x y) = overlay (foldMapBasic f x) (foldMapBasic f y)
+foldMapBasic f (Connect x y) = connect (foldMapBasic f x) (foldMapBasic f y)
 
 newtype Reflexive a = Reflexive { fromReflexive :: Basic a }
     deriving (Arbitrary, Functor, Foldable, Num, Show)
