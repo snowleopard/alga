@@ -92,6 +92,9 @@ main = do
     test "Remove single vertex" $ \x ->
         removeVertex x (vertex x) == (empty :: G)
 
+    test "Transpose inverse" $ \(x :: G) ->
+        transpose (transpose $ foldBasic x) == x
+
     putStrLn "============ Reflexive graphs ============"
     test "Vertex self-loop" $ \x ->
         (vertex x :: R) == vertex x * vertex x

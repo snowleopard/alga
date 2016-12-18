@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies, DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.Basic (
-    Basic (..), Reflexive (..), Undirected (..), PartialOrder (..)
+    Basic (..), foldBasic, Reflexive (..), Undirected (..), PartialOrder (..)
     ) where
 
 import Control.Monad
