@@ -20,7 +20,8 @@ library
     exposed-modules:  Algebra.Graph,
                       Algebra.Graph.AdjacencyMap,
                       Algebra.Graph.Basic,
-                      Algebra.Graph.Relation
+                      Algebra.Graph.Relation,
+                      Algebra.Graph.Util
     build-depends:    base       >= 4.8 && < 5,
                       containers == 0.5.*,
                       QuickCheck >= 2.6 && < 2.9

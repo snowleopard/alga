@@ -4,6 +4,7 @@ import Test.QuickCheck
 
 import Algebra.Graph
 import Algebra.Graph.Basic
+import Algebra.Graph.Util
 
 type G = Basic Int
 type R = Reflexive Int
