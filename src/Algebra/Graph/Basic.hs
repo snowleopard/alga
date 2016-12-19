@@ -8,6 +8,7 @@ import Control.Monad
 import Test.QuickCheck
 
 import Algebra.Graph
+import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Relation
 
 data Basic a = Empty
@@ -42,10 +43,10 @@ instance Num a => Num (Basic a) where
     negate      = id
 
 instance Ord a => Eq (Basic a) where
-    x == y = toRelation x == toRelation y
+    x == y = toAdjacencyMap x == toAdjacencyMap y
 
-toRelation :: Ord a => Basic a -> Relation a
-toRelation = foldBasic
+toAdjacencyMap :: Ord a => Basic a -> AdjacencyMap a
+toAdjacencyMap = foldBasic
 
 instance Applicative Basic where
     pure  = vertex
@@ -71,7 +72,7 @@ instance Ord a => Eq (Reflexive a) where
     x == y = toReflexiveRelation x == toReflexiveRelation y
 
 toReflexiveRelation :: Ord a => Reflexive a -> Relation a
-toReflexiveRelation = reflexiveClosure . toRelation . fromReflexive
+toReflexiveRelation = reflexiveClosure . foldBasic . fromReflexive
 
 newtype Undirected a = Undirected { fromUndirected :: Basic a }
     deriving (Arbitrary, Functor, Foldable, Num, Show)
@@ -80,7 +81,7 @@ instance Ord a => Eq (Undirected a) where
     x == y = toSymmetricRelation x == toSymmetricRelation y
 
 toSymmetricRelation :: Ord a => Undirected a -> Relation a
-toSymmetricRelation = symmetricClosure . toRelation . fromUndirected
+toSymmetricRelation = symmetricClosure . foldBasic . fromUndirected
 
 newtype PartialOrder a = PartialOrder { fromPartialOrder :: Basic a }
     deriving (Arbitrary, Functor, Foldable, Num, Show)
@@ -89,7 +90,7 @@ instance Ord a => Eq (PartialOrder a) where
     x == y = toTransitiveRelation x == toTransitiveRelation y
 
 toTransitiveRelation :: Ord a => PartialOrder a -> Relation a
-toTransitiveRelation = transitiveClosure . toRelation . fromPartialOrder
+toTransitiveRelation = transitiveClosure . foldBasic . fromPartialOrder
 
 -- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Graph (Reflexive a) where
