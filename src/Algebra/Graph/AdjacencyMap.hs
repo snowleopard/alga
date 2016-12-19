@@ -1,23 +1,22 @@
 {-# LANGUAGE TypeFamilies #-}
-module Algebra.Graph.AdjacencyMap (AdjacencyMap (..)) where
+module Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap) where
 
 import           Data.Set (Set)
 import qualified Data.Set as Set
-import           Data.Map.Strict (Map)
+import           Data.Map.Strict (Map, keysSet, fromSet)
 import qualified Data.Map.Strict as Map
 
 import Algebra.Graph
 
-data AdjacencyMap a = AdjacencyMap { adj :: Map a (Set a) }
-    deriving (Eq, Show)
+newtype AdjacencyMap a = M { adjacencyMap :: Map a (Set a) } deriving (Eq, Show)
 
 instance Ord a => Graph (AdjacencyMap a) where
     type Vertex (AdjacencyMap a) = a
-    empty       = AdjacencyMap Map.empty
-    vertex  x   = AdjacencyMap $ Map.singleton x Set.empty
-    overlay x y = AdjacencyMap $ Map.unionWith Set.union (adj x) (adj y)
-    connect x y = AdjacencyMap $ Map.unionsWith Set.union [ adj x, adj y,
-        Map.fromSet (const . Map.keysSet $ adj y) (Map.keysSet $ adj x) ]
+    empty       = M $ Map.empty
+    vertex  x   = M $ Map.singleton x Set.empty
+    overlay x y = M $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
+    connect x y = M $ Map.unionsWith Set.union [ adjacencyMap x, adjacencyMap y,
+        fromSet (const . keysSet $ adjacencyMap y) (keysSet $ adjacencyMap x) ]
 
 instance (Ord a, Num a) => Num (AdjacencyMap a) where
     fromInteger = vertex . fromInteger
