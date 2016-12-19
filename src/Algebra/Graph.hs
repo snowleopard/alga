@@ -1,13 +1,14 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies, TupleSections #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving, RankNTypes #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph (
-    Graph (..), edge, vertices, clique, fromEdgeList, path, circuit, box, induce,
-    removeVertex, arbitraryGraph, isSubgraphOf, foldg, overlays, connects,
-    transpose
+    Graph (..), edge, vertices, clique, fromEdgeList, path, circuit, tree,
+    forest, box, induce, removeVertex, arbitraryGraph, isSubgraphOf, transpose,
+    foldg, overlays, connects
     ) where
 
 import Data.Foldable
 import Test.QuickCheck
+import Data.Tree
 
 class Graph g where
     type Vertex g
@@ -39,6 +40,12 @@ path xs  = fromEdgeList $ zip xs (tail xs)
 circuit :: Graph g => [Vertex g] -> g
 circuit []     = empty
 circuit (x:xs) = path $ [x] ++ xs ++ [x]
+
+tree :: Graph g => Tree (Vertex g) -> g
+tree (Node x f) = vertex x `connect` vertices (map rootLabel f) `overlay` forest f
+
+forest :: Graph g => Forest (Vertex g) -> g
+forest = overlays . map tree
 
 arbitraryGraph :: (Graph g, Arbitrary (Vertex g)) => Gen g
 arbitraryGraph = sized graph
