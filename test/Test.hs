@@ -17,7 +17,6 @@ test str p = putStr (str ++ ": ") >> quickCheck p
 main :: IO ()
 main = do
     putStrLn "============ Directed graphs ============"
-
     test "Overlay identity" $ \(x :: G) ->
         x + empty == x
 
@@ -96,6 +95,14 @@ main = do
     test "Remove single vertex" $ \x ->
         removeVertex x (vertex x) == (empty :: G)
 
+    let d x = (foldBasic x) :: Dfs Int
+    test "DFS idempotence" $ \x ->
+        d x == d (forest . dfsForest $ d x)
+    test "DFS homomorphism" $ \x y ->
+        d x + d y == d (x + y) && d x * d y == d (x * y)
+    test "DFS reflexivity" $ \x ->
+        (vertex x :: Dfs Int) == vertex x * vertex x
+
     let t x = transpose (foldBasic x) :: G
     test "Transpose self-inverse" $ \x ->
         t (t x) == x
@@ -112,8 +119,8 @@ main = do
         x * y == y * x
 
     putStrLn "============ Partial Orders ============"
-    test "Closure" $ mapSize (min 20) $ \(x :: P) y z ->
-        y == empty || x * y * z == x * y + y * z
+    test "Closure" $ mapSize (min 20) $ \(x :: P) y z -> y /= empty ==>
+        x * y * z == x * y + y * z
 
     test "Path equals clique" $ mapSize (min 20) $ \xs ->
         path xs == (clique xs :: P)
