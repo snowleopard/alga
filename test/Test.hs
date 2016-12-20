@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 import Data.Foldable
 import Test.QuickCheck
 

@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
 module Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap) where
 
 import           Data.Set (Set)

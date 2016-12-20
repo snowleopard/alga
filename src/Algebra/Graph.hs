@@ -1,5 +1,4 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies, TupleSections #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving #-}
 module Algebra.Graph (
     Graph (..), edge, vertices, clique, fromEdgeList, path, circuit, tree,
     forest, box, induce, removeVertex, arbitraryGraph, isSubgraphOf, foldg,

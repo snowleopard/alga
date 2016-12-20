@@ -16,31 +16,33 @@ source-repository head
     location: https://github.com/snowleopard/alga.git
 
 library
-    hs-source-dirs:   src
-    exposed-modules:  Algebra.Graph,
-                      Algebra.Graph.AdjacencyMap,
-                      Algebra.Graph.Basic,
-                      Algebra.Graph.Relation,
-                      Algebra.Graph.Util
-    build-depends:    base       >= 4.8 && < 5,
-                      containers == 0.5.*,
-                      QuickCheck >= 2.6 && < 2.9
-    default-language: Haskell2010
-    other-extensions: DeriveFunctor
-                      DeriveFoldable
-                      DeriveTraversable
-                      FlexibleContexts
-                      TypeFamilies
-                      TupleSections
-    GHC-options:      -O2 -Wall -fwarn-tabs
+    hs-source-dirs:     src
+    exposed-modules:    Algebra.Graph,
+                        Algebra.Graph.AdjacencyMap,
+                        Algebra.Graph.Basic,
+                        Algebra.Graph.Relation,
+                        Algebra.Graph.Util
+    build-depends:      base       >= 4.8 && < 5,
+                        containers == 0.5.*,
+                        QuickCheck >= 2.6 && < 2.9
+    default-language:   Haskell2010
+    default-extensions: ScopedTypeVariables
+                        TupleSections
+                        TypeFamilies
+    other-extensions:   DeriveFoldable
+                        DeriveFunctor
+                        DeriveTraversable
+                        FlexibleContexts
+    GHC-options:        -O2 -Wall -fwarn-tabs
 
 test-suite test-alga
-    hs-source-dirs:   test
-    type:             exitcode-stdio-1.0
-    main-is:          Test.hs
-    build-depends:    base >= 4.8 && < 5,
-                      QuickCheck >= 2.6 && < 2.9,
-                      alga
-    default-language: Haskell2010
-    GHC-options:      -O2 -Wall -fwarn-tabs
-    other-extensions: ScopedTypeVariables
+    hs-source-dirs:     test
+    type:               exitcode-stdio-1.0
+    main-is:            Test.hs
+    build-depends:      base >= 4.8 && < 5,
+                        QuickCheck >= 2.6 && < 2.9,
+                        alga
+    default-language:   Haskell2010
+    GHC-options:        -O2 -Wall -fwarn-tabs
+    default-extensions: TypeFamilies
+                        ScopedTypeVariables

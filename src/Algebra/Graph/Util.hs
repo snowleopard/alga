@@ -1,5 +1,4 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies, TupleSections #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.Util (Dfs, dfsForest, adjacencyList, edgeList, transpose) where
 
 import Data.Graph (dff, graphFromEdges', Forest)

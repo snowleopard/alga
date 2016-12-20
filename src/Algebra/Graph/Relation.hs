@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
 module Algebra.Graph.Relation (
     Relation (..), reflexiveClosure, symmetricClosure, transitiveClosure
     ) where
