@@ -1,4 +1,5 @@
 import Data.Foldable
+import Data.List.Extra (nubOrd)
 import Test.QuickCheck
 
 import Algebra.Graph
@@ -97,10 +98,25 @@ main = do
     let d x = (foldBasic x) :: Dfs Int
     test "DFS idempotence" $ \x ->
         d x == d (forest . dfsForest $ d x)
+    test "DFS subgraph" $ \x ->
+        forest (dfsForest $ d x) `isSubgraphOf` x
     test "DFS homomorphism" $ \x y ->
         d x + d y == d (x + y) && d x * d y == d (x * y)
     test "DFS reflexivity" $ \x ->
         (vertex x :: Dfs Int) == vertex x * vertex x
+
+    let ts x = (foldBasic x) :: TopSort Int
+    test "TopSort is a topological sort" $ \x ->
+        fmap (isTopSort $ foldBasic x) (topSort $ ts x) /= Just False
+
+    test "TopSort of a cyclic graph" $ \x ys -> not (null ys) ==>
+        topSort (ts $ x + circuit (nubOrd ys)) == Nothing
+
+    test "TopSort idempotence" $ \x ->
+        (topSort . ts . path =<< topSort (ts x)) == (topSort $ ts x)
+
+    test "TopSort homomorphism" $ \x y ->
+        ts x + ts y == ts (x + y) && ts x * ts y == ts (x * y)
 
     let t x = transpose (foldBasic x) :: G
     test "Transpose self-inverse" $ \x ->
