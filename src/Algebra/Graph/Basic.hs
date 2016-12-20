@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies, DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.Basic (
-    Basic (..), foldBasic, Reflexive (..), Undirected (..), PartialOrder (..)
+    Basic (..), foldBasic, Reflexive, Undirected, PartialOrder
     ) where
 
 import Control.Monad
@@ -65,7 +65,7 @@ foldMapBasic f (Vertex  x  ) = f x
 foldMapBasic f (Overlay x y) = overlay (foldMapBasic f x) (foldMapBasic f y)
 foldMapBasic f (Connect x y) = connect (foldMapBasic f x) (foldMapBasic f y)
 
-newtype Reflexive a = Reflexive { fromReflexive :: Basic a }
+newtype Reflexive a = R { fromReflexive :: Basic a }
     deriving (Arbitrary, Functor, Foldable, Num, Show)
 
 instance Ord a => Eq (Reflexive a) where
@@ -74,7 +74,7 @@ instance Ord a => Eq (Reflexive a) where
 toReflexiveRelation :: Ord a => Reflexive a -> Relation a
 toReflexiveRelation = reflexiveClosure . foldBasic . fromReflexive
 
-newtype Undirected a = Undirected { fromUndirected :: Basic a }
+newtype Undirected a = U { fromUndirected :: Basic a }
     deriving (Arbitrary, Functor, Foldable, Num, Show)
 
 instance Ord a => Eq (Undirected a) where
@@ -83,7 +83,7 @@ instance Ord a => Eq (Undirected a) where
 toSymmetricRelation :: Ord a => Undirected a -> Relation a
 toSymmetricRelation = symmetricClosure . foldBasic . fromUndirected
 
-newtype PartialOrder a = PartialOrder { fromPartialOrder :: Basic a }
+newtype PartialOrder a = PO { fromPartialOrder :: Basic a }
     deriving (Arbitrary, Functor, Foldable, Num, Show)
 
 instance Ord a => Eq (PartialOrder a) where
@@ -95,23 +95,23 @@ toTransitiveRelation = transitiveClosure . foldBasic . fromPartialOrder
 -- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Graph (Reflexive a) where
     type Vertex (Reflexive a) = a
-    empty       = Reflexive empty
-    vertex      = Reflexive . vertex
-    overlay x y = Reflexive $ fromReflexive x `overlay` fromReflexive y
-    connect x y = Reflexive $ fromReflexive x `connect` fromReflexive y
+    empty       = R empty
+    vertex      = R . vertex
+    overlay x y = R $ fromReflexive x `overlay` fromReflexive y
+    connect x y = R $ fromReflexive x `connect` fromReflexive y
 
 -- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Graph (Undirected a) where
     type Vertex (Undirected a) = a
-    empty       = Undirected empty
-    vertex      = Undirected . vertex
-    overlay x y = Undirected $ fromUndirected x `overlay` fromUndirected y
-    connect x y = Undirected $ fromUndirected x `connect` fromUndirected y
+    empty       = U empty
+    vertex      = U . vertex
+    overlay x y = U $ fromUndirected x `overlay` fromUndirected y
+    connect x y = U $ fromUndirected x `connect` fromUndirected y
 
 -- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Graph (PartialOrder a) where
     type Vertex (PartialOrder a) = a
-    empty       = PartialOrder empty
-    vertex      = PartialOrder . vertex
-    overlay x y = PartialOrder $ fromPartialOrder x `overlay` fromPartialOrder y
-    connect x y = PartialOrder $ fromPartialOrder x `connect` fromPartialOrder y
+    empty       = PO empty
+    vertex      = PO . vertex
+    overlay x y = PO $ fromPartialOrder x `overlay` fromPartialOrder y
+    connect x y = PO $ fromPartialOrder x `connect` fromPartialOrder y
