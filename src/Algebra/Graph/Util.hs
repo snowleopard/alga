@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.Util (
-    Dfs, dfsForest, TopSort, isTopSort, topSort, adjacencyList, edgeList, transpose
+    Dfs, dfsForest, TopSort, isTopSort, topSort, mapVertices, adjacencyList,
+    edgeList, transpose
     ) where
 
 import qualified Data.Graph as Std
@@ -11,7 +12,8 @@ import qualified Data.Set as Set
 import           Data.Set (Set)
 
 import Algebra.Graph
-import Algebra.Graph.AdjacencyMap
+import qualified Algebra.Graph.AdjacencyMap as AM
+import Algebra.Graph.AdjacencyMap hiding (mapVertices)
 
 newtype Dfs a = D { fromDfs :: AdjacencyMap a } deriving (Show, Num)
 
@@ -33,11 +35,14 @@ newtype TopSort a = TS { fromTopSort :: AdjacencyMap a } deriving (Show, Num)
 instance Ord a => Eq (TopSort a) where
     x == y = topSort x == topSort y
 
+mapVertices :: (Ord a, Ord b) => (a -> b) -> TopSort a -> TopSort b
+mapVertices f = TS . AM.mapVertices f . fromTopSort
+
 topSort :: Ord a => TopSort a -> Maybe [a]
-topSort (TS x) = if isTopSort x ts then Just ts else Nothing
+topSort (TS x) = if isTopSort x result then Just result else Nothing
   where
     (g, get) = toDownStd x
-    ts       = map get $ Std.topSort g
+    result   = map get $ Std.topSort g
 
 toDownStd :: Ord a => AdjacencyMap a -> (Std.Graph, Std.Vertex -> a)
 toDownStd x = (g, \v -> case get v of (_, Down u, _) -> u)

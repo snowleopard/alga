@@ -1,4 +1,4 @@
-module Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap) where
+module Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap, mapVertices) where
 
 import           Data.Set (Set)
 import qualified Data.Set as Set
@@ -24,3 +24,6 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
     signum      = const empty
     abs         = id
     negate      = id
+
+mapVertices :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap a -> AdjacencyMap b
+mapVertices f (AM x) = AM . Map.map (Set.map f) $ Map.mapKeysWith Set.union f x
