@@ -1,4 +1,6 @@
-module Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap, mapVertices) where
+module Algebra.Graph.AdjacencyMap (
+    AdjacencyMap, adjacencyMap, mapVertices, vertexSet
+    ) where
 
 import           Data.Set (Set)
 import qualified Data.Set as Set
@@ -27,3 +29,6 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
 
 mapVertices :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap a -> AdjacencyMap b
 mapVertices f (AM x) = AM . Map.map (Set.map f) $ Map.mapKeysWith Set.union f x
+
+vertexSet :: Ord a => AdjacencyMap a -> Set a
+vertexSet (AM x) = Map.keysSet x
