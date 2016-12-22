@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Algebra.Graph.Todo (Todo, todo, low, high, (><)) where
+module Algebra.Graph.Todo (Todo, todo, low, high, (~*~), (>*<), priority) where
 
 import           Data.Map (Map)
 import qualified Data.Map as Map
@@ -16,14 +16,25 @@ instance Ord a => Eq (Todo a) where
 instance (IsString a, Ord a) => IsString (Todo a) where
     fromString = vertex . fromString
 
+-- Lower the priority of items in a given todo list
 low :: Todo a -> Todo a
 low (T p g) = T (Map.map (subtract 1) p) g
 
+-- Raise the priority of items in a given todo list
 high :: Todo a -> Todo a
 high (T p g) = T (Map.map (+1) p) g
 
-(><) :: Ord a => Todo a -> Todo a -> Todo a
-x >< y = low x `connect` high y
+-- Specify exact priority of items in a given todo list (default 0)
+priority :: Int -> Todo a -> Todo a
+priority x (T p g) = T (Map.map (const x) p) g
+
+-- Pull the arguments together as close as possible
+(~*~) :: Ord a => Todo a -> Todo a -> Todo a
+x ~*~ y = low x `connect` high y
+
+-- Repel the arguments as far as possible
+(>*<) :: Ord a => Todo a -> Todo a -> Todo a
+x >*< y = high x `connect` low y
 
 todo :: forall a. Ord a => Todo a -> Maybe [a]
 todo (T p g) = fmap (map snd) . topSort $ mapVertices prioritise g
