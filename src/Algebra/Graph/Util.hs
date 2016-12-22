@@ -38,7 +38,7 @@ instance Ord a => Eq (TopSort a) where
 mapVertices :: (Ord a, Ord b) => (a -> b) -> TopSort a -> TopSort b
 mapVertices f = TS . AM.mapVertices f . fromTopSort
 
-vertexSet :: Ord a => TopSort a -> Set a
+vertexSet :: TopSort a -> Set a
 vertexSet = AM.vertexSet . fromTopSort
 
 topSort :: Ord a => TopSort a -> Maybe [a]
