@@ -1,4 +1,5 @@
 import Data.Foldable
+import Data.List (sort)
 import Data.List.Extra (nubOrd)
 import Test.QuickCheck
 
@@ -124,6 +125,9 @@ main = do
 
     test "Transpose antihomomorphism" $ \x y ->
         t x + t y == t (x + y) && t x * t y == t (y * x)
+
+    test "EdgeList of fromEdgeList" $ \xs ->
+        nubOrd (sort xs) == edgeList (foldBasic (fromEdgeList xs :: G))
 
     putStrLn "============ Reflexive graphs ============"
     test "Vertex self-loop" $ \x ->
