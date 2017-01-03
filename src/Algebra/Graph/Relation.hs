@@ -5,6 +5,7 @@ module Algebra.Graph.Relation (
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Tuple
+import Test.QuickCheck (Arbitrary (..))
 
 import Algebra.Graph
 
@@ -31,6 +32,12 @@ instance (Ord a, Num a) => Num (Relation a) where
     signum      = const empty
     abs         = id
     negate      = id
+
+instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
+    arbitrary = do
+        r <- arbitrary
+        let (xs, ys) = unzip $ Set.toAscList r
+        return $ Relation (Set.fromList $ xs ++ ys) r
 
 reflexiveClosure :: Ord a => Relation a -> Relation a
 reflexiveClosure (Relation d r) = Relation d $ r `Set.union`

@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.AdjacencyMap (
     AdjacencyMap, adjacencyMap, mapVertices, vertexSet
     ) where
@@ -6,10 +7,12 @@ import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Map.Strict (Map, keysSet, fromSet)
 import qualified Data.Map.Strict as Map
+import Test.QuickCheck
 
 import Algebra.Graph
 
-newtype AdjacencyMap a = AM { adjacencyMap :: Map a (Set a) } deriving (Eq, Show)
+newtype AdjacencyMap a = AM { adjacencyMap :: Map a (Set a) }
+    deriving (Arbitrary, Eq, Show)
 
 instance Ord a => Graph (AdjacencyMap a) where
     type Vertex (AdjacencyMap a) = a
