@@ -41,6 +41,7 @@ test-suite test-alga
     hs-source-dirs:     test
     type:               exitcode-stdio-1.0
     main-is:            Test.hs
+    other-modules:      Algebra.Graph.Test
     build-depends:      alga,
                         base       >= 4.8 && < 5,
                         extra      == 1.4.10,
@@ -49,3 +50,5 @@ test-suite test-alga
     GHC-options:        -O2 -Wall -fwarn-tabs
     default-extensions: TypeFamilies
                         ScopedTypeVariables
+    other-extensions:   FlexibleContexts
+                        RankNTypes

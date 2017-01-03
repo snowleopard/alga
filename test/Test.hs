@@ -1,10 +1,14 @@
+{-# LANGUAGE FlexibleContexts #-}
 import Data.Foldable
 import Data.List (sort)
 import Data.List.Extra (nubOrd)
 import Test.QuickCheck
 
 import Algebra.Graph
+import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Basic
+import Algebra.Graph.Relation
+import Algebra.Graph.Test
 import Algebra.Graph.Util
 
 type G = Basic Int
@@ -17,51 +21,19 @@ test str p = putStr (str ++ ": ") >> quickCheck p
 
 main :: IO ()
 main = do
+    putStrLn "============ Basic ============"
+    quickCheck (axioms   :: GraphTestsuite (Basic Int))
+    quickCheck (theorems :: GraphTestsuite (Basic Int))
+
+    putStrLn "============ Relation ============"
+    quickCheck (axioms :: GraphTestsuite (Relation Int))
+
+    putStrLn "============ Adjacency Map ============"
+    quickCheck (axioms :: GraphTestsuite (AdjacencyMap Int))
+
     putStrLn "============ Directed graphs ============"
-    test "Overlay identity" $ \(x :: G) ->
-        x + empty == x
-
-    test "Overlay commutativity" $ \(x :: G) y ->
-        x + y == y + x
-
-    test "Overlay associativity" $ \(x :: G) y z ->
-        x + (y + z) == (x + y) + z
-
-    test "Overlay idempotence" $ \(x :: G) ->
-        x + x == x
-
-    test "Connect identity" $ \(x :: G) ->
-        x * empty == x && empty * x == x
-
-    test "Overlay associativity" $ \(x :: G) y z ->
-        x * (y * z) == (x * y) * z
-
-    test "Distributivity" $ \(x :: G) y z ->
-        x * (y + z) == x * y + x * z && (x + y) * z == x * z + y * z
-
-    test "Decomposition" $ \(x :: G) y z ->
-        x * y * z == x * y + x * z + y * z
-
-    test "Absorption" $ \(x :: G) y ->
-        x + x * y == x * y && y + x * y == x * y
-
-    test "Connect saturation" $ \(x :: G) ->
-        x * x == x * x * x
-
-    test "Lower bound" $ \(x :: G) ->
-        empty `isSubgraphOf` x
-
     test "Upper bound" $ \(x :: G) ->
         x `isSubgraphOf` (vertices (toList x) * vertices (toList x))
-
-    test "Overlay order" $ \(x :: G) y ->
-        x `isSubgraphOf` (x + y)
-
-    test "Connect order" $ \(x :: G) y ->
-        x `isSubgraphOf` (x * y) && y `isSubgraphOf` (x * y)
-
-    test "Overlay-connect order" $ \(x :: G) y ->
-        (x + y) `isSubgraphOf` (x * y)
 
     test "Path-circuit order" $ \xs ->
         path xs `isSubgraphOf` (circuit xs :: G)
