@@ -10,6 +10,7 @@ import Test.QuickCheck
 import Algebra.Graph
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Relation
+import Algebra.Graph.Util
 
 data Basic a = Empty
              | Vertex a
@@ -78,10 +79,10 @@ newtype Undirected a = U { fromUndirected :: Basic a }
     deriving (Arbitrary, Functor, Foldable, Num, Show)
 
 instance Ord a => Eq (Undirected a) where
-    x == y = toSymmetricRelation x == toSymmetricRelation y
+    x == y = bidirect x == bidirect y
 
-toSymmetricRelation :: Ord a => Undirected a -> Relation a
-toSymmetricRelation = symmetricClosure . foldBasic . fromUndirected
+bidirect :: Undirected a -> Basic a
+bidirect (U g) = g `overlay` transpose (foldBasic g)
 
 newtype PartialOrder a = PO { fromPartialOrder :: Basic a }
     deriving (Arbitrary, Functor, Foldable, Num, Show)
