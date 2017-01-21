@@ -13,7 +13,6 @@ import Algebra.Graph.Util
 
 type G = Basic Int
 type R = Reflexive Int
-type U = Undirected Int
 type P = PartialOrder Int
 
 test :: Testable a => String -> a -> IO ()
@@ -106,8 +105,7 @@ main = do
         (vertex x :: R) == vertex x * vertex x
 
     putStrLn "============ Undirected graphs ============"
-    test "Connect commutativity" $ \(x :: U) y ->
-        x * y == y * x
+    quickCheck (undirectedAxioms :: GraphTestsuite (Undirected Int))
 
     putStrLn "============ Partial Orders ============"
     test "Closure" $ mapSize (min 20) $ \(x :: P) y z -> y /= empty ==>

@@ -1,5 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
-module Algebra.Graph.Test (GraphTestsuite, axioms, theorems) where
+module Algebra.Graph.Test (
+    GraphTestsuite, axioms, theorems, undirectedAxioms
+    ) where
 
 import Prelude hiding ((+), (*), (<=))
 import Test.QuickCheck
@@ -16,7 +18,7 @@ import Algebra.Graph
 (<=) = isSubgraphOf
 
 (//) :: Testable prop => prop -> String -> Property
-(//) = flip label
+p // s = label s $ counterexample ("Failed when checking '" ++ s ++ "'") p
 
 infixl 1 //
 infixl 4 <=
@@ -47,3 +49,8 @@ theorems x y z = conjoin
     ,         empty <= x                        // "Lower bound"
     ,             x <= x + y                    // "Overlay order"
     ,         x + y <= x * y                    // "Overlay-connect order" ]
+
+undirectedAxioms :: GraphTestsuite g
+undirectedAxioms x y z = conjoin
+    [ axioms x y z
+    , x * y == y * x                            // "Connect commutativity" ]
