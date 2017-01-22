@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.Util (
     Dfs, dfsForest, TopSort, isTopSort, topSort, mapVertices, vertexSet,
-    transpose, removeVertex, induce, gmap
+    transpose, toList, removeVertex, induce, gmap
     ) where
 
 import qualified Data.Graph as Std
@@ -73,6 +73,23 @@ instance Graph g => Graph (Transpose g) where
 
 instance (Num g, Graph g) => Num (Transpose g) where
     fromInteger = T . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
+
+newtype ToList a = TL { toList :: [a] }
+
+instance Graph (ToList a) where
+    type Vertex (ToList a) = a
+    empty       = TL $ []
+    vertex  x   = TL $ [x]
+    overlay x y = TL $ toList x ++ toList y
+    connect x y = TL $ toList x ++ toList y
+
+instance Num a => Num (ToList a) where
+    fromInteger = vertex . fromInteger
     (+)         = overlay
     (*)         = connect
     signum      = const empty

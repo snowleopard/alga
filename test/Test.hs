@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts #-}
-import Data.Foldable
 import Data.List (sort)
 import Data.List.Extra (nubOrd)
 import Test.QuickCheck
@@ -31,7 +30,7 @@ main = do
 
     putStrLn "============ Directed graphs ============"
     test "Upper bound" $ \(x :: G) ->
-        x `isSubgraphOf` (vertices (toList x) * vertices (toList x))
+        x `isSubgraphOf` (vertices (toList $ foldBasic x) * vertices (toList $ foldBasic x))
 
     test "Path-circuit order" $ \xs ->
         path xs `isSubgraphOf` (circuit xs :: G)
