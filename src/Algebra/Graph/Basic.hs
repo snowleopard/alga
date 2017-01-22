@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.Basic (
-    Basic (..), foldBasic, Reflexive, Undirected, PartialOrder
+    Basic (..), fold, Reflexive, Undirected, PartialOrder
     ) where
 
 import Control.Monad
@@ -47,7 +47,7 @@ instance Ord a => Eq (Basic a) where
     x == y = toAdjacencyMap x == toAdjacencyMap y
 
 toAdjacencyMap :: Ord a => Basic a -> AdjacencyMap a
-toAdjacencyMap = foldBasic
+toAdjacencyMap = fold
 
 instance Applicative Basic where
     pure  = vertex
@@ -57,8 +57,8 @@ instance Monad Basic where
     return = vertex
     (>>=)  = flip foldMapBasic
 
-foldBasic :: (Vertex g ~ a, Graph g) => Basic a -> g
-foldBasic = foldMapBasic vertex
+fold :: (Vertex g ~ a, Graph g) => Basic a -> g
+fold = foldMapBasic vertex
 
 foldMapBasic :: (Vertex g ~ b, Graph g) => (a -> g) -> Basic a -> g
 foldMapBasic _ Empty         = empty
@@ -73,7 +73,7 @@ instance Ord a => Eq (Reflexive a) where
     x == y = toReflexiveRelation x == toReflexiveRelation y
 
 toReflexiveRelation :: Ord a => Reflexive a -> Relation a
-toReflexiveRelation = reflexiveClosure . foldBasic . fromReflexive
+toReflexiveRelation = reflexiveClosure . fold . fromReflexive
 
 newtype Undirected a = U { fromUndirected :: Basic a }
     deriving (Arbitrary, Functor, Foldable, Num, Show)
@@ -82,7 +82,7 @@ instance Ord a => Eq (Undirected a) where
     x == y = bidirect x == bidirect y
 
 bidirect :: Undirected a -> Basic a
-bidirect (U g) = g `overlay` transpose (foldBasic g)
+bidirect (U g) = g `overlay` transpose (fold g)
 
 newtype PartialOrder a = PO { fromPartialOrder :: Basic a }
     deriving (Arbitrary, Functor, Foldable, Num, Show)
@@ -91,7 +91,7 @@ instance Ord a => Eq (PartialOrder a) where
     x == y = toTransitiveRelation x == toTransitiveRelation y
 
 toTransitiveRelation :: Ord a => PartialOrder a -> Relation a
-toTransitiveRelation = transitiveClosure . foldBasic . fromPartialOrder
+toTransitiveRelation = transitiveClosure . fold . fromPartialOrder
 
 -- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Graph (Reflexive a) where

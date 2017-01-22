@@ -29,8 +29,8 @@ main = do
     quickCheck (axioms :: GraphTestsuite (AdjacencyMap Int))
 
     putStrLn "============ Directed graphs ============"
-    test "Upper bound" $ \(x :: G) ->
-        x `isSubgraphOf` (vertices (toList $ foldBasic x) * vertices (toList $ foldBasic x))
+    test "Upper bound" $ \(x :: G) -> let xs = vertices . toList $ fold x in
+        x `isSubgraphOf` (xs * xs)
 
     test "Path-circuit order" $ \xs ->
         path xs `isSubgraphOf` (circuit xs :: G)
@@ -44,12 +44,12 @@ main = do
         (x `box` y) `box` z == assoc (x `box` (y `box` z))
 
     test "Induce full graph" $ \(x :: G) ->
-        induce (const True) (foldBasic x) == x
+        induce (const True) (fold x) == x
 
     test "Induce empty graph" $ \(x :: G) ->
-        induce (const False) (foldBasic x) == (empty :: G)
+        induce (const False) (fold x) == (empty :: G)
 
-    let i x (s :: [Int]) = induce (`elem` s) (foldBasic x) :: G
+    let i x (s :: [Int]) = induce (`elem` s) (fold x) :: G
     test "Induce subgraph" $ \s (x :: G) ->
         (x `i` s) `isSubgraphOf` x
 
@@ -65,7 +65,7 @@ main = do
     test "Remove single vertex" $ \x ->
         removeVertex x (vertex x) == (empty :: G)
 
-    let d x = (foldBasic x) :: Dfs Int
+    let d x = (fold x) :: Dfs Int
     test "DFS idempotence" $ \x ->
         d x == d (forest . dfsForest $ d x)
     test "DFS subgraph" $ \x ->
@@ -75,9 +75,9 @@ main = do
     test "DFS reflexivity" $ \x ->
         (vertex x :: Dfs Int) == vertex x * vertex x
 
-    let ts x = (foldBasic x) :: TopSort Int
+    let ts x = (fold x) :: TopSort Int
     test "TopSort is a topological sort" $ \x ->
-        fmap (isTopSort $ foldBasic x) (topSort $ ts x) /= Just False
+        fmap (isTopSort $ fold x) (topSort $ ts x) /= Just False
 
     test "TopSort of a cyclic graph" $ \x ys -> not (null ys) ==>
         topSort (ts $ x + circuit (nubOrd ys)) == Nothing
@@ -88,7 +88,7 @@ main = do
     test "TopSort homomorphism" $ \x y ->
         ts x + ts y == ts (x + y) && ts x * ts y == ts (x * y)
 
-    let t x = transpose (foldBasic x) :: G
+    let t x = transpose (fold x) :: G
     test "Transpose self-inverse" $ \x ->
         t (t x) == x
 
@@ -96,7 +96,7 @@ main = do
         t x + t y == t (x + y) && t x * t y == t (y * x)
 
     test "EdgeList of fromEdgeList" $ \xs ->
-        nubOrd (sort xs) == edgeList (foldBasic (fromEdgeList xs :: G))
+        nubOrd (sort xs) == edgeList (fold (fromEdgeList xs :: G))
 
     putStrLn "============ Reflexive graphs ============"
     quickCheck (reflexiveAxioms :: GraphTestsuite (Reflexive Int))
