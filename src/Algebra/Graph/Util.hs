@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.Util (
     Dfs, dfsForest, TopSort, isTopSort, topSort, mapVertices, vertexSet,
-    adjacencyList, edgeList, transpose
+    transpose, removeVertex, induce, gmap
     ) where
 
 import qualified Data.Graph as Std
@@ -13,7 +13,7 @@ import           Data.Set (Set)
 
 import Algebra.Graph
 import qualified Algebra.Graph.AdjacencyMap as AM
-import Algebra.Graph.AdjacencyMap hiding (mapVertices, vertexSet)
+import Algebra.Graph.AdjacencyMap hiding (mapVertices, vertexSet, transpose)
 
 newtype Dfs a = D { fromDfs :: AdjacencyMap a } deriving (Show, Num)
 
@@ -61,15 +61,6 @@ isTopSort x = go Set.empty
     go seen (v:vs) = let newSeen = seen `seq` Set.insert v seen
         in postset v x `Set.intersection` newSeen == Set.empty && go newSeen vs
 
-adjacencyList :: AdjacencyMap a -> [(a, [a])]
-adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
-
-edgeList :: AdjacencyMap a -> [(a, a)]
-edgeList = concatMap (\(x, ys) -> map (x,) ys) . adjacencyList
-
-postset :: Ord a => a -> AdjacencyMap a -> Set a
-postset x = Map.findWithDefault Set.empty x . adjacencyMap
-
 -- Note: Transpose can only transpose polymorphic graphs.
 newtype Transpose a = T { transpose :: a }
 
@@ -82,6 +73,49 @@ instance Graph g => Graph (Transpose g) where
 
 instance (Num g, Graph g) => Num (Transpose g) where
     fromInteger = T . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
+
+newtype Induce a g = I { getInduce :: (a -> Bool) -> g }
+
+induce :: (Vertex g -> Bool) -> Induce (Vertex g) g -> g
+induce = flip getInduce
+
+removeVertex :: Eq (Vertex g) => Vertex g -> Induce (Vertex g) g -> g
+removeVertex v = induce (/= v)
+
+instance (Graph g, Vertex g ~ a) => Graph (Induce a g) where
+    type Vertex (Induce a g) = a
+    empty       = I $ \_ -> empty
+    vertex  x   = I $ \f -> if f x then vertex x else empty
+    overlay x y = I $ \f -> getInduce x f `overlay` getInduce y f
+    connect x y = I $ \f -> getInduce x f `connect` getInduce y f
+
+instance (Graph g, Num a, Vertex g ~ a) => Num (Induce a g) where
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
+
+newtype GraphF a b g = GF { getGraphF :: (a -> b) -> g }
+
+gmap :: (a -> Vertex g) -> GraphF a (Vertex g) g -> g
+gmap = flip getGraphF
+
+instance (Graph g, Vertex g ~ b) => Graph (GraphF a b g) where
+    type Vertex (GraphF a b g) = a
+    empty       = GF $ \_ -> empty
+    vertex  x   = GF $ \f -> vertex (f x)
+    overlay x y = GF $ \f -> getGraphF x f `overlay` getGraphF y f
+    connect x y = GF $ \f -> getGraphF x f `connect` getGraphF y f
+
+instance (Graph g, Num a, Vertex g ~ b) => Num (GraphF a b g) where
+    fromInteger = vertex . fromInteger
     (+)         = overlay
     (*)         = connect
     signum      = const empty

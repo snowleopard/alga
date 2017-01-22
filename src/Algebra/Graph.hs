@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving #-}
 module Algebra.Graph (
     Graph (..), edge, vertices, clique, fromEdgeList, path, circuit, tree,
-    forest, box, induce, removeVertex, arbitraryGraph, isSubgraphOf, foldg,
+    forest, box, arbitraryGraph, isSubgraphOf, foldg,
     overlays, connects
     ) where
 
@@ -61,12 +61,6 @@ box x y = overlays $ xs ++ ys
   where
     xs = map (\b -> fmap (,b) x) $ toList y
     ys = map (\a -> fmap (a,) y) $ toList x
-
-induce :: (Monad m, Graph (m a)) => (a -> Bool) -> m a -> m a
-induce p = (>>= \x -> if p x then return x else empty)
-
-removeVertex :: (Eq a, Monad m, Graph (m a)) => a -> m a -> m a
-removeVertex x = induce (/= x)
 
 -- 'foldr f empty' adds a redundant empty to the result; foldg avoids this
 foldg :: Graph g => (g -> g -> g) -> [g] -> g

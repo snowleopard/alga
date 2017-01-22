@@ -5,14 +5,13 @@ import Data.List.Extra (nubOrd)
 import Test.QuickCheck
 
 import Algebra.Graph
-import Algebra.Graph.AdjacencyMap
+import Algebra.Graph.AdjacencyMap hiding (fromEdgeList, transpose)
 import Algebra.Graph.Basic
 import Algebra.Graph.Relation
 import Algebra.Graph.Test
 import Algebra.Graph.Util
 
 type G = Basic Int
-type R = Reflexive Int
 type P = PartialOrder Int
 
 test :: Testable a => String -> a -> IO ()
@@ -46,12 +45,12 @@ main = do
         (x `box` y) `box` z == assoc (x `box` (y `box` z))
 
     test "Induce full graph" $ \(x :: G) ->
-        induce (const True) x == x
+        induce (const True) (foldBasic x) == x
 
     test "Induce empty graph" $ \(x :: G) ->
-        induce (const False) x == empty
+        induce (const False) (foldBasic x) == (empty :: G)
 
-    let i x (s :: [Int]) = induce (`elem` s) x
+    let i x (s :: [Int]) = induce (`elem` s) (foldBasic x) :: G
     test "Induce subgraph" $ \s (x :: G) ->
         (x `i` s) `isSubgraphOf` x
 
@@ -101,8 +100,7 @@ main = do
         nubOrd (sort xs) == edgeList (foldBasic (fromEdgeList xs :: G))
 
     putStrLn "============ Reflexive graphs ============"
-    test "Vertex self-loop" $ \x ->
-        (vertex x :: R) == vertex x * vertex x
+    quickCheck (reflexiveAxioms :: GraphTestsuite (Reflexive Int))
 
     putStrLn "============ Undirected graphs ============"
     quickCheck (undirectedAxioms :: GraphTestsuite (Undirected Int))

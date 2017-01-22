@@ -8,7 +8,7 @@ import Control.Monad
 import Test.QuickCheck
 
 import Algebra.Graph
-import Algebra.Graph.AdjacencyMap
+import Algebra.Graph.AdjacencyMap hiding (transpose)
 import Algebra.Graph.Relation
 import Algebra.Graph.Util
 

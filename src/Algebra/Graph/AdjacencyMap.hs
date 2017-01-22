@@ -1,15 +1,17 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.AdjacencyMap (
-    AdjacencyMap, adjacencyMap, mapVertices, vertexSet
+    AdjacencyMap, adjacencyMap, mapVertices, vertexSet, adjacencyList, edgeList,
+    postset, fromEdgeList, transpose
     ) where
 
-import           Data.Set (Set)
-import qualified Data.Set as Set
 import           Data.Map.Strict (Map, keysSet, fromSet)
 import qualified Data.Map.Strict as Map
+import           Data.Set (Set)
+import qualified Data.Set as Set
+import Data.Tuple
 import Test.QuickCheck
 
-import Algebra.Graph
+import Algebra.Graph hiding (fromEdgeList)
 
 newtype AdjacencyMap a = AM { adjacencyMap :: Map a (Set a) }
     deriving (Arbitrary, Eq, Show)
@@ -35,3 +37,18 @@ mapVertices f (AM x) = AM . Map.map (Set.map f) $ Map.mapKeysWith Set.union f x
 
 vertexSet :: AdjacencyMap a -> Set a
 vertexSet (AM x) = Map.keysSet x
+
+adjacencyList :: AdjacencyMap a -> [(a, [a])]
+adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
+
+edgeList :: AdjacencyMap a -> [(a, a)]
+edgeList = concatMap (\(x, ys) -> map (x,) ys) . adjacencyList
+
+fromEdgeList :: Ord a => [(a, a)] -> AdjacencyMap a
+fromEdgeList = AM . Map.fromListWith Set.union . map (\(x, y) -> (x, Set.singleton y))
+
+postset :: Ord a => a -> AdjacencyMap a -> Set a
+postset x = Map.findWithDefault Set.empty x . adjacencyMap
+
+transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
+transpose = fromEdgeList . map swap . edgeList
