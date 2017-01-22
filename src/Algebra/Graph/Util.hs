@@ -79,22 +79,19 @@ instance (Num g, Graph g) => Num (Transpose g) where
     abs         = id
     negate      = id
 
-newtype Induce a g = I { getInduce :: (a -> Bool) -> g }
+newtype GraphF a g = GF { gfor :: (a -> Vertex g) -> g }
 
-induce :: (Vertex g -> Bool) -> Induce (Vertex g) g -> g
-induce = flip getInduce
+gmap :: (a -> Vertex g) -> GraphF a g -> g
+gmap = flip gfor
 
-removeVertex :: Eq (Vertex g) => Vertex g -> Induce (Vertex g) g -> g
-removeVertex v = induce (/= v)
+instance Graph g => Graph (GraphF a g) where
+    type Vertex (GraphF a g) = a
+    empty       = GF $ \_ -> empty
+    vertex  x   = GF $ \f -> vertex (f x)
+    overlay x y = GF $ \f -> gmap f x `overlay` gmap f y
+    connect x y = GF $ \f -> gmap f x `connect` gmap f y
 
-instance (Graph g, Vertex g ~ a) => Graph (Induce a g) where
-    type Vertex (Induce a g) = a
-    empty       = I $ \_ -> empty
-    vertex  x   = I $ \f -> if f x then vertex x else empty
-    overlay x y = I $ \f -> getInduce x f `overlay` getInduce y f
-    connect x y = I $ \f -> getInduce x f `connect` getInduce y f
-
-instance (Graph g, Num a, Vertex g ~ a) => Num (Induce a g) where
+instance (Graph g, Num a) => Num (GraphF a g) where
     fromInteger = vertex . fromInteger
     (+)         = overlay
     (*)         = connect
@@ -102,19 +99,22 @@ instance (Graph g, Num a, Vertex g ~ a) => Num (Induce a g) where
     abs         = id
     negate      = id
 
-newtype GraphF a b g = GF { getGraphF :: (a -> b) -> g }
+newtype GraphM a g = GM { bind :: (a -> g) -> g }
 
-gmap :: (a -> Vertex g) -> GraphF a (Vertex g) g -> g
-gmap = flip getGraphF
+induce :: Graph g => (Vertex g -> Bool) -> GraphM (Vertex g) g -> g
+induce f g = bind g $ \v -> if f v then vertex v else empty
 
-instance (Graph g, Vertex g ~ b) => Graph (GraphF a b g) where
-    type Vertex (GraphF a b g) = a
-    empty       = GF $ \_ -> empty
-    vertex  x   = GF $ \f -> vertex (f x)
-    overlay x y = GF $ \f -> getGraphF x f `overlay` getGraphF y f
-    connect x y = GF $ \f -> getGraphF x f `connect` getGraphF y f
+removeVertex :: (Eq (Vertex g), Graph g) => Vertex g -> GraphM (Vertex g) g -> g
+removeVertex v = induce (/= v)
 
-instance (Graph g, Num a, Vertex g ~ b) => Num (GraphF a b g) where
+instance Graph g => Graph (GraphM a g) where
+    type Vertex (GraphM a g) = a
+    empty       = GM $ \_ -> empty
+    vertex  x   = GM $ \f -> f x
+    overlay x y = GM $ \f -> bind x f `overlay` bind y f
+    connect x y = GM $ \f -> bind x f `connect` bind y f
+
+instance (Graph g, Num a) => Num (GraphM a g) where
     fromInteger = vertex . fromInteger
     (+)         = overlay
     (*)         = connect

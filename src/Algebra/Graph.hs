@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 module Algebra.Graph (
     Graph (..), edge, vertices, clique, fromEdgeList, path, circuit, tree,
     forest, box, arbitraryGraph, isSubgraphOf, foldg,
