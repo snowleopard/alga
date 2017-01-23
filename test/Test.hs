@@ -8,7 +8,7 @@ import Algebra.Graph.AdjacencyMap hiding (fromEdgeList, transpose)
 import Algebra.Graph.Basic
 import Algebra.Graph.Relation
 import Algebra.Graph.Test
-import Algebra.Graph.Util
+import Algebra.Graph.Util hiding (box)
 
 type G = Basic Int
 type P = PartialOrder Int
@@ -42,6 +42,10 @@ main = do
 
     test "Box associativity" $ mapSize (min 10) $ \(x :: G) (y :: G) (z :: G) ->
         (x `box` y) `box` z == assoc (x `box` (y `box` z))
+
+    test "Box-overlay distributivity" $ mapSize (min 10) $ \(x :: G) y z ->
+        x `box` (y + z) == (x `box` y) `overlay` (x `box` z) &&
+        (x + y) `box` z == (x `box` z) `overlay` (y `box` z)
 
     test "Induce full graph" $ \(x :: G) ->
         induce (const True) (fold x) == x

@@ -1,7 +1,7 @@
-{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, RankNTypes #-}
 module Algebra.Graph.Util (
     Dfs, dfsForest, TopSort, isTopSort, topSort, mapVertices, vertexSet,
-    transpose, toList, removeVertex, induce, gmap
+    transpose, toList, box, removeVertex, induce, gmap
     ) where
 
 import qualified Data.Graph as Std
@@ -11,7 +11,7 @@ import Data.Ord
 import qualified Data.Set as Set
 import           Data.Set (Set)
 
-import Algebra.Graph
+import Algebra.Graph hiding (box)
 import qualified Algebra.Graph.AdjacencyMap as AM
 import Algebra.Graph.AdjacencyMap hiding (mapVertices, vertexSet, transpose)
 
@@ -62,7 +62,7 @@ isTopSort x = go Set.empty
         in postset v x `Set.intersection` newSeen == Set.empty && go newSeen vs
 
 -- Note: Transpose can only transpose polymorphic graphs.
-newtype Transpose a = T { transpose :: a }
+newtype Transpose g = T { transpose :: g }
 
 instance Graph g => Graph (Transpose g) where
     type Vertex (Transpose g) = Vertex g
@@ -96,19 +96,19 @@ instance Num a => Num (ToList a) where
     abs         = id
     negate      = id
 
-newtype GraphF a g = GF { gfor :: (a -> Vertex g) -> g }
+newtype GraphFunctor g a = GF { gfor :: (a -> Vertex g) -> g }
 
-gmap :: (a -> Vertex g) -> GraphF a g -> g
+gmap :: (a -> Vertex g) -> GraphFunctor g a -> g
 gmap = flip gfor
 
-instance Graph g => Graph (GraphF a g) where
-    type Vertex (GraphF a g) = a
+instance Graph g => Graph (GraphFunctor g a) where
+    type Vertex (GraphFunctor g a) = a
     empty       = GF $ \_ -> empty
     vertex  x   = GF $ \f -> vertex (f x)
     overlay x y = GF $ \f -> gmap f x `overlay` gmap f y
     connect x y = GF $ \f -> gmap f x `connect` gmap f y
 
-instance (Graph g, Num a) => Num (GraphF a g) where
+instance (Graph g, Num a) => Num (GraphFunctor g a) where
     fromInteger = vertex . fromInteger
     (+)         = overlay
     (*)         = connect
@@ -116,22 +116,31 @@ instance (Graph g, Num a) => Num (GraphF a g) where
     abs         = id
     negate      = id
 
-newtype GraphM a g = GM { bind :: (a -> g) -> g }
+-- TODO: Fix type inference at the use site
+box :: (Graph c, Vertex c ~ (u, v))
+    => (forall a. (Graph a, Vertex a ~ u) => a)
+    -> (forall b. (Graph b, Vertex b ~ v) => b) -> c
+box x y = overlays $ xs ++ ys
+  where
+    xs = map (\b -> gmap (,b) x) $ toList y
+    ys = map (\a -> gmap (a,) y) $ toList x
 
-induce :: Graph g => (Vertex g -> Bool) -> GraphM (Vertex g) g -> g
+newtype GraphMonad g a = GM { bind :: (a -> g) -> g }
+
+induce :: Graph g => (Vertex g -> Bool) -> GraphMonad g (Vertex g) -> g
 induce f g = bind g $ \v -> if f v then vertex v else empty
 
-removeVertex :: (Eq (Vertex g), Graph g) => Vertex g -> GraphM (Vertex g) g -> g
+removeVertex :: (Eq (Vertex g), Graph g) => Vertex g -> GraphMonad g (Vertex g) -> g
 removeVertex v = induce (/= v)
 
-instance Graph g => Graph (GraphM a g) where
-    type Vertex (GraphM a g) = a
+instance Graph g => Graph (GraphMonad g a) where
+    type Vertex (GraphMonad g a) = a
     empty       = GM $ \_ -> empty
     vertex  x   = GM $ \f -> f x
     overlay x y = GM $ \f -> bind x f `overlay` bind y f
     connect x y = GM $ \f -> bind x f `connect` bind y f
 
-instance (Graph g, Num a) => Num (GraphM a g) where
+instance (Graph g, Num a) => Num (GraphMonad g a) where
     fromInteger = vertex . fromInteger
     (+)         = overlay
     (*)         = connect
