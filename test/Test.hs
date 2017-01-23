@@ -6,8 +6,10 @@ import Test.QuickCheck
 import Algebra.Graph
 import Algebra.Graph.AdjacencyMap hiding (fromEdgeList, transpose)
 import Algebra.Graph.Basic
+import Algebra.Graph.Dfs
 import Algebra.Graph.Relation
 import Algebra.Graph.Test
+import Algebra.Graph.TopSort
 import Algebra.Graph.Util hiding (box)
 
 type G = Basic Int

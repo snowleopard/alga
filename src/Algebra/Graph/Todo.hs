@@ -6,7 +6,7 @@ import qualified Data.Map as Map
 import Data.String
 
 import Algebra.Graph
-import Algebra.Graph.Util
+import Algebra.Graph.TopSort
 
 data Todo a = T (Map a Int) (TopSort a) deriving Show
 
