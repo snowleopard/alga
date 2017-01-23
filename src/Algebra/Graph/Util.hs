@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, RankNTypes #-}
 module Algebra.Graph.Util (
     Dfs, dfsForest, TopSort, isTopSort, topSort, mapVertices, vertexSet,
-    transpose, toList, box, removeVertex, induce, gmap
+    transpose, toList, gmap, mergeVertices, box, induce, removeVertex, splitVertex
     ) where
 
 import qualified Data.Graph as Std
@@ -101,6 +101,9 @@ newtype GraphFunctor g a = GF { gfor :: (a -> Vertex g) -> g }
 gmap :: (a -> Vertex g) -> GraphFunctor g a -> g
 gmap = flip gfor
 
+mergeVertices :: (Vertex g -> Bool) -> Vertex g -> GraphFunctor g (Vertex g) -> g
+mergeVertices p v = gmap $ \u -> if p u then v else u
+
 instance Graph g => Graph (GraphFunctor g a) where
     type Vertex (GraphFunctor g a) = a
     empty       = GF $ \_ -> empty
@@ -128,10 +131,13 @@ box x y = overlays $ xs ++ ys
 newtype GraphMonad g a = GM { bind :: (a -> g) -> g }
 
 induce :: Graph g => (Vertex g -> Bool) -> GraphMonad g (Vertex g) -> g
-induce f g = bind g $ \v -> if f v then vertex v else empty
+induce p g = bind g $ \v -> if p v then vertex v else empty
 
 removeVertex :: (Eq (Vertex g), Graph g) => Vertex g -> GraphMonad g (Vertex g) -> g
 removeVertex v = induce (/= v)
+
+splitVertex :: (Eq (Vertex g), Graph g) => Vertex g -> [Vertex g] -> GraphMonad g (Vertex g) -> g
+splitVertex v vs g = bind g $ \u -> if u == v then vertices vs else vertex u
 
 instance Graph g => Graph (GraphMonad g a) where
     type Vertex (GraphMonad g a) = a
