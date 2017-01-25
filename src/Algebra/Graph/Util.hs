@@ -1,8 +1,11 @@
 {-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, RankNTypes #-}
 module Algebra.Graph.Util (
-    transpose, toList, gmap, mergeVertices, box, induce, removeVertex, splitVertex
+    transpose, vertexSet, toList, gmap, mergeVertices, box, induce,
+    removeVertex, splitVertex
     ) where
 
+import qualified Data.Set as Set
+import Data.Set (Set)
 import Test.QuickCheck
 
 import Algebra.Graph hiding (box)
@@ -25,16 +28,19 @@ instance (Graph g, Num g) => Num (Transpose g) where
     abs         = id
     negate      = id
 
-newtype ToList a = TL { toList :: [a] } deriving (Arbitrary, Eq, Show)
+newtype VertexSet a = VS { vertexSet :: Set a } deriving (Arbitrary, Eq, Show)
 
-instance Graph (ToList a) where
-    type Vertex (ToList a) = a
-    empty       = TL $ []
-    vertex  x   = TL $ [x]
-    overlay x y = TL $ toList x ++ toList y
-    connect x y = TL $ toList x ++ toList y
+toList :: VertexSet a -> [a]
+toList = Set.toList . vertexSet
 
-instance Num a => Num (ToList a) where
+instance Ord a => Graph (VertexSet a) where
+    type Vertex (VertexSet a) = a
+    empty       = VS $ Set.empty
+    vertex  x   = VS $ Set.singleton x
+    overlay x y = VS $ vertexSet x `Set.union` vertexSet y
+    connect x y = VS $ vertexSet x `Set.union` vertexSet y
+
+instance (Num a, Ord a) => Num (VertexSet a) where
     fromInteger = vertex . fromInteger
     (+)         = overlay
     (*)         = connect
@@ -99,7 +105,7 @@ instance (Graph g, Num a) => Num (GraphFunctor g a) where
     negate      = id
 
 -- TODO: Fix type inference at the use site
-box :: (Graph c, Vertex c ~ (u, v))
+box :: (Ord u, Ord v, Graph c, Vertex c ~ (u, v))
     => (forall a. (Graph a, Vertex a ~ u) => a)
     -> (forall b. (Graph b, Vertex b ~ v) => b) -> c
 box x y = overlays $ xs ++ ys
