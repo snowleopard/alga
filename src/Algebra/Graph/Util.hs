@@ -1,12 +1,14 @@
-{-# LANGUAGE FlexibleContexts, RankNTypes #-}
+{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, RankNTypes #-}
 module Algebra.Graph.Util (
     transpose, toList, gmap, mergeVertices, box, induce, removeVertex, splitVertex
     ) where
 
+import Test.QuickCheck
+
 import Algebra.Graph hiding (box)
 
 -- Note: Transpose can only transpose polymorphic graphs.
-newtype Transpose g = T { transpose :: g }
+newtype Transpose g = T { transpose :: g } deriving (Arbitrary, Eq, Show)
 
 instance Graph g => Graph (Transpose g) where
     type Vertex (Transpose g) = Vertex g
@@ -15,7 +17,7 @@ instance Graph g => Graph (Transpose g) where
     overlay x y = T $ overlay (transpose x) (transpose y)
     connect x y = T $ connect (transpose y) (transpose x)
 
-instance (Num g, Graph g) => Num (Transpose g) where
+instance (Graph g, Num g) => Num (Transpose g) where
     fromInteger = T . fromInteger
     (+)         = overlay
     (*)         = connect
@@ -23,7 +25,7 @@ instance (Num g, Graph g) => Num (Transpose g) where
     abs         = id
     negate      = id
 
-newtype ToList a = TL { toList :: [a] }
+newtype ToList a = TL { toList :: [a] } deriving (Arbitrary, Eq, Show)
 
 instance Graph (ToList a) where
     type Vertex (ToList a) = a
@@ -34,6 +36,39 @@ instance Graph (ToList a) where
 
 instance Num a => Num (ToList a) where
     fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
+
+newtype Simplify g = S { simplify :: g } deriving (Arbitrary, Eq, Show)
+
+instance (Eq g, Graph g) => Graph (Simplify g) where
+    type Vertex (Simplify g) = Vertex g
+    empty       = S empty
+    vertex      = S . vertex
+    overlay x y = S $ simpleOverlay (simplify x) (simplify y)
+    connect x y = S $ simpleConnect (simplify x) (simplify y)
+
+simpleOverlay :: (Graph g, Eq g) => g -> g -> g
+simpleOverlay x y
+    | x == z    = x
+    | y == z    = y
+    | otherwise = z
+  where
+    z = overlay x y
+
+simpleConnect :: (Graph g, Eq g) => g -> g -> g
+simpleConnect x y
+    | x == z    = x
+    | y == z    = y
+    | otherwise = z
+  where
+    z = connect x y
+
+instance (Eq g, Graph g, Num g) => Num (Simplify g) where
+    fromInteger = S . fromInteger
     (+)         = overlay
     (*)         = connect
     signum      = const empty
