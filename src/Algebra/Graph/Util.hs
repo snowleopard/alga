@@ -128,25 +128,25 @@ box x y = overlays $ xs ++ ys
     xs = map (\b -> gmap (,b) x) . nubOrd . toList $ gmap id y
     ys = map (\a -> gmap (a,) y) . nubOrd . toList $ gmap id x
 
-newtype GraphMonad g a = GM { bind :: (a -> g) -> g }
+newtype GraphMonad a = GM { bind :: forall g. Graph g => (a -> g) -> g }
 
-induce :: Graph g => (Vertex g -> Bool) -> GraphMonad g (Vertex g) -> g
+induce :: Graph g => (Vertex g -> Bool) -> GraphMonad (Vertex g) -> g
 induce p g = bind g $ \v -> if p v then vertex v else empty
 
-removeVertex :: (Eq (Vertex g), Graph g) => Vertex g -> GraphMonad g (Vertex g) -> g
+removeVertex :: (Eq (Vertex g), Graph g) => Vertex g -> GraphMonad (Vertex g) -> g
 removeVertex v = induce (/= v)
 
-splitVertex :: (Eq (Vertex g), Graph g) => Vertex g -> [Vertex g] -> GraphMonad g (Vertex g) -> g
+splitVertex :: (Eq (Vertex g), Graph g) => Vertex g -> [Vertex g] -> GraphMonad (Vertex g) -> g
 splitVertex v vs g = bind g $ \u -> if u == v then vertices vs else vertex u
 
-instance Graph g => Graph (GraphMonad g a) where
-    type Vertex (GraphMonad g a) = a
+instance Graph (GraphMonad a) where
+    type Vertex (GraphMonad a) = a
     empty       = GM $ \_ -> empty
     vertex  x   = GM $ \f -> f x
     overlay x y = GM $ \f -> bind x f `overlay` bind y f
     connect x y = GM $ \f -> bind x f `connect` bind y f
 
-instance (Graph g, Num a) => Num (GraphMonad g a) where
+instance Num a => Num (GraphMonad a) where
     fromInteger = vertex . fromInteger
     (+)         = overlay
     (*)         = connect
