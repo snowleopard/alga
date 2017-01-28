@@ -1,11 +1,9 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Algebra.Graph (
     Graph (..), edge, vertices, clique, fromEdgeList, path, circuit, tree,
-    forest, box, arbitraryGraph, isSubgraphOf, foldg,
-    overlays, connects
+    forest, arbitraryGraph, isSubgraphOf, foldg, overlays, connects
     ) where
 
-import Data.Foldable
 import Test.QuickCheck
 import Data.Tree
 
@@ -55,12 +53,6 @@ arbitraryGraph = sized graph
         left <- choose (0, n)
         oneof [ overlay <$> (graph left) <*> (graph $ n - left)
               , connect <$> (graph left) <*> (graph $ n - left) ]
-
-box :: (Functor f, Foldable f, Graph (f (a, b))) => f a -> f b -> f (a, b)
-box x y = overlays $ xs ++ ys
-  where
-    xs = map (\b -> fmap (,b) x) $ toList y
-    ys = map (\a -> fmap (a,) y) $ toList x
 
 -- 'foldr f empty' adds a redundant empty to the result; foldg avoids this
 foldg :: Graph g => (g -> g -> g) -> [g] -> g

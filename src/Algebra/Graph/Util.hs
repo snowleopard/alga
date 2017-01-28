@@ -9,7 +9,7 @@ import qualified Data.Set as Set
 import Data.Set (Set)
 import Test.QuickCheck
 
-import Algebra.Graph hiding (box)
+import Algebra.Graph
 
 -- Note: Transpose can only transpose polymorphic graphs.
 newtype Transpose g = T { transpose :: g } deriving (Arbitrary, Eq, Show)
@@ -97,22 +97,22 @@ instance (Eq g, Graph g, Num g) => Num (Simplify g) where
     abs         = id
     negate      = id
 
-newtype GraphFunctor g a = GF { gfor :: (a -> Vertex g) -> g }
+newtype GraphFunctor a = GF { gfor :: forall g. Graph g => (a -> Vertex g) -> g }
 
-gmap :: (a -> Vertex g) -> GraphFunctor g a -> g
+gmap :: Graph g => (a -> Vertex g) -> GraphFunctor a -> g
 gmap = flip gfor
 
-mergeVertices :: (Vertex g -> Bool) -> Vertex g -> GraphFunctor g (Vertex g) -> g
+mergeVertices :: Graph g => (Vertex g -> Bool) -> Vertex g -> GraphFunctor (Vertex g) -> g
 mergeVertices p v = gmap $ \u -> if p u then v else u
 
-instance Graph g => Graph (GraphFunctor g a) where
-    type Vertex (GraphFunctor g a) = a
+instance Graph (GraphFunctor a) where
+    type Vertex (GraphFunctor a) = a
     empty       = GF $ \_ -> empty
     vertex  x   = GF $ \f -> vertex (f x)
     overlay x y = GF $ \f -> gmap f x `overlay` gmap f y
     connect x y = GF $ \f -> gmap f x `connect` gmap f y
 
-instance (Graph g, Num a) => Num (GraphFunctor g a) where
+instance Num a => Num (GraphFunctor a) where
     fromInteger = vertex . fromInteger
     (+)         = overlay
     (*)         = connect
@@ -120,14 +120,13 @@ instance (Graph g, Num a) => Num (GraphFunctor g a) where
     abs         = id
     negate      = id
 
--- TODO: Fix type inference at the use site
+-- Note: `gmap id` is needed
 box :: (Ord u, Ord v, Graph c, Vertex c ~ (u, v))
-    => (forall a. (Graph a, Vertex a ~ u) => a)
-    -> (forall b. (Graph b, Vertex b ~ v) => b) -> c
+    => GraphFunctor u -> GraphFunctor v -> c
 box x y = overlays $ xs ++ ys
   where
-    xs = map (\b -> gmap (,b) x) . nubOrd $ toList y
-    ys = map (\a -> gmap (a,) y) . nubOrd $ toList x
+    xs = map (\b -> gmap (,b) x) . nubOrd . toList $ gmap id y
+    ys = map (\a -> gmap (a,) y) . nubOrd . toList $ gmap id x
 
 newtype GraphMonad g a = GM { bind :: (a -> g) -> g }
 

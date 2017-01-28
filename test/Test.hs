@@ -10,7 +10,7 @@ import Algebra.Graph.Dfs
 import Algebra.Graph.Relation
 import Algebra.Graph.Test
 import Algebra.Graph.TopSort
-import Algebra.Graph.Util hiding (box)
+import Algebra.Graph.Util
 
 type G = Basic Int
 type P = PartialOrder Int
@@ -37,17 +37,27 @@ main = do
     test "Path-circuit order" $ \xs ->
         path xs `isSubgraphOf` (circuit xs :: G)
 
-    let comm  = fmap $ \(a, b) -> (b, a)
-        assoc = fmap $ \(a, (b, c)) -> ((a, b), c)
-    test "Box commutativity" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
-        x `box` y == comm (y `box` x)
+    let comm    = gmap $ \(a, b) -> (b, a)
+        eq2 x y = x == (y :: Basic (Int, Int))
+    test "Box commutativity" $ mapSize (min 10) $ \x y ->
+        let fx = fold x
+            fy = fold y
+        in fx `box` fy `eq2` comm (fy `box` fx)
 
-    test "Box associativity" $ mapSize (min 10) $ \(x :: G) (y :: G) (z :: G) ->
-        (x `box` y) `box` z == assoc (x `box` (y `box` z))
+    let assoc   = gmap $ \(a, (b, c)) -> ((a, b), c)
+        eq3 x y = x == (y :: Basic ((Int, Int), Int))
+    test "Box associativity" $ mapSize (min 10) $ \x y z ->
+        let fx = fold x
+            fy = fold y
+            fz = fold z
+        in (fx `box` fy) `box` fz `eq3` assoc (fx `box` (fy `box` fz))
 
-    test "Box-overlay distributivity" $ mapSize (min 10) $ \(x :: G) y z ->
-        x `box` (y + z) == (x `box` y) `overlay` (x `box` z) &&
-        (x + y) `box` z == (x `box` z) `overlay` (y `box` z)
+    test "Box-overlay distributivity" $ mapSize (min 10) $ \x y z ->
+        let fx = fold x
+            fy = fold y
+            fz = fold z
+        in (fx `box` (fy + fz)) `eq2` ((fx `box` fy) `overlay` (fx `box` fz)) &&
+           ((fx + fy) `box` fz) `eq2` ((fx `box` fz) `overlay` (fy `box` fz))
 
     test "Induce full graph" $ \(x :: G) ->
         induce (const True) (fold x) == x
