@@ -4,6 +4,7 @@ module Algebra.Graph.Util (
     removeVertex, splitVertex
     ) where
 
+import Data.List.Extra (nubOrd)
 import qualified Data.Set as Set
 import Data.Set (Set)
 import Test.QuickCheck
@@ -28,10 +29,25 @@ instance (Graph g, Num g) => Num (Transpose g) where
     abs         = id
     negate      = id
 
-newtype VertexSet a = VS { vertexSet :: Set a } deriving (Arbitrary, Eq, Show)
+-- Note: Derived Eq instance does not satisfy Graph laws
+newtype ToList a = TL { toList :: [a] } deriving (Arbitrary, Show)
 
-toList :: VertexSet a -> [a]
-toList = Set.toList . vertexSet
+instance Graph (ToList a) where
+     type Vertex (ToList a) = a
+     empty       = TL $ []
+     vertex  x   = TL $ [x]
+     overlay x y = TL $ toList x ++ toList y
+     connect x y = TL $ toList x ++ toList y
+
+instance Num a => Num (ToList a) where
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
+
+newtype VertexSet a = VS { vertexSet :: Set a } deriving (Arbitrary, Eq, Show)
 
 instance Ord a => Graph (VertexSet a) where
     type Vertex (VertexSet a) = a
@@ -110,8 +126,8 @@ box :: (Ord u, Ord v, Graph c, Vertex c ~ (u, v))
     -> (forall b. (Graph b, Vertex b ~ v) => b) -> c
 box x y = overlays $ xs ++ ys
   where
-    xs = map (\b -> gmap (,b) x) $ toList y
-    ys = map (\a -> gmap (a,) y) $ toList x
+    xs = map (\b -> gmap (,b) x) . nubOrd $ toList y
+    ys = map (\a -> gmap (a,) y) . nubOrd $ toList x
 
 newtype GraphMonad g a = GM { bind :: (a -> g) -> g }
 
