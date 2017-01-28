@@ -64,3 +64,31 @@ overlays = foldg overlay
 
 connects :: Graph g => [g] -> g
 connects = foldg connect
+
+instance Graph () where
+    type Vertex () = ()
+    empty          = ()
+    vertex  _      = ()
+    overlay _ _    = ()
+    connect _ _    = ()
+
+instance Graph g => Graph (Maybe g) where
+    type Vertex (Maybe g) = Vertex g
+    empty       = Just empty
+    vertex      = Just . vertex
+    overlay x y = overlay <$> x <*> y
+    connect x y = connect <$> x <*> y
+
+instance Graph g => Graph (a -> g) where
+    type Vertex (a -> g) = Vertex g
+    empty       = \_ -> empty
+    vertex  x   = \_ -> vertex x
+    overlay x y = \a -> x a `overlay` y a
+    connect x y = \a -> x a `connect` y a
+
+instance (Graph g, Graph h) => Graph (g, h) where
+    type Vertex (g, h)        = (Vertex g     , Vertex h     )
+    empty                     = (empty        , empty        )
+    vertex  (x,  y )          = (vertex  x    , vertex  y    )
+    overlay (x1, y1) (x2, y2) = (overlay x1 x2, overlay y1 y2)
+    connect (x1, y1) (x2, y2) = (connect x1 x2, connect y1 y2)
