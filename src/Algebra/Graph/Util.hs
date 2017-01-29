@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, RankNTypes #-}
 module Algebra.Graph.Util (
     transpose, vertexSet, toList, gmap, mergeVertices, box, induce,
-    removeVertex, splitVertex
+    removeVertex, splitVertex, deBruijn
     ) where
 
 import Data.List.Extra (nubOrd)
@@ -99,12 +99,6 @@ instance (Eq g, Graph g, Num g) => Num (Simplify g) where
 
 newtype GraphFunctor a = GF { gfor :: forall g. Graph g => (a -> Vertex g) -> g }
 
-gmap :: Graph g => (a -> Vertex g) -> GraphFunctor a -> g
-gmap = flip gfor
-
-mergeVertices :: Graph g => (Vertex g -> Bool) -> Vertex g -> GraphFunctor (Vertex g) -> g
-mergeVertices p v = gmap $ \u -> if p u then v else u
-
 instance Graph (GraphFunctor a) where
     type Vertex (GraphFunctor a) = a
     empty       = GF $ \_ -> empty
@@ -120,6 +114,12 @@ instance Num a => Num (GraphFunctor a) where
     abs         = id
     negate      = id
 
+gmap :: Graph g => (a -> Vertex g) -> GraphFunctor a -> g
+gmap = flip gfor
+
+mergeVertices :: Graph g => (Vertex g -> Bool) -> Vertex g -> GraphFunctor (Vertex g) -> g
+mergeVertices p v = gmap $ \u -> if p u then v else u
+
 -- Note: `gmap id` is needed
 box :: (Ord u, Ord v, Graph c, Vertex c ~ (u, v))
     => GraphFunctor u -> GraphFunctor v -> c
@@ -129,15 +129,6 @@ box x y = overlays $ xs ++ ys
     ys = map (\a -> gmap (a,) y) . nubOrd . toList $ gmap id x
 
 newtype GraphMonad a = GM { bind :: forall g. Graph g => (a -> g) -> g }
-
-induce :: Graph g => (Vertex g -> Bool) -> GraphMonad (Vertex g) -> g
-induce p g = bind g $ \v -> if p v then vertex v else empty
-
-removeVertex :: (Eq (Vertex g), Graph g) => Vertex g -> GraphMonad (Vertex g) -> g
-removeVertex v = induce (/= v)
-
-splitVertex :: (Eq (Vertex g), Graph g) => Vertex g -> [Vertex g] -> GraphMonad (Vertex g) -> g
-splitVertex v vs g = bind g $ \u -> if u == v then vertices vs else vertex u
 
 instance Graph (GraphMonad a) where
     type Vertex (GraphMonad a) = a
@@ -153,3 +144,19 @@ instance Num a => Num (GraphMonad a) where
     signum      = const empty
     abs         = id
     negate      = id
+
+induce :: Graph g => (Vertex g -> Bool) -> GraphMonad (Vertex g) -> g
+induce p g = bind g $ \v -> if p v then vertex v else empty
+
+removeVertex :: (Eq (Vertex g), Graph g) => Vertex g -> GraphMonad (Vertex g) -> g
+removeVertex v = induce (/= v)
+
+splitVertex :: (Eq (Vertex g), Graph g) => Vertex g -> [Vertex g] -> GraphMonad (Vertex g) -> g
+splitVertex v vs g = bind g $ \u -> if u == v then vertices vs else vertex u
+
+deBruijn :: (Graph g, Vertex g ~ [a]) => Int -> [a] -> g
+deBruijn len alphabet = bind skeleton expand
+  where
+    overlaps = mapM (const alphabet) [2..len]
+    skeleton = fromEdgeList [        (Left s, Right s)   | s <- overlaps ]
+    expand v = vertices     [ either ([a] ++) (++ [a]) v | a <- alphabet ]
