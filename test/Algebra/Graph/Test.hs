@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, RankNTypes #-}
+{-# LANGUAGE RankNTypes #-}
 module Algebra.Graph.Test (
     GraphTestsuite, axioms, theorems, undirectedAxioms, reflexiveAxioms
     ) where

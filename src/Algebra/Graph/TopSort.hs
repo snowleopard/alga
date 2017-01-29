@@ -1,4 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.TopSort (
     TopSort, isTopSort, topSort, mapVertices, vertexSet
     ) where

@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, RankNTypes #-}
+{-# LANGUAGE RankNTypes #-}
 module Algebra.Graph.Util (
     transpose, vertexSet, toList, gmap, mergeVertices, box, induce,
     removeVertex, splitVertex, deBruijn

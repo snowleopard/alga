@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 import Data.List (sort)
 import Data.List.Extra (nubOrd)
 import Test.QuickCheck

@@ -31,13 +31,14 @@ library
                         extra      == 1.4.10,
                         QuickCheck >= 2.6 && < 2.9
     default-language:   Haskell2010
-    default-extensions: ScopedTypeVariables
+    default-extensions: FlexibleContexts
+                        GeneralizedNewtypeDeriving
+                        ScopedTypeVariables
                         TupleSections
                         TypeFamilies
     other-extensions:   DeriveFoldable
                         DeriveFunctor
                         DeriveTraversable
-                        FlexibleContexts
                         OverloadedStrings
     GHC-options:        -O2 -Wall -fwarn-tabs
 
@@ -52,7 +53,7 @@ test-suite test-alga
                         QuickCheck >= 2.6 && < 2.9
     default-language:   Haskell2010
     GHC-options:        -O2 -Wall -fwarn-tabs
-    default-extensions: TypeFamilies
+    default-extensions: FlexibleContexts
+                        TypeFamilies
                         ScopedTypeVariables
-    other-extensions:   FlexibleContexts
-                        RankNTypes
+    other-extensions:   RankNTypes

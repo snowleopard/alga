@@ -1,4 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.Dfs (Dfs, dfsForest) where
 
 import Data.Graph (dff, Forest)

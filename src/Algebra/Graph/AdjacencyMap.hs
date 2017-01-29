@@ -1,4 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.AdjacencyMap (
     AdjacencyMap, adjacencyMap, mapVertices, vertexSet, adjacencyList, edgeList,
     fromAdjacencyList, fromEdgeList, postset, transpose, toKL, toKLvia, fromKL

@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 module Algebra.Graph (
     Graph (..), edge, vertices, clique, fromEdgeList, path, circuit, tree,
     forest, arbitraryGraph, isSubgraphOf, foldg, overlays, connects

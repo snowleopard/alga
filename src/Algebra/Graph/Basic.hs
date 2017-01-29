@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.Basic (
     Basic (..), fold, Reflexive, Undirected, PartialOrder
     ) where
