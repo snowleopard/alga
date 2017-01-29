@@ -4,8 +4,8 @@ module Algebra.Graph (
     forest, arbitraryGraph, isSubgraphOf, foldg, overlays, connects
     ) where
 
-import Test.QuickCheck
 import Data.Tree
+import Test.QuickCheck
 
 class Graph g where
     type Vertex g

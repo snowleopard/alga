@@ -1,9 +1,11 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Algebra.Graph.AdjacencyMap (
     AdjacencyMap, adjacencyMap, mapVertices, vertexSet, adjacencyList, edgeList,
-    postset, fromEdgeList, transpose
+    fromAdjacencyList, fromEdgeList, postset, transpose, toKL, toKLvia, fromKL
     ) where
 
+import Data.Array
+import qualified Data.Graph as KL -- KL stands for King-Launchbury graphs
 import           Data.Map.Strict (Map, keysSet, fromSet)
 import qualified Data.Map.Strict as Map
 import           Data.Set (Set)
@@ -41,6 +43,9 @@ vertexSet (AM x) = Map.keysSet x
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
 adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
 
+fromAdjacencyList :: Ord a => [(a, [a])] -> AdjacencyMap a
+fromAdjacencyList = AM . Map.fromAscList . map (\(x, ys) -> (x, Set.fromList ys))
+
 edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList = concatMap (\(x, ys) -> map (x,) ys) . adjacencyList
 
@@ -52,3 +57,14 @@ postset x = Map.findWithDefault Set.empty x . adjacencyMap
 
 transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
 transpose = fromEdgeList . map swap . edgeList
+
+toKLvia :: Ord b => (a -> b) -> (b -> a) -> AdjacencyMap a -> (KL.Graph, KL.Vertex -> a)
+toKLvia a2b b2a x = (g, \v -> case r v of (_, u, _) -> b2a u)
+  where
+    (g, r) = KL.graphFromEdges' [ ((), a2b v, map a2b us) | (v, us) <- adjacencyList x ]
+
+toKL :: Ord a => AdjacencyMap a -> (KL.Graph, KL.Vertex -> a)
+toKL = toKLvia id id
+
+fromKL :: Ord a => KL.Graph -> (KL.Vertex -> a) -> AdjacencyMap a
+fromKL g r = fromAdjacencyList . map (\(x, ys) -> (r x, map r ys)) $ assocs g

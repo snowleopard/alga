@@ -1,9 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Algebra.Graph.Dfs (Dfs, dfsForest, toStd) where
+module Algebra.Graph.Dfs (Dfs, dfsForest) where
 
-import qualified Data.Graph as Std
-import Data.Graph (dff, graphFromEdges', Forest)
-
+import Data.Graph (dff, Forest)
 import Algebra.Graph
 import Algebra.Graph.AdjacencyMap
 
@@ -13,14 +11,7 @@ instance Ord a => Eq (Dfs a) where
     x == y = dfsForest x == dfsForest y
 
 dfsForest :: Ord a => Dfs a -> Forest a
-dfsForest (D x) = map (fmap get) $ dff g
-  where
-    (g, get) = toStd x
-
-toStd :: Ord a => AdjacencyMap a -> (Std.Graph, Std.Vertex -> a)
-toStd x = (g, \v -> case get v of (_, u, _) -> u)
-  where
-    (g, get) = graphFromEdges' . map (\(v, us) -> ((), v, us)) $ adjacencyList x
+dfsForest (D x) = let (g, r) = toKL x in fmap (fmap r) $ dff g
 
 -- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Ord a => Graph (Dfs a) where

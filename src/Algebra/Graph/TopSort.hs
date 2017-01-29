@@ -27,14 +27,8 @@ vertexSet = AM.vertexSet . fromTopSort
 topSort :: Ord a => TopSort a -> Maybe [a]
 topSort (TS x) = if isTopSort x result then Just result else Nothing
   where
-    (g, get) = toDownStd x
-    result   = map get $ Std.topSort g
-
-toDownStd :: Ord a => AdjacencyMap a -> (Std.Graph, Std.Vertex -> a)
-toDownStd x = (g, \v -> case get v of (_, Down u, _) -> u)
-  where
-    (g, get) = Std.graphFromEdges' . map (\(v, us) -> ((), Down v, map Down us))
-             $ adjacencyList x
+    (g, r) = toKLvia Down (\(Down v) -> v) x
+    result = map r $ Std.topSort g
 
 isTopSort :: forall a. Ord a => AdjacencyMap a -> [a] -> Bool
 isTopSort x = go Set.empty
