@@ -72,19 +72,22 @@ instance Graph () where
     overlay _ _    = ()
     connect _ _    = ()
 
+-- Note: Maybe g and (a -> g) instances are identical and use the Applicative's
+-- pure and <*>. We do not provide a general instance for all Applicative
+-- functors because that would lead to overlapping instances.
 instance Graph g => Graph (Maybe g) where
     type Vertex (Maybe g) = Vertex g
-    empty       = Just empty
-    vertex      = Just . vertex
+    empty       = pure empty
+    vertex      = pure . vertex
     overlay x y = overlay <$> x <*> y
     connect x y = connect <$> x <*> y
 
 instance Graph g => Graph (a -> g) where
     type Vertex (a -> g) = Vertex g
-    empty       = \_ -> empty
-    vertex  x   = \_ -> vertex x
-    overlay x y = \a -> x a `overlay` y a
-    connect x y = \a -> x a `connect` y a
+    empty       = pure empty
+    vertex      = pure . vertex
+    overlay x y = overlay <$> x <*> y
+    connect x y = connect <$> x <*> y
 
 instance (Graph g, Graph h) => Graph (g, h) where
     type Vertex (g, h)        = (Vertex g     , Vertex h     )
