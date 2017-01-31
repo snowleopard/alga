@@ -18,8 +18,8 @@ instance Graph g => Graph (Transpose g) where
     type Vertex (Transpose g) = Vertex g
     empty       = T empty
     vertex      = T . vertex
-    overlay x y = T $ overlay (transpose x) (transpose y)
-    connect x y = T $ connect (transpose y) (transpose x)
+    overlay x y = T $ transpose x `overlay` transpose y
+    connect x y = T $ transpose y `connect` transpose x
 
 instance (Graph g, Num g) => Num (Transpose g) where
     fromInteger = T . fromInteger
