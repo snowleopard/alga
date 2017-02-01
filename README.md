@@ -7,5 +7,6 @@ describes the code in detail:
 * Introduction: https://blogs.ncl.ac.uk/andreymokhov/an-algebra-of-graphs/
 * A few different flavours of the algebra: https://blogs.ncl.ac.uk/andreymokhov/graphs-a-la-carte/
 * Graphs in disguise or How to plan you holiday using Haskell: https://blogs.ncl.ac.uk/andreymokhov/graphs-in-disguise/
+* Old graphs from new types: https://blogs.ncl.ac.uk/andreymokhov/old-graphs-from-new-types/
 
 You can find more code in this old experimental repo: https://github.com/snowleopard/graph-algebra.
