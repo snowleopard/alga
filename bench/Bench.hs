@@ -43,16 +43,16 @@ fastReadInts n = foldr (+) 0 $ map fastRead $ ints ++ ints
     ints = mapM (const "0123456789") [1..n]
 
 vMesh :: Int -> Int
-vMesh n = v $ gmap (\(x, y) -> x * n + y) $ vertices [1..n] `box` vertices [1..n]
+vMesh n = v $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
 eMesh :: Int -> Int
-eMesh n = e $ gmap (\(x, y) -> x * n + y) $ vertices [1..n] `box` vertices [1..n]
+eMesh n = e $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
 vIntMesh :: Int -> Int
-vIntMesh n = vInt $ gmap (\(x, y) -> x * n + y) $ vertices [1..n] `box` vertices [1..n]
+vIntMesh n = vInt $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
 eIntMesh :: Int -> Int
-eIntMesh n = eInt $ gmap (\(x, y) -> x * n + y) $ vertices [1..n] `box` vertices [1..n]
+eIntMesh n = eInt $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
 vIntClique :: Int -> Int
 vIntClique n = vInt $ clique [1..n]
@@ -123,11 +123,11 @@ main = defaultMain
         , bench "100"    $ nf vIntClique 100
         , bench "1000"   $ nf vIntClique 1000
         , bench "10000"  $ nf vIntClique 10000
-        , bench "31623"  $ nf vIntClique 31623 ]
+        , bench "44722"  $ nf vIntClique 44722 ]
     , bgroup "eIntClique"
         [ bench "1"      $ nf eIntClique 1
         , bench "10"     $ nf eIntClique 10
         , bench "100"    $ nf eIntClique 100
         , bench "1000"   $ nf eIntClique 1000
         , bench "10000"  $ nf eIntClique 10000
-        , bench "31623"  $ nf eIntClique 31623 ] ]
+        , bench "44722"  $ nf eIntClique 44722 ] ]
