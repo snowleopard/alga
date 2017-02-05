@@ -59,3 +59,17 @@ test-suite test-alga
                         TypeFamilies
                         ScopedTypeVariables
     other-extensions:   RankNTypes
+
+benchmark benchmark-alga
+    hs-source-dirs:     bench
+    type:               exitcode-stdio-1.0
+    main-is:            Bench.hs
+    build-depends:      alga,
+                        base       >= 4.8 && < 5,
+                        containers == 0.5.*,
+                        criterion
+    default-language:   Haskell2010
+    GHC-options:        -O2 -Wall -fwarn-tabs
+    default-extensions: FlexibleContexts
+                        TypeFamilies
+                        ScopedTypeVariables
