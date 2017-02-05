@@ -18,7 +18,7 @@ I'll keep adding more graph instances, with some high-performance options too.
 
 ### 2D mesh
 
-2D meshes are constructed by as ``path [1..n] `box` path [1..n]``.
+2D meshes are constructed as ``path [1..n] `box` path [1..n]``.
 
 <table>
   <tr>
