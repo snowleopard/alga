@@ -19,12 +19,14 @@ library
     hs-source-dirs:     src
     exposed-modules:    Algebra.Graph,
                         Algebra.Graph.AdjacencyMap,
+                        Algebra.Graph.AdjacencyMap.Int,
                         Algebra.Graph.Basic,
                         Algebra.Graph.Dfs,
                         Algebra.Graph.Relation,
                         Algebra.Graph.Todo,
                         Algebra.Graph.TopSort,
-                        Algebra.Graph.Util
+                        Algebra.Graph.Util,
+                        Algebra.Graph.Util.Int
     build-depends:      array      >= 0.5,
                         base       >= 4.8 && < 5,
                         containers == 0.5.*,

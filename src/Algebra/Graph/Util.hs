@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 module Algebra.Graph.Util (
-    transpose, vertexSet, toList, gmap, mergeVertices, box, induce,
+    transpose, VertexSet, vertexSet, toList, gmap, mergeVertices, box, induce,
     removeVertex, splitVertex, deBruijn
     ) where
 

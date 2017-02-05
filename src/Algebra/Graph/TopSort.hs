@@ -10,7 +10,7 @@ import           Data.Set (Set)
 
 import Algebra.Graph
 import qualified Algebra.Graph.AdjacencyMap as AM
-import Algebra.Graph.AdjacencyMap hiding (mapVertices, vertexSet)
+import Algebra.Graph.AdjacencyMap hiding (mapVertices)
 
 newtype TopSort a = TS { fromTopSort :: AdjacencyMap a } deriving (Show, Num)
 
@@ -21,7 +21,7 @@ mapVertices :: (Ord a, Ord b) => (a -> b) -> TopSort a -> TopSort b
 mapVertices f = TS . AM.mapVertices f . fromTopSort
 
 vertexSet :: TopSort a -> Set a
-vertexSet = AM.vertexSet . fromTopSort
+vertexSet = Map.keysSet . AM.adjacencyMap . fromTopSort
 
 topSort :: Ord a => TopSort a -> Maybe [a]
 topSort (TS x) = if isTopSort x result then Just result else Nothing
