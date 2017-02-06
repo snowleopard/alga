@@ -22,13 +22,13 @@ I'll keep adding more graph instances, with some high-performance options too.
 
 <table>
   <tr>
-    <th>Graph instance</th>
+    <th>Benchmark</th>
     <th>|V|</th>
     <th>|E|</th>
-    <th>Construct and compute size</th>
+    <th>Runtime</th>
   </tr>
   <tr align="center">
-    <th rowspan="4">VertexSet</th>
+    <td rowspan="4">Compute the size of <strong>VertexSet</strong></td>
     <td>1</td>
     <td>0</td>
     <td>318 ns</td>
@@ -49,7 +49,7 @@ I'll keep adding more graph instances, with some high-performance options too.
     <td>7.33 s</td>
   </tr>
   <tr align="center">
-    <th rowspan="4">AdjacencyMap</th>
+    <td rowspan="4">Compute the number of edges in <strong>AdjacencyMap</strong></td>
     <td>1</td>
     <td>0</td>
     <td>334 ns</td>
@@ -70,7 +70,7 @@ I'll keep adding more graph instances, with some high-performance options too.
     <td>10.5 s</td>
   </tr>
   <tr align="center">
-    <th rowspan="4">Int.VertexSet</th>
+    <td rowspan="4">Compute the size of <strong>Int.VertexSet</strong></td>
     <td>1</td>
     <td>0</td>
     <td>315 ns</td>
@@ -91,7 +91,7 @@ I'll keep adding more graph instances, with some high-performance options too.
     <td>1.54 s</td>
   </tr>
   <tr align="center">
-    <th rowspan="4">Int.AdjacencyMap</th>
+    <td rowspan="4">Compute the number of edges in <strong>Int.AdjacencyMap</strong></td>
     <td>1</td>
     <td>0</td>
     <td>303 ns</td>
@@ -121,13 +121,13 @@ altogether and eats cliques for breakfast.
 
 <table>
   <tr>
-    <th>Graph instance</th>
+    <th>Benchmark</th>
     <th>|V|</th>
     <th>|E|</th>
-    <th>Construct and compute size</th>
+    <th>Runtime</th>
   </tr>
   <tr align="center">
-    <th rowspan="6">Int.VertexSet</th>
+    <td rowspan="6">Compute the size of <strong>Int.VertexSet</strong></td>
     <td>1</td>
     <td>1</td>
     <td>43.2 ns</td>
@@ -158,7 +158,7 @@ altogether and eats cliques for breakfast.
     <td>13.8 ms</td>
   </tr>    
   <tr align="center">
-    <th rowspan="6">Int.AdjacencyMap</th>
+    <td rowspan="6">Compute the number of edges in <strong>Int.AdjacencyMap</strong></td>
     <td>1</td>
     <td>1</td>
     <td>45.4 ns</td>
@@ -200,13 +200,13 @@ where `fastRead = foldr (\c r -> r + ord c - ord '0') 0`. Note that
 
 <table>
   <tr>
-    <th>Graph instance</th>
+    <th>Benchmark</th>
     <th>|V|</th>
     <th>|E|</th>
-    <th>Construct and compute size</th>
+    <th>Runtime</th>
   </tr>
   <tr align="center">
-    <th rowspan="6">VertexSet</th>
+    <td rowspan="6">Compute the size of <strong>VertexSet</strong></td>
     <td>10</td>
     <td>100</td>
     <td>4.86 μs</td>
@@ -237,7 +237,7 @@ where `fastRead = foldr (\c r -> r + ord c - ord '0') 0`. Note that
     <td>6.35 s</td>
   </tr>  
   <tr align="center">
-    <th rowspan="6">AdjacencyMap</th>
+    <td rowspan="6">Compute the number of edges in <strong>AdjacencyMap</strong></td>
     <td>10</td>
     <td>100</td>
     <td>7.83 μs</td>
@@ -268,7 +268,7 @@ where `fastRead = foldr (\c r -> r + ord c - ord '0') 0`. Note that
     <td>8.13 s</td>
   </tr>
   <tr align="center">
-    <th rowspan="6">Int.VertexSet</th>
+    <td rowspan="6">Compute the size of <strong>Int.VertexSet</strong></td>
     <td>10</td>
     <td>100</td>
     <td>5.13 μs</td>
@@ -299,7 +299,7 @@ where `fastRead = foldr (\c r -> r + ord c - ord '0') 0`. Note that
     <td>1.10 s</td>
   </tr>
   <tr align="center">
-    <th rowspan="6">Int.AdjacencyMap</th>
+    <td rowspan="6">Compute the number of edges in <strong>Int.AdjacencyMap</strong></td>
     <td>10</td>
     <td>100</td>
     <td>8.59 μs</td>
