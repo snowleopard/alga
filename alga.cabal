@@ -19,6 +19,7 @@ library
     hs-source-dirs:     src
     exposed-modules:    Algebra.Graph,
                         Algebra.Graph.AdjacencyMap,
+                        Algebra.Graph.AdjacencyArray.Unboxed,
                         Algebra.Graph.AdjacencyMap.Int,
                         Algebra.Graph.Basic,
                         Algebra.Graph.Dfs,

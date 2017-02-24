@@ -4,6 +4,7 @@ import qualified Data.IntSet as IntSet
 import qualified Data.Set as Set
 
 import Algebra.Graph
+import Algebra.Graph.AdjacencyArray.Unboxed (GraphArray (..), matrixLength)
 import Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap)
 import Algebra.Graph.Util (box, deBruijn, gmap, VertexSet, vertexSet)
 import qualified Algebra.Graph.AdjacencyMap.Int as Int
@@ -14,6 +15,9 @@ v = Set.size . vertexSet
 
 e :: AdjacencyMap a -> Int
 e = foldr (\s r -> Set.size s + r) 0 . adjacencyMap
+
+a :: GraphArray -> Int
+a (GA _ es) = matrixLength es
 
 vInt :: Int.VertexSet -> Int
 vInt = IntSet.size . Int.vertexSet
@@ -26,6 +30,9 @@ vDeBruijn n = v $ deBruijn n "0123456789"
 
 eDeBruijn :: Int -> Int
 eDeBruijn n = e $ deBruijn n "0123456789"
+
+aDeBruijn :: Int -> Int
+aDeBruijn n = a $ gmap fastRead $ deBruijn n "0123456789"
 
 vIntDeBruijn :: Int -> Int
 vIntDeBruijn n = v $ gmap fastRead $ deBruijn n "0123456789"
@@ -48,6 +55,9 @@ vMesh n = v $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 eMesh :: Int -> Int
 eMesh n = e $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
+aMesh :: Int -> Int
+aMesh n = a $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
+
 vIntMesh :: Int -> Int
 vIntMesh n = vInt $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
@@ -59,6 +69,9 @@ vIntClique n = vInt $ clique [1..n]
 
 eIntClique :: Int -> Int
 eIntClique n = eInt $ clique [1..n]
+
+aClique :: Int -> Int
+aClique n = a $ clique [1..n]
 
 main :: IO ()
 main = defaultMain
@@ -76,6 +89,12 @@ main = defaultMain
         , bench "10^4" $ whnf eDeBruijn 4
         , bench "10^5" $ whnf eDeBruijn 5
         , bench "10^6" $ whnf eDeBruijn 6 ]
+    , bgroup "aDeBruijn"
+        [ bench "10^1" $ whnf aDeBruijn 1
+        , bench "10^2" $ whnf aDeBruijn 2
+        , bench "10^3" $ whnf aDeBruijn 3
+        , bench "10^4" $ whnf aDeBruijn 4
+        , bench "10^5" $ whnf aDeBruijn 5 ]
     , bgroup "vIntDeBruijn"
         [ bench "10^1" $ whnf vIntDeBruijn 1
         , bench "10^2" $ whnf vIntDeBruijn 2
@@ -107,6 +126,10 @@ main = defaultMain
         , bench "10x10"     $ whnf eMesh 10
         , bench "100x100"   $ whnf eMesh 100
         , bench "1000x1000" $ whnf eMesh 1000 ]
+    , bgroup "aMesh"
+        [ bench "1x1"       $ whnf aMesh 1
+        , bench "10x10"     $ whnf aMesh 10
+        , bench "100x100"   $ whnf aMesh 100 ]
     , bgroup "vIntMesh"
         [ bench "1x1"       $ whnf vIntMesh 1
         , bench "10x10"     $ whnf vIntMesh 10
@@ -117,6 +140,11 @@ main = defaultMain
         , bench "10x10"     $ whnf eIntMesh 10
         , bench "100x100"   $ whnf eIntMesh 100
         , bench "1000x1000" $ whnf eIntMesh 1000 ]
+    , bgroup "aIntClique"
+        [ bench "1"      $ nf aClique 1
+        , bench "10"     $ nf aClique 10
+        , bench "100"    $ nf aClique 100
+        , bench "1000"   $ nf aClique 1000 ]
     , bgroup "vIntClique"
         [ bench "1"      $ nf vIntClique 1
         , bench "10"     $ nf vIntClique 10
