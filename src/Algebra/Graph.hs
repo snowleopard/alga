@@ -1,5 +1,5 @@
 module Algebra.Graph (
-    Graph (..), edge, vertices, clique, fromEdgeList, path, circuit, tree,
+    Graph (..), edge, vertices, edges, clique, path, circuit, tree,
     forest, arbitraryGraph, isSubgraphOf, foldg, overlays, connects
     ) where
 
@@ -19,11 +19,11 @@ edge x y = vertex x `connect` vertex y
 vertices :: Graph g => [Vertex g] -> g
 vertices = overlays . map vertex
 
+edges :: Graph g => [(Vertex g, Vertex g)] -> g
+edges = overlays . map (uncurry edge)
+
 clique :: Graph g => [Vertex g] -> g
 clique = connects . map vertex
-
-fromEdgeList :: Graph g => [(Vertex g, Vertex g)] -> g
-fromEdgeList = overlays . map (uncurry edge)
 
 isSubgraphOf :: (Graph g, Eq g) => g -> g -> Bool
 isSubgraphOf x y = overlay x y == y
@@ -31,7 +31,7 @@ isSubgraphOf x y = overlay x y == y
 path :: Graph g => [Vertex g] -> g
 path []  = empty
 path [x] = vertex x
-path xs  = fromEdgeList $ zip xs (tail xs)
+path xs  = edges $ zip xs (tail xs)
 
 circuit :: Graph g => [Vertex g] -> g
 circuit []     = empty

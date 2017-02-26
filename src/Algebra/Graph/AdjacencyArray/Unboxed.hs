@@ -7,7 +7,7 @@ import Data.Array.Base
 import Data.Array.ST
 import Test.QuickCheck (Arbitrary (..))
 
-import Algebra.Graph hiding (fromEdgeList)
+import Algebra.Graph hiding (edges)
 
 -- NOTE: This instance doesn't allow to share common subgraphs and is
 -- therefore typically very slow. Use with caution! It is here mostly

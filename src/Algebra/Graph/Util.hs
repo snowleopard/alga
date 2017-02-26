@@ -158,5 +158,5 @@ deBruijn :: (Graph g, Vertex g ~ [a]) => Int -> [a] -> g
 deBruijn len alphabet = bind skeleton expand
   where
     overlaps = mapM (const alphabet) [2..len]
-    skeleton = fromEdgeList [        (Left s, Right s)   | s <- overlaps ]
-    expand v = vertices     [ either ([a] ++) (++ [a]) v | a <- alphabet ]
+    skeleton = edges    [        (Left s, Right s)   | s <- overlaps ]
+    expand v = vertices [ either ([a] ++) (++ [a]) v | a <- alphabet ]

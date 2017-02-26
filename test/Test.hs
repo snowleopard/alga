@@ -3,7 +3,7 @@ import Data.List.Extra (nubOrd)
 import Test.QuickCheck
 
 import Algebra.Graph
-import Algebra.Graph.AdjacencyMap hiding (fromEdgeList, transpose)
+import Algebra.Graph.AdjacencyMap hiding (edges, transpose)
 import Algebra.Graph.Basic
 import Algebra.Graph.Dfs
 import Algebra.Graph.Relation
@@ -110,8 +110,8 @@ main = do
     test "Transpose antihomomorphism" $ \x y ->
         t x + t y == t (x + y) && t x * t y == t (y * x)
 
-    test "EdgeList of fromEdgeList" $ \xs ->
-        nubOrd (sort xs) == edgeList (fold (fromEdgeList xs :: G))
+    test "EdgeList of edges" $ \xs ->
+        nubOrd (sort xs) == edgeList (fold (edges xs :: G))
 
     putStrLn "============ Reflexive graphs ============"
     quickCheck (reflexiveAxioms :: GraphTestsuite (Reflexive Int))

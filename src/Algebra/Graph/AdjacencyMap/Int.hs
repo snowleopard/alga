@@ -1,6 +1,6 @@
 module Algebra.Graph.AdjacencyMap.Int (
     AdjacencyMap, adjacencyMap, mapVertices, adjacencyList, edgeList,
-    fromAdjacencyList, fromEdgeList, postset, transpose, toKL, toKLvia, fromKL
+    fromAdjacencyList, edges, postset, transpose, toKL, toKLvia, fromKL
     ) where
 
 import Data.Array
@@ -12,7 +12,7 @@ import qualified Data.IntSet as Set
 import Data.Tuple
 import Test.QuickCheck
 
-import Algebra.Graph hiding (fromEdgeList)
+import Algebra.Graph hiding (edges)
 
 newtype AdjacencyMap = AM { adjacencyMap :: IntMap IntSet }
     deriving (Arbitrary, Eq, Show)
@@ -45,14 +45,14 @@ fromAdjacencyList = AM . Map.fromAscList . map (\(x, ys) -> (x, Set.fromList ys)
 edgeList :: AdjacencyMap -> [(Int, Int)]
 edgeList = concatMap (\(x, ys) -> map (x,) ys) . adjacencyList
 
-fromEdgeList :: [(Int, Int)] -> AdjacencyMap
-fromEdgeList = AM . Map.fromListWith Set.union . map (\(x, y) -> (x, Set.singleton y))
+edges :: [(Int, Int)] -> AdjacencyMap
+edges = AM . Map.fromListWith Set.union . map (\(x, y) -> (x, Set.singleton y))
 
 postset :: Int -> AdjacencyMap -> IntSet
 postset x = Map.findWithDefault Set.empty x . adjacencyMap
 
 transpose :: AdjacencyMap -> AdjacencyMap
-transpose = fromEdgeList . map swap . edgeList
+transpose = edges . map swap . edgeList
 
 toKLvia :: Ord a => (Int -> a) -> (a -> Int) -> AdjacencyMap -> (KL.Graph, KL.Vertex -> Int)
 toKLvia i2a a2i x = (g, \v -> case r v of (_, u, _) -> a2i u)
