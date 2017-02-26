@@ -1,5 +1,5 @@
 module Algebra.Graph.Relation (
-    Relation (..), reflexiveClosure, symmetricClosure, transitiveClosure
+    Relation, domain, relation, reflexiveClosure, symmetricClosure, transitiveClosure
     ) where
 
 import           Data.Set (Set)
