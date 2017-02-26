@@ -1,5 +1,5 @@
 module Algebra.Graph (
-    Graph (..), edge, vertices, edges, clique, path, circuit, tree,
+    Graph (..), edge, vertices, edges, graph, clique, path, circuit, tree,
     forest, arbitraryGraph, isSubgraphOf, foldg, overlays, connects
     ) where
 
@@ -21,6 +21,9 @@ vertices = overlays . map vertex
 
 edges :: Graph g => [(Vertex g, Vertex g)] -> g
 edges = overlays . map (uncurry edge)
+
+graph :: Graph g => [Vertex g] -> [(Vertex g, Vertex g)] -> g
+graph vs es = overlay (vertices vs) (edges es)
 
 clique :: Graph g => [Vertex g] -> g
 clique = connects . map vertex
@@ -44,14 +47,14 @@ forest :: Graph g => Forest (Vertex g) -> g
 forest = overlays . map tree
 
 arbitraryGraph :: (Graph g, Arbitrary (Vertex g)) => Gen g
-arbitraryGraph = sized graph
+arbitraryGraph = sized expr
   where
-    graph 0 = return empty
-    graph 1 = vertex <$> arbitrary
-    graph n = do
+    expr 0 = return empty
+    expr 1 = vertex <$> arbitrary
+    expr n = do
         left <- choose (0, n)
-        oneof [ overlay <$> (graph left) <*> (graph $ n - left)
-              , connect <$> (graph left) <*> (graph $ n - left) ]
+        oneof [ overlay <$> (expr left) <*> (expr $ n - left)
+              , connect <$> (expr left) <*> (expr $ n - left) ]
 
 -- 'foldr f empty' adds a redundant empty to the result; foldg avoids this
 foldg :: Graph g => (g -> g -> g) -> [g] -> g
