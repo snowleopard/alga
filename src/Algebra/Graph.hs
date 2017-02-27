@@ -1,5 +1,5 @@
 module Algebra.Graph (
-    Graph (..), edge, vertices, edges, graph, clique, path, circuit, tree,
+    Graph (..), edge, vertices, edges, graph, clique, path, circuit, star, tree,
     forest, arbitraryGraph, isSubgraphOf, foldg, overlays, connects
     ) where
 
@@ -40,8 +40,11 @@ circuit :: Graph g => [Vertex g] -> g
 circuit []     = empty
 circuit (x:xs) = path $ [x] ++ xs ++ [x]
 
+star :: Graph g => Vertex g -> [Vertex g] -> g
+star x ys = connect (vertex x) (vertices ys)
+
 tree :: Graph g => Tree (Vertex g) -> g
-tree (Node x f) = vertex x `connect` vertices (map rootLabel f) `overlay` forest f
+tree (Node x f) = overlay (star x $ map rootLabel f) (forest f)
 
 forest :: Graph g => Forest (Vertex g) -> g
 forest = overlays . map tree

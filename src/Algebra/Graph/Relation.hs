@@ -16,11 +16,9 @@ instance Ord a => Graph (Relation a) where
     type Vertex (Relation a) = a
     empty       = R Set.empty Set.empty
     vertex  x   = R (Set.singleton x) Set.empty
-    overlay x y = R (domain   x `Set.union` domain   y)
-                           (relation x `Set.union` relation y)
-    connect x y = R (domain   x `Set.union` domain   y)
-                           (relation x `Set.union` relation y
-                            `Set.union` (domain x >< domain y))
+    overlay x y = R (domain x `Set.union` domain y) (relation x `Set.union` relation y)
+    connect x y = R (domain x `Set.union` domain y) (relation x `Set.union` relation y
+        `Set.union` (domain x >< domain y))
 
 (><) :: Set a -> Set a -> Set (a, a)
 x >< y = Set.fromDistinctAscList [ (a, b) | a <- Set.elems x, b <- Set.elems y ]

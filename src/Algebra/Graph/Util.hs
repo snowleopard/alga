@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 module Algebra.Graph.Util (
-    transpose, VertexSet, vertexSet, toList, gmap, mergeVertices, box, induce,
-    removeVertex, splitVertex, deBruijn
+    transpose, VertexSet, vertexSet, toList, gmap, mergeVertices, box,
+    bind, induce, removeVertex, splitVertex, deBruijn
     ) where
 
 import Data.List.Extra (nubOrd)
