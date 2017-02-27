@@ -4,7 +4,6 @@ module Algebra.Graph.Util (
     bind, induce, removeVertex, splitVertex, deBruijn
     ) where
 
-import Data.List.Extra (nubOrd)
 import qualified Data.Set as Set
 import Data.Set (Set)
 import Test.QuickCheck
@@ -121,12 +120,11 @@ mergeVertices :: Graph g => (Vertex g -> Bool) -> Vertex g -> GraphFunctor (Vert
 mergeVertices p v = gmap $ \u -> if p u then v else u
 
 -- Note: `gmap id` is needed
-box :: (Ord u, Ord v, Graph c, Vertex c ~ (u, v))
-    => GraphFunctor u -> GraphFunctor v -> c
+box :: (Graph g, Vertex g ~ (u, v)) => GraphFunctor u -> GraphFunctor v -> g
 box x y = overlays $ xs ++ ys
   where
-    xs = map (\b -> gmap (,b) x) . nubOrd . toList $ gmap id y
-    ys = map (\a -> gmap (a,) y) . nubOrd . toList $ gmap id x
+    xs = map (\b -> gmap (,b) x) . toList $ gmap id y
+    ys = map (\a -> gmap (a,) y) . toList $ gmap id x
 
 newtype GraphMonad a = GM { bind :: forall g. Graph g => (a -> g) -> g }
 

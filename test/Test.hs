@@ -83,15 +83,15 @@ main = do
     test "Remove single vertex" $ \x ->
         removeVertex x (vertex x) == (empty :: G)
 
-    let d x = (fold x) :: Dfs Int
+    let d x = (fold x) :: DfsForest Int
     test "DFS idempotence" $ \(x :: AdjacencyMap Int) ->
-        dfs x == dfs (forest $ dfs x)
+        dfsForest x == dfsForest (forest $ dfsForest x)
     test "DFS subgraph" $ \(x :: AdjacencyMap Int) ->
-        forest (dfs x) `isSubgraphOf` x
+        forest (dfsForest x) `isSubgraphOf` x
     test "DFS homomorphism" $ \x y ->
         d x + d y == d (x + y) && d x * d y == d (x * y)
     test "DFS reflexivity" $ \x ->
-        (vertex x :: Dfs Int) == vertex x * vertex x
+        (vertex x :: DfsForest Int) == vertex x * vertex x
 
     let ts x = (fold x) :: TopSort Int
     test "TopSort is a topological sort" $ \(x :: AdjacencyMap Int) ->
