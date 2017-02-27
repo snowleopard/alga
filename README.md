@@ -47,7 +47,28 @@ I'll keep adding more graph instances, with some high-performance options too.
     <td>1 000 000</td>
     <td>1 998 000</td>
     <td>7.33 s</td>
+  </tr>  
+  <tr align="center">
+    <td rowspan="4">Compute the size of <strong>Relation</strong></td>
+    <td>1</td>
+    <td>0</td>
+    <td>250 ns</td>
   </tr>
+  <tr align="center">
+    <td>100</td>
+    <td>180</td>
+    <td>152 μs</td>
+  </tr>
+  <tr align="center">
+    <td>10 000</td>
+    <td>19 800</td>
+    <td>35.7 ms</td>
+  </tr>
+  <tr align="center">
+    <td>1 000 000</td>
+    <td>1 998 000</td>
+    <td>8.79 s</td>
+  </tr>  
   <tr align="center">
     <td rowspan="4">Compute the number of edges in <strong>AdjacencyMap</strong></td>
     <td>1</td>
@@ -156,7 +177,33 @@ altogether and eats cliques for breakfast.
     <td>44 722</td>
     <td>1 000 006 281</td>
     <td>13.8 ms</td>
-  </tr>    
+  </tr> 
+  <tr align="center">
+    <td rowspan="5">Compute the size of <strong>Relation</strong></td>
+    <td>1</td>
+    <td>1</td>
+    <td>38.9 ns</td>
+  </tr>
+  <tr align="center">
+    <td>10</td>
+    <td>45</td>
+    <td>7.74 μs</td>
+  </tr>
+  <tr align="center">
+    <td>100</td>
+    <td>4 950</td>
+    <td>969 μs</td>
+  </tr>
+  <tr align="center">
+    <td>1 000</td>
+    <td>499 500</td>
+    <td>93.8 ms</td>
+  </tr>
+  <tr align="center">
+    <td>10 000</td>
+    <td>49 995 000</td>
+    <td>11.2 s</td>
+  </tr>
   <tr align="center">
     <td rowspan="6">Compute the number of edges in <strong>Int.AdjacencyMap</strong></td>
     <td>1</td>
@@ -235,6 +282,37 @@ where `fastRead = foldr (\c r -> r + ord c - ord '0') 0`. Note that
     <td>1 000 000</td>
     <td>10 000 000</td>
     <td>6.35 s</td>
+  </tr>
+  <tr align="center">
+    <td rowspan="6">Compute the size of <strong>Relation</strong></td>
+    <td>10</td>
+    <td>100</td>
+    <td>7.13 μs</td>
+  </tr>
+  <tr align="center">
+    <td>100</td>
+    <td>1 000</td>
+    <td>282 μs</td>
+  </tr>
+  <tr align="center">
+    <td>1 000</td>
+    <td>10 000</td>
+    <td>6.05 ms</td>
+  </tr>
+  <tr align="center">
+    <td>10 000</td>
+    <td>100 000</td>
+    <td>83.1 ms</td>
+  </tr>
+  <tr align="center">
+    <td>100 000</td>
+    <td>1 000 000</td>
+    <td>960 ms</td>
+  </tr>
+  <tr align="center">
+    <td>1 000 000</td>
+    <td>10 000 000</td>
+    <td>11.4 s</td>
   </tr>  
   <tr align="center">
     <td rowspan="6">Compute the number of edges in <strong>AdjacencyMap</strong></td>
