@@ -86,22 +86,22 @@ main = do
     let d x = (fold x) :: Dfs Int
     test "DFS idempotence" $ \(x :: AdjacencyMap Int) ->
         dfs x == dfs (forest $ dfs x)
-    test "DFS subgraph" $ \x ->
-        forest (dfs x) `isSubgraphOf` (x :: AdjacencyMap Int)
+    test "DFS subgraph" $ \(x :: AdjacencyMap Int) ->
+        forest (dfs x) `isSubgraphOf` x
     test "DFS homomorphism" $ \x y ->
         d x + d y == d (x + y) && d x * d y == d (x * y)
     test "DFS reflexivity" $ \x ->
         (vertex x :: Dfs Int) == vertex x * vertex x
 
     let ts x = (fold x) :: TopSort Int
-    test "TopSort is a topological sort" $ \x ->
-        fmap (isTopSort $ fold x) (topSort $ ts x) /= Just False
+    test "TopSort is a topological sort" $ \(x :: AdjacencyMap Int) ->
+        fmap (isTopSort x) (topSort x) /= Just False
 
-    test "TopSort of a cyclic graph" $ \x ys -> not (null ys) ==>
-        topSort (ts $ x + circuit (nubOrd ys)) == Nothing
+    test "TopSort of a cyclic graph" $ \(x :: AdjacencyMap Int) ys -> not (null ys) ==>
+        topSort (x + circuit (nubOrd ys)) == Nothing
 
-    test "TopSort idempotence" $ \x ->
-        (topSort . ts . path =<< topSort (ts x)) == (topSort $ ts x)
+    test "TopSort idempotence" $ \(x :: AdjacencyMap Int) ->
+        (topSort . path =<< topSort x) == (topSort x)
 
     test "TopSort homomorphism" $ \x y ->
         ts x + ts y == ts (x + y) && ts x * ts y == ts (x * y)

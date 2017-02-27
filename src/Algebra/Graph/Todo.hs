@@ -6,9 +6,10 @@ import qualified Data.Map as Map
 import Data.String
 
 import Algebra.Graph
+import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.TopSort
 
-data Todo a = T (Map a Int) (TopSort a) deriving Show
+data Todo a = T (Map a Int) (AdjacencyMap a) deriving Show
 
 instance Ord a => Eq (Todo a) where
     x == y = todo x == todo y

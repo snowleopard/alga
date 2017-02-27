@@ -1,5 +1,5 @@
 module Algebra.Graph.TopSort (
-    TopSort, isTopSort, topSort, mapVertices, vertexSet
+    TopSort, isTopSort, topSort, vertexSet
     ) where
 
 import qualified Data.Graph as Std
@@ -10,23 +10,19 @@ import           Data.Set (Set)
 import Test.QuickCheck
 
 import Algebra.Graph
-import qualified Algebra.Graph.AdjacencyMap as AM
-import Algebra.Graph.AdjacencyMap hiding (mapVertices)
+import Algebra.Graph.AdjacencyMap
 
 newtype TopSort a = TS { fromTopSort :: AdjacencyMap a }
     deriving (Arbitrary, Num, Show)
 
 instance Ord a => Eq (TopSort a) where
-    x == y = topSort x == topSort y
-
-mapVertices :: (Ord a, Ord b) => (a -> b) -> TopSort a -> TopSort b
-mapVertices f = TS . AM.mapVertices f . fromTopSort
+    TS x == TS y = topSort x == topSort y
 
 vertexSet :: TopSort a -> Set a
-vertexSet = Map.keysSet . AM.adjacencyMap . fromTopSort
+vertexSet = Map.keysSet . adjacencyMap . fromTopSort
 
-topSort :: Ord a => TopSort a -> Maybe [a]
-topSort (TS x) = if isTopSort x result then Just result else Nothing
+topSort :: Ord a => AdjacencyMap a -> Maybe [a]
+topSort x = if isTopSort x result then Just result else Nothing
   where
     (g, r) = toKLvia Down (\(Down v) -> v) x
     result = map r $ Std.topSort g
