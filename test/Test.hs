@@ -84,10 +84,10 @@ main = do
         removeVertex x (vertex x) == (empty :: G)
 
     let d x = (fold x) :: Dfs Int
-    test "DFS idempotence" $ \x ->
-        d x == d (forest . dfsForest $ d x)
+    test "DFS idempotence" $ \(x :: AdjacencyMap Int) ->
+        dfs x == dfs (forest $ dfs x)
     test "DFS subgraph" $ \x ->
-        forest (dfsForest $ d x) `isSubgraphOf` x
+        forest (dfs x) `isSubgraphOf` (x :: AdjacencyMap Int)
     test "DFS homomorphism" $ \x y ->
         d x + d y == d (x + y) && d x * d y == d (x * y)
     test "DFS reflexivity" $ \x ->
