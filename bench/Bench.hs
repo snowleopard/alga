@@ -4,6 +4,7 @@ import qualified Data.IntSet as IntSet
 import qualified Data.Set as Set
 
 import Algebra.Graph
+import Algebra.Graph.Relation (Relation, relation)
 import Algebra.Graph.AdjacencyArray.Unboxed (GraphArray (..), matrixLength)
 import Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap)
 import Algebra.Graph.Util (box, deBruijn, gmap, VertexSet, vertexSet)
@@ -14,7 +15,10 @@ v :: VertexSet a -> Int
 v = Set.size . vertexSet
 
 e :: AdjacencyMap a -> Int
-e = foldr (\s r -> Set.size s + r) 0 . adjacencyMap
+e = foldr (\s t -> Set.size s + t) 0 . adjacencyMap
+
+r :: Relation a -> Int
+r = Set.size . relation
 
 a :: GraphArray -> Int
 a (GA _ es) = matrixLength es
@@ -23,13 +27,16 @@ vInt :: Int.VertexSet -> Int
 vInt = IntSet.size . Int.vertexSet
 
 eInt :: Int.AdjacencyMap -> Int
-eInt = foldr (\s r -> IntSet.size s + r) 0 . Int.adjacencyMap
+eInt = foldr (\s t -> IntSet.size s + t) 0 . Int.adjacencyMap
 
 vDeBruijn :: Int -> Int
 vDeBruijn n = v $ deBruijn n "0123456789"
 
 eDeBruijn :: Int -> Int
 eDeBruijn n = e $ deBruijn n "0123456789"
+
+rDeBruijn :: Int -> Int
+rDeBruijn n = r $ deBruijn n "0123456789"
 
 aDeBruijn :: Int -> Int
 aDeBruijn n = a $ gmap fastRead $ deBruijn n "0123456789"
@@ -42,7 +49,7 @@ eIntDeBruin n = e $ gmap fastRead $ deBruijn n "0123456789"
 
 -- fastRead is ~3000x faster than read
 fastRead :: String -> Int
-fastRead = foldr (\c r -> r + ord c - ord '0') 0
+fastRead = foldr (\c t -> t + ord c - ord '0') 0
 
 fastReadInts :: Int -> Int
 fastReadInts n = foldr (+) 0 $ map fastRead $ ints ++ ints
@@ -54,6 +61,9 @@ vMesh n = v $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
 eMesh :: Int -> Int
 eMesh n = e $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
+
+rMesh :: Int -> Int
+rMesh n = r $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
 aMesh :: Int -> Int
 aMesh n = a $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
@@ -69,6 +79,9 @@ vIntClique n = vInt $ clique [1..n]
 
 eIntClique :: Int -> Int
 eIntClique n = eInt $ clique [1..n]
+
+rClique :: Int -> Int
+rClique n = r $ clique [1..n]
 
 aClique :: Int -> Int
 aClique n = a $ clique [1..n]
@@ -89,6 +102,13 @@ main = defaultMain
         , bench "10^4" $ whnf eDeBruijn 4
         , bench "10^5" $ whnf eDeBruijn 5
         , bench "10^6" $ whnf eDeBruijn 6 ]
+    , bgroup "rDeBruijn"
+        [ bench "10^1" $ whnf rDeBruijn 1
+        , bench "10^2" $ whnf rDeBruijn 2
+        , bench "10^3" $ whnf rDeBruijn 3
+        , bench "10^4" $ whnf rDeBruijn 4
+        , bench "10^5" $ whnf rDeBruijn 5
+        , bench "10^6" $ whnf rDeBruijn 6 ]
     , bgroup "aDeBruijn"
         [ bench "10^1" $ whnf aDeBruijn 1
         , bench "10^2" $ whnf aDeBruijn 2
@@ -126,6 +146,11 @@ main = defaultMain
         , bench "10x10"     $ whnf eMesh 10
         , bench "100x100"   $ whnf eMesh 100
         , bench "1000x1000" $ whnf eMesh 1000 ]
+    , bgroup "rMesh"
+        [ bench "1x1"       $ whnf rMesh 1
+        , bench "10x10"     $ whnf rMesh 10
+        , bench "100x100"   $ whnf rMesh 100
+        , bench "1000x1000" $ whnf rMesh 1000 ]
     , bgroup "aMesh"
         [ bench "1x1"       $ whnf aMesh 1
         , bench "10x10"     $ whnf aMesh 10
@@ -140,11 +165,17 @@ main = defaultMain
         , bench "10x10"     $ whnf eIntMesh 10
         , bench "100x100"   $ whnf eIntMesh 100
         , bench "1000x1000" $ whnf eIntMesh 1000 ]
-    , bgroup "aIntClique"
+    , bgroup "aClique"
         [ bench "1"      $ nf aClique 1
         , bench "10"     $ nf aClique 10
         , bench "100"    $ nf aClique 100
         , bench "1000"   $ nf aClique 1000 ]
+    , bgroup "rClique"
+        [ bench "1"       $ nf rClique 1
+        , bench "10"      $ nf rClique 10
+        , bench "100"     $ nf rClique 100
+        , bench "1000"    $ nf rClique 1000
+        , bench "10000"   $ nf rClique 10000 ]
     , bgroup "vIntClique"
         [ bench "1"      $ nf vIntClique 1
         , bench "10"     $ nf vIntClique 10
