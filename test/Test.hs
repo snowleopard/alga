@@ -29,6 +29,9 @@ main = do
     putStrLn "============ Adjacency Map ============"
     quickCheck (axioms :: GraphTestsuite (AdjacencyMap Int))
 
+    putStrLn "============ TopSort ============"
+    quickCheck (axioms :: GraphTestsuite (TopSort Int))
+
     putStrLn "============ Directed graphs ============"
     test "Upper bound" $ \(x :: G) -> let xs = vertices . toList $ fold x in
         x `isSubgraphOf` (xs * xs)
