@@ -9,16 +9,16 @@ import Test.QuickCheck (Arbitrary (..))
 
 import Algebra.Graph
 
-data Relation a = Relation { domain :: Set a, relation :: Set (a, a) }
+data Relation a = R { domain :: Set a, relation :: Set (a, a) }
     deriving (Eq, Show)
 
 instance Ord a => Graph (Relation a) where
     type Vertex (Relation a) = a
-    empty       = Relation Set.empty Set.empty
-    vertex  x   = Relation (Set.singleton x) Set.empty
-    overlay x y = Relation (domain   x `Set.union` domain   y)
+    empty       = R Set.empty Set.empty
+    vertex  x   = R (Set.singleton x) Set.empty
+    overlay x y = R (domain   x `Set.union` domain   y)
                            (relation x `Set.union` relation y)
-    connect x y = Relation (domain   x `Set.union` domain   y)
+    connect x y = R (domain   x `Set.union` domain   y)
                            (relation x `Set.union` relation y
                             `Set.union` (domain x >< domain y))
 
@@ -37,19 +37,19 @@ instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
     arbitrary = do
         r <- arbitrary
         let (xs, ys) = unzip $ Set.toAscList r
-        return $ Relation (Set.fromList $ xs ++ ys) r
+        return $ R (Set.fromList $ xs ++ ys) r
 
 reflexiveClosure :: Ord a => Relation a -> Relation a
-reflexiveClosure (Relation d r) = Relation d $ r `Set.union`
+reflexiveClosure (R d r) = R d $ r `Set.union`
     Set.fromDistinctAscList [ (a, a) | a <- Set.elems d ]
 
 symmetricClosure :: Ord a => Relation a -> Relation a
-symmetricClosure (Relation d r) = Relation d $ r `Set.union` (Set.map swap r)
+symmetricClosure (R d r) = R d $ r `Set.union` (Set.map swap r)
 
 transitiveClosure :: Ord a => Relation a -> Relation a
-transitiveClosure old@(Relation d r)
+transitiveClosure old@(R d r)
     | r == newR = old
-    | otherwise = transitiveClosure $ Relation d newR
+    | otherwise = transitiveClosure $ R d newR
   where
     newR = Set.unions $ r : [ preset x old >< postset x old | x <- Set.elems d ]
 
