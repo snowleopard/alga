@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 module Algebra.Graph.Util (
     transpose, VertexSet, vertexSet, toList, gmap, mergeVertices, box,
-    bind, induce, removeVertex, splitVertex, deBruijn
+    bind, induce, removeVertex, splitVertex, removeEdge, deBruijn
     ) where
 
 import qualified Data.Set as Set
@@ -148,6 +148,19 @@ induce p g = bind g $ \v -> if p v then vertex v else empty
 
 removeVertex :: (Eq (Vertex g), Graph g) => Vertex g -> GraphMonad (Vertex g) -> g
 removeVertex v = induce (/= v)
+
+newtype RemoveEdge a = RE { re :: forall g. (Vertex g ~ a, Graph g) => a -> a -> g }
+
+instance Eq a => Graph (RemoveEdge a) where
+    type Vertex (RemoveEdge a) = a
+    empty       = RE $ \_ _ -> empty
+    vertex  x   = RE $ \_ _ -> vertex x
+    overlay x y = RE $ \u v -> overlay (re x u v) (re y u v)
+    connect x y = RE $ \u v -> connect (removeVertex u $ re x u u) (re y u v) `overlay`
+                               connect (re x u v) (removeVertex v $ re y v v)
+
+removeEdge :: (Eq (Vertex g), Graph g) => Vertex g -> Vertex g -> RemoveEdge (Vertex g) -> g
+removeEdge u v g = re g u v
 
 splitVertex :: (Eq (Vertex g), Graph g) => Vertex g -> [Vertex g] -> GraphMonad (Vertex g) -> g
 splitVertex v vs g = bind g $ \u -> if u == v then vertices vs else vertex u
