@@ -56,10 +56,10 @@ instance Monad Basic where
     return = vertex
     (>>=)  = flip foldMapBasic
 
-fold :: (Vertex g ~ a, Graph g) => Basic a -> g
+fold :: Graph g => Basic (Vertex g) -> g
 fold = foldMapBasic vertex
 
-foldMapBasic :: (Vertex g ~ b, Graph g) => (a -> g) -> Basic a -> g
+foldMapBasic :: Graph g => (a -> g) -> Basic a -> g
 foldMapBasic _ Empty         = empty
 foldMapBasic f (Vertex  x  ) = f x
 foldMapBasic f (Overlay x y) = overlay (foldMapBasic f x) (foldMapBasic f y)
