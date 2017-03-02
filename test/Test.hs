@@ -2,26 +2,26 @@ import Data.List (sort)
 import Data.List.Extra (nubOrd)
 import Test.QuickCheck
 
-import Algebra.Graph
+import Algebra.Graph hiding (Graph)
 import Algebra.Graph.AdjacencyMap hiding (edges, transpose)
-import Algebra.Graph.Basic
+import Algebra.Graph.Data
 import Algebra.Graph.Dfs
 import Algebra.Graph.Relation
 import Algebra.Graph.Test
 import Algebra.Graph.TopSort
 import Algebra.Graph.Util
 
-type G = Basic Int
-type P = PartialOrder Int
+type G = Graph Int
+type T = Transitive Int
 
 test :: Testable a => String -> a -> IO ()
 test str p = putStr (str ++ ": ") >> quickCheck p
 
 main :: IO ()
 main = do
-    putStrLn "============ Basic ============"
-    quickCheck (axioms   :: GraphTestsuite (Basic Int))
-    quickCheck (theorems :: GraphTestsuite (Basic Int))
+    putStrLn "============ Graph ============"
+    quickCheck (axioms   :: GraphTestsuite (Graph Int))
+    quickCheck (theorems :: GraphTestsuite (Graph Int))
 
     putStrLn "============ Relation ============"
     quickCheck (axioms :: GraphTestsuite (Relation Int))
@@ -40,14 +40,14 @@ main = do
         path xs `isSubgraphOf` (circuit xs :: G)
 
     let comm    = gmap $ \(a, b) -> (b, a)
-        eq2 x y = x == (y :: Basic (Int, Int))
+        eq2 x y = x == (y :: Graph (Int, Int))
     test "Box commutativity" $ mapSize (min 10) $ \x y ->
         let fx = fold x
             fy = fold y
         in fx `box` fy `eq2` comm (fy `box` fx)
 
     let assoc   = gmap $ \(a, (b, c)) -> ((a, b), c)
-        eq3 x y = x == (y :: Basic ((Int, Int), Int))
+        eq3 x y = x == (y :: Graph ((Int, Int), Int))
     test "Box associativity" $ mapSize (min 10) $ \x y z ->
         let fx = fold x
             fy = fold y
@@ -116,15 +116,15 @@ main = do
     test "EdgeList of edges" $ \xs ->
         nubOrd (sort xs) == edgeList (fold (edges xs :: G))
 
-    putStrLn "============ Reflexive graphs ============"
+    putStrLn "============ Reflexive relation ============"
     quickCheck (reflexiveAxioms :: GraphTestsuite (Reflexive Int))
 
-    putStrLn "============ Undirected graphs ============"
-    quickCheck (undirectedAxioms :: GraphTestsuite (Undirected Int))
+    putStrLn "============ Symmetric relation ============"
+    quickCheck (undirectedAxioms :: GraphTestsuite (Symmetric Int))
 
-    putStrLn "============ Partial Orders ============"
-    test "Closure" $ mapSize (min 20) $ \(x :: P) y z -> y /= empty ==>
+    putStrLn "============ Transitive relation ============"
+    test "Closure" $ mapSize (min 20) $ \(x :: T) y z -> y /= empty ==>
         x * y * z == x * y + y * z
 
     test "Path equals clique" $ mapSize (min 20) $ \xs ->
-        path xs == (clique xs :: P)
+        path xs == (clique xs :: T)

@@ -1,5 +1,8 @@
 module Algebra.Graph.Relation (
-    Relation, domain, relation, reflexiveClosure, symmetricClosure, transitiveClosure
+    Relation, domain, relation, preset, postset,
+    reflexiveClosure, symmetricClosure, transitiveClosure,
+    Reflexive, reflexiveRelation, Symmetric, symmetricRelation,
+    Transitive, transitiveRelation
     ) where
 
 import           Data.Set (Set)
@@ -37,6 +40,12 @@ instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
         let (xs, ys) = unzip $ Set.toAscList r
         return $ R (Set.fromList $ xs ++ ys) r
 
+preset :: Ord a => a -> Relation a -> Set a
+preset x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
+
+postset :: Ord a => a -> Relation a -> Set a
+postset x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation
+
 reflexiveClosure :: Ord a => Relation a -> Relation a
 reflexiveClosure (R d r) = R d $ r `Set.union`
     Set.fromDistinctAscList [ (a, a) | a <- Set.elems d ]
@@ -51,8 +60,44 @@ transitiveClosure old@(R d r)
   where
     newR = Set.unions $ r : [ preset x old >< postset x old | x <- Set.elems d ]
 
-preset :: Ord a => a -> Relation a -> Set a
-preset x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
+newtype Reflexive a = RR { reflexiveRelation :: Relation a }
+    deriving (Arbitrary, Num, Show)
 
-postset :: Ord a => a -> Relation a -> Set a
-postset x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation
+instance Ord a => Eq (Reflexive a) where
+    RR x == RR y = reflexiveClosure x == reflexiveClosure y
+
+newtype Symmetric a = SR { symmetricRelation :: Relation a }
+    deriving (Arbitrary, Num, Show)
+
+instance Ord a => Eq (Symmetric a) where
+    SR x == SR y = symmetricClosure x == symmetricClosure y
+
+newtype Transitive a = TR { transitiveRelation :: Relation a }
+    deriving (Arbitrary, Num, Show)
+
+instance Ord a => Eq (Transitive a) where
+    TR x == TR y = transitiveClosure x == transitiveClosure y
+
+-- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
+instance Ord a => Graph (Reflexive a) where
+    type Vertex (Reflexive a) = a
+    empty       = RR empty
+    vertex      = RR . vertex
+    overlay x y = RR $ reflexiveRelation x `overlay` reflexiveRelation y
+    connect x y = RR $ reflexiveRelation x `connect` reflexiveRelation y
+
+-- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
+instance Ord a => Graph (Symmetric a) where
+    type Vertex (Symmetric a) = a
+    empty       = SR empty
+    vertex      = SR . vertex
+    overlay x y = SR $ symmetricRelation x `overlay` symmetricRelation y
+    connect x y = SR $ symmetricRelation x `connect` symmetricRelation y
+
+-- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
+instance Ord a => Graph (Transitive a) where
+    type Vertex (Transitive a) = a
+    empty       = TR empty
+    vertex      = TR . vertex
+    overlay x y = TR $ transitiveRelation x `overlay` transitiveRelation y
+    connect x y = TR $ transitiveRelation x `connect` transitiveRelation y

@@ -21,7 +21,7 @@ library
                         Algebra.Graph.AdjacencyMap,
                         Algebra.Graph.AdjacencyArray.Unboxed,
                         Algebra.Graph.AdjacencyMap.Int,
-                        Algebra.Graph.Basic,
+                        Algebra.Graph.Data,
                         Algebra.Graph.Dfs,
                         Algebra.Graph.Relation,
                         Algebra.Graph.Todo,
