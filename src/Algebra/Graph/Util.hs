@@ -149,18 +149,38 @@ induce p g = bind g $ \v -> if p v then vertex v else empty
 removeVertex :: (Eq (Vertex g), Graph g) => Vertex g -> GraphMonad (Vertex g) -> g
 removeVertex v = induce (/= v)
 
-newtype RemoveEdge a = RE { re :: forall g. (Vertex g ~ a, Graph g) => a -> a -> g }
+data Pieces g = Pieces { removeS :: g, removeT :: g, removeST :: g }
 
-instance Eq a => Graph (RemoveEdge a) where
-    type Vertex (RemoveEdge a) = a
-    empty       = RE $ \_ _ -> empty
-    vertex  x   = RE $ \_ _ -> vertex x
-    overlay x y = RE $ \u v -> overlay (re x u v) (re y u v)
-    connect x y = RE $ \u v -> connect (removeVertex u $ re x u u) (re y u v) `overlay`
-                               connect (re x u v) (removeVertex v $ re y v v)
+newtype Smash a = SM { smash :: forall g. (Vertex g ~ a, Graph g) => a -> a -> Pieces g }
 
-removeEdge :: (Eq (Vertex g), Graph g) => Vertex g -> Vertex g -> RemoveEdge (Vertex g) -> g
-removeEdge u v g = re g u v
+instance Eq a => Graph (Smash a) where
+    type Vertex (Smash a) = a
+    empty       = SM $ \_ _ -> Pieces empty empty empty
+    vertex x    = SM $ \s t -> Pieces (if x == s then empty else vertex x)
+                                      (if x == t then empty else vertex x)
+                                      (vertex x)
+    overlay x y = SM $ \s t -> let px = smash x s t
+                                   py = smash y s t
+                               in Pieces (removeS  px `overlay` removeS  py)
+                                         (removeT  px `overlay` removeT  py)
+                                         (removeST px `overlay` removeST py)
+    connect x y = SM $ \s t -> let px = smash x s t
+                                   py = smash y s t
+                               in Pieces (removeS  px `connect` removeS  py)
+                                         (removeT  px `connect` removeT  py)
+                                         ((removeS px `connect` removeST py) `overlay`
+                                         (removeST px `connect` removeT  py))
+
+instance (Eq a, Num a) => Num (Smash a) where
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
+
+removeEdge :: (Eq (Vertex g), Graph g) => Vertex g -> Vertex g -> Smash (Vertex g) -> g
+removeEdge s t g = removeST $ smash g s t
 
 splitVertex :: (Eq (Vertex g), Graph g) => Vertex g -> [Vertex g] -> GraphMonad (Vertex g) -> g
 splitVertex v vs g = bind g $ \u -> if u == v then vertices vs else vertex u
