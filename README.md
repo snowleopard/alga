@@ -1,4 +1,4 @@
-# An algebra of graphs
+# Algebraic graphs
 
 [![Linux & OS X status](https://img.shields.io/travis/snowleopard/alga/master.svg?label=Linux%20%26%20OS%20X)](https://travis-ci.org/snowleopard/alga) [![Windows status](https://img.shields.io/appveyor/ci/snowleopard/alga/master.svg?label=Windows)](https://ci.appveyor.com/project/snowleopard/alga)
 
