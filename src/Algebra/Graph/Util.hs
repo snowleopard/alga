@@ -1,7 +1,8 @@
 {-# LANGUAGE RankNTypes #-}
 module Algebra.Graph.Util (
-    transpose, VertexSet, vertexSet, ToList, toList, gmap, mergeVertices, box,
-    bind, induce, removeVertex, splitVertex, removeEdge, deBruijn
+    transpose, VertexSet, vertexSet, ToList, toList, simplify, gmap,
+    mergeVertices, box, bind, induce, removeVertex, splitVertex, removeEdge,
+    deBruijn
     ) where
 
 import qualified Data.Set as Set
