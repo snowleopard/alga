@@ -1,6 +1,6 @@
 name:          alga-core
 version:       0.0.1
-synopsis:      Algebraic graphs: a minimalistic and powerful core of graph construction primitives
+synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
 author:        Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard
@@ -21,6 +21,7 @@ library
                         Algebra.Graph.AdjacencyMap,
                         Algebra.Graph.AdjacencyArray.Unboxed,
                         Algebra.Graph.AdjacencyMap.Int,
+                        Algebra.Graph.Classes,
                         Algebra.Graph.Data,
                         Algebra.Graph.Dfs,
                         Algebra.Graph.Relation,

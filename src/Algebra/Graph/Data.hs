@@ -4,8 +4,8 @@ module Algebra.Graph.Data (Graph (..), fold) where
 import Control.Monad
 import Test.QuickCheck
 
-import qualified Algebra.Graph as A
-import Algebra.Graph hiding (Graph)
+import qualified Algebra.Graph.Classes as C
+import Algebra.Graph.Classes hiding (Graph)
 import Algebra.Graph.AdjacencyMap hiding (transpose)
 
 data Graph a = Empty
@@ -14,7 +14,7 @@ data Graph a = Empty
              | Connect (Graph a) (Graph a)
              deriving (Show, Functor, Foldable, Traversable)
 
-instance A.Graph (Graph a) where
+instance C.Graph (Graph a) where
     type Vertex (Graph a) = a
     empty   = Empty
     vertex  = Vertex
@@ -50,16 +50,16 @@ instance Monad Graph where
     return = vertex
     (>>=)  = flip foldMapGraph
 
-fold :: A.Graph g => Graph (Vertex g) -> g
+fold :: C.Graph g => Graph (Vertex g) -> g
 fold = foldMapGraph vertex
 
-foldMapGraph :: A.Graph g => (a -> g) -> Graph a -> g
+foldMapGraph :: C.Graph g => (a -> g) -> Graph a -> g
 foldMapGraph _ Empty         = empty
 foldMapGraph f (Vertex  x  ) = f x
 foldMapGraph f (Overlay x y) = overlay (foldMapGraph f x) (foldMapGraph f y)
 foldMapGraph f (Connect x y) = connect (foldMapGraph f x) (foldMapGraph f y)
 
-arbitraryGraph :: (A.Graph g, Arbitrary (Vertex g)) => Gen g
+arbitraryGraph :: (C.Graph g, Arbitrary (Vertex g)) => Gen g
 arbitraryGraph = sized expr
   where
     expr 0 = return empty
