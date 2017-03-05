@@ -1,6 +1,6 @@
 name:          alga-core
 version:       0.0.1
-synopsis:      An algebra of graphs
+synopsis:      Algebraic graphs: a minimalistic and powerful core of graph construction primitives
 license:       MIT
 license-file:  LICENSE
 author:        Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard
