@@ -1,4 +1,4 @@
-name:          alga
+name:          alga-core
 version:       0.0.1
 synopsis:      An algebra of graphs
 license:       MIT
@@ -50,7 +50,7 @@ test-suite test-alga
     type:               exitcode-stdio-1.0
     main-is:            Test.hs
     other-modules:      Algebra.Graph.Test
-    build-depends:      alga,
+    build-depends:      alga-core,
                         base       >= 4.8 && < 5,
                         extra      >= 1.5.1,
                         QuickCheck >= 2.9.2
@@ -65,7 +65,7 @@ benchmark benchmark-alga
     hs-source-dirs:     bench
     type:               exitcode-stdio-1.0
     main-is:            Bench.hs
-    build-depends:      alga,
+    build-depends:      alga-core,
                         base       >= 4.8 && < 5,
                         containers == 0.5.*,
                         criterion
