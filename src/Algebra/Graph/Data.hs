@@ -58,3 +58,13 @@ foldMapGraph _ Empty         = empty
 foldMapGraph f (Vertex  x  ) = f x
 foldMapGraph f (Overlay x y) = overlay (foldMapGraph f x) (foldMapGraph f y)
 foldMapGraph f (Connect x y) = connect (foldMapGraph f x) (foldMapGraph f y)
+
+arbitraryGraph :: (A.Graph g, Arbitrary (Vertex g)) => Gen g
+arbitraryGraph = sized expr
+  where
+    expr 0 = return empty
+    expr 1 = vertex <$> arbitrary
+    expr n = do
+        left <- choose (0, n)
+        oneof [ overlay <$> (expr left) <*> (expr $ n - left)
+              , connect <$> (expr left) <*> (expr $ n - left) ]

@@ -5,7 +5,6 @@ module Algebra.Graph.AdjacencyArray.Unboxed (
 
 import Data.Array.Base
 import Data.Array.ST
-import Test.QuickCheck (Arbitrary (..))
 
 import Algebra.Graph hiding (edges)
 
@@ -211,6 +210,3 @@ instance Num GraphArray where
     signum      = const empty
     abs         = id
     negate      = id
-
-instance Arbitrary GraphArray where
-    arbitrary = arbitraryGraph

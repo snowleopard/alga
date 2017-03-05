@@ -1,10 +1,9 @@
 module Algebra.Graph (
-    Graph (..), edge, vertices, edges, graph, clique, path, circuit, star, tree,
-    forest, arbitraryGraph, isSubgraphOf, foldg, overlays, connects
+    Graph (..), vertices, overlays, connects, edge, edges, graph, isSubgraphOf,
+    path, circuit, clique, star, tree, forest, biclique
     ) where
 
 import Data.Tree
-import Test.QuickCheck
 
 class Graph g where
     type Vertex g
@@ -13,20 +12,23 @@ class Graph g where
     overlay :: g -> g -> g
     connect :: g -> g -> g
 
-edge :: Graph g => Vertex g -> Vertex g -> g
-edge x y = vertex x `connect` vertex y
-
 vertices :: Graph g => [Vertex g] -> g
 vertices = overlays . map vertex
+
+overlays :: Graph g => [g] -> g
+overlays = foldr overlay empty
+
+connects :: Graph g => [g] -> g
+connects = foldr connect empty
+
+edge :: Graph g => Vertex g -> Vertex g -> g
+edge x y = vertex x `connect` vertex y
 
 edges :: Graph g => [(Vertex g, Vertex g)] -> g
 edges = overlays . map (uncurry edge)
 
 graph :: Graph g => [Vertex g] -> [(Vertex g, Vertex g)] -> g
 graph vs es = overlay (vertices vs) (edges es)
-
-clique :: Graph g => [Vertex g] -> g
-clique = connects . map vertex
 
 isSubgraphOf :: (Graph g, Eq g) => g -> g -> Bool
 isSubgraphOf x y = overlay x y == y
@@ -40,6 +42,12 @@ circuit :: Graph g => [Vertex g] -> g
 circuit []     = empty
 circuit (x:xs) = path $ [x] ++ xs ++ [x]
 
+clique :: Graph g => [Vertex g] -> g
+clique = connects . map vertex
+
+biclique :: Graph g => [Vertex g] -> [Vertex g] -> g
+biclique xs ys = connect (vertices xs) (vertices ys)
+
 star :: Graph g => Vertex g -> [Vertex g] -> g
 star x ys = connect (vertex x) (vertices ys)
 
@@ -48,27 +56,6 @@ tree (Node x f) = overlay (star x $ map rootLabel f) (forest f)
 
 forest :: Graph g => Forest (Vertex g) -> g
 forest = overlays . map tree
-
-arbitraryGraph :: (Graph g, Arbitrary (Vertex g)) => Gen g
-arbitraryGraph = sized expr
-  where
-    expr 0 = return empty
-    expr 1 = vertex <$> arbitrary
-    expr n = do
-        left <- choose (0, n)
-        oneof [ overlay <$> (expr left) <*> (expr $ n - left)
-              , connect <$> (expr left) <*> (expr $ n - left) ]
-
--- 'foldr f empty' adds a redundant empty to the result; foldg avoids this
-foldg :: Graph g => (g -> g -> g) -> [g] -> g
-foldg _ [] = empty
-foldg f gs = foldr1 f gs
-
-overlays :: Graph g => [g] -> g
-overlays = foldg overlay
-
-connects :: Graph g => [g] -> g
-connects = foldg connect
 
 instance Graph () where
     type Vertex () = ()
