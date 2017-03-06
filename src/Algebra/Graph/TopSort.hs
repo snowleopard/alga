@@ -7,13 +7,11 @@ import qualified Data.Map.Strict as Map
 import Data.Ord
 import qualified Data.Set as Set
 import           Data.Set (Set)
-import Test.QuickCheck
 
 import Algebra.Graph
 import Algebra.Graph.AdjacencyMap
 
-newtype TopSort a = TS { fromTopSort :: AdjacencyMap a }
-    deriving (Arbitrary, Num, Show)
+newtype TopSort a = TS { fromTopSort :: AdjacencyMap a } deriving (Num, Show)
 
 instance Ord a => Eq (TopSort a) where
     TS x == TS y = topSort x == topSort y

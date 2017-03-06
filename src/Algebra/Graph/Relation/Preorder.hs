@@ -6,14 +6,14 @@
 -- Maintainer  :  andrey.mokhov@gmail.com
 -- Stability   :  experimental
 --
--- An abstract implementation of binary transitive relations.
+-- An abstract implementation of binary preorder relations.
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.Preorder (
     -- * Preorder relations
     PreorderRelation, domain, relation,
 
-    -- * Operations on transitive relations
+    -- * Operations on preorders
     preset, postset, symmetricClosure
   ) where
 

@@ -38,7 +38,7 @@ x ~*~ y = low x `connect` high y
 x >*< y = high x `connect` low y
 
 todo :: forall a. Ord a => Todo a -> Maybe [a]
-todo (T p g) = fmap (map snd) . topSort $ mapVertices prioritise g
+todo (T p g) = fmap (map snd) . topSort $ gmap prioritise g
   where
     prioritise :: a -> (Int, a)
     prioritise x = (negate $ Map.findWithDefault 0 x p, x)

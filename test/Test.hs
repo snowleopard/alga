@@ -3,7 +3,7 @@ import Data.List.Extra (nubOrd)
 import Test.QuickCheck
 
 import Algebra.Graph hiding (Graph)
-import Algebra.Graph.AdjacencyMap hiding (edges, transpose)
+import Algebra.Graph.AdjacencyMap hiding (edges, gmap)
 import Algebra.Graph.Data
 import Algebra.Graph.Dfs
 import Algebra.Graph.Relation
@@ -32,9 +32,6 @@ main = do
 
     putStrLn "============ Adjacency Map ============"
     quickCheck (axioms :: GraphTestsuite (AdjacencyMap Int))
-
-    putStrLn "============ TopSort ============"
-    quickCheck (axioms :: GraphTestsuite (TopSort Int))
 
     putStrLn "============ Directed graphs ============"
     test "Upper bound" $ \(x :: G) -> let xs = vertices . toList $ fold x in

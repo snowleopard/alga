@@ -2,7 +2,6 @@
 module Algebra.Graph.Data (Graph (..), fold) where
 
 import Control.Monad
-import Test.QuickCheck
 
 import qualified Algebra.Graph.Classes as C
 import Algebra.Graph.Classes hiding (Graph)
@@ -20,16 +19,6 @@ instance C.Graph (Graph a) where
     vertex  = Vertex
     overlay = Overlay
     connect = Connect
-
-instance Arbitrary a => Arbitrary (Graph a) where
-    arbitrary = arbitraryGraph
-
-    shrink Empty         = []
-    shrink (Vertex    _) = [Empty]
-    shrink (Overlay x y) = [Empty, x, y]
-                        ++ [Overlay x' y' | (x', y') <- shrink (x, y) ]
-    shrink (Connect x y) = [Empty, x, y, Overlay x y]
-                        ++ [Connect x' y' | (x', y') <- shrink (x, y) ]
 
 instance Num a => Num (Graph a) where
     fromInteger = Vertex . fromInteger
@@ -58,13 +47,3 @@ foldMapGraph _ Empty         = empty
 foldMapGraph f (Vertex  x  ) = f x
 foldMapGraph f (Overlay x y) = overlay (foldMapGraph f x) (foldMapGraph f y)
 foldMapGraph f (Connect x y) = connect (foldMapGraph f x) (foldMapGraph f y)
-
-arbitraryGraph :: (C.Graph g, Arbitrary (Vertex g)) => Gen g
-arbitraryGraph = sized expr
-  where
-    expr 0 = return empty
-    expr 1 = vertex <$> arbitrary
-    expr n = do
-        left <- choose (0, n)
-        oneof [ overlay <$> (expr left) <*> (expr $ n - left)
-              , connect <$> (expr left) <*> (expr $ n - left) ]

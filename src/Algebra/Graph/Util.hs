@@ -7,12 +7,11 @@ module Algebra.Graph.Util (
 
 import qualified Data.Set as Set
 import Data.Set (Set)
-import Test.QuickCheck
 
 import Algebra.Graph
 
 -- Note: Transpose can only transpose polymorphic graphs.
-newtype Transpose g = T { transpose :: g } deriving (Arbitrary, Eq, Show)
+newtype Transpose g = T { transpose :: g } deriving (Eq, Show)
 
 instance Graph g => Graph (Transpose g) where
     type Vertex (Transpose g) = Vertex g
@@ -30,7 +29,7 @@ instance (Graph g, Num g) => Num (Transpose g) where
     negate      = id
 
 -- Note: Derived Eq instance does not satisfy Graph laws
-newtype ToList a = TL { toList :: [a] } deriving (Arbitrary, Show)
+newtype ToList a = TL { toList :: [a] } deriving Show
 
 instance Graph (ToList a) where
      type Vertex (ToList a) = a
@@ -47,7 +46,7 @@ instance Num a => Num (ToList a) where
     abs         = id
     negate      = id
 
-newtype VertexSet a = VS { vertexSet :: Set a } deriving (Arbitrary, Eq, Show)
+newtype VertexSet a = VS { vertexSet :: Set a } deriving (Eq, Show)
 
 instance Ord a => Graph (VertexSet a) where
     type Vertex (VertexSet a) = a
@@ -64,7 +63,7 @@ instance (Num a, Ord a) => Num (VertexSet a) where
     abs         = id
     negate      = id
 
-newtype Simplify g = S { simplify :: g } deriving (Arbitrary, Eq, Show)
+newtype Simplify g = S { simplify :: g } deriving (Eq, Show)
 
 instance (Eq g, Graph g) => Graph (Simplify g) where
     type Vertex (Simplify g) = Vertex g

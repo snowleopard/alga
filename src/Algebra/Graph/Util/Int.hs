@@ -2,11 +2,10 @@ module Algebra.Graph.Util.Int (VertexSet, vertexSet) where
 
 import qualified Data.IntSet as Set
 import Data.IntSet (IntSet)
-import Test.QuickCheck
 
 import Algebra.Graph
 
-newtype VertexSet = VS { vertexSet :: IntSet } deriving (Arbitrary, Eq, Show)
+newtype VertexSet = VS { vertexSet :: IntSet } deriving (Eq, Show)
 
 instance Graph VertexSet where
     type Vertex VertexSet = Int

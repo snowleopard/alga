@@ -10,12 +10,11 @@ import qualified Data.IntMap.Strict as Map
 import           Data.IntSet (IntSet)
 import qualified Data.IntSet as Set
 import Data.Tuple
-import Test.QuickCheck
 
 import Algebra.Graph hiding (edges)
 
 newtype AdjacencyMap = AM { adjacencyMap :: IntMap IntSet }
-    deriving (Arbitrary, Eq, Show)
+    deriving (Eq, Show)
 
 instance Graph AdjacencyMap where
     type Vertex AdjacencyMap = Int

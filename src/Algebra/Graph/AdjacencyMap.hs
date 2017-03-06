@@ -1,58 +1,39 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Algebra.Graph.AdjacencyMap
+-- Copyright   :  (c) Andrey Mokhov 2016-2017
+-- License     :  MIT (see the file LICENSE)
+-- Maintainer  :  andrey.mokhov@gmail.com
+-- Stability   :  experimental
+--
+-- An abstract implementation of adjacency maps.
+--
+-----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap (
-    AdjacencyMap, adjacencyMap, mapVertices, adjacencyList, edgeList,
-    fromAdjacencyList, edges, postset, transpose, toKL, toKLvia, fromKL
-    ) where
+    -- * Data structure
+    AdjacencyMap, adjacencyMap,
+
+    -- * Operations on adjacency maps
+    gmap, adjacencyList, edgeList,
+    fromAdjacencyList, edges, postset, toKL, toKLvia, fromKL
+  ) where
 
 import Data.Array
 import qualified Data.Graph as KL -- KL stands for King-Launchbury graphs
-import           Data.Map.Strict (Map, keysSet, fromSet)
 import qualified Data.Map.Strict as Map
 import           Data.Set (Set)
 import qualified Data.Set as Set
-import Data.Tuple
-import Test.QuickCheck
 
-import Algebra.Graph hiding (edges)
-
-newtype AdjacencyMap a = AM { adjacencyMap :: Map a (Set a) }
-    deriving (Arbitrary, Eq, Show)
-
-instance Ord a => Graph (AdjacencyMap a) where
-    type Vertex (AdjacencyMap a) = a
-    empty       = AM $ Map.empty
-    vertex  x   = AM $ Map.singleton x Set.empty
-    overlay x y = AM $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
-    connect x y = AM $ Map.unionsWith Set.union [ adjacencyMap x, adjacencyMap y,
-        fromSet (const . keysSet $ adjacencyMap y) (keysSet $ adjacencyMap x) ]
-
-instance (Ord a, Num a) => Num (AdjacencyMap a) where
-    fromInteger = vertex . fromInteger
-    (+)         = overlay
-    (*)         = connect
-    signum      = const empty
-    abs         = id
-    negate      = id
-
-mapVertices :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap a -> AdjacencyMap b
-mapVertices f (AM x) = AM . Map.map (Set.map f) $ Map.mapKeysWith Set.union f x
+import Algebra.Graph.AdjacencyMap.Internal
 
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
 adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
 
-fromAdjacencyList :: Ord a => [(a, [a])] -> AdjacencyMap a
-fromAdjacencyList = AM . Map.fromAscList . map (\(x, ys) -> (x, Set.fromList ys))
-
 edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList = concatMap (\(x, ys) -> map (x,) ys) . adjacencyList
 
-edges :: Ord a => [(a, a)] -> AdjacencyMap a
-edges = AM . Map.fromListWith Set.union . map (\(x, y) -> (x, Set.singleton y))
-
 postset :: Ord a => a -> AdjacencyMap a -> Set a
 postset x = Map.findWithDefault Set.empty x . adjacencyMap
-
-transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
-transpose = edges . map swap . edgeList
 
 toKLvia :: Ord b => (a -> b) -> (b -> a) -> AdjacencyMap a -> (KL.Graph, KL.Vertex -> a)
 toKLvia a2b b2a x = (g, \v -> case r v of (_, u, _) -> b2a u)
