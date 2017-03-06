@@ -1,5 +1,5 @@
-name:          alga-core
-version:       0.0.1
+name:          algebraic-graphs
+version:       0.1.0
 synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
@@ -56,7 +56,7 @@ test-suite test-alga
     main-is:            Test.hs
     other-modules:      Algebra.Graph.Test,
                         Algebra.Graph.Test.Arbitrary
-    build-depends:      alga-core,
+    build-depends:      algebraic-graphs,
                         base       >= 4.9 && < 5,
                         containers == 0.5.*,
                         extra      >= 1.5 && < 1.6,
@@ -74,10 +74,10 @@ benchmark benchmark-alga
     hs-source-dirs:     bench
     type:               exitcode-stdio-1.0
     main-is:            Bench.hs
-    build-depends:      alga-core,
+    build-depends:      algebraic-graphs,
                         base       >= 4.9 && < 5,
                         containers == 0.5.*,
-                        criterion >= 1.1 && < 1.2
+                        criterion  >= 1.1 && < 1.2
     default-language:   Haskell2010
     GHC-options:        -O2 -Wall -fwarn-tabs
     default-extensions: FlexibleContexts
