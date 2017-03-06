@@ -7,12 +7,16 @@ import Algebra.Graph.AdjacencyMap hiding (edges, transpose)
 import Algebra.Graph.Data
 import Algebra.Graph.Dfs
 import Algebra.Graph.Relation
+import Algebra.Graph.Relation.Reflexive
+import Algebra.Graph.Relation.Symmetric
+import Algebra.Graph.Relation.Transitive
 import Algebra.Graph.Test
+import Algebra.Graph.Test.Arbitrary ()
 import Algebra.Graph.TopSort
 import Algebra.Graph.Util
 
 type G = Graph Int
-type T = Transitive Int
+type T = TransitiveRelation Int
 
 test :: Testable a => String -> a -> IO ()
 test str p = putStr (str ++ ": ") >> quickCheck p
@@ -117,10 +121,10 @@ main = do
         nubOrd (sort xs) == edgeList (fold (edges xs :: G))
 
     putStrLn "============ Reflexive relation ============"
-    quickCheck (reflexiveAxioms :: GraphTestsuite (Reflexive Int))
+    quickCheck (reflexiveAxioms :: GraphTestsuite (ReflexiveRelation Int))
 
     putStrLn "============ Symmetric relation ============"
-    quickCheck (undirectedAxioms :: GraphTestsuite (Symmetric Int))
+    quickCheck (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))
 
     putStrLn "============ Transitive relation ============"
     test "Closure" $ mapSize (min 20) $ \(x :: T) y z -> y /= empty ==>

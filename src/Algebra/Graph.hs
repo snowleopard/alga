@@ -6,7 +6,9 @@
 -- Maintainer  :  andrey.mokhov@gmail.com
 -- Stability   :  experimental
 --
--- The core of algebraic graphs.
+-- A library for algebraic construction and manipulation of graphs in Haskell.
+-- See <https://github.com/snowleopard/alga-paper this paper> for the motivation
+-- behind the library, the underlying theory and implementation details.
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph (
@@ -21,7 +23,7 @@ module Algebra.Graph (
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, tree, forest
-    ) where
+  ) where
 
 import Data.Tree
 

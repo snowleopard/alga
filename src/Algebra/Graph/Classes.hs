@@ -21,7 +21,7 @@ module Algebra.Graph.Classes (
 
     -- * Transitive graphs
     Transitive
-    ) where
+  ) where
 
 {-|
 The core type class for constructing algebraic graphs, characterised by the

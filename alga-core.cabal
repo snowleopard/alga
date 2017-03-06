@@ -25,6 +25,10 @@ library
                         Algebra.Graph.Data,
                         Algebra.Graph.Dfs,
                         Algebra.Graph.Relation,
+                        Algebra.Graph.Relation.Internal,
+                        Algebra.Graph.Relation.Reflexive,
+                        Algebra.Graph.Relation.Symmetric,
+                        Algebra.Graph.Relation.Transitive,
                         Algebra.Graph.Todo,
                         Algebra.Graph.TopSort,
                         Algebra.Graph.Util,
@@ -49,9 +53,11 @@ test-suite test-alga
     hs-source-dirs:     test
     type:               exitcode-stdio-1.0
     main-is:            Test.hs
-    other-modules:      Algebra.Graph.Test
+    other-modules:      Algebra.Graph.Test,
+                        Algebra.Graph.Test.Arbitrary
     build-depends:      alga-core,
                         base       >= 4.8 && < 5,
+                        containers == 0.5.*,
                         extra      >= 1.5.1,
                         QuickCheck >= 2.9.2
     default-language:   Haskell2010
