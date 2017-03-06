@@ -14,7 +14,7 @@ module Algebra.Graph.Relation.Symmetric (
     SymmetricRelation, domain, relation,
 
     -- * Operations on symmetric relations
-    neighbours, reflexiveClosure, transitiveClosure
+    neighbours, reflexiveClosure, transitiveClosure, preorderClosure
   ) where
 
 import Data.Set (Set)
@@ -62,3 +62,13 @@ reflexiveClosure = SymmetricRelation . R.reflexiveClosure . fromSymmetric
 -- @
 transitiveClosure :: Ord a => SymmetricRelation a -> SymmetricRelation a
 transitiveClosure = SymmetricRelation . R.transitiveClosure . symmetricClosure . fromSymmetric
+
+-- | Compute the /preorder closure/ of a 'SymmetricRelation'.
+--
+-- @
+-- preorderClosure 'Algebra.Graph.empty'      == 'Algebra.Graph.empty'
+-- preorderClosure ('Algebra.Graph.vertex' x) == 'Algebra.Graph.edge' x x
+-- preorderClosure ('Algebra.Graph.edge' x y) == 'Algebra.Graph.edges' [(x, x), (x, y), (y, y)]
+-- @
+preorderClosure :: Ord a => SymmetricRelation a -> SymmetricRelation a
+preorderClosure = SymmetricRelation . R.preorderClosure . symmetricClosure . fromSymmetric

@@ -8,8 +8,9 @@
 --
 -- This module exposes the implementation of binary relations. The API is unstable
 -- and unsafe. Where possible use non-internal modules "Algebra.Graph.Relation",
--- "Algebra.Graph.Relation.Reflexive", "Algebra.Graph.Relation.Symmetric" and
--- "Algebra.Graph.Relation.Transitive" instead.
+-- "Algebra.Graph.Relation.Reflexive", "Algebra.Graph.Relation.Symmetric",
+-- "Algebra.Graph.Relation.Transitive" and "Algebra.Graph.Relation.Preorder"
+-- instead.
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.Internal (
@@ -18,6 +19,7 @@ module Algebra.Graph.Relation.Internal (
 
     -- * Operations on binary relations
     preset, postset, reflexiveClosure, symmetricClosure, transitiveClosure,
+    preorderClosure,
 
     -- * Reflexive relations
     ReflexiveRelation (..),
@@ -26,7 +28,10 @@ module Algebra.Graph.Relation.Internal (
     SymmetricRelation (..),
 
     -- * Transitive relations
-    TransitiveRelation (..)
+    TransitiveRelation (..),
+
+    -- * Preorders
+    PreorderRelation (..)
   ) where
 
 import           Data.Set hiding (empty, map)
@@ -179,3 +184,34 @@ instance Ord a => Graph (TransitiveRelation a) where
     connect x y = TransitiveRelation $ fromTransitive x `connect` fromTransitive y
 
 instance Ord a => Transitive (TransitiveRelation a)
+
+-- TODO: Optimise the implementation by caching the results of preorder closure.
+-- | The 'Preorder' data type represents a binary transitive relation
+-- over a set of elements.
+newtype PreorderRelation a = PreorderRelation { fromPreorder :: Relation a }
+    deriving (Num, Show)
+
+-- | Compute the /preorder closure/ of a 'Relation'.
+--
+-- @
+-- preorderClosure 'empty'      == 'empty'
+-- preorderClosure ('vertex' x) == 'Algebra.Graph.edge' x x
+-- preorderClosure ('Algebra.Graph.path' xs)  == 'Algebra.Graph.clique' xs
+-- @
+preorderClosure :: Ord a => Relation a -> Relation a
+preorderClosure = reflexiveClosure . transitiveClosure
+
+instance Ord a => Eq (PreorderRelation a) where
+    x == y = preorderClosure (fromPreorder x) == preorderClosure (fromPreorder y)
+
+-- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
+instance Ord a => Graph (PreorderRelation a) where
+    type Vertex (PreorderRelation a) = a
+    empty       = PreorderRelation empty
+    vertex      = PreorderRelation . vertex
+    overlay x y = PreorderRelation $ fromPreorder x `overlay` fromPreorder y
+    connect x y = PreorderRelation $ fromPreorder x `connect` fromPreorder y
+
+instance Ord a => Reflexive  (PreorderRelation a)
+instance Ord a => Transitive (PreorderRelation a)
+instance Ord a => Preorder   (PreorderRelation a)

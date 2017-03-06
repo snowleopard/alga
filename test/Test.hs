@@ -7,6 +7,7 @@ import Algebra.Graph.AdjacencyMap hiding (edges, transpose)
 import Algebra.Graph.Data
 import Algebra.Graph.Dfs
 import Algebra.Graph.Relation
+import Algebra.Graph.Relation.Preorder
 import Algebra.Graph.Relation.Reflexive
 import Algebra.Graph.Relation.Symmetric
 import Algebra.Graph.Relation.Transitive
@@ -16,7 +17,6 @@ import Algebra.Graph.TopSort
 import Algebra.Graph.Util
 
 type G = Graph Int
-type T = TransitiveRelation Int
 
 test :: Testable a => String -> a -> IO ()
 test str p = putStr (str ++ ": ") >> quickCheck p
@@ -127,8 +127,16 @@ main = do
     quickCheck (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))
 
     putStrLn "============ Transitive relation ============"
-    test "Closure" $ mapSize (min 20) $ \(x :: T) y z -> y /= empty ==>
-        x * y * z == x * y + y * z
+    quickCheck $ mapSize (min 20)
+        (transitiveAxioms :: GraphTestsuite (TransitiveRelation Int))
 
     test "Path equals clique" $ mapSize (min 20) $ \xs ->
-        path xs == (clique xs :: T)
+        path xs == (clique xs :: TransitiveRelation Int)
+
+    putStrLn "============ Preorder relation ============"
+    quickCheck $ mapSize (min 20)
+        (preorderAxioms :: GraphTestsuite (PreorderRelation Int))
+
+    test "Path equals clique" $ mapSize (min 20) $ \xs ->
+        path xs == (clique xs :: PreorderRelation Int)
+

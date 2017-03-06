@@ -20,7 +20,10 @@ module Algebra.Graph.Classes (
     Reflexive,
 
     -- * Transitive graphs
-    Transitive
+    Transitive,
+
+    -- * Preorders
+    Preorder
   ) where
 
 {-|
@@ -111,6 +114,11 @@ closure or transitive reduction.
 -}
 class Graph g => Transitive g
 
+{-|
+The class of /preorder graphs/ that are both reflexive and transitive.
+-}
+class (Reflexive g, Transitive g) => Preorder g
+
 instance Graph () where
     type Vertex () = ()
     empty          = ()
@@ -121,6 +129,7 @@ instance Graph () where
 instance Undirected ()
 instance Reflexive  ()
 instance Transitive ()
+instance Preorder   ()
 
 -- Note: Maybe g and (a -> g) instances are identical and use the Applicative's
 -- pure and <*>. We do not provide a general instance for all Applicative
@@ -135,6 +144,7 @@ instance Graph g => Graph (Maybe g) where
 instance Undirected g => Undirected (Maybe g)
 instance Reflexive  g => Reflexive  (Maybe g)
 instance Transitive g => Transitive (Maybe g)
+instance Preorder   g => Preorder   (Maybe g)
 
 instance Graph g => Graph (a -> g) where
     type Vertex (a -> g) = Vertex g
@@ -146,6 +156,7 @@ instance Graph g => Graph (a -> g) where
 instance Undirected g => Undirected (a -> g)
 instance Reflexive  g => Reflexive  (a -> g)
 instance Transitive g => Transitive (a -> g)
+instance Preorder   g => Preorder   (a -> g)
 
 instance (Graph g, Graph h) => Graph (g, h) where
     type Vertex (g, h)        = (Vertex g     , Vertex h     )
@@ -157,3 +168,4 @@ instance (Graph g, Graph h) => Graph (g, h) where
 instance (Undirected g, Undirected h) => Undirected (g, h)
 instance (Reflexive  g, Reflexive  h) => Reflexive  (g, h)
 instance (Transitive g, Transitive h) => Transitive (g, h)
+instance (Preorder   g, Preorder   h) => Preorder   (g, h)

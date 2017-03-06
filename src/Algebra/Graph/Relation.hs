@@ -14,7 +14,8 @@ module Algebra.Graph.Relation (
     Relation, domain, relation,
 
     -- * Operations on binary relations
-    preset, postset, reflexiveClosure, symmetricClosure, transitiveClosure
+    preset, postset, reflexiveClosure, symmetricClosure, transitiveClosure,
+    preorderClosure
   ) where
 
 import Algebra.Graph.Relation.Internal

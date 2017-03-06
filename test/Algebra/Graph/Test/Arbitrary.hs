@@ -40,3 +40,6 @@ instance (Arbitrary a, Ord a) => Arbitrary (SymmetricRelation a) where
 
 instance (Arbitrary a, Ord a) => Arbitrary (TransitiveRelation a) where
     arbitrary = TransitiveRelation <$> arbitraryRelation
+
+instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
+    arbitrary = PreorderRelation <$> arbitraryRelation

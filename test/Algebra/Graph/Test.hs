@@ -1,6 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 module Algebra.Graph.Test (
-    GraphTestsuite, axioms, theorems, undirectedAxioms, reflexiveAxioms
+    GraphTestsuite, axioms, theorems, undirectedAxioms, reflexiveAxioms,
+    transitiveAxioms, preorderAxioms
     ) where
 
 import Prelude hiding ((+), (*), (<=))
@@ -60,3 +61,15 @@ reflexiveAxioms x y z = conjoin
     [ axioms x y z
     , forAll arbitrary (\v -> vertex v `asTypeOf` x == vertex v * vertex v)
                                                 // "Vertex self-loop" ]
+
+transitiveAxioms :: Eq g => GraphTestsuite g
+transitiveAxioms x y z = conjoin
+    [ axioms x y z
+    , y == empty || x * y * z == x * y + y * z  // "Closure" ]
+
+preorderAxioms :: (Arbitrary (Vertex g), Eq g, Show (Vertex g)) => GraphTestsuite g
+preorderAxioms x y z = conjoin
+    [ axioms x y z
+    , forAll arbitrary (\v -> vertex v `asTypeOf` x == vertex v * vertex v)
+                                                // "Vertex self-loop"
+    , y == empty || x * y * z == x * y + y * z  // "Closure" ]
