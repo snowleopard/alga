@@ -7,15 +7,17 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- The core data type for algebraic graphs and basic transformation algorithms.
+-- The core data type for algebraic graphs and associated algorithms.
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph.Data (
     -- * Algebraic data type for graphs
     Graph (..), fold, foldg, toList,
 
-    -- * Basic graph construction and transformation
+    -- * Graph transformation primitives
     induce, removeVertex, replaceVertex, mergeVertices, splitVertex, removeEdge,
+
+    -- * Graph composition
     box
   ) where
 
@@ -82,8 +84,8 @@ fold = foldg empty vertex overlay connect
 
 -- | Generalised 'Graph' folding.
 --
--- > foldg []   return       (++) (++) == toList
--- > foldg 0    (const 1)    (+)  (+)  == length . toList
+-- > foldg []   return        (++) (++) == toList
+-- > foldg 0    (const 1)     (+)  (+)  == length . toList
 -- > foldg True (const False) (&&) (&&) == null . toList
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
@@ -130,22 +132,23 @@ removeVertex v = induce (/= v)
 -- | Replace a vertex with another one in a given 'Graph'.
 --
 -- @
--- replaceVertex x x                     == id
--- replaceVertex x y ('vertex' x)          == 'vertex' y
--- replaceVertex x y . replaceVertex y z == replaceVertex x z
+-- replaceVertex x x            == id
+-- replaceVertex x y ('vertex' x) == 'vertex' y
+-- replaceVertex x y            == 'mergeVertices' (== x) y
 -- @
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
 replaceVertex u v = fmap $ \w -> if w == u then v else w
 
--- | Merge vertices satisfying a given predicate.
+-- | Merge vertices satisfying a given predicate with a given vertex.
 --
 -- @
 -- mergeVertices (const False) x    == id
+-- mergeVertices (== x) y           == 'replaceVertex' x y
 -- mergeVertices even 1 (0 * 2)     == 1 * 1
 -- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
 -- @
 mergeVertices :: (a -> Bool) -> a -> Graph a -> Graph a
-mergeVertices p u = fmap $ \v -> if p v then u else v
+mergeVertices p v = fmap $ \w -> if p w then v else w
 
 -- | Split a vertex into a list of vertices with the same connectivity.
 --
@@ -156,7 +159,7 @@ mergeVertices p u = fmap $ \v -> if p v then u else v
 -- splitVertex 1 [0, 1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)
 -- @
 splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
-splitVertex v vs g = g >>= \u -> if u == v then vertices vs else vertex u
+splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 
 -- | Remove an edge from a given 'Graph'.
 --
@@ -168,7 +171,35 @@ splitVertex v vs g = g >>= \u -> if u == v then vertices vs else vertex u
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
-removeEdge = undefined
+removeEdge s t g = piece st where (_, _, st) = smash s t g
+
+data Piece a = Piece { piece :: Graph a, intact :: Bool }
+
+breakIf :: Bool -> Piece a -> Piece a
+breakIf True  _ = Piece Empty False
+breakIf False x = x
+
+instance C.Graph (Piece a) where
+    type Vertex (Piece a) = a
+    empty       = Piece Empty True
+    vertex x    = Piece (Vertex x) True
+    overlay x y = Piece (simple Overlay (piece x) (piece y)) (intact x && intact y)
+    connect x y = Piece (simple Connect (piece x) (piece y)) (intact x && intact y)
+
+simple :: (Graph a -> Graph a -> Graph a) -> Graph a -> Graph a -> Graph a
+simple _ Empty x = x
+simple _ x Empty = x
+simple f x y     = f x y
+
+type Pieces a = (Piece a, Piece a, Piece a)
+
+smash :: Eq a => a -> a -> Graph a -> Pieces a
+smash s t = foldg empty v overlay c
+  where
+    v x = (breakIf (x == s) $ vertex x, breakIf (x == t) $ vertex x, vertex x)
+    c x@(sx, tx, stx) y@(sy, ty, sty)
+        | intact sx && intact ty = connect x y
+        | otherwise = (connect sx sy, connect tx ty, connect sx sty `overlay` connect stx ty)
 
 -- | Compute the /Cartesian product/ of graphs.
 --
