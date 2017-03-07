@@ -1,12 +1,29 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
-module Algebra.Graph.Data (Graph (..), fold) where
+-----------------------------------------------------------------------------
+-- |
+-- Module     : Algebra.Graph.Data
+-- Copyright  : (c) Andrey Mokhov 2016-2017
+-- License    : MIT (see the file LICENSE)
+-- Maintainer : andrey.mokhov@gmail.com
+-- Stability  : experimental
+--
+-- The core data type for algebraic graphs.
+--
+-----------------------------------------------------------------------------
+module Algebra.Graph.Data (
+    -- * Algebraic data type for graphs
+    Graph (..), fold
+
+  ) where
 
 import Control.Monad
 
 import qualified Algebra.Graph.Classes as C
 import Algebra.Graph.Classes hiding (Graph)
-import Algebra.Graph.AdjacencyMap hiding (transpose)
+import Algebra.Graph.AdjacencyMap
 
+-- | The 'Graph' datatype is a deep embedding of the core graph construction
+-- primitives 'empty', 'vertex', 'overlay' and 'connect'.
 data Graph a = Empty
              | Vertex a
              | Overlay (Graph a) (Graph a)

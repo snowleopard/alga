@@ -1,10 +1,10 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Algebra.Graph.Relation
--- Copyright   :  (c) Andrey Mokhov 2016-2017
--- License     :  MIT (see the file LICENSE)
--- Maintainer  :  andrey.mokhov@gmail.com
--- Stability   :  experimental
+-- Module     : Algebra.Graph.Relation
+-- Copyright  : (c) Andrey Mokhov 2016-2017
+-- License    : MIT (see the file LICENSE)
+-- Maintainer : andrey.mokhov@gmail.com
+-- Stability  : experimental
 --
 -- An abstract implementation of binary relations.
 --

@@ -1,10 +1,10 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Algebra.Graph
--- Copyright   :  (c) Andrey Mokhov 2016-2017
--- License     :  MIT (see the file LICENSE)
--- Maintainer  :  andrey.mokhov@gmail.com
--- Stability   :  experimental
+-- Module     : Algebra.Graph
+-- Copyright  : (c) Andrey Mokhov 2016-2017
+-- License    : MIT (see the file LICENSE)
+-- Maintainer : andrey.mokhov@gmail.com
+-- Stability  : experimental
 --
 -- Common classes of algebraic graphs.
 --

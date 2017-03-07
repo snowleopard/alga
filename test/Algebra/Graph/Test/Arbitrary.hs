@@ -2,14 +2,13 @@
 {-# LANGUAGE StandaloneDeriving #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Algebra.Graph.Test.Arbitrary
--- Copyright   :  (c) Andrey Mokhov 2016-2017
--- License     :  MIT (see the file LICENSE)
--- Maintainer  :  andrey.mokhov@gmail.com
--- Stability   :  experimental
+-- Module     : Algebra.Graph.Test.Arbitrary
+-- Copyright  : (c) Andrey Mokhov 2016-2017
+-- License    : MIT (see the file LICENSE)
+-- Maintainer : andrey.mokhov@gmail.com
+-- Stability  : experimental
 --
--- This module defines generators and orphan Arbitrary instances for various
--- graph data types.
+-- Generators and orphan Arbitrary instances for various graph data types.
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Arbitrary (

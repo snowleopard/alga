@@ -1,10 +1,10 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Algebra.Graph.Relation.Internal
--- Copyright   :  (c) Andrey Mokhov 2016-2017
--- License     :  MIT (see the file LICENSE)
--- Maintainer  :  andrey.mokhov@gmail.com
--- Stability   :  unstable
+-- Module     : Algebra.Graph.Relation.Internal
+-- Copyright  : (c) Andrey Mokhov 2016-2017
+-- License    : MIT (see the file LICENSE)
+-- Maintainer : andrey.mokhov@gmail.com
+-- Stability  : unstable
 --
 -- This module exposes the implementation of binary relations. The API is unstable
 -- and unsafe. Where possible use non-internal modules "Algebra.Graph.Relation",
