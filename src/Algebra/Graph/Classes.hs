@@ -169,3 +169,15 @@ instance (Undirected g, Undirected h) => Undirected (g, h)
 instance (Reflexive  g, Reflexive  h) => Reflexive  (g, h)
 instance (Transitive g, Transitive h) => Transitive (g, h)
 instance (Preorder   g, Preorder   h) => Preorder   (g, h)
+
+instance (Graph g, Graph h, Graph i) => Graph (g, h, i) where
+    type Vertex (g, h, i)             = (Vertex g     , Vertex h     , Vertex i     )
+    empty                             = (empty        , empty        , empty        )
+    vertex  (x,  y , z )              = (vertex  x    , vertex  y    , vertex  z    )
+    overlay (x1, y1, z1) (x2, y2, z2) = (overlay x1 x2, overlay y1 y2, overlay z1 z2)
+    connect (x1, y1, z1) (x2, y2, z2) = (connect x1 x2, connect y1 y2, connect z1 z2)
+
+instance (Undirected g, Undirected h, Undirected i) => Undirected (g, h, i)
+instance (Reflexive  g, Reflexive  h, Reflexive  i) => Reflexive  (g, h, i)
+instance (Transitive g, Transitive h, Transitive i) => Transitive (g, h, i)
+instance (Preorder   g, Preorder   h, Preorder   i) => Preorder   (g, h, i)
