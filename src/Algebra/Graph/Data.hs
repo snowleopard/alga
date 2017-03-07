@@ -15,7 +15,8 @@ module Algebra.Graph.Data (
     Graph (..), fold, foldg, toList,
 
     -- * Basic graph construction and transformation
-    induce, mergeVertices, box
+    induce, removeVertex, replaceVertex, mergeVertices, splitVertex, removeEdge,
+    box
   ) where
 
 import Control.Monad
@@ -30,7 +31,7 @@ import Algebra.Graph.AdjacencyMap
 -- law-abiding 'Num' instance as a convenient notation when working with graphs:
 --
 -- @
--- 1           == Vertex 1
+-- 0           == Vertex 0
 -- 1 + 2       == Overlay (Vertex 1) (Vertex 2)
 -- 1 * 2       == Connect (Vertex 1) (Vertex 2)
 -- 1 + 2 * 3   == Overlay (Vertex 1) (Connect (Vertex 2) (Vertex 3))
@@ -81,9 +82,9 @@ fold = foldg empty vertex overlay connect
 
 -- | Generalised 'Graph' folding.
 --
--- > foldg []    return       (++) (++) == toList
--- > foldg 0     (const 1)    (+)  (+)  == length . toList
--- > foldg False (const True) (||) (||) == null . toList
+-- > foldg []   return       (++) (++) == toList
+-- > foldg 0    (const 1)    (+)  (+)  == length . toList
+-- > foldg True (const False) (&&) (&&) == null . toList
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
   where
@@ -110,6 +111,8 @@ toList = foldg [] return (++) (++)
 -- @
 -- induce (const True)  x    == x
 -- induce (const False) x    == 'empty'
+-- induce (/= x)             == 'removeVertex' x
+-- induce p . induce q       == induce (\x -> p x && q x)
 -- isSubgraph (induce p x) x == True
 -- @
 induce :: (a -> Bool) -> Graph a -> Graph a
@@ -118,18 +121,54 @@ induce p g = g >>= \v -> if p v then vertex v else empty
 -- | Remove a vertex from a given 'Graph'.
 --
 -- @
--- removeVertex 1 1 == 'empty'
--- removeVertex 1 1 == 'empty'
+-- removeVertex x ('vertex' x)       == 'empty'
+-- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Eq a => a -> Graph a -> Graph a
 removeVertex v = induce (/= v)
 
+-- | Replace a vertex with another one in a given 'Graph'.
+--
+-- @
+-- replaceVertex x x                     == id
+-- replaceVertex x y ('vertex' x)          == 'vertex' y
+-- replaceVertex x y . replaceVertex y z == replaceVertex x z
+-- @
+replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
+replaceVertex u v = fmap $ \w -> if w == u then v else w
+
 -- | Merge vertices satisfying a given predicate.
 --
--- > mergeVertices even 1 (0 * 2)     == 1 * 1
--- > mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
+-- @
+-- mergeVertices (const False) x    == id
+-- mergeVertices even 1 (0 * 2)     == 1 * 1
+-- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
+-- @
 mergeVertices :: (a -> Bool) -> a -> Graph a -> Graph a
 mergeVertices p u = fmap $ \v -> if p v then u else v
+
+-- | Split a vertex into a list of vertices with the same connectivity.
+--
+-- @
+-- splitVertex x []                   == 'removeVertex' x
+-- splitVertex x [x]                  == id
+-- splitVertex x [y]                  == 'replaceVertex' x y
+-- splitVertex 1 [0, 1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)
+-- @
+splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
+splitVertex v vs g = g >>= \u -> if u == v then vertices vs else vertex u
+
+-- | Remove an edge from a given 'Graph'.
+--
+-- @
+-- removeEdge x y ('edge' x y)       == 'vertices' [x, y]
+-- removeEdge x y . removeEdge x y == removeEdge x y
+-- removeEdge x y . 'removeVertex' x == 'removeVertex' x
+-- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
+-- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
+-- @
+removeEdge :: Eq a => a -> a -> Graph a -> Graph a
+removeEdge = undefined
 
 -- | Compute the /Cartesian product/ of graphs.
 --
@@ -139,9 +178,9 @@ mergeVertices p u = fmap $ \v -> if p v then u else v
 --                                       , ((0,\'b\'), (1,\'b\'))
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
--- Up to an isomorphism between
--- the resulting vertex types, this operation is commutative, associative, and
--- has @()@ as the identity and 'empty' as the annihilating zero. Below @~~@
+-- Up to an isomorphism between the resulting vertex types, this operation
+-- is /commutative/, /associative/, and
+-- has @()@ as the /identity/ and 'empty' as the /annihilating zero/. Below @~~@
 -- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @
