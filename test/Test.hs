@@ -4,7 +4,7 @@ import Test.QuickCheck
 
 import Algebra.Graph hiding (Graph)
 import Algebra.Graph.AdjacencyMap hiding (edges, gmap)
-import Algebra.Graph.Data
+import Algebra.Graph.Data (Graph, fold)
 import Algebra.Graph.Dfs
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.Preorder
