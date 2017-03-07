@@ -29,14 +29,14 @@ instance (Graph g, Num g) => Num (Transpose g) where
     negate      = id
 
 -- Note: Derived Eq instance does not satisfy Graph laws
-newtype ToList a = TL { toList :: [a] } deriving Show
+newtype ToList a = ToList { toList :: [a] } deriving Show
 
 instance Graph (ToList a) where
      type Vertex (ToList a) = a
-     empty       = TL $ []
-     vertex  x   = TL $ [x]
-     overlay x y = TL $ toList x ++ toList y
-     connect x y = TL $ toList x ++ toList y
+     empty       = ToList $ []
+     vertex  x   = ToList $ [x]
+     overlay x y = ToList $ toList x ++ toList y
+     connect x y = ToList $ toList x ++ toList y
 
 instance Num a => Num (ToList a) where
     fromInteger = vertex . fromInteger
