@@ -50,7 +50,7 @@ main = do
         (x `box` y) `box` z == assoc (x `box` (y `box` z))
 
     test "Box-overlay distributivity" $ mapSize (min 10) $ \(x :: G) (y :: G) z ->
-        (x `box` (y + z)) == ((x `box` y) `overlay` (x `box` z))
+        x `box` (y `overlay` z) == (x `box` y) `overlay` (x `box` z)
 
     test "Induce full graph" $ \(x :: G) ->
         induce (const True) x == x

@@ -17,6 +17,9 @@ module Algebra.Graph.Data (
     -- * Graph transformation primitives
     induce, removeVertex, replaceVertex, mergeVertices, splitVertex, removeEdge,
 
+    -- * Graph properties
+    isEmpty, hasVertex, hasEdge,
+
     -- * Graph composition
     box
   ) where
@@ -71,6 +74,27 @@ instance Monad Graph where
     return  = vertex
     g >>= f = foldg Empty f Overlay Connect g
 
+-- | Check if the 'Graph' is empty. A convenient alias for `null`.
+--
+-- @
+-- isEmpty 'empty'                       == True
+-- isEmpty ('vertex' x)                  == False
+-- isEmpty ('removeVertex' x $ 'vertex' x) == True
+-- isEmpty ('removeEdge' x y $ 'edge' x y) == False
+-- @
+isEmpty :: Graph a -> Bool
+isEmpty = null
+
+-- | Check if the 'Graph' contains a given vertex. A convenient alias for `elem`.
+--
+-- @
+-- hasVertex x 'empty'            == False
+-- hasVertex x ('vertex' x)       == True
+-- hasVertex x ('removeVertex' x) == const False
+-- @
+hasVertex :: Eq a => a -> Graph a -> Bool
+hasVertex = elem
+
 -- | Fold a 'Graph' into the polymorphic graph expression. Semantically, this
 -- operation acts as the identity, but allows to convert a 'Graph' to a
 -- different data representation. __TODO__: get rid of leaky Show instances of
@@ -87,7 +111,7 @@ fromGraph = foldg empty vertex overlay connect
 -- @
 -- foldg []   return        (++) (++) == 'toList'
 -- foldg 0    (const 1)     (+)  (+)  == 'length'
--- foldg True (const False) (&&) (&&) == 'null'
+-- foldg True (const False) (&&) (&&) == 'isEmpty'
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
@@ -119,7 +143,8 @@ induce p g = g >>= \v -> if p v then vertex v else empty
 removeVertex :: Eq a => a -> Graph a -> Graph a
 removeVertex v = induce (/= v)
 
--- | Replace a vertex with another one in a given 'Graph'.
+-- | The function @replaceVertex x y@ replaces vertex @x@ with vertex @y@ in a
+-- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
 --
 -- @
 -- replaceVertex x x            == id
@@ -163,6 +188,17 @@ splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t g = piece st where (_, _, st) = smash s t g
 
+-- | Check if the 'Graph' contains a given edge.
+--
+-- @
+-- hasEdge x y 'empty'            == False
+-- hasEdge x y ('vertex' z)       == False
+-- hasEdge x y ('edge' x y)       == True
+-- hasEdge x y . 'removeEdge' x y == const False
+-- @
+hasEdge :: Eq a => a -> a -> Graph a -> Bool
+hasEdge s t g = not $ intact st where (_, _, st) = smash s t g
+
 data Piece a = Piece { piece :: Graph a, intact :: Bool }
 
 breakIf :: Bool -> Piece a -> Piece a
@@ -188,7 +224,7 @@ smash s t = foldg empty v overlay c
   where
     v x = (breakIf (x == s) $ vertex x, breakIf (x == t) $ vertex x, vertex x)
     c x@(sx, tx, stx) y@(sy, ty, sty)
-        | intact sx && intact ty = connect x y
+        | intact sx || intact ty = connect x y
         | otherwise = (connect sx sy, connect tx ty, connect sx sty `overlay` connect stx ty)
 
 -- | Compute the /Cartesian product/ of graphs.
@@ -200,15 +236,16 @@ smash s t = foldg empty v overlay c
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
 -- Up to an isomorphism between the resulting vertex types, this operation
--- is /commutative/, /associative/, and
--- has @()@ as the /identity/ and 'empty' as the /annihilating zero/. Below @~~@
+-- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
+-- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
 -- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @
--- box x y         ~~ box y x
--- box x (box y z) ~~ box (box x y) z
--- box x ()        ~~ x
--- box x 'empty'     ~~ 'empty'
+-- box x y             ~~ box y x
+-- box x (box y z)     ~~ box (box x y) z
+-- box x ('overlay' y z) == 'overlay' (box x y) (box x z)
+-- box x ('vertex' ())   ~~ x
+-- box x 'empty'         ~~ 'empty'
 -- @
 box :: Graph a -> Graph b -> Graph (a, b)
 box x y = overlays $ xs ++ ys
