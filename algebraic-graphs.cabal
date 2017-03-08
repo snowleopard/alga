@@ -44,7 +44,9 @@ library
                         ScopedTypeVariables
                         TupleSections
                         TypeFamilies
-    other-extensions:   DeriveFunctor
+    other-extensions:   DeriveFoldable
+                        DeriveFunctor
+                        DeriveTraversable
                         OverloadedStrings
     GHC-options:        -O2 -Wall -fwarn-tabs
 

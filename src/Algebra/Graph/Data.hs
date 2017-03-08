@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Data
@@ -12,7 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Data (
     -- * Algebraic data type for graphs
-    Graph (..), fold, foldg, toList,
+    Graph (..), fromGraph, foldg,
 
     -- * Graph transformation primitives
     induce, removeVertex, replaceVertex, mergeVertices, splitVertex, removeEdge,
@@ -22,7 +22,7 @@ module Algebra.Graph.Data (
   ) where
 
 import Control.Monad
-import Prelude hiding (foldMap)
+import Data.Foldable
 
 import Algebra.Graph hiding (Graph)
 import qualified Algebra.Graph.Classes as C
@@ -43,7 +43,7 @@ data Graph a = Empty
              | Vertex a
              | Overlay (Graph a) (Graph a)
              | Connect (Graph a) (Graph a)
-             deriving (Show, Functor)
+             deriving (Foldable, Functor, Show, Traversable)
 
 instance C.Graph (Graph a) where
     type Vertex (Graph a) = a
@@ -61,7 +61,7 @@ instance Num a => Num (Graph a) where
     negate      = id
 
 instance Ord a => Eq (Graph a) where
-    x == y = fold x == (fold y :: AdjacencyMap a)
+    x == y = fromGraph x == (fromGraph y :: AdjacencyMap a)
 
 instance Applicative Graph where
     pure  = vertex
@@ -76,17 +76,19 @@ instance Monad Graph where
 -- different data representation. __TODO__: get rid of leaky Show instances of
 -- ToList and Relation.
 --
--- > fold g       :: Graph a      == g
--- > fold (1 * 2) :: ToList Int   == ToList {toList = [1,2]}
--- > fold (1 * 2) :: Relation Int == Relation {domain = fromList [1,2], relation = fromList [(1,2)]}
-fold :: C.Graph g => Graph (Vertex g) -> g
-fold = foldg empty vertex overlay connect
+-- > fromGraph g       :: Graph a      == g
+-- > fromGraph (1 * 2) :: ToList Int   == ToList {toList = [1,2]}
+-- > fromGraph (1 * 2) :: Relation Int == Relation {domain = fromList [1,2], relation = fromList [(1,2)]}
+fromGraph :: C.Graph g => Graph (Vertex g) -> g
+fromGraph = foldg empty vertex overlay connect
 
 -- | Generalised 'Graph' folding.
 --
--- > foldg []   return        (++) (++) == toList
--- > foldg 0    (const 1)     (+)  (+)  == length . toList
--- > foldg True (const False) (&&) (&&) == null . toList
+-- @
+-- foldg []   return        (++) (++) == 'toList'
+-- foldg 0    (const 1)     (+)  (+)  == 'length'
+-- foldg True (const False) (&&) (&&) == 'null'
+-- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
   where
@@ -94,18 +96,6 @@ foldg e v o c = go
     go (Vertex x)    = v x
     go (Overlay x y) = o (go x) (go y)
     go (Connect x y) = c (go x) (go y)
-
--- | Turn a 'Graph' into a list of its vertices by traversing the expression
--- from left to right.
---
--- @
--- toList 'empty'   == []
--- toList 1       == [1]
--- toList (1 * 1) == [1, 1]
--- toList (1 * 0) == [1, 0]
--- @
-toList :: Graph a -> [a]
-toList = foldg [] return (++) (++)
 
 -- | Construct the /induced subgraph/ of a given 'Graph' by removing the
 -- vertices that do not satisfy a given predicate.
