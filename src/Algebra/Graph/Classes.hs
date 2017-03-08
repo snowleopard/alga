@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph
+-- Module     : Algebra.Graph.Classes
 -- Copyright  : (c) Andrey Mokhov 2016-2017
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -8,6 +8,8 @@
 --
 -- Common classes of algebraic graphs.
 --
+-- See "Algebra.Graph.HigherKinded.Classes" for alternative definitions where
+-- the type classes are higher-kinded.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Classes (
     -- * The core type class

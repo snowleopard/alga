@@ -29,6 +29,7 @@ import Data.Foldable
 
 import Algebra.Graph hiding (Graph)
 import qualified Algebra.Graph.Classes as C
+import qualified Algebra.Graph.HigherKinded.Classes as H
 import Algebra.Graph.AdjacencyMap
 
 -- | The 'Graph' datatype is a deep embedding of the core graph construction
@@ -55,6 +56,11 @@ instance C.Graph (Graph a) where
     overlay = Overlay
     connect = Connect
 
+instance H.Graph Graph where
+    empty   = Empty
+    overlay = Overlay
+    connect = Connect
+
 instance Num a => Num (Graph a) where
     fromInteger = Vertex . fromInteger
     (+)         = Overlay
@@ -67,11 +73,11 @@ instance Ord a => Eq (Graph a) where
     x == y = fromGraph x == (fromGraph y :: AdjacencyMap a)
 
 instance Applicative Graph where
-    pure  = vertex
+    pure  = Vertex
     (<*>) = ap
 
 instance Monad Graph where
-    return  = vertex
+    return  = Vertex
     g >>= f = foldg Empty f Overlay Connect g
 
 -- | Check if the 'Graph' is empty. A convenient alias for `null`.
