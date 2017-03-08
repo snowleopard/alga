@@ -97,12 +97,12 @@ hasVertex = elem
 
 -- | Fold a 'Graph' into the polymorphic graph expression. Semantically, this
 -- operation acts as the identity, but allows to convert a 'Graph' to a
--- different data representation. __TODO__: get rid of leaky Show instances of
--- ToList and Relation.
+-- different data representation.
 --
--- > fromGraph g       :: Graph a      == g
--- > fromGraph (1 * 2) :: ToList Int   == ToList {toList = [1,2]}
--- > fromGraph (1 * 2) :: Relation Int == Relation {domain = fromList [1,2], relation = fromList [(1,2)]}
+-- @
+-- fromGraph g                 :: Graph a       == g
+-- 'show' (fromGraph (1 * 2 + 3) :: Relation Int) == "graph [1,2,3] [(1,2)]"
+-- @
 fromGraph :: C.Graph g => Graph (Vertex g) -> g
 fromGraph = foldg empty vertex overlay connect
 

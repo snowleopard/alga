@@ -41,13 +41,38 @@ import Data.Tuple
 import Algebra.Graph.Classes
 
 -- | The 'Relation' data type represents a binary relation over a set of elements.
+-- The 'Show' instance is defined using basic graph construction primitives:
+--
+-- @
+-- show ('empty'     :: Relation Int) == "empty"
+-- show (1         :: Relation Int) == "vertex 1"
+-- show (1 + 2     :: Relation Int) == "vertices [1,2]"
+-- show (1 * 2     :: Relation Int) == "edge 1 2"
+-- show (1 * 2 * 3 :: Relation Int) == "edges [(1,2),(1,3),(2,3)]"
+-- show (1 * 2 + 3 :: Relation Int) == "graph [1,2,3] [(1,2)]"
+-- @
 data Relation a = Relation {
     -- | The /domain/ of the relation.
     domain :: Set a,
     -- | The set of pairs of elements that are /related/. It is guaranteed that
     -- each element belongs to the domain.
     relation :: Set (a, a)
-  } deriving (Eq, Show)
+  } deriving Eq
+
+instance (Ord a, Show a) => Show (Relation a) where
+    show (Relation d r)
+        | d == Set.empty  = "empty"
+        | r == Set.empty  = if Set.size d > 1 then "vertices " ++ vs
+                            else "vertex " ++ v1
+        | d == related    = if Set.size r > 1 then "edges " ++ es
+                            else "edge "  ++ show e1 ++ " " ++ show e2
+        | otherwise       = "graph " ++ vs ++ " " ++ es
+      where
+        vs       = show (toAscList d)
+        v1       = show (head $ toAscList d)
+        es       = show (toAscList r)
+        (e1, e2) = head (toAscList r)
+        related  = Set.fromList . uncurry (++) . unzip $ Set.toAscList r
 
 instance Ord a => Graph (Relation a) where
     type Vertex (Relation a) = a
@@ -131,11 +156,19 @@ transitiveClosure old@(Relation d r)
 -- TODO: Optimise the implementation by caching the results of reflexive closure.
 -- | The 'ReflexiveRelation' data type represents a binary reflexive relation
 -- over a set of elements.
+--
+-- @
+-- show (1     :: ReflexiveRelation Int) == "edge 1 1"
+-- show (1 * 2 :: ReflexiveRelation Int) == "edges [(1,1),(1,2),(2,2)]"
+-- @
 newtype ReflexiveRelation a = ReflexiveRelation { fromReflexive :: Relation a }
-    deriving (Num, Show)
+    deriving Num
 
 instance Ord a => Eq (ReflexiveRelation a) where
     x == y = reflexiveClosure (fromReflexive x) == reflexiveClosure (fromReflexive y)
+
+instance (Ord a, Show a) => Show (ReflexiveRelation a) where
+    show = show . reflexiveClosure . fromReflexive
 
 -- TODO: To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Ord a => Graph (ReflexiveRelation a) where
@@ -150,11 +183,19 @@ instance Ord a => Reflexive (ReflexiveRelation a)
 -- TODO: Optimise the implementation by caching the results of symmetric closure.
 -- | The 'SymmetricRelation' data type represents a binary symmetric relation
 -- over a set of elements.
+--
+-- @
+-- show (1     :: SymmetricRelation Int) == "vertex 1"
+-- show (1 * 2 :: SymmetricRelation Int) == "edges [(1,2),(2,1)]"
+-- @
 newtype SymmetricRelation a = SymmetricRelation { fromSymmetric :: Relation a }
-    deriving (Num, Show)
+    deriving Num
 
 instance Ord a => Eq (SymmetricRelation a) where
     x == y = symmetricClosure (fromSymmetric x) == symmetricClosure (fromSymmetric y)
+
+instance (Ord a, Show a) => Show (SymmetricRelation a) where
+    show = show . symmetricClosure . fromSymmetric
 
 -- TODO: To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Ord a => Graph (SymmetricRelation a) where
@@ -169,11 +210,19 @@ instance Ord a => Undirected (SymmetricRelation a)
 -- TODO: Optimise the implementation by caching the results of transitive closure.
 -- | The 'TransitiveRelation' data type represents a binary transitive relation
 -- over a set of elements.
+--
+-- @
+-- show (1 * 2         :: TransitiveRelation Int) == "edge 1 2"
+-- show (1 * 2 + 2 * 3 :: TransitiveRelation Int) == "edges [(1,2),(1,3),(2,3)]"
+-- @
 newtype TransitiveRelation a = TransitiveRelation { fromTransitive :: Relation a }
-    deriving (Num, Show)
+    deriving Num
 
 instance Ord a => Eq (TransitiveRelation a) where
     x == y = transitiveClosure (fromTransitive x) == transitiveClosure (fromTransitive y)
+
+instance (Ord a, Show a) => Show (TransitiveRelation a) where
+    show = show . transitiveClosure . fromTransitive
 
 -- To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Ord a => Graph (TransitiveRelation a) where
@@ -188,8 +237,17 @@ instance Ord a => Transitive (TransitiveRelation a)
 -- TODO: Optimise the implementation by caching the results of preorder closure.
 -- | The 'Preorder' data type represents a binary transitive relation
 -- over a set of elements.
+--
+-- @
+-- show (1             :: PreorderRelation Int) == "edge 1 1"
+-- show (1 * 2         :: PreorderRelation Int) == "edges [(1,1),(1,2),(2,2)]"
+-- show (1 * 2 + 2 * 3 :: PreorderRelation Int) == "edges [(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)]"
+-- @
 newtype PreorderRelation a = PreorderRelation { fromPreorder :: Relation a }
-    deriving (Num, Show)
+    deriving Num
+
+instance (Ord a, Show a) => Show (PreorderRelation a) where
+    show = show . preorderClosure . fromPreorder
 
 -- | Compute the /preorder closure/ of a 'Relation'.
 --
