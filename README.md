@@ -12,8 +12,6 @@ The following series of blog posts also describe the ideas behind the library:
 * Graphs in disguise or How to plan you holiday using Haskell: https://blogs.ncl.ac.uk/andreymokhov/graphs-in-disguise/
 * Old graphs from new types: https://blogs.ncl.ac.uk/andreymokhov/old-graphs-from-new-types/
 
-You can find more code in this old experimental repo: https://github.com/snowleopard/graph-algebra.
-
 ## Performance
 
 Some quick benchmarks with [Criterion](http://www.serpentine.com/criterion/tutorial.html),
