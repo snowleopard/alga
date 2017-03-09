@@ -10,23 +10,28 @@ import Data.Set (Set)
 
 import Algebra.Graph
 
--- Note: Transpose can only transpose polymorphic graphs.
-newtype Transpose g = T { transpose :: g } deriving (Eq, Show)
+newtype Fold a = F { fold :: forall g. Graph g => g -> (a -> g) -> (g -> g -> g) -> (g -> g -> g) -> g}
 
-instance Graph g => Graph (Transpose g) where
-    type Vertex (Transpose g) = Vertex g
-    empty       = T empty
-    vertex      = T . vertex
-    overlay x y = T $ transpose x `overlay` transpose y
-    connect x y = T $ transpose y `connect` transpose x
+foldg :: Graph g => g -> (a -> g) -> (g -> g -> g) -> (g -> g -> g) -> Fold a -> g
+foldg e v o c g = fold g e v o c
 
-instance (Graph g, Num g) => Num (Transpose g) where
-    fromInteger = T . fromInteger
+instance Graph (Fold a) where
+    type Vertex (Fold a) = a
+    empty       = F $ \e _ _ _ -> e
+    vertex  x   = F $ \_ v _ _ -> v x
+    overlay x y = F $ \e v o c -> fold x e v o c `o` fold y e v o c
+    connect x y = F $ \e v o c -> fold x e v o c `c` fold y e v o c
+
+instance Num a => Num (Fold a) where
+    fromInteger = vertex . fromInteger
     (+)         = overlay
     (*)         = connect
     signum      = const empty
     abs         = id
     negate      = id
+
+transpose :: Graph g => Fold (Vertex g) -> g
+transpose = foldg empty vertex overlay (flip connect)
 
 -- Note: Derived Eq instance does not satisfy Graph laws
 newtype ToList a = ToList { toList :: [a] } deriving Show
@@ -63,14 +68,8 @@ instance (Num a, Ord a) => Num (VertexSet a) where
     abs         = id
     negate      = id
 
-newtype Simplify g = S { simplify :: g } deriving (Eq, Show)
-
-instance (Eq g, Graph g) => Graph (Simplify g) where
-    type Vertex (Simplify g) = Vertex g
-    empty       = S empty
-    vertex      = S . vertex
-    overlay x y = S $ simpleOverlay (simplify x) (simplify y)
-    connect x y = S $ simpleConnect (simplify x) (simplify y)
+simplify :: (Eq g, Graph g) => Fold (Vertex g) -> g
+simplify = foldg empty vertex simpleOverlay simpleConnect
 
 simpleOverlay :: (Graph g, Eq g) => g -> g -> g
 simpleOverlay x y
@@ -88,65 +87,26 @@ simpleConnect x y
   where
     z = connect x y
 
-instance (Eq g, Graph g, Num g) => Num (Simplify g) where
-    fromInteger = S . fromInteger
-    (+)         = overlay
-    (*)         = connect
-    signum      = const empty
-    abs         = id
-    negate      = id
+gmap :: Graph g => (a -> Vertex g) -> Fold a -> g
+gmap f = foldg empty (vertex . f) overlay connect
 
-newtype GraphFunctor a = GF { gfor :: forall g. Graph g => (a -> Vertex g) -> g }
-
-instance Graph (GraphFunctor a) where
-    type Vertex (GraphFunctor a) = a
-    empty       = GF $ \_ -> empty
-    vertex  x   = GF $ \f -> vertex (f x)
-    overlay x y = GF $ \f -> gmap f x `overlay` gmap f y
-    connect x y = GF $ \f -> gmap f x `connect` gmap f y
-
-instance Num a => Num (GraphFunctor a) where
-    fromInteger = vertex . fromInteger
-    (+)         = overlay
-    (*)         = connect
-    signum      = const empty
-    abs         = id
-    negate      = id
-
-gmap :: Graph g => (a -> Vertex g) -> GraphFunctor a -> g
-gmap = flip gfor
-
-mergeVertices :: Graph g => (Vertex g -> Bool) -> Vertex g -> GraphFunctor (Vertex g) -> g
+mergeVertices :: Graph g => (Vertex g -> Bool) -> Vertex g -> Fold (Vertex g) -> g
 mergeVertices p v = gmap $ \u -> if p u then v else u
 
 -- Note: `gmap id` is needed
-box :: (Graph g, Vertex g ~ (u, v)) => GraphFunctor u -> GraphFunctor v -> g
+box :: (Graph g, Vertex g ~ (u, v)) => Fold u -> Fold v -> g
 box x y = overlays $ xs ++ ys
   where
     xs = map (\b -> gmap (,b) x) . toList $ gmap id y
     ys = map (\a -> gmap (a,) y) . toList $ gmap id x
 
-newtype GraphMonad a = GM { bind :: forall g. Graph g => (a -> g) -> g }
+bind :: Graph g => Fold a -> (a -> g) -> g
+bind g f = foldg empty f overlay connect g
 
-instance Graph (GraphMonad a) where
-    type Vertex (GraphMonad a) = a
-    empty       = GM $ \_ -> empty
-    vertex  x   = GM $ \f -> f x
-    overlay x y = GM $ \f -> bind x f `overlay` bind y f
-    connect x y = GM $ \f -> bind x f `connect` bind y f
-
-instance Num a => Num (GraphMonad a) where
-    fromInteger = vertex . fromInteger
-    (+)         = overlay
-    (*)         = connect
-    signum      = const empty
-    abs         = id
-    negate      = id
-
-induce :: Graph g => (Vertex g -> Bool) -> GraphMonad (Vertex g) -> g
+induce :: Graph g => (Vertex g -> Bool) -> Fold (Vertex g) -> g
 induce p g = bind g $ \v -> if p v then vertex v else empty
 
-removeVertex :: (Eq (Vertex g), Graph g) => Vertex g -> GraphMonad (Vertex g) -> g
+removeVertex :: (Eq (Vertex g), Graph g) => Vertex g -> Fold (Vertex g) -> g
 removeVertex v = induce (/= v)
 
 data Pieces g = Pieces { removeS :: g, removeT :: g, removeST :: g }
@@ -182,7 +142,7 @@ instance (Eq a, Num a) => Num (Smash a) where
 removeEdge :: (Eq (Vertex g), Graph g) => Vertex g -> Vertex g -> Smash (Vertex g) -> g
 removeEdge s t g = removeST $ smash g s t
 
-splitVertex :: (Eq (Vertex g), Graph g) => Vertex g -> [Vertex g] -> GraphMonad (Vertex g) -> g
+splitVertex :: (Eq (Vertex g), Graph g) => Vertex g -> [Vertex g] -> Fold (Vertex g) -> g
 splitVertex v vs g = bind g $ \u -> if u == v then vertices vs else vertex u
 
 deBruijn :: (Graph g, Vertex g ~ [a]) => Int -> [a] -> g
