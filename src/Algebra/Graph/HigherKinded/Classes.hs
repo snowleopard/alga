@@ -12,7 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.HigherKinded.Classes (
     -- * The core type class
-    Graph (..), vertex,
+    Graph (..), empty, vertex, overlay,
 
     -- * Undirected graphs
     Undirected,
@@ -26,6 +26,9 @@ module Algebra.Graph.HigherKinded.Classes (
     -- * Preorders
     Preorder
   ) where
+
+import Control.Applicative (empty, (<|>))
+import Control.Monad
 
 {-|
 The core type class for constructing algebraic graphs, characterised by the
@@ -69,17 +72,17 @@ The core type class 'Graph' corresponds to unlabelled directed graphs.
 'Undirected', reflexive and transitive graphs can be obtained by extending the
 minimal set of axioms.
 -}
-class Monad g => Graph g where
-    -- | Construct the empty graph.
-    empty :: g a
-    -- | Overlay two graphs.
-    overlay :: g a -> g a -> g a
+class MonadPlus g => Graph g where
     -- | Connect two graphs.
     connect :: g a -> g a -> g a
 
 -- | Construct the graph comprising a single isolated vertex. An alias for 'pure'.
 vertex :: Graph g => a -> g a
 vertex = pure
+
+-- | Overlay two graphs. An alias for '<|>'.
+overlay :: Graph g => g a -> g a -> g a
+overlay = (<|>)
 
 {-|
 The class of /undirected graphs/ that satisfy the following additional axiom.

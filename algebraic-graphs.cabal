@@ -27,6 +27,7 @@ library
                         Algebra.Graph.Dfs,
                         Algebra.Graph.HigherKinded,
                         Algebra.Graph.HigherKinded.Classes,
+                        Algebra.Graph.HigherKinded.Util,
                         Algebra.Graph.Relation,
                         Algebra.Graph.Relation.Internal,
                         Algebra.Graph.Relation.Preorder,

@@ -5,7 +5,8 @@ import Test.QuickCheck
 
 import Algebra.Graph hiding (Graph)
 import Algebra.Graph.AdjacencyMap hiding (edges, gmap)
-import Algebra.Graph.Data (Graph, fromGraph, induce, box, removeVertex)
+import Algebra.Graph.Data (Graph, fromGraph)
+import Algebra.Graph.HigherKinded.Util
 import Algebra.Graph.Dfs
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.Preorder

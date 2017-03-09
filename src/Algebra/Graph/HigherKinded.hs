@@ -16,7 +16,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.HigherKinded (
     -- * The core type class
-    Graph (..), vertex,
+    Graph (..), empty, vertex, overlay,
 
     -- * Basic graph construction primitives
     vertices, overlays, connects, edge, edges, graph,
@@ -28,6 +28,7 @@ module Algebra.Graph.HigherKinded (
     path, circuit, clique, biclique, star, tree, forest
   ) where
 
+import Control.Monad
 import Data.Tree
 
 import Algebra.Graph.HigherKinded.Classes
@@ -45,7 +46,7 @@ vertices = overlays . map vertex
 -- > overlays [x]    == x
 -- > overlays [x, y] == overlay x y
 overlays :: Graph g => [g a] -> g a
-overlays = foldr overlay empty
+overlays = msum
 
 -- | Connect a given list of graphs.
 --
