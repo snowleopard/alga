@@ -99,7 +99,7 @@ fromGraph = foldg empty vertex overlay connect
 -- @
 -- foldg []   return        (++) (++) == 'Data.Foldable.toList'
 -- foldg 0    (const 1)     (+)  (+)  == 'Data.Foldable.length'
--- foldg True (const False) (&&) (&&) == 'Data.Foldable.isEmpty'
+-- foldg True (const False) (&&) (&&) == 'Algebra.Graph.HigherKinded.Util.isEmpty'
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
@@ -121,7 +121,7 @@ foldg e v o c = go
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t g = piece st where (_, _, st) = smash s t g
 
--- | Check if the 'Graph' contains a given edge.
+-- | Check if a 'Graph' contains a given edge.
 --
 -- @
 -- hasEdge x y 'empty'            == False

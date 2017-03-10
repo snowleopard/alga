@@ -16,7 +16,7 @@ import Algebra.Graph.Relation.Transitive
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Arbitrary ()
 import Algebra.Graph.TopSort
-import Algebra.Graph.Util hiding (box, induce, toList, removeVertex)
+import Algebra.Graph.Util hiding (box, induce, removeVertex)
 
 type G = Graph Int
 

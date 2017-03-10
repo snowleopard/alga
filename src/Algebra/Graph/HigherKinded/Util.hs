@@ -81,7 +81,7 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 splitVertex :: (Eq a, Graph g) => a -> [a] -> g a -> g a
 splitVertex v us g = g >>= \w -> if w == v then msum (map vertex us) else vertex w
 
--- | Check if the 'Graph' is empty. A convenient alias for `null`.
+-- | Check if a 'Graph' is empty. A convenient alias for `null`.
 --
 -- @
 -- isEmpty 'empty'                       == True
@@ -92,7 +92,7 @@ splitVertex v us g = g >>= \w -> if w == v then msum (map vertex us) else vertex
 isEmpty :: (Graph g, Foldable g) => g a -> Bool
 isEmpty = null
 
--- | Check if the 'Graph' contains a given vertex. A convenient alias for `elem`.
+-- | Check if a 'Graph' contains a given vertex. A convenient alias for `elem`.
 --
 -- @
 -- hasVertex x 'empty'            == False
