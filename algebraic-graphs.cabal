@@ -25,6 +25,7 @@ library
                         Algebra.Graph.Classes,
                         Algebra.Graph.Data,
                         Algebra.Graph.Dfs,
+                        Algebra.Graph.Fold,
                         Algebra.Graph.HigherKinded,
                         Algebra.Graph.HigherKinded.Classes,
                         Algebra.Graph.HigherKinded.Util,
@@ -35,9 +36,7 @@ library
                         Algebra.Graph.Relation.Symmetric,
                         Algebra.Graph.Relation.Transitive,
                         Algebra.Graph.Todo,
-                        Algebra.Graph.TopSort,
-                        Algebra.Graph.Util,
-                        Algebra.Graph.Util.Int
+                        Algebra.Graph.TopSort
     build-depends:      array      >= 0.5 && < 0.6,
                         base       >= 4.9 && < 5,
                         containers == 0.5.*

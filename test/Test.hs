@@ -6,8 +6,9 @@ import Test.QuickCheck
 import Algebra.Graph hiding (Graph)
 import Algebra.Graph.AdjacencyMap hiding (edges, gmap)
 import Algebra.Graph.Data (Graph, fromGraph)
-import Algebra.Graph.HigherKinded.Util
 import Algebra.Graph.Dfs
+import Algebra.Graph.Fold hiding (box, induce, removeVertex)
+import Algebra.Graph.HigherKinded.Util
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.Preorder
 import Algebra.Graph.Relation.Reflexive
@@ -16,7 +17,6 @@ import Algebra.Graph.Relation.Transitive
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Arbitrary ()
 import Algebra.Graph.TopSort
-import Algebra.Graph.Util hiding (box, induce, removeVertex)
 
 type G = Graph Int
 

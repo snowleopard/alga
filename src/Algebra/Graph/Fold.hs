@@ -1,21 +1,23 @@
 {-# LANGUAGE RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Util
+-- Module     : Algebra.Graph.Fold
 -- Copyright  : (c) Andrey Mokhov 2016-2017
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Transformation and composition of polymorphic graphs.
+-- Boehm-Berarducci encoding of algebraic graphs. It is used for generalised
+-- graph folding and for the implementation of polymorphic graph construction
+-- and transformation algorithms.
 --
 -----------------------------------------------------------------------------
-module Algebra.Graph.Util (
+module Algebra.Graph.Fold (
     -- * Graph folding
     Fold, foldg,
 
     -- * Graph properties
-    isEmpty, hasVertex, hasEdge, toSet,
+    isEmpty, hasVertex, hasEdge, toIntSet, toSet,
 
     -- * Graph transformation
     transpose, simplify, gmap, replaceVertex, mergeVertices, bind, induce,
@@ -30,15 +32,17 @@ module Algebra.Graph.Util (
 
 import Control.Applicative hiding (empty)
 import Control.Monad
-import Data.Foldable hiding (fold)
+import Data.Foldable
+import qualified Data.IntSet as IntSet
+import Data.IntSet (IntSet)
 import qualified Data.Set as Set
 import Data.Set (Set)
 
 import Algebra.Graph
+import qualified Algebra.Graph.HigherKinded.Classes as H
 
--- | Boehm-Berarducci encoding of algebraic graphs, which is used to define
--- generalised graph folding.
-newtype Fold a = F { fold :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b }
+-- | Boehm-Berarducci encoding of algebraic graphs.
+newtype Fold a = F { runFold :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b }
 
 -- | Generalised folding of polymorphic graph expressions.
 --
@@ -48,14 +52,14 @@ newtype Fold a = F { fold :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b
 -- foldg True (const False) (&&) (&&) == 'isEmpty'
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
-foldg e v o c g = fold g e v o c
+foldg e v o c g = runFold g e v o c
 
 instance Graph (Fold a) where
     type Vertex (Fold a) = a
     empty       = F $ \e _ _ _ -> e
     vertex  x   = F $ \_ v _ _ -> v x
-    overlay x y = F $ \e v o c -> fold x e v o c `o` fold y e v o c
-    connect x y = F $ \e v o c -> fold x e v o c `c` fold y e v o c
+    overlay x y = F $ \e v o c -> foldg e v o c x `o` foldg e v o c y
+    connect x y = F $ \e v o c -> foldg e v o c x `c` foldg e v o c y
 
 instance Num a => Num (Fold a) where
     fromInteger = vertex . fromInteger
@@ -68,16 +72,27 @@ instance Num a => Num (Fold a) where
 instance Functor Fold where
     fmap f = foldg empty (vertex . f) overlay connect
 
-instance Foldable Fold where
-    foldMap f = foldg mempty f mappend mappend
-
 instance Applicative Fold where
     pure  = vertex
     (<*>) = ap
 
+instance Alternative Fold where
+    empty = empty
+    (<|>) = overlay
+
+instance MonadPlus Fold where
+    mzero = empty
+    mplus = overlay
+
 instance Monad Fold where
     return  = vertex
     g >>= f = foldg empty f overlay connect g
+
+instance H.Graph Fold where
+    connect = connect
+
+instance Foldable Fold where
+    foldMap f = foldg mempty f mappend mappend
 
 instance Traversable Fold where
     traverse f = foldg (pure empty) (fmap vertex . f) (liftA2 overlay) (liftA2 connect)
@@ -92,6 +107,18 @@ instance Traversable Fold where
 -- @
 toSet :: Ord a => Fold a -> Set a
 toSet = foldg Set.empty Set.singleton Set.union Set.union
+
+-- | The set of vertices of a given graph. Like 'toSet' but specicialised for
+-- graphs with vertices of type 'Int'.
+--
+-- @
+-- toIntSet 'empty'         == IntSet.empty
+-- toIntSet ('vertex' x)    == IntSet.singleton x
+-- toIntSet ('vertices' xs) == IntSet.fromList xs
+-- toIntSet ('clique' xs)   == IntSet.fromList xs
+-- @
+toIntSet :: Fold Int -> IntSet
+toIntSet = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 
 -- | Check if a graph is empty. A convenient alias for `null`.
 --
