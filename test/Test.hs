@@ -6,7 +6,6 @@ import Test.QuickCheck
 import Algebra.Graph hiding (Graph)
 import Algebra.Graph.AdjacencyMap hiding (edges)
 import Algebra.Graph.Data (Graph, fromGraph)
-import Algebra.Graph.Dfs
 import Algebra.Graph.Fold hiding (box, induce, removeVertex)
 import Algebra.Graph.HigherKinded.Util
 import Algebra.Graph.Relation
@@ -16,7 +15,6 @@ import Algebra.Graph.Relation.Symmetric
 import Algebra.Graph.Relation.Transitive
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Arbitrary ()
-import Algebra.Graph.TopSort
 
 type G = Graph Int
 
@@ -75,28 +73,19 @@ main = do
     test "Remove single vertex" $ \x ->
         removeVertex x (vertex x) == (empty :: G)
 
-    let d x = (fromGraph x) :: DfsForest Int
     test "DFS idempotence" $ \(x :: AdjacencyMap Int) ->
         dfsForest x == dfsForest (forest $ dfsForest x)
     test "DFS subgraph" $ \(x :: AdjacencyMap Int) ->
         forest (dfsForest x) `isSubgraphOf` x
-    test "DFS homomorphism" $ \x y ->
-        d x + d y == d (x + y) && d x * d y == d (x * y)
-    test "DFS reflexivity" $ \x ->
-        (vertex x :: DfsForest Int) == vertex x * vertex x
 
-    let ts x = (fromGraph x) :: TopSort Int
     test "TopSort is a topological sort" $ \(x :: AdjacencyMap Int) ->
-        fmap (isTopSort x) (topSort x) /= Just False
+        fmap (flip isTopSort x) (topSort x) /= Just False
 
     test "TopSort of a cyclic graph" $ \(x :: AdjacencyMap Int) ys -> not (null ys) ==>
         topSort (x + circuit (nubOrd ys)) == Nothing
 
     test "TopSort idempotence" $ \(x :: AdjacencyMap Int) ->
         (topSort . path =<< topSort x) == (topSort x)
-
-    test "TopSort homomorphism" $ \x y ->
-        ts x + ts y == ts (x + y) && ts x * ts y == ts (x * y)
 
     let t x = transpose (fromGraph x) :: G
     test "Transpose self-inverse" $ \x ->

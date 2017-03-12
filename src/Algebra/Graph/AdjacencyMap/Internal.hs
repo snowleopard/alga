@@ -75,9 +75,9 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
     abs         = id
     negate      = id
 
--- | Transform the adjacency map of a graph by applying a function to each of its
--- vertices. This is similar to @Functor@'s 'fmap' but can be used with
--- non-fully-parametric 'AdjacencyMap'.
+-- | Transform a graph by applying a function to each of its vertices. This is
+-- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
+-- 'AdjacencyMap'.
 --
 -- @
 -- gmap f 'empty'      == 'empty'
@@ -89,7 +89,7 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
 gmap :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap a -> AdjacencyMap b
 gmap f = AdjacencyMap . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 
--- | Construct the adjacency map of a graph from an /adjacency list/.
+-- | Construct a graph from an /adjacency list/.
 --
 -- @
 -- fromAdjacencyList []         == 'empty'
@@ -99,7 +99,7 @@ gmap f = AdjacencyMap . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adja
 fromAdjacencyList :: Ord a => [(a, [a])] -> AdjacencyMap a
 fromAdjacencyList = AdjacencyMap . Map.fromAscList . map (\(x, ys) -> (x, Set.fromList ys))
 
--- | Construct the adjacency map of a graph from a list of its edges.
+-- | Construct a graph from an /edge list/.
 --
 -- @
 -- edges []       == 'empty'
@@ -108,7 +108,7 @@ fromAdjacencyList = AdjacencyMap . Map.fromAscList . map (\(x, ys) -> (x, Set.fr
 edges :: Ord a => [(a, a)] -> AdjacencyMap a
 edges = AdjacencyMap . Map.fromListWith Set.union . map (\(x, y) -> (x, Set.singleton y))
 
--- | Extract an /adjacency list/ from the adjacency map of a graph.
+-- | Extract the /adjacency list/ of a graph.
 --
 -- @
 -- adjacencyList 'empty'          == []
@@ -119,13 +119,13 @@ edges = AdjacencyMap . Map.fromListWith Set.union . map (\(x, y) -> (x, Set.sing
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
 adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
 
--- | Extract an /edge list/ from the adjacency map of a graph.
+-- | Extract the /edge list/ of a graph.
 --
 -- @
 -- edgeList 'empty'          == []
 -- edgeList ('vertex' x)     == []
--- edgeList ('Algebra.Graph.edge' x y)     == [(x, y)]
--- edgeList ('Algebra.Graph.star' 2 [1,3]) == [(2, 1), (2, 3)]
+-- edgeList ('Algebra.Graph.edge' x y)     == [(x,y)]
+-- edgeList ('Algebra.Graph.star' 2 [1,3]) == [(2,1), (2,3)]
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList = concatMap (\(x, ys) -> map (x,) ys) . adjacencyList

@@ -6,7 +6,8 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- An abstract implementation of adjacency maps.
+-- An abstract implementation of adjacency maps, associated operations and
+-- algorithms.
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap (
@@ -17,8 +18,13 @@ module Algebra.Graph.AdjacencyMap (
     isEmpty, hasVertex, hasEdge, toSet,
 
     -- * Operations on adjacency maps
-    gmap, edgeList, edges, adjacencyList, fromAdjacencyList,
-    postset, toKL, toKLvia, fromKL
+    gmap, edgeList, edges, adjacencyList, fromAdjacencyList, postset,
+
+    -- * Algorithms
+    dfsForest, topSort, isTopSort,
+
+    -- * Interoperability with King-Launchbury graphs
+    GraphKL, getGraph, getVertex, graphKL, fromGraphKL
   ) where
 
 import Data.Array
@@ -26,6 +32,7 @@ import qualified Data.Graph as KL -- KL stands for King-Launchbury graphs
 import qualified Data.Map.Strict as Map
 import           Data.Set (Set)
 import qualified Data.Set as Set
+import Data.Tree
 
 import Algebra.Graph.AdjacencyMap.Internal
 
@@ -79,15 +86,71 @@ toSet = Map.keysSet . adjacencyMap
 -- postset y ('Algebra.Graph.edge' x y) == Set.empty
 -- @
 postset :: Ord a => a -> AdjacencyMap a -> Set a
-postset x = Map.findWithDefault Set.empty x . adjacencyMap
+postset v = Map.findWithDefault Set.empty v . adjacencyMap
 
-toKLvia :: Ord b => (a -> b) -> (b -> a) -> AdjacencyMap a -> (KL.Graph, KL.Vertex -> a)
-toKLvia a2b b2a x = (g, \v -> case r v of (_, u, _) -> b2a u)
+-- | A data type encapsulating King-Launchbury graphs, which are implemented in
+-- the "Data.Graph" module of the @containers@ library.
+data GraphKL a = GraphKL {
+    -- | Array-based graph representation (King and Launchbury, 1995).
+    getGraph :: KL.Graph,
+    -- | A mapping of "Data.Graph.Vertex" to vertices of type @a@.
+    getVertex :: KL.Vertex -> a }
+
+-- | Build 'GraphKL' from the adjacency map of a graph.
+graphKL :: Ord a => AdjacencyMap a -> GraphKL a
+graphKL m = GraphKL g $ \u -> case r u of (_, v, _) -> v
   where
-    (g, r) = KL.graphFromEdges' [ ((), a2b v, map a2b us) | (v, us) <- adjacencyList x ]
+    (g, r) = KL.graphFromEdges' [ ((), v, us) | (v, us) <- adjacencyList m ]
 
-toKL :: Ord a => AdjacencyMap a -> (KL.Graph, KL.Vertex -> a)
-toKL = toKLvia id id
+-- | Extract the adjacency map of a King-Launchbury graph.
+fromGraphKL :: Ord a => GraphKL a -> AdjacencyMap a
+fromGraphKL (GraphKL g r) = fromAdjacencyList $ map (\(x, ys) -> (r x, map r ys)) (assocs g)
 
-fromKL :: Ord a => KL.Graph -> (KL.Vertex -> a) -> AdjacencyMap a
-fromKL g r = fromAdjacencyList . map (\(x, ys) -> (r x, map r ys)) $ assocs g
+-- | Compute the /depth-first search/ forest of a graph.
+--
+-- @
+-- dfsForest $ 3 * (1 + 4) * (1 + 5)     == [ Node { rootLabel = 1
+--                                                 , subForest = [ Node { rootLabel = 5
+--                                                                      , subForest = []}]}
+--                                          , Node { rootLabel = 3
+--                                                 , subForest = [ Node { rootLabel = 4
+--                                                                      , subForest = []}]}]
+-- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 1 1)         == 'Algebra.Graph.vertex' 1
+-- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 1 2)         == 'Algebra.Graph.edge' 1 2
+-- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 2 1)         == 'Algebra.Graph.vertices' [1, 2]
+-- 'Algebra.Graph.isSubgraphOf' ('Algebra.Graph.forest' $ dfsForest x) x == True
+-- dfsForest . 'Algebra.Graph.forest' . dfsForest        == dfsForest
+-- @
+dfsForest :: Ord a => AdjacencyMap a -> Forest a
+dfsForest m = let GraphKL g r = graphKL m in fmap (fmap r) (KL.dff g)
+
+-- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
+-- is cyclic.
+--
+-- @
+-- topSort (1 * 2 + 3 * 1)             == Just [3,1,2]
+-- topSort (1 * 2 + 2 * 1)             == Nothing
+-- fmap (flip 'isTopSort' x) (topSort x) /= Just False
+-- @
+topSort :: Ord a => AdjacencyMap a -> Maybe [a]
+topSort m = if isTopSort result m then Just result else Nothing
+  where
+    GraphKL g r = graphKL m
+    result      = map r (KL.topSort g)
+
+-- | Check if a given list of vertices is a valid /topological sort/ of a graph.
+--
+-- @
+-- isTopSort [3, 1, 2] (1 * 2 + 3 * 1) == True
+-- isTopSort [1, 2, 3] (1 * 2 + 3 * 1) == False
+-- isTopSort []        (1 * 2 + 3 * 1) == False
+-- isTopSort []        'Algebra.Graph.empty'           == True
+-- isTopSort [x]       ('Algebra.Graph.vertex' x)      == True
+-- isTopSort [x]       ('Algebra.Graph.edge' x x)      == False
+-- @
+isTopSort :: Ord a => [a] -> AdjacencyMap a -> Bool
+isTopSort xs m = go Set.empty xs
+  where
+    go seen []     = seen == Map.keysSet (adjacencyMap m)
+    go seen (v:vs) = let newSeen = seen `seq` Set.insert v seen
+        in postset v m `Set.intersection` newSeen == Set.empty && go newSeen vs

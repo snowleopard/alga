@@ -7,7 +7,6 @@ import Data.String
 
 import Algebra.Graph
 import Algebra.Graph.AdjacencyMap
-import Algebra.Graph.TopSort
 
 data Todo a = T (Map a Int) (AdjacencyMap a) deriving Show
 
