@@ -4,7 +4,7 @@ import Data.List.Extra (nubOrd)
 import Test.QuickCheck
 
 import Algebra.Graph hiding (Graph)
-import Algebra.Graph.AdjacencyMap hiding (edges, gmap)
+import Algebra.Graph.AdjacencyMap hiding (edges)
 import Algebra.Graph.Data (Graph, fromGraph)
 import Algebra.Graph.Dfs
 import Algebra.Graph.Fold hiding (box, induce, removeVertex)

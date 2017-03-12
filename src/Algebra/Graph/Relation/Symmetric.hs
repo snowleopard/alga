@@ -17,7 +17,7 @@ module Algebra.Graph.Relation.Symmetric (
     isEmpty, hasVertex, hasEdge, toSet,
 
     -- * Operations on symmetric relations
-    neighbours, reflexiveClosure, transitiveClosure, preorderClosure
+    neighbours, reflexiveClosure, transitiveClosure, preorderClosure, gmap
   ) where
 
 import qualified Data.Set as Set
@@ -114,3 +114,17 @@ transitiveClosure = SymmetricRelation . R.transitiveClosure . symmetricClosure .
 -- @
 preorderClosure :: Ord a => SymmetricRelation a -> SymmetricRelation a
 preorderClosure = SymmetricRelation . R.preorderClosure . symmetricClosure . fromSymmetric
+
+-- | Transform a given relation by applying a function to each of its elements.
+-- This is similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
+-- 'SymmetricRelation'.
+--
+-- @
+-- gmap f 'Algebra.Graph.empty'      == 'Algebra.Graph.empty'
+-- gmap f ('Algebra.Graph.vertex' x) == 'Algebra.Graph.vertex' (f x)
+-- gmap f ('Algebra.Graph.edge' x y) == 'Algebra.Graph.edge' (f x) (f x)
+-- gmap id           == id
+-- gmap f . gmap g   == gmap (f . g)
+-- @
+gmap :: (Ord a, Ord b) => (a -> b) -> SymmetricRelation a -> SymmetricRelation b
+gmap f = SymmetricRelation . R.gmap f . symmetricClosure . fromSymmetric

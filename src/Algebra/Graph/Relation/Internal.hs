@@ -19,7 +19,7 @@ module Algebra.Graph.Relation.Internal (
 
     -- * Operations on binary relations
     preset, postset, reflexiveClosure, symmetricClosure, transitiveClosure,
-    preorderClosure,
+    preorderClosure, gmap,
 
     -- * Reflexive relations
     ReflexiveRelation (..),
@@ -92,6 +92,20 @@ instance (Ord a, Num a) => Num (Relation a) where
     signum      = const empty
     abs         = id
     negate      = id
+
+-- | Transform a given relation by applying a function to each of its elements.
+-- This is similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
+-- 'Relation'.
+--
+-- @
+-- gmap f 'empty'      == 'empty'
+-- gmap f ('vertex' x) == 'vertex' (f x)
+-- gmap f ('Algebra.Graph.edge' x y) == 'Algebra.Graph.edge' (f x) (f x)
+-- gmap id           == id
+-- gmap f . gmap g   == gmap (f . g)
+-- @
+gmap :: (Ord a, Ord b) => (a -> b) -> Relation a -> Relation b
+gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) r)
 
 -- | The /preset/ of an element @x@ is the set of elements that are related to
 -- it on the /left/, i.e. @preset x == { a | aRx }@. In the context of directed

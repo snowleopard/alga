@@ -18,7 +18,7 @@ module Algebra.Graph.Relation (
 
     -- * Operations on binary relations
     preset, postset, reflexiveClosure, symmetricClosure, transitiveClosure,
-    preorderClosure
+    preorderClosure, gmap
   ) where
 
 import qualified Data.Set as Set

@@ -17,7 +17,7 @@ module Algebra.Graph.Relation.Preorder (
     isEmpty, hasVertex, hasEdge, toSet,
 
     -- * Operations on preorders
-    preset, postset, symmetricClosure
+    preset, postset, symmetricClosure, gmap
   ) where
 
 import qualified Data.Set as Set
@@ -113,3 +113,17 @@ postset x = R.postset x . preorderClosure . fromPreorder
 -- @
 symmetricClosure :: Ord a => PreorderRelation a -> PreorderRelation a
 symmetricClosure = PreorderRelation . R.symmetricClosure . preorderClosure . fromPreorder
+
+-- | Transform a given relation by applying a function to each of its elements.
+-- This is similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
+-- 'PreorderRelation'.
+--
+-- @
+-- gmap f 'Algebra.Graph.empty'      == 'Algebra.Graph.empty'
+-- gmap f ('Algebra.Graph.vertex' x) == 'Algebra.Graph.vertex' (f x)
+-- gmap f ('Algebra.Graph.edge' x y) == 'Algebra.Graph.edge' (f x) (f x)
+-- gmap id           == id
+-- gmap f . gmap g   == gmap (f . g)
+-- @
+gmap :: (Ord a, Ord b) => (a -> b) -> PreorderRelation a -> PreorderRelation b
+gmap f = PreorderRelation . R.gmap f . preorderClosure . fromPreorder

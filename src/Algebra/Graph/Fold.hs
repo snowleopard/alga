@@ -28,7 +28,7 @@ module Algebra.Graph.Fold (
 
     -- * Graph construction
     deBruijn
-    ) where
+  ) where
 
 import Control.Applicative hiding (empty)
 import Control.Monad
@@ -184,8 +184,8 @@ simple op x y
 -- gmap f 'empty'      == 'empty'
 -- gmap f ('vertex' x) == 'vertex' (f x)
 -- gmap f ('edge' x y) == 'edge' (f x) (f x)
--- gmap id             == id
--- gmap f . gmap g     == gmap (f . g)
+-- gmap id           == id
+-- gmap f . gmap g   == gmap (f . g)
 -- @
 gmap :: Graph g => (a -> Vertex g) -> Fold a -> g
 gmap f = foldg empty (vertex . f) overlay connect

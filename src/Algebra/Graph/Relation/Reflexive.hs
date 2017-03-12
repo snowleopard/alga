@@ -17,7 +17,7 @@ module Algebra.Graph.Relation.Reflexive (
     isEmpty, hasVertex, hasEdge, toSet,
 
     -- * Operations on reflexive relations
-    preset, postset, symmetricClosure, transitiveClosure
+    preset, postset, symmetricClosure, transitiveClosure, gmap
   ) where
 
 import qualified Data.Set as Set
@@ -118,3 +118,17 @@ symmetricClosure = ReflexiveRelation . R.symmetricClosure . fromReflexive
 -- @
 transitiveClosure :: Ord a => ReflexiveRelation a -> ReflexiveRelation a
 transitiveClosure = ReflexiveRelation . R.transitiveClosure . fromReflexive
+
+-- | Transform a given relation by applying a function to each of its elements.
+-- This is similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
+-- 'ReflexiveRelation'.
+--
+-- @
+-- gmap f 'Algebra.Graph.empty'      == 'Algebra.Graph.empty'
+-- gmap f ('Algebra.Graph.vertex' x) == 'Algebra.Graph.vertex' (f x)
+-- gmap f ('Algebra.Graph.edge' x y) == 'Algebra.Graph.edge' (f x) (f x)
+-- gmap id           == id
+-- gmap f . gmap g   == gmap (f . g)
+-- @
+gmap :: (Ord a, Ord b) => (a -> b) -> ReflexiveRelation a -> ReflexiveRelation b
+gmap f = ReflexiveRelation . R.gmap f . reflexiveClosure . fromReflexive
