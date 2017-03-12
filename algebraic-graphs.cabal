@@ -1,11 +1,11 @@
 name:          algebraic-graphs
-version:       0.1.0
+version:       0.0.1
 synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
 author:        Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard
 maintainer:    Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard
-copyright:     Andrey Mokhov, 2016
+copyright:     Andrey Mokhov, 2016-2017
 homepage:      https://github.com/snowleopard/alga
 category:      Algebra
 build-type:    Simple
@@ -35,9 +35,9 @@ library
                         Algebra.Graph.Relation.Symmetric,
                         Algebra.Graph.Relation.Transitive,
                         Algebra.Graph.Todo
-    build-depends:      array      >= 0.5 && < 0.6,
-                        base       >= 4.9 && < 5,
-                        containers == 0.5.*
+    build-depends:      array      >= 0.5,
+                        base       >= 4.9,
+                        containers >= 0.5
     default-language:   Haskell2010
     default-extensions: FlexibleContexts
                         GeneralizedNewtypeDeriving
@@ -57,10 +57,10 @@ test-suite test-alga
     other-modules:      Algebra.Graph.Test,
                         Algebra.Graph.Test.Arbitrary
     build-depends:      algebraic-graphs,
-                        base       >= 4.9 && < 5,
-                        containers == 0.5.*,
-                        extra      >= 1.5 && < 1.6,
-                        QuickCheck >= 2.9 && < 2.10
+                        base       >= 4.9,
+                        containers >= 0.5,
+                        extra      >= 1.5,
+                        QuickCheck >= 2.9
     default-language:   Haskell2010
     GHC-options:        -O2 -Wall -fwarn-tabs
     default-extensions: FlexibleContexts
@@ -75,9 +75,9 @@ benchmark benchmark-alga
     type:               exitcode-stdio-1.0
     main-is:            Bench.hs
     build-depends:      algebraic-graphs,
-                        base       >= 4.9 && < 5,
-                        containers == 0.5.*,
-                        criterion  >= 1.1 && < 1.2
+                        base       >= 4.9,
+                        containers >= 0.5,
+                        criterion  >= 1.1
     default-language:   Haskell2010
     GHC-options:        -O2 -Wall -fwarn-tabs
     default-extensions: FlexibleContexts
