@@ -27,7 +27,7 @@ import Control.Monad
 import Algebra.Graph hiding (Graph)
 import qualified Algebra.Graph.Classes as C
 import qualified Algebra.Graph.HigherKinded.Classes as H
-import Algebra.Graph.AdjacencyMap
+import Algebra.Graph.AdjacencyMap hiding (hasEdge)
 
 -- | The 'Graph' datatype is a deep embedding of the core graph construction
 -- primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a

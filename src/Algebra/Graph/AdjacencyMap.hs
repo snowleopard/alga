@@ -13,9 +13,12 @@ module Algebra.Graph.AdjacencyMap (
     -- * Data structure
     AdjacencyMap, adjacencyMap,
 
+    -- * Properties of adjacency maps
+    isEmpty, hasVertex, hasEdge, toSet,
+
     -- * Operations on adjacency maps
-    gmap, adjacencyList, edgeList,
-    fromAdjacencyList, edges, postset, toKL, toKLvia, fromKL
+    gmap, edgeList, edges, adjacencyList, fromAdjacencyList,
+    postset, toKL, toKLvia, fromKL
   ) where
 
 import Data.Array
@@ -26,12 +29,55 @@ import qualified Data.Set as Set
 
 import Algebra.Graph.AdjacencyMap.Internal
 
-adjacencyList :: AdjacencyMap a -> [(a, [a])]
-adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
+-- | Check if a graph is empty.
+--
+-- @
+-- isEmpty 'Algebra.Graph.empty'      == True
+-- isEmpty ('Algebra.Graph.vertex' x) == False
+-- @
+isEmpty :: AdjacencyMap a -> Bool
+isEmpty = Map.null . adjacencyMap
 
-edgeList :: AdjacencyMap a -> [(a, a)]
-edgeList = concatMap (\(x, ys) -> map (x,) ys) . adjacencyList
+-- | Check if a graph contains a given vertex.
+--
+-- @
+-- hasVertex x 'Algebra.Graph.empty'      == False
+-- hasVertex x ('Algebra.Graph.vertex' x) == True
+-- @
+hasVertex :: Ord a => a -> AdjacencyMap a -> Bool
+hasVertex v = Map.member v . adjacencyMap
 
+-- | Check if a graph contains a given edge.
+--
+-- @
+-- hasEdge x y 'Algebra.Graph.empty'      == False
+-- hasEdge x y ('Algebra.Graph.vertex' z) == False
+-- hasEdge x y ('Algebra.Graph.edge' x y) == True
+-- @
+hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
+hasEdge u v a = case Map.lookup u (adjacencyMap a) of
+    Nothing -> False
+    Just vs -> Set.member v vs
+
+-- | The set of vertices of a given graph.
+--
+-- @
+-- toSet 'Algebra.Graph.empty'         == Set.empty
+-- toSet ('Algebra.Graph.vertex' x)    == Set.singleton x
+-- toSet ('Algebra.Graph.vertices' xs) == Set.fromList xs
+-- toSet ('Algebra.Graph.clique' xs)   == Set.fromList xs
+-- @
+toSet :: Ord a => AdjacencyMap a -> Set.Set a
+toSet = Map.keysSet . adjacencyMap
+
+-- | The /postset/ of a vertex @x@ is the set of its /direct successors/.
+--
+-- @
+-- postset x 'Algebra.Graph.empty'      == Set.empty
+-- postset x ('Algebra.Graph.vertex' x) == Set.empty
+-- postset x ('Algebra.Graph.edge' x y) == Set.fromList [y]
+-- postset y ('Algebra.Graph.edge' x y) == Set.empty
+-- @
 postset :: Ord a => a -> AdjacencyMap a -> Set a
 postset x = Map.findWithDefault Set.empty x . adjacencyMap
 

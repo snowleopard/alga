@@ -12,8 +12,11 @@
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap.Internal (
-    -- * Adjacency maps
-    AdjacencyMap (..), gmap, fromAdjacencyList, edges
+    -- * Adjacency map
+    AdjacencyMap (..),
+
+    -- * Operations on adjacency maps
+    gmap, edgeList, edges, adjacencyList, fromAdjacencyList
   ) where
 
 import           Data.Map.Strict (Map, keysSet, fromSet)
@@ -25,8 +28,36 @@ import Algebra.Graph.Classes
 
 -- | The 'AdjacencyMap' data type represents a graph by a map of vertices
 -- to their adjacency sets.
-newtype AdjacencyMap a = AdjacencyMap { adjacencyMap :: Map a (Set a) }
-    deriving (Eq, Show)
+-- The 'Show' instance is defined using basic graph construction primitives:
+--
+-- @
+-- show ('empty'     :: AdjacencyMap Int) == "empty"
+-- show (1         :: AdjacencyMap Int) == "vertex 1"
+-- show (1 + 2     :: AdjacencyMap Int) == "vertices [1,2]"
+-- show (1 * 2     :: AdjacencyMap Int) == "edge 1 2"
+-- show (1 * 2 * 3 :: AdjacencyMap Int) == "edges [(1,2),(1,3),(2,3)]"
+-- show (1 * 2 + 3 :: AdjacencyMap Int) == "graph [1,2,3] [(1,2)]"
+-- @
+newtype AdjacencyMap a = AdjacencyMap {
+    -- | The /adjacency map/ of the graph: each vertex is associated with a set
+    -- of its direct successors.
+    adjacencyMap :: Map a (Set a)
+  } deriving Eq
+
+instance (Ord a, Show a) => Show (AdjacencyMap a) where
+    show a@(AdjacencyMap m)
+        | m == Map.empty = "empty"
+        | es == []       = if Set.size vs > 1 then "vertices " ++ show (Set.toAscList vs)
+                                              else "vertex "   ++ show v
+        | vs == related  = if length es > 1 then "edges " ++ show es
+                                            else "edge "  ++ show e ++ " " ++ show f
+        | otherwise      = "graph " ++ show (Set.toAscList vs) ++ " " ++ show es
+      where
+        vs      = keysSet m
+        es      = edgeList a
+        v       = head $ Set.toList vs
+        (e,f)   = head es
+        related = Set.fromList . uncurry (++) $ unzip es
 
 instance Ord a => Graph (AdjacencyMap a) where
     type Vertex (AdjacencyMap a) = a
@@ -44,11 +75,57 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
     abs         = id
     negate      = id
 
+-- | Transform the adjacency map of a graph by applying a function to each of its
+-- vertices. This is similar to @Functor@'s 'fmap' but can be used with
+-- non-fully-parametric 'AdjacencyMap'.
+--
+-- @
+-- gmap f 'empty'      == 'empty'
+-- gmap f ('vertex' x) == 'vertex' (f x)
+-- gmap f ('Algebra.Graph.edge' x y) == 'Algebra.Graph.edge' (f x) (f x)
+-- gmap id           == id
+-- gmap f . gmap g   == gmap (f . g)
+-- @
 gmap :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap a -> AdjacencyMap b
 gmap f = AdjacencyMap . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 
+-- | Construct the adjacency map of a graph from an /adjacency list/.
+--
+-- @
+-- fromAdjacencyList []         == 'empty'
+-- fromAdjacencyList [(x, [])]  == 'vertex' x
+-- fromAdjacencyList [(x, [y])] == 'Algebra.Graph.edge' x y
+-- @
 fromAdjacencyList :: Ord a => [(a, [a])] -> AdjacencyMap a
 fromAdjacencyList = AdjacencyMap . Map.fromAscList . map (\(x, ys) -> (x, Set.fromList ys))
 
+-- | Construct the adjacency map of a graph from a list of its edges.
+--
+-- @
+-- edges []       == 'empty'
+-- edges [(x, y)] == 'Algebra.Graph.edge' x y
+-- @
 edges :: Ord a => [(a, a)] -> AdjacencyMap a
 edges = AdjacencyMap . Map.fromListWith Set.union . map (\(x, y) -> (x, Set.singleton y))
+
+-- | Extract an /adjacency list/ from the adjacency map of a graph.
+--
+-- @
+-- adjacencyList 'empty'          == []
+-- adjacencyList ('vertex' x)     == [(x, [])]
+-- adjacencyList ('Algebra.Graph.edge' x y)     == [(x, [y])]
+-- adjacencyList ('Algebra.Graph.star' 2 [1,3]) == [(1, []), (2, [1,3]), (3, [])]
+-- @
+adjacencyList :: AdjacencyMap a -> [(a, [a])]
+adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
+
+-- | Extract an /edge list/ from the adjacency map of a graph.
+--
+-- @
+-- edgeList 'empty'          == []
+-- edgeList ('vertex' x)     == []
+-- edgeList ('Algebra.Graph.edge' x y)     == [(x, y)]
+-- edgeList ('Algebra.Graph.star' 2 [1,3]) == [(2, 1), (2, 3)]
+-- @
+edgeList :: AdjacencyMap a -> [(a, a)]
+edgeList = concatMap (\(x, ys) -> map (x,) ys) . adjacencyList
