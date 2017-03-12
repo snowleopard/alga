@@ -13,24 +13,66 @@ module Algebra.Graph.Relation.Preorder (
     -- * Preorder relations
     PreorderRelation, domain, relation,
 
+    -- * Graph-like properties of binary relations
+    isEmpty, hasVertex, hasEdge, toSet,
+
     -- * Operations on preorders
     preset, postset, symmetricClosure
   ) where
 
-import Data.Set (Set)
+import qualified Data.Set as Set
 
 import qualified Algebra.Graph.Relation.Internal as R
 import Algebra.Graph.Relation.Internal (PreorderRelation (..), preorderClosure)
 
 -- | The /domain/ of the relation.
-domain :: PreorderRelation a -> Set a
+domain :: PreorderRelation a -> Set.Set a
 domain = R.domain . fromPreorder
 
 -- | The set of pairs of elements that are /related/. It is guaranteed that each
 -- element belongs to the domain and is related to itself, and that if
 -- @xRy@ and @yRz@ hold then so does @xRz@.
-relation :: Ord a => PreorderRelation a -> Set (a, a)
+relation :: Ord a => PreorderRelation a -> Set.Set (a, a)
 relation = R.relation . preorderClosure . fromPreorder
+
+-- | Check if a relation graph is empty.
+--
+-- @
+-- isEmpty 'Algebra.Graph.empty'      == True
+-- isEmpty ('Algebra.Graph.vertex' x) == False
+-- @
+isEmpty :: PreorderRelation a -> Bool
+isEmpty = null . domain
+
+-- | Check if a relation graph contains a given vertex.
+--
+-- @
+-- hasVertex x 'Algebra.Graph.empty'      == False
+-- hasVertex x ('Algebra.Graph.vertex' x) == True
+-- @
+hasVertex :: Ord a => a -> PreorderRelation a -> Bool
+hasVertex v = Set.member v . domain
+
+-- | Check if a relation graph contains a given edge.
+--
+-- @
+-- hasEdge x y 'Algebra.Graph.empty'      == False
+-- hasEdge x y ('Algebra.Graph.vertex' z) == False
+-- hasEdge x y ('Algebra.Graph.edge' x y) == True
+-- @
+hasEdge :: Ord a => a -> a -> PreorderRelation a -> Bool
+hasEdge u v = Set.member (u, v) . relation
+
+-- | The set of vertices of a given graph.
+--
+-- @
+-- toSet 'Algebra.Graph.empty'         == Set.empty
+-- toSet ('Algebra.Graph.vertex' x)    == Set.singleton x
+-- toSet ('Algebra.Graph.vertices' xs) == Set.fromList xs
+-- toSet ('Algebra.Graph.clique' xs)   == Set.fromList xs
+-- @
+toSet :: Ord a => PreorderRelation a -> Set.Set a
+toSet = domain
 
 -- | The /preset/ of an element @x@ is the set of elements that are related to
 -- it on the /left/, i.e. @preset x == { a | aRx }@. In the context of directed
@@ -44,7 +86,7 @@ relation = R.relation . preorderClosure . fromPreorder
 -- preset y ('Algebra.Graph.edge' x y)       == Set.fromList [x, y]
 -- preset z ('Algebra.Graph.path' [x, y, z]) == Set.fromList [x, y, z]
 -- @
-preset :: Ord a => a -> PreorderRelation a -> Set a
+preset :: Ord a => a -> PreorderRelation a -> Set.Set a
 preset x = R.preset x . preorderClosure . fromPreorder
 
 -- | The /postset/ of an element @x@ is the set of elements that are related to
@@ -59,7 +101,7 @@ preset x = R.preset x . preorderClosure . fromPreorder
 -- postset y ('Algebra.Graph.edge' x y)       == Set.fromList [y]
 -- postset x ('Algebra.Graph.path' [x, y, z]) == Set.fromList [x, y, z]
 -- @
-postset :: Ord a => a -> PreorderRelation a -> Set a
+postset :: Ord a => a -> PreorderRelation a -> Set.Set a
 postset x = R.postset x . preorderClosure . fromPreorder
 
 -- | Compute the /symmetric closure/ of a 'PreorderRelation'.

@@ -61,18 +61,18 @@ data Relation a = Relation {
 
 instance (Ord a, Show a) => Show (Relation a) where
     show (Relation d r)
-        | d == Set.empty  = "empty"
-        | r == Set.empty  = if Set.size d > 1 then "vertices " ++ vs
-                            else "vertex " ++ v1
-        | d == related    = if Set.size r > 1 then "edges " ++ es
-                            else "edge "  ++ show e1 ++ " " ++ show e2
-        | otherwise       = "graph " ++ vs ++ " " ++ es
+        | vs == []     = "empty"
+        | es == []     = if Set.size d > 1 then "vertices " ++ show vs
+                                           else "vertex "   ++ show v
+        | d == related = if Set.size r > 1 then "edges " ++ show es
+                                           else "edge "  ++ show e ++ " " ++ show f
+        | otherwise    = "graph " ++ show vs ++ " " ++ show es
       where
-        vs       = show (toAscList d)
-        v1       = show (head $ toAscList d)
-        es       = show (toAscList r)
-        (e1, e2) = head (toAscList r)
-        related  = Set.fromList . uncurry (++) . unzip $ Set.toAscList r
+        vs      = toAscList d
+        es      = toAscList r
+        v       = head $ toAscList d
+        (e, f)  = head $ toAscList r
+        related = fromList . uncurry (++) $ unzip es
 
 instance Ord a => Graph (Relation a) where
     type Vertex (Relation a) = a
