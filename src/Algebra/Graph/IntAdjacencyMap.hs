@@ -1,24 +1,24 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.AdjacencyMap
+-- Module     : Algebra.Graph.IntAdjacencyMap
 -- Copyright  : (c) Andrey Mokhov 2016-2017
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- An abstract implementation of adjacency maps, associated operations and
--- algorithms. For adjacency maps specialised to graphs with @Int@ vertices
--- see "Algebra.Graph.IntAdjacencyMap".
+-- An abstract implementation of adjacency maps specialised to graphs with @Int@
+-- vertices, as well as associated operations and algorithms. For the parametric
+-- version of adjacency maps see "Algebra.Graph.AdjacencyMap".
 --
 -----------------------------------------------------------------------------
-module Algebra.Graph.AdjacencyMap (
+module Algebra.Graph.IntAdjacencyMap (
     -- * Data structure
-    AdjacencyMap, adjacencyMap,
+    IntAdjacencyMap, adjacencyMap,
 
-    -- * Properties
+    -- * Properties of adjacency maps
     isEmpty, hasVertex, hasEdge, toSet,
 
-    -- * Operations
+    -- * Operations on adjacency maps
     gmap, edgeList, edges, adjacencyList, fromAdjacencyList, postset,
 
     -- * Algorithms
@@ -29,14 +29,14 @@ module Algebra.Graph.AdjacencyMap (
   ) where
 
 import Data.Array
-import Data.Set (Set)
+import Data.IntSet (IntSet)
 import Data.Tree
 
-import Algebra.Graph.AdjacencyMap.Internal
+import Algebra.Graph.IntAdjacencyMap.Internal
 
-import qualified Data.Graph      as KL
-import qualified Data.Map.Strict as Map
-import qualified Data.Set        as Set
+import qualified Data.Graph         as KL
+import qualified Data.IntMap.Strict as Map
+import qualified Data.IntSet        as Set
 
 -- | Check if a graph is empty.
 --
@@ -44,7 +44,7 @@ import qualified Data.Set        as Set
 -- isEmpty 'Algebra.Graph.empty'      == True
 -- isEmpty ('Algebra.Graph.vertex' x) == False
 -- @
-isEmpty :: AdjacencyMap a -> Bool
+isEmpty :: IntAdjacencyMap -> Bool
 isEmpty = Map.null . adjacencyMap
 
 -- | Check if a graph contains a given vertex.
@@ -53,7 +53,7 @@ isEmpty = Map.null . adjacencyMap
 -- hasVertex x 'Algebra.Graph.empty'      == False
 -- hasVertex x ('Algebra.Graph.vertex' x) == True
 -- @
-hasVertex :: Ord a => a -> AdjacencyMap a -> Bool
+hasVertex :: Int -> IntAdjacencyMap -> Bool
 hasVertex v = Map.member v . adjacencyMap
 
 -- | Check if a graph contains a given edge.
@@ -63,7 +63,7 @@ hasVertex v = Map.member v . adjacencyMap
 -- hasEdge x y ('Algebra.Graph.vertex' z) == False
 -- hasEdge x y ('Algebra.Graph.edge' x y) == True
 -- @
-hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
+hasEdge :: Int -> Int -> IntAdjacencyMap -> Bool
 hasEdge u v a = case Map.lookup u (adjacencyMap a) of
     Nothing -> False
     Just vs -> Set.member v vs
@@ -76,7 +76,7 @@ hasEdge u v a = case Map.lookup u (adjacencyMap a) of
 -- toSet ('Algebra.Graph.vertices' xs) == Set.fromList xs
 -- toSet ('Algebra.Graph.clique' xs)   == Set.fromList xs
 -- @
-toSet :: Ord a => AdjacencyMap a -> Set a
+toSet :: IntAdjacencyMap -> IntSet
 toSet = Map.keysSet . adjacencyMap
 
 -- | The /postset/ of a vertex @x@ is the set of its /direct successors/.
@@ -87,25 +87,25 @@ toSet = Map.keysSet . adjacencyMap
 -- postset x ('Algebra.Graph.edge' x y) == Set.fromList [y]
 -- postset y ('Algebra.Graph.edge' x y) == Set.empty
 -- @
-postset :: Ord a => a -> AdjacencyMap a -> Set a
+postset :: Int -> IntAdjacencyMap -> IntSet
 postset v = Map.findWithDefault Set.empty v . adjacencyMap
 
 -- | A data type encapsulating King-Launchbury graphs, which are implemented in
 -- the "Data.Graph" module of the @containers@ library.
-data GraphKL a = GraphKL {
+data GraphKL = GraphKL {
     -- | Array-based graph representation (King and Launchbury, 1995).
     getGraph :: KL.Graph,
-    -- | A mapping of "Data.Graph.Vertex" to vertices of type @a@.
-    getVertex :: KL.Vertex -> a }
+    -- | A mapping of "Data.Graph.Vertex" to vertices of type @Int@.
+    getVertex :: KL.Vertex -> Int }
 
 -- | Build 'GraphKL' from the adjacency map of a graph.
-graphKL :: Ord a => AdjacencyMap a -> GraphKL a
+graphKL :: IntAdjacencyMap -> GraphKL
 graphKL m = GraphKL g $ \u -> case r u of (_, v, _) -> v
   where
     (g, r) = KL.graphFromEdges' [ ((), v, us) | (v, us) <- adjacencyList m ]
 
 -- | Extract the adjacency map of a King-Launchbury graph.
-fromGraphKL :: Ord a => GraphKL a -> AdjacencyMap a
+fromGraphKL :: GraphKL -> IntAdjacencyMap
 fromGraphKL (GraphKL g r) = fromAdjacencyList $ map (\(x, ys) -> (r x, map r ys)) (assocs g)
 
 -- | Compute the /depth-first search/ forest of a graph.
@@ -123,7 +123,7 @@ fromGraphKL (GraphKL g r) = fromAdjacencyList $ map (\(x, ys) -> (r x, map r ys)
 -- 'Algebra.Graph.isSubgraphOf' ('Algebra.Graph.forest' $ dfsForest x) x == True
 -- dfsForest . 'Algebra.Graph.forest' . dfsForest        == dfsForest
 -- @
-dfsForest :: Ord a => AdjacencyMap a -> Forest a
+dfsForest :: IntAdjacencyMap -> Forest Int
 dfsForest m = let GraphKL g r = graphKL m in fmap (fmap r) (KL.dff g)
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
@@ -134,7 +134,7 @@ dfsForest m = let GraphKL g r = graphKL m in fmap (fmap r) (KL.dff g)
 -- topSort (1 * 2 + 2 * 1)             == Nothing
 -- fmap (flip 'isTopSort' x) (topSort x) /= Just False
 -- @
-topSort :: Ord a => AdjacencyMap a -> Maybe [a]
+topSort :: IntAdjacencyMap -> Maybe [Int]
 topSort m = if isTopSort result m then Just result else Nothing
   where
     GraphKL g r = graphKL m
@@ -150,7 +150,7 @@ topSort m = if isTopSort result m then Just result else Nothing
 -- isTopSort [x]       ('Algebra.Graph.vertex' x)      == True
 -- isTopSort [x]       ('Algebra.Graph.edge' x x)      == False
 -- @
-isTopSort :: Ord a => [a] -> AdjacencyMap a -> Bool
+isTopSort :: [Int] -> IntAdjacencyMap -> Bool
 isTopSort xs m = go Set.empty xs
   where
     go seen []     = seen == Map.keysSet (adjacencyMap m)

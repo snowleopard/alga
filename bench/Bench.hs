@@ -1,15 +1,17 @@
 import Criterion.Main
 import Data.Char
 import Data.Foldable (toList)
-import qualified Data.IntSet as IntSet
-import qualified Data.Set as Set
 
 import Algebra.Graph
-import Algebra.Graph.Relation (Relation, relation)
 import Algebra.Graph.AdjacencyArray.Unboxed (GraphArray (..), matrixLength)
 import Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap)
 import Algebra.Graph.Fold (Fold, box, deBruijn, gmap, toIntSet, toSet)
-import qualified Algebra.Graph.AdjacencyMap.Int as Int
+import Algebra.Graph.IntAdjacencyMap (IntAdjacencyMap)
+import Algebra.Graph.Relation (Relation, relation)
+
+import qualified Algebra.Graph.IntAdjacencyMap as Int
+import qualified Data.IntSet                   as IntSet
+import qualified Data.Set                      as Set
 
 v :: Ord a => Fold a -> Int
 v = Set.size . toSet
@@ -29,7 +31,7 @@ a (GA _ es) = matrixLength es
 vInt :: Fold Int -> Int
 vInt = IntSet.size . toIntSet
 
-eInt :: Int.AdjacencyMap -> Int
+eInt :: IntAdjacencyMap -> Int
 eInt = foldr (\s t -> IntSet.size s + t) 0 . Int.adjacencyMap
 
 vDeBruijn :: Int -> Int

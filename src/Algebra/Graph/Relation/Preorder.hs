@@ -13,17 +13,17 @@ module Algebra.Graph.Relation.Preorder (
     -- * Preorder relations
     PreorderRelation, domain, relation,
 
-    -- * Graph-like properties of binary relations
+    -- * Graph-like properties
     isEmpty, hasVertex, hasEdge, toSet,
 
-    -- * Operations on preorders
+    -- * Operations
     preset, postset, symmetricClosure, gmap
   ) where
 
-import qualified Data.Set as Set
+import Algebra.Graph.Relation.Internal (PreorderRelation (..), preorderClosure)
 
 import qualified Algebra.Graph.Relation.Internal as R
-import Algebra.Graph.Relation.Internal (PreorderRelation (..), preorderClosure)
+import qualified Data.Set                        as Set
 
 -- | The /domain/ of the relation.
 domain :: PreorderRelation a -> Set.Set a

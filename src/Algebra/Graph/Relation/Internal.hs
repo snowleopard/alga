@@ -34,11 +34,12 @@ module Algebra.Graph.Relation.Internal (
     PreorderRelation (..)
   ) where
 
-import           Data.Set hiding (empty, map)
-import qualified Data.Set as Set
 import Data.Tuple
+import Data.Set hiding (empty, map)
 
 import Algebra.Graph.Classes
+
+import qualified Data.Set as Set
 
 -- | The 'Relation' data type represents a binary relation over a set of elements.
 -- The 'Show' instance is defined using basic graph construction primitives:

@@ -13,17 +13,17 @@ module Algebra.Graph.Relation.Reflexive (
     -- * Reflexive relations
     ReflexiveRelation, domain, relation,
 
-    -- * Graph-like properties of binary relations
+    -- * Graph-like properties
     isEmpty, hasVertex, hasEdge, toSet,
 
-    -- * Operations on reflexive relations
+    -- * Operations
     preset, postset, symmetricClosure, transitiveClosure, gmap
   ) where
 
-import qualified Data.Set as Set
+import Algebra.Graph.Relation.Internal (ReflexiveRelation (..), reflexiveClosure)
 
 import qualified Algebra.Graph.Relation.Internal as R
-import Algebra.Graph.Relation.Internal (ReflexiveRelation (..), reflexiveClosure)
+import qualified Data.Set                        as Set
 
 -- | The /domain/ of the relation.
 domain :: ReflexiveRelation a -> Set.Set a

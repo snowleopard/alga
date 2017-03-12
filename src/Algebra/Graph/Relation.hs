@@ -13,17 +13,17 @@ module Algebra.Graph.Relation (
     -- * Binary relation
     Relation, domain, relation,
 
-    -- * Graph-like properties of binary relations
+    -- * Graph-like properties
     isEmpty, hasVertex, hasEdge, toSet,
 
-    -- * Operations on binary relations
+    -- * Operations
     preset, postset, reflexiveClosure, symmetricClosure, transitiveClosure,
     preorderClosure, gmap
   ) where
 
-import qualified Data.Set as Set
-
 import Algebra.Graph.Relation.Internal
+
+import qualified Data.Set as Set
 
 -- | Check if a relation graph is empty.
 --

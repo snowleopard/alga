@@ -13,17 +13,17 @@ module Algebra.Graph.Relation.Symmetric (
     -- * Symmetric relations
     SymmetricRelation, domain, relation,
 
-    -- * Graph-like properties of binary relations
+    -- * Graph-like properties
     isEmpty, hasVertex, hasEdge, toSet,
 
-    -- * Operations on symmetric relations
+    -- * Operations
     neighbours, reflexiveClosure, transitiveClosure, preorderClosure, gmap
   ) where
 
-import qualified Data.Set as Set
+import Algebra.Graph.Relation.Internal (SymmetricRelation (..), symmetricClosure)
 
 import qualified Algebra.Graph.Relation.Internal as R
-import Algebra.Graph.Relation.Internal (SymmetricRelation (..), symmetricClosure)
+import qualified Data.Set                        as Set
 
 -- | The /domain/ of the relation.
 domain :: SymmetricRelation a -> Set.Set a
