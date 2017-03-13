@@ -53,11 +53,12 @@ library
 test-suite test-alga
     hs-source-dirs:     test
     type:               exitcode-stdio-1.0
-    main-is:            Test.hs
+    main-is:            Main.hs
     other-modules:      Algebra.Graph.Test,
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,
-                        Algebra.Graph.Test.IntAdjacencyMap
+                        Algebra.Graph.Test.IntAdjacencyMap,
+                        Algebra.Graph.Test.Relation
     build-depends:      algebraic-graphs,
                         base       >= 4.9,
                         containers >= 0.5,

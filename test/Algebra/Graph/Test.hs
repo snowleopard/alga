@@ -2,9 +2,10 @@
 module Algebra.Graph.Test (
     module Data.List,
     module Data.List.Extra,
+    module Test.QuickCheck,
 
     GraphTestsuite, axioms, theorems, undirectedAxioms, reflexiveAxioms,
-    transitiveAxioms, preorderAxioms, test, quickCheck
+    transitiveAxioms, preorderAxioms, test,
     ) where
 
 import Data.List (sort)

@@ -7,13 +7,10 @@ import Algebra.Graph.AdjacencyMap hiding (edges, edgeList)
 import Algebra.Graph.Data (Graph, fromGraph)
 import Algebra.Graph.HigherKinded (box, induce, removeVertex)
 import Algebra.Graph.Relation hiding (edges)
-import Algebra.Graph.Relation.Preorder
-import Algebra.Graph.Relation.Reflexive
-import Algebra.Graph.Relation.Symmetric
-import Algebra.Graph.Relation.Transitive
 import Algebra.Graph.Test
 import Algebra.Graph.Test.AdjacencyMap
 import Algebra.Graph.Test.IntAdjacencyMap
+import Algebra.Graph.Test.Relation
 
 type G = Graph Int
 
@@ -23,9 +20,7 @@ main = do
     quickCheck (axioms   :: GraphTestsuite (Graph Int))
     quickCheck (theorems :: GraphTestsuite (Graph Int))
 
-    putStrLn "============ Relation ============"
-    quickCheck (axioms :: GraphTestsuite (Relation Int))
-
+    testRelation
     testAdjacencyMap
     testIntAdjacencyMap
 
@@ -92,24 +87,4 @@ main = do
 
     test "EdgeList of edges" $ \xs ->
         nubOrd (sort xs) == edgeList (fromGraph (edges xs :: G))
-
-    putStrLn "============ Reflexive relation ============"
-    quickCheck (reflexiveAxioms :: GraphTestsuite (ReflexiveRelation Int))
-
-    putStrLn "============ Symmetric relation ============"
-    quickCheck (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))
-
-    putStrLn "============ Transitive relation ============"
-    quickCheck $ mapSize (min 20)
-        (transitiveAxioms :: GraphTestsuite (TransitiveRelation Int))
-
-    test "Path equals clique" $ mapSize (min 20) $ \xs ->
-        path xs == (clique xs :: TransitiveRelation Int)
-
-    putStrLn "============ Preorder relation ============"
-    quickCheck $ mapSize (min 20)
-        (preorderAxioms :: GraphTestsuite (PreorderRelation Int))
-
-    test "Path equals clique" $ mapSize (min 20) $ \xs ->
-        path xs == (clique xs :: PreorderRelation Int)
 

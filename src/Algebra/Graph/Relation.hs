@@ -18,7 +18,7 @@ module Algebra.Graph.Relation (
 
     -- * Operations
     preset, postset, reflexiveClosure, symmetricClosure, transitiveClosure,
-    preorderClosure, gmap, edgeList, edges
+    preorderClosure, gmap, edgeList, edges, fromAdjacencyList
   ) where
 
 import Algebra.Graph.Relation.Internal

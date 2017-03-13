@@ -19,7 +19,7 @@ module Algebra.Graph.Relation.Internal (
 
     -- * Operations on binary relations
     preset, postset, reflexiveClosure, symmetricClosure, transitiveClosure,
-    preorderClosure, gmap, edges, edgeList,
+    preorderClosure, gmap, edgeList, edges, fromAdjacencyList,
 
     -- * Reflexive relations
     ReflexiveRelation (..),
@@ -35,7 +35,7 @@ module Algebra.Graph.Relation.Internal (
   ) where
 
 import Data.Tuple
-import Data.Set hiding (empty, map)
+import Data.Set (Set, union)
 
 import Algebra.Graph.Classes
 
@@ -69,22 +69,22 @@ instance (Ord a, Show a) => Show (Relation a) where
                                            else "edge "  ++ show e ++ " " ++ show f
         | otherwise    = "graph " ++ show vs ++ " " ++ show es
       where
-        vs      = toAscList d
-        es      = toAscList r
-        v       = head $ toAscList d
-        (e, f)  = head $ toAscList r
-        related = fromList . uncurry (++) $ unzip es
+        vs      = Set.toAscList d
+        es      = Set.toAscList r
+        v       = head $ Set.toAscList d
+        (e, f)  = head $ Set.toAscList r
+        related = Set.fromList . uncurry (++) $ unzip es
 
 instance Ord a => Graph (Relation a) where
     type Vertex (Relation a) = a
     empty       = Relation Set.empty Set.empty
-    vertex  x   = Relation (singleton x) Set.empty
+    vertex  x   = Relation (Set.singleton x) Set.empty
     overlay x y = Relation (domain x `union` domain y) (relation x `union` relation y)
     connect x y = Relation (domain x `union` domain y) (relation x `union` relation y
         `union` (domain x >< domain y))
 
 (><) :: Set a -> Set a -> Set (a, a)
-x >< y = fromDistinctAscList [ (a, b) | a <- elems x, b <- elems y ]
+x >< y = Set.fromDistinctAscList [ (a, b) | a <- Set.elems x, b <- Set.elems y ]
 
 instance (Ord a, Num a) => Num (Relation a) where
     fromInteger = vertex . fromInteger
@@ -94,19 +94,20 @@ instance (Ord a, Num a) => Num (Relation a) where
     abs         = id
     negate      = id
 
--- | Check if the internal representation of 'Relation' is consistent, i.e. it all
+-- | Check if the internal representation of a relation is consistent, i.e. if all
 -- pairs of elements in the 'relation' refer to existing elements in the 'domain'.
 -- It should be impossible to create an inconsistent 'Relation', and we use this
 -- function in testing.
 --
 -- @
--- consistent 'empty'         == True
--- consistent ('vertex' x)    == True
--- consistent ('overlay' x y) == True
--- consistent ('connect' x y) == True
--- consistent ('Algebra.Graph.edge' x y)    == True
--- consistent ('edges' xs)    == True
--- consistent ('Algebra.Graph.graph' xs ys) == True
+-- consistent 'empty'                  == True
+-- consistent ('vertex' x)             == True
+-- consistent ('overlay' x y)          == True
+-- consistent ('connect' x y)          == True
+-- consistent ('Algebra.Graph.edge' x y)             == True
+-- consistent ('edges' xs)             == True
+-- consistent ('Algebra.Graph.graph' xs ys)          == True
+-- consistent ('fromAdjacencyList' xs) == True
 -- @
 consistent :: Ord a => Relation a -> Bool
 consistent r = Set.fromList (uncurry (++) $ unzip $ edgeList r)
@@ -152,18 +153,6 @@ preset x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
 postset :: Ord a => a -> Relation a -> Set a
 postset x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation
 
--- | Construct a relation from a list of related pairs of elements.
---
--- @
--- edges []         == 'empty'
--- edges [(x, y)]   == 'Algebra.Graph.edge' x y
--- 'edgeList' . edges == 'Data.List.nub' . 'Data.List.sort'
--- @
-edges :: Ord a => [(a, a)] -> Relation a
-edges es = Relation (Set.fromList vs) (Set.fromList es)
-  where
-    vs = uncurry (++) $ unzip es
-
 -- | Extract the list of related pairs of elements in a relation.
 --
 -- @
@@ -176,6 +165,32 @@ edges es = Relation (Set.fromList vs) (Set.fromList es)
 edgeList :: Ord a => Relation a -> [(a, a)]
 edgeList = Set.toAscList . relation
 
+-- | Construct a relation from a list of related pairs of elements.
+--
+-- @
+-- edges []         == 'empty'
+-- edges [(x, y)]   == 'Algebra.Graph.edge' x y
+-- 'edgeList' . edges == 'Data.List.nub' . 'Data.List.sort'
+-- @
+edges :: Ord a => [(a, a)] -> Relation a
+edges es = Relation (Set.fromList vs) (Set.fromList es)
+  where
+    vs = uncurry (++) $ unzip es
+
+-- | Construct a relation from the /adjacency list/ of a graph.
+--
+-- @
+-- fromAdjacencyList []                                  == 'empty'
+-- fromAdjacencyList [(x, [])]                           == 'vertex' x
+-- fromAdjacencyList [(x, [y])]                          == 'Algebra.Graph.edge' x y
+-- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
+-- @
+fromAdjacencyList :: Ord a => [(a, [a])] -> Relation a
+fromAdjacencyList as = Relation (Set.fromList vs) (Set.fromList es)
+  where
+    vs = concatMap (\(x, ys) -> x : ys) as
+    es = [ (x, y) | (x, ys) <- as, y <- ys ]
+
 -- | Compute the /reflexive closure/ of a 'Relation'.
 --
 -- @
@@ -184,7 +199,7 @@ edgeList = Set.toAscList . relation
 -- @
 reflexiveClosure :: Ord a => Relation a -> Relation a
 reflexiveClosure (Relation d r) =
-    Relation d $ r `union` fromDistinctAscList [ (a, a) | a <- elems d ]
+    Relation d $ r `union` Set.fromDistinctAscList [ (a, a) | a <- Set.elems d ]
 
 -- | Compute the /symmetric closure/ of a 'Relation'.
 --
@@ -208,7 +223,7 @@ transitiveClosure old@(Relation d r)
     | r == newR = old
     | otherwise = transitiveClosure $ Relation d newR
   where
-    newR = unions $ r : [ preset x old >< postset x old | x <- elems d ]
+    newR = Set.unions $ r : [ preset x old >< postset x old | x <- Set.elems d ]
 
 -- TODO: Optimise the implementation by caching the results of reflexive closure.
 -- | The 'ReflexiveRelation' data type represents a binary reflexive relation
