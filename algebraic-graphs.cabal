@@ -34,8 +34,7 @@ library
                         Algebra.Graph.Relation.Preorder,
                         Algebra.Graph.Relation.Reflexive,
                         Algebra.Graph.Relation.Symmetric,
-                        Algebra.Graph.Relation.Transitive,
-                        Algebra.Graph.Todo
+                        Algebra.Graph.Relation.Transitive
     build-depends:      array      >= 0.5,
                         base       >= 4.9,
                         containers >= 0.5
