@@ -3,10 +3,10 @@ import Data.List.Extra (nubOrd)
 import Test.QuickCheck
 
 import Algebra.Graph hiding (Graph, box, induce, removeVertex)
-import Algebra.Graph.AdjacencyMap hiding (edges)
+import Algebra.Graph.AdjacencyMap hiding (edges, edgeList)
 import Algebra.Graph.Data (Graph, fromGraph)
 import Algebra.Graph.HigherKinded (box, induce, removeVertex)
-import Algebra.Graph.Relation
+import Algebra.Graph.Relation hiding (edges)
 import Algebra.Graph.Relation.Preorder
 import Algebra.Graph.Relation.Reflexive
 import Algebra.Graph.Relation.Symmetric

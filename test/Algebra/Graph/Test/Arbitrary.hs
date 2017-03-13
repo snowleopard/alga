@@ -17,8 +17,8 @@ module Algebra.Graph.Test.Arbitrary (
 
 import Test.QuickCheck
 
-import Algebra.Graph
-import Algebra.Graph.AdjacencyMap.Internal
+import Algebra.Graph hiding (edges)
+import Algebra.Graph.AdjacencyMap.Internal hiding (edges)
 import Algebra.Graph.Data hiding (Graph)
 import Algebra.Graph.IntAdjacencyMap.Internal (IntAdjacencyMap)
 import Algebra.Graph.Relation.Internal
@@ -50,10 +50,7 @@ instance Arbitrary a => Arbitrary (Data.Graph a) where
 
 -- | Generate an arbitrary 'Relation'.
 arbitraryRelation :: (Arbitrary a, Ord a) => Gen (Relation a)
-arbitraryRelation = do
-    r <- arbitrary
-    let (xs, ys) = unzip $ Set.toAscList r
-    return $ Relation (Set.fromList $ xs ++ ys) r
+arbitraryRelation = edges <$> arbitrary
 
 -- | Generate an arbitrary 'AdjacencyMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.

@@ -15,11 +15,11 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.Internal (
     -- * Binary relations
-    Relation (..),
+    Relation (..), consistent,
 
     -- * Operations on binary relations
     preset, postset, reflexiveClosure, symmetricClosure, transitiveClosure,
-    preorderClosure, gmap,
+    preorderClosure, gmap, edges, edgeList,
 
     -- * Reflexive relations
     ReflexiveRelation (..),
@@ -94,6 +94,24 @@ instance (Ord a, Num a) => Num (Relation a) where
     abs         = id
     negate      = id
 
+-- | Check if the internal representation of 'Relation' is consistent, i.e. it all
+-- pairs of elements in the 'relation' refer to existing elements in the 'domain'.
+-- It should be impossible to create an inconsistent 'Relation', and we use this
+-- function in testing.
+--
+-- @
+-- consistent 'empty'         == True
+-- consistent ('vertex' x)    == True
+-- consistent ('overlay' x y) == True
+-- consistent ('connect' x y) == True
+-- consistent ('Algebra.Graph.edge' x y)    == True
+-- consistent ('edges' xs)    == True
+-- consistent ('Algebra.Graph.graph' xs ys) == True
+-- @
+consistent :: Ord a => Relation a -> Bool
+consistent r = Set.fromList (uncurry (++) $ unzip $ edgeList r)
+    `Set.isSubsetOf` (domain r)
+
 -- | Transform a given relation by applying a function to each of its elements.
 -- This is similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
 -- 'Relation'.
@@ -133,6 +151,30 @@ preset x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
 -- @
 postset :: Ord a => a -> Relation a -> Set a
 postset x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation
+
+-- | Construct a relation from a list of related pairs of elements.
+--
+-- @
+-- edges []         == 'empty'
+-- edges [(x, y)]   == 'Algebra.Graph.edge' x y
+-- 'edgeList' . edges == 'Data.List.nub' . 'Data.List.sort'
+-- @
+edges :: Ord a => [(a, a)] -> Relation a
+edges es = Relation (Set.fromList vs) (Set.fromList es)
+  where
+    vs = uncurry (++) $ unzip es
+
+-- | Extract the list of related pairs of elements in a relation.
+--
+-- @
+-- edgeList 'empty'          == []
+-- edgeList ('vertex' x)     == []
+-- edgeList ('Algebra.Graph.edge' x y)     == [(x,y)]
+-- edgeList ('Algebra.Graph.star' 2 [1,3]) == [(2,1), (2,3)]
+-- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
+-- @
+edgeList :: Ord a => Relation a -> [(a, a)]
+edgeList = Set.toAscList . relation
 
 -- | Compute the /reflexive closure/ of a 'Relation'.
 --
