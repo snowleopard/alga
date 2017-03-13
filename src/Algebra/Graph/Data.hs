@@ -14,7 +14,7 @@ module Algebra.Graph.Data (
     -- * Algebraic data type for graphs
     Graph (..), fromGraph, foldg,
 
-    -- * Graph transformation primitives
+    -- * Graph transformation
     removeEdge,
 
     -- * Graph properties
@@ -24,10 +24,11 @@ module Algebra.Graph.Data (
 import Control.Applicative (Alternative, (<|>))
 import Control.Monad
 
-import Algebra.Graph hiding (Graph)
-import qualified Algebra.Graph.Classes as C
-import qualified Algebra.Graph.HigherKinded.Classes as H
+import Algebra.Graph.Base hiding (Graph)
 import Algebra.Graph.AdjacencyMap hiding (hasEdge)
+
+import qualified Algebra.Graph.Classes              as C
+import qualified Algebra.Graph.HigherKinded.Classes as H
 
 -- | The 'Graph' datatype is a deep embedding of the core graph construction
 -- primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a

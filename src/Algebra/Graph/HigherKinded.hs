@@ -25,114 +25,167 @@ module Algebra.Graph.HigherKinded (
     isSubgraphOf,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, tree, forest
+    path, circuit, clique, biclique, star, tree, forest, deBruijn,
+
+    -- * Graph transformation
+    induce, removeVertex, replaceVertex, mergeVertices, splitVertex,
+
+    -- * Graph properties
+    isEmpty, hasVertex, toSet, toIntSet,
+
+    -- * Graph composition
+    box,
+
+    -- * Re-exporting standard functions
+    toList
   ) where
 
 import Control.Monad
-import Data.Tree
+import Data.Foldable
 
-import Algebra.Graph.HigherKinded.Classes
+import Algebra.Graph.HigherKinded.Base
 
--- | Construct the graph comprising a given list of isolated vertices.
+import qualified Data.IntSet as IntSet
+import qualified Data.Set    as Set
+
+-- | Construct the /induced subgraph/ of a given 'Graph' by removing the
+-- vertices that do not satisfy a given predicate.
 --
--- > vertices []  == empty
--- > vertices [x] == vertex x
-vertices :: Graph g => [a] -> g a
-vertices = overlays . map vertex
+-- @
+-- induce (const True)  x    == x
+-- induce (const False) x    == 'empty'
+-- induce (/= x)             == 'removeVertex' x
+-- induce p . induce q       == induce (\x -> p x && q x)
+-- 'isSubgraph' (induce p x) x == True
+-- @
+induce :: Graph g => (a -> Bool) -> g a -> g a
+induce = mfilter
 
--- | Overlay a given list of graphs.
+-- | Remove a vertex from a given 'Graph'.
 --
--- > overlays []     == empty
--- > overlays [x]    == x
--- > overlays [x, y] == overlay x y
-overlays :: Graph g => [g a] -> g a
-overlays = msum
+-- @
+-- removeVertex x ('vertex' x)       == 'empty'
+-- removeVertex x . removeVertex x == removeVertex x
+-- @
+removeVertex :: (Eq a, Graph g) => a -> g a -> g a
+removeVertex v = induce (/= v)
 
--- | Connect a given list of graphs.
+-- | The function @replaceVertex x y@ replaces vertex @x@ with vertex @y@ in a
+-- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
 --
--- > connects []     == empty
--- > connects [x]    == x
--- > connects [x, y] == connect x y
-connects :: Graph g => [g a] -> g a
-connects = foldr connect empty
+-- @
+-- replaceVertex x x            == id
+-- replaceVertex x y ('vertex' x) == 'vertex' y
+-- replaceVertex x y            == 'mergeVertices' (== x) y
+-- @
+replaceVertex :: (Eq a, Graph g) => a -> a -> g a -> g a
+replaceVertex u v = fmap $ \w -> if w == u then v else w
 
--- | Construct the graph comprising a single edge.
+-- | Merge vertices satisfying a given predicate with a given vertex.
 --
--- > edge x y == connect (vertex x) (vertex y)
-edge :: Graph g => a -> a -> g a
-edge x y = connect (vertex x) (vertex y)
+-- @
+-- mergeVertices (const False) x    == id
+-- mergeVertices (== x) y           == 'replaceVertex' x y
+-- mergeVertices even 1 (0 * 2)     == 1 * 1
+-- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
+-- @
+mergeVertices :: (Eq a, Graph g) => (a -> Bool) -> a -> g a -> g a
+mergeVertices p v = fmap $ \w -> if p w then v else w
 
--- | Construct the graph from a list of edges.
+-- | Split a vertex into a list of vertices with the same connectivity.
 --
--- > edges []       == empty
--- > edges [(x, y)] == edge x y
-edges :: Graph g => [(a, a)] -> g a
-edges = overlays . map (uncurry edge)
+-- @
+-- splitVertex x []                  == 'removeVertex' x
+-- splitVertex x [x]                 == id
+-- splitVertex x [y]                 == 'replaceVertex' x y
+-- splitVertex 1 [0,1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)
+-- @
+splitVertex :: (Eq a, Graph g) => a -> [a] -> g a -> g a
+splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 
--- | Construct the graph given a list of vertices @V@ and a list of edges @E@.
--- The resulting graph contains both the vertices @V@ and all the vertices
--- referred to by the edges @E@.
+-- | Check if a 'Graph' is empty. A convenient alias for `null`.
 --
--- > graph []  []       == empty
--- > graph [x] []       == vertex x
--- > graph []  [(x, y)] == edge x y
-graph :: Graph g => [a] -> [(a, a)] -> g a
-graph vs es = overlay (vertices vs) (edges es)
+-- @
+-- isEmpty 'empty'                       == True
+-- isEmpty ('vertex' x)                  == False
+-- isEmpty ('removeVertex' x $ 'vertex' x) == True
+-- isEmpty ('Algebra.Graph.Data.removeEdge' x y $ 'edge' x y) == False
+-- @
+isEmpty :: Graph g => g a -> Bool
+isEmpty = null
 
--- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
--- first graph is a /subgraph/ of the second.
-isSubgraphOf :: (Graph g, Eq (g a)) => g a -> g a -> Bool
-isSubgraphOf x y = overlay x y == y
-
--- | The /path/ on a list of vertices.
+-- | Check if a 'Graph' contains a given vertex. A convenient alias for `elem`.
 --
--- > path []     == empty
--- > path [x]    == vertex x
--- > path [x, y] == edge x y
-path :: Graph g => [a] -> g a
-path []  = empty
-path [x] = vertex x
-path xs  = edges $ zip xs (tail xs)
+-- @
+-- hasVertex x 'empty'            == False
+-- hasVertex x ('vertex' x)       == True
+-- hasVertex x ('removeVertex' x) == const False
+-- @
+hasVertex :: (Eq a, Graph g) => a -> g a -> Bool
+hasVertex = elem
 
--- | The /circuit/ on a list of vertices.
+-- | The set of vertices of a given graph.
 --
--- > circuit []     == empty
--- > circuit [x]    == edge x x
--- > circuit [x, y] == edges [(x, y), (y, x)]
-circuit :: Graph g => [a] -> g a
-circuit []     = empty
-circuit (x:xs) = path $ [x] ++ xs ++ [x]
+-- @
+-- toSet 'empty'         == Set.empty
+-- toSet ('vertex' x)    == Set.singleton x
+-- toSet ('vertices' xs) == Set.fromList xs
+-- toSet ('clique' xs)   == Set.fromList xs
+-- @
+toSet :: (Ord a, Graph g) => g a -> Set.Set a
+toSet = foldr Set.insert Set.empty
 
--- | The /clique/ on a list of vertices.
+-- | The set of vertices of a given graph. Like 'toSet' but specicialised for
+-- graphs with vertices of type 'Int'.
 --
--- > clique []        == empty
--- > clique [x]       == vertex x
--- > clique [x, y]    == edge x y
--- > clique [x, y, z] == edges [(x, y), (x, z), (y, z)]
-clique :: Graph g => [a] -> g a
-clique = connects . map vertex
+-- @
+-- toIntSet 'empty'         == IntSet.empty
+-- toIntSet ('vertex' x)    == IntSet.singleton x
+-- toIntSet ('vertices' xs) == IntSet.fromList xs
+-- toIntSet ('clique' xs)   == IntSet.fromList xs
+-- @
+toIntSet :: Graph g => g Int -> IntSet.IntSet
+toIntSet = foldr IntSet.insert IntSet.empty
 
--- | The /biclique/ on a list of vertices.
+-- | Compute the /Cartesian product/ of graphs.
 --
--- > biclique []       []       == empty
--- > biclique [x]      []       == vertex x
--- > biclique []       [y]      == vertex y
--- > biclique [x1, x2] [y1, y2] == edges [(x1, y1), (x1, y2), (x2, y1), (x2, y2)]
-biclique :: Graph g => [a] -> [a] -> g a
-biclique xs ys = connect (vertices xs) (vertices ys)
-
--- | The /star/ formed by a centre vertex and a list of leaves.
+-- @
+-- box ('path' [0,1]) ('path' "ab") == 'edges' [ ((0,\'a\'), (0,\'b\'))
+--                                       , ((0,\'a\'), (1,\'a\'))
+--                                       , ((0,\'b\'), (1,\'b\'))
+--                                       , ((1,\'a\'), (1,\'b\')) ]
+-- @
+-- Up to an isomorphism between the resulting vertex types, this operation
+-- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
+-- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
+-- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@.
 --
--- > star x []     == vertex x
--- > star x [y]    == edge x y
--- > star x [y, z] == edges [(x, y), (x, z)]
-star :: Graph g => a -> [a] -> g a
-star x ys = connect (vertex x) (vertices ys)
+-- @
+-- box x y             ~~ box y x
+-- box x (box y z)     ~~ box (box x y) z
+-- box x ('overlay' y z) == 'overlay' (box x y) (box x z)
+-- box x ('vertex' ())   ~~ x
+-- box x 'empty'         ~~ 'empty'
+-- @
+box :: Graph g => g a -> g b -> g (a, b)
+box x y = msum $ xs ++ ys
+  where
+    xs = map (\b -> fmap (,b) x) $ toList y
+    ys = map (\a -> fmap (a,) y) $ toList x
 
--- | The /tree/ graph constructed from a given 'Tree' data structure.
-tree :: Graph g => Tree a -> g a
-tree (Node x f) = overlay (star x $ map rootLabel f) (forest f)
-
--- | The /forest/ graph constructed from a given 'Forest' data structure.
-forest :: Graph g => Forest a -> g a
-forest = overlays . map tree
+-- | Construct a /De Bruijn graph/ of given dimension and symbols of a given
+-- alphabet.
+--
+-- @
+-- deBruijn k []    == 'empty'
+-- deBruijn 1 [0,1] == 'edges' [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]
+-- deBruijn 2 "0"   == 'edge' "00" "00"
+-- deBruijn 2 "01"  == 'edges' [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
+--                           , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
+-- @
+deBruijn :: Graph g => Int -> [a] -> g [a]
+deBruijn len alphabet = skeleton >>= expand
+  where
+    overlaps = mapM (const alphabet) [2..len]
+    skeleton = edges    [        (Left s, Right s)   | s <- overlaps ]
+    expand v = vertices [ either ([a] ++) (++ [a]) v | a <- alphabet ]

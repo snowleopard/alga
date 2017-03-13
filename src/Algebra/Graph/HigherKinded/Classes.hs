@@ -72,7 +72,7 @@ The core type class 'Graph' corresponds to unlabelled directed graphs.
 'Undirected', reflexive and transitive graphs can be obtained by extending the
 minimal set of axioms.
 -}
-class MonadPlus g => Graph g where
+class (Traversable g, MonadPlus g) => Graph g where
     -- | Connect two graphs.
     connect :: g a -> g a -> g a
 

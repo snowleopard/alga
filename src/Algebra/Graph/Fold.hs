@@ -17,7 +17,7 @@ module Algebra.Graph.Fold (
     Fold, foldg,
 
     -- * Graph properties
-    isEmpty, hasVertex, hasEdge, toIntSet, toSet,
+    isEmpty, hasVertex, hasEdge, toSet, toIntSet,
 
     -- * Graph transformation
     transpose, simplify, gmap, replaceVertex, mergeVertices, bind, induce,
@@ -27,19 +27,23 @@ module Algebra.Graph.Fold (
     box,
 
     -- * Graph construction
-    deBruijn
+    deBruijn,
+
+    -- * Re-exporting standard functions
+    toList
   ) where
 
 import Control.Applicative hiding (empty)
 import Control.Monad
 import Data.Foldable
-import qualified Data.IntSet as IntSet
 import Data.IntSet (IntSet)
-import qualified Data.Set as Set
 import Data.Set (Set)
 
-import Algebra.Graph
+import Algebra.Graph.Base
+
 import qualified Algebra.Graph.HigherKinded.Classes as H
+import qualified Data.IntSet                        as IntSet
+import qualified Data.Set                           as Set
 
 -- | Boehm-Berarducci encoding of algebraic graphs.
 newtype Fold a = F { runFold :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b }
@@ -70,7 +74,7 @@ instance Num a => Num (Fold a) where
     negate      = id
 
 instance Functor Fold where
-    fmap f = foldg empty (vertex . f) overlay connect
+    fmap = gmap
 
 instance Applicative Fold where
     pure  = vertex
@@ -85,8 +89,8 @@ instance MonadPlus Fold where
     mplus = overlay
 
 instance Monad Fold where
-    return  = vertex
-    g >>= f = foldg empty f overlay connect g
+    return = vertex
+    (>>=)  = bind
 
 instance H.Graph Fold where
     connect = connect
@@ -344,10 +348,10 @@ smash s t = foldg empty v overlay c
 --
 -- @
 -- deBruijn k []    == 'empty'
--- deBruijn 1 [0,1] == 'edges' [([0],[0]),([0],[1]),([1],[0]),([1],[1])]
+-- deBruijn 1 [0,1] == 'edges' [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]
 -- deBruijn 2 "0"   == 'edge' "00" "00"
--- deBruijn 2 "01"  == 'edges' [("00","00"),("00","01"),("01","10"),("01","11")
---                           ,("10","00"),("10","01"),("11","10"),("11","11")]
+-- deBruijn 2 "01"  == 'edges' [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
+--                           , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
 -- @
 deBruijn :: (Graph g, Vertex g ~ [a]) => Int -> [a] -> g
 deBruijn len alphabet = bind skeleton expand

@@ -1,12 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Algebra.Graph.Todo (Todo, todo, low, high, (~*~), (>*<), priority) where
 
-import           Data.Map (Map)
-import qualified Data.Map as Map
+import Data.Map (Map)
 import Data.String
 
-import Algebra.Graph
 import Algebra.Graph.AdjacencyMap
+import Algebra.Graph.Classes
+
+import qualified Data.Map as Map
 
 data Todo a = T (Map a Int) (AdjacencyMap a) deriving Show
 

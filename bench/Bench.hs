@@ -1,6 +1,5 @@
 import Criterion.Main
 import Data.Char
-import Data.Foldable (toList)
 
 import Algebra.Graph
 import Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap)

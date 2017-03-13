@@ -1,13 +1,11 @@
-import Data.Foldable (toList)
 import Data.List (sort)
 import Data.List.Extra (nubOrd)
 import Test.QuickCheck
 
-import Algebra.Graph hiding (Graph)
+import Algebra.Graph hiding (Graph, box, induce, removeVertex)
 import Algebra.Graph.AdjacencyMap hiding (edges)
 import Algebra.Graph.Data (Graph, fromGraph)
-import Algebra.Graph.Fold hiding (box, induce, removeVertex)
-import Algebra.Graph.HigherKinded.Util
+import Algebra.Graph.HigherKinded (box, induce, removeVertex)
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.Preorder
 import Algebra.Graph.Relation.Reflexive
