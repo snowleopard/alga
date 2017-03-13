@@ -1,13 +1,22 @@
 {-# LANGUAGE RankNTypes #-}
 module Algebra.Graph.Test (
+    module Data.List,
+    module Data.List.Extra,
+
     GraphTestsuite, axioms, theorems, undirectedAxioms, reflexiveAxioms,
-    transitiveAxioms, preorderAxioms
+    transitiveAxioms, preorderAxioms, test, quickCheck
     ) where
 
+import Data.List (sort)
+import Data.List.Extra (nubOrd)
 import Prelude hiding ((+), (*), (<=))
 import Test.QuickCheck
 
 import Algebra.Graph
+import Algebra.Graph.Test.Arbitrary ()
+
+test :: Testable a => String -> a -> IO ()
+test str p = putStr (str ++ ": ") >> quickCheck p
 
 (+) :: Graph g => g -> g -> g
 (+) = overlay

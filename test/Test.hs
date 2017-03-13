@@ -4,7 +4,6 @@ import Test.QuickCheck
 
 import Algebra.Graph hiding (Graph, box, induce, removeVertex)
 import Algebra.Graph.AdjacencyMap hiding (edges)
-import Algebra.Graph.AdjacencyMap.Internal (consistent)
 import Algebra.Graph.Data (Graph, fromGraph)
 import Algebra.Graph.HigherKinded (box, induce, removeVertex)
 import Algebra.Graph.Relation
@@ -13,12 +12,10 @@ import Algebra.Graph.Relation.Reflexive
 import Algebra.Graph.Relation.Symmetric
 import Algebra.Graph.Relation.Transitive
 import Algebra.Graph.Test
-import Algebra.Graph.Test.Arbitrary ()
+import Algebra.Graph.Test.AdjacencyMap
+import Algebra.Graph.Test.IntAdjacencyMap
 
 type G = Graph Int
-
-test :: Testable a => String -> a -> IO ()
-test str p = putStr (str ++ ": ") >> quickCheck p
 
 main :: IO ()
 main = do
@@ -29,20 +26,8 @@ main = do
     putStrLn "============ Relation ============"
     quickCheck (axioms :: GraphTestsuite (Relation Int))
 
-    putStrLn "============ Adjacency Map ============"
-    quickCheck (axioms :: GraphTestsuite (AdjacencyMap Int))
-
-    test "Consistency of fromAdjacencyList" $ \(xs :: [(Int, [Int])]) ->
-        consistent (fromAdjacencyList xs)
-
-    test "Overlay of fromAdjacencyList" $ \(xs :: [(Int, [Int])]) ys ->
-        fromAdjacencyList xs `overlay` fromAdjacencyList ys == fromAdjacencyList (xs ++ ys)
-
-    test "Inverse of adjacencyList" $ \(m :: AdjacencyMap Int) ->
-        fromAdjacencyList (adjacencyList m) == m
-
-    test "Weak inverse of edges" $ \(xs :: [(Int, Int)]) ->
-        edgeList (edges xs) == nubOrd (sort xs)
+    testAdjacencyMap
+    testIntAdjacencyMap
 
     putStrLn "============ Directed graphs ============"
     test "Upper bound" $ \(x :: G) -> let xs = vertices (toList x) in

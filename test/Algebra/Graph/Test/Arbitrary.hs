@@ -12,17 +12,20 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Arbitrary (
     -- * Generators of arbitrary graph instances
-    arbitraryGraph, arbitraryRelation
+    arbitraryGraph, arbitraryRelation, arbitraryAdjacencyMap, arbitraryIntAdjacencyMap
   ) where
 
-import qualified Data.Set as Set
 import Test.QuickCheck
 
 import Algebra.Graph
-import qualified Algebra.Graph.Data as Data
-import Algebra.Graph.Data hiding (Graph)
-import Algebra.Graph.Relation.Internal
 import Algebra.Graph.AdjacencyMap.Internal
+import Algebra.Graph.Data hiding (Graph)
+import Algebra.Graph.IntAdjacencyMap.Internal (IntAdjacencyMap)
+import Algebra.Graph.Relation.Internal
+
+import qualified Algebra.Graph.Data                     as Data
+import qualified Algebra.Graph.IntAdjacencyMap.Internal as Int
+import qualified Data.Set                               as Set
 
 -- | Generate an arbitrary 'Graph' value of a specified size.
 arbitraryGraph :: (Graph g, Arbitrary (Vertex g)) => Gen g
@@ -52,9 +55,15 @@ arbitraryRelation = do
     let (xs, ys) = unzip $ Set.toAscList r
     return $ Relation (Set.fromList $ xs ++ ys) r
 
--- | Generate an arbitrary 'AdjacencyMap'.
+-- | Generate an arbitrary 'AdjacencyMap'. It is guaranteed that the
+-- resulting adjacency map is 'consistent'.
 arbitraryAdjacencyMap :: (Arbitrary a, Ord a) => Gen (AdjacencyMap a)
 arbitraryAdjacencyMap = fromAdjacencyList <$> arbitrary
+
+-- | Generate an arbitrary 'IntAdjacencyMap'. It is guaranteed that the
+-- resulting adjacency map is 'consistent'.
+arbitraryIntAdjacencyMap :: Gen IntAdjacencyMap
+arbitraryIntAdjacencyMap = Int.fromAdjacencyList <$> arbitrary
 
 -- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
@@ -74,3 +83,6 @@ instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
 
 instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
     arbitrary = arbitraryAdjacencyMap
+
+instance Arbitrary IntAdjacencyMap where
+    arbitrary = arbitraryIntAdjacencyMap
