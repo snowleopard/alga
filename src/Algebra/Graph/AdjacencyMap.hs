@@ -22,13 +22,14 @@ module Algebra.Graph.AdjacencyMap (
     gmap, edgeList, edges, adjacencyList, fromAdjacencyList, postset,
 
     -- * Algorithms
-    dfsForest, topSort, isTopSort,
+    dfsForest, topSort, isTopSort, scc,
 
     -- * Interoperability with King-Launchbury graphs
     GraphKL, getGraph, getVertex, graphKL, fromGraphKL
   ) where
 
 import Data.Array
+import Data.Foldable (toList)
 import Data.Set (Set)
 import Data.Tree
 
@@ -156,3 +157,23 @@ isTopSort xs m = go Set.empty xs
     go seen []     = seen == Map.keysSet (adjacencyMap m)
     go seen (v:vs) = let newSeen = seen `seq` Set.insert v seen
         in postset v m `Set.intersection` newSeen == Set.empty && go newSeen vs
+
+-- | Compute the /condensation/ of a graph, where each vertex corresponds to a
+-- /strongly-connected component/ of the original graph.
+--
+-- @
+-- scc 'Algebra.Graph.empty'               == 'Algebra.Graph.empty'
+-- scc ('Algebra.Graph.vertex' x)          == 'Algebra.Graph.vertex' (Set.singleton x)
+-- scc ('Algebra.Graph.edge' x y)          == 'Algebra.Graph.edge' (Set.singleton x) (Set.singleton y)
+-- scc ('Algebra.Graph.circuit' xs)        == 'Algebra.Graph.edge' (Set.fromList xs) (Set.fromList xs)
+-- scc (3 * 1 * 4 * 1 * 5) == 'Algebra.Graph.edges' [ (Set.fromList [1,4], Set.fromList [1,4])
+--                                  , (Set.fromList [1,4], Set.fromList [5]  )
+--                                  , (Set.fromList [3]  , Set.fromList [1,4])
+--                                  , (Set.fromList [3]  , Set.fromList [5]  )]
+-- @
+scc :: Ord a => AdjacencyMap a -> AdjacencyMap (Set a)
+scc m = gmap (\v -> Map.findWithDefault Set.empty v components) m
+  where
+    GraphKL g r = graphKL m
+    components  = Map.fromList $ concatMap (expand . fmap r . toList) (KL.scc g)
+    expand xs   = let s = Set.fromList xs in map (\x -> (x, s)) xs
