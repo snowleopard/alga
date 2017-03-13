@@ -25,7 +25,7 @@ module Algebra.Graph.HigherKinded (
     isSubgraphOf,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, tree, forest, deBruijn,
+    path, circuit, clique, biclique, star, tree, forest, mesh, torus, deBruijn,
 
     -- * Graph transformation
     induce, removeVertex, replaceVertex, mergeVertices, splitVertex,
@@ -172,6 +172,32 @@ box x y = msum $ xs ++ ys
   where
     xs = map (\b -> fmap (,b) x) $ toList y
     ys = map (\a -> fmap (a,) y) $ toList x
+
+-- | Construct a /mesh graph/ from two lists of vertices.
+--
+-- @
+-- mesh xs     []   == 'empty'
+-- mesh []     ys   == 'empty'
+-- mesh [x]    [y]  == 'vertex' (x, y)
+-- mesh xs     ys   == 'box' ('path' xs) ('path' ys)
+-- mesh [1..3] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(2,\'b\')), ((2,\'a\'),(2,\'b\'))
+--                           , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\')), ((3,\'a\'),(3,\'b\')) ]
+-- @
+mesh :: Graph g => [u] -> [v] -> g (u, v)
+mesh us vs = path us `box` path vs
+
+-- | Construct a /torus graph/ from two lists of vertices.
+--
+-- @
+-- torus xs     []   == 'empty'
+-- torus []     ys   == 'empty'
+-- torus [x]    [y]  == 'edge' (x, y) (x, y)
+-- torus xs     ys   == 'box' ('circuit' xs) ('circuit' ys)
+-- torus [1..2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
+--                            , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
+-- @
+torus :: Graph g => [u] -> [v] -> g (u, v)
+torus us vs = circuit us `box` circuit vs
 
 -- | Construct a /De Bruijn graph/ of given dimension and symbols of a given
 -- alphabet.

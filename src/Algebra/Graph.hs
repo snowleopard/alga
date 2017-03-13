@@ -24,7 +24,7 @@ module Algebra.Graph (
     isSubgraphOf,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, tree, forest, deBruijn,
+    path, circuit, clique, biclique, star, tree, forest, mesh, torus, deBruijn,
 
     -- * Graph folding
     Fold, foldg,

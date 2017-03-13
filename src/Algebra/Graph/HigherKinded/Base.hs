@@ -154,10 +154,10 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 star :: Graph g => a -> [a] -> g a
 star x ys = connect (vertex x) (vertices ys)
 
--- | The /tree/ graph constructed from a given 'Tree' data structure.
+-- | The /tree graph/ constructed from a given 'Tree' data structure.
 tree :: Graph g => Tree a -> g a
 tree (Node x f) = overlay (star x $ map rootLabel f) (forest f)
 
--- | The /forest/ graph constructed from a given 'Forest' data structure.
+-- | The /forest graph/ constructed from a given 'Forest' data structure.
 forest :: Graph g => Forest a -> g a
 forest = overlays . map tree
