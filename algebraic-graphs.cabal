@@ -68,7 +68,6 @@ test-suite test-alga
                         TypeFamilies
                         ScopedTypeVariables
     other-extensions:   RankNTypes
-                        StandaloneDeriving
 
 benchmark benchmark-alga
     hs-source-dirs:     bench

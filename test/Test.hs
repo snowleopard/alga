@@ -4,6 +4,7 @@ import Test.QuickCheck
 
 import Algebra.Graph hiding (Graph, box, induce, removeVertex)
 import Algebra.Graph.AdjacencyMap hiding (edges)
+import Algebra.Graph.AdjacencyMap.Internal (consistent)
 import Algebra.Graph.Data (Graph, fromGraph)
 import Algebra.Graph.HigherKinded (box, induce, removeVertex)
 import Algebra.Graph.Relation
@@ -30,6 +31,18 @@ main = do
 
     putStrLn "============ Adjacency Map ============"
     quickCheck (axioms :: GraphTestsuite (AdjacencyMap Int))
+
+    test "Consistency of fromAdjacencyList" $ \(xs :: [(Int, [Int])]) ->
+        consistent (fromAdjacencyList xs)
+
+    test "Overlay of fromAdjacencyList" $ \(xs :: [(Int, [Int])]) ys ->
+        fromAdjacencyList xs `overlay` fromAdjacencyList ys == fromAdjacencyList (xs ++ ys)
+
+    test "Inverse of adjacencyList" $ \(m :: AdjacencyMap Int) ->
+        fromAdjacencyList (adjacencyList m) == m
+
+    test "Weak inverse of edges" $ \(xs :: [(Int, Int)]) ->
+        edgeList (edges xs) == nubOrd (sort xs)
 
     putStrLn "============ Directed graphs ============"
     test "Upper bound" $ \(x :: G) -> let xs = vertices (toList x) in

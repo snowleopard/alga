@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE StandaloneDeriving #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Arbitrary
@@ -53,6 +52,10 @@ arbitraryRelation = do
     let (xs, ys) = unzip $ Set.toAscList r
     return $ Relation (Set.fromList $ xs ++ ys) r
 
+-- | Generate an arbitrary 'AdjacencyMap'.
+arbitraryAdjacencyMap :: (Arbitrary a, Ord a) => Gen (AdjacencyMap a)
+arbitraryAdjacencyMap = fromAdjacencyList <$> arbitrary
+
 -- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
     arbitrary = arbitraryRelation
@@ -69,4 +72,5 @@ instance (Arbitrary a, Ord a) => Arbitrary (TransitiveRelation a) where
 instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
     arbitrary = PreorderRelation <$> arbitraryRelation
 
-deriving instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a)
+instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
+    arbitrary = arbitraryAdjacencyMap
