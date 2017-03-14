@@ -3,6 +3,7 @@ module Algebra.Graph.Test (
     module Data.List,
     module Data.List.Extra,
     module Test.QuickCheck,
+    module Test.QuickCheck.Function,
 
     GraphTestsuite, axioms, theorems, undirectedAxioms, reflexiveAxioms,
     transitiveAxioms, preorderAxioms, test,
@@ -12,6 +13,7 @@ import Data.List (sort)
 import Data.List.Extra (nubOrd)
 import Prelude hiding ((+), (*), (<=))
 import Test.QuickCheck
+import Test.QuickCheck.Function
 
 import Algebra.Graph
 import Algebra.Graph.Test.Arbitrary ()

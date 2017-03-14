@@ -21,7 +21,6 @@ import Algebra.Graph.Test
 import Data.Set (Set)
 import Data.IntSet (IntSet)
 import Prelude hiding ((==))
-import Test.QuickCheck.Function
 
 import Algebra.Graph.Data as Data hiding (foldg, hasEdge, removeEdge)
 

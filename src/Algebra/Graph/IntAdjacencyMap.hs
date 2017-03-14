@@ -85,13 +85,19 @@ toSet = Map.keysSet . adjacencyMap
 -- postset x 'Algebra.Graph.empty'      == Set.empty
 -- postset x ('Algebra.Graph.vertex' x) == Set.empty
 -- postset x ('Algebra.Graph.edge' x y) == Set.fromList [y]
--- postset y ('Algebra.Graph.edge' x y) == Set.empty
+-- postset 2 ('Algebra.Graph.edge' 1 2) == Set.empty
 -- @
 postset :: Int -> IntAdjacencyMap -> IntSet
 postset v = Map.findWithDefault Set.empty v . adjacencyMap
 
--- | A data type encapsulating King-Launchbury graphs, which are implemented in
--- the "Data.Graph" module of the @containers@ library.
+-- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
+-- the "Data.Graph" module of the @containers@ library. If @graphKL g == h@ then
+-- the following holds:
+--
+-- @
+-- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == Set.toAscList ('toSet' g)
+-- map (\\(x, y) -> ('getVertex' h x, 'getVertex' h y)) ('Data.Graph.edges' $ 'getGraph' h) == 'edgeList' g
+-- @
 data GraphKL = GraphKL {
     -- | Array-based graph representation (King and Launchbury, 1995).
     getGraph :: KL.Graph,
@@ -99,29 +105,37 @@ data GraphKL = GraphKL {
     getVertex :: KL.Vertex -> Int }
 
 -- | Build 'GraphKL' from the adjacency map of a graph.
+--
+-- @
+-- 'fromGraphKL' . graphKL == id
+-- @
 graphKL :: IntAdjacencyMap -> GraphKL
 graphKL m = GraphKL g $ \u -> case r u of (_, v, _) -> v
   where
     (g, r) = KL.graphFromEdges' [ ((), v, us) | (v, us) <- adjacencyList m ]
 
 -- | Extract the adjacency map of a King-Launchbury graph.
+--
+-- @
+-- fromGraphKL . 'graphKL' == id
+-- @
 fromGraphKL :: GraphKL -> IntAdjacencyMap
 fromGraphKL (GraphKL g r) = fromAdjacencyList $ map (\(x, ys) -> (r x, map r ys)) (assocs g)
 
 -- | Compute the /depth-first search/ forest of a graph.
 --
 -- @
+-- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 1 1)         == 'Algebra.Graph.vertex' 1
+-- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 1 2)         == 'Algebra.Graph.edge' 1 2
+-- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 2 1)         == 'Algebra.Graph.vertices' [1, 2]
+-- 'Algebra.Graph.isSubgraphOf' ('Algebra.Graph.forest' $ dfsForest x) x == True
+-- dfsForest . 'Algebra.Graph.forest' . dfsForest        == dfsForest
 -- dfsForest $ 3 * (1 + 4) * (1 + 5)     == [ Node { rootLabel = 1
 --                                                 , subForest = [ Node { rootLabel = 5
 --                                                                      , subForest = [] }]}
 --                                          , Node { rootLabel = 3
 --                                                 , subForest = [ Node { rootLabel = 4
 --                                                                      , subForest = [] }]}]
--- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 1 1)         == 'Algebra.Graph.vertex' 1
--- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 1 2)         == 'Algebra.Graph.edge' 1 2
--- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 2 1)         == 'Algebra.Graph.vertices' [1, 2]
--- 'Algebra.Graph.isSubgraphOf' ('Algebra.Graph.forest' $ dfsForest x) x == True
--- dfsForest . 'Algebra.Graph.forest' . dfsForest        == dfsForest
 -- @
 dfsForest :: IntAdjacencyMap -> Forest Int
 dfsForest m = let GraphKL g r = graphKL m in fmap (fmap r) (KL.dff g)

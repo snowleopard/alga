@@ -121,8 +121,9 @@ gmap f = IntAdjacencyMap . Map.map (Set.map f) . Map.mapKeysWith Set.union f . a
 fromAdjacencyList :: [(Int, [Int])] -> IntAdjacencyMap
 fromAdjacencyList as = IntAdjacencyMap $ Map.unionWith Set.union vs es
   where
-    vs = fromSet (const Set.empty) . Set.fromList $ concatMap (\(x, ys) -> x : ys) as
-    es = Map.fromListWith Set.union $ map (\(x, ys) -> (x, Set.fromList ys)) as
+    ss = map (fmap Set.fromList) as
+    vs = fromSet (const Set.empty) . Set.unions $ map snd ss
+    es = Map.fromListWith Set.union ss
 
 -- | Construct a graph from an /edge list/.
 --
@@ -132,14 +133,14 @@ fromAdjacencyList as = IntAdjacencyMap $ Map.unionWith Set.union vs es
 -- 'edgeList' . edges == 'Data.List.nub' . 'Data.List.sort'
 -- @
 edges :: [(Int, Int)] -> IntAdjacencyMap
-edges = IntAdjacencyMap . Map.fromListWith Set.union . map (\(x, y) -> (x, Set.singleton y))
+edges = fromAdjacencyList . map (fmap return)
 
 -- | Extract the /adjacency list/ of a graph.
 --
 -- @
 -- adjacencyList 'empty'               == []
 -- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('Algebra.Graph.edge' x y)          == [(x, [y])]
+-- adjacencyList ('Algebra.Graph.edge' 1 2)          == [(1, [2]), (2, [])]
 -- adjacencyList ('Algebra.Graph.star' 2 [1,3])      == [(1, []), (2, [1,3]), (3, [])]
 -- 'fromAdjacencyList' . adjacencyList == id
 -- @

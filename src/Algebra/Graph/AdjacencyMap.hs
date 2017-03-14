@@ -86,13 +86,19 @@ toSet = Map.keysSet . adjacencyMap
 -- postset x 'Algebra.Graph.empty'      == Set.empty
 -- postset x ('Algebra.Graph.vertex' x) == Set.empty
 -- postset x ('Algebra.Graph.edge' x y) == Set.fromList [y]
--- postset y ('Algebra.Graph.edge' x y) == Set.empty
+-- postset 2 ('Algebra.Graph.edge' 1 2) == Set.empty
 -- @
 postset :: Ord a => a -> AdjacencyMap a -> Set a
 postset v = Map.findWithDefault Set.empty v . adjacencyMap
 
--- | A data type encapsulating King-Launchbury graphs, which are implemented in
--- the "Data.Graph" module of the @containers@ library.
+-- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
+-- the "Data.Graph" module of the @containers@ library. If @graphKL g == h@ then
+-- the following holds:
+--
+-- @
+-- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == Set.toAscList ('toSet' g)
+-- map (\\(x, y) -> ('getVertex' h x, 'getVertex' h y)) ('Data.Graph.edges' $ 'getGraph' h) == 'edgeList' g
+-- @
 data GraphKL a = GraphKL {
     -- | Array-based graph representation (King and Launchbury, 1995).
     getGraph :: KL.Graph,
@@ -100,29 +106,37 @@ data GraphKL a = GraphKL {
     getVertex :: KL.Vertex -> a }
 
 -- | Build 'GraphKL' from the adjacency map of a graph.
+--
+-- @
+-- 'fromGraphKL' . graphKL == id
+-- @
 graphKL :: Ord a => AdjacencyMap a -> GraphKL a
 graphKL m = GraphKL g $ \u -> case r u of (_, v, _) -> v
   where
     (g, r) = KL.graphFromEdges' [ ((), v, us) | (v, us) <- adjacencyList m ]
 
 -- | Extract the adjacency map of a King-Launchbury graph.
+--
+-- @
+-- fromGraphKL . 'graphKL' == id
+-- @
 fromGraphKL :: Ord a => GraphKL a -> AdjacencyMap a
 fromGraphKL (GraphKL g r) = fromAdjacencyList $ map (\(x, ys) -> (r x, map r ys)) (assocs g)
 
 -- | Compute the /depth-first search/ forest of a graph.
 --
 -- @
+-- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 1 1)         == 'Algebra.Graph.vertex' 1
+-- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 1 2)         == 'Algebra.Graph.edge' 1 2
+-- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 2 1)         == 'Algebra.Graph.vertices' [1, 2]
+-- 'Algebra.Graph.isSubgraphOf' ('Algebra.Graph.forest' $ dfsForest x) x == True
+-- dfsForest . 'Algebra.Graph.forest' . dfsForest        == dfsForest
 -- dfsForest $ 3 * (1 + 4) * (1 + 5)     == [ Node { rootLabel = 1
 --                                                 , subForest = [ Node { rootLabel = 5
 --                                                                      , subForest = [] }]}
 --                                          , Node { rootLabel = 3
 --                                                 , subForest = [ Node { rootLabel = 4
 --                                                                      , subForest = [] }]}]
--- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 1 1)         == 'Algebra.Graph.vertex' 1
--- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 1 2)         == 'Algebra.Graph.edge' 1 2
--- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 2 1)         == 'Algebra.Graph.vertices' [1, 2]
--- 'Algebra.Graph.isSubgraphOf' ('Algebra.Graph.forest' $ dfsForest x) x == True
--- dfsForest . 'Algebra.Graph.forest' . dfsForest        == dfsForest
 -- @
 dfsForest :: Ord a => AdjacencyMap a -> Forest a
 dfsForest m = let GraphKL g r = graphKL m in fmap (fmap r) (KL.dff g)
@@ -165,7 +179,7 @@ isTopSort xs m = go Set.empty xs
 -- scc 'Algebra.Graph.empty'               == 'Algebra.Graph.empty'
 -- scc ('Algebra.Graph.vertex' x)          == 'Algebra.Graph.vertex' (Set.singleton x)
 -- scc ('Algebra.Graph.edge' x y)          == 'Algebra.Graph.edge' (Set.singleton x) (Set.singleton y)
--- scc ('Algebra.Graph.circuit' xs)        == 'Algebra.Graph.edge' (Set.fromList xs) (Set.fromList xs)
+-- scc ('Algebra.Graph.circuit' (1:xs))    == 'Algebra.Graph.edge' (Set.fromList (1:xs)) (Set.fromList (1:xs))
 -- scc (3 * 1 * 4 * 1 * 5) == 'Algebra.Graph.edges' [ (Set.fromList [1,4], Set.fromList [1,4])
 --                                  , (Set.fromList [1,4], Set.fromList [5]  )
 --                                  , (Set.fromList [3]  , Set.fromList [1,4])
