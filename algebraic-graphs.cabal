@@ -72,6 +72,7 @@ test-suite test-alga
                         TypeFamilies
                         ScopedTypeVariables
     other-extensions:   RankNTypes
+                        ViewPatterns
 
 benchmark benchmark-alga
     hs-source-dirs:     bench

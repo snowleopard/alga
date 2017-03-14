@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
+{-# LANGUAGE ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Graph
@@ -20,14 +21,18 @@ import Algebra.Graph.Test
 import Data.Set (Set)
 import Data.IntSet (IntSet)
 import Prelude hiding ((==))
+import Test.QuickCheck.Function
 
 import Algebra.Graph.Data as Data hiding (foldg, hasEdge, removeEdge)
 
-import qualified Prelude ((==))
+import qualified Prelude     as P
 import qualified Data.Set    as Set
 import qualified Data.IntSet as IntSet
 
-type G = Data.Graph Int
+type G  = Data.Graph Int
+type II = Int -> Int
+type IB = Int -> Bool
+type IG = Int -> G
 
 testGraph :: IO ()
 testGraph = do
@@ -36,7 +41,7 @@ testGraph = do
     quickCheck (theorems :: GraphTestsuite G)
 
     let (==) :: G -> G -> Bool
-        (==) = (Prelude.==)
+        (==) = (P.==)
     putStrLn "\n============ vertices ============"
 
     test "vertices []  == empty   " $
@@ -161,21 +166,159 @@ testGraph = do
     test "transpose (transpose x) == x       " $ \y -> let x = fromGraph y in
           transpose (transpose x) == gmap id x
 
+    putStrLn "\n============ simplify ============"
+
+    test "simplify x                        == x                            " $ \y -> let x = fromGraph y in
+          simplify x                        == gmap id x
+
+    test "1 + 1 :: Graph Int                == Overlay (Vertex 1) (Vertex 1)" $
+         (1 + 1)                            == Overlay (Vertex 1) (Vertex 1)
+
+    test "simplify (1 + 1) :: Graph Int     == Vertex 1                     " $
+          simplify (1 + 1)                  == Vertex 1
+
+    test "1 * 1 * 1 :: Graph Int            == Connect (Connect (Vertex 1) (Vertex 1)) (Vertex 1)" $
+         (1 * 1 * 1)                        == Connect (Connect (Vertex 1) (Vertex 1)) (Vertex 1)
+
+    test "simplify (1 * 1 * 1) :: Graph Int == Connect (Vertex 1) (Vertex 1)" $
+          simplify (1 * 1 * 1)              == Connect (Vertex 1) (Vertex 1)
+
+    putStrLn "\n============ gmap ============"
+
+    test "gmap f empty      == empty           " $ \(apply -> f :: II) ->
+          gmap f empty      == empty
+
+    test "gmap f (vertex x) == vertex (f x)    " $ \(apply -> f :: II) x ->
+          gmap f (vertex x) == vertex (f x)
+
+    test "gmap f (edge x y) == edge (f x) (f y)" $ \(apply -> f :: II) x y ->
+          gmap f (edge x y) == edge (f x) (f y)
+
+    test "gmap id           == id              " $ \y -> let x = fromGraph y in
+          gmap id x         == y
+
+    test "gmap f . gmap g   == gmap (f . g)    " $ \(apply -> f :: II) (apply -> g :: II) y -> let x = fromGraph y in
+         (gmap f . gmap g) x== gmap (f . g) x
+
+    putStrLn "\n============ replaceVertex ============"
+
+    test "replaceVertex x x            == id                    " $ \x z -> let y = fromGraph z in
+          replaceVertex x x y          == gmap id y
+
+    test "replaceVertex x y (vertex x) == vertex y              " $ \x y ->
+          replaceVertex x y (vertex x) == vertex y
+
+    test "replaceVertex x y            == mergeVertices (== x) y" $ \x y k -> let z = fromGraph k in
+          replaceVertex x y z          == mergeVertices (P.== x) y (gmap id z)
+
+    putStrLn "\n============ mergeVertices ============"
+
+    test "mergeVertices (const False) x    == id               " $ \x z -> let y = fromGraph z in
+          mergeVertices (const False) x y  == gmap id y
+
+    test "mergeVertices (== x) y           == replaceVertex x y" $ \x y k -> let z = fromGraph k in
+          mergeVertices (P.== x) y z       == replaceVertex x y z
+
+    test "mergeVertices even 1 (0 * 2)     == 1 * 1            " $
+          mergeVertices even 1 (0 * 2)     == (1 * 1)
+
+    test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1            " $
+          mergeVertices odd  1 (3 + 4 * 5) == (4 * 1)
+
+    putStrLn "\n============ bind ============"
+
+    test "bind empty f         == empty                       " $ \(apply -> f :: IG) ->
+          bind empty f         == empty
+
+    test "bind (vertex x) f    == f x                         " $ \(apply -> f :: IG) x ->
+          bind (vertex x) f    == f x
+
+    test "bind (edge x y) f    == connect (f x) (f y)         " $ \(apply -> f :: IG) x y ->
+          bind (edge x y) f    == connect (f x) (f y)
+
+    test "bind (vertices xs) f == overlays (map f xs)         " $ mapSize (min 10) $ \xs (apply -> f :: IG) ->
+          bind (vertices xs) f == overlays (map f xs)
+
+    test "bind x (const empty) == empty                       " $ \(y :: G) -> let x = fromGraph y in
+          bind x (const empty) == empty
+
+    test "bind x vertex        == x                           " $ \(y :: G) -> let x = fromGraph y in
+          bind x vertex        == gmap id x
+
+    test "bind (bind x f) g    == bind x (\\y -> bind (f y) g)" $ mapSize (min 10) $ \(z :: G) (apply -> f :: IG) (apply -> g :: IG) -> let x = fromGraph z in
+          bind (fromGraph $ bind x f) g == bind x (\y -> bind (fromGraph $ f y) g)
+
+    putStrLn "\n============ removeVertex ============"
+
+    test "removeVertex x (vertex x)       == empty         " $ \x ->
+          removeVertex x (vertex x)       == empty
+
+    test "removeVertex x . removeVertex x == removeVertex x" $ \x (z :: G) -> let y = fromGraph z in
+         (removeVertex x . removeVertex x)y==removeVertex x y
+
+    putStrLn "\n============ splitVertex ============"
+
+    test "splitVertex x []                   == removeVertex x   " $ \x z -> let y = fromGraph z in
+         (splitVertex x []) y                == removeVertex x y
+
+    test "splitVertex x [x]                  == id               " $ \x z -> let y = fromGraph z in
+         (splitVertex x [x]) y               == gmap id y
+
+    test "splitVertex x [y]                  == replaceVertex x y" $ \x y k -> let z = fromGraph k in
+         (splitVertex x [y]) z               == replaceVertex x y z
+
+    test "splitVertex 1 [0, 1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)" $
+         (splitVertex 1 [0, 1] $ 1 * (2 + 3))==((0 + 1) * (2 + 3))
+
+    putStrLn "\n============ removeEdge ============"
+
+    test "removeEdge x y (edge x y)       == vertices [x, y]" $ \x y ->
+          removeEdge x y (edge x y)       == vertices [x, y]
+
+    test "removeEdge x y . removeEdge x y == removeEdge x y " $ \x y k -> let z = fromGraph k in
+         (removeEdge x y . removeEdge x y)z==removeEdge x y z
+
+    test "removeEdge x y . removeVertex x == removeVertex x " $ \x y k -> let z = fromGraph k in
+         (removeEdge x y . removeVertex x)z==removeVertex x z
+
+    test "removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2      " $
+          removeEdge 1 1 (1 * 1 * 2 * 2)  ==(1 * 2 * 2)
+
+    test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2  " $
+          removeEdge 1 2 (1 * 1 * 2 * 2)  ==(1 * 1 + 2 * 2)
+
+    putStrLn "\n============ induce ============"
+
+    test "induce (const True)  x      == x                        " $ \(y :: G) -> let x = fromGraph y in
+          induce (const True)  x      == gmap id x
+
+    test "induce (const False) x      == empty                    " $ \(y :: G) -> let x = fromGraph y in
+          induce (const False) x      == empty
+
+    test "induce (/= x)               == removeVertex x           " $ \x (z :: G) -> let y = fromGraph z in
+          induce (/= x) y             == removeVertex x y
+
+    test "induce p . induce q         == induce (\\x -> p x && q x)" $ \(apply -> p :: IB) (apply -> q :: IB) (z :: G) -> let y = fromGraph z in
+         (induce p . induce q) y      == induce (\x -> p x && q x) y
+
     let (==) :: Eq a => a -> a -> Bool
-        (==) = (Prelude.==)
+        (==) = (P.==)
+    test "isSubgraphOf (induce p x) x == True                     " $ \(apply -> p :: IB) (x :: G) ->
+          isSubgraphOf (induce p $ fromGraph x) x == True
+
     putStrLn "\n============ foldg ============"
 
-    test "foldg []   return        (++) (++) x == toList x " $ \(y :: G) -> let x = fromGraph y in
-          foldg []   return        (++) (++) x == toList x
+    test "foldg []   return        (++) (++) == toList " $ \(y :: G) -> let x = fromGraph y in
+          foldg []   return        (++) (++)x== toList x
 
-    test "foldg 0    (const 1)     (+)  (+)  x == length x " $ \(y :: G) -> let x = fromGraph y in
-          foldg 0    (const 1)     (+)  (+)  x == length x
+    test "foldg 0    (const 1)     (+)  (+)  == length " $ \(y :: G) -> let x = fromGraph y in
+          foldg 0    (const 1)     (+)  (+)x == length x
 
-    test "foldg True (const False) (&&) (&&) x == isEmpty x" $ \(y :: G) -> let x = fromGraph y in
-          foldg True (const False) (&&) (&&) x == isEmpty x
+    test "foldg True (const False) (&&) (&&) == isEmpty" $ \(y :: G) -> let x = fromGraph y in
+          foldg True (const False) (&&) (&&)x== isEmpty x
 
     let (==) :: Bool -> Bool -> Bool
-        (==) = (Prelude.==)
+        (==) = (P.==)
     putStrLn "\n============ isSubgraphOf ============"
 
     test "isSubgraphOf empty x                     == True " $ \(x :: G) ->
@@ -198,71 +341,71 @@ testGraph = do
     test "isEmpty (vertex x)                  == False" $ \(x :: Int) ->
           isEmpty (vertex x)                  == False
 
-    test "isEmpty (removeVertex x $ vertex x) == True " $ \x ->
-          isEmpty (removeVertex x $(vertex x :: Fold Int)) == True
+    test "isEmpty (removeVertex x $ vertex x) == True " $ \(x :: Int) ->
+          isEmpty (removeVertex x $ vertex x) == True
 
     test "isEmpty (removeEdge x y $ edge x y) == False" $ \(x :: Int) y ->
           isEmpty (removeEdge x y $ edge x y) == False
 
     putStrLn "\n============ hasVertex ============"
 
-    test "hasVertex x empty              == False        " $ \(x :: Int) ->
-          hasVertex x empty              == False
+    test "hasVertex x empty            == False      " $ \(x :: Int) ->
+          hasVertex x empty            == False
 
-    test "hasVertex x (vertex x)         == True         " $ \(x :: Int) ->
-          hasVertex x (vertex x)         == True
+    test "hasVertex x (vertex x)       == True       " $ \(x :: Int) ->
+          hasVertex x (vertex x)       == True
 
-    test "hasVertex x (removeVertex x y) == const False y" $ \x (z :: G) -> let y = fromGraph z in
-          hasVertex x (removeVertex x y) == const False y
+    test "hasVertex x . removeVertex x == const False" $ \x (z :: G) -> let y = fromGraph z in
+          hasVertex x (removeVertex x y)==const False y
 
     putStrLn "\n============ hasEdge ============"
 
-    test "hasEdge x y empty              == False        " $ \(x :: Int) y ->
-          hasEdge x y empty              == False
+    test "hasEdge x y empty            == False      " $ \(x :: Int) y ->
+          hasEdge x y empty            == False
 
-    test "hasEdge x y (vertex z)         == False        " $ \(x :: Int) y z ->
-          hasEdge x y (vertex z)         == False
+    test "hasEdge x y (vertex z)       == False      " $ \(x :: Int) y z ->
+          hasEdge x y (vertex z)       == False
 
-    test "hasEdge x y (edge x y)         == True         " $ \(x :: Int) y ->
-          hasEdge x y (edge x y)         == True
+    test "hasEdge x y (edge x y)       == True       " $ \(x :: Int) y ->
+          hasEdge x y (edge x y)       == True
 
-    test "hasEdge x y (removeEdge x y z) == const False z" $ \(x :: Int) y g -> let z = fromGraph g in
-          hasEdge x y (removeEdge x y z) == const False z
+    test "hasEdge x y . removeEdge x y == const False" $ \(x :: Int) y g -> let z = fromGraph g in
+          hasEdge x y (removeEdge x y z)==const False z
 
     let (==) :: Set Int -> Set Int -> Bool
-        (==) = (Prelude.==)
+        (==) = (P.==)
     putStrLn "\n============ toSet ============"
 
     test "toSet empty         == Set.empty      " $
-          toSet (empty :: Fold Int) == Set.empty
+          toSet empty         == (Set.empty :: Set Int)
 
-    test "toSet (vertex x)    == Set.singleton x" $ \x ->
-          toSet (vertex x :: Fold Int) == Set.singleton x
+    test "toSet (vertex x)    == Set.singleton x" $ \(x :: Int) ->
+          toSet (vertex x)    == Set.singleton x
 
-    test "toSet (vertices xs) == Set.fromList xs" $ \xs ->
-          toSet (vertices xs :: Fold Int) == Set.fromList xs
+    test "toSet (vertices xs) == Set.fromList xs" $ \(xs :: [Int]) ->
+          toSet (vertices xs) == Set.fromList xs
 
-    test "toSet (clique xs)   == Set.fromList xs" $ \xs ->
-          toSet (clique xs :: Fold Int) == Set.fromList xs
+    test "toSet (clique xs)   == Set.fromList xs" $ \(xs :: [Int]) ->
+          toSet (clique xs)   == Set.fromList xs
 
     let (==) :: IntSet -> IntSet -> Bool
-        (==) = (Prelude.==)
+        (==) = (P.==)
     putStrLn "\n============ toIntSet ============"
 
     test "toIntSet empty         == IntSet.empty      " $
-          toIntSet (empty :: Fold Int) == IntSet.empty
+          toIntSet empty         == IntSet.empty
 
     test "toIntSet (vertex x)    == IntSet.singleton x" $ \x ->
-          toIntSet (vertex x :: Fold Int) == IntSet.singleton x
+          toIntSet (vertex x)    == IntSet.singleton x
 
     test "toIntSet (vertices xs) == IntSet.fromList xs" $ \xs ->
-          toIntSet (vertices xs :: Fold Int) == IntSet.fromList xs
+          toIntSet (vertices xs) == IntSet.fromList xs
 
     test "toIntSet (clique xs)   == IntSet.fromList xs" $ \xs ->
-          toIntSet (clique xs :: Fold Int) == IntSet.fromList xs
+          toIntSet (clique xs)   == IntSet.fromList xs
 
     let (==) :: Data.Graph (Int, Char) -> Data.Graph (Int, Char) -> Bool
-        (==) = (Prelude.==)
+        (==) = (P.==)
     putStrLn "\n============ mesh ============"
 
     test "mesh xs     []   == empty                  " $ \xs ->
@@ -302,7 +445,7 @@ testGraph = do
                                      , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2,'a')) ]
 
     let (==) :: Data.Graph [Int] -> Data.Graph [Int] -> Bool
-        (==) = (Prelude.==)
+        (==) = (P.==)
     putStrLn "\n============ deBruijn ============"
     test "deBruijn k []    == empty" $ \k ->
           deBruijn k []    == empty
@@ -311,7 +454,7 @@ testGraph = do
           deBruijn 1 [0,1] == edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]
 
     let (==) :: Data.Graph String -> Data.Graph String -> Bool
-        (==) = (Prelude.==)
+        (==) = (P.==)
     test "deBruijn 2 \"0\"   == edge \"00\" \"00\"" $
           deBruijn 2 "0"   == edge "00" "00"
 

@@ -101,7 +101,7 @@ consistent m = Set.fromList (uncurry (++) $ unzip $ edgeList m)
 -- @
 -- gmap f 'empty'      == 'empty'
 -- gmap f ('vertex' x) == 'vertex' (f x)
--- gmap f ('Algebra.Graph.edge' x y) == 'Algebra.Graph.edge' (f x) (f x)
+-- gmap f ('Algebra.Graph.edge' x y) == 'Algebra.Graph.edge' (f x) (f y)
 -- gmap id           == id
 -- gmap f . gmap g   == gmap (f . g)
 -- @

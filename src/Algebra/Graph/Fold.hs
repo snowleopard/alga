@@ -187,7 +187,7 @@ simple op x y
 -- @
 -- gmap f 'empty'      == 'empty'
 -- gmap f ('vertex' x) == 'vertex' (f x)
--- gmap f ('edge' x y) == 'edge' (f x) (f x)
+-- gmap f ('edge' x y) == 'edge' (f x) (f y)
 -- gmap id           == id
 -- gmap f . gmap g   == gmap (f . g)
 -- @
@@ -223,10 +223,10 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- @
 -- bind 'empty' f         == 'empty'
 -- bind ('vertex' x) f    == f x
--- bind ('edge' x y) f    == 'connect' (f x) (f x)
+-- bind ('edge' x y) f    == 'connect' (f x) (f y)
 -- bind ('vertices' xs) f == 'overlays' ('map' f xs)
 -- bind x (const 'empty') == 'empty'
--- bind x 'vertex'        == id
+-- bind x 'vertex'        == x
 -- bind (bind x f) g    == bind x (\\y -> bind (f y) g)
 -- @
 bind :: Graph g => Fold a -> (a -> g) -> g
@@ -239,8 +239,8 @@ bind g f = foldg empty f overlay connect g
 -- induce (const True)  x    == x
 -- induce (const False) x    == 'empty'
 -- induce (/= x)             == 'removeVertex' x
--- induce p . induce q       == induce (\x -> p x && q x)
--- 'Algebra.Graph.isSubgraph' (induce p x) x == True
+-- induce p . induce q       == induce (\\x -> p x && q x)
+-- 'Algebra.Graph.isSubgraphOf' (induce p x) x == True
 -- @
 induce :: Graph g => (Vertex g -> Bool) -> Fold (Vertex g) -> g
 induce p g = bind g $ \v -> if p v then vertex v else empty
