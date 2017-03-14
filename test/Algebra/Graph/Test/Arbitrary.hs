@@ -19,6 +19,7 @@ import Test.QuickCheck
 
 import Algebra.Graph.AdjacencyMap.Internal (AdjacencyMap (..))
 import Algebra.Graph.Classes
+import Algebra.Graph.Fold.Internal (Fold (..))
 import Algebra.Graph.IntAdjacencyMap.Internal (IntAdjacencyMap (..))
 import Algebra.Graph.Relation.Internal (Relation (..))
 
@@ -83,3 +84,6 @@ instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
 
 instance Arbitrary IntAdjacencyMap where
     arbitrary = arbitraryIntAdjacencyMap
+
+instance Arbitrary a => Arbitrary (Fold a) where
+    arbitrary = Data.fromGraph <$> arbitrary

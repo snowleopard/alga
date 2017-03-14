@@ -1,4 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Fold
@@ -33,73 +32,15 @@ module Algebra.Graph.Fold (
     toList
   ) where
 
-import Control.Applicative hiding (empty)
-import Control.Monad
 import Data.Foldable
 import Data.IntSet (IntSet)
 import Data.Set (Set)
 
 import Algebra.Graph.Base
+import Algebra.Graph.Fold.Internal
 
-import qualified Algebra.Graph.HigherKinded.Classes as H
-import qualified Data.IntSet                        as IntSet
-import qualified Data.Set                           as Set
-
--- | Boehm-Berarducci encoding of algebraic graphs.
-newtype Fold a = F { runFold :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b }
-
--- | Generalised folding of polymorphic graph expressions.
---
--- @
--- foldg []   return        (++) (++) == 'toList'
--- foldg 0    (const 1)     (+)  (+)  == 'length'
--- foldg True (const False) (&&) (&&) == 'isEmpty'
--- @
-foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
-foldg e v o c g = runFold g e v o c
-
-instance Graph (Fold a) where
-    type Vertex (Fold a) = a
-    empty       = F $ \e _ _ _ -> e
-    vertex  x   = F $ \_ v _ _ -> v x
-    overlay x y = F $ \e v o c -> foldg e v o c x `o` foldg e v o c y
-    connect x y = F $ \e v o c -> foldg e v o c x `c` foldg e v o c y
-
-instance Num a => Num (Fold a) where
-    fromInteger = vertex . fromInteger
-    (+)         = overlay
-    (*)         = connect
-    signum      = const empty
-    abs         = id
-    negate      = id
-
-instance Functor Fold where
-    fmap = gmap
-
-instance Applicative Fold where
-    pure  = vertex
-    (<*>) = ap
-
-instance Alternative Fold where
-    empty = empty
-    (<|>) = overlay
-
-instance MonadPlus Fold where
-    mzero = empty
-    mplus = overlay
-
-instance Monad Fold where
-    return = vertex
-    (>>=)  = bind
-
-instance H.Graph Fold where
-    connect = connect
-
-instance Foldable Fold where
-    foldMap f = foldg mempty f mappend mappend
-
-instance Traversable Fold where
-    traverse f = foldg (pure empty) (fmap vertex . f) (liftA2 overlay) (liftA2 connect)
+import qualified Data.IntSet as IntSet
+import qualified Data.Set    as Set
 
 -- | The set of vertices of a given graph.
 --
@@ -181,19 +122,6 @@ simple op x y
   where
     z = op x y
 
--- | Transform a given graph by applying a function to each of its vertices.
--- This is similar to 'fmap' but can be used with non-fully-parametric graphs.
---
--- @
--- gmap f 'empty'      == 'empty'
--- gmap f ('vertex' x) == 'vertex' (f x)
--- gmap f ('edge' x y) == 'edge' (f x) (f y)
--- gmap id           == id
--- gmap f . gmap g   == gmap (f . g)
--- @
-gmap :: Graph g => (a -> Vertex g) -> Fold a -> g
-gmap f = foldg empty (vertex . f) overlay connect
-
 -- | The function @replaceVertex x y@ replaces vertex @x@ with vertex @y@ in a
 -- given graph. If @y@ already exists, @x@ and @y@ will be merged.
 --
@@ -216,30 +144,14 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 mergeVertices :: Graph g => (Vertex g -> Bool) -> Vertex g -> Fold (Vertex g) -> g
 mergeVertices p v = gmap $ \u -> if p u then v else u
 
--- | Transform a given graph by substituting each of its vertices with a subgraph.
--- This is similar to Monad's bind '>>=' but can be used with non-fully-parametric
--- graphs.
---
--- @
--- bind 'empty' f         == 'empty'
--- bind ('vertex' x) f    == f x
--- bind ('edge' x y) f    == 'connect' (f x) (f y)
--- bind ('vertices' xs) f == 'overlays' ('map' f xs)
--- bind x (const 'empty') == 'empty'
--- bind x 'vertex'        == x
--- bind (bind x f) g    == bind x (\\y -> bind (f y) g)
--- @
-bind :: Graph g => Fold a -> (a -> g) -> g
-bind g f = foldg empty f overlay connect g
-
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 --
 -- @
--- induce (const True)  x    == x
--- induce (const False) x    == 'empty'
--- induce (/= x)             == 'removeVertex' x
--- induce p . induce q       == induce (\\x -> p x && q x)
+-- induce (const True)  x      == x
+-- induce (const False) x      == 'empty'
+-- induce (/= x)               == 'removeVertex' x
+-- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'Algebra.Graph.isSubgraphOf' (induce p x) x == True
 -- @
 induce :: Graph g => (Vertex g -> Bool) -> Fold (Vertex g) -> g

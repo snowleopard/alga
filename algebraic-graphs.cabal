@@ -24,6 +24,7 @@ library
                         Algebra.Graph.Classes,
                         Algebra.Graph.Data,
                         Algebra.Graph.Fold,
+                        Algebra.Graph.Fold.Internal,
                         Algebra.Graph.HigherKinded,
                         Algebra.Graph.HigherKinded.Base,
                         Algebra.Graph.HigherKinded.Classes,
