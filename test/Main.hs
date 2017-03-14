@@ -9,6 +9,7 @@ import Algebra.Graph.HigherKinded (box, induce, removeVertex)
 import Algebra.Graph.Relation hiding (edges)
 import Algebra.Graph.Test
 import Algebra.Graph.Test.AdjacencyMap
+import Algebra.Graph.Test.Graph
 import Algebra.Graph.Test.IntAdjacencyMap
 import Algebra.Graph.Test.Relation
 
@@ -16,13 +17,10 @@ type G = Graph Int
 
 main :: IO ()
 main = do
-    putStrLn "============ Graph ============"
-    quickCheck (axioms   :: GraphTestsuite (Graph Int))
-    quickCheck (theorems :: GraphTestsuite (Graph Int))
-
-    testRelation
     testAdjacencyMap
+    testGraph
     testIntAdjacencyMap
+    testRelation
 
     putStrLn "============ Directed graphs ============"
     test "Upper bound" $ \(x :: G) -> let xs = vertices (toList x) in

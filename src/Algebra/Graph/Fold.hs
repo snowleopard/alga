@@ -140,7 +140,7 @@ isEmpty = null
 -- @
 -- hasVertex x 'empty'            == False
 -- hasVertex x ('vertex' x)       == True
--- hasVertex x ('removeVertex' x) == const False
+-- hasVertex x . 'removeVertex' x == const False
 -- @
 hasVertex :: Eq a => a -> Fold a -> Bool
 hasVertex = elem

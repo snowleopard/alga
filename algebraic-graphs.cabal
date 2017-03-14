@@ -57,6 +57,7 @@ test-suite test-alga
     other-modules:      Algebra.Graph.Test,
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,
+                        Algebra.Graph.Test.Graph,
                         Algebra.Graph.Test.IntAdjacencyMap,
                         Algebra.Graph.Test.Relation
     build-depends:      algebraic-graphs,
