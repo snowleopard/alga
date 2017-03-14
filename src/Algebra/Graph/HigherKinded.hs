@@ -52,10 +52,10 @@ import qualified Data.Set    as Set
 -- vertices that do not satisfy a given predicate.
 --
 -- @
--- induce (const True)  x    == x
--- induce (const False) x    == 'empty'
--- induce (/= x)             == 'removeVertex' x
--- induce p . induce q       == induce (\\x -> p x && q x)
+-- induce (const True)  x      == x
+-- induce (const False) x      == 'empty'
+-- induce (/= x)               == 'removeVertex' x
+-- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: Graph g => (a -> Bool) -> g a -> g a

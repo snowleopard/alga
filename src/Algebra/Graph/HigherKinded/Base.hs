@@ -91,10 +91,11 @@ graph vs es = overlay (vertices vs) (edges es)
 -- first graph is a /subgraph/ of the second.
 --
 -- @
--- isSubgraphOf 'empty' x                     == True
--- isSubgraphOf ('vertex' x) 'empty'            == False
--- isSubgraphOf x ('overlay' x y)             == True
+-- isSubgraphOf 'empty'         x             == True
+-- isSubgraphOf ('vertex' x)    'empty'         == False
+-- isSubgraphOf x             ('overlay' x y) == True
 -- isSubgraphOf ('overlay' x y) ('connect' x y) == True
+-- isSubgraphOf ('path' xs)     ('circuit' xs)  == True
 -- @
 isSubgraphOf :: (Graph g, Eq (g a)) => g a -> g a -> Bool
 isSubgraphOf x y = overlay x y == y

@@ -29,6 +29,7 @@ import qualified Prelude     as P
 import qualified Data.Set    as Set
 import qualified Data.IntSet as IntSet
 
+type F  = Fold Int
 type G  = Data.Graph Int
 type II = Int -> Int
 type IB = Int -> Bool
@@ -163,12 +164,12 @@ testGraph = do
     test "transpose (edge x y)    == edge y x" $ \x y ->
           transpose (edge x y)    == edge y x
 
-    test "transpose (transpose x) == x       " $ \y -> let x = fromGraph y in
+    test "transpose (transpose x) == x       " $ \x ->
           transpose (transpose x) == gmap id x
 
     putStrLn "\n============ simplify ============"
 
-    test "simplify x                        == x                            " $ \y -> let x = fromGraph y in
+    test "simplify x                        == x                            " $ \x ->
           simplify x                        == gmap id x
 
     test "1 + 1 :: Graph Int                == Overlay (Vertex 1) (Vertex 1)" $
@@ -194,58 +195,58 @@ testGraph = do
     test "gmap f (edge x y) == edge (f x) (f y)" $ \(apply -> f :: II) x y ->
           gmap f (edge x y) == edge (f x) (f y)
 
-    test "gmap id           == id              " $ \y -> let x = fromGraph y in
-          gmap id x         == y
+    test "gmap id           == id              " $ \x ->
+          gmap id (fromGraph x) == x
 
-    test "gmap f . gmap g   == gmap (f . g)    " $ \(apply -> f :: II) (apply -> g :: II) y -> let x = fromGraph y in
+    test "gmap f . gmap g   == gmap (f . g)    " $ \(apply -> f :: II) (apply -> g :: II) x ->
          (gmap f . gmap g) x== gmap (f . g) x
 
     putStrLn "\n============ replaceVertex ============"
 
-    test "replaceVertex x x            == id                    " $ \x z -> let y = fromGraph z in
+    test "replaceVertex x x            == id                    " $ \x y ->
           replaceVertex x x y          == gmap id y
 
     test "replaceVertex x y (vertex x) == vertex y              " $ \x y ->
           replaceVertex x y (vertex x) == vertex y
 
-    test "replaceVertex x y            == mergeVertices (== x) y" $ \x y k -> let z = fromGraph k in
+    test "replaceVertex x y            == mergeVertices (== x) y" $ \x y z ->
           replaceVertex x y z          == mergeVertices (P.== x) y (gmap id z)
 
     putStrLn "\n============ mergeVertices ============"
 
-    test "mergeVertices (const False) x    == id               " $ \x z -> let y = fromGraph z in
+    test "mergeVertices (const False) x    == id               " $ \x y ->
           mergeVertices (const False) x y  == gmap id y
 
-    test "mergeVertices (== x) y           == replaceVertex x y" $ \x y k -> let z = fromGraph k in
+    test "mergeVertices (== x) y           == replaceVertex x y" $ \x y z ->
           mergeVertices (P.== x) y z       == replaceVertex x y z
 
     test "mergeVertices even 1 (0 * 2)     == 1 * 1            " $
-          mergeVertices even 1 (0 * 2)     == (1 * 1)
+          mergeVertices even 1 (0 * 2)     ==(1 * 1)
 
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1            " $
-          mergeVertices odd  1 (3 + 4 * 5) == (4 * 1)
+          mergeVertices odd  1 (3 + 4 * 5) ==(4 * 1)
 
     putStrLn "\n============ bind ============"
 
-    test "bind empty f         == empty                       " $ \(apply -> f :: IG) ->
+    test "bind empty f         == empty                      " $ \(apply -> f :: IG) ->
           bind empty f         == empty
 
-    test "bind (vertex x) f    == f x                         " $ \(apply -> f :: IG) x ->
+    test "bind (vertex x) f    == f x                        " $ \(apply -> f :: IG) x ->
           bind (vertex x) f    == f x
 
-    test "bind (edge x y) f    == connect (f x) (f y)         " $ \(apply -> f :: IG) x y ->
+    test "bind (edge x y) f    == connect (f x) (f y)        " $ \(apply -> f :: IG) x y ->
           bind (edge x y) f    == connect (f x) (f y)
 
-    test "bind (vertices xs) f == overlays (map f xs)         " $ mapSize (min 10) $ \xs (apply -> f :: IG) ->
+    test "bind (vertices xs) f == overlays (map f xs)        " $ mapSize (min 10) $ \xs (apply -> f :: IG) ->
           bind (vertices xs) f == overlays (map f xs)
 
-    test "bind x (const empty) == empty                       " $ \(y :: G) -> let x = fromGraph y in
+    test "bind x (const empty) == empty                      " $ \(x :: F) ->
           bind x (const empty) == empty
 
-    test "bind x vertex        == x                           " $ \(y :: G) -> let x = fromGraph y in
+    test "bind x vertex        == x                          " $ \(x :: F) ->
           bind x vertex        == gmap id x
 
-    test "bind (bind x f) g    == bind x (\\y -> bind (f y) g)" $ mapSize (min 10) $ \(z :: G) (apply -> f :: IG) (apply -> g :: IG) -> let x = fromGraph z in
+    test "bind (bind x f) g    == bind x (\\y -> bind (f y) g)" $ mapSize (min 10) $ \x (apply -> f :: IG) (apply -> g :: IG) ->
           bind (fromGraph $ bind x f) g == bind x (\y -> bind (fromGraph $ f y) g)
 
     putStrLn "\n============ removeVertex ============"
@@ -253,18 +254,18 @@ testGraph = do
     test "removeVertex x (vertex x)       == empty         " $ \x ->
           removeVertex x (vertex x)       == empty
 
-    test "removeVertex x . removeVertex x == removeVertex x" $ \x (z :: G) -> let y = fromGraph z in
+    test "removeVertex x . removeVertex x == removeVertex x" $ \x y ->
          (removeVertex x . removeVertex x)y==removeVertex x y
 
     putStrLn "\n============ splitVertex ============"
 
-    test "splitVertex x []                   == removeVertex x   " $ \x z -> let y = fromGraph z in
+    test "splitVertex x []                   == removeVertex x   " $ \x y ->
          (splitVertex x []) y                == removeVertex x y
 
-    test "splitVertex x [x]                  == id               " $ \x z -> let y = fromGraph z in
+    test "splitVertex x [x]                  == id               " $ \x y ->
          (splitVertex x [x]) y               == gmap id y
 
-    test "splitVertex x [y]                  == replaceVertex x y" $ \x y k -> let z = fromGraph k in
+    test "splitVertex x [y]                  == replaceVertex x y" $ \x y z ->
          (splitVertex x [y]) z               == replaceVertex x y z
 
     test "splitVertex 1 [0, 1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)" $
@@ -275,10 +276,10 @@ testGraph = do
     test "removeEdge x y (edge x y)       == vertices [x, y]" $ \x y ->
           removeEdge x y (edge x y)       == vertices [x, y]
 
-    test "removeEdge x y . removeEdge x y == removeEdge x y " $ \x y k -> let z = fromGraph k in
+    test "removeEdge x y . removeEdge x y == removeEdge x y " $ \x y z ->
          (removeEdge x y . removeEdge x y)z==removeEdge x y z
 
-    test "removeEdge x y . removeVertex x == removeVertex x " $ \x y k -> let z = fromGraph k in
+    test "removeEdge x y . removeVertex x == removeVertex x " $ \x y z ->
          (removeEdge x y . removeVertex x)z==removeVertex x z
 
     test "removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2      " $
@@ -289,16 +290,16 @@ testGraph = do
 
     putStrLn "\n============ induce ============"
 
-    test "induce (const True)  x      == x                        " $ \(y :: G) -> let x = fromGraph y in
+    test "induce (const True)  x      == x                        " $ \x ->
           induce (const True)  x      == gmap id x
 
-    test "induce (const False) x      == empty                    " $ \(y :: G) -> let x = fromGraph y in
+    test "induce (const False) x      == empty                    " $ \x ->
           induce (const False) x      == empty
 
-    test "induce (/= x)               == removeVertex x           " $ \x (z :: G) -> let y = fromGraph z in
+    test "induce (/= x)               == removeVertex x           " $ \x y ->
           induce (/= x) y             == removeVertex x y
 
-    test "induce p . induce q         == induce (\\x -> p x && q x)" $ \(apply -> p :: IB) (apply -> q :: IB) (z :: G) -> let y = fromGraph z in
+    test "induce p . induce q         == induce (\\x -> p x && q x)" $ \(apply -> p :: IB) (apply -> q :: IB) y ->
          (induce p . induce q) y      == induce (\x -> p x && q x) y
 
     let (==) :: Eq a => a -> a -> Bool
@@ -308,30 +309,33 @@ testGraph = do
 
     putStrLn "\n============ foldg ============"
 
-    test "foldg []   return        (++) (++) == toList " $ \(y :: G) -> let x = fromGraph y in
+    test "foldg []   return        (++) (++) == toList " $ \(x :: F) ->
           foldg []   return        (++) (++)x== toList x
 
-    test "foldg 0    (const 1)     (+)  (+)  == length " $ \(y :: G) -> let x = fromGraph y in
+    test "foldg 0    (const 1)     (+)  (+)  == length " $ \(x :: F) ->
           foldg 0    (const 1)     (+)  (+)x == length x
 
-    test "foldg True (const False) (&&) (&&) == isEmpty" $ \(y :: G) -> let x = fromGraph y in
+    test "foldg True (const False) (&&) (&&) == isEmpty" $ \(x :: F) ->
           foldg True (const False) (&&) (&&)x== isEmpty x
 
     let (==) :: Bool -> Bool -> Bool
         (==) = (P.==)
     putStrLn "\n============ isSubgraphOf ============"
 
-    test "isSubgraphOf empty x                     == True " $ \(x :: G) ->
-          isSubgraphOf empty x                     == True
+    test "isSubgraphOf empty         x             == True " $ \(x :: G) ->
+          isSubgraphOf empty         x             == True
 
-    test "isSubgraphOf (vertex x) empty            == False" $ \x ->
-          isSubgraphOf (vertex x) (empty :: G)     == False
+    test "isSubgraphOf (vertex x)    empty         == False" $ \x ->
+          isSubgraphOf (vertex x)    (empty :: G)  == False
 
-    test "isSubgraphOf x (overlay x y)             == True " $ \(x :: G) y ->
-          isSubgraphOf x (overlay x y)             == True
+    test "isSubgraphOf x             (overlay x y) == True " $ \(x :: G) y ->
+          isSubgraphOf x             (overlay x y) == True
 
     test "isSubgraphOf (overlay x y) (connect x y) == True " $ \(x :: G) y ->
           isSubgraphOf (overlay x y) (connect x y) == True
+
+    test "isSubgraphOf (path xs)     (circuit xs)  == True " $ \xs ->
+          isSubgraphOf (path xs :: G)(circuit xs)  == True
 
     putStrLn "\n============ isEmpty ============"
 
@@ -355,7 +359,7 @@ testGraph = do
     test "hasVertex x (vertex x)       == True       " $ \(x :: Int) ->
           hasVertex x (vertex x)       == True
 
-    test "hasVertex x . removeVertex x == const False" $ \x (z :: G) -> let y = fromGraph z in
+    test "hasVertex x . removeVertex x == const False" $ \(x :: Int) y ->
           hasVertex x (removeVertex x y)==const False y
 
     putStrLn "\n============ hasEdge ============"
@@ -369,7 +373,7 @@ testGraph = do
     test "hasEdge x y (edge x y)       == True       " $ \(x :: Int) y ->
           hasEdge x y (edge x y)       == True
 
-    test "hasEdge x y . removeEdge x y == const False" $ \(x :: Int) y g -> let z = fromGraph g in
+    test "hasEdge x y . removeEdge x y == const False" $ \(x :: Int) y z ->
           hasEdge x y (removeEdge x y z)==const False z
 
     let (==) :: Set Int -> Set Int -> Bool
@@ -447,7 +451,7 @@ testGraph = do
     let (==) :: Data.Graph [Int] -> Data.Graph [Int] -> Bool
         (==) = (P.==)
     putStrLn "\n============ deBruijn ============"
-    test "deBruijn k []    == empty" $ \k ->
+    test "deBruijn k []    == empty                                               " $ \k ->
           deBruijn k []    == empty
 
     test "deBruijn 1 [0,1] == edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]" $
@@ -455,7 +459,7 @@ testGraph = do
 
     let (==) :: Data.Graph String -> Data.Graph String -> Bool
         (==) = (P.==)
-    test "deBruijn 2 \"0\"   == edge \"00\" \"00\"" $
+    test "deBruijn 2 \"0\"   == edge \"00\" \"00\"                                      " $
           deBruijn 2 "0"   == edge "00" "00"
 
     test ("deBruijn 2 \"01\"  == edges [ (\"00\",\"00\"), (\"00\",\"01\"), (\"01\",\"10\"), (\"01\",\"11\")\n" ++
@@ -463,3 +467,25 @@ testGraph = do
           deBruijn 2 "01"  == edges [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
                                     , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
 
+    let (==) :: Data.Graph (Int, Int) -> Data.Graph (Int, Int) -> Bool
+        (==) = (P.==)
+        unit = gmap $ \(a, ())     -> a
+        comm = gmap $ \(a, b)      -> (b, a)
+    putStrLn "\n============ box ============"
+    test "box x y             ~~ box y x                    " $ mapSize (min 10) $ \x y ->
+          comm (box x y)      == box y x
+
+    test "box x (overlay y z) == overlay (box x y) (box x z)" $ mapSize (min 10) $ \x y z ->
+          box x (overlay y z) == overlay (box x y) (box x z)
+
+    test "box x (vertex ())   ~~ x                          " $ mapSize (min 10) $ \x ->
+     unit(box x (vertex ()))  == gmap id x
+
+    test "box x empty         ~~ empty                      " $ mapSize (min 10) $ \x ->
+     unit(box x empty)        == empty
+
+    let (==) :: Data.Graph ((Int, Int), Int) -> Data.Graph ((Int, Int), Int) -> Bool
+        (==)  = (P.==)
+        assoc = gmap $ \(a, (b, c)) -> ((a, b), c)
+    test "box x (box y z)     ~~ box (box x y) z            " $ mapSize (min 10) $ \x y z ->
+      assoc (box x (box y z)) == box (box x y) z
