@@ -11,3 +11,5 @@ The following series of blog posts also describe the ideas behind the library:
 * A few different flavours of the algebra: https://blogs.ncl.ac.uk/andreymokhov/graphs-a-la-carte/
 * Graphs in disguise or How to plan you holiday using Haskell: https://blogs.ncl.ac.uk/andreymokhov/graphs-in-disguise/
 * Old graphs from new types: https://blogs.ncl.ac.uk/andreymokhov/old-graphs-from-new-types/
+
+Some preliminary benchmarks can be found in [doc/benchmarks](https://github.com/snowleopard/alga/blob/master/doc/benchmarks.md).
