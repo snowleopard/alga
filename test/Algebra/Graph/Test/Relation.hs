@@ -31,7 +31,8 @@ sizeLimit = mapSize (min 10)
 testRelation :: IO ()
 testRelation = do
     putStrLn "\n============ Relation ============"
-    quickCheck (axioms :: GraphTestsuite (Relation Int))
+    test "Axioms of graphs" $ sizeLimit
+        (axioms :: GraphTestsuite (Relation Int))
 
     test "Consistency of arbitraryRelation" $ \(m :: RI) ->
         consistent m
@@ -212,32 +213,36 @@ testRelation = do
 
     putStrLn "\n============ fromAdjacencyList ============"
 
-    test "fromAdjacencyList []                                  == empty   " $
+    test "fromAdjacencyList []                                  == empty                       " $
           fromAdjacencyList []                                  == (empty :: RI)
 
-    test "fromAdjacencyList [(x, [])]                           == vertex x" $ \(x :: Int) ->
+    test "fromAdjacencyList [(x, [])]                           == vertex x                    " $ \(x :: Int) ->
           fromAdjacencyList [(x, [])]                           == vertex x
 
-    test "fromAdjacencyList [(x, [y])]                          == edge x y" $ \(x :: Int) y ->
+    test "fromAdjacencyList [(x, [y])]                          == edge x y                    " $ \(x :: Int) y ->
           fromAdjacencyList [(x, [y])]                          == edge x y
 
     test "overlay (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)" $ \xs ys ->
           overlay (fromAdjacencyList xs) (fromAdjacencyList ys) ==(fromAdjacencyList (xs ++ ys) :: RI)
 
     putStrLn "\n============ ReflexiveRelation ============"
-    quickCheck (reflexiveAxioms :: GraphTestsuite (ReflexiveRelation Int))
+    test "Axioms of reflexive graphs" $ sizeLimit
+        (reflexiveAxioms :: GraphTestsuite (ReflexiveRelation Int))
 
     putStrLn "\n============ SymmetricRelation ============"
-    quickCheck $ sizeLimit (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))
+    test "Axioms of undirected graphs" $ sizeLimit
+        (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))
 
     putStrLn "\n============ TransitiveRelation ============"
-    quickCheck $ sizeLimit (transitiveAxioms :: GraphTestsuite (TransitiveRelation Int))
+    test "Axioms of transitive graphs" $ sizeLimit
+        (transitiveAxioms :: GraphTestsuite (TransitiveRelation Int))
 
     test "\npath xs == (clique xs :: TransitiveRelation Int)" $ sizeLimit $ \xs ->
         path xs == (clique xs :: TransitiveRelation Int)
 
     putStrLn "\n============ PreorderRelation ============"
-    quickCheck $ sizeLimit (preorderAxioms :: GraphTestsuite (PreorderRelation Int))
+    test "Axioms of preorder graphs" $ sizeLimit
+        (preorderAxioms :: GraphTestsuite (PreorderRelation Int))
 
     test "\npath xs == (clique xs :: PreorderRelation Int)" $ sizeLimit $ \xs ->
         path xs == (clique xs :: PreorderRelation Int)

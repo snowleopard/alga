@@ -21,7 +21,7 @@ import Algebra.Graph.Test
 testIntAdjacencyMap :: IO ()
 testIntAdjacencyMap = do
     putStrLn "\n============ IntAdjacencyMap ============"
-    quickCheck (axioms :: GraphTestsuite IntAdjacencyMap)
+    test "Axioms of graphs" $ (axioms :: GraphTestsuite IntAdjacencyMap)
 
     test "Consistency of arbitraryIntAdjacencyMap" $ \m ->
         consistent m

@@ -37,8 +37,8 @@ type IG = Int -> G
 testGraph :: IO ()
 testGraph = do
     putStrLn "\n============ Graph ============"
-    quickCheck (axioms   :: GraphTestsuite G)
-    quickCheck (theorems :: GraphTestsuite G)
+    test "Axioms of graphs"     $ (axioms   :: GraphTestsuite G)
+    test "\nTheorems of graphs" $ (theorems :: GraphTestsuite G)
 
     let (==) :: G -> G -> Bool
         (==) = (P.==)
@@ -168,19 +168,19 @@ testGraph = do
 
     putStrLn "\n============ simplify ============"
 
-    test "simplify x                        == x                            " $ \x ->
+    test "simplify x                        == x                                                 " $ \x ->
           simplify x                        == gmap id x
 
-    test "1 + 1 :: Graph Int                == Overlay (Vertex 1) (Vertex 1)" $
+    test "1 + 1 :: Graph Int                == Overlay (Vertex 1) (Vertex 1)                     " $
          (1 + 1)                            == Overlay (Vertex 1) (Vertex 1)
 
-    test "simplify (1 + 1) :: Graph Int     == Vertex 1                     " $
+    test "simplify (1 + 1) :: Graph Int     == Vertex 1                                          " $
           simplify (1 + 1)                  == Vertex 1
 
     test "1 * 1 * 1 :: Graph Int            == Connect (Connect (Vertex 1) (Vertex 1)) (Vertex 1)" $
          (1 * 1 * 1)                        == Connect (Connect (Vertex 1) (Vertex 1)) (Vertex 1)
 
-    test "simplify (1 * 1 * 1) :: Graph Int == Connect (Vertex 1) (Vertex 1)" $
+    test "simplify (1 * 1 * 1) :: Graph Int == Connect (Vertex 1) (Vertex 1)                     " $
           simplify (1 * 1 * 1)              == Connect (Vertex 1) (Vertex 1)
 
     putStrLn "\n============ gmap ============"
@@ -423,8 +423,7 @@ testGraph = do
     test "mesh xs     ys   == box (path xs) (path ys)" $ \xs ys ->
           mesh xs     ys   == box (path xs) (path ys)
 
-    test ("mesh [1..3] \"ab\" == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))\n" ++
-         "                          , ((2,'a'),(3,'a')), ((2,'b'),(3,'b')), ((3,'a'),(3,'b')) ]") $
+    test ("mesh [1..3] \"ab\" == <correct result>      ") $
          mesh [1..3] "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
                                     , ((2,'a'),(3,'a')), ((2,'b'),(3,'b')), ((3,'a'),(3,'b')) ]
 
@@ -442,8 +441,7 @@ testGraph = do
     test "torus xs     ys   == box (circuit xs) (circuit ys)" $ \xs ys ->
           torus xs     ys   == box (circuit xs) (circuit ys)
 
-    test ("torus [1..2] \"ab\" == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))\n" ++
-         "                           , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2,'a')) ]") $
+    test ("torus [1..2] \"ab\" == <correct result>           ") $
          torus [1..2] "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
                                      , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2,'a')) ]
 
@@ -461,8 +459,7 @@ testGraph = do
     test "deBruijn 2 \"0\"   == edge \"00\" \"00\"                                      " $
           deBruijn 2 "0"   == edge "00" "00"
 
-    test ("deBruijn 2 \"01\"  == edges [ (\"00\",\"00\"), (\"00\",\"01\"), (\"01\",\"10\"), (\"01\",\"11\")\n" ++
-          "                          , (\"10\",\"00\"), (\"10\",\"01\"), (\"11\",\"10\"), (\"11\",\"11\") ]") $
+    test ("deBruijn 2 \"01\"  == <correct result>                                   ") $
           deBruijn 2 "01"  == edges [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
                                     , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
 

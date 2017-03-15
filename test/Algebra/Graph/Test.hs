@@ -19,7 +19,7 @@ import Algebra.Graph
 import Algebra.Graph.Test.Arbitrary ()
 
 test :: Testable a => String -> a -> IO ()
-test str p = putStr (str ++ ": ") >> quickCheck p
+test str p = putStr (str ++ " : ") >> quickCheck p
 
 (+) :: Graph g => g -> g -> g
 (+) = overlay

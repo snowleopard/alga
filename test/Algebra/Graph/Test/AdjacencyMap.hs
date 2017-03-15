@@ -31,7 +31,7 @@ type II = Int -> Int
 testAdjacencyMap :: IO ()
 testAdjacencyMap = do
     putStrLn "\n============ AdjacencyMap ============"
-    quickCheck (axioms :: GraphTestsuite AI)
+    test "Axioms of graphs" $ (axioms :: GraphTestsuite AI)
 
     test "Consistency of arbitraryAdjacencyMap" $ \(m :: AI) ->
         consistent m
@@ -94,38 +94,38 @@ testAdjacencyMap = do
 
     putStrLn "\n============ edges ============"
 
-    test "edges []         == empty   " $
-          edges []         ==(empty :: AI)
+    test "edges []       == empty   " $
+          edges []       ==(empty :: AI)
 
-    test "edges [(x, y)]   == edge x y" $ \(x :: Int) y ->
-          edges [(x, y)]   == edge x y
+    test "edges [(x, y)] == edge x y" $ \(x :: Int) y ->
+          edges [(x, y)] == edge x y
 
     putStrLn "\n============ adjacencyList ============"
 
-    test "adjacencyList empty               == []                            " $
-          adjacencyList (empty :: AI)       == []
+    test "adjacencyList empty          == []                            " $
+          adjacencyList (empty :: AI)  == []
 
-    test "adjacencyList (vertex x)          == [(x, [])]                     " $ \(x :: Int) ->
-          adjacencyList (vertex x)          == [(x, [])]
+    test "adjacencyList (vertex x)     == [(x, [])]                     " $ \(x :: Int) ->
+          adjacencyList (vertex x)     == [(x, [])]
 
-    test "adjacencyList (edge 1 2)          == [(1, [2]), (2, [])]           " $
+    test "adjacencyList (edge 1 2)     == [(1, [2]), (2, [])]           " $
           adjacencyList (edge 1 (2 :: Int)) == [(1, [2]), (2, [])]
 
-    test "adjacencyList (star 2 [1,3])      == [(1, []), (2, [1,3]), (3, [])]" $
+    test "adjacencyList (star 2 [1,3]) == [(1, []), (2, [1,3]), (3, [])]" $
           adjacencyList (star 2 [1,3::Int]) == [(1, []), (2, [1,3]), (3, [])]
 
     putStrLn "\n============ fromAdjacencyList ============"
 
-    test "fromAdjacencyList []                                  == empty   " $
+    test "fromAdjacencyList []                                  == empty                       " $
           fromAdjacencyList []                                  == (empty :: AI)
 
-    test "fromAdjacencyList [(x, [])]                           == vertex x" $ \(x :: Int) ->
+    test "fromAdjacencyList [(x, [])]                           == vertex x                    " $ \(x :: Int) ->
           fromAdjacencyList [(x, [])]                           == vertex x
 
-    test "fromAdjacencyList [(x, [y])]                          == edge x y" $ \(x :: Int) y ->
+    test "fromAdjacencyList [(x, [y])]                          == edge x y                    " $ \(x :: Int) y ->
           fromAdjacencyList [(x, [y])]                          == edge x y
 
-    test "fromAdjacencyList . adjacencyList                     == id      " $ \(x :: AI) ->
+    test "fromAdjacencyList . adjacencyList                     == id                          " $ \(x :: AI) ->
          (fromAdjacencyList . adjacencyList) x                  == x
 
     test "overlay (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)" $ \xs ys ->
