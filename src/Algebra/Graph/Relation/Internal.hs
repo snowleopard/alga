@@ -134,7 +134,7 @@ gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) 
 -- @
 -- preset x 'empty'      == Set.empty
 -- preset x ('vertex' x) == Set.empty
--- preset x ('Algebra.Graph.edge' x y) == Set.empty
+-- preset 1 ('Algebra.Graph.edge' 1 2) == Set.empty
 -- preset y ('Algebra.Graph.edge' x y) == Set.fromList [x]
 -- @
 preset :: Ord a => a -> Relation a -> Set a
@@ -148,7 +148,7 @@ preset x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
 -- postset x 'empty'      == Set.empty
 -- postset x ('vertex' x) == Set.empty
 -- postset x ('Algebra.Graph.edge' x y) == Set.fromList [y]
--- postset y ('Algebra.Graph.edge' x y) == Set.empty
+-- postset 2 ('Algebra.Graph.edge' 1 2) == Set.empty
 -- @
 postset :: Ord a => a -> Relation a -> Set a
 postset x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation
@@ -214,9 +214,9 @@ symmetricClosure (Relation d r) = Relation d $ r `union` (Set.map swap r)
 -- | Compute the /transitive closure/ of a 'Relation'.
 --
 -- @
--- transitiveClosure 'empty'      == 'empty'
--- transitiveClosure ('vertex' x) == 'vertex' x
--- transitiveClosure ('Algebra.Graph.path' xs)  == 'Algebra.Graph.clique' xs
+-- transitiveClosure 'empty'           == 'empty'
+-- transitiveClosure ('vertex' x)      == 'vertex' x
+-- transitiveClosure ('Algebra.Graph.path' $ 'Data.List.nub' xs) == 'Algebra.Graph.clique' ('Data.List.nub' xs)
 -- @
 transitiveClosure :: Ord a => Relation a -> Relation a
 transitiveClosure old@(Relation d r)
@@ -224,6 +224,16 @@ transitiveClosure old@(Relation d r)
     | otherwise = transitiveClosure $ Relation d newR
   where
     newR = Set.unions $ r : [ preset x old >< postset x old | x <- Set.elems d ]
+
+-- | Compute the /preorder closure/ of a 'Relation'.
+--
+-- @
+-- preorderClosure 'empty'           == 'empty'
+-- preorderClosure ('vertex' x)      == 'Algebra.Graph.edge' x x
+-- preorderClosure ('Algebra.Graph.path' $ 'Data.List.nub' xs) == reflexiveClosure ('Algebra.Graph.clique' $ 'Data.List.nub' xs)
+-- @
+preorderClosure :: Ord a => Relation a -> Relation a
+preorderClosure = reflexiveClosure . transitiveClosure
 
 -- TODO: Optimise the implementation by caching the results of reflexive closure.
 -- | The 'ReflexiveRelation' data type represents a binary reflexive relation
@@ -280,13 +290,22 @@ instance Ord a => Graph (SymmetricRelation a) where
 instance Ord a => Undirected (SymmetricRelation a)
 
 -- TODO: Optimise the implementation by caching the results of transitive closure.
--- | The 'TransitiveRelation' data type represents a binary transitive relation
--- over a set of elements.
---
--- @
--- show (1 * 2         :: TransitiveRelation Int) == "edge 1 2"
--- show (1 * 2 + 2 * 3 :: TransitiveRelation Int) == "edges [(1,2),(1,3),(2,3)]"
--- @
+{-| The 'TransitiveRelation' data type represents a binary transitive relation
+over a set of elements. Transitive relations satisfy all laws of the
+'Algebra.Graph.Classes.Transitive' type class and, in particular, the /closure/
+axiom:
+
+    > y /= empty ==> x * y + x * z + y * z == x * y + y * z
+
+For example, the following holds:
+
+    > path xs == (clique xs :: TransitiveRelation Int)
+
+The 'Show' instance produces transitively closed expressions:
+
+    > show (1 * 2         :: TransitiveRelation Int) == "edge 1 2"
+    > show (1 * 2 + 2 * 3 :: TransitiveRelation Int) == "edges [(1,2),(1,3),(2,3)]"
+-}
 newtype TransitiveRelation a = TransitiveRelation { fromTransitive :: Relation a }
     deriving Num
 
@@ -307,29 +326,32 @@ instance Ord a => Graph (TransitiveRelation a) where
 instance Ord a => Transitive (TransitiveRelation a)
 
 -- TODO: Optimise the implementation by caching the results of preorder closure.
--- | The 'Preorder' data type represents a binary transitive relation
--- over a set of elements.
---
--- @
--- show (1             :: PreorderRelation Int) == "edge 1 1"
--- show (1 * 2         :: PreorderRelation Int) == "edges [(1,1),(1,2),(2,2)]"
--- show (1 * 2 + 2 * 3 :: PreorderRelation Int) == "edges [(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)]"
--- @
+{-| The 'PreorderRelation' data type represents a binary relation over a set of
+elements that is both transitive and reflexive. Preorders satisfy all laws of the
+'Algebra.Graph.Classes.Preorder' type class and, in particular, the /closure/
+axiom:
+
+@y /= 'empty' ==> x * y + x * z + y * z == x * y + y * z@
+
+and the /self-loop/ axiom:
+
+@'vertex' x == 'vertex' x * 'vertex' x@
+
+For example, the following holds:
+
+@'Algebra.Graph.path' xs == ('Algebra.Graph.clique' xs :: PreorderRelation Int)@
+
+The 'Show' instance produces transitively closed expressions:
+
+@show (1             :: PreorderRelation Int) == "edge 1 1"
+show (1 * 2         :: PreorderRelation Int) == "edges [(1,1),(1,2),(2,2)]"
+show (1 * 2 + 2 * 3 :: PreorderRelation Int) == "edges [(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)]"@
+-}
 newtype PreorderRelation a = PreorderRelation { fromPreorder :: Relation a }
     deriving Num
 
 instance (Ord a, Show a) => Show (PreorderRelation a) where
     show = show . preorderClosure . fromPreorder
-
--- | Compute the /preorder closure/ of a 'Relation'.
---
--- @
--- preorderClosure 'empty'      == 'empty'
--- preorderClosure ('vertex' x) == 'Algebra.Graph.edge' x x
--- preorderClosure ('Algebra.Graph.path' xs)  == 'Algebra.Graph.clique' xs
--- @
-preorderClosure :: Ord a => Relation a -> Relation a
-preorderClosure = reflexiveClosure . transitiveClosure
 
 instance Ord a => Eq (PreorderRelation a) where
     x == y = preorderClosure (fromPreorder x) == preorderClosure (fromPreorder y)
