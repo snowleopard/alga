@@ -20,7 +20,6 @@ library
     exposed-modules:    Algebra.Graph,
                         Algebra.Graph.AdjacencyMap,
                         Algebra.Graph.AdjacencyMap.Internal,
-                        Algebra.Graph.Base,
                         Algebra.Graph.Class,
                         Algebra.Graph.Fold,
                         Algebra.Graph.Fold.Internal,

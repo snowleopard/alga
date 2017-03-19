@@ -36,7 +36,7 @@ import Data.Foldable
 import Data.IntSet (IntSet)
 import Data.Set (Set)
 
-import Algebra.Graph.Base
+import Algebra.Graph.Class
 import Algebra.Graph.Fold.Internal
 
 import qualified Data.IntSet as IntSet

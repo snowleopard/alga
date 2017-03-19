@@ -6,14 +6,19 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Common classes of algebraic graphs.
+-- __Alga__ is a library for algebraic construction and manipulation of graphs
+-- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
+-- motivation behind the library, the underlying theory, and implementation details.
+--
+-- This module defines the core type class 'Graph', a few graph subclasses, and
+-- basic polymorphic graph construction primitives.
 --
 -- See "Algebra.Graph.HigherKinded.Class" for alternative definitions where
 -- the type classes are higher-kinded.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Class (
     -- * The core type class
-    Graph (..), ToGraph (..),
+    Graph (..),
 
     -- * Undirected graphs
     Undirected,
@@ -25,8 +30,22 @@ module Algebra.Graph.Class (
     Transitive,
 
     -- * Preorders
-    Preorder
+    Preorder,
+
+    -- * Basic graph construction primitives
+    vertices, overlays, connects, edge, edges, graph,
+
+    -- * Relations on graphs
+    isSubgraphOf,
+
+    -- * Standard families of graphs
+    path, circuit, clique, biclique, star, tree, forest,
+
+    -- * Conversion between graph data types
+    ToGraph (..)
   ) where
+
+import Data.Tree
 
 {-|
 The core type class for constructing algebraic graphs, characterised by the
@@ -67,8 +86,8 @@ The following useful theorems can be proved from the above set of axioms.
         >     x * x * x == x * x
 
 The core type class 'Graph' corresponds to unlabelled directed graphs.
-'Undirected', reflexive and transitive graphs can be obtained by extending the
-minimal set of axioms.
+'Undirected', 'Reflexive', 'Transitive' and 'Preorder' graphs can be obtained
+by extending the minimal set of axioms.
 -}
 class Graph g where
     -- | The type of graph vertices.
@@ -81,19 +100,6 @@ class Graph g where
     overlay :: g -> g -> g
     -- | Connect two graphs.
     connect :: g -> g -> g
-
--- | The 'ToGraph' type class captures data types that can be converted to
--- polymorphic graph expressions. The conversion method 'toGraph' semantically
--- acts as the identity on graph data structures, but allows to convert graphs
--- between different data representations.
---
--- @
---       toGraph (g     :: 'Algebra.Graph.Graph' a  ) :: 'Algebra.Graph.Graph' a       == g
--- 'show' (toGraph (1 * 2 :: 'Algebra.Graph.Graph' Int) :: 'Algebra.Graph.Relation' Int) == "edge 1 2"
--- @
-class ToGraph t where
-    type ToVertex t
-    toGraph :: (Graph g, Vertex g ~ ToVertex t) => t -> g
 
 {-|
 The class of /undirected graphs/ that satisfy the following additional axiom.
@@ -112,8 +118,8 @@ The class of /reflexive graphs/ that satisfy the following additional axiom.
         > vertex x == vertex x * vertex x
 
 Note that by applying the axiom in the reverse direction, one can always remove
-all self-loops resulting in an /irreflexive graph/. We therefore also use this
-type class to represent irreflexive graphs.
+all self-loops resulting in an /irreflexive graph/. This type class can
+therefore be also used in the context of irreflexive graphs.
 -}
 class Graph g => Reflexive g
 
@@ -196,3 +202,180 @@ instance (Undirected g, Undirected h, Undirected i) => Undirected (g, h, i)
 instance (Reflexive  g, Reflexive  h, Reflexive  i) => Reflexive  (g, h, i)
 instance (Transitive g, Transitive h, Transitive i) => Transitive (g, h, i)
 instance (Preorder   g, Preorder   h, Preorder   i) => Preorder   (g, h, i)
+
+-- | Construct the graph comprising a given list of isolated vertices.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- vertices []  == 'empty'
+-- vertices [x] == 'vertex' x
+-- @
+vertices :: Graph g => [Vertex g] -> g
+vertices = overlays . map vertex
+
+-- | Overlay a given list of graphs.
+-- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
+-- of the given list, and /S/ is the sum of sizes of the graphs in the list.
+--
+-- @
+-- overlays []    == 'empty'
+-- overlays [x]   == x
+-- overlays [x,y] == 'overlay' x y
+-- @
+overlays :: Graph g => [g] -> g
+overlays = foldr overlay empty
+
+-- | Connect a given list of graphs.
+-- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
+-- of the given list, and /S/ is the sum of sizes of the graphs in the list.
+--
+-- @
+-- connects []    == 'empty'
+-- connects [x]   == x
+-- connects [x,y] == 'connect' x y
+-- @
+connects :: Graph g => [g] -> g
+connects = foldr connect empty
+
+-- | Construct the graph comprising a single edge.
+-- Complexity: /O(1)/ time, memory and size.
+--
+-- @
+-- edge x y == 'connect' ('vertex' x) ('vertex' y)
+-- @
+edge :: Graph g => Vertex g -> Vertex g -> g
+edge x y = connect (vertex x) (vertex y)
+
+-- | Construct the graph from a list of edges.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- edges []      == 'empty'
+-- edges [(x,y)] == 'edge' x y
+-- @
+edges :: Graph g => [(Vertex g, Vertex g)] -> g
+edges = overlays . map (uncurry edge)
+
+-- | Construct the graph from given lists of vertices /V/ and edges /E/.
+-- The resulting graph contains the vertices /V/ as well as all the vertices
+-- referred to by the edges /E/.
+-- Complexity: /O(|V| + |E|)/ time, memory and size.
+--
+-- @
+-- graph []  []      == 'empty'
+-- graph [x] []      == 'vertex' x
+-- graph []  [(x,y)] == 'edge' x y
+-- @
+graph :: Graph g => [Vertex g] -> [(Vertex g, Vertex g)] -> g
+graph vs es = overlay (vertices vs) (edges es)
+
+-- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
+-- first graph is a /subgraph/ of the second. Here is the current implementation:
+--
+-- @
+-- isSubgraphOf x y = 'overlay' x y == y
+-- @
+-- The complexity therefore depends on the complexity of equality testing of
+-- a particular graph instance.
+--
+-- @
+-- isSubgraphOf 'empty'         x             == True
+-- isSubgraphOf ('vertex' x)    'empty'         == False
+-- isSubgraphOf x             ('overlay' x y) == True
+-- isSubgraphOf ('overlay' x y) ('connect' x y) == True
+-- isSubgraphOf ('path' xs)     ('circuit' xs)  == True
+-- @
+isSubgraphOf :: (Graph g, Eq g) => g -> g -> Bool
+isSubgraphOf x y = overlay x y == y
+
+-- | The /path/ on a list of vertices.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- path []    == 'empty'
+-- path [x]   == 'vertex' x
+-- path [x,y] == 'edge' x y
+-- @
+path :: Graph g => [Vertex g] -> g
+path []  = empty
+path [x] = vertex x
+path xs  = edges $ zip xs (tail xs)
+
+-- | The /circuit/ on a list of vertices.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- circuit []    == 'empty'
+-- circuit [x]   == 'edge' x x
+-- circuit [x,y] == 'edges' [(x,y), (y,x)]
+-- @
+circuit :: Graph g => [Vertex g] -> g
+circuit []     = empty
+circuit (x:xs) = path $ [x] ++ xs ++ [x]
+
+-- | The /clique/ on a list of vertices.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- clique []      == 'empty'
+-- clique [x]     == 'vertex' x
+-- clique [x,y]   == 'edge' x y
+-- clique [x,y,z] == 'edges' [(x,y), (x,z), (y,z)]
+-- @
+clique :: Graph g => [Vertex g] -> g
+clique = connects . map vertex
+
+-- | The /biclique/ on a list of vertices.
+-- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
+-- lengths of the given lists.
+--
+-- @
+-- biclique []      []      == 'empty'
+-- biclique [x]     []      == 'vertex' x
+-- biclique []      [y]     == 'vertex' y
+-- biclique [x1,x2] [y1,y2] == 'edges' [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
+-- @
+biclique :: Graph g => [Vertex g] -> [Vertex g] -> g
+biclique xs ys = connect (vertices xs) (vertices ys)
+
+-- | The /star/ formed by a centre vertex and a list of leaves.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- star x []    == 'vertex' x
+-- star x [y]   == 'edge' x y
+-- star x [y,z] == 'edges' [(x,y), (x,z)]
+-- @
+star :: Graph g => Vertex g -> [Vertex g] -> g
+star x ys = connect (vertex x) (vertices ys)
+
+-- | The /tree graph/ constructed from a given 'Tree' data structure.
+-- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
+-- given tree (i.e. the number of vertices in the tree).
+tree :: Graph g => Tree (Vertex g) -> g
+tree (Node x f) = overlay (star x $ map rootLabel f) (forest f)
+
+-- | The /forest graph/ constructed from a given 'Forest' data structure.
+-- Complexity: /O(F)/ time, memory and size, where /F/ is the size of the
+-- given forest (i.e. the number of vertices in the forest).
+forest :: Graph g => Forest (Vertex g) -> g
+forest = overlays . map tree
+
+-- | The 'ToGraph' type class captures data types that can be converted to
+-- polymorphic graph expressions. The conversion method 'toGraph' semantically
+-- acts as the identity on graph data structures, but allows to convert graphs
+-- between different data representations.
+--
+-- @
+--       toGraph (g     :: 'Algebra.Graph.Graph' a  ) :: 'Algebra.Graph.Graph' a       == g
+-- 'show' (toGraph (1 * 2 :: 'Algebra.Graph.Graph' Int) :: 'Algebra.Graph.Relation' Int) == "edge 1 2"
+-- @
+class ToGraph t where
+    type ToVertex t
+    toGraph :: (Graph g, Vertex g ~ ToVertex t) => t -> g

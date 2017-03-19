@@ -23,7 +23,7 @@ module Algebra.Graph.IntAdjacencyMap.Internal (
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)
 import Data.IntSet (IntSet)
 
-import Algebra.Graph.Class
+import Algebra.Graph.Class hiding (edges)
 
 import qualified Data.IntMap.Strict as Map
 import qualified Data.IntSet        as Set

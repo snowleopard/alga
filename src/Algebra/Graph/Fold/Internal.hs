@@ -23,7 +23,7 @@ module Algebra.Graph.Fold.Internal (
 import Control.Applicative hiding (empty)
 import Control.Monad
 
-import Algebra.Graph.Base
+import Algebra.Graph.Class
 import Algebra.Graph.AdjacencyMap (AdjacencyMap)
 
 import qualified Algebra.Graph.HigherKinded.Class as H

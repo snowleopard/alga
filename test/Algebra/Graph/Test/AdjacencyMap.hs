@@ -17,7 +17,7 @@ module Algebra.Graph.Test.AdjacencyMap (
 
 import Data.Tree
 
-import Algebra.Graph.Base hiding (edges)
+import Algebra.Graph.Class hiding (edges)
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.Test

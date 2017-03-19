@@ -14,7 +14,7 @@ module Algebra.Graph.Test.IntAdjacencyMap (
     testIntAdjacencyMap
   ) where
 
-import Algebra.Graph.Class
+import Algebra.Graph.Class hiding (edges)
 import Algebra.Graph.IntAdjacencyMap.Internal
 import Algebra.Graph.Test
 

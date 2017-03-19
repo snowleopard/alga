@@ -2,7 +2,7 @@ import Criterion.Main
 import Data.Char
 import Data.Foldable
 
-import Algebra.Graph.Base
+import Algebra.Graph.Class
 import Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap)
 import Algebra.Graph.Fold (Fold, box, deBruijn, gmap, toIntSet, toSet)
 import Algebra.Graph.IntAdjacencyMap (IntAdjacencyMap)

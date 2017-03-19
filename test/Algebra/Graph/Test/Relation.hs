@@ -15,7 +15,7 @@ module Algebra.Graph.Test.Relation (
     testRelation
   ) where
 
-import Algebra.Graph.Base hiding (edges)
+import Algebra.Graph.Class hiding (edges)
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Test
