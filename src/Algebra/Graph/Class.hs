@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Classes
+-- Module     : Algebra.Graph.Class
 -- Copyright  : (c) Andrey Mokhov 2016-2017
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -8,12 +8,12 @@
 --
 -- Common classes of algebraic graphs.
 --
--- See "Algebra.Graph.HigherKinded.Classes" for alternative definitions where
+-- See "Algebra.Graph.HigherKinded.Class" for alternative definitions where
 -- the type classes are higher-kinded.
 -----------------------------------------------------------------------------
-module Algebra.Graph.Classes (
+module Algebra.Graph.Class (
     -- * The core type class
-    Graph (..),
+    Graph (..), ToGraph (..),
 
     -- * Undirected graphs
     Undirected,
@@ -81,6 +81,18 @@ class Graph g where
     overlay :: g -> g -> g
     -- | Connect two graphs.
     connect :: g -> g -> g
+
+-- | Fold a 'Graph' into the polymorphic graph expression. Semantically, this
+-- operation acts as the identity, but allows to convert a 'Graph' to a
+-- different data representation.
+--
+-- @
+-- fromGraph g                 :: Graph a       == g
+-- 'show' (fromGraph (1 * 2 + 3) :: Relation Int) == "graph [1,2,3] [(1,2)]"
+-- @
+class ToGraph t where
+    type ToVertex t
+    toGraph :: (Graph g, Vertex g ~ ToVertex t) => t -> g
 
 {-|
 The class of /undirected graphs/ that satisfy the following additional axiom.

@@ -11,12 +11,12 @@
 -- behind the library, the underlying theory and implementation details.
 --
 -- This module defines the higher-kinded version of the type class 'Graph'.
--- See "Algebra.Graph" for an alternative version where 'Graph' has kind @*@.
+-- See "Algebra.Graph.Class" for an alternative version where 'Graph' has kind @*@.
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph.HigherKinded (
     -- * The core type class
-    Graph (..), empty, vertex, overlay,
+    Graph (..), empty, vertex, overlay, ToGraph (..),
 
     -- * Basic graph construction primitives
     vertices, overlays, connects, edge, edges, graph,

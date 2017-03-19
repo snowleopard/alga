@@ -26,7 +26,7 @@ import Control.Monad
 import Algebra.Graph.Base
 import Algebra.Graph.AdjacencyMap (AdjacencyMap)
 
-import qualified Algebra.Graph.HigherKinded.Classes as H
+import qualified Algebra.Graph.HigherKinded.Class as H
 
 -- | Boehm-Berarducci encoding of algebraic graphs.
 -- The 'Show' instance is defined using basic graph construction primitives:

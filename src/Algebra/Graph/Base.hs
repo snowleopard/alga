@@ -26,7 +26,7 @@ module Algebra.Graph.Base (
 
 import Data.Tree
 
-import Algebra.Graph.Classes
+import Algebra.Graph.Class
 
 -- | Construct the graph comprising a given list of isolated vertices.
 --

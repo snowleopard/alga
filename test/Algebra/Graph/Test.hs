@@ -15,7 +15,7 @@ import Prelude hiding ((+), (*), (<=))
 import Test.QuickCheck
 import Test.QuickCheck.Function
 
-import Algebra.Graph
+import Algebra.Graph.Base
 import Algebra.Graph.Test.Arbitrary ()
 
 test :: Testable a => String -> a -> IO ()

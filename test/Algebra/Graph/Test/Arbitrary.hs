@@ -17,37 +17,37 @@ module Algebra.Graph.Test.Arbitrary (
 
 import Test.QuickCheck
 
+import Algebra.Graph
 import Algebra.Graph.AdjacencyMap.Internal (AdjacencyMap (..))
-import Algebra.Graph.Classes
 import Algebra.Graph.Fold.Internal (Fold (..))
 import Algebra.Graph.IntAdjacencyMap.Internal (IntAdjacencyMap (..))
 import Algebra.Graph.Relation.Internal (Relation (..))
 
-import qualified Algebra.Graph.Data                     as Data
+import qualified Algebra.Graph.Class                    as C
 import qualified Algebra.Graph.AdjacencyMap.Internal    as AdjacencyMap
 import qualified Algebra.Graph.IntAdjacencyMap.Internal as IntAdjacencyMap
 import qualified Algebra.Graph.Relation.Internal        as Relation
 
 -- | Generate an arbitrary 'Graph' value of a specified size.
-arbitraryGraph :: (Graph g, Arbitrary (Vertex g)) => Gen g
+arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
 arbitraryGraph = sized expr
   where
-    expr 0 = return empty
-    expr 1 = vertex <$> arbitrary
+    expr 0 = return C.empty
+    expr 1 = C.vertex <$> arbitrary
     expr n = do
         left <- choose (0, n)
-        oneof [ overlay <$> (expr left) <*> (expr $ n - left)
-              , connect <$> (expr left) <*> (expr $ n - left) ]
+        oneof [ C.overlay <$> (expr left) <*> (expr $ n - left)
+              , C.connect <$> (expr left) <*> (expr $ n - left) ]
 
-instance Arbitrary a => Arbitrary (Data.Graph a) where
+instance Arbitrary a => Arbitrary (Graph a) where
     arbitrary = arbitraryGraph
 
-    shrink Data.Empty         = []
-    shrink (Data.Vertex    _) = [Data.Empty]
-    shrink (Data.Overlay x y) = [Data.Empty, x, y]
-                             ++ [Data.Overlay x' y' | (x', y') <- shrink (x, y) ]
-    shrink (Data.Connect x y) = [Data.Empty, x, y, Data.Overlay x y]
-                             ++ [Data.Connect x' y' | (x', y') <- shrink (x, y) ]
+    shrink Empty         = []
+    shrink (Vertex    _) = [Empty]
+    shrink (Overlay x y) = [Empty, x, y]
+                        ++ [Overlay x' y' | (x', y') <- shrink (x, y) ]
+    shrink (Connect x y) = [Empty, x, y, Overlay x y]
+                        ++ [Connect x' y' | (x', y') <- shrink (x, y) ]
 
 -- | Generate an arbitrary 'Relation'.
 arbitraryRelation :: (Arbitrary a, Ord a) => Gen (Relation a)
@@ -86,4 +86,4 @@ instance Arbitrary IntAdjacencyMap where
     arbitrary = arbitraryIntAdjacencyMap
 
 instance Arbitrary a => Arbitrary (Fold a) where
-    arbitrary = Data.fromGraph <$> arbitrary
+    arbitrary = arbitraryGraph

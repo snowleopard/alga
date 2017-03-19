@@ -12,7 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.HigherKinded.Base (
     -- * The core type class
-    Graph (..), empty, vertex, overlay,
+    Graph (..), empty, vertex, overlay, ToGraph (..),
 
     -- * Basic graph construction primitives
     vertices, overlays, connects, edge, edges, graph,
@@ -27,7 +27,7 @@ module Algebra.Graph.HigherKinded.Base (
 import Control.Monad
 import Data.Tree
 
-import Algebra.Graph.HigherKinded.Classes
+import Algebra.Graph.HigherKinded.Class
 
 -- | Construct the graph comprising a given list of isolated vertices.
 --

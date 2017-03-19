@@ -37,7 +37,7 @@ module Algebra.Graph.Relation.Internal (
 import Data.Tuple
 import Data.Set (Set, union)
 
-import Algebra.Graph.Classes
+import Algebra.Graph.Class
 
 import qualified Data.Set as Set
 

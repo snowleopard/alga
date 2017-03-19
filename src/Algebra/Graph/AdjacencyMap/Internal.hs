@@ -22,7 +22,7 @@ module Algebra.Graph.AdjacencyMap.Internal (
 import Data.Map.Strict (Map, keysSet, fromSet)
 import Data.Set (Set)
 
-import Algebra.Graph.Classes
+import Algebra.Graph.Class
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set

@@ -1,18 +1,18 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.HigherKinded.Classes
+-- Module     : Algebra.Graph.HigherKinded.Class
 -- Copyright  : (c) Andrey Mokhov 2016-2017
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
 -- Common classes of algebraic graphs. This module defines higher-kinded
--- equivalents for the classes defined in "Algebra.Graph.Classes".
+-- equivalents for the classes defined in "Algebra.Graph.Class".
 --
 -----------------------------------------------------------------------------
-module Algebra.Graph.HigherKinded.Classes (
+module Algebra.Graph.HigherKinded.Class (
     -- * The core type class
-    Graph (..), empty, vertex, overlay,
+    Graph (..), empty, vertex, overlay, ToGraph (..),
 
     -- * Undirected graphs
     Undirected,
@@ -83,6 +83,9 @@ vertex = pure
 -- | Overlay two graphs. An alias for '<|>'.
 overlay :: Graph g => g a -> g a -> g a
 overlay = (<|>)
+
+class ToGraph t where
+    toGraph :: Graph g => t a -> g a
 
 {-|
 The class of /undirected graphs/ that satisfy the following additional axiom.
