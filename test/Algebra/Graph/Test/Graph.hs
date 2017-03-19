@@ -292,6 +292,9 @@ testGraph = do
     test "size (connect x y) == size x + size y" $ \(x :: G) y ->
           size (connect x y) == size x + size y
 
+    test "size x             >= 1              " $ \(x :: G) ->
+          size x             >= 1
+
     putStrLn "\n============ hasVertex ============"
 
     test "hasVertex x empty            == False      " $ \(x :: Int) ->
@@ -319,14 +322,14 @@ testGraph = do
 
     putStrLn "\n============ vertexCount ============"
 
-    test "vertexCount empty      == 0                   " $
+    test "vertexCount empty      == 0                  " $
           vertexCount (empty :: G) == 0
 
-    test "vertexCount (vertex x) == 1                   " $ \(x :: Int) ->
+    test "vertexCount (vertex x) == 1                  " $ \(x :: Int) ->
           vertexCount (vertex x) == 1
 
-    test "vertexCount            == Set.size . vertexSet" $ \(x :: G) ->
-          vertexCount x          ==(Set.size . vertexSet) x
+    test "vertexCount            == length . vertexList" $ \(x :: G) ->
+          vertexCount x          ==(length . vertexList) x
 
     putStrLn "\n============ edgeCount ============"
 

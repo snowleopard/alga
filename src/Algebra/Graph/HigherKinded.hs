@@ -31,7 +31,7 @@ module Algebra.Graph.HigherKinded (
     induce, removeVertex, replaceVertex, mergeVertices, splitVertex,
 
     -- * Graph properties
-    isEmpty, hasVertex, toSet, toIntSet,
+    isEmpty, hasVertex, vertexSet, vertexIntSet,
 
     -- * Graph composition
     box,
@@ -127,25 +127,25 @@ hasVertex = elem
 -- | The set of vertices of a given graph.
 --
 -- @
--- toSet 'empty'         == Set.empty
--- toSet ('vertex' x)    == Set.singleton x
--- toSet ('vertices' xs) == Set.fromList xs
--- toSet ('clique' xs)   == Set.fromList xs
+-- vertexSet 'empty'         == Set.empty
+-- vertexSet ('vertex' x)    == Set.singleton x
+-- vertexSet ('vertices' xs) == Set.fromList xs
+-- vertexSet ('clique' xs)   == Set.fromList xs
 -- @
-toSet :: (Ord a, Graph g) => g a -> Set.Set a
-toSet = foldr Set.insert Set.empty
+vertexSet :: (Ord a, Graph g) => g a -> Set.Set a
+vertexSet = foldr Set.insert Set.empty
 
--- | The set of vertices of a given graph. Like 'toSet' but specicialised for
+-- | The set of vertices of a given graph. Like 'vertexSet' but specicialised for
 -- graphs with vertices of type 'Int'.
 --
 -- @
--- toIntSet 'empty'         == IntSet.empty
--- toIntSet ('vertex' x)    == IntSet.singleton x
--- toIntSet ('vertices' xs) == IntSet.fromList xs
--- toIntSet ('clique' xs)   == IntSet.fromList xs
+-- vertexIntSet 'empty'         == IntSet.empty
+-- vertexIntSet ('vertex' x)    == IntSet.singleton x
+-- vertexIntSet ('vertices' xs) == IntSet.fromList xs
+-- vertexIntSet ('clique' xs)   == IntSet.fromList xs
 -- @
-toIntSet :: Graph g => g Int -> IntSet.IntSet
-toIntSet = foldr IntSet.insert IntSet.empty
+vertexIntSet :: Graph g => g Int -> IntSet.IntSet
+vertexIntSet = foldr IntSet.insert IntSet.empty
 
 -- | Compute the /Cartesian product/ of graphs.
 --

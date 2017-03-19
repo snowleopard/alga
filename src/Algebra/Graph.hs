@@ -48,12 +48,10 @@ module Algebra.Graph (
 import Control.Applicative (Alternative, (<|>))
 import Control.Monad
 
-import Algebra.Graph.AdjacencyMap (AdjacencyMap)
-import Algebra.Graph.Relation     (relation)
-
-import qualified Algebra.Graph.AdjacencyMap as AdjacencyMap
+import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Algebra.Graph.Class        as C
 import qualified Algebra.Graph.HigherKinded as H
+import qualified Algebra.Graph.Relation     as R
 import qualified Data.IntSet                as IntSet
 import qualified Data.Set                   as Set
 import qualified Data.Tree                  as Tree
@@ -115,16 +113,18 @@ m == 'edgeCount' g
 s == 'size' g@
 
 Note that 'size' is slightly different from the 'length' method of the
-'Foldable' type class, as the latter does not count 'Empty' leaves of the
+'Foldable' type class, as the latter does not count 'empty' leaves of the
 expression:
 
-@'length' 'empty'      == 0
-'size'   'empty'      == 1
-'length' ('vertex' x) == 1
-'size'   ('vertex' x) == 1@
+@'length' 'empty'           == 0
+'size'   'empty'           == 1
+'length' ('vertex' x)      == 1
+'size'   ('vertex' x)      == 1
+'length' ('empty' + 'empty') == 0
+'size'   ('empty' + 'empty') == 2@
 
-The size of any graph is positive, and the difference @(size - length)@
-corresponds to the number of occurrences of 'Empty' in a graph expression.
+The 'size' of any graph is positive, and the difference @('size' g - 'length' g)@
+corresponds to the number of occurrences of 'empty' in an expression @g@.
 
 Converting a 'Graph' to the corresponding 'AdjacencyMap' takes /O(s + m * log(m))/
 time and /O(s + m)/ memory, hence this is the complexity of the current
@@ -231,7 +231,7 @@ instance Num a => Num (Graph a) where
     negate      = id
 
 instance Ord a => Eq (Graph a) where
-    x == y = C.toGraph x == (C.toGraph y :: AdjacencyMap a)
+    x == y = C.toGraph x == (C.toGraph y :: AM.AdjacencyMap a)
 
 instance Applicative Graph where
     pure  = Vertex
@@ -280,7 +280,7 @@ foldg e v o c = go
 -- vertices [x]           == 'vertex' x
 -- 'hasVertex' x . vertices == 'elem' x
 -- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
--- 'vertexSet'   . vertices == Set.fromList
+-- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: [a] -> Graph a
 vertices = H.vertices
@@ -379,7 +379,7 @@ isEmpty ::Graph a -> Bool
 isEmpty = H.isEmpty
 
 -- | The /size/ of a graph, i.e. the number of leaves of the expression
--- including 'Empty' leaves.
+-- including 'empty' leaves.
 -- Complexity: /O(s)/ time.
 --
 -- @
@@ -387,6 +387,7 @@ isEmpty = H.isEmpty
 -- size ('vertex' x)    == 1
 -- size ('overlay' x y) == size x + size y
 -- size ('connect' x y) == size x + size y
+-- size x             >= 1
 -- @
 size :: Graph a -> Int
 size = foldg 1 (const 1) (+) (+)
@@ -420,10 +421,10 @@ hasEdge s t g = not $ intact st where (_, _, st) = smash s t g
 -- @
 -- vertexCount 'empty'      == 0
 -- vertexCount ('vertex' x) == 1
--- vertexCount            == Set.size . 'vertexSet'
+-- vertexCount            == 'length' . 'vertexList'
 -- @
 vertexCount :: Ord a => Graph a -> Int
-vertexCount = Set.size . vertexSet
+vertexCount = length . vertexList
 
 -- | The number of edges in a graph.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
@@ -444,19 +445,10 @@ edgeCount = length . edgeList
 -- @
 -- vertexList 'empty'      == []
 -- vertexList ('vertex' x) == [x]
--- vertexList . 'vertices' == 'Data.List.nub' . 'sort'
+-- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
 vertexList :: Ord a => Graph a -> [a]
-vertexList = foldg [] return merge merge
-
--- Merge two sorted lists
-merge :: Ord a => [a] -> [a] -> [a]
-merge xs     []     = xs
-merge []     ys     = ys
-merge (x:xs) (y:ys) = case compare x y of
-    LT -> x : merge xs     (y:ys)
-    EQ -> x : merge xs     ys
-    GT -> y : merge (x:xs) ys
+vertexList = Set.toAscList . vertexSet
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
@@ -470,44 +462,44 @@ merge (x:xs) (y:ys) = case compare x y of
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
 -- @
 edgeList :: Ord a => Graph a -> [(a, a)]
-edgeList = AdjacencyMap.edgeList . C.toGraph
+edgeList = AM.edgeList . C.toGraph
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
 --
 -- @
--- vertexSet 'empty'      == Set.empty
--- vertexSet . 'vertex'   == Set.singleton
--- vertexSet . 'vertices' == Set.fromList
--- vertexSet . 'clique'   == Set.fromList
+-- vertexSet 'empty'      == Set.'Set.empty'
+-- vertexSet . 'vertex'   == Set.'Set.singleton'
+-- vertexSet . 'vertices' == Set.'Set.fromList'
+-- vertexSet . 'clique'   == Set.'Set.fromList'
 -- @
 vertexSet :: Ord a => Graph a -> Set.Set a
-vertexSet = H.toSet
+vertexSet = H.vertexSet
 
 -- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
 -- graphs with vertices of type 'Int'.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
 --
 -- @
--- vertexIntSet 'empty'      == IntSet.emptys
--- vertexIntSet . 'vertex'   == IntSet.singleton
--- vertexIntSet . 'vertices' == IntSet.fromList
--- vertexIntSet . 'clique'   == IntSet.fromList
+-- vertexIntSet 'empty'      == IntSet.'IntSet.empty'
+-- vertexIntSet . 'vertex'   == IntSet.'IntSet.singleton'
+-- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
+-- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
 -- @
 vertexIntSet :: Graph Int -> IntSet.IntSet
-vertexIntSet = H.toIntSet
+vertexIntSet = H.vertexIntSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
 --
 -- @
--- edgeSet 'empty'      == Set.empty
--- edgeSet ('vertex' x) == Set.empty
--- edgeSet ('edge' x y) == Set.singleton (x,y)
--- edgeSet . 'edges'    == Set.fromList
+-- edgeSet 'empty'      == Set.'Set.empty'
+-- edgeSet ('vertex' x) == Set.'Set.empty'
+-- edgeSet ('edge' x y) == Set.'Set.singleton' (x,y)
+-- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
 edgeSet :: Ord a => Graph a -> Set.Set (a, a)
-edgeSet = relation . C.toGraph
+edgeSet = R.edgeSet . C.toGraph
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the

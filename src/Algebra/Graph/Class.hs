@@ -82,13 +82,14 @@ class Graph g where
     -- | Connect two graphs.
     connect :: g -> g -> g
 
--- | Fold a 'Graph' into the polymorphic graph expression. Semantically, this
--- operation acts as the identity, but allows to convert a 'Graph' to a
--- different data representation.
+-- | The 'ToGraph' type class captures data types that can be converted to
+-- polymorphic graph expressions. The conversion method 'toGraph' semantically
+-- acts as the identity on graph data structures, but allows to convert graphs
+-- between different data representations.
 --
 -- @
--- fromGraph g                 :: Graph a       == g
--- 'show' (fromGraph (1 * 2 + 3) :: Relation Int) == "graph [1,2,3] [(1,2)]"
+--       toGraph (g     :: 'Algebra.Graph.Graph' a  ) :: 'Algebra.Graph.Graph' a       == g
+-- 'show' (toGraph (1 * 2 :: 'Algebra.Graph.Graph' Int) :: 'Algebra.Graph.Relation' Int) == "edge 1 2"
 -- @
 class ToGraph t where
     type ToVertex t

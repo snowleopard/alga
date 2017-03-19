@@ -86,19 +86,19 @@ testRelation = do
     test "hasEdge x y (edge x y) == True " $ \(x :: Int) y ->
           hasEdge x y (edge x y) == True
 
-    putStrLn "\n============ toSet ============"
+    putStrLn "\n============ vertexSet ============"
 
-    test "toSet empty         == Set.empty      " $
-          toSet (empty :: RI) == Set.empty
+    test "vertexSet empty         == Set.empty      " $
+          vertexSet (empty :: RI) == Set.empty
 
-    test "toSet (vertex x)    == Set.singleton x" $ \(x :: Int) ->
-          toSet (vertex x)    == Set.singleton x
+    test "vertexSet (vertex x)    == Set.singleton x" $ \(x :: Int) ->
+          vertexSet (vertex x)    == Set.singleton x
 
-    test "toSet (vertices xs) == Set.fromList xs" $ \(xs :: [Int]) ->
-          toSet (vertices xs) == Set.fromList xs
+    test "vertexSet (vertices xs) == Set.fromList xs" $ \(xs :: [Int]) ->
+          vertexSet (vertices xs) == Set.fromList xs
 
-    test "toSet (clique xs)   == Set.fromList xs" $ \(xs :: [Int]) ->
-          toSet (clique xs)   == Set.fromList xs
+    test "vertexSet (clique xs)   == Set.fromList xs" $ \(xs :: [Int]) ->
+          vertexSet (clique xs)   == Set.fromList xs
 
     putStrLn "\n============ preset ============"
 

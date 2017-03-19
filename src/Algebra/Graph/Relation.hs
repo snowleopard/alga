@@ -14,7 +14,7 @@ module Algebra.Graph.Relation (
     Relation, domain, relation,
 
     -- * Graph-like properties
-    isEmpty, hasVertex, hasEdge, toSet,
+    isEmpty, hasVertex, hasEdge, vertexSet, edgeSet,
 
     -- * Operations
     preset, postset, reflexiveClosure, symmetricClosure, transitiveClosure,
@@ -56,10 +56,23 @@ hasEdge u v = Set.member (u, v) . relation
 -- | The set of vertices of a given graph.
 --
 -- @
--- toSet 'Algebra.Graph.empty'         == Set.empty
--- toSet ('Algebra.Graph.vertex' x)    == Set.singleton x
--- toSet ('Algebra.Graph.vertices' xs) == Set.fromList xs
--- toSet ('Algebra.Graph.clique' xs)   == Set.fromList xs
+-- vertexSet 'Algebra.Graph.empty'      == Set.empty
+-- vertexSet . 'Algebra.Graph.vertex'   == Set.singleton
+-- vertexSet . 'Algebra.Graph.vertices' == Set.fromList
+-- vertexSet . 'Algebra.Graph.clique'   == Set.fromList
 -- @
-toSet :: Ord a => Relation a -> Set.Set a
-toSet = domain
+vertexSet :: Ord a => Relation a -> Set.Set a
+vertexSet = domain
+
+-- | The set of edges of a given graph.
+-- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
+--
+-- @
+-- edgeSet 'empty'      == Set.empty
+-- edgeSet ('vertex' x) == Set.empty
+-- edgeSet ('edge' x y) == Set.singleton (x,y)
+-- edgeSet . 'edges'    == Set.fromList
+-- @
+edgeSet :: Ord a => Relation a -> Set.Set (a, a)
+edgeSet = relation
+
