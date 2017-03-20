@@ -12,14 +12,23 @@ module Algebra.Graph.Test (
 import Data.List (sort)
 import Data.List.Extra (nubOrd)
 import Prelude hiding ((+), (*), (<=))
+import System.Exit (exitFailure)
 import Test.QuickCheck
 import Test.QuickCheck.Function
+import Test.QuickCheck.Test (isSuccess)
 
 import Algebra.Graph.Class
 import Algebra.Graph.Test.Arbitrary ()
 
 test :: Testable a => String -> a -> IO ()
-test str p = putStr (str ++ " : ") >> quickCheck p
+test str p = do
+    result <- quickCheckWithResult (stdArgs { chatty = False }) p
+    if isSuccess result
+        then putStrLn $ "OK: " ++ str
+        else do
+            putStrLn $ "\nTest failure:\n    " ++ str ++ "\n"
+            putStrLn $ output result
+            exitFailure
 
 (+) :: Graph g => g -> g -> g
 (+) = overlay
