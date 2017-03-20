@@ -40,7 +40,7 @@ module Algebra.Graph.HigherKinded.Class (
     isSubgraphOf,
 
     -- * Graph properties
-    isEmpty, hasVertex, vertexCount, edgeCount, vertexList,
+    isEmpty, size, hasVertex, vertexCount, edgeCount, vertexList,
     edgeList, vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
@@ -311,6 +311,21 @@ isSubgraphOf x y = overlay x y == y
 -- @
 isEmpty :: Graph g => g a -> Bool
 isEmpty = null
+
+-- | The /size/ of a graph, i.e. the number of leaves of the expression
+-- including 'empty' leaves. This function can only be applied to a graph data
+-- structure that implements the 'C.ToGraph' conversion class.
+-- Complexity: /O(s)/ time.
+--
+-- @
+-- size 'empty'         == 1
+-- size ('vertex' x)    == 1
+-- size ('overlay' x y) == size x + size y
+-- size ('connect' x y) == size x + size y
+-- size x             >= 1
+-- @
+size :: (Graph g, C.ToGraph (g a)) => g a -> Int
+size = C.size . C.toGraph
 
 -- | Check if a graph contains a given vertex. A convenient alias for `elem`.
 -- Complexity: /O(s)/ time.

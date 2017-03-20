@@ -239,7 +239,7 @@ instance Applicative Graph where
     (<*>) = ap
 
 instance Monad Graph where
-    return  = Vertex
+    return  = pure
     g >>= f = foldg Empty f Overlay Connect g
 
 instance Alternative Graph where
