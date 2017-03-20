@@ -152,6 +152,22 @@ testGraph = do
     test "foldg True  (const False) (&&)    (&&)           == isEmpty" $ \(x :: G) ->
           foldg True  (const False) (&&)    (&&) x         == isEmpty x
 
+    putStrLn "\n============ edge ============"
+    test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
+          edge x y               == connect (vertex x) (vertex y)
+
+    test "hasEdge x y (edge x y) == True" $ \(x :: Int) y ->
+          hasEdge x y (edge x y) == True
+
+    test "edgeCount   (edge x y) == 1" $ \(x :: Int) y ->
+          edgeCount   (edge x y) == 1
+
+    test "vertexCount (edge 1 1) == 1" $
+          vertexCount (edge 1 1 :: G) == 1
+
+    test "vertexCount (edge 1 2) == 2" $
+          vertexCount (edge 1 2 :: G) == 2
+
     putStrLn "\n============ vertices ============"
     test "vertices []            == empty" $
           vertices []            == (empty :: G)
@@ -167,6 +183,16 @@ testGraph = do
 
     test "vertexSet   . vertices == Set.fromList" $ \(xs :: [Int]) ->
          (vertexSet   . vertices) xs == Set.fromList xs
+
+    putStrLn "\n============ edges ============"
+    test "edges []          == empty" $
+          edges []          ==(empty :: G)
+
+    test "edges [(x,y)]     == edge x y" $ \(x :: Int) y ->
+          edges [(x,y)]     == edge x y
+
+    test "edgeCount . edges == length . nub" $ \(xs :: [(Int, Int)]) ->
+         (edgeCount . edges) xs == (length . nubOrd) xs
 
     putStrLn "\n============ overlays ============"
     test "overlays []        == empty" $
@@ -193,32 +219,6 @@ testGraph = do
 
     test "isEmpty . connects == all isEmpty" $ \(xs :: [G]) ->
          (isEmpty . connects) xs == all isEmpty xs
-
-    putStrLn "\n============ edge ============"
-    test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
-          edge x y               == connect (vertex x) (vertex y)
-
-    test "hasEdge x y (edge x y) == True" $ \(x :: Int) y ->
-          hasEdge x y (edge x y) == True
-
-    test "edgeCount   (edge x y) == 1" $ \(x :: Int) y ->
-          edgeCount   (edge x y) == 1
-
-    test "vertexCount (edge 1 1) == 1" $
-          vertexCount (edge 1 1 :: G) == 1
-
-    test "vertexCount (edge 1 2) == 2" $
-          vertexCount (edge 1 2 :: G) == 2
-
-    putStrLn "\n============ edges ============"
-    test "edges []          == empty" $
-          edges []          ==(empty :: G)
-
-    test "edges [(x,y)]     == edge x y" $ \(x :: Int) y ->
-          edges [(x,y)]     == edge x y
-
-    test "edgeCount . edges == length . nub" $ \(xs :: [(Int, Int)]) ->
-         (edgeCount . edges) xs == (length . nubOrd) xs
 
     putStrLn "\n============ graph ============"
     test "graph []  []      == empty" $
@@ -461,7 +461,7 @@ testGraph = do
     test "mesh xs     ys   == box (path xs) (path ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
           mesh xs     ys   == box (path xs) (path ys)
 
-    test ("mesh [1..3] \"ab\" == <correct result>       ") $
+    test ("mesh [1..3] \"ab\" == <correct result>") $
          mesh [1..3] "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
                                     , ((2,'a'),(3,'a')), ((2,'b'),(3,'b')), ((3,'a'),(3 :: Int,'b')) ]
 
@@ -478,7 +478,7 @@ testGraph = do
     test "torus xs     ys   == box (circuit xs) (circuit ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
           torus xs     ys   == box (circuit xs) (circuit ys)
 
-    test ("torus [1..2] \"ab\" == <correct result>             ") $
+    test ("torus [1..2] \"ab\" == <correct result>") $
          torus [1..2] "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
                                      , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ]
 
@@ -492,7 +492,7 @@ testGraph = do
     test "deBruijn 2 \"0\"   == edge \"00\" \"00\"" $
           deBruijn 2 "0"   == edge "00" "00"
 
-    test ("deBruijn 2 \"01\"  == <correct result>                                    ") $
+    test ("deBruijn 2 \"01\"  == <correct result>") $
           deBruijn 2 "01"  == edges [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
                                     , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
 
