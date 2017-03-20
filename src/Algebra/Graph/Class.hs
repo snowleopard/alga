@@ -33,7 +33,7 @@ module Algebra.Graph.Class (
     Preorder,
 
     -- * Basic graph construction primitives
-    vertices, overlays, connects, edge, edges, graph,
+    edge, vertices, overlays, connects, edges, graph,
 
     -- * Relations on graphs
     isSubgraphOf,
@@ -88,6 +88,11 @@ The following useful theorems can be proved from the above set of axioms.
 The core type class 'Graph' corresponds to unlabelled directed graphs.
 'Undirected', 'Reflexive', 'Transitive' and 'Preorder' graphs can be obtained
 by extending the minimal set of axioms.
+
+When specifying the time and memory complexity of graph algorithms, /n/ will
+denote the number of vertices in the graph, /m/ will denote the number of
+edges in the graph, and /s/ will denote the /size/ of the corresponding
+'Graph' expression.
 -}
 class Graph g where
     -- | The type of graph vertices.
@@ -203,6 +208,15 @@ instance (Reflexive  g, Reflexive  h, Reflexive  i) => Reflexive  (g, h, i)
 instance (Transitive g, Transitive h, Transitive i) => Transitive (g, h, i)
 instance (Preorder   g, Preorder   h, Preorder   i) => Preorder   (g, h, i)
 
+-- | Construct the graph comprising a single edge.
+-- Complexity: /O(1)/ time, memory and size.
+--
+-- @
+-- edge x y == 'connect' ('vertex' x) ('vertex' y)
+-- @
+edge :: Graph g => Vertex g -> Vertex g -> g
+edge x y = connect (vertex x) (vertex y)
+
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
@@ -213,6 +227,17 @@ instance (Preorder   g, Preorder   h, Preorder   i) => Preorder   (g, h, i)
 -- @
 vertices :: Graph g => [Vertex g] -> g
 vertices = overlays . map vertex
+
+-- | Construct the graph from a list of edges.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- edges []      == 'empty'
+-- edges [(x,y)] == 'edge' x y
+-- @
+edges :: Graph g => [(Vertex g, Vertex g)] -> g
+edges = overlays . map (uncurry edge)
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -237,26 +262,6 @@ overlays = foldr overlay empty
 -- @
 connects :: Graph g => [g] -> g
 connects = foldr connect empty
-
--- | Construct the graph comprising a single edge.
--- Complexity: /O(1)/ time, memory and size.
---
--- @
--- edge x y == 'connect' ('vertex' x) ('vertex' y)
--- @
-edge :: Graph g => Vertex g -> Vertex g -> g
-edge x y = connect (vertex x) (vertex y)
-
--- | Construct the graph from a list of edges.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- edges []      == 'empty'
--- edges [(x,y)] == 'edge' x y
--- @
-edges :: Graph g => [(Vertex g, Vertex g)] -> g
-edges = overlays . map (uncurry edge)
 
 -- | Construct the graph from given lists of vertices /V/ and edges /E/.
 -- The resulting graph contains the vertices /V/ as well as all the vertices

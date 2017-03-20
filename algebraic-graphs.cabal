@@ -23,8 +23,6 @@ library
                         Algebra.Graph.Class,
                         Algebra.Graph.Fold,
                         Algebra.Graph.Fold.Internal,
-                        Algebra.Graph.HigherKinded,
-                        Algebra.Graph.HigherKinded.Base,
                         Algebra.Graph.HigherKinded.Class,
                         Algebra.Graph.IntAdjacencyMap,
                         Algebra.Graph.IntAdjacencyMap.Internal,

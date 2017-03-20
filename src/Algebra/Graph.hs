@@ -25,7 +25,7 @@ module Algebra.Graph (
     foldg,
 
     -- * Basic graph construction primitives
-    vertices, overlays, connects, edge, edges, graph,
+    edge, vertices, edges, overlays, connects, graph,
 
     -- * Relations on graphs
     isSubgraphOf,
@@ -42,19 +42,19 @@ module Algebra.Graph (
     transpose, induce,
 
     -- * Graph composition
-    box,
+    box
   ) where
 
 import Control.Applicative (Alternative, (<|>))
 import Control.Monad
 
-import qualified Algebra.Graph.AdjacencyMap as AM
-import qualified Algebra.Graph.Class        as C
-import qualified Algebra.Graph.HigherKinded as H
-import qualified Algebra.Graph.Relation     as R
-import qualified Data.IntSet                as IntSet
-import qualified Data.Set                   as Set
-import qualified Data.Tree                  as Tree
+import qualified Algebra.Graph.AdjacencyMap       as AM
+import qualified Algebra.Graph.Class              as C
+import qualified Algebra.Graph.HigherKinded.Class as H
+import qualified Algebra.Graph.Relation           as R
+import qualified Data.IntSet                      as IntSet
+import qualified Data.Set                         as Set
+import qualified Data.Tree                        as Tree
 
 {-| The 'Graph' datatype is a deep embedding of the core graph construction
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a
@@ -126,9 +126,10 @@ expression:
 The 'size' of any graph is positive, and the difference @('size' g - 'length' g)@
 corresponds to the number of occurrences of 'empty' in an expression @g@.
 
-Converting a 'Graph' to the corresponding 'AdjacencyMap' takes /O(s + m * log(m))/
-time and /O(s + m)/ memory, hence this is the complexity of the current
-implementation of the graph equality test.
+Converting a 'Graph' to the corresponding 'AM.AdjacencyMap' takes /O(s + m * log(m))/
+time and /O(s + m)/ memory. This is also the complexity of the graph equality test,
+because it is currently implemented by converting graph expressions to canonical
+representations based on adjacency maps.
 -}
 data Graph a = Empty
              | Vertex a
@@ -271,6 +272,19 @@ foldg e v o c = go
     go (Overlay x y) = o (go x) (go y)
     go (Connect x y) = c (go x) (go y)
 
+-- | Construct the graph comprising a single edge.
+-- Complexity: /O(1)/ time, memory and size.
+--
+-- @
+-- edge x y               == 'connect' ('vertex' x) ('vertex' y)
+-- 'hasEdge' x y (edge x y) == True
+-- 'edgeCount'   (edge x y) == 1
+-- 'vertexCount' (edge 1 1) == 1
+-- 'vertexCount' (edge 1 2) == 2
+-- @
+edge :: a -> a -> Graph a
+edge = H.edge
+
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
@@ -284,6 +298,18 @@ foldg e v o c = go
 -- @
 vertices :: [a] -> Graph a
 vertices = H.vertices
+
+-- | Construct the graph from a list of edges.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- edges []          == 'empty'
+-- edges [(x,y)]     == 'edge' x y
+-- 'edgeCount' . edges == 'length' . 'Data.List.nub'
+-- @
+edges :: [(a, a)] -> Graph a
+edges = H.edges
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -310,31 +336,6 @@ overlays = H.overlays
 -- @
 connects :: [Graph a] -> Graph a
 connects = H.connects
-
--- | Construct the graph comprising a single edge.
--- Complexity: /O(1)/ time, memory and size.
---
--- @
--- edge x y               == 'connect' ('vertex' x) ('vertex' y)
--- 'hasEdge' x y (edge x y) == True
--- 'edgeCount'   (edge x y) == 1
--- 'vertexCount' (edge 1 1) == 1
--- 'vertexCount' (edge 1 2) == 2
--- @
-edge :: a -> a -> Graph a
-edge = H.edge
-
--- | Construct the graph from a list of edges.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- edges []          == 'empty'
--- edges [(x,y)]     == 'edge' x y
--- 'edgeCount' . edges == 'length' . 'Data.List.nub'
--- @
-edges :: [(a, a)] -> Graph a
-edges = H.edges
 
 -- | Construct the graph from given lists of vertices /V/ and edges /E/.
 -- The resulting graph contains the vertices /V/ as well as all the vertices
@@ -375,7 +376,7 @@ isSubgraphOf = H.isSubgraphOf
 -- isEmpty ('removeVertex' x $ 'vertex' x) == True
 -- isEmpty ('Algebra.Graph.Data.removeEdge' x y $ 'edge' x y) == False
 -- @
-isEmpty ::Graph a -> Bool
+isEmpty :: Graph a -> Bool
 isEmpty = H.isEmpty
 
 -- | The /size/ of a graph, i.e. the number of leaves of the expression
@@ -620,33 +621,6 @@ torus = H.torus
 deBruijn :: Int -> [a] -> Graph [a]
 deBruijn = H.deBruijn
 
--- | Transpose a given graph.
--- Complexity: /O(s)/ time, memory and size.
---
--- @
--- transpose 'empty'       == 'empty'
--- transpose ('vertex' x)  == 'vertex' x
--- transpose ('edge' x y)  == 'edge' y x
--- transpose . transpose == id
--- @
-transpose :: Graph a -> Graph a
-transpose = foldg empty vertex overlay (flip connect)
-
--- | Construct the /induced subgraph/ of a given graph by removing the
--- vertices that do not satisfy a given predicate.
--- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
---
--- @
--- induce (const True)  x      == x
--- induce (const False) x      == 'empty'
--- induce (/= x)               == 'removeVertex' x
--- induce p . induce q         == induce (\\x -> p x && q x)
--- 'isSubgraphOf' (induce p x) x == True
--- @
-induce :: (a -> Bool) -> Graph a -> Graph a
-induce = H.induce
-
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
 --
@@ -702,7 +676,6 @@ smash s t = foldg C.empty v C.overlay c
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O(s)/ time, memory and size.
 --
---
 -- @
 -- replaceVertex x x            == id
 -- replaceVertex x y ('vertex' x) == 'vertex' y
@@ -737,6 +710,33 @@ mergeVertices = H.mergeVertices
 -- @
 splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
 splitVertex = H.splitVertex
+
+-- | Transpose a given graph.
+-- Complexity: /O(s)/ time, memory and size.
+--
+-- @
+-- transpose 'empty'       == 'empty'
+-- transpose ('vertex' x)  == 'vertex' x
+-- transpose ('edge' x y)  == 'edge' y x
+-- transpose . transpose == id
+-- @
+transpose :: Graph a -> Graph a
+transpose = foldg empty vertex overlay (flip connect)
+
+-- | Construct the /induced subgraph/ of a given graph by removing the
+-- vertices that do not satisfy a given predicate.
+-- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
+-- /O(1)/ to be evaluated.
+--
+-- @
+-- induce (const True)  x      == x
+-- induce (const False) x      == 'empty'
+-- induce (/= x)               == 'removeVertex' x
+-- induce p . induce q         == induce (\\x -> p x && q x)
+-- 'isSubgraphOf' (induce p x) x == True
+-- @
+induce :: (a -> Bool) -> Graph a -> Graph a
+induce = H.induce
 
 -- | Compute the /Cartesian product/ of graphs.
 -- Complexity: /O(s1 * s2)/ time, memory and size, where /s1/ and /s2/ are the
