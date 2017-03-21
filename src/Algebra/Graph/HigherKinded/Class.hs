@@ -11,11 +11,14 @@
 -- motivation behind the library, the underlying theory, and implementation details.
 --
 -- This module defines the core type class 'Graph', a few graph subclasses, and
--- basic polymorphic graph construction primitives.
+-- basic polymorphic graph construction primitives. Functions that cannot be
+-- implemented fully polymorphically and require the use of an intermediate data
+-- type are not included. For example, to compute the size of a 'Graph'
+-- expression you will need to use a concrete data type, such as "Algebra.Graph"
+-- or "Algebra.Graph.Fold".
 --
 -- See "Algebra.Graph.Class" for alternative definitions where the core type
 -- class is not higher-kinded and permits more instances.
---
 -----------------------------------------------------------------------------
 module Algebra.Graph.HigherKinded.Class (
     -- * The core type class
@@ -40,8 +43,7 @@ module Algebra.Graph.HigherKinded.Class (
     isSubgraphOf,
 
     -- * Graph properties
-    isEmpty, size, hasVertex, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, vertexIntSet, edgeSet,
+    isEmpty, hasVertex, vertexCount, vertexList, vertexSet, vertexIntSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, tree, forest, mesh, torus, deBruijn,
@@ -62,9 +64,6 @@ import Control.Monad
 import Data.Foldable
 import Data.Tree
 
-import qualified Algebra.Graph.AdjacencyMap as AM
-import qualified Algebra.Graph.Class        as C
-import qualified Algebra.Graph.Relation     as R
 import qualified Data.IntSet as IntSet
 import qualified Data.Set    as Set
 
@@ -125,26 +124,7 @@ by extending the minimal set of axioms.
 When specifying the time and memory complexity of graph algorithms, /n/ will
 denote the number of vertices in the graph, /m/ will denote the number of
 edges in the graph, and /s/ will denote the /size/ of the corresponding
-'Graph' expression. For example, if g is a 'Graph' then /n/, /m/ and /s/ can be
-computed as follows:
-
-@n == 'vertexCount' g
-m == 'edgeCount' g
-s == 'size' g@
-
-Note that 'size' is slightly different from the 'length' method of the
-'Foldable' type class, as the latter does not count 'empty' leaves of the
-expression:
-
-@'length' 'empty'           == 0
-'size'   'empty'           == 1
-'length' ('vertex' x)      == 1
-'size'   ('vertex' x)      == 1
-'length' ('empty' + 'empty') == 0
-'size'   ('empty' + 'empty') == 2@
-
-The 'size' of any graph is positive, and the difference @('size' g - 'length' g)@
-corresponds to the number of occurrences of 'empty' in an expression @g@.
+'Graph' expression.
 -}
 class (Traversable g, MonadPlus g) => Graph g where
     -- | Connect two graphs.
@@ -206,8 +186,6 @@ class (Reflexive g, Transitive g) => Preorder g
 --
 -- @
 -- edge x y               == 'connect' ('vertex' x) ('vertex' y)
--- 'hasEdge' x y (edge x y) == True
--- 'edgeCount'   (edge x y) == 1
 -- 'vertexCount' (edge 1 1) == 1
 -- 'vertexCount' (edge 1 2) == 2
 -- @
@@ -233,9 +211,8 @@ vertices = overlays . map vertex
 -- given list.
 --
 -- @
--- edges []          == 'empty'
--- edges [(x,y)]     == 'edge' x y
--- 'edgeCount' . edges == 'length' . 'Data.List.nub'
+-- edges []      == 'empty'
+-- edges [(x,y)] == 'edge' x y
 -- @
 edges :: Graph g => [(a, a)] -> g a
 edges = overlays . map (uncurry edge)
@@ -307,25 +284,9 @@ isSubgraphOf x y = overlay x y == y
 -- isEmpty ('overlay' 'empty' 'empty')       == True
 -- isEmpty ('vertex' x)                  == False
 -- isEmpty ('removeVertex' x $ 'vertex' x) == True
--- isEmpty ('Algebra.Graph.Data.removeEdge' x y $ 'edge' x y) == False
 -- @
 isEmpty :: Graph g => g a -> Bool
 isEmpty = null
-
--- | The /size/ of a graph, i.e. the number of leaves of the expression
--- including 'empty' leaves. This function can only be applied to a graph data
--- structure that implements the 'C.ToGraph' conversion class.
--- Complexity: /O(s)/ time.
---
--- @
--- size 'empty'         == 1
--- size ('vertex' x)    == 1
--- size ('overlay' x y) == size x + size y
--- size ('connect' x y) == size x + size y
--- size x             >= 1
--- @
-size :: (Graph g, C.ToGraph (g a)) => g a -> Int
-size = C.size . C.toGraph
 
 -- | Check if a graph contains a given vertex. A convenient alias for `elem`.
 -- Complexity: /O(s)/ time.
@@ -349,19 +310,6 @@ hasVertex = elem
 vertexCount :: (Ord a, Graph g) => g a -> Int
 vertexCount = length . vertexList
 
--- | The number of edges in a graph.
--- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
--- graph can be quadratic with respect to the expression size /s/.
---
--- @
--- edgeCount 'empty'      == 0
--- edgeCount ('vertex' x) == 0
--- edgeCount ('edge' x y) == 1
--- edgeCount            == 'length' . 'edgeList'
--- @
-edgeCount :: (Ord a, Graph g, C.ToGraph (g a), C.ToVertex (g a) ~ a) => g a -> Int
-edgeCount = length . edgeList
-
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
 --
@@ -372,20 +320,6 @@ edgeCount = length . edgeList
 -- @
 vertexList :: (Ord a, Graph g) => g a -> [a]
 vertexList = Set.toAscList . vertexSet
-
--- | The sorted list of edges of a graph.
--- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
--- edges /m/ of a graph can be quadratic with respect to the expression size /s/.
---
--- @
--- edgeList 'empty'          == []
--- edgeList ('vertex' x)     == []
--- edgeList ('edge' x y)     == [(x,y)]
--- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
--- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
--- @
-edgeList :: (Ord a, Graph g, C.ToGraph (g a), C.ToVertex (g a) ~ a) => g a -> [(a, a)]
-edgeList = AM.edgeList . C.toGraph
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -411,18 +345,6 @@ vertexSet = foldr Set.insert Set.empty
 -- @
 vertexIntSet :: Graph g => g Int -> IntSet.IntSet
 vertexIntSet = foldr IntSet.insert IntSet.empty
-
--- | The set of edges of a given graph.
--- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
---
--- @
--- edgeSet 'empty'      == Set.'Set.empty'
--- edgeSet ('vertex' x) == Set.'Set.empty'
--- edgeSet ('edge' x y) == Set.'Set.singleton' (x,y)
--- edgeSet . 'edges'    == Set.'Set.fromList'
--- @
-edgeSet :: (Ord a, Graph g, C.ToGraph (g a), C.ToVertex (g a) ~ a) => g a -> Set.Set (a, a)
-edgeSet = R.edgeSet . C.toGraph
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
