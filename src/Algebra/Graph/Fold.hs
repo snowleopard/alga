@@ -684,15 +684,18 @@ induce p g = bind g $ \v -> if p v then C.vertex v else C.empty
 -- it simplifies a given polymorphic graph expression according to the laws of
 -- the algebra. The function does not compute the simplest possible expression,
 -- but uses heuristics to obtain useful simplifications in reasonable time.
--- Given an expression of size /n/, the function performs /O(n)/ graph
--- comparisons using the corresponding @Eq@ instance.
+-- Complexity: the function performs /O(s)/ graph comparisons. It is guaranteed
+-- that the size of the result does not exceed the size of the given expression.
+-- Below the operator @~>@ denotes the /is simplified to/ relation.
 --
 -- @
--- simplify x                        == x
--- 1 + 1 :: Graph Int                == overlay (vertex 1) (vertex 1)
--- simplify (1 + 1) :: Graph Int     == vertex 1
--- 1 * 1 * 1 :: Graph Int            == connect (connect (vertex 1) (vertex 1)) (vertex 1)
--- simplify (1 * 1 * 1) :: Graph Int == connect (vertex 1) (vertex 1)
+-- simplify x           == x
+-- 'size' (simplify x)    <= 'size' x
+-- simplify 'empty'       ~> 'empty'
+-- simplify 1           ~> 1
+-- simplify (1 + 1)     ~> 1
+-- simplify (1 + 2 + 1) ~> 1 + 2
+-- simplify (1 * 1 * 1) ~> 1 * 1
 -- @
 simplify :: (Eq g, C.Graph g) => Fold (C.Vertex g) -> g
 simplify = foldg C.empty C.vertex (simple C.overlay) (simple C.connect)

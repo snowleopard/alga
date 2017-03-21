@@ -28,7 +28,7 @@ module Algebra.Graph (
     edge, vertices, edges, overlays, connects, graph,
 
     -- * Relations on graphs
-    isSubgraphOf,
+    isSubgraphOf, (===),
 
     -- * Graph properties
     isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
@@ -39,7 +39,7 @@ module Algebra.Graph (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
-    transpose, induce,
+    transpose, induce, simplify,
 
     -- * Graph composition
     box
@@ -366,6 +366,25 @@ graph = H.graph
 isSubgraphOf :: Ord a => Graph a -> Graph a -> Bool
 isSubgraphOf = H.isSubgraphOf
 
+-- | Structural equality on graph expressions.
+-- Complexity: /O(s)/ time.
+--
+-- @
+--     x === x         == True
+--     x === x + 'empty' == False
+-- x + y === x + y     == True
+-- 1 + 2 === 2 + 1     == False
+-- x + y === x * y     == False
+-- @
+(===) :: Eq a => Graph a -> Graph a -> Bool
+Empty           === Empty           = True
+(Vertex x)      === (Vertex y)      = x == y
+(Overlay x1 y1) === (Overlay x2 y2) = x1 === x2 && y1 === y2
+(Connect x1 y1) === (Connect x2 y2) = x1 === x2 && y1 === y2
+_               === _               = False
+
+infix 4 ===
+
 -- | Check if a graph is empty. A convenient alias for 'null'.
 -- Complexity: /O(s)/ time.
 --
@@ -654,13 +673,13 @@ instance C.Graph (Piece a) where
     type Vertex (Piece a) = a
     empty       = Piece Empty True
     vertex x    = Piece (Vertex x) True
-    overlay x y = Piece (simple Overlay (piece x) (piece y)) (intact x && intact y)
-    connect x y = Piece (simple Connect (piece x) (piece y)) (intact x && intact y)
+    overlay x y = Piece (nonTrivial Overlay (piece x) (piece y)) (intact x && intact y)
+    connect x y = Piece (nonTrivial Connect (piece x) (piece y)) (intact x && intact y)
 
-simple :: (Graph a -> Graph a -> Graph a) -> Graph a -> Graph a -> Graph a
-simple _ Empty x = x
-simple _ x Empty = x
-simple f x y     = f x y
+nonTrivial :: (Graph a -> Graph a -> Graph a) -> Graph a -> Graph a -> Graph a
+nonTrivial _ Empty x = x
+nonTrivial _ x Empty = x
+nonTrivial f x y     = f x y
 
 type Pieces a = (Piece a, Piece a, Piece a)
 
@@ -737,6 +756,33 @@ transpose = foldg empty vertex overlay (flip connect)
 -- @
 induce :: (a -> Bool) -> Graph a -> Graph a
 induce = H.induce
+
+-- | Simplify a given graph. Semantically, this is the identity function, but
+-- it simplifies a given polymorphic graph expression according to the laws of
+-- the algebra. The function does not compute the simplest possible expression,
+-- but uses heuristics to obtain useful simplifications in reasonable time.
+-- Complexity: the function performs /O(s)/ graph comparisons. It is guaranteed
+-- that the size of the result does not exceed the size of the given expression.
+--
+-- @
+-- simplify x            == x
+-- 'size' (simplify x)     <= 'size' x
+-- simplify 'empty'       '===' 'empty'
+-- simplify 1           '===' 1
+-- simplify (1 + 1)     '===' 1
+-- simplify (1 + 2 + 1) '===' 1 + 2
+-- simplify (1 * 1 * 1) '===' 1 * 1
+-- @
+simplify :: Ord a => Graph a -> Graph a
+simplify = foldg Empty Vertex (simple Overlay) (simple Connect)
+
+simple :: Eq g => (g -> g -> g) -> g -> g -> g
+simple op x y
+    | x == z    = x
+    | y == z    = y
+    | otherwise = z
+  where
+    z = op x y
 
 -- | Compute the /Cartesian product/ of graphs.
 -- Complexity: /O(s1 * s2)/ time, memory and size, where /s1/ and /s2/ are the

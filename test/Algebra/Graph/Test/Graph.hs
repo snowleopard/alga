@@ -249,6 +249,22 @@ testGraph = do
     test "isSubgraphOf (path xs)     (circuit xs)  == True" $ \xs ->
           isSubgraphOf (path xs :: G)(circuit xs)  == True
 
+    putStrLn "\n============ isSubgraphOf ============"
+    test "    x === x         == True" $ \(x :: G) ->
+             (x === x)        == True
+
+    test "    x === x + empty == False" $ \(x :: G) ->
+             (x === x + empty)== False
+
+    test "x + y === x + y     == True" $ \(x :: G) y ->
+         (x + y === x + y)    == True
+
+    test "1 + 2 === 2 + 1     == False" $
+         (1 + 2 === 2 + (1 :: G)) == False
+
+    test "x + y === x * y     == False" $ \(x :: G) y ->
+         (x + y === x * y)    == False
+
     putStrLn "\n============ isEmpty ============"
     test "isEmpty empty                       == True" $
           isEmpty (empty :: G)                == True
@@ -621,6 +637,28 @@ testGraph = do
 
     test "isSubgraphOf (induce p x) x == True" $ \(apply -> p :: IB) (x :: G) ->
           isSubgraphOf (induce p x) x == True
+
+    putStrLn "\n============ simplify ============"
+    test "simplify x            == x" $ \(x :: G) ->
+          simplify x            == x
+
+    test "size (simplify x)     <= size x" $ \(x :: G) ->
+          size (simplify x)     <= size x
+
+    test "simplify empty       === empty" $
+          simplify (empty :: G)=== empty
+
+    test "simplify 1           === 1" $
+          simplify 1           === (1 :: G)
+
+    test "simplify (1 + 1)     === 1" $
+          simplify (1 + 1)     === (1 :: G)
+
+    test "simplify (1 + 2 + 1) === 1 + 2" $
+          simplify (1 + 2 + 1) === (1 + 2 :: G)
+
+    test "simplify (1 * 1 * 1) === 1 * 1" $
+          simplify (1 * 1 * 1) === (1 * 1 :: G)
 
     putStrLn "\n============ box ============"
     let unit = fmap $ \(a, ()) -> a
