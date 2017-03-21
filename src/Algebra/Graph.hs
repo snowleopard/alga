@@ -66,7 +66,7 @@ law-abiding 'Num' instance as a convenient notation for working with graphs:
     > 1 + 2 * 3   == Overlay (Vertex 1) (Connect (Vertex 2) (Vertex 3))
     > 1 * (2 + 3) == Connect (Vertex 1) (Overlay (Vertex 2) (Vertex 3))
 
-The @Eq@ instance is currently implemented using the 'AdjacencyMap' as the
+The 'Eq' instance is currently implemented using the 'AdjacencyMap' as the
 /canonical graph representation/ and satisfies all axioms of algebraic graphs:
 
     * 'overlay' is commutative and associative:

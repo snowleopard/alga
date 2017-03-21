@@ -19,7 +19,7 @@ import Test.QuickCheck
 
 import Algebra.Graph
 import Algebra.Graph.AdjacencyMap.Internal (AdjacencyMap (..))
-import Algebra.Graph.Fold.Internal (Fold (..))
+import Algebra.Graph.Fold (Fold)
 import Algebra.Graph.IntAdjacencyMap.Internal (IntAdjacencyMap (..))
 import Algebra.Graph.Relation.Internal (Relation (..))
 

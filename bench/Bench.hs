@@ -4,7 +4,7 @@ import Data.Foldable
 
 import Algebra.Graph.Class
 import Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap)
-import Algebra.Graph.Fold (Fold, box, deBruijn, gmap, toIntSet, toSet)
+import Algebra.Graph.Fold (Fold, box, deBruijn, gmap, vertexIntSet, vertexSet)
 import Algebra.Graph.IntAdjacencyMap (IntAdjacencyMap)
 import Algebra.Graph.Relation (Relation, relation)
 
@@ -13,7 +13,7 @@ import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
 
 v :: Ord a => Fold a -> Int
-v = Set.size . toSet
+v = Set.size . vertexSet
 
 l :: Fold a -> Int
 l = length . toList
@@ -25,7 +25,7 @@ r :: Relation a -> Int
 r = Set.size . relation
 
 vInt :: Fold Int -> Int
-vInt = IntSet.size . toIntSet
+vInt = IntSet.size . vertexIntSet
 
 eInt :: IntAdjacencyMap -> Int
 eInt = foldr (\s t -> IntSet.size s + t) 0 . Int.adjacencyMap

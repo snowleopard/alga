@@ -277,6 +277,7 @@ connects = foldr connect empty
 -- graph []  []      == 'empty'
 -- graph [x] []      == 'vertex' x
 -- graph []  [(x,y)] == 'edge' x y
+-- graph vs  es      == 'overlay' ('vertices' vs) ('edges' es)
 -- @
 graph :: Graph g => [Vertex g] -> [(Vertex g, Vertex g)] -> g
 graph vs es = overlay (vertices vs) (edges es)
