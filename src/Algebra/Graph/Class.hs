@@ -11,10 +11,15 @@
 -- motivation behind the library, the underlying theory, and implementation details.
 --
 -- This module defines the core type class 'Graph', a few graph subclasses, and
--- basic polymorphic graph construction primitives.
+-- basic polymorphic graph construction primitives. Functions that cannot be
+-- implemented fully polymorphically and require the use of an intermediate data
+-- type are not included. For example, to compute the number of vertices in a
+-- 'Graph' expression you will need to use a concrete data type, such as
+-- "Algebra.Graph.Fold". Other useful 'Graph' instances are defined in
+-- "Algebra.Graph", "Algebra.Graph.AdjacencyMap" and "Algebra.Graph.Relation".
 --
--- See "Algebra.Graph.HigherKinded.Class" for alternative definitions where
--- the type classes are higher-kinded.
+-- See "Algebra.Graph.HigherKinded.Class" for the higher-kinded version of the
+-- core graph type class.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Class (
     -- * The core type class
@@ -37,9 +42,6 @@ module Algebra.Graph.Class (
 
     -- * Relations on graphs
     isSubgraphOf,
-
-    -- * Graph properties
-    size,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, tree, forest,
@@ -297,37 +299,6 @@ graph vs es = overlay (vertices vs) (edges es)
 -- @
 isSubgraphOf :: (Graph g, Eq g) => g -> g -> Bool
 isSubgraphOf x y = overlay x y == y
-
-newtype Size a = Size {
-    -- | The /size/ of a graph, i.e. the number of leaves of the expression
-    -- including 'empty' leaves. This function can be applied to a polymorphic
-    -- graph expression or to a concrete data structure via the 'ToGraph' conversion.
-    -- Complexity: /O(s)/ time.
-    --
-    -- @
-    -- size 'empty'         == 1
-    -- size ('vertex' x)    == 1
-    -- size ('overlay' x y) == size x + size y
-    -- size ('connect' x y) == size x + size y
-    -- size x             >= 1
-    -- @
-    size :: Int
-    }
-
-instance Graph (Size a) where
-    type Vertex (Size a) = a
-    empty       = Size 1
-    vertex _    = Size 1
-    overlay x y = Size $ size x + size y
-    connect x y = Size $ size x + size y
-
-instance Num a => Num (Size a) where
-    fromInteger = vertex . fromInteger
-    (+)         = overlay
-    (*)         = connect
-    signum      = const empty
-    abs         = id
-    negate      = id
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
