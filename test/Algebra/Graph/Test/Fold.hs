@@ -31,7 +31,7 @@ type IF = Int -> F
 
 testFold :: IO ()
 testFold = do
-    putStrLn "\n============ Graph ============"
+    putStrLn "\n============ Fold ============"
     test "Axioms of graphs"   $ (axioms   :: GraphTestsuite F)
 
     putStrLn "\n============ Show ============"
@@ -237,7 +237,7 @@ testFold = do
     test "isEmpty . connects == all isEmpty" $ \(xs :: [F]) ->
          (isEmpty . connects) xs == all isEmpty xs
 
-    putStrLn "\n============ Graph ============"
+    putStrLn "\n============ graph ============"
     test "graph []  []      == empty" $
           graph []  []      == (empty :: F)
 

@@ -17,7 +17,6 @@ module Algebra.Graph.Test.AdjacencyMap (
 
 import Data.Tree
 
-import Algebra.Graph.Class hiding (edges)
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.Test
@@ -27,6 +26,7 @@ import qualified Data.Set   as Set
 
 type AI = AdjacencyMap Int
 type II = Int -> Int
+type IB = Int -> Bool
 
 testAdjacencyMap :: IO ()
 testAdjacencyMap = do
@@ -58,57 +58,171 @@ testAdjacencyMap = do
     test "show (1 * 2 + 3 :: AdjacencyMap Int) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: AdjacencyMap Int) == "graph [1,2,3] [(1,2)]"
 
-    putStrLn "\n============ gmap ============"
-    test "gmap f empty      == empty" $ \(apply -> f :: II) ->
-          gmap f empty      == empty
+    putStrLn "\n============ empty ============"
+    test "isEmpty     empty == True" $
+          isEmpty    (empty :: AI) == True
 
-    test "gmap f (vertex x) == vertex (f x)" $ \(apply -> f :: II) x ->
-          gmap f (vertex x) == vertex (f x)
+    test "hasVertex x empty == False" $ \(x :: Int) ->
+          hasVertex x empty == False
 
-    test "gmap f (edge x y) == edge (f x) (f y)" $ \(apply -> f :: II) x y ->
-          gmap f (edge x y) == edge (f x) (f y)
+    test "vertexCount empty == 0" $
+          vertexCount(empty :: AI) == 0
 
-    test "gmap id           == id" $ \x ->
-          gmap id x         == (x :: AI)
+    test "edgeCount   empty == 0" $
+          edgeCount  (empty :: AI) == 0
 
-    test "gmap f . gmap g   == gmap (f . g)" $ \(apply -> f :: II) (apply -> g :: II) x ->
-         (gmap f . gmap g) x== gmap (f . g) x
+    putStrLn "\n============ vertex ============"
+    test "isEmpty     (vertex x) == False" $ \(x :: Int) ->
+          isEmpty     (vertex x) == False
 
-    putStrLn "\n============ edgeList ============"
-    test "edgeList empty          == []" $
-          edgeList (empty :: AI)  == []
+    test "hasVertex x (vertex x) == True" $ \(x :: Int) ->
+          hasVertex x (vertex x) == True
 
-    test "edgeList (vertex x)     == []" $ \(x :: Int) ->
-          edgeList (vertex x)     == []
+    test "hasVertex 1 (vertex 2) == False" $
+          hasVertex 1 (vertex 2 :: AI) == False
 
-    test "edgeList (edge x y)     == [(x,y)]" $ \(x :: Int) y ->
-          edgeList (edge x y)     == [(x,y)]
+    test "vertexCount (vertex x) == 1" $ \(x :: Int) ->
+          vertexCount (vertex x) == 1
 
-    test "edgeList (star 2 [1,3]) == [(2,1), (2,3)]" $
-          edgeList (star 2 [1,3]) == [(2,1), (2,3 :: Int)]
+    test "edgeCount   (vertex x) == 0" $ \(x :: Int) ->
+          edgeCount   (vertex x) == 0
 
-    test "edgeList . edges        == nub . sort" $ \(xs :: [(Int, Int)]) ->
-         (edgeList . edges) xs    ==(nubOrd . sort) xs
+    putStrLn "\n============ overlay ============"
+    test "isEmpty     (overlay x y) == isEmpty   x   && isEmpty   y" $ \(x :: AI) y ->
+          isEmpty     (overlay x y) == (isEmpty   x   && isEmpty   y)
+
+    test "hasVertex z (overlay x y) == hasVertex z x || hasVertex z y" $ \(x :: AI) y z ->
+          hasVertex z (overlay x y) == (hasVertex z x || hasVertex z y)
+
+    test "vertexCount (overlay x y) >= vertexCount x" $ \(x :: AI) y ->
+          vertexCount (overlay x y) >= vertexCount x
+
+    test "vertexCount (overlay x y) <= vertexCount x + vertexCount y" $ \(x :: AI) y ->
+          vertexCount (overlay x y) <= vertexCount x + vertexCount y
+
+    test "edgeCount   (overlay x y) >= edgeCount x" $ \(x :: AI) y ->
+          edgeCount   (overlay x y) >= edgeCount x
+
+    test "edgeCount   (overlay x y) <= edgeCount x   + edgeCount y" $ \(x :: AI) y ->
+          edgeCount   (overlay x y) <= edgeCount x   + edgeCount y
+
+    test "vertexCount (overlay 1 2) == 2" $
+          vertexCount (overlay 1 2 :: AI) == 2
+
+    test "edgeCount   (overlay 1 2) == 0" $
+          edgeCount   (overlay 1 2 :: AI) == 0
+
+    putStrLn "\n============ connect ============"
+    test "isEmpty     (connect x y) == isEmpty   x   && isEmpty   y" $ \(x :: AI) y ->
+          isEmpty     (connect x y) == (isEmpty   x   && isEmpty   y)
+
+    test "hasVertex z (connect x y) == hasVertex z x || hasVertex z y" $ \(x :: AI) y z ->
+          hasVertex z (connect x y) == (hasVertex z x || hasVertex z y)
+
+    test "vertexCount (connect x y) >= vertexCount x" $ \(x :: AI) y ->
+          vertexCount (connect x y) >= vertexCount x
+
+    test "vertexCount (connect x y) <= vertexCount x + vertexCount y" $ \(x :: AI) y ->
+          vertexCount (connect x y) <= vertexCount x + vertexCount y
+
+    test "edgeCount   (connect x y) >= edgeCount x" $ \(x :: AI) y ->
+          edgeCount   (connect x y) >= edgeCount x
+
+    test "edgeCount   (connect x y) >= edgeCount y" $ \(x :: AI) y ->
+          edgeCount   (connect x y) >= edgeCount y
+
+    test "edgeCount   (connect x y) >= vertexCount x * vertexCount y" $ \(x :: AI) y ->
+          edgeCount   (connect x y) >= vertexCount x * vertexCount y
+
+    test "edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y" $ \(x :: AI) y ->
+          edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y
+
+    test "vertexCount (connect 1 2) == 2" $
+          vertexCount (connect 1 2 :: AI) == 2
+
+    test "edgeCount   (connect 1 2) == 1" $
+          edgeCount   (connect 1 2 :: AI) == 1
+
+    putStrLn "\n============ edge ============"
+    test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
+         (edge x y :: AI)        == connect (vertex x) (vertex y)
+
+    test "hasEdge x y (edge x y) == True" $ \(x :: Int) y ->
+          hasEdge x y (edge x y) == True
+
+    test "edgeCount   (edge x y) == 1" $ \(x :: Int) y ->
+          edgeCount   (edge x y) == 1
+
+    test "vertexCount (edge 1 1) == 1" $
+          vertexCount (edge 1 1 :: AI) == 1
+
+    test "vertexCount (edge 1 2) == 2" $
+          vertexCount (edge 1 2 :: AI) == 2
+
+    putStrLn "\n============ vertices ============"
+    test "vertices []            == empty" $
+          vertices []            == (empty :: AI)
+
+    test "vertices [x]           == vertex x" $ \(x :: Int) ->
+          vertices [x]           == (vertex x :: AI)
+
+    test "hasVertex x . vertices == elem x" $ \x (xs :: [Int]) ->
+         (hasVertex x . vertices) xs == elem x xs
+
+    test "vertexCount . vertices == length . nub" $ \(xs :: [Int]) ->
+         (vertexCount . vertices) xs == (length . nubOrd) xs
+
+    test "vertexSet   . vertices == Set.fromList" $ \(xs :: [Int]) ->
+         (vertexSet   . vertices) xs == Set.fromList xs
 
     putStrLn "\n============ edges ============"
-    test "edges []       == empty" $
-          edges []       ==(empty :: AI)
+    test "edges []          == empty" $
+          edges []          == (empty :: AI)
 
-    test "edges [(x, y)] == edge x y" $ \(x :: Int) y ->
-          edges [(x, y)] == edge x y
+    test "edges [(x,y)]     == edge x y" $ \(x :: Int) y ->
+          edges [(x,y)]     == (edge x y :: AI)
 
-    putStrLn "\n============ adjacencyList ============"
-    test "adjacencyList empty          == []" $
-          adjacencyList (empty :: AI)  == []
+    test "edgeCount . edges == length . nub" $ \(xs :: [(Int, Int)]) ->
+         (edgeCount . edges) xs == (length . nubOrd) xs
 
-    test "adjacencyList (vertex x)     == [(x, [])]" $ \(x :: Int) ->
-          adjacencyList (vertex x)     == [(x, [])]
+    putStrLn "\n============ overlays ============"
+    test "overlays []        == empty" $
+          overlays []        == (empty :: AI)
 
-    test "adjacencyList (edge 1 2)     == [(1, [2]), (2, [])]" $
-          adjacencyList (edge 1 (2 :: Int)) == [(1, [2]), (2, [])]
+    test "overlays [x]       == x" $ \(x :: AI) ->
+          overlays [x]       == x
 
-    test "adjacencyList (star 2 [1,3]) == [(1, []), (2, [1,3]), (3, [])]" $
-          adjacencyList (star 2 [1,3::Int]) == [(1, []), (2, [1,3]), (3, [])]
+    test "overlays [x,y]     == overlay x y" $ \(x :: AI) y ->
+          overlays [x,y]     == overlay x y
+
+    test "isEmpty . overlays == all isEmpty" $ mapSize (min 10) $ \(xs :: [AI]) ->
+         (isEmpty . overlays) xs == all isEmpty xs
+
+    putStrLn "\n============ connects ============"
+    test "connects []        == empty" $
+          connects []        == (empty :: AI)
+
+    test "connects [x]       == x" $ \(x :: AI) ->
+          connects [x]       == x
+
+    test "connects [x,y]     == connect x y" $ \(x :: AI) y ->
+          connects [x,y]     == connect x y
+
+    test "isEmpty . connects == all isEmpty" $ mapSize (min 10) $ \(xs :: [AI]) ->
+         (isEmpty . connects) xs == all isEmpty xs
+
+    putStrLn "\n============ graph ============"
+    test "graph []  []      == empty" $
+          graph []  []      == (empty :: AI)
+
+    test "graph [x] []      == vertex x" $ \(x :: Int) ->
+          graph [x] []      == (vertex x :: AI)
+
+    test "graph []  [(x,y)] == edge x y" $ \(x :: Int) y ->
+          graph []  [(x,y)] == (edge x y :: AI)
+
+    test "graph vs  es      == overlay (vertices vs) (edges es)" $ \(vs :: [Int]) es ->
+          graph vs  es      == (overlay (vertices vs) (edges es) :: AI)
 
     putStrLn "\n============ fromAdjacencyList ============"
     test "fromAdjacencyList []                                  == empty" $
@@ -126,6 +240,149 @@ testAdjacencyMap = do
     test "overlay (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)" $ \xs ys ->
           overlay (fromAdjacencyList xs) (fromAdjacencyList ys) ==(fromAdjacencyList (xs ++ ys) :: AI)
 
+    putStrLn "\n============ isSubgraphOf ============"
+    test "isSubgraphOf empty         x             == True" $ \(x :: AI) ->
+          isSubgraphOf empty         x             == True
+
+    test "isSubgraphOf (vertex x)    empty         == False" $ \x ->
+          isSubgraphOf (vertex x)   (empty :: AI)   == False
+
+    test "isSubgraphOf x             (overlay x y) == True" $ \(x :: AI) y ->
+          isSubgraphOf x             (overlay x y) == True
+
+    test "isSubgraphOf (overlay x y) (connect x y) == True" $ \(x :: AI) y ->
+          isSubgraphOf (overlay x y) (connect x y) == True
+
+    test "isSubgraphOf (path xs)     (circuit xs)  == True" $ \xs ->
+          isSubgraphOf (path xs :: AI)(circuit xs)  == True
+
+    putStrLn "\n============ isEmpty ============"
+    test "isEmpty empty                       == True" $
+          isEmpty (empty :: AI)                == True
+
+    test "isEmpty (overlay empty empty)       == True" $
+          isEmpty (overlay empty empty :: AI)  == True
+
+    test "isEmpty (vertex x)                  == False" $ \(x :: Int) ->
+          isEmpty (vertex x)                  == False
+
+    test "isEmpty (removeVertex x $ vertex x) == True" $ \(x :: Int) ->
+          isEmpty (removeVertex x $ vertex x) == True
+
+    test "isEmpty (removeEdge x y $ edge x y) == False" $ \(x :: Int) y ->
+          isEmpty (removeEdge x y $ edge x y) == False
+
+    putStrLn "\n============ hasVertex ============"
+    test "hasVertex x empty            == False" $ \(x :: Int) ->
+          hasVertex x empty            == False
+
+    test "hasVertex x (vertex x)       == True" $ \(x :: Int) ->
+          hasVertex x (vertex x)       == True
+
+    test "hasVertex x . removeVertex x == const False" $ \(x :: Int) y ->
+          hasVertex x (removeVertex x y)==const False y
+
+    putStrLn "\n============ hasEdge ============"
+    test "hasEdge x y empty            == False" $ \(x :: Int) y ->
+          hasEdge x y empty            == False
+
+    test "hasEdge x y (vertex z)       == False" $ \(x :: Int) y z ->
+          hasEdge x y (vertex z)       == False
+
+    test "hasEdge x y (edge x y)       == True" $ \(x :: Int) y ->
+          hasEdge x y (edge x y)       == True
+
+    test "hasEdge x y . removeEdge x y == const False" $ \(x :: Int) y z ->
+          hasEdge x y (removeEdge x y z)==const False z
+
+    putStrLn "\n============ vertexCount ============"
+    test "vertexCount empty      == 0" $
+          vertexCount (empty :: AI) == 0
+
+    test "vertexCount (vertex x) == 1" $ \(x :: Int) ->
+          vertexCount (vertex x) == 1
+
+    test "vertexCount            == length . vertexList" $ \(x :: AI) ->
+          vertexCount x          == (length . vertexList) x
+
+    putStrLn "\n============ edgeCount ============"
+    test "edgeCount empty      == 0" $
+          edgeCount (empty :: AI) == 0
+
+    test "edgeCount (vertex x) == 0" $ \(x :: Int) ->
+          edgeCount (vertex x) == 0
+
+    test "edgeCount (edge x y) == 1" $ \(x :: Int) y ->
+          edgeCount (edge x y) == 1
+
+    test "edgeCount            == length . edgeList" $ \(x :: AI) ->
+          edgeCount x          == (length . edgeList) x
+
+    putStrLn "\n============ vertexList ============"
+    test "vertexList empty      == []" $
+          vertexList (empty :: AI) == []
+
+    test "vertexList (vertex x) == [x]" $ \(x :: Int) ->
+          vertexList (vertex x) == [x]
+
+    test "vertexList . vertices == nub . sort" $ \(xs :: [Int]) ->
+         (vertexList . vertices) xs == (nubOrd . sort) xs
+
+    putStrLn "\n============ edgeList ============"
+    test "edgeList empty          == []" $
+          edgeList (empty :: AI )  == []
+
+    test "edgeList (vertex x)     == []" $ \(x :: Int) ->
+          edgeList (vertex x)     == []
+
+    test "edgeList (edge x y)     == [(x,y)]" $ \(x :: Int) y ->
+          edgeList (edge x y)     == [(x,y)]
+
+    test "edgeList (star 2 [3,1]) == [(2,1), (2,3)]" $
+          edgeList (star 2 [3,1]) == [(2,1), (2,3 :: Int)]
+
+    test "edgeList . edges        == nub . sort" $ \(xs :: [(Int, Int)]) ->
+         (edgeList . edges) xs    == (nubOrd . sort) xs
+
+    putStrLn "\n============ adjacencyList ============"
+    test "adjacencyList empty          == []" $
+          adjacencyList (empty :: AI)  == []
+
+    test "adjacencyList (vertex x)     == [(x, [])]" $ \(x :: Int) ->
+          adjacencyList (vertex x)     == [(x, [])]
+
+    test "adjacencyList (edge 1 2)     == [(1, [2]), (2, [])]" $
+          adjacencyList (edge 1 (2 :: Int)) == [(1, [2]), (2, [])]
+
+    test "adjacencyList (star 2 [1,3]) == [(1, []), (2, [1,3]), (3, [])]" $
+          adjacencyList (star 2 [1,3::Int]) == [(1, []), (2, [1,3]), (3, [])]
+
+    putStrLn "\n============ vertexSet ============"
+    test "vertexSet empty      == Set.empty" $
+          vertexSet(empty :: AI)== Set.empty
+
+    test "vertexSet . vertex   == Set.singleton" $ \(x :: Int) ->
+         (vertexSet . vertex) x== Set.singleton x
+
+    test "vertexSet . vertices == Set.fromList" $ \(xs :: [Int]) ->
+         (vertexSet . vertices) xs == Set.fromList xs
+
+    test "vertexSet . clique   == Set.fromList" $ \(xs :: [Int]) ->
+         (vertexSet . clique) xs == Set.fromList xs
+
+    putStrLn "\n============ edgeSet ============"
+    test "edgeSet empty      == Set.empty" $
+          edgeSet (empty :: AI) == Set.empty
+
+    test "edgeSet (vertex x) == Set.empty" $ \(x :: Int) ->
+          edgeSet (vertex x) == Set.empty
+
+    test "edgeSet (edge x y) == Set.singleton (x,y)" $ \(x :: Int) y ->
+          edgeSet (edge x y) == Set.singleton (x,y)
+
+    test "edgeSet . edges    == Set.fromList" $ \(xs :: [(Int, Int)]) ->
+         (edgeSet . edges) xs== Set.fromList xs
+
     putStrLn "\n============ postset ============"
     test "postset x empty      == Set.empty" $ \(x :: Int) ->
           postset x empty      == Set.empty
@@ -139,42 +396,139 @@ testAdjacencyMap = do
     test "postset 2 (edge 1 2) == Set.empty" $
           postset 2 (edge 1 2) ==(Set.empty :: Set.Set Int)
 
-    putStrLn "\n============ isEmpty ============"
-    test "isEmpty empty      == True" $
-          isEmpty (empty::AI)== True
+    putStrLn "\n============ path ============"
+    test "path []    == empty" $
+          path []    == (empty :: AI)
 
-    test "isEmpty (vertex x) == False" $ \(x :: Int) ->
-          isEmpty (vertex x) == False
+    test "path [x]   == vertex x" $ \(x :: Int) ->
+          path [x]   == (vertex x :: AI)
 
-    putStrLn "\n============ hasVertex ============"
-    test "hasVertex x empty      == False" $ \(x :: Int) ->
-          hasVertex x empty      == False
+    test "path [x,y] == edge x y" $ \(x :: Int) y ->
+          path [x,y] == (edge x y :: AI)
 
-    test "hasVertex x (vertex x) == True" $ \(x :: Int) ->
-          hasVertex x (vertex x) == True
+    putStrLn "\n============ circuit ============"
+    test "circuit []    == empty" $
+          circuit []    == (empty :: AI)
 
-    putStrLn "\n============ hasEdge ============"
-    test "hasEdge x y empty      == False" $ \(x :: Int) y ->
-          hasEdge x y empty      == False
+    test "circuit [x]   == edge x x" $ \(x :: Int) ->
+          circuit [x]   == (edge x x :: AI)
 
-    test "hasEdge x y (vertex z) == False" $ \(x :: Int) y z ->
-          hasEdge x y (vertex z) == False
+    test "circuit [x,y] == edges [(x,y), (y,x)]" $ \(x :: Int) y ->
+          circuit [x,y] == (edges [(x,y), (y,x)] :: AI)
 
-    test "hasEdge x y (edge x y) == True" $ \(x :: Int) y ->
-          hasEdge x y (edge x y) == True
+    putStrLn "\n============ clique ============"
+    test "clique []      == empty" $
+          clique []      == (empty :: AI)
 
-    putStrLn "\n============ toSet ============"
-    test "toSet empty         == Set.empty" $
-          toSet (empty :: AI) == Set.empty
+    test "clique [x]     == vertex x" $ \(x :: Int) ->
+          clique [x]     == (vertex x :: AI)
 
-    test "toSet (vertex x)    == Set.singleton x" $ \(x :: Int) ->
-          toSet (vertex x)    == Set.singleton x
+    test "clique [x,y]   == edge x y" $ \(x :: Int) y ->
+          clique [x,y]   == (edge x y :: AI)
 
-    test "toSet (vertices xs) == Set.fromList xs" $ \(xs :: [Int]) ->
-          toSet (vertices xs) == Set.fromList xs
+    test "clique [x,y,z] == edges [(x,y), (x,z), (y,z)]" $ \(x :: Int) y z ->
+          clique [x,y,z] == (edges [(x,y), (x,z), (y,z)] :: AI)
 
-    test "toSet (clique xs)   == Set.fromList xs" $ \(xs :: [Int]) ->
-          toSet (clique xs)   == Set.fromList xs
+    putStrLn "\n============ biclique ============"
+    test "biclique []      []      == empty" $
+          biclique []      []      == (empty :: AI)
+
+    test "biclique [x]     []      == vertex x" $ \(x :: Int) ->
+          biclique [x]     []      == (vertex x :: AI)
+
+    test "biclique []      [y]     == vertex y" $ \(y :: Int) ->
+          biclique []      [y]     == (vertex y :: AI)
+
+    test "biclique [x1,x2] [y1,y2] == edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]" $ \(x1 :: Int) x2 y1 y2 ->
+          biclique [x1,x2] [y1,y2] == (edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)] :: AI)
+
+    putStrLn "\n============ star ============"
+    test "star x []    == vertex x" $ \(x :: Int) ->
+          star x []    == (vertex x :: AI)
+
+    test "star x [y]   == edge x y" $ \(x :: Int) y ->
+          star x [y]   == (edge x y :: AI)
+
+    test "star x [y,z] == edges [(x,y), (x,z)]" $ \(x :: Int) y z ->
+          star x [y,z] == (edges [(x,y), (x,z)] :: AI)
+
+    putStrLn "\n============ removeVertex ============"
+    test "removeVertex x (vertex x)       == empty" $ \(x :: Int) ->
+          removeVertex x (vertex x)       == (empty :: AI)
+
+    test "removeVertex x . removeVertex x == removeVertex x" $ \x (y :: AI) ->
+         (removeVertex x . removeVertex x)y==(removeVertex x y :: AI)
+
+    putStrLn "\n============ removeEdge ============"
+    test "removeEdge x y (edge x y)       == vertices [x, y]" $ \(x :: Int) y ->
+          removeEdge x y (edge x y)       == (vertices [x, y] :: AI)
+
+    test "removeEdge x y . removeEdge x y == removeEdge x y" $ \(x :: Int) y z ->
+         (removeEdge x y . removeEdge x y)z==(removeEdge x y z :: AI)
+
+    test "removeEdge x y . removeVertex x == removeVertex x" $ \(x :: Int) y z ->
+         (removeEdge x y . removeVertex x)z==(removeVertex x z :: AI)
+
+    test "removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2" $
+          removeEdge 1 1 (1 * 1 * 2 * 2)  == (1 * 2 * (2 :: AI))
+
+    test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
+          removeEdge 1 2 (1 * 1 * 2 * 2)  == (1 * 1 + 2 * (2 :: AI))
+
+    putStrLn "\n============ replaceVertex ============"
+    test "replaceVertex x x            == id" $ \x (y :: AI) ->
+          replaceVertex x x y          == y
+
+    test "replaceVertex x y (vertex x) == vertex y" $ \x (y :: Int) ->
+          replaceVertex x y (vertex x) == (vertex y :: AI)
+
+    test "replaceVertex x y            == mergeVertices (== x) y" $ \x y z ->
+          replaceVertex x y z          == (mergeVertices (== x) y z :: AI)
+
+    putStrLn "\n============ mergeVertices ============"
+    test "mergeVertices (const False) x    == id" $ \x (y :: AI) ->
+          mergeVertices (const False) x y  == y
+
+    test "mergeVertices (== x) y           == replaceVertex x y" $ \x y (z :: AI) ->
+          mergeVertices (== x) y z         == (replaceVertex x y z :: AI)
+
+    test "mergeVertices even 1 (0 * 2)     == 1 * 1" $
+          mergeVertices even 1 (0 * 2)     == (1 * 1 :: AI)
+
+    test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
+          mergeVertices odd  1 (3 + 4 * 5) == (4 * 1 :: AI)
+
+    putStrLn "\n============ gmap ============"
+    test "gmap f empty      == empty" $ \(apply -> f :: II) ->
+          gmap f empty      == empty
+
+    test "gmap f (vertex x) == vertex (f x)" $ \(apply -> f :: II) x ->
+          gmap f (vertex x) == vertex (f x)
+
+    test "gmap f (edge x y) == edge (f x) (f y)" $ \(apply -> f :: II) x y ->
+          gmap f (edge x y) == edge (f x) (f y)
+
+    test "gmap id           == id" $ \x ->
+          gmap id x         == (x :: AI)
+
+    test "gmap f . gmap g   == gmap (f . g)" $ \(apply -> f :: II) (apply -> g :: II) x ->
+         (gmap f . gmap g) x== gmap (f . g) x
+
+    putStrLn "\n============ induce ============"
+    test "induce (const True)  x      == x" $ \(x :: AI) ->
+          induce (const True)  x      == x
+
+    test "induce (const False) x      == empty" $ \(x :: AI) ->
+          induce (const False) x      == (empty :: AI)
+
+    test "induce (/= x)               == removeVertex x" $ \x (y :: AI) ->
+          induce (/= x) y             == (removeVertex x y :: AI)
+
+    test "induce p . induce q         == induce (\\x -> p x && q x)" $ \(apply -> p :: IB) (apply -> q :: IB) (y :: AI) ->
+         (induce p . induce q) y      == (induce (\x -> p x && q x) y :: AI)
+
+    test "isSubgraphOf (induce p x) x == True" $ \(apply -> p :: IB) (x :: AI) ->
+          isSubgraphOf (induce p x) x == True
 
     putStrLn "\n============ dfsForest ============"
     test "forest (dfsForest $ edge 1 1)         == vertex 1" $
@@ -249,9 +603,9 @@ testAdjacencyMap = do
                                            , (Set.fromList [3]  , Set.fromList [5 :: Int])]
 
     putStrLn "\n============ GraphKL ============"
-    test "map (getVertex h) (vertices $ getGraph h) == Set.toAscList (toSet g)"
+    test "map (getVertex h) (vertices $ getGraph h) == Set.toAscList (vertexSet g)"
       $ \(g :: AI) -> let h = graphKL g in
-        map (getVertex h) (KL.vertices $ getGraph h) == Set.toAscList (toSet g)
+        map (getVertex h) (KL.vertices $ getGraph h) == Set.toAscList (vertexSet g)
 
     test "map (\\(x, y) -> (getVertex h x, getVertex h y)) (edges $ getGraph h) == edgeList g"
       $ \(g :: AI) -> let h = graphKL g in

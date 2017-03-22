@@ -11,9 +11,12 @@
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines Boehm-Berarducci encoding of algebraic graphs, which is
--- used for generalised graph folding and for the implementation of polymorphic
--- graph construction and transformation algorithms.
+-- This module defines the 'Fold' data type -- the Boehm-Berarducci encoding of
+-- algebraic graphs, which is used for generalised graph folding and for the
+-- implementation of polymorphic graph construction and transformation algorithms.
+-- 'Fold' is an instance of type classes defined in modules "Algebra.Graph.Class"
+-- and "Algebra.Graph.HigherKinded.Class", which can be used for polymorphic
+-- graph construction and manipulation.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Fold (
     -- * Boehm-Berarducci encoding of algebraic graphs
@@ -113,7 +116,7 @@ The following useful theorems can be proved from the above set of axioms.
 When specifying the time and memory complexity of graph algorithms, /n/ will
 denote the number of vertices in the graph, /m/ will denote the number of
 edges in the graph, and /s/ will denote the /size/ of the corresponding
-'Graph' expression. For example, if g is a 'Graph' then /n/, /m/ and /s/ can be
+graph expression. For example, if g is a 'Fold' then /n/, /m/ and /s/ can be
 computed as follows:
 
 @n == 'vertexCount' g
@@ -134,7 +137,7 @@ expression:
 The 'size' of any graph is positive, and the difference @('size' g - 'length' g)@
 corresponds to the number of occurrences of 'empty' in an expression @g@.
 
-Converting a 'Graph' to the corresponding 'AM.AdjacencyMap' takes /O(s + m * log(m))/
+Converting a 'Fold' to the corresponding 'AM.AdjacencyMap' takes /O(s + m * log(m))/
 time and /O(s + m)/ memory. This is also the complexity of the graph equality test,
 because it is currently implemented by converting graph expressions to canonical
 representations based on adjacency maps.
@@ -354,7 +357,7 @@ connects = C.connects
 -- isEmpty ('overlay' 'empty' 'empty')       == True
 -- isEmpty ('vertex' x)                  == False
 -- isEmpty ('removeVertex' x $ 'vertex' x) == True
--- isEmpty ('Algebra.Graph.Data.removeEdge' x y $ 'edge' x y) == False
+-- isEmpty ('removeEdge' x y $ 'edge' x y) == False
 -- @
 isEmpty :: Fold a -> Bool
 isEmpty = H.isEmpty
@@ -385,6 +388,7 @@ hasVertex :: Eq a => a -> Fold a -> Bool
 hasVertex = H.hasVertex
 
 -- | Check if a graph contains a given edge.
+-- Complexity: /O(s)/ time.
 --
 -- @
 -- hasEdge x y 'empty'            == False
@@ -578,7 +582,7 @@ removeVertex v = induce (/= v)
 -- @
 -- removeEdge x y ('edge' x y)       == 'vertices' [x, y]
 -- removeEdge x y . removeEdge x y == removeEdge x y
--- removeEdge x y . 'Algebra.Graph.HigherKinded.Util.removeVertex' x == 'Algebra.Graph.HigherKinded.Util.removeVertex' x
+-- removeEdge x y . 'removeVertex' x == 'removeVertex' x
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @

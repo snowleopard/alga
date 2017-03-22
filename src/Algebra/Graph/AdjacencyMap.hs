@@ -6,20 +6,36 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- An abstract implementation of adjacency maps, associated operations and
--- algorithms. For adjacency maps specialised to graphs with @Int@ vertices
--- see "Algebra.Graph.IntAdjacencyMap".
+-- __Alga__ is a library for algebraic construction and manipulation of graphs
+-- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
+-- motivation behind the library, the underlying theory, and implementation details.
 --
+-- This module defines the 'AdjacencyMap' data type, which is an abstract
+-- implementation of graph adjacency maps, as well as associated operations and
+-- algorithms. 'AdjacencyMap' is an instance of "Algebra.Graph.Class" type class,
+-- which can be used for polymorphic graph construction and manipulation.
+-- See "Algebra.Graph.IntAdjacencyMap" for adjacency maps specialised to graphs
+-- with @Int@ vertices.
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap (
     -- * Data structure
-    AdjacencyMap, adjacencyMap,
+    AdjacencyMap, adjacencyMap, empty, vertex, overlay, connect,
 
-    -- * Properties
-    isEmpty, hasVertex, hasEdge, toSet,
+    -- * Basic graph construction primitives
+    edge, vertices, edges, overlays, connects, graph, fromAdjacencyList,
 
-    -- * Operations
-    gmap, edgeList, edges, adjacencyList, fromAdjacencyList, postset,
+    -- * Relations on graphs
+    isSubgraphOf,
+
+    -- * Graph properties
+    isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
+    adjacencyList, vertexSet, edgeSet, postset,
+
+    -- * Standard families of graphs
+    path, circuit, clique, biclique, star, tree, forest,
+
+    -- * Graph transformation
+    removeVertex, removeEdge, replaceVertex, mergeVertices, gmap, induce,
 
     -- * Algorithms
     dfsForest, topSort, isTopSort, scc,
@@ -35,68 +51,281 @@ import Data.Tree
 
 import Algebra.Graph.AdjacencyMap.Internal
 
-import qualified Data.Graph      as KL
-import qualified Data.Map.Strict as Map
-import qualified Data.Set        as Set
+import qualified Algebra.Graph.Class as C
+import qualified Data.Graph          as KL
+import qualified Data.Map.Strict     as Map
+import qualified Data.Set            as Set
 
--- | Check if a graph is empty.
+-- | Construct the graph comprising a single edge.
+-- Complexity: /O(1)/ time, memory.
 --
 -- @
--- isEmpty 'Algebra.Graph.empty'      == True
--- isEmpty ('Algebra.Graph.vertex' x) == False
+-- edge x y               == 'connect' ('vertex' x) ('vertex' y)
+-- 'hasEdge' x y (edge x y) == True
+-- 'edgeCount'   (edge x y) == 1
+-- 'vertexCount' (edge 1 1) == 1
+-- 'vertexCount' (edge 1 2) == 2
+-- @
+edge :: Ord a => a -> a -> AdjacencyMap a
+edge = C.edge
+
+-- | Overlay a given list of graphs.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- overlays []        == 'empty'
+-- overlays [x]       == x
+-- overlays [x,y]     == 'overlay' x y
+-- 'isEmpty' . overlays == 'all' 'isEmpty'
+-- @
+overlays :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
+overlays = C.overlays
+
+-- | Connect a given list of graphs.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- connects []        == 'empty'
+-- connects [x]       == x
+-- connects [x,y]     == 'connect' x y
+-- 'isEmpty' . connects == 'all' 'isEmpty'
+-- @
+connects :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
+connects = C.connects
+
+-- | Construct the graph from given lists of vertices /V/ and edges /E/.
+-- The resulting graph contains the vertices /V/ as well as all the vertices
+-- referred to by the edges /E/.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- graph []  []      == 'empty'
+-- graph [x] []      == 'vertex' x
+-- graph []  [(x,y)] == 'edge' x y
+-- graph vs  es      == 'overlay' ('vertices' vs) ('edges' es)
+-- @
+graph :: Ord a => [a] -> [(a, a)] -> AdjacencyMap a
+graph vs es = overlay (vertices vs) (edges es)
+
+-- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
+-- first graph is a /subgraph/ of the second.
+-- Complexity: /O((n + m) * log(n))/ time.
+--
+-- @
+-- isSubgraphOf 'empty'         x             == True
+-- isSubgraphOf ('vertex' x)    'empty'         == False
+-- isSubgraphOf x             ('overlay' x y) == True
+-- isSubgraphOf ('overlay' x y) ('connect' x y) == True
+-- isSubgraphOf ('path' xs)     ('circuit' xs)  == True
+-- @
+isSubgraphOf :: Ord a => AdjacencyMap a -> AdjacencyMap a -> Bool
+isSubgraphOf x y = Map.isSubmapOfBy Set.isSubsetOf (adjacencyMap x) (adjacencyMap y)
+
+-- | Check if a graph is empty.
+-- Complexity: /O(1)/ time.
+--
+-- @
+-- isEmpty 'empty'                       == True
+-- isEmpty ('overlay' 'empty' 'empty')       == True
+-- isEmpty ('vertex' x)                  == False
+-- isEmpty ('removeVertex' x $ 'vertex' x) == True
+-- isEmpty ('removeEdge' x y $ 'edge' x y) == False
 -- @
 isEmpty :: AdjacencyMap a -> Bool
 isEmpty = Map.null . adjacencyMap
 
 -- | Check if a graph contains a given vertex.
+-- Complexity: /O(log(n))/ time.
 --
 -- @
--- hasVertex x 'Algebra.Graph.empty'      == False
--- hasVertex x ('Algebra.Graph.vertex' x) == True
+-- hasVertex x 'empty'            == False
+-- hasVertex x ('vertex' x)       == True
+-- hasVertex x . 'removeVertex' x == const False
 -- @
 hasVertex :: Ord a => a -> AdjacencyMap a -> Bool
-hasVertex v = Map.member v . adjacencyMap
+hasVertex x = Map.member x . adjacencyMap
 
 -- | Check if a graph contains a given edge.
+-- Complexity: /O(log(n))/ time.
 --
 -- @
--- hasEdge x y 'Algebra.Graph.empty'      == False
--- hasEdge x y ('Algebra.Graph.vertex' z) == False
--- hasEdge x y ('Algebra.Graph.edge' x y) == True
+-- hasEdge x y 'empty'            == False
+-- hasEdge x y ('vertex' z)       == False
+-- hasEdge x y ('edge' x y)       == True
+-- hasEdge x y . 'removeEdge' x y == const False
 -- @
 hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
 hasEdge u v a = case Map.lookup u (adjacencyMap a) of
     Nothing -> False
     Just vs -> Set.member v vs
 
--- | The set of vertices of a given graph.
+-- | The number of vertices in a graph.
+-- Complexity: /O(1)/ time.
 --
 -- @
--- toSet 'Algebra.Graph.empty'         == Set.empty
--- toSet ('Algebra.Graph.vertex' x)    == Set.singleton x
--- toSet ('Algebra.Graph.vertices' xs) == Set.fromList xs
--- toSet ('Algebra.Graph.clique' xs)   == Set.fromList xs
+-- vertexCount 'empty'      == 0
+-- vertexCount ('vertex' x) == 1
+-- vertexCount            == 'length' . 'vertexList'
 -- @
-toSet :: Ord a => AdjacencyMap a -> Set a
-toSet = Map.keysSet . adjacencyMap
+vertexCount :: Ord a => AdjacencyMap a -> Int
+vertexCount = Map.size . adjacencyMap
 
--- | The /postset/ of a vertex @x@ is the set of its /direct successors/.
+-- | The number of edges in a graph.
+-- Complexity: /O(n)/ time.
 --
 -- @
--- postset x 'Algebra.Graph.empty'      == Set.empty
--- postset x ('Algebra.Graph.vertex' x) == Set.empty
--- postset x ('Algebra.Graph.edge' x y) == Set.fromList [y]
--- postset 2 ('Algebra.Graph.edge' 1 2) == Set.empty
+-- edgeCount 'empty'      == 0
+-- edgeCount ('vertex' x) == 0
+-- edgeCount ('edge' x y) == 1
+-- edgeCount            == 'length' . 'edgeList'
+-- @
+edgeCount :: Ord a => AdjacencyMap a -> Int
+edgeCount = Map.foldr (\es r -> (Set.size es + r)) 0 . adjacencyMap
+
+-- | The sorted list of vertices of a given graph.
+-- Complexity: /O(n)/ time and memory.
+--
+-- @
+-- vertexList 'empty'      == []
+-- vertexList ('vertex' x) == [x]
+-- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
+-- @
+vertexList :: Ord a => AdjacencyMap a -> [a]
+vertexList = Map.keys . adjacencyMap
+
+-- | The set of vertices of a given graph.
+-- Complexity: /O(n)/ time and memory.
+--
+-- @
+-- vertexSet 'empty'      == Set.'Set.empty'
+-- vertexSet . 'vertex'   == Set.'Set.singleton'
+-- vertexSet . 'vertices' == Set.'Set.fromList'
+-- vertexSet . 'clique'   == Set.'Set.fromList'
+-- @
+vertexSet :: Ord a => AdjacencyMap a -> Set a
+vertexSet = Map.keysSet . adjacencyMap
+
+-- | The set of edges of a given graph.
+-- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
+--
+-- @
+-- edgeSet 'empty'      == Set.'Set.empty'
+-- edgeSet ('vertex' x) == Set.'Set.empty'
+-- edgeSet ('edge' x y) == Set.'Set.singleton' (x,y)
+-- edgeSet . 'edges'    == Set.'Set.fromList'
+-- @
+edgeSet :: Ord a => AdjacencyMap a -> Set (a, a)
+edgeSet = Map.foldrWithKey (\v es -> Set.union (Set.mapMonotonic (v,) es)) Set.empty . adjacencyMap
+
+-- | The /postset/ of a vertex is the set of its /direct successors/.
+--
+-- @
+-- postset x 'empty'      == Set.'Set.empty'
+-- postset x ('vertex' x) == Set.'Set.empty'
+-- postset x ('edge' x y) == Set.'Set.fromList' [y]
+-- postset 2 ('edge' 1 2) == Set.'Set.empty'
 -- @
 postset :: Ord a => a -> AdjacencyMap a -> Set a
-postset v = Map.findWithDefault Set.empty v . adjacencyMap
+postset x = Map.findWithDefault Set.empty x . adjacencyMap
+
+-- | The /path/ on a list of vertices.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- path []    == 'empty'
+-- path [x]   == 'vertex' x
+-- path [x,y] == 'edge' x y
+-- @
+path :: Ord a => [a] -> AdjacencyMap a
+path = C.path
+
+-- | The /circuit/ on a list of vertices.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- circuit []    == 'empty'
+-- circuit [x]   == 'edge' x x
+-- circuit [x,y] == 'edges' [(x,y), (y,x)]
+-- @
+circuit :: Ord a => [a] -> AdjacencyMap a
+circuit = C.circuit
+
+-- | The /clique/ on a list of vertices.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- clique []      == 'empty'
+-- clique [x]     == 'vertex' x
+-- clique [x,y]   == 'edge' x y
+-- clique [x,y,z] == 'edges' [(x,y), (x,z), (y,z)]
+-- @
+clique :: Ord a => [a] -> AdjacencyMap a
+clique = C.clique
+
+-- | The /biclique/ on a list of vertices.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- biclique []      []      == 'empty'
+-- biclique [x]     []      == 'vertex' x
+-- biclique []      [y]     == 'vertex' y
+-- biclique [x1,x2] [y1,y2] == 'edges' [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
+-- @
+biclique :: Ord a => [a] -> [a] -> AdjacencyMap a
+biclique = C.biclique
+
+-- | The /star/ formed by a centre vertex and a list of leaves.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- star x []    == 'vertex' x
+-- star x [y]   == 'edge' x y
+-- star x [y,z] == 'edges' [(x,y), (x,z)]
+-- @
+star :: Ord a => a -> [a] -> AdjacencyMap a
+star = C.star
+
+-- | The /tree graph/ constructed from a given 'Tree' data structure.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+tree :: Ord a => Tree a -> AdjacencyMap a
+tree = C.tree
+
+-- | The /forest graph/ constructed from a given 'Forest' data structure.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+forest :: Ord a => Forest a -> AdjacencyMap a
+forest = C.forest
+
+-- | The function @replaceVertex x y@ replaces vertex @x@ with vertex @y@ in a
+-- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
+-- Complexity: /O((n + m) * log(n))/ time.
+--
+-- @
+-- replaceVertex x x            == id
+-- replaceVertex x y ('vertex' x) == 'vertex' y
+-- replaceVertex x y            == 'mergeVertices' (== x) y
+-- @
+replaceVertex :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
+replaceVertex u v = gmap $ \w -> if w == u then v else w
+
+-- | Merge vertices satisfying a given predicate with a given vertex.
+-- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
+-- /O(1)/ to be evaluated.
+--
+-- @
+-- mergeVertices (const False) x    == id
+-- mergeVertices (== x) y           == 'replaceVertex' x y
+-- mergeVertices even 1 (0 * 2)     == 1 * 1
+-- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
+-- @
+mergeVertices :: Ord a => (a -> Bool) -> a -> AdjacencyMap a -> AdjacencyMap a
+mergeVertices p v = gmap $ \u -> if p u then v else u
 
 -- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
 -- the "Data.Graph" module of the @containers@ library. If @graphKL g == h@ then
 -- the following holds:
 --
 -- @
--- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == Set.toAscList ('toSet' g)
+-- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == Set.toAscList ('vertexSet' g)
 -- map (\\(x, y) -> ('getVertex' h x, 'getVertex' h y)) ('Data.Graph.edges' $ 'getGraph' h) == 'edgeList' g
 -- @
 data GraphKL a = GraphKL {
@@ -176,14 +405,14 @@ isTopSort xs m = go Set.empty xs
 -- /strongly-connected component/ of the original graph.
 --
 -- @
--- scc 'Algebra.Graph.empty'               == 'Algebra.Graph.empty'
--- scc ('Algebra.Graph.vertex' x)          == 'Algebra.Graph.vertex' (Set.singleton x)
--- scc ('Algebra.Graph.edge' x y)          == 'Algebra.Graph.edge' (Set.singleton x) (Set.singleton y)
--- scc ('Algebra.Graph.circuit' (1:xs))    == 'Algebra.Graph.edge' (Set.fromList (1:xs)) (Set.fromList (1:xs))
--- scc (3 * 1 * 4 * 1 * 5) == 'Algebra.Graph.edges' [ (Set.fromList [1,4], Set.fromList [1,4])
---                                  , (Set.fromList [1,4], Set.fromList [5]  )
---                                  , (Set.fromList [3]  , Set.fromList [1,4])
---                                  , (Set.fromList [3]  , Set.fromList [5]  )]
+-- scc 'empty'               == 'empty'
+-- scc ('vertex' x)          == 'vertex' (Set.'Set.singleton' x)
+-- scc ('edge' x y)          == 'edge' (Set.'Set.singleton' x) (Set.'Set.singleton' y)
+-- scc ('circuit' (1:xs))    == 'edge' (Set.'Set.fromList' (1:xs)) (Set.'Set.fromList' (1:xs))
+-- scc (3 * 1 * 4 * 1 * 5) == 'edges' [ (Set.'Set.fromList' [1,4], Set.'Set.fromList' [1,4])
+--                                  , (Set.'Set.fromList' [1,4], Set.'Set.fromList' [5]  )
+--                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [1,4])
+--                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [5]  )]
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (Set a)
 scc m = gmap (\v -> Map.findWithDefault Set.empty v components) m
