@@ -607,7 +607,7 @@ forest = H.forest
 -- mesh [1..3] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(2,\'b\')), ((2,\'a\'),(2,\'b\'))
 --                           , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\')), ((3,\'a\'),(3,\'b\')) ]
 -- @
-mesh :: [u] -> [v] -> Graph (u, v)
+mesh :: [a] -> [b] -> Graph (a, b)
 mesh = H.mesh
 
 -- | Construct a /torus graph/ from two lists of vertices.
@@ -622,7 +622,7 @@ mesh = H.mesh
 -- torus [1..2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
 --                            , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
-torus :: [u] -> [v] -> Graph (u, v)
+torus :: [a] -> [b] -> Graph (a, b)
 torus = H.torus
 
 -- | Construct a /De Bruijn graph/ of given dimension and symbols of a given

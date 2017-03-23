@@ -435,8 +435,8 @@ forest = overlays . map tree
 -- mesh [1..3] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(2,\'b\')), ((2,\'a\'),(2,\'b\'))
 --                           , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\')), ((3,\'a\'),(3,\'b\')) ]
 -- @
-mesh :: Graph g => [u] -> [v] -> g (u, v)
-mesh us vs = path us `box` path vs
+mesh :: Graph g => [a] -> [b] -> g (a, b)
+mesh xs ys = path xs `box` path ys
 
 -- | Construct a /torus graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -450,8 +450,8 @@ mesh us vs = path us `box` path vs
 -- torus [1..2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
 --                            , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
-torus :: Graph g => [u] -> [v] -> g (u, v)
-torus us vs = circuit us `box` circuit vs
+torus :: Graph g => [a] -> [b] -> g (a, b)
+torus xs ys = circuit xs `box` circuit ys
 
 -- | Construct a /De Bruijn graph/ of given dimension and symbols of a given
 -- alphabet.

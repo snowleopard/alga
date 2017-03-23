@@ -529,8 +529,8 @@ edgeSet = R.edgeSet . C.toGraph
 -- mesh [1..3] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(2,\'b\')), ((2,\'a\'),(2,\'b\'))
 --                           , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\')), ((3,\'a\'),(3,\'b\')) ]
 -- @
-mesh :: (C.Graph g, C.Vertex g ~ (u, v)) => [u] -> [v] -> g
-mesh us vs = C.path us `box` C.path vs
+mesh :: (C.Graph g, C.Vertex g ~ (a, b)) => [a] -> [b] -> g
+mesh xs ys = C.path xs `box` C.path ys
 
 -- | Construct a /torus graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -544,8 +544,8 @@ mesh us vs = C.path us `box` C.path vs
 -- torus [1..2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
 --                            , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
-torus :: (C.Graph g, C.Vertex g ~ (u, v)) => [u] -> [v] -> g
-torus us vs = C.circuit us `box` C.circuit vs
+torus :: (C.Graph g, C.Vertex g ~ (a, b)) => [a] -> [b] -> g
+torus xs ys = C.circuit xs `box` C.circuit ys
 
 -- | Construct a /De Bruijn graph/ of given dimension and symbols of a given
 -- alphabet.
