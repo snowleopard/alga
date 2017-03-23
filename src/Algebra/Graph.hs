@@ -394,7 +394,7 @@ infix 4 ===
 -- isEmpty ('overlay' 'empty' 'empty')       == True
 -- isEmpty ('vertex' x)                  == False
 -- isEmpty ('removeVertex' x $ 'vertex' x) == True
--- isEmpty ('Algebra.Graph.Data.removeEdge' x y $ 'edge' x y) == False
+-- isEmpty ('removeEdge' x y $ 'edge' x y) == False
 -- @
 isEmpty :: Graph a -> Bool
 isEmpty = H.isEmpty

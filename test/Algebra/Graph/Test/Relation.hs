@@ -15,12 +15,12 @@ module Algebra.Graph.Test.Relation (
     testRelation
   ) where
 
-import Algebra.Graph.Class hiding (edges)
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Test
 
-import qualified Data.Set as Set
+import qualified Algebra.Graph.Class as C
+import qualified Data.Set            as Set
 
 type RI = Relation Int
 type II = Int -> Int
@@ -225,11 +225,11 @@ testRelation = do
         (transitiveAxioms :: GraphTestsuite (TransitiveRelation Int))
 
     test "path xs == (clique xs :: TransitiveRelation Int)" $ sizeLimit $ \xs ->
-          path xs == (clique xs :: TransitiveRelation Int)
+          C.path xs == (C.clique xs :: TransitiveRelation Int)
 
     putStrLn "\n============ PreorderRelation ============"
     test "Axioms of preorder graphs" $ sizeLimit
         (preorderAxioms :: GraphTestsuite (PreorderRelation Int))
 
     test "path xs == (clique xs :: PreorderRelation Int)" $ sizeLimit $ \xs ->
-          path xs == (clique xs :: PreorderRelation Int)
+          C.path xs == (C.clique xs :: PreorderRelation Int)
