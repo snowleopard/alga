@@ -355,11 +355,11 @@ fromGraphKL (GraphKL g r) = fromAdjacencyList $ map (\(x, ys) -> (r x, map r ys)
 -- | Compute the /depth-first search/ forest of a graph.
 --
 -- @
--- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 1 1)         == 'Algebra.Graph.vertex' 1
--- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 1 2)         == 'Algebra.Graph.edge' 1 2
--- 'Algebra.Graph.forest' (dfsForest $ 'Algebra.Graph.edge' 2 1)         == 'Algebra.Graph.vertices' [1, 2]
--- 'Algebra.Graph.isSubgraphOf' ('Algebra.Graph.forest' $ dfsForest x) x == True
--- dfsForest . 'Algebra.Graph.forest' . dfsForest        == dfsForest
+-- 'forest' (dfsForest $ 'edge' 1 1)         == 'vertex' 1
+-- 'forest' (dfsForest $ 'edge' 1 2)         == 'edge' 1 2
+-- 'forest' (dfsForest $ 'edge' 2 1)         == 'vertices' [1, 2]
+-- 'isSubgraphOf' ('forest' $ dfsForest x) x == True
+-- dfsForest . 'forest' . dfsForest        == dfsForest
 -- dfsForest $ 3 * (1 + 4) * (1 + 5)     == [ Node { rootLabel = 1
 --                                                 , subForest = [ Node { rootLabel = 5
 --                                                                      , subForest = [] }]}
@@ -390,9 +390,9 @@ topSort m = if isTopSort result m then Just result else Nothing
 -- isTopSort [3, 1, 2] (1 * 2 + 3 * 1) == True
 -- isTopSort [1, 2, 3] (1 * 2 + 3 * 1) == False
 -- isTopSort []        (1 * 2 + 3 * 1) == False
--- isTopSort []        'Algebra.Graph.empty'           == True
--- isTopSort [x]       ('Algebra.Graph.vertex' x)      == True
--- isTopSort [x]       ('Algebra.Graph.edge' x x)      == False
+-- isTopSort []        'empty'           == True
+-- isTopSort [x]       ('vertex' x)      == True
+-- isTopSort [x]       ('edge' x x)      == False
 -- @
 isTopSort :: Ord a => [a] -> AdjacencyMap a -> Bool
 isTopSort xs m = go Set.empty xs
