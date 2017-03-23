@@ -19,10 +19,11 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap (
     -- * Data structure
-    AdjacencyMap, adjacencyMap, empty, vertex, overlay, connect,
+    AdjacencyMap, adjacencyMap,
 
     -- * Basic graph construction primitives
-    edge, vertices, edges, overlays, connects, graph, fromAdjacencyList,
+    empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
+    graph, fromAdjacencyList,
 
     -- * Relations on graphs
     isSubgraphOf,
@@ -56,7 +57,7 @@ import qualified Data.Graph          as KL
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
 
--- | Construct the graph comprising a single edge.
+-- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
 --
 -- @

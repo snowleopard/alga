@@ -20,13 +20,14 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Fold (
     -- * Boehm-Berarducci encoding of algebraic graphs
-    Fold, empty, vertex, overlay, connect,
+    Fold,
+
+    -- * Basic graph construction primitives
+    empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
+    C.graph,
 
     -- * Graph folding
     foldg,
-
-    -- * Basic graph construction primitives
-    edge, vertices, edges, overlays, connects, C.graph,
 
     -- * Relations on graphs
     C.isSubgraphOf,
@@ -144,73 +145,6 @@ representations based on adjacency maps.
 -}
 newtype Fold a = Fold { runFold :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b }
 
--- | Construct the /empty graph/.
--- Complexity: /O(1)/ time, memory and size.
---
--- @
--- 'isEmpty'     empty == True
--- 'hasVertex' x empty == False
--- 'vertexCount' empty == 0
--- 'edgeCount'   empty == 0
--- 'size'        empty == 1
--- @
-empty :: C.Graph g => g
-empty = C.empty
-
--- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time, memory and size.
---
--- @
--- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
--- 'hasVertex' 1 (vertex 2) == False
--- 'vertexCount' (vertex x) == 1
--- 'edgeCount'   (vertex x) == 0
--- 'size'        (vertex x) == 1
--- @
-vertex :: C.Graph g => C.Vertex g -> g
-vertex = C.vertex
-
--- | /Overlay/ two graphs. This is an idempotent, commutative and associative
--- operation with the identity 'empty'.
--- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
---
--- @
--- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (overlay x y) >= 'vertexCount' x
--- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (overlay x y) >= 'edgeCount' x
--- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
--- 'size'        (overlay x y) == 'size' x        + 'size' y
--- 'vertexCount' (overlay 1 2) == 2
--- 'edgeCount'   (overlay 1 2) == 0
--- @
-overlay :: C.Graph g => g -> g -> g
-overlay = C.overlay
-
--- | /Connect/ two graphs. This is an associative operation with the identity
--- 'empty', which distributes over the overlay and obeys the decomposition axiom.
--- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
--- of edges in the resulting graph is quadratic with respect to the number of
--- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
---
--- @
--- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (connect x y) >= 'vertexCount' x
--- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (connect x y) >= 'edgeCount' x
--- 'edgeCount'   (connect x y) >= 'edgeCount' y
--- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
--- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
--- 'size'        (connect x y) == 'size' x        + 'size' y
--- 'vertexCount' (connect 1 2) == 2
--- 'edgeCount'   (connect 1 2) == 1
--- @
-connect :: C.Graph g => g -> g -> g
-connect = C.connect
-
 instance (Ord a, Show a) => Show (Fold a) where
     show f = show (C.toGraph f :: AM.AdjacencyMap a)
 
@@ -267,24 +201,34 @@ instance C.ToGraph (Fold a) where
 instance H.ToGraph Fold where
     toGraph = foldg H.empty H.vertex H.overlay H.connect
 
--- | Generalised graph folding: recursively collapse a 'Fold' by applying
--- the provided functions to the leaves and internal nodes of the expression.
--- The order of arguments is: empty, vertex, overlay and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+-- | Construct the /empty graph/.
+-- Complexity: /O(1)/ time, memory and size.
 --
 -- @
--- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
--- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
--- foldg []    return        (++)    (++)           == 'Data.Foldable.toList'
--- foldg 0     (const 1)     (+)     (+)            == 'Data.Foldable.length'
--- foldg 1     (const 1)     (+)     (+)            == 'size'
--- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
+-- 'isEmpty'     empty == True
+-- 'hasVertex' x empty == False
+-- 'vertexCount' empty == 0
+-- 'edgeCount'   empty == 0
+-- 'size'        empty == 1
 -- @
-foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
-foldg e v o c g = runFold g e v o c
+empty :: C.Graph g => g
+empty = C.empty
 
--- | Construct the graph comprising a single edge.
+-- | Construct the graph comprising /a single isolated vertex/.
+-- Complexity: /O(1)/ time, memory and size.
+--
+-- @
+-- 'isEmpty'     (vertex x) == False
+-- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' 1 (vertex 2) == False
+-- 'vertexCount' (vertex x) == 1
+-- 'edgeCount'   (vertex x) == 0
+-- 'size'        (vertex x) == 1
+-- @
+vertex :: C.Graph g => C.Vertex g -> g
+vertex = C.vertex
+
+-- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
 --
 -- @
@@ -296,6 +240,46 @@ foldg e v o c g = runFold g e v o c
 -- @
 edge :: C.Graph g => C.Vertex g -> C.Vertex g -> g
 edge = C.edge
+
+-- | /Overlay/ two graphs. This is an idempotent, commutative and associative
+-- operation with the identity 'empty'.
+-- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
+--
+-- @
+-- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (overlay x y) >= 'vertexCount' x
+-- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (overlay x y) >= 'edgeCount' x
+-- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
+-- 'size'        (overlay x y) == 'size' x        + 'size' y
+-- 'vertexCount' (overlay 1 2) == 2
+-- 'edgeCount'   (overlay 1 2) == 0
+-- @
+overlay :: C.Graph g => g -> g -> g
+overlay = C.overlay
+
+-- | /Connect/ two graphs. This is an associative operation with the identity
+-- 'empty', which distributes over the overlay and obeys the decomposition axiom.
+-- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
+-- of edges in the resulting graph is quadratic with respect to the number of
+-- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
+--
+-- @
+-- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (connect x y) >= 'vertexCount' x
+-- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (connect x y) >= 'edgeCount' x
+-- 'edgeCount'   (connect x y) >= 'edgeCount' y
+-- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
+-- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
+-- 'size'        (connect x y) == 'size' x        + 'size' y
+-- 'vertexCount' (connect 1 2) == 2
+-- 'edgeCount'   (connect 1 2) == 1
+-- @
+connect :: C.Graph g => g -> g -> g
+connect = C.connect
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -348,6 +332,23 @@ overlays = C.overlays
 -- @
 connects :: C.Graph g => [g] -> g
 connects = C.connects
+
+-- | Generalised graph folding: recursively collapse a 'Fold' by applying
+-- the provided functions to the leaves and internal nodes of the expression.
+-- The order of arguments is: empty, vertex, overlay and connect.
+-- Complexity: /O(s)/ applications of given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+--
+-- @
+-- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
+-- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
+-- foldg []    return        (++)    (++)           == 'Data.Foldable.toList'
+-- foldg 0     (const 1)     (+)     (+)            == 'Data.Foldable.length'
+-- foldg 1     (const 1)     (+)     (+)            == 'size'
+-- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
+-- @
+foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
+foldg e v o c g = runFold g e v o c
 
 -- | Check if a graph is empty. A convenient alias for 'null'.
 -- Complexity: /O(s)/ time.

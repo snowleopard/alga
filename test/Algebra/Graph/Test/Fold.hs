@@ -88,6 +88,22 @@ testFold = do
     test "size        (vertex x) == 1" $ \(x :: Int) ->
           size        (vertex x) == 1
 
+    putStrLn "\n============ edge ============"
+    test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
+         (edge x y :: F)         == connect (vertex x) (vertex y)
+
+    test "hasEdge x y (edge x y) == True" $ \(x :: Int) y ->
+          hasEdge x y (edge x y) == True
+
+    test "edgeCount   (edge x y) == 1" $ \(x :: Int) y ->
+          edgeCount   (edge x y) == 1
+
+    test "vertexCount (edge 1 1) == 1" $
+          vertexCount (edge 1 1 :: F) == 1
+
+    test "vertexCount (edge 1 2) == 2" $
+          vertexCount (edge 1 2 :: F) == 2
+
     putStrLn "\n============ overlay ============"
     test "isEmpty     (overlay x y) == isEmpty   x   && isEmpty   y" $ \(x :: F) y ->
           isEmpty     (overlay x y) == (isEmpty   x   && isEmpty   y)
@@ -149,41 +165,6 @@ testFold = do
 
     test "edgeCount   (connect 1 2) == 1" $
           edgeCount   (connect 1 2 :: F) == 1
-
-    putStrLn "\n============ foldg ============"
-    test "foldg empty vertex        overlay connect        == id" $ \(x :: F) ->
-          foldg empty vertex        overlay connect x      == x
-
-    test "foldg empty vertex        overlay (flip connect) == transpose" $ \(x :: F) ->
-          foldg empty vertex        overlay (flip connect)x== (transpose x :: F)
-
-    test "foldg []    return        (++)    (++)           == toList" $ \(x :: F) ->
-          foldg []    return        (++)    (++) x         == toList x
-
-    test "foldg 0     (const 1)     (+)     (+)            == length" $ \(x :: F) ->
-          foldg 0     (const 1)     (+)     (+) x          == length x
-
-    test "foldg 1     (const 1)     (+)     (+)            == size" $ \(x :: F) ->
-          foldg 1     (const 1)     (+)     (+) x          == size x
-
-    test "foldg True  (const False) (&&)    (&&)           == isEmpty" $ \(x :: F) ->
-          foldg True  (const False) (&&)    (&&) x         == isEmpty x
-
-    putStrLn "\n============ edge ============"
-    test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
-         (edge x y :: F)         == connect (vertex x) (vertex y)
-
-    test "hasEdge x y (edge x y) == True" $ \(x :: Int) y ->
-          hasEdge x y (edge x y) == True
-
-    test "edgeCount   (edge x y) == 1" $ \(x :: Int) y ->
-          edgeCount   (edge x y) == 1
-
-    test "vertexCount (edge 1 1) == 1" $
-          vertexCount (edge 1 1 :: F) == 1
-
-    test "vertexCount (edge 1 2) == 2" $
-          vertexCount (edge 1 2 :: F) == 2
 
     putStrLn "\n============ vertices ============"
     test "vertices []            == empty" $
@@ -249,6 +230,25 @@ testFold = do
 
     test "graph vs  es      == overlay (vertices vs) (edges es)" $ \(vs :: [Int]) es ->
           graph vs  es      == (overlay (vertices vs) (edges es) :: F)
+
+    putStrLn "\n============ foldg ============"
+    test "foldg empty vertex        overlay connect        == id" $ \(x :: F) ->
+          foldg empty vertex        overlay connect x      == x
+
+    test "foldg empty vertex        overlay (flip connect) == transpose" $ \(x :: F) ->
+          foldg empty vertex        overlay (flip connect)x== (transpose x :: F)
+
+    test "foldg []    return        (++)    (++)           == toList" $ \(x :: F) ->
+          foldg []    return        (++)    (++) x         == toList x
+
+    test "foldg 0     (const 1)     (+)     (+)            == length" $ \(x :: F) ->
+          foldg 0     (const 1)     (+)     (+) x          == length x
+
+    test "foldg 1     (const 1)     (+)     (+)            == size" $ \(x :: F) ->
+          foldg 1     (const 1)     (+)     (+) x          == size x
+
+    test "foldg True  (const False) (&&)    (&&)           == isEmpty" $ \(x :: F) ->
+          foldg True  (const False) (&&)    (&&) x         == isEmpty x
 
     putStrLn "\n============ isSubgraphOf ============"
     test "isSubgraphOf empty         x             == True" $ \(x :: F) ->

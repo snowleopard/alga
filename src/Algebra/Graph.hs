@@ -19,13 +19,14 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph (
     -- * Algebraic data type for graphs
-    Graph (..), empty, vertex, overlay, connect,
+    Graph (..),
+
+    -- * Basic graph construction primitives
+    empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
+    graph,
 
     -- * Graph folding
     foldg,
-
-    -- * Basic graph construction primitives
-    edge, vertices, edges, overlays, connects, graph,
 
     -- * Relations on graphs
     isSubgraphOf, (===),
@@ -137,75 +138,6 @@ data Graph a = Empty
              | Connect (Graph a) (Graph a)
              deriving (Foldable, Functor, Show, Traversable)
 
--- | Construct the /empty graph/. An alias for the constructor 'Empty'.
--- Complexity: /O(1)/ time, memory and size.
---
--- @
--- 'isEmpty'     empty == True
--- 'hasVertex' x empty == False
--- 'vertexCount' empty == 0
--- 'edgeCount'   empty == 0
--- 'size'        empty == 1
--- @
-empty :: Graph a
-empty = Empty
-
--- | Construct the graph comprising /a single isolated vertex/. An alias for the
--- constructor 'Vertex'.
--- Complexity: /O(1)/ time, memory and size.
---
--- @
--- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
--- 'hasVertex' 1 (vertex 2) == False
--- 'vertexCount' (vertex x) == 1
--- 'edgeCount'   (vertex x) == 0
--- 'size'        (vertex x) == 1
--- @
-vertex :: a -> Graph a
-vertex = Vertex
-
--- | /Overlay/ two graphs. An alias for the constructor 'Overlay'. This is an
--- idempotent, commutative and associative operation with the identity 'empty'.
--- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
---
--- @
--- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (overlay x y) >= 'vertexCount' x
--- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (overlay x y) >= 'edgeCount' x
--- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
--- 'size'        (overlay x y) == 'size' x        + 'size' y
--- 'vertexCount' (overlay 1 2) == 2
--- 'edgeCount'   (overlay 1 2) == 0
--- @
-overlay :: Graph a -> Graph a -> Graph a
-overlay = Overlay
-
--- | /Connect/ two graphs. An alias for the constructor 'Connect'. This is an
--- associative operation with the identity 'empty', which distributes over the
--- overlay and obeys the decomposition axiom.
--- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
--- of edges in the resulting graph is quadratic with respect to the number of
--- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
---
--- @
--- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (connect x y) >= 'vertexCount' x
--- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (connect x y) >= 'edgeCount' x
--- 'edgeCount'   (connect x y) >= 'edgeCount' y
--- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
--- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
--- 'size'        (connect x y) == 'size' x        + 'size' y
--- 'vertexCount' (connect 1 2) == 2
--- 'edgeCount'   (connect 1 2) == 1
--- @
-connect :: Graph a -> Graph a -> Graph a
-connect = Connect
-
 instance C.Graph (Graph a) where
     type Vertex (Graph a) = a
     empty   = empty
@@ -250,29 +182,35 @@ instance MonadPlus Graph where
     mzero = Empty
     mplus = Overlay
 
--- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
--- the provided functions to the leaves and internal nodes of the expression.
--- The order of arguments is: empty, vertex, overlay and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+-- | Construct the /empty graph/. An alias for the constructor 'Empty'.
+-- Complexity: /O(1)/ time, memory and size.
 --
 -- @
--- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
--- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
--- foldg []    return        (++)    (++)           == 'Data.Foldable.toList'
--- foldg 0     (const 1)     (+)     (+)            == 'Data.Foldable.length'
--- foldg 1     (const 1)     (+)     (+)            == 'size'
--- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
+-- 'isEmpty'     empty == True
+-- 'hasVertex' x empty == False
+-- 'vertexCount' empty == 0
+-- 'edgeCount'   empty == 0
+-- 'size'        empty == 1
 -- @
-foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
-foldg e v o c = go
-  where
-    go Empty         = e
-    go (Vertex x)    = v x
-    go (Overlay x y) = o (go x) (go y)
-    go (Connect x y) = c (go x) (go y)
+empty :: Graph a
+empty = Empty
 
--- | Construct the graph comprising a single edge.
+-- | Construct the graph comprising /a single isolated vertex/. An alias for the
+-- constructor 'Vertex'.
+-- Complexity: /O(1)/ time, memory and size.
+--
+-- @
+-- 'isEmpty'     (vertex x) == False
+-- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' 1 (vertex 2) == False
+-- 'vertexCount' (vertex x) == 1
+-- 'edgeCount'   (vertex x) == 0
+-- 'size'        (vertex x) == 1
+-- @
+vertex :: a -> Graph a
+vertex = Vertex
+
+-- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
 --
 -- @
@@ -284,6 +222,47 @@ foldg e v o c = go
 -- @
 edge :: a -> a -> Graph a
 edge = H.edge
+
+-- | /Overlay/ two graphs. An alias for the constructor 'Overlay'. This is an
+-- idempotent, commutative and associative operation with the identity 'empty'.
+-- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
+--
+-- @
+-- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (overlay x y) >= 'vertexCount' x
+-- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (overlay x y) >= 'edgeCount' x
+-- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
+-- 'size'        (overlay x y) == 'size' x        + 'size' y
+-- 'vertexCount' (overlay 1 2) == 2
+-- 'edgeCount'   (overlay 1 2) == 0
+-- @
+overlay :: Graph a -> Graph a -> Graph a
+overlay = Overlay
+
+-- | /Connect/ two graphs. An alias for the constructor 'Connect'. This is an
+-- associative operation with the identity 'empty', which distributes over the
+-- overlay and obeys the decomposition axiom.
+-- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
+-- of edges in the resulting graph is quadratic with respect to the number of
+-- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
+--
+-- @
+-- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (connect x y) >= 'vertexCount' x
+-- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (connect x y) >= 'edgeCount' x
+-- 'edgeCount'   (connect x y) >= 'edgeCount' y
+-- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
+-- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
+-- 'size'        (connect x y) == 'size' x        + 'size' y
+-- 'vertexCount' (connect 1 2) == 2
+-- 'edgeCount'   (connect 1 2) == 1
+-- @
+connect :: Graph a -> Graph a -> Graph a
+connect = Connect
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -350,6 +329,28 @@ connects = H.connects
 -- @
 graph :: [a] -> [(a, a)] -> Graph a
 graph = H.graph
+
+-- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
+-- the provided functions to the leaves and internal nodes of the expression.
+-- The order of arguments is: empty, vertex, overlay and connect.
+-- Complexity: /O(s)/ applications of given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+--
+-- @
+-- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
+-- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
+-- foldg []    return        (++)    (++)           == 'Data.Foldable.toList'
+-- foldg 0     (const 1)     (+)     (+)            == 'Data.Foldable.length'
+-- foldg 1     (const 1)     (+)     (+)            == 'size'
+-- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
+-- @
+foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
+foldg e v o c = go
+  where
+    go Empty         = e
+    go (Vertex x)    = v x
+    go (Overlay x y) = o (go x) (go y)
+    go (Connect x y) = c (go x) (go y)
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.

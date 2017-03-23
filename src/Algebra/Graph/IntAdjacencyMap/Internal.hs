@@ -13,10 +13,10 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.IntAdjacencyMap.Internal (
     -- * Adjacency map
-    IntAdjacencyMap (..), empty, vertex, overlay, connect, consistent,
+    IntAdjacencyMap (..), consistent,
 
     -- * Basic graph construction primitives
-    vertices, edges, fromAdjacencyList,
+    empty, vertex, overlay, connect, vertices, edges, fromAdjacencyList,
 
     -- * Graph properties
     edgeList, adjacencyList,
@@ -95,6 +95,54 @@ newtype IntAdjacencyMap = IntAdjacencyMap {
     adjacencyMap :: IntMap IntSet
   } deriving Eq
 
+instance Show IntAdjacencyMap where
+    show a@(IntAdjacencyMap m)
+        | m == IntMap.empty = "empty"
+        | es == []       = if IntSet.size vs > 1 then "vertices " ++ show (IntSet.toAscList vs)
+                                              else "vertex "   ++ show v
+        | vs == related  = if length es > 1 then "edges " ++ show es
+                                            else "edge "  ++ show e ++ " " ++ show f
+        | otherwise      = "graph " ++ show (IntSet.toAscList vs) ++ " " ++ show es
+      where
+        vs      = keysSet m
+        es      = edgeList a
+        v       = head $ IntSet.toList vs
+        (e,f)   = head es
+        related = IntSet.fromList . uncurry (++) $ unzip es
+
+instance C.Graph IntAdjacencyMap where
+    type Vertex IntAdjacencyMap = Int
+    empty   = empty
+    vertex  = vertex
+    overlay = overlay
+    connect = connect
+
+instance Num IntAdjacencyMap where
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
+
+-- | Check if the internal graph representation is consistent, i.e. that all
+-- edges refer to existing vertices. It should be impossible to create an
+-- inconsistent adjacency map, and we use this function in testing.
+--
+-- @
+-- consistent 'empty'                  == True
+-- consistent ('vertex' x)             == True
+-- consistent ('overlay' x y)          == True
+-- consistent ('connect' x y)          == True
+-- consistent ('IntAdjacencyMap.edge' x y)             == True
+-- consistent ('edges' xs)             == True
+-- consistent ('IntAdjacencyMap.graph' xs ys)          == True
+-- consistent ('fromAdjacencyList' xs) == True
+-- @
+consistent :: IntAdjacencyMap -> Bool
+consistent m = IntSet.fromList (uncurry (++) $ unzip $ edgeList m)
+    `IntSet.isSubsetOf` keysSet (adjacencyMap m)
+
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
 --
@@ -158,54 +206,6 @@ overlay x y = IntAdjacencyMap $ IntMap.unionWith IntSet.union (adjacencyMap x) (
 connect :: IntAdjacencyMap -> IntAdjacencyMap -> IntAdjacencyMap
 connect x y = IntAdjacencyMap $ IntMap.unionsWith IntSet.union [ adjacencyMap x, adjacencyMap y,
     fromSet (const . keysSet $ adjacencyMap y) (keysSet $ adjacencyMap x) ]
-
-instance Show IntAdjacencyMap where
-    show a@(IntAdjacencyMap m)
-        | m == IntMap.empty = "empty"
-        | es == []       = if IntSet.size vs > 1 then "vertices " ++ show (IntSet.toAscList vs)
-                                              else "vertex "   ++ show v
-        | vs == related  = if length es > 1 then "edges " ++ show es
-                                            else "edge "  ++ show e ++ " " ++ show f
-        | otherwise      = "graph " ++ show (IntSet.toAscList vs) ++ " " ++ show es
-      where
-        vs      = keysSet m
-        es      = edgeList a
-        v       = head $ IntSet.toList vs
-        (e,f)   = head es
-        related = IntSet.fromList . uncurry (++) $ unzip es
-
-instance C.Graph IntAdjacencyMap where
-    type Vertex IntAdjacencyMap = Int
-    empty   = empty
-    vertex  = vertex
-    overlay = overlay
-    connect = connect
-
-instance Num IntAdjacencyMap where
-    fromInteger = vertex . fromInteger
-    (+)         = overlay
-    (*)         = connect
-    signum      = const empty
-    abs         = id
-    negate      = id
-
--- | Check if the internal graph representation is consistent, i.e. that all
--- edges refer to existing vertices. It should be impossible to create an
--- inconsistent adjacency map, and we use this function in testing.
---
--- @
--- consistent 'empty'                  == True
--- consistent ('vertex' x)             == True
--- consistent ('overlay' x y)          == True
--- consistent ('connect' x y)          == True
--- consistent ('IntAdjacencyMap.edge' x y)             == True
--- consistent ('edges' xs)             == True
--- consistent ('IntAdjacencyMap.graph' xs ys)          == True
--- consistent ('fromAdjacencyList' xs) == True
--- @
-consistent :: IntAdjacencyMap -> Bool
-consistent m = IntSet.fromList (uncurry (++) $ unzip $ edgeList m)
-    `IntSet.isSubsetOf` keysSet (adjacencyMap m)
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length

@@ -87,6 +87,22 @@ testAdjacencyMap = do
     test "edgeCount   (vertex x) == 0" $ \(x :: Int) ->
           edgeCount   (vertex x) == 0
 
+    putStrLn "\n============ edge ============"
+    test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
+         (edge x y :: AI)        == connect (vertex x) (vertex y)
+
+    test "hasEdge x y (edge x y) == True" $ \(x :: Int) y ->
+          hasEdge x y (edge x y) == True
+
+    test "edgeCount   (edge x y) == 1" $ \(x :: Int) y ->
+          edgeCount   (edge x y) == 1
+
+    test "vertexCount (edge 1 1) == 1" $
+          vertexCount (edge 1 1 :: AI) == 1
+
+    test "vertexCount (edge 1 2) == 2" $
+          vertexCount (edge 1 2 :: AI) == 2
+
     putStrLn "\n============ overlay ============"
     test "isEmpty     (overlay x y) == isEmpty   x   && isEmpty   y" $ \(x :: AI) y ->
           isEmpty     (overlay x y) == (isEmpty   x   && isEmpty   y)
@@ -142,22 +158,6 @@ testAdjacencyMap = do
 
     test "edgeCount   (connect 1 2) == 1" $
           edgeCount   (connect 1 2 :: AI) == 1
-
-    putStrLn "\n============ edge ============"
-    test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
-         (edge x y :: AI)        == connect (vertex x) (vertex y)
-
-    test "hasEdge x y (edge x y) == True" $ \(x :: Int) y ->
-          hasEdge x y (edge x y) == True
-
-    test "edgeCount   (edge x y) == 1" $ \(x :: Int) y ->
-          edgeCount   (edge x y) == 1
-
-    test "vertexCount (edge 1 1) == 1" $
-          vertexCount (edge 1 1 :: AI) == 1
-
-    test "vertexCount (edge 1 2) == 2" $
-          vertexCount (edge 1 2 :: AI) == 2
 
     putStrLn "\n============ vertices ============"
     test "vertices []            == empty" $
