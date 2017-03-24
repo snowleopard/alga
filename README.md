@@ -1,6 +1,6 @@
 # Algebraic graphs
 
-[![Linux & OS X status](https://img.shields.io/travis/snowleopard/alga/master.svg?label=Linux%20%26%20OS%20X)](https://travis-ci.org/snowleopard/alga) [![Windows status](https://img.shields.io/appveyor/ci/snowleopard/alga/master.svg?label=Windows)](https://ci.appveyor.com/project/snowleopard/alga)
+[![Hackage version](https://img.shields.io/hackage/v/algebraic-graphs.svg?label=Hackage)](https://hackage.haskell.org/package/algebraic-graphs) [![Linux & OS X status](https://img.shields.io/travis/snowleopard/alga/master.svg?label=Linux%20%26%20OS%20X)](https://travis-ci.org/snowleopard/alga) [![Windows status](https://img.shields.io/appveyor/ci/snowleopard/alga/master.svg?label=Windows)](https://ci.appveyor.com/project/snowleopard/alga)
 
 A library for algebraic construction and manipulation of graphs in Haskell. See
 [this paper](https://github.com/snowleopard/alga-paper) for the motivation behind the library, the underlying
