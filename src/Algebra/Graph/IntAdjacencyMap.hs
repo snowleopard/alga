@@ -10,11 +10,11 @@
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines the 'IntAdjacencyMap' data type, which is an abstract
--- implementation of graph adjacency maps, as well as associated operations and
--- algorithms. 'IntAdjacencyMap' is an instance of "Algebra.Graph.Class" type class,
--- which can be used for polymorphic graph construction and manipulation.
--- See "Algebra.Graph.AdjacencyMap" for graphs with non-@Int@ vertices.
+-- This module defines the 'IntAdjacencyMap' data type, as well as associated
+-- operations and algorithms. 'AdjaceIntAdjacencyMapncyMap' is an instance of
+-- the 'C.Graph' type class, which can be used for polymorphic graph construction
+-- and manipulation. See "Algebra.Graph.AdjacencyMap" for graphs with
+-- non-@Int@ vertices.
 -----------------------------------------------------------------------------
 module Algebra.Graph.IntAdjacencyMap (
     -- * Data structure
