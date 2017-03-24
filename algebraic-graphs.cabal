@@ -1,5 +1,5 @@
 name:          algebraic-graphs
-version:       0.0.2
+version:       0.0.3
 synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
@@ -13,16 +13,16 @@ cabal-version: >=1.10
 tested-with:   GHC==8.0.2
 stability:     experimental
 description:
-    __Alga__ is a library for algebraic construction and manipulation of graphs in Haskell. See
-    <https://github.com/snowleopard/alga-paper this paper> for the motivation behind
-    the library, the underlying theory and implementation details.
+    <https://github.com/snowleopard/alga Alga> is a library for algebraic construction and
+    manipulation of graphs in Haskell. See <https://github.com/snowleopard/alga-paper this paper>
+    for the motivation behind the library, the underlying theory and implementation details.
     .
     The top-level module
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph.html Algebra.Graph>
     defines the core data type
-    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph.html#t:Graph Graph>.
+    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph.html#t:Graph Graph>,
     which is a deep embedding of four graph construction primitives /empty/,
-    /vertex/, /overlay/ and /connect/. More conventional graph representations can be found
+    /vertex/, /overlay/ and /connect/. More conventional graph representations can be found in
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-AdjacencyMap.html Algebra.Graph.AdjacencyMap>
     and
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Relation.html Algebra.Graph.Relation>.
@@ -37,8 +37,8 @@ description:
     flexibility for polymorphic graph manipulation.
     .
     This is an experimental library and the API will be unstable until version 1.0.0. Please
-    consider contributing to the on-going discussions on the library API at
-    https://github.com/snowleopard/alga/issues.
+    consider contributing to the on-going
+    <https://github.com/snowleopard/alga/issues discussions on the library API>.
 
 extra-doc-files:
     README.md
