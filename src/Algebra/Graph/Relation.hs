@@ -285,7 +285,7 @@ tree = C.tree
 forest :: Ord a => Tree.Forest a -> Relation a
 forest = C.forest
 
--- | The function @replaceVertex x y@ replaces vertex @x@ with vertex @y@ in a
+-- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O((n + m) * log(n))/ time.
 --

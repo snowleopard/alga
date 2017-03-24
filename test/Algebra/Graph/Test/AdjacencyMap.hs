@@ -354,8 +354,8 @@ testAdjacencyMap = do
     test "adjacencyList (edge 1 2)     == [(1, [2]), (2, [])]" $
           adjacencyList (edge 1 (2 :: Int)) == [(1, [2]), (2, [])]
 
-    test "adjacencyList (star 2 [1,3]) == [(1, []), (2, [1,3]), (3, [])]" $
-          adjacencyList (star 2 [1,3::Int]) == [(1, []), (2, [1,3]), (3, [])]
+    test "adjacencyList (star 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]" $
+          adjacencyList (star 2 [3,1::Int]) == [(1, []), (2, [1,3]), (3, [])]
 
     putStrLn "\n============ vertexSet ============"
     test "vertexSet empty      == Set.empty" $

@@ -14,8 +14,7 @@
 -- basic polymorphic graph construction primitives. Functions that cannot be
 -- implemented fully polymorphically and require the use of an intermediate data
 -- type are not included. For example, to compute the size of a 'Graph'
--- expression you will need to use a concrete data type, such as "Algebra.Graph"
--- or "Algebra.Graph.Fold".
+-- expression you will need to use a concrete data type, such as "Algebra.Graph".
 --
 -- See "Algebra.Graph.Class" for alternative definitions where the core type
 -- class is not higher-kinded and permits more instances.
@@ -264,7 +263,7 @@ graph vs es = overlay (vertices vs) (edges es)
 -- isSubgraphOf x y = 'overlay' x y == y
 -- @
 -- The complexity therefore depends on the complexity of equality testing of
--- a particular graph instance.
+-- the specific graph instance.
 --
 -- @
 -- isSubgraphOf 'empty'         x             == True
@@ -443,12 +442,12 @@ mesh xs ys = path xs `box` path ys
 -- lengths of the given lists.
 --
 -- @
--- torus xs     []   == 'empty'
--- torus []     ys   == 'empty'
--- torus [x]    [y]  == 'edge' (x, y) (x, y)
--- torus xs     ys   == 'box' ('circuit' xs) ('circuit' ys)
--- torus [1..2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
---                            , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
+-- torus xs    []   == 'empty'
+-- torus []    ys   == 'empty'
+-- torus [x]   [y]  == 'edge' (x, y) (x, y)
+-- torus xs    ys   == 'box' ('circuit' xs) ('circuit' ys)
+-- torus [1,2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
+--                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus :: Graph g => [a] -> [b] -> g (a, b)
 torus xs ys = circuit xs `box` circuit ys
@@ -497,7 +496,7 @@ induce = mfilter
 removeVertex :: (Eq a, Graph g) => a -> g a -> g a
 removeVertex v = induce (/= v)
 
--- | The function @replaceVertex x y@ replaces vertex @x@ with vertex @y@ in a
+-- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O(s)/ time, memory and size.
 --

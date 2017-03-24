@@ -134,9 +134,9 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
 -- consistent ('vertex' x)             == True
 -- consistent ('overlay' x y)          == True
 -- consistent ('connect' x y)          == True
--- consistent ('AdjacencyMap.edge' x y)             == True
+-- consistent ('Algebra.Graph.AdjacencyMap.edge' x y)             == True
 -- consistent ('edges' xs)             == True
--- consistent ('AdjacencyMap.graph' xs ys)          == True
+-- consistent ('Algebra.Graph.AdjacencyMap.graph' xs ys)          == True
 -- consistent ('fromAdjacencyList' xs) == True
 -- @
 consistent :: Ord a => AdjacencyMap a -> Bool
@@ -147,10 +147,10 @@ consistent m = Set.fromList (uncurry (++) $ unzip $ edgeList m)
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'AdjacencyMap.isEmpty'     empty == True
--- 'AdjacencyMap.hasVertex' x empty == False
--- 'AdjacencyMap.vertexCount' empty == 0
--- 'AdjacencyMap.edgeCount'   empty == 0
+-- 'Algebra.Graph.AdjacencyMap.isEmpty'     empty == True
+-- 'Algebra.Graph.AdjacencyMap.hasVertex' x empty == False
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' empty == 0
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   empty == 0
 -- @
 empty :: AdjacencyMap a
 empty = AdjacencyMap $ Map.empty
@@ -159,11 +159,11 @@ empty = AdjacencyMap $ Map.empty
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'AdjacencyMap.isEmpty'     (vertex x) == False
--- 'AdjacencyMap.hasVertex' x (vertex x) == True
--- 'AdjacencyMap.hasVertex' 1 (vertex 2) == False
--- 'AdjacencyMap.vertexCount' (vertex x) == 1
--- 'AdjacencyMap.edgeCount'   (vertex x) == 0
+-- 'Algebra.Graph.AdjacencyMap.isEmpty'     (vertex x) == False
+-- 'Algebra.Graph.AdjacencyMap.hasVertex' x (vertex x) == True
+-- 'Algebra.Graph.AdjacencyMap.hasVertex' 1 (vertex 2) == False
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' (vertex x) == 1
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (vertex x) == 0
 -- @
 vertex :: a -> AdjacencyMap a
 vertex x = AdjacencyMap $ Map.singleton x Set.empty
@@ -173,14 +173,14 @@ vertex x = AdjacencyMap $ Map.singleton x Set.empty
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- 'AdjacencyMap.isEmpty'     (overlay x y) == 'AdjacencyMap.isEmpty'   x   && 'AdjacencyMap.isEmpty'   y
--- 'AdjacencyMap.hasVertex' z (overlay x y) == 'AdjacencyMap.hasVertex' z x || 'AdjacencyMap.hasVertex' z y
--- 'AdjacencyMap.vertexCount' (overlay x y) >= 'AdjacencyMap.vertexCount' x
--- 'AdjacencyMap.vertexCount' (overlay x y) <= 'AdjacencyMap.vertexCount' x + 'AdjacencyMap.vertexCount' y
--- 'AdjacencyMap.edgeCount'   (overlay x y) >= 'AdjacencyMap.edgeCount' x
--- 'AdjacencyMap.edgeCount'   (overlay x y) <= 'AdjacencyMap.edgeCount' x   + 'AdjacencyMap.edgeCount' y
--- 'AdjacencyMap.vertexCount' (overlay 1 2) == 2
--- 'AdjacencyMap.edgeCount'   (overlay 1 2) == 0
+-- 'Algebra.Graph.AdjacencyMap.isEmpty'     (overlay x y) == 'Algebra.Graph.AdjacencyMap.isEmpty'   x   && 'Algebra.Graph.AdjacencyMap.isEmpty'   y
+-- 'Algebra.Graph.AdjacencyMap.hasVertex' z (overlay x y) == 'Algebra.Graph.AdjacencyMap.hasVertex' z x || 'Algebra.Graph.AdjacencyMap.hasVertex' z y
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' (overlay x y) >= 'Algebra.Graph.AdjacencyMap.vertexCount' x
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' (overlay x y) <= 'Algebra.Graph.AdjacencyMap.vertexCount' x + 'Algebra.Graph.AdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (overlay x y) >= 'Algebra.Graph.AdjacencyMap.edgeCount' x
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (overlay x y) <= 'Algebra.Graph.AdjacencyMap.edgeCount' x   + 'Algebra.Graph.AdjacencyMap.edgeCount' y
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' (overlay 1 2) == 2
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
 overlay x y = AdjacencyMap $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
@@ -192,16 +192,16 @@ overlay x y = AdjacencyMap $ Map.unionWith Set.union (adjacencyMap x) (adjacency
 -- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
 --
 -- @
--- 'AdjacencyMap.isEmpty'     (connect x y) == 'AdjacencyMap.isEmpty'   x   && 'AdjacencyMap.isEmpty'   y
--- 'AdjacencyMap.hasVertex' z (connect x y) == 'AdjacencyMap.hasVertex' z x || 'AdjacencyMap.hasVertex' z y
--- 'AdjacencyMap.vertexCount' (connect x y) >= 'AdjacencyMap.vertexCount' x
--- 'AdjacencyMap.vertexCount' (connect x y) <= 'AdjacencyMap.vertexCount' x + 'AdjacencyMap.vertexCount' y
--- 'AdjacencyMap.edgeCount'   (connect x y) >= 'AdjacencyMap.edgeCount' x
--- 'AdjacencyMap.edgeCount'   (connect x y) >= 'AdjacencyMap.edgeCount' y
--- 'AdjacencyMap.edgeCount'   (connect x y) >= 'AdjacencyMap.vertexCount' x * 'AdjacencyMap.vertexCount' y
--- 'AdjacencyMap.edgeCount'   (connect x y) <= 'AdjacencyMap.vertexCount' x * 'AdjacencyMap.vertexCount' y + 'AdjacencyMap.edgeCount' x + 'AdjacencyMap.edgeCount' y
--- 'AdjacencyMap.vertexCount' (connect 1 2) == 2
--- 'AdjacencyMap.edgeCount'   (connect 1 2) == 1
+-- 'Algebra.Graph.AdjacencyMap.isEmpty'     (connect x y) == 'Algebra.Graph.AdjacencyMap.isEmpty'   x   && 'Algebra.Graph.AdjacencyMap.isEmpty'   y
+-- 'Algebra.Graph.AdjacencyMap.hasVertex' z (connect x y) == 'Algebra.Graph.AdjacencyMap.hasVertex' z x || 'Algebra.Graph.AdjacencyMap.hasVertex' z y
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' (connect x y) >= 'Algebra.Graph.AdjacencyMap.vertexCount' x
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' (connect x y) <= 'Algebra.Graph.AdjacencyMap.vertexCount' x + 'Algebra.Graph.AdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.AdjacencyMap.edgeCount' x
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.AdjacencyMap.edgeCount' y
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.AdjacencyMap.vertexCount' x * 'Algebra.Graph.AdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (connect x y) <= 'Algebra.Graph.AdjacencyMap.vertexCount' x * 'Algebra.Graph.AdjacencyMap.vertexCount' y + 'Algebra.Graph.AdjacencyMap.edgeCount' x + 'Algebra.Graph.AdjacencyMap.edgeCount' y
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' (connect 1 2) == 2
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (connect 1 2) == 1
 -- @
 connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
 connect x y = AdjacencyMap $ Map.unionsWith Set.union [ adjacencyMap x, adjacencyMap y,
@@ -214,9 +214,9 @@ connect x y = AdjacencyMap $ Map.unionsWith Set.union [ adjacencyMap x, adjacenc
 -- @
 -- vertices []            == 'empty'
 -- vertices [x]           == 'vertex' x
--- 'AdjacencyMap.hasVertex' x . vertices == 'elem' x
--- 'AdjacencyMap.vertexCount' . vertices == 'length' . 'Data.List.nub'
--- 'AdjacencyMap.vertexSet'   . vertices == Set.'Set.fromList'
+-- 'Algebra.Graph.AdjacencyMap.hasVertex' x . vertices == 'elem' x
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' . vertices == 'length' . 'Data.List.nub'
+-- 'Algebra.Graph.AdjacencyMap.vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: Ord a => [a] -> AdjacencyMap a
 vertices = AdjacencyMap . Map.fromList . map (\x -> (x, Set.empty))
@@ -226,8 +226,8 @@ vertices = AdjacencyMap . Map.fromList . map (\x -> (x, Set.empty))
 --
 -- @
 -- edges []          == 'empty'
--- edges [(x, y)]    == 'AdjacencyMap.edge' x y
--- 'AdjacencyMap.edgeCount' . edges == 'length' . 'Data.List.nub'
+-- edges [(x, y)]    == 'Algebra.Graph.AdjacencyMap.edge' x y
+-- 'Algebra.Graph.AdjacencyMap.edgeCount' . edges == 'length' . 'Data.List.nub'
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
 edges :: Ord a => [(a, a)] -> AdjacencyMap a
@@ -239,7 +239,7 @@ edges = fromAdjacencyList . map (fmap return)
 -- @
 -- fromAdjacencyList []                                  == 'empty'
 -- fromAdjacencyList [(x, [])]                           == 'vertex' x
--- fromAdjacencyList [(x, [y])]                          == 'AdjacencyMap.edge' x y
+-- fromAdjacencyList [(x, [y])]                          == 'Algebra.Graph.AdjacencyMap.edge' x y
 -- fromAdjacencyList . 'adjacencyList'                     == id
 -- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
 -- @
@@ -256,8 +256,8 @@ fromAdjacencyList as = AdjacencyMap $ Map.unionWith Set.union vs es
 -- @
 -- edgeList 'empty'          == []
 -- edgeList ('vertex' x)     == []
--- edgeList ('AdjacencyMap.edge' x y)     == [(x,y)]
--- edgeList ('AdjacencyMap.star' 2 [3,1]) == [(2,1), (2,3)]
+-- edgeList ('Algebra.Graph.AdjacencyMap.edge' x y)     == [(x,y)]
+-- edgeList ('Algebra.Graph.AdjacencyMap.star' 2 [3,1]) == [(2,1), (2,3)]
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
@@ -269,8 +269,8 @@ edgeList = concatMap (\(x, ys) -> map (x,) ys) . adjacencyList
 -- @
 -- adjacencyList 'empty'               == []
 -- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('AdjacencyMap.edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('AdjacencyMap.star' 2 [1,3])      == [(1, []), (2, [1,3]), (3, [])]
+-- adjacencyList ('Algebra.Graph.AdjacencyMap.edge' 1 2)          == [(1, [2]), (2, [])]
+-- adjacencyList ('Algebra.Graph.AdjacencyMap.star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
 -- 'fromAdjacencyList' . adjacencyList == id
 -- @
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
@@ -290,7 +290,7 @@ removeVertex x = AdjacencyMap . Map.map (Set.delete x) . Map.delete x . adjacenc
 -- Complexity: /O(log(n))/ time.
 --
 -- @
--- removeEdge x y ('AdjacencyMap.edge' x y)       == 'vertices' [x, y]
+-- removeEdge x y ('Algebra.Graph.AdjacencyMap.edge' x y)       == 'vertices' [x, y]
 -- removeEdge x y . removeEdge x y == removeEdge x y
 -- removeEdge x y . 'removeVertex' x == 'removeVertex' x
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
@@ -307,7 +307,7 @@ removeEdge x y = AdjacencyMap . Map.adjust (Set.delete y) x . adjacencyMap
 -- @
 -- gmap f 'empty'      == 'empty'
 -- gmap f ('vertex' x) == 'vertex' (f x)
--- gmap f ('AdjacencyMap.edge' x y) == 'AdjacencyMap.edge' (f x) (f y)
+-- gmap f ('Algebra.Graph.AdjacencyMap.edge' x y) == 'Algebra.Graph.AdjacencyMap.edge' (f x) (f y)
 -- gmap id           == id
 -- gmap f . gmap g   == gmap (f . g)
 -- @
@@ -324,7 +324,7 @@ gmap f = AdjacencyMap . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adja
 -- induce (const False) x      == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)
--- 'AdjacencyMap.isSubgraphOf' (induce p x) x == True
+-- 'Algebra.Graph.AdjacencyMap.isSubgraphOf' (induce p x) x == True
 -- @
 induce :: Ord a => (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
 induce p = AdjacencyMap . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjacencyMap

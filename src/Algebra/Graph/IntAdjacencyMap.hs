@@ -11,8 +11,8 @@
 -- motivation behind the library, the underlying theory, and implementation details.
 --
 -- This module defines the 'IntAdjacencyMap' data type, as well as associated
--- operations and algorithms. 'AdjaceIntAdjacencyMapncyMap' is an instance of
--- the 'C.Graph' type class, which can be used for polymorphic graph construction
+-- operations and algorithms. 'IntAdjacencyMap' is an instance of the 'C.Graph'
+-- type class, which can be used for polymorphic graph construction
 -- and manipulation. See "Algebra.Graph.AdjacencyMap" for graphs with
 -- non-@Int@ vertices.
 -----------------------------------------------------------------------------
@@ -297,7 +297,7 @@ tree = C.tree
 forest :: Forest Int -> IntAdjacencyMap
 forest = C.forest
 
--- | The function @replaceVertex x y@ replaces vertex @x@ with vertex @y@ in a
+-- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'IntAdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O((n + m) * log(n))/ time.
 --
@@ -327,7 +327,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- the following holds:
 --
 -- @
--- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == IntSet.toAscList ('vertexSet' g)
+-- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == IntSet.'IntSet.toAscList' ('vertexSet' g)
 -- map (\\(x, y) -> ('getVertex' h x, 'getVertex' h y)) ('Data.Graph.edges' $ 'getGraph' h) == 'edgeList' g
 -- @
 data GraphKL = GraphKL {

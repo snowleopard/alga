@@ -295,7 +295,7 @@ tree = C.tree
 forest :: Ord a => Forest a -> AdjacencyMap a
 forest = C.forest
 
--- | The function @replaceVertex x y@ replaces vertex @x@ with vertex @y@ in a
+-- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O((n + m) * log(n))/ time.
 --
@@ -325,7 +325,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- the following holds:
 --
 -- @
--- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == Set.toAscList ('vertexSet' g)
+-- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == Set.'Set.toAscList' ('vertexSet' g)
 -- map (\\(x, y) -> ('getVertex' h x, 'getVertex' h y)) ('Data.Graph.edges' $ 'getGraph' h) == 'edgeList' g
 -- @
 data GraphKL a = GraphKL {

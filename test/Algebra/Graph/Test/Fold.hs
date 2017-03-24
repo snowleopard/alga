@@ -298,6 +298,9 @@ testFold = do
     test "size x             >= 1" $ \(x :: F) ->
           size x             >= 1
 
+    test "size x             >= vertexCount x" $ \(x :: F) ->
+          size x             >= vertexCount x
+
     putStrLn "\n============ hasVertex ============"
     test "hasVertex x empty            == False" $ \(x :: Int) ->
           hasVertex x empty            == False
@@ -483,21 +486,21 @@ testFold = do
                                                          , ((2,'a'),(3,'a')), ((2,'b'),(3,'b')), ((3,'a'),(3,'b')) ]
 
     putStrLn "\n============ torus ============"
-    test "torus xs     []   == empty" $ \xs ->
-          torus xs     []   == (empty :: Fold (Int, Int))
+    test "torus xs    []   == empty" $ \xs ->
+          torus xs    []   == (empty :: Fold (Int, Int))
 
-    test "torus []     ys   == empty" $ \ys ->
-          torus []     ys   == (empty :: Fold (Int, Int))
+    test "torus []    ys   == empty" $ \ys ->
+          torus []    ys   == (empty :: Fold (Int, Int))
 
-    test "torus [x]    [y]  == edge (x, y) (x, y)" $ \(x :: Int) (y :: Int) ->
-          torus [x]    [y]  == (edge (x, y) (x, y) :: Fold (Int, Int))
+    test "torus [x]   [y]  == edge (x, y) (x, y)" $ \(x :: Int) (y :: Int) ->
+          torus [x]   [y]  == (edge (x, y) (x, y) :: Fold (Int, Int))
 
-    test "torus xs     ys   == box (circuit xs) (circuit ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
-          torus xs     ys   == (box (circuit xs) (circuit ys) :: Fold (Int, Int))
+    test "torus xs    ys   == box (circuit xs) (circuit ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
+          torus xs    ys   == (box (circuit xs) (circuit ys) :: Fold (Int, Int))
 
-    test ("torus [1..2] \"ab\" == <correct result>") $
-         (torus [1..2] "ab" :: Fold (Int, Char)) == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
-                                                          , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2,'a')) ]
+    test ("torus [1,2] \"ab\" == <correct result>") $
+         (torus [1,2] "ab" :: Fold (Int, Char)) == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
+                                                         , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2,'a')) ]
 
     putStrLn "\n============ deBruijn ============"
     test "deBruijn k []    == empty" $ \k ->
@@ -640,7 +643,7 @@ testFold = do
           isSubgraphOf (induce p x) x == True
 
     putStrLn "\n============ simplify ============"
-    test "simplify x            == x" $ \(x :: F) ->
+    test "simplify              == id" $ \(x :: F) ->
           simplify x            == x
 
     test "size (simplify x)     <= size x" $ \(x :: F) ->

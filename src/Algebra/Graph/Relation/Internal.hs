@@ -152,9 +152,9 @@ instance (Ord a, Num a) => Num (Relation a) where
 -- consistent ('vertex' x)             == True
 -- consistent ('overlay' x y)          == True
 -- consistent ('connect' x y)          == True
--- consistent ('Relatation.edge' x y)             == True
+-- consistent ('Algebra.Graph.Relation.edge' x y)             == True
 -- consistent ('edges' xs)             == True
--- consistent ('Relatation.graph' xs ys)          == True
+-- consistent ('Algebra.Graph.Relation.graph' xs ys)          == True
 -- consistent ('fromAdjacencyList' xs) == True
 -- @
 consistent :: Ord a => Relation a -> Bool
@@ -165,10 +165,10 @@ consistent r = Set.fromList (uncurry (++) $ unzip $ edgeList r)
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'Relation.isEmpty'     empty == True
--- 'Relation.hasVertex' x empty == False
--- 'Relation.vertexCount' empty == 0
--- 'Relation.edgeCount'   empty == 0
+-- 'Algebra.Graph.Relation.isEmpty'     empty == True
+-- 'Algebra.Graph.Relation.hasVertex' x empty == False
+-- 'Algebra.Graph.Relation.vertexCount' empty == 0
+-- 'Algebra.Graph.Relation.edgeCount'   empty == 0
 -- @
 empty :: Relation a
 empty = Relation Set.empty Set.empty
@@ -177,11 +177,11 @@ empty = Relation Set.empty Set.empty
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'Relation.isEmpty'     (vertex x) == False
--- 'Relation.hasVertex' x (vertex x) == True
--- 'Relation.hasVertex' 1 (vertex 2) == False
--- 'Relation.vertexCount' (vertex x) == 1
--- 'Relation.edgeCount'   (vertex x) == 0
+-- 'Algebra.Graph.Relation.isEmpty'     (vertex x) == False
+-- 'Algebra.Graph.Relation.hasVertex' x (vertex x) == True
+-- 'Algebra.Graph.Relation.hasVertex' 1 (vertex 2) == False
+-- 'Algebra.Graph.Relation.vertexCount' (vertex x) == 1
+-- 'Algebra.Graph.Relation.edgeCount'   (vertex x) == 0
 -- @
 vertex :: a -> Relation a
 vertex x = Relation (Set.singleton x) Set.empty
@@ -191,14 +191,14 @@ vertex x = Relation (Set.singleton x) Set.empty
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- 'Relation.isEmpty'     (overlay x y) == 'Relation.isEmpty'   x   && 'Relation.isEmpty'   y
--- 'Relation.hasVertex' z (overlay x y) == 'Relation.hasVertex' z x || 'Relation.hasVertex' z y
--- 'Relation.vertexCount' (overlay x y) >= 'Relation.vertexCount' x
--- 'Relation.vertexCount' (overlay x y) <= 'Relation.vertexCount' x + 'Relation.vertexCount' y
--- 'Relation.edgeCount'   (overlay x y) >= 'Relation.edgeCount' x
--- 'Relation.edgeCount'   (overlay x y) <= 'Relation.edgeCount' x   + 'Relation.edgeCount' y
--- 'Relation.vertexCount' (overlay 1 2) == 2
--- 'Relation.edgeCount'   (overlay 1 2) == 0
+-- 'Algebra.Graph.Relation.isEmpty'     (overlay x y) == 'Algebra.Graph.Relation.isEmpty'   x   && 'Algebra.Graph.Relation.isEmpty'   y
+-- 'Algebra.Graph.Relation.hasVertex' z (overlay x y) == 'Algebra.Graph.Relation.hasVertex' z x || 'Algebra.Graph.Relation.hasVertex' z y
+-- 'Algebra.Graph.Relation.vertexCount' (overlay x y) >= 'Algebra.Graph.Relation.vertexCount' x
+-- 'Algebra.Graph.Relation.vertexCount' (overlay x y) <= 'Algebra.Graph.Relation.vertexCount' x + 'Algebra.Graph.Relation.vertexCount' y
+-- 'Algebra.Graph.Relation.edgeCount'   (overlay x y) >= 'Algebra.Graph.Relation.edgeCount' x
+-- 'Algebra.Graph.Relation.edgeCount'   (overlay x y) <= 'Algebra.Graph.Relation.edgeCount' x   + 'Algebra.Graph.Relation.edgeCount' y
+-- 'Algebra.Graph.Relation.vertexCount' (overlay 1 2) == 2
+-- 'Algebra.Graph.Relation.edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Ord a => Relation a -> Relation a -> Relation a
 overlay x y = Relation (domain x `union` domain y) (relation x `union` relation y)
@@ -210,16 +210,16 @@ overlay x y = Relation (domain x `union` domain y) (relation x `union` relation 
 -- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
 --
 -- @
--- 'Relation.isEmpty'     (connect x y) == 'Relation.isEmpty'   x   && 'Relation.isEmpty'   y
--- 'Relation.hasVertex' z (connect x y) == 'Relation.hasVertex' z x || 'Relation.hasVertex' z y
--- 'Relation.vertexCount' (connect x y) >= 'Relation.vertexCount' x
--- 'Relation.vertexCount' (connect x y) <= 'Relation.vertexCount' x + 'Relation.vertexCount' y
--- 'Relation.edgeCount'   (connect x y) >= 'Relation.edgeCount' x
--- 'Relation.edgeCount'   (connect x y) >= 'Relation.edgeCount' y
--- 'Relation.edgeCount'   (connect x y) >= 'Relation.vertexCount' x * 'Relation.vertexCount' y
--- 'Relation.edgeCount'   (connect x y) <= 'Relation.vertexCount' x * 'Relation.vertexCount' y + 'Relation.edgeCount' x + 'Relation.edgeCount' y
--- 'Relation.vertexCount' (connect 1 2) == 2
--- 'Relation.edgeCount'   (connect 1 2) == 1
+-- 'Algebra.Graph.Relation.isEmpty'     (connect x y) == 'Algebra.Graph.Relation.isEmpty'   x   && 'Algebra.Graph.Relation.isEmpty'   y
+-- 'Algebra.Graph.Relation.hasVertex' z (connect x y) == 'Algebra.Graph.Relation.hasVertex' z x || 'Algebra.Graph.Relation.hasVertex' z y
+-- 'Algebra.Graph.Relation.vertexCount' (connect x y) >= 'Algebra.Graph.Relation.vertexCount' x
+-- 'Algebra.Graph.Relation.vertexCount' (connect x y) <= 'Algebra.Graph.Relation.vertexCount' x + 'Algebra.Graph.Relation.vertexCount' y
+-- 'Algebra.Graph.Relation.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.edgeCount' x
+-- 'Algebra.Graph.Relation.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.edgeCount' y
+-- 'Algebra.Graph.Relation.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.vertexCount' x * 'Algebra.Graph.Relation.vertexCount' y
+-- 'Algebra.Graph.Relation.edgeCount'   (connect x y) <= 'Algebra.Graph.Relation.vertexCount' x * 'Algebra.Graph.Relation.vertexCount' y + 'Algebra.Graph.Relation.edgeCount' x + 'Algebra.Graph.Relation.edgeCount' y
+-- 'Algebra.Graph.Relation.vertexCount' (connect 1 2) == 2
+-- 'Algebra.Graph.Relation.edgeCount'   (connect 1 2) == 1
 -- @
 connect :: Ord a => Relation a -> Relation a -> Relation a
 connect x y = Relation (domain x `union` domain y) (relation x `union` relation y
@@ -235,9 +235,9 @@ x >< y = Set.fromDistinctAscList [ (a, b) | a <- Set.elems x, b <- Set.elems y ]
 -- @
 -- vertices []            == 'empty'
 -- vertices [x]           == 'vertex' x
--- 'Relation.hasVertex' x . vertices == 'elem' x
--- 'Relation.vertexCount' . vertices == 'length' . 'Data.List.nub'
--- 'Relation.vertexSet'   . vertices == Set.'Set.fromList'
+-- 'Algebra.Graph.Relation.hasVertex' x . vertices == 'elem' x
+-- 'Algebra.Graph.Relation.vertexCount' . vertices == 'length' . 'Data.List.nub'
+-- 'Algebra.Graph.Relation.vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: Ord a => [a] -> Relation a
 vertices xs = Relation (Set.fromList xs) Set.empty
@@ -247,8 +247,8 @@ vertices xs = Relation (Set.fromList xs) Set.empty
 --
 -- @
 -- edges []          == 'empty'
--- edges [(x,y)]     == 'Relation.edge' x y
--- 'Relation.edgeCount' . edges == 'length' . 'Data.List.nub'
+-- edges [(x,y)]     == 'Algebra.Graph.Relation.edge' x y
+-- 'Algebra.Graph.Relation.edgeCount' . edges == 'length' . 'Data.List.nub'
 -- @
 edges :: Ord a => [(a, a)] -> Relation a
 edges es = Relation (Set.fromList $ uncurry (++) $ unzip es) (Set.fromList es)
@@ -259,7 +259,7 @@ edges es = Relation (Set.fromList $ uncurry (++) $ unzip es) (Set.fromList es)
 -- @
 -- fromAdjacencyList []                                  == 'empty'
 -- fromAdjacencyList [(x, [])]                           == 'vertex' x
--- fromAdjacencyList [(x, [y])]                          == 'Relation.edge' x y
+-- fromAdjacencyList [(x, [y])]                          == 'Algebra.Graph.Relation.edge' x y
 -- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
 -- @
 fromAdjacencyList :: Ord a => [(a, [a])] -> Relation a
@@ -274,8 +274,8 @@ fromAdjacencyList as = Relation (Set.fromList vs) (Set.fromList es)
 -- @
 -- edgeList 'empty'          == []
 -- edgeList ('vertex' x)     == []
--- edgeList ('Relation.edge' x y)     == [(x,y)]
--- edgeList ('Relation.star' 2 [1,3]) == [(2,1), (2,3)]
+-- edgeList ('Algebra.Graph.Relation.edge' x y)     == [(x,y)]
+-- edgeList ('Algebra.Graph.Relation.star' 2 [1,3]) == [(2,1), (2,3)]
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
 -- @
 edgeList :: Ord a => Relation a -> [(a, a)]
@@ -289,8 +289,8 @@ edgeList = Set.toAscList . relation
 -- @
 -- preset x 'empty'      == Set.empty
 -- preset x ('vertex' x) == Set.empty
--- preset 1 ('Relatation.edge' 1 2) == Set.empty
--- preset y ('Relatation.edge' x y) == Set.fromList [x]
+-- preset 1 ('Algebra.Graph.Relation.edge' 1 2) == Set.empty
+-- preset y ('Algebra.Graph.Relation.edge' x y) == Set.fromList [x]
 -- @
 preset :: Ord a => a -> Relation a -> Set a
 preset x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
@@ -303,8 +303,8 @@ preset x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
 -- @
 -- postset x 'empty'      == Set.empty
 -- postset x ('vertex' x) == Set.empty
--- postset x ('Relatation.edge' x y) == Set.fromList [y]
--- postset 2 ('Relatation.edge' 1 2) == Set.empty
+-- postset x ('Algebra.Graph.Relation.edge' x y) == Set.fromList [y]
+-- postset 2 ('Algebra.Graph.Relation.edge' 1 2) == Set.empty
 -- @
 postset :: Ord a => a -> Relation a -> Set a
 postset x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation
@@ -342,7 +342,7 @@ removeEdge x y (Relation d r) = Relation d (Set.delete (x, y) r)
 -- @
 -- gmap f 'empty'      == 'empty'
 -- gmap f ('vertex' x) == 'vertex' (f x)
--- gmap f ('Relation.edge' x y) == 'Relation.edge' (f x) (f y)
+-- gmap f ('Algebra.Graph.Relation.edge' x y) == 'Algebra.Graph.Relation.edge' (f x) (f y)
 -- gmap id           == id
 -- gmap f . gmap g   == gmap (f . g)
 -- @
@@ -359,7 +359,7 @@ gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) 
 -- induce (const False) x      == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)
--- 'Relation.isSubgraphOf' (induce p x) x == True
+-- 'Algebra.Graph.Relation.isSubgraphOf' (induce p x) x == True
 -- @
 induce :: Ord a => (a -> Bool) -> Relation a -> Relation a
 induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
@@ -371,7 +371,7 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
 --
 -- @
 -- reflexiveClosure 'empty'      == 'empty'
--- reflexiveClosure ('vertex' x) == 'Relatation.edge' x x
+-- reflexiveClosure ('vertex' x) == 'Algebra.Graph.Relation.edge' x x
 -- @
 reflexiveClosure :: Ord a => Relation a -> Relation a
 reflexiveClosure (Relation d r) =
@@ -383,7 +383,7 @@ reflexiveClosure (Relation d r) =
 -- @
 -- symmetricClosure 'empty'      == 'empty'
 -- symmetricClosure ('vertex' x) == 'vertex' x
--- symmetricClosure ('Relatation.edge' x y) == 'Relatation.edges' [(x, y), (y, x)]
+-- symmetricClosure ('Algebra.Graph.Relation.edge' x y) == 'Algebra.Graph.Relation.edges' [(x, y), (y, x)]
 -- @
 symmetricClosure :: Ord a => Relation a -> Relation a
 symmetricClosure (Relation d r) = Relation d $ r `union` (Set.map swap r)
@@ -394,7 +394,7 @@ symmetricClosure (Relation d r) = Relation d $ r `union` (Set.map swap r)
 -- @
 -- transitiveClosure 'empty'           == 'empty'
 -- transitiveClosure ('vertex' x)      == 'vertex' x
--- transitiveClosure ('Relatation.path' $ 'Data.List.nub' xs) == 'Relatation.clique' ('Data.List.nub' xs)
+-- transitiveClosure ('Algebra.Graph.Relation.path' $ 'Data.List.nub' xs) == 'Algebra.Graph.Relation.clique' ('Data.List.nub' xs)
 -- @
 transitiveClosure :: Ord a => Relation a -> Relation a
 transitiveClosure old@(Relation d r)
@@ -408,8 +408,8 @@ transitiveClosure old@(Relation d r)
 --
 -- @
 -- preorderClosure 'empty'           == 'empty'
--- preorderClosure ('vertex' x)      == 'Relatation.edge' x x
--- preorderClosure ('Relatation.path' $ 'Data.List.nub' xs) == 'reflexiveClosure' ('Relatation.clique' $ 'Data.List.nub' xs)
+-- preorderClosure ('vertex' x)      == 'Algebra.Graph.Relation.edge' x x
+-- preorderClosure ('Algebra.Graph.Relation.path' $ 'Data.List.nub' xs) == 'reflexiveClosure' ('Algebra.Graph.Relation.clique' $ 'Data.List.nub' xs)
 -- @
 preorderClosure :: Ord a => Relation a -> Relation a
 preorderClosure = reflexiveClosure . transitiveClosure
@@ -421,7 +421,7 @@ over a set of elements. Reflexive relations satisfy all laws of the
 
 @'C.vertex' x == 'C.vertex' x * 'C.vertex' x@
 
-The 'Show' instance produces transitively closed expressions:
+The 'Show' instance produces reflexively closed expressions:
 
 @show (1     :: ReflexiveRelation Int) == "edge 1 1"
 show (1 * 2 :: ReflexiveRelation Int) == "edges [(1,1),(1,2),(2,2)]"@
@@ -453,7 +453,7 @@ commutativity of connect:
 
 @'C.connect' x y == 'C.connect' y x@
 
-The 'Show' instance produces transitively closed expressions:
+The 'Show' instance produces symmetrically closed expressions:
 
 @show (1     :: SymmetricRelation Int) == "vertex 1"
 show (1 * 2 :: SymmetricRelation Int) == "edges [(1,2),(2,1)]"@
@@ -528,7 +528,7 @@ For example, the following holds:
 
 @'C.path' xs == 'C.clique' xs@
 
-The 'Show' instance produces transitively closed expressions:
+The 'Show' instance produces reflexively and transitively closed expressions:
 
 @show (1             :: PreorderRelation Int) == "edge 1 1"
 show (1 * 2         :: PreorderRelation Int) == "edges [(1,1),(1,2),(2,2)]"

@@ -296,6 +296,9 @@ testGraph = do
     test "size x             >= 1" $ \(x :: G) ->
           size x             >= 1
 
+    test "size x             >= vertexCount x" $ \(x :: G) ->
+          size x             >= vertexCount x
+
     putStrLn "\n============ hasVertex ============"
     test "hasVertex x empty            == False" $ \(x :: Int) ->
           hasVertex x empty            == False
@@ -481,21 +484,21 @@ testGraph = do
                                     , ((2,'a'),(3,'a')), ((2,'b'),(3,'b')), ((3,'a'),(3 :: Int,'b')) ]
 
     putStrLn "\n============ torus ============"
-    test "torus xs     []   == empty" $ \xs ->
-          torus xs     []   == (empty :: Graph (Int, Int))
+    test "torus xs    []   == empty" $ \xs ->
+          torus xs    []   == (empty :: Graph (Int, Int))
 
-    test "torus []     ys   == empty" $ \ys ->
-          torus []     ys   == (empty :: Graph (Int, Int))
+    test "torus []    ys   == empty" $ \ys ->
+          torus []    ys   == (empty :: Graph (Int, Int))
 
-    test "torus [x]    [y]  == edge (x, y) (x, y)" $ \(x :: Int) (y :: Int) ->
-          torus [x]    [y]  == edge (x, y) (x, y)
+    test "torus [x]   [y]  == edge (x, y) (x, y)" $ \(x :: Int) (y :: Int) ->
+          torus [x]   [y]  == edge (x, y) (x, y)
 
-    test "torus xs     ys   == box (circuit xs) (circuit ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
-          torus xs     ys   == box (circuit xs) (circuit ys)
+    test "torus xs    ys   == box (circuit xs) (circuit ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
+          torus xs    ys   == box (circuit xs) (circuit ys)
 
-    test ("torus [1..2] \"ab\" == <correct result>") $
-         torus [1..2] "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
-                                     , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ]
+    test ("torus [1,2] \"ab\" == <correct result>") $
+         torus [1,2] "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
+                                    , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ]
 
     putStrLn "\n============ deBruijn ============"
     test "deBruijn k []    == empty" $ \k ->
@@ -638,7 +641,7 @@ testGraph = do
           isSubgraphOf (induce p x) x == True
 
     putStrLn "\n============ simplify ============"
-    test "simplify x            == x" $ \(x :: G) ->
+    test "simplify              == id" $ \(x :: G) ->
           simplify x            == x
 
     test "size (simplify x)     <= size x" $ \(x :: G) ->

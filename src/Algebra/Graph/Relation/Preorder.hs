@@ -16,7 +16,7 @@ module Algebra.Graph.Relation.Preorder (
 
 import Algebra.Graph.Relation.Internal
 
--- | Construct a reflexive relation from a 'Relation'.
+-- | Construct a preorder relation from a 'Relation'.
 -- Complexity: /O(1)/ time.
 fromRelation :: Relation a -> PreorderRelation a
 fromRelation = PreorderRelation
@@ -25,4 +25,3 @@ fromRelation = PreorderRelation
 -- Complexity: /O(n * m * log(m))/ time.
 toRelation :: Ord a => PreorderRelation a -> Relation a
 toRelation = preorderClosure . fromPreorder
-

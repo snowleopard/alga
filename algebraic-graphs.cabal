@@ -11,23 +11,34 @@ category:      Algebra, Algorithms, Data Structures, Graphs
 build-type:    Simple
 cabal-version: >=1.10
 tested-with:   GHC==8.0.2
+stability:     experimental
 description:
-    A library for algebraic construction and manipulation of graphs in Haskell. See
+    __Alga__ is a library for algebraic construction and manipulation of graphs in Haskell. See
     <https://github.com/snowleopard/alga-paper this paper> for the motivation behind
     the library, the underlying theory and implementation details.
     .
-    The top-level module "Algebra.Graph" defines the core data type 'Algebra.Graph.Graph'
-    which is a deep embedding of four graph construction primitives 'Algebra.Graph.empty',
-    'Algebra.Graph.vertex', 'Algebra.Graph.overlay' and 'Algebra.Graph.connect'. More
-    conventional graph representations can be found in "Algebra.Graph.AdjacencyMap" and
-    "Algebra.Graph.Relation".
+    The top-level module
+    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph.html Algebra.Graph>
+    defines the core data type
+    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph.html#t:Graph Graph>.
+    which is a deep embedding of four graph construction primitives /empty/,
+    /vertex/, /overlay/ and /connect/. More conventional graph representations can be found
+    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-AdjacencyMap.html Algebra.Graph.AdjacencyMap>
+    and
+    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Relation.html Algebra.Graph.Relation>.
     .
-    The type classes defined in "Algebra.Graph.Class" and "Algebra.Graph.HigherKinded.Class"
+    The type classes defined in
+    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Class.html Algebra.Graph.Class>
+    and
+    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-HigherKinded-Class.html Algebra.Graph.HigherKinded.Class>
     can be used for polymorphic graph construction and manipulation. Also see
-    "Algebra.Graph.Fold" that defines the Boehm-Berarducci encoding of algebraic graphs and
-    provides additional flexibility for polymorphic graph manipulation.
+    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Fold.html Algebra.Graph.Fold>
+    that defines the Boehm-Berarducci encoding of algebraic graphs and provides additional
+    flexibility for polymorphic graph manipulation.
     .
-    This is an experimental library and the API will be unstable until version 1.0.0.
+    This is an experimental library and the API will be unstable until version 1.0.0. Please
+    consider contributing to the on-going discussions on the library API at
+    https://github.com/snowleopard/alga/issues.
 
 extra-doc-files:
     README.md

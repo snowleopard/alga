@@ -373,6 +373,7 @@ isEmpty = H.isEmpty
 -- size ('overlay' x y) == size x + size y
 -- size ('connect' x y) == size x + size y
 -- size x             >= 1
+-- size x             >= 'vertexCount' x
 -- @
 size :: Fold a -> Int
 size = foldg 1 (const 1) (+) (+)
@@ -538,12 +539,12 @@ mesh xs ys = C.path xs `box` C.path ys
 -- lengths of the given lists.
 --
 -- @
--- torus xs     []   == 'empty'
--- torus []     ys   == 'empty'
--- torus [x]    [y]  == 'edge' (x, y) (x, y)
--- torus xs     ys   == 'box' ('circuit' xs) ('circuit' ys)
--- torus [1..2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
---                            , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
+-- torus xs    []   == 'empty'
+-- torus []    ys   == 'empty'
+-- torus [x]   [y]  == 'edge' (x, y) (x, y)
+-- torus xs    ys   == 'box' ('circuit' xs) ('circuit' ys)
+-- torus [1,2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
+--                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus :: (C.Graph g, C.Vertex g ~ (a, b)) => [a] -> [b] -> g
 torus xs ys = C.circuit xs `box` C.circuit ys
@@ -590,8 +591,8 @@ removeVertex v = induce (/= v)
 removeEdge :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
 removeEdge s t g = piece st where (_, _, st) = smash s t g
 
--- | The function @replaceVertex x y@ replaces vertex @x@ with vertex @y@ in a
--- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
+-- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
+-- given graph expression. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O(s)/ time, memory and size.
 --
 -- @
@@ -685,16 +686,16 @@ bind g f = foldg C.empty f C.overlay C.connect g
 induce :: C.Graph g => (C.Vertex g -> Bool) -> Fold (C.Vertex g) -> g
 induce p g = bind g $ \v -> if p v then C.vertex v else C.empty
 
--- | Simplify a given graph. Semantically, this is the identity function, but
--- it simplifies a given polymorphic graph expression according to the laws of
--- the algebra. The function does not compute the simplest possible expression,
+-- | Simplify a graph expression. Semantically, this is the identity function,
+-- but it simplifies a given polymorphic graph expression according to the laws
+-- of the algebra. The function does not compute the simplest possible expression,
 -- but uses heuristics to obtain useful simplifications in reasonable time.
 -- Complexity: the function performs /O(s)/ graph comparisons. It is guaranteed
 -- that the size of the result does not exceed the size of the given expression.
 -- Below the operator @~>@ denotes the /is simplified to/ relation.
 --
 -- @
--- simplify x           == x
+-- simplify             == id
 -- 'size' (simplify x)    <= 'size' x
 -- simplify 'empty'       ~> 'empty'
 -- simplify 1           ~> 1
@@ -735,7 +736,7 @@ simple op x y
 -- box x ('vertex' ())   ~~ x
 -- box x 'empty'         ~~ 'empty'
 -- @
-box :: (C.Graph g, C.Vertex g ~ (u, v)) => Fold u -> Fold v -> g
+box :: (C.Graph g, C.Vertex g ~ (a, b)) => Fold a -> Fold b -> g
 box x y = C.overlays $ xs ++ ys
   where
     xs = map (\b -> gmap (,b) x) $ toList y

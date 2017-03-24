@@ -21,7 +21,7 @@ import Algebra.Graph.Relation.Internal
 
 import qualified Data.Set as Set
 
--- | Construct a reflexive relation from a 'Relation'.
+-- | Construct a symmetric relation from a 'Relation'.
 -- Complexity: /O(1)/ time.
 fromRelation :: Relation a -> SymmetricRelation a
 fromRelation = SymmetricRelation

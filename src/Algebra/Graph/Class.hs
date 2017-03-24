@@ -289,7 +289,7 @@ graph vs es = overlay (vertices vs) (edges es)
 -- isSubgraphOf x y = 'overlay' x y == y
 -- @
 -- The complexity therefore depends on the complexity of equality testing of
--- a particular graph instance.
+-- the specific graph instance.
 --
 -- @
 -- isSubgraphOf 'empty'         x             == True

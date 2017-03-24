@@ -67,7 +67,7 @@ law-abiding 'Num' instance as a convenient notation for working with graphs:
     > 1 + 2 * 3   == Overlay (Vertex 1) (Connect (Vertex 2) (Vertex 3))
     > 1 * (2 + 3) == Connect (Vertex 1) (Overlay (Vertex 2) (Vertex 3))
 
-The 'Eq' instance is currently implemented using the 'AdjacencyMap' as the
+The 'Eq' instance is currently implemented using the 'AM.AdjacencyMap' as the
 /canonical graph representation/ and satisfies all axioms of algebraic graphs:
 
     * 'overlay' is commutative and associative:
@@ -409,6 +409,7 @@ isEmpty = H.isEmpty
 -- size ('overlay' x y) == size x + size y
 -- size ('connect' x y) == size x + size y
 -- size x             >= 1
+-- size x             >= 'vertexCount' x
 -- @
 size :: Graph a -> Int
 size = foldg 1 (const 1) (+) (+)
@@ -616,12 +617,12 @@ mesh = H.mesh
 -- lengths of the given lists.
 --
 -- @
--- torus xs     []   == 'empty'
--- torus []     ys   == 'empty'
--- torus [x]    [y]  == 'edge' (x, y) (x, y)
--- torus xs     ys   == 'box' ('circuit' xs) ('circuit' ys)
--- torus [1..2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
---                            , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
+-- torus xs    []   == 'empty'
+-- torus []    ys   == 'empty'
+-- torus [x]   [y]  == 'edge' (x, y) (x, y)
+-- torus xs    ys   == 'box' ('circuit' xs) ('circuit' ys)
+-- torus [1,2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
+--                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus :: [a] -> [b] -> Graph (a, b)
 torus = H.torus
@@ -692,7 +693,7 @@ smash s t = foldg C.empty v C.overlay c
         | intact sx || intact ty = C.connect x y
         | otherwise = (C.connect sx sy, C.connect tx ty, C.connect sx sty `C.overlay` C.connect stx ty)
 
--- | The function @replaceVertex x y@ replaces vertex @x@ with vertex @y@ in a
+-- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O(s)/ time, memory and size.
 --
@@ -758,15 +759,15 @@ transpose = foldg empty vertex overlay (flip connect)
 induce :: (a -> Bool) -> Graph a -> Graph a
 induce = H.induce
 
--- | Simplify a given graph. Semantically, this is the identity function, but
--- it simplifies a given polymorphic graph expression according to the laws of
--- the algebra. The function does not compute the simplest possible expression,
+-- | Simplify a graph expression. Semantically, this is the identity function,
+-- but it simplifies a given expression according to the laws of the algebra.
+-- The function does not compute the simplest possible expression,
 -- but uses heuristics to obtain useful simplifications in reasonable time.
 -- Complexity: the function performs /O(s)/ graph comparisons. It is guaranteed
 -- that the size of the result does not exceed the size of the given expression.
 --
 -- @
--- simplify x            == x
+-- simplify              == id
 -- 'size' (simplify x)     <= 'size' x
 -- simplify 'empty'       '===' 'empty'
 -- simplify 1           '===' 1

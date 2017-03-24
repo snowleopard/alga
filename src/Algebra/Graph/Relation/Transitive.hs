@@ -16,7 +16,7 @@ module Algebra.Graph.Relation.Transitive (
 
 import Algebra.Graph.Relation.Internal
 
--- | Construct a reflexive relation from a 'Relation'.
+-- | Construct a transitive relation from a 'Relation'.
 -- Complexity: /O(1)/ time.
 fromRelation :: Relation a -> TransitiveRelation a
 fromRelation = TransitiveRelation
