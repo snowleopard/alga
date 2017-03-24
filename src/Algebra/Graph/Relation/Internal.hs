@@ -14,7 +14,7 @@
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.Internal (
-    -- * Binary relations
+    -- * Data structure
     Relation (..), consistent,
 
     -- * Basic graph construction primitives
@@ -48,17 +48,62 @@ import Data.Set (Set, union)
 import qualified Algebra.Graph.Class as C
 import qualified Data.Set            as Set
 
--- | The 'Relation' data type represents a binary relation over a set of elements.
--- The 'Show' instance is defined using basic graph construction primitives:
---
--- @
--- show ('empty'     :: Relation Int) == "empty"
--- show (1         :: Relation Int) == "vertex 1"
--- show (1 + 2     :: Relation Int) == "vertices [1,2]"
--- show (1 * 2     :: Relation Int) == "edge 1 2"
--- show (1 * 2 * 3 :: Relation Int) == "edges [(1,2),(1,3),(2,3)]"
--- show (1 * 2 + 3 :: Relation Int) == "graph [1,2,3] [(1,2)]"
--- @
+{-| The 'Relation' data type represents a graph as a /binary relation/. We define
+a law-abiding 'Num' instance as a convenient notation for working with graphs:
+
+    > 0           == vertex 0
+    > 1 + 2       == overlay (vertex 1) (vertex 2)
+    > 1 * 2       == connect (vertex 1) (vertex 2)
+    > 1 + 2 * 3   == overlay (vertex 1) (connect (vertex 2) (vertex 3))
+    > 1 * (2 + 3) == connect (vertex 1) (overlay (vertex 2) (vertex 3))
+
+The 'Show' instance is defined using basic graph construction primitives:
+
+@show ('empty'     :: Relation Int) == "empty"
+show (1         :: Relation Int) == "vertex 1"
+show (1 + 2     :: Relation Int) == "vertices [1,2]"
+show (1 * 2     :: Relation Int) == "edge 1 2"
+show (1 * 2 * 3 :: Relation Int) == "edges [(1,2),(1,3),(2,3)]"
+show (1 * 2 + 3 :: Relation Int) == "graph [1,2,3] [(1,2)]"@
+
+The 'Eq' instance satisfies all axioms of algebraic graphs:
+
+    * 'overlay' is commutative and associative:
+
+        >       x + y == y + x
+        > x + (y + z) == (x + y) + z
+
+    * 'connect' is associative and has 'empty' as the identity:
+
+        >   x * empty == x
+        >   empty * x == x
+        > x * (y * z) == (x * y) * z
+
+    * 'connect' distributes over 'overlay':
+
+        > x * (y + z) == x * y + x * z
+        > (x + y) * z == x * z + y * z
+
+    * 'connect' can be decomposed:
+
+        > x * y * z == x * y + x * z + y * z
+
+The following useful theorems can be proved from the above set of axioms.
+
+    * 'overlay' has 'empty' as the identity and is idempotent:
+
+        >   x + empty == x
+        >   empty + x == x
+        >       x + x == x
+
+    * Absorption and saturation of 'connect':
+
+        > x * y + x + y == x * y
+        >     x * x * x == x * x
+
+When specifying the time and memory complexity of graph algorithms, /n/ and /m/
+will denote the number of vertices and edges in the graph, respectively.
+-}
 data Relation a = Relation {
     -- | The /domain/ of the relation.
     domain :: Set a,
@@ -117,7 +162,7 @@ consistent r = Set.fromList (uncurry (++) $ unzip $ edgeList r)
     `Set.isSubsetOf` (domain r)
 
 -- | Construct the /empty graph/.
--- Complexity: /O(1)/ time, memory and size.
+-- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'Relation.isEmpty'     empty == True
@@ -129,7 +174,7 @@ empty :: Relation a
 empty = Relation Set.empty Set.empty
 
 -- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time, memory and size.
+-- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'Relation.isEmpty'     (vertex x) == False
@@ -208,7 +253,7 @@ vertices xs = Relation (Set.fromList xs) Set.empty
 edges :: Ord a => [(a, a)] -> Relation a
 edges es = Relation (Set.fromList $ uncurry (++) $ unzip es) (Set.fromList es)
 
--- | Construct a relation from the /adjacency list/ of a graph.
+-- | Construct a graph from an adjacency list.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
@@ -223,7 +268,8 @@ fromAdjacencyList as = Relation (Set.fromList vs) (Set.fromList es)
     vs = concatMap (\(x, ys) -> x : ys) as
     es = [ (x, y) | (x, ys) <- as, y <- ys ]
 
--- | Extract the list of related pairs of elements in a relation.
+-- | The sorted list of edges of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
 --
 -- @
 -- edgeList 'empty'          == []
@@ -238,6 +284,7 @@ edgeList = Set.toAscList . relation
 -- | The /preset/ of an element @x@ is the set of elements that are related to
 -- it on the /left/, i.e. @preset x == { a | aRx }@. In the context of directed
 -- graphs, this corresponds to the set of /direct predecessors/ of vertex @x@.
+-- Complexity: /O(n + m)/ time and /O(n)/ memory.
 --
 -- @
 -- preset x 'empty'      == Set.empty
@@ -251,6 +298,7 @@ preset x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
 -- | The /postset/ of an element @x@ is the set of elements that are related to
 -- it on the /right/, i.e. @postset x == { a | xRa }@. In the context of directed
 -- graphs, this corresponds to the set of /direct successors/ of vertex @x@.
+-- Complexity: /O(n + m)/ time and /O(n)/ memory.
 --
 -- @
 -- postset x 'empty'      == Set.empty
@@ -319,6 +367,7 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
     pp (x, y) = p x && p y
 
 -- | Compute the /reflexive closure/ of a 'Relation'.
+-- Complexity: /O(n*log(m))/ time.
 --
 -- @
 -- reflexiveClosure 'empty'      == 'empty'
@@ -329,6 +378,7 @@ reflexiveClosure (Relation d r) =
     Relation d $ r `union` Set.fromDistinctAscList [ (a, a) | a <- Set.elems d ]
 
 -- | Compute the /symmetric closure/ of a 'Relation'.
+-- Complexity: /O(m*log(m))/ time.
 --
 -- @
 -- symmetricClosure 'empty'      == 'empty'
@@ -339,6 +389,7 @@ symmetricClosure :: Ord a => Relation a -> Relation a
 symmetricClosure (Relation d r) = Relation d $ r `union` (Set.map swap r)
 
 -- | Compute the /transitive closure/ of a 'Relation'.
+-- Complexity: /O(n * m * log(m))/ time.
 --
 -- @
 -- transitiveClosure 'empty'           == 'empty'
@@ -353,6 +404,7 @@ transitiveClosure old@(Relation d r)
     newR = Set.unions $ r : [ preset x old >< postset x old | x <- Set.elems d ]
 
 -- | Compute the /preorder closure/ of a 'Relation'.
+-- Complexity: /O(n * m * log(m))/ time.
 --
 -- @
 -- preorderClosure 'empty'           == 'empty'
@@ -363,11 +415,11 @@ preorderClosure :: Ord a => Relation a -> Relation a
 preorderClosure = reflexiveClosure . transitiveClosure
 
 -- TODO: Optimise the implementation by caching the results of reflexive closure.
-{-| The 'ReflexiveRelation' data type represents a binary reflexive relation
+{-| The 'ReflexiveRelation' data type represents a /reflexive binary relation/
 over a set of elements. Reflexive relations satisfy all laws of the
 'C.Reflexive' type class and, in particular, the /self-loop/ axiom:
 
-@'Relation.Reflexive.vertex' x == 'Relation.Reflexive.vertex' x * 'Relation.Reflexive.vertex' x@
+@'C.vertex' x == 'C.vertex' x * 'C.vertex' x@
 
 The 'Show' instance produces transitively closed expressions:
 
@@ -394,12 +446,12 @@ instance Ord a => C.Graph (ReflexiveRelation a) where
 instance Ord a => C.Reflexive (ReflexiveRelation a)
 
 -- TODO: Optimise the implementation by caching the results of symmetric closure.
-{-|  The 'SymmetricRelation' data type represents a binary symmetric relation
+{-|  The 'SymmetricRelation' data type represents a /symmetric binary relation/
 over a set of elements. Symmetric relations satisfy all laws of the
 'C.Undirected' type class and, in particular, the
 commutativity of connect:
 
-@'Relation.Symmetric.connect' x y == 'Relation.Symmetric.connect' y x@
+@'C.connect' x y == 'C.connect' y x@
 
 The 'Show' instance produces transitively closed expressions:
 
@@ -426,15 +478,15 @@ instance Ord a => C.Graph (SymmetricRelation a) where
 instance Ord a => C.Undirected (SymmetricRelation a)
 
 -- TODO: Optimise the implementation by caching the results of transitive closure.
-{-| The 'TransitiveRelation' data type represents a binary transitive relation
+{-| The 'TransitiveRelation' data type represents a /transitive binary relation/
 over a set of elements. Transitive relations satisfy all laws of the
 'C.Transitive' type class and, in particular, the /closure/ axiom:
 
-@y /= 'Relation.Transitive.empty' ==> x * y + x * z + y * z == x * y + y * z@
+@y /= 'C.empty' ==> x * y + x * z + y * z == x * y + y * z@
 
 For example, the following holds:
 
-@'Relation.Transitive.path' xs == Relation.Transitive.clique xs@
+@'C.path' xs == 'C.clique' xs@
 
 The 'Show' instance produces transitively closed expressions:
 
@@ -466,15 +518,15 @@ elements that is both transitive and reflexive. Preorders satisfy all laws of th
 'Algebra.Graph.Class.Preorder' type class and, in particular, the /closure/
 axiom:
 
-@y /= 'Relation.Preorder.empty' ==> x * y + x * z + y * z == x * y + y * z@
+@y /= 'C.empty' ==> x * y + x * z + y * z == x * y + y * z@
 
 and the /self-loop/ axiom:
 
-@'Relation.Preorder.vertex' x == 'Relation.Preorder.vertex' x * 'Relation.Preorder.vertex' x@
+@'C.vertex' x == 'C.vertex' x * 'C.vertex' x@
 
 For example, the following holds:
 
-@'Relation.Preorder.path' xs == 'Relation.Preorder.clique' xs@
+@'C.path' xs == 'C.clique' xs@
 
 The 'Show' instance produces transitively closed expressions:
 

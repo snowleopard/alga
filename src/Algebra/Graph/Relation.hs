@@ -6,11 +6,16 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- An abstract implementation of binary relations.
+-- __Alga__ is a library for algebraic construction and manipulation of graphs
+-- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
+-- motivation behind the library, the underlying theory, and implementation details.
 --
+-- This module defines the 'Relation' data type, as well as associated
+-- operations and algorithms. 'Relation' is an instance of the 'C.Graph' type
+-- class, which can be used for polymorphic graph construction and manipulation.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation (
-    -- * Binary relation
+    -- * Data structure
     Relation, domain, relation,
 
     -- * Basic graph construction primitives
@@ -30,7 +35,7 @@ module Algebra.Graph.Relation (
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, gmap, induce,
 
-    -- * Operations
+    -- * Operations on binary relations
     reflexiveClosure, symmetricClosure, transitiveClosure, preorderClosure
   ) where
 
