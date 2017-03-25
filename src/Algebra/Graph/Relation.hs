@@ -39,12 +39,39 @@ module Algebra.Graph.Relation (
     reflexiveClosure, symmetricClosure, transitiveClosure, preorderClosure
   ) where
 
+import Data.Tuple
+
 import Algebra.Graph.Relation.Internal
 
 import qualified Algebra.Graph.Class as C
 import qualified Data.IntSet         as IntSet
 import qualified Data.Set            as Set
 import qualified Data.Tree           as Tree
+
+-- | Construct the /empty graph/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'isEmpty'     empty == True
+-- 'hasVertex' x empty == False
+-- 'vertexCount' empty == 0
+-- 'edgeCount'   empty == 0
+-- @
+empty :: Ord a => Relation a
+empty = C.empty
+
+-- | Construct the graph comprising /a single isolated vertex/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'isEmpty'     (vertex x) == False
+-- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' 1 (vertex 2) == False
+-- 'vertexCount' (vertex x) == 1
+-- 'edgeCount'   (vertex x) == 0
+-- @
+vertex :: Ord a => a -> Relation a
+vertex = C.vertex
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -58,6 +85,69 @@ import qualified Data.Tree           as Tree
 -- @
 edge :: Ord a => a -> a -> Relation a
 edge = C.edge
+
+-- | /Overlay/ two graphs. This is an idempotent, commutative and associative
+-- operation with the identity 'empty'.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (overlay x y) >= 'vertexCount' x
+-- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (overlay x y) >= 'edgeCount' x
+-- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
+-- 'vertexCount' (overlay 1 2) == 2
+-- 'edgeCount'   (overlay 1 2) == 0
+-- @
+overlay :: Ord a => Relation a -> Relation a -> Relation a
+overlay = C.overlay
+
+-- | /Connect/ two graphs. This is an associative operation with the identity
+-- 'empty', which distributes over the overlay and obeys the decomposition axiom.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
+-- number of edges in the resulting graph is quadratic with respect to the number
+-- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
+--
+-- @
+-- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (connect x y) >= 'vertexCount' x
+-- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (connect x y) >= 'edgeCount' x
+-- 'edgeCount'   (connect x y) >= 'edgeCount' y
+-- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
+-- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
+-- 'vertexCount' (connect 1 2) == 2
+-- 'edgeCount'   (connect 1 2) == 1
+-- @
+connect :: Ord a => Relation a -> Relation a -> Relation a
+connect = C.connect
+
+-- | Construct the graph comprising a given list of isolated vertices.
+-- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
+-- of the given list.
+--
+-- @
+-- vertices []            == 'empty'
+-- vertices [x]           == 'vertex' x
+-- 'hasVertex' x . vertices == 'elem' x
+-- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
+-- 'vertexSet'   . vertices == Set.'Set.fromList'
+-- @
+vertices :: Ord a => [a] -> Relation a
+vertices xs = Relation (Set.fromList xs) Set.empty
+
+-- | Construct the graph from a list of edges.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- edges []          == 'empty'
+-- edges [(x,y)]     == 'edge' x y
+-- 'edgeCount' . edges == 'length' . 'Data.List.nub'
+-- @
+edges :: Ord a => [(a, a)] -> Relation a
+edges es = Relation (Set.fromList $ uncurry (++) $ unzip es) (Set.fromList es)
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -96,6 +186,21 @@ connects = C.connects
 -- @
 graph :: Ord a => [a] -> [(a, a)] -> Relation a
 graph = C.graph
+
+-- | Construct a graph from an adjacency list.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- fromAdjacencyList []                                  == 'empty'
+-- fromAdjacencyList [(x, [])]                           == 'vertex' x
+-- fromAdjacencyList [(x, [y])]                          == 'edge' x y
+-- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
+-- @
+fromAdjacencyList :: Ord a => [(a, [a])] -> Relation a
+fromAdjacencyList as = Relation (Set.fromList vs) (Set.fromList es)
+  where
+    vs = concatMap (\(x, ys) -> x : ys) as
+    es = [ (x, y) | (x, ys) <- as, y <- ys ]
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -181,6 +286,19 @@ edgeCount = Set.size . relation
 vertexList :: Ord a => Relation a -> [a]
 vertexList = Set.toAscList . domain
 
+-- | The sorted list of edges of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- edgeList 'empty'          == []
+-- edgeList ('vertex' x)     == []
+-- edgeList ('edge' x y)     == [(x,y)]
+-- edgeList ('star' 2 [1,3]) == [(2,1), (2,3)]
+-- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
+-- @
+edgeList :: Ord a => Relation a -> [(a, a)]
+edgeList = Set.toAscList . relation
+
 -- | The set of vertices of a given graph.
 -- Complexity: /O(1)/ time.
 --
@@ -217,6 +335,34 @@ vertexIntSet = IntSet.fromAscList . vertexList
 -- @
 edgeSet :: Ord a => Relation a -> Set.Set (a, a)
 edgeSet = relation
+
+-- | The /preset/ of an element @x@ is the set of elements that are related to
+-- it on the /left/, i.e. @preset x == { a | aRx }@. In the context of directed
+-- graphs, this corresponds to the set of /direct predecessors/ of vertex @x@.
+-- Complexity: /O(n + m)/ time and /O(n)/ memory.
+--
+-- @
+-- preset x 'empty'      == Set.empty
+-- preset x ('vertex' x) == Set.empty
+-- preset 1 ('edge' 1 2) == Set.empty
+-- preset y ('edge' x y) == Set.fromList [x]
+-- @
+preset :: Ord a => a -> Relation a -> Set.Set a
+preset x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
+
+-- | The /postset/ of an element @x@ is the set of elements that are related to
+-- it on the /right/, i.e. @postset x == { a | xRa }@. In the context of directed
+-- graphs, this corresponds to the set of /direct successors/ of vertex @x@.
+-- Complexity: /O(n + m)/ time and /O(n)/ memory.
+--
+-- @
+-- postset x 'empty'      == Set.empty
+-- postset x ('vertex' x) == Set.empty
+-- postset x ('edge' x y) == Set.fromList [y]
+-- postset 2 ('edge' 1 2) == Set.empty
+-- @
+postset :: Ord a => a -> Relation a -> Set.Set a
+postset x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -285,6 +431,31 @@ tree = C.tree
 forest :: Ord a => Tree.Forest a -> Relation a
 forest = C.forest
 
+-- | Remove a vertex from a given graph.
+-- Complexity: /O(n + m)/ time.
+--
+-- @
+-- removeVertex x ('vertex' x)       == 'empty'
+-- removeVertex x . removeVertex x == removeVertex x
+-- @
+removeVertex :: Ord a => a -> Relation a -> Relation a
+removeVertex x (Relation d r) = Relation (Set.delete x d) (Set.filter notx r)
+  where
+    notx (a, b) = a /= x && b /= x
+
+-- | Remove an edge from a given graph.
+-- Complexity: /O(log(m))/ time.
+--
+-- @
+-- removeEdge x y ('AdjacencyMap.edge' x y)       == 'vertices' [x, y]
+-- removeEdge x y . removeEdge x y == removeEdge x y
+-- removeEdge x y . 'removeVertex' x == 'removeVertex' x
+-- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
+-- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
+-- @
+removeEdge :: Ord a => a -> a -> Relation a -> Relation a
+removeEdge x y (Relation d r) = Relation d (Set.delete (x, y) r)
+
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O((n + m) * log(n))/ time.
@@ -309,3 +480,83 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- @
 mergeVertices :: Ord a => (a -> Bool) -> a -> Relation a -> Relation a
 mergeVertices p v = gmap $ \u -> if p u then v else u
+
+-- | Transform a graph by applying a function to each of its vertices. This is
+-- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
+-- 'Relation'.
+-- Complexity: /O((n + m) * log(n))/ time.
+--
+-- @
+-- gmap f 'empty'      == 'empty'
+-- gmap f ('vertex' x) == 'vertex' (f x)
+-- gmap f ('edge' x y) == 'edge' (f x) (f y)
+-- gmap id           == id
+-- gmap f . gmap g   == gmap (f . g)
+-- @
+gmap :: (Ord a, Ord b) => (a -> b) -> Relation a -> Relation b
+gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) r)
+
+-- | Construct the /induced subgraph/ of a given graph by removing the
+-- vertices that do not satisfy a given predicate.
+-- Complexity: /O(m)/ time, assuming that the predicate takes /O(1)/ to
+-- be evaluated.
+--
+-- @
+-- induce (const True)  x      == x
+-- induce (const False) x      == 'empty'
+-- induce (/= x)               == 'removeVertex' x
+-- induce p . induce q         == induce (\\x -> p x && q x)
+-- 'isSubgraphOf' (induce p x) x == True
+-- @
+induce :: Ord a => (a -> Bool) -> Relation a -> Relation a
+induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
+  where
+    pp (x, y) = p x && p y
+
+-- | Compute the /reflexive closure/ of a 'Relation'.
+-- Complexity: /O(n*log(m))/ time.
+--
+-- @
+-- reflexiveClosure 'empty'      == 'empty'
+-- reflexiveClosure ('vertex' x) == 'edge' x x
+-- @
+reflexiveClosure :: Ord a => Relation a -> Relation a
+reflexiveClosure (Relation d r) =
+    Relation d $ r `Set.union` Set.fromDistinctAscList [ (a, a) | a <- Set.toAscList d ]
+
+-- | Compute the /symmetric closure/ of a 'Relation'.
+-- Complexity: /O(m*log(m))/ time.
+--
+-- @
+-- symmetricClosure 'empty'      == 'empty'
+-- symmetricClosure ('vertex' x) == 'vertex' x
+-- symmetricClosure ('edge' x y) == 'edges' [(x, y), (y, x)]
+-- @
+symmetricClosure :: Ord a => Relation a -> Relation a
+symmetricClosure (Relation d r) = Relation d $ r `Set.union` (Set.map swap r)
+
+-- | Compute the /transitive closure/ of a 'Relation'.
+-- Complexity: /O(n * m * log(m))/ time.
+--
+-- @
+-- transitiveClosure 'empty'           == 'empty'
+-- transitiveClosure ('vertex' x)      == 'vertex' x
+-- transitiveClosure ('path' $ 'Data.List.nub' xs) == 'clique' ('Data.List.nub' xs)
+-- @
+transitiveClosure :: Ord a => Relation a -> Relation a
+transitiveClosure old@(Relation d r)
+    | r == newR = old
+    | otherwise = transitiveClosure $ Relation d newR
+  where
+    newR = Set.unions $ r : [ preset x old `setProduct` postset x old | x <- Set.toAscList d ]
+
+-- | Compute the /preorder closure/ of a 'Relation'.
+-- Complexity: /O(n * m * log(m))/ time.
+--
+-- @
+-- preorderClosure 'empty'           == 'empty'
+-- preorderClosure ('vertex' x)      == 'edge' x x
+-- preorderClosure ('path' $ 'Data.List.nub' xs) == 'reflexiveClosure' ('clique' $ 'Data.List.nub' xs)
+-- @
+preorderClosure :: Ord a => Relation a -> Relation a
+preorderClosure = reflexiveClosure . transitiveClosure

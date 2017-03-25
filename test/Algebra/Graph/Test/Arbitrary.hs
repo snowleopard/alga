@@ -21,12 +21,13 @@ import Algebra.Graph
 import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.Fold (Fold)
 import Algebra.Graph.IntAdjacencyMap.Internal
-import Algebra.Graph.Relation.Internal (Relation (..))
+import Algebra.Graph.Relation.Internal
+import Algebra.Graph.Relation.InternalDerived
 
 import qualified Algebra.Graph.Class             as C
 import qualified Algebra.Graph.AdjacencyMap      as AdjacencyMap
 import qualified Algebra.Graph.IntAdjacencyMap   as IntAdjacencyMap
-import qualified Algebra.Graph.Relation.Internal as Relation
+import qualified Algebra.Graph.Relation          as Relation
 
 -- | Generate an arbitrary 'Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
@@ -67,17 +68,17 @@ arbitraryIntAdjacencyMap = IntAdjacencyMap.fromAdjacencyList <$> arbitrary
 instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
     arbitrary = arbitraryRelation
 
-instance (Arbitrary a, Ord a) => Arbitrary (Relation.ReflexiveRelation a) where
-    arbitrary = Relation.ReflexiveRelation <$> arbitraryRelation
+instance (Arbitrary a, Ord a) => Arbitrary (ReflexiveRelation a) where
+    arbitrary = ReflexiveRelation <$> arbitraryRelation
 
-instance (Arbitrary a, Ord a) => Arbitrary (Relation.SymmetricRelation a) where
-    arbitrary = Relation.SymmetricRelation <$> arbitraryRelation
+instance (Arbitrary a, Ord a) => Arbitrary (SymmetricRelation a) where
+    arbitrary = SymmetricRelation <$> arbitraryRelation
 
-instance (Arbitrary a, Ord a) => Arbitrary (Relation.TransitiveRelation a) where
-    arbitrary = Relation.TransitiveRelation <$> arbitraryRelation
+instance (Arbitrary a, Ord a) => Arbitrary (TransitiveRelation a) where
+    arbitrary = TransitiveRelation <$> arbitraryRelation
 
-instance (Arbitrary a, Ord a) => Arbitrary (Relation.PreorderRelation a) where
-    arbitrary = Relation.PreorderRelation <$> arbitraryRelation
+instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
+    arbitrary = PreorderRelation <$> arbitraryRelation
 
 instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
     arbitrary = arbitraryAdjacencyMap

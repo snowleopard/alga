@@ -17,7 +17,8 @@ module Algebra.Graph.Relation.Symmetric (
     neighbours
   ) where
 
-import Algebra.Graph.Relation.Internal
+import Algebra.Graph.Relation
+import Algebra.Graph.Relation.InternalDerived
 
 import qualified Data.Set as Set
 

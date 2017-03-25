@@ -9,7 +9,6 @@
 -- This module exposes the implementation of adjacency maps. The API is unstable
 -- and unsafe. Where possible use non-internal module "Algebra.Graph.AdjacencyMap"
 -- instead.
---
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap.Internal (
     -- * Adjacency map implementation
@@ -103,7 +102,7 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
         es       = internalEdgeList m
         v        = head $ Set.toList vs
         (e, f)   = head es
-        referred = refererredToVertexSet m
+        referred = referredToVertexSet m
 
 instance Ord a => Graph (AdjacencyMap a) where
     type Vertex (AdjacencyMap a) = a
@@ -124,6 +123,7 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices. It should be impossible to create an
 -- inconsistent adjacency map, and we use this function in testing.
+-- /Note: this function is for internal use only/.
 --
 -- @
 -- consistent 'Algebra.Graph.AdjacencyMap.empty'                  == True
@@ -136,11 +136,11 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
 -- consistent ('Algebra.Graph.AdjacencyMap.fromAdjacencyList' xs) == True
 -- @
 consistent :: Ord a => AdjacencyMap a -> Bool
-consistent (AdjacencyMap m) = refererredToVertexSet m `Set.isSubsetOf` keysSet m
+consistent (AdjacencyMap m) = referredToVertexSet m `Set.isSubsetOf` keysSet m
 
 -- The set of vertices that are referred to by the edges
-refererredToVertexSet :: Ord a => Map a (Set a) -> Set a
-refererredToVertexSet = Set.fromList . uncurry (++) . unzip . internalEdgeList
+referredToVertexSet :: Ord a => Map a (Set a) -> Set a
+referredToVertexSet = Set.fromList . uncurry (++) . unzip . internalEdgeList
 
 -- The list of edges in adjacency map
 internalEdgeList :: Map a (Set a) -> [(a, a)]

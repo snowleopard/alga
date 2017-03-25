@@ -14,7 +14,8 @@ module Algebra.Graph.Relation.Reflexive (
     ReflexiveRelation, fromRelation, toRelation
   ) where
 
-import Algebra.Graph.Relation.Internal
+import Algebra.Graph.Relation
+import Algebra.Graph.Relation.InternalDerived
 
 -- | Construct a reflexive relation from a 'Relation'.
 -- Complexity: /O(1)/ time.

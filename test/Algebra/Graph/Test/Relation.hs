@@ -17,7 +17,10 @@ module Algebra.Graph.Test.Relation (
 
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.Internal
+import Algebra.Graph.Relation.Preorder
+import Algebra.Graph.Relation.Reflexive
 import Algebra.Graph.Relation.Symmetric
+import Algebra.Graph.Relation.Transitive
 import Algebra.Graph.Test
 
 import qualified Algebra.Graph.Class as C

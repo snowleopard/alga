@@ -102,7 +102,7 @@ instance Show IntAdjacencyMap where
         es       = internalEdgeList m
         v        = head $ IntSet.toList vs
         (e, f)   = head es
-        referred = refererredToVertexIntSet m
+        referred = referredToVertexSet m
 
 instance Graph IntAdjacencyMap where
     type Vertex IntAdjacencyMap = Int
@@ -123,6 +123,7 @@ instance Num IntAdjacencyMap where
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices. It should be impossible to create an
 -- inconsistent adjacency map, and we use this function in testing.
+-- /Note: this function is for internal use only/.
 --
 -- @
 -- consistent 'Algebra.Graph.IntAdjacencyMap.empty'                  == True
@@ -135,11 +136,11 @@ instance Num IntAdjacencyMap where
 -- consistent ('Algebra.Graph.IntAdjacencyMap.fromAdjacencyList' xs) == True
 -- @
 consistent :: IntAdjacencyMap -> Bool
-consistent (IntAdjacencyMap m) = refererredToVertexIntSet m `IntSet.isSubsetOf` keysSet m
+consistent (IntAdjacencyMap m) = referredToVertexSet m `IntSet.isSubsetOf` keysSet m
 
 -- The set of vertices that are referred to by the edges
-refererredToVertexIntSet :: IntMap IntSet -> IntSet
-refererredToVertexIntSet = IntSet.fromList . uncurry (++) . unzip . internalEdgeList
+referredToVertexSet :: IntMap IntSet -> IntSet
+referredToVertexSet = IntSet.fromList . uncurry (++) . unzip . internalEdgeList
 
 -- The list of edges in adjacency map
 internalEdgeList :: IntMap IntSet -> [(Int, Int)]
