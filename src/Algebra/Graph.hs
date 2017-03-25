@@ -482,6 +482,7 @@ vertexList = Set.toAscList . vertexSet
 -- edgeList ('edge' x y)     == [(x,y)]
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
+-- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: Ord a => Graph a -> [(a, a)]
 edgeList = AM.edgeList . C.toGraph
@@ -528,9 +529,10 @@ edgeSet = R.edgeSet . C.toGraph
 -- given list.
 --
 -- @
--- path []    == 'empty'
--- path [x]   == 'vertex' x
--- path [x,y] == 'edge' x y
+-- path []        == 'empty'
+-- path [x]       == 'vertex' x
+-- path [x,y]     == 'edge' x y
+-- path . 'reverse' == 'transpose' . path
 -- @
 path :: [a] -> Graph a
 path = H.path
@@ -540,9 +542,10 @@ path = H.path
 -- given list.
 --
 -- @
--- circuit []    == 'empty'
--- circuit [x]   == 'edge' x x
--- circuit [x,y] == 'edges' [(x,y), (y,x)]
+-- circuit []        == 'empty'
+-- circuit [x]       == 'edge' x x
+-- circuit [x,y]     == 'edges' [(x,y), (y,x)]
+-- circuit . 'reverse' == 'transpose' . circuit
 -- @
 circuit :: [a] -> Graph a
 circuit = H.circuit
@@ -552,10 +555,11 @@ circuit = H.circuit
 -- given list.
 --
 -- @
--- clique []      == 'empty'
--- clique [x]     == 'vertex' x
--- clique [x,y]   == 'edge' x y
--- clique [x,y,z] == 'edges' [(x,y), (x,z), (y,z)]
+-- clique []        == 'empty'
+-- clique [x]       == 'vertex' x
+-- clique [x,y]     == 'edge' x y
+-- clique [x,y,z]   == 'edges' [(x,y), (x,z), (y,z)]
+-- clique . 'reverse' == 'transpose' . clique
 -- @
 clique :: [a] -> Graph a
 clique = H.clique
@@ -740,6 +744,11 @@ splitVertex = H.splitVertex
 -- transpose ('vertex' x)  == 'vertex' x
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
+-- transpose . 'path'      == 'path'    . 'reverse'
+-- transpose . 'circuit'   == 'circuit' . 'reverse'
+-- transpose . 'clique'    == 'clique'  . 'reverse'
+-- transpose ('box' x y)   == 'box' (transpose x) (transpose y)
+-- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Graph a -> Graph a
 transpose = foldg empty vertex overlay (flip connect)
@@ -807,6 +816,7 @@ simple op x y
 -- box x ('overlay' y z) == 'overlay' (box x y) (box x z)
 -- box x ('vertex' ())   ~~ x
 -- box x 'empty'         ~~ 'empty'
+-- 'transpose' (box x y) == box ('transpose' x) ('transpose' y)
 -- @
 box :: Graph a -> Graph b -> Graph (a, b)
 box = H.box

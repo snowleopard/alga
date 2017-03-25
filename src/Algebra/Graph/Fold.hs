@@ -478,6 +478,7 @@ vertexList = Set.toAscList . vertexSet
 -- edgeList ('edge' x y)     == [(x,y)]
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
+-- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: Ord a => Fold a -> [(a, a)]
 edgeList = AM.edgeList . C.toGraph
@@ -638,6 +639,11 @@ splitVertex v vs g = bind g $ \u -> if u == v then C.vertices vs else C.vertex u
 -- transpose ('vertex' x)  == 'vertex' x
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
+-- transpose . 'C.path'      == 'C.path'    . 'reverse'
+-- transpose . 'C.circuit'   == 'C.circuit' . 'reverse'
+-- transpose . 'C.clique'    == 'C.clique'  . 'reverse'
+-- transpose ('box' x y)   == 'box' (transpose x) (transpose y)
+-- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: C.Graph g => Fold (C.Vertex g) -> g
 transpose = foldg C.empty C.vertex C.overlay (flip C.connect)
@@ -735,6 +741,7 @@ simple op x y
 -- box x ('overlay' y z) == 'overlay' (box x y) (box x z)
 -- box x ('vertex' ())   ~~ x
 -- box x 'empty'         ~~ 'empty'
+-- 'transpose' (box x y) == box ('transpose' x) ('transpose' y)
 -- @
 box :: (C.Graph g, C.Vertex g ~ (a, b)) => Fold a -> Fold b -> g
 box x y = C.overlays $ xs ++ ys

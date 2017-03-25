@@ -17,6 +17,7 @@ module Algebra.Graph.Test.Graph (
   ) where
 
 import Data.Foldable
+import Data.Tuple
 
 import Algebra.Graph
 import Algebra.Graph.Test
@@ -585,6 +586,21 @@ testGraph = do
 
     test "transpose . transpose == id" $ \(x :: G) ->
          (transpose . transpose) x == x
+
+    test "transpose . path      == path    . reverse" $ \(xs :: [Int]) ->
+         (transpose . path) xs  == (path . reverse) xs
+
+    test "transpose . circuit   == circuit . reverse" $ \(xs :: [Int]) ->
+         (transpose . circuit) xs == (circuit . reverse) xs
+
+    test "transpose . clique    == clique  . reverse" $ \(xs :: [Int]) ->
+         (transpose . clique) xs == (clique . reverse) xs
+
+    test "transpose (box x y)   == box (transpose x) (transpose y)" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
+          transpose (box x y)   == box (transpose x) (transpose y)
+
+    test "edgeList . transpose  == sort . map swap . edgeList" $ \(x :: G) ->
+         (edgeList . transpose) x == (sort . map swap . edgeList) x
 
     putStrLn "\n============ fmap ============"
     test "fmap f empty      == empty" $ \(apply -> f :: II) ->
