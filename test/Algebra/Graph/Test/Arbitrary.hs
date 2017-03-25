@@ -20,13 +20,13 @@ import Test.QuickCheck
 import Algebra.Graph
 import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.Fold (Fold)
-import Algebra.Graph.IntAdjacencyMap.Internal (IntAdjacencyMap (..))
+import Algebra.Graph.IntAdjacencyMap.Internal
 import Algebra.Graph.Relation.Internal (Relation (..))
 
-import qualified Algebra.Graph.Class                    as C
-import qualified Algebra.Graph.AdjacencyMap             as AdjacencyMap
-import qualified Algebra.Graph.IntAdjacencyMap.Internal as IntAdjacencyMap
-import qualified Algebra.Graph.Relation.Internal        as Relation
+import qualified Algebra.Graph.Class             as C
+import qualified Algebra.Graph.AdjacencyMap      as AdjacencyMap
+import qualified Algebra.Graph.IntAdjacencyMap   as IntAdjacencyMap
+import qualified Algebra.Graph.Relation.Internal as Relation
 
 -- | Generate an arbitrary 'Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
