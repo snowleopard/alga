@@ -18,13 +18,13 @@ module Algebra.Graph.Test.Arbitrary (
 import Test.QuickCheck
 
 import Algebra.Graph
-import Algebra.Graph.AdjacencyMap.Internal (AdjacencyMap (..))
+import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.Fold (Fold)
 import Algebra.Graph.IntAdjacencyMap.Internal (IntAdjacencyMap (..))
 import Algebra.Graph.Relation.Internal (Relation (..))
 
 import qualified Algebra.Graph.Class                    as C
-import qualified Algebra.Graph.AdjacencyMap.Internal    as AdjacencyMap
+import qualified Algebra.Graph.AdjacencyMap             as AdjacencyMap
 import qualified Algebra.Graph.IntAdjacencyMap.Internal as IntAdjacencyMap
 import qualified Algebra.Graph.Relation.Internal        as Relation
 

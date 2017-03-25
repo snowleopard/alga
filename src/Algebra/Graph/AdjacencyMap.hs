@@ -56,6 +56,31 @@ import qualified Data.Graph          as KL
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
 
+-- | Construct the /empty graph/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'isEmpty'     empty == True
+-- 'hasVertex' x empty == False
+-- 'vertexCount' empty == 0
+-- 'edgeCount'   empty == 0
+-- @
+empty :: Ord a => AdjacencyMap a
+empty = C.empty
+
+-- | Construct the graph comprising /a single isolated vertex/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'isEmpty'     (vertex x) == False
+-- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' 1 (vertex 2) == False
+-- 'vertexCount' (vertex x) == 1
+-- 'edgeCount'   (vertex x) == 0
+-- @
+vertex :: Ord a => a -> AdjacencyMap a
+vertex = C.vertex
+
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
 --
@@ -68,6 +93,70 @@ import qualified Data.Set            as Set
 -- @
 edge :: Ord a => a -> a -> AdjacencyMap a
 edge = C.edge
+
+-- | /Overlay/ two graphs. This is an idempotent, commutative and associative
+-- operation with the identity 'empty'.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (overlay x y) >= 'vertexCount' x
+-- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (overlay x y) >= 'edgeCount' x
+-- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
+-- 'vertexCount' (overlay 1 2) == 2
+-- 'edgeCount'   (overlay 1 2) == 0
+-- @
+overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
+overlay = C.overlay
+
+-- | /Connect/ two graphs. This is an associative operation with the identity
+-- 'empty', which distributes over the overlay and obeys the decomposition axiom.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
+-- number of edges in the resulting graph is quadratic with respect to the number
+-- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
+--
+-- @
+-- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (connect x y) >= 'vertexCount' x
+-- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (connect x y) >= 'edgeCount' x
+-- 'edgeCount'   (connect x y) >= 'edgeCount' y
+-- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
+-- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
+-- 'vertexCount' (connect 1 2) == 2
+-- 'edgeCount'   (connect 1 2) == 1
+-- @
+connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
+connect = C.connect
+
+-- | Construct the graph comprising a given list of isolated vertices.
+-- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
+-- of the given list.
+--
+-- @
+-- vertices []            == 'empty'
+-- vertices [x]           == 'vertex' x
+-- 'hasVertex' x . vertices == 'elem' x
+-- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
+-- 'vertexSet'   . vertices == Set.'Set.fromList'
+-- @
+vertices :: Ord a => [a] -> AdjacencyMap a
+vertices = AdjacencyMap . Map.fromList . map (\x -> (x, Set.empty))
+
+-- | Construct the graph from a list of edges.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- edges []          == 'empty'
+-- edges [(x, y)]    == 'edge' x y
+-- 'edgeCount' . edges == 'length' . 'Data.List.nub'
+-- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
+-- @
+edges :: Ord a => [(a, a)] -> AdjacencyMap a
+edges = fromAdjacencyList . map (fmap return)
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -106,6 +195,23 @@ connects = C.connects
 -- @
 graph :: Ord a => [a] -> [(a, a)] -> AdjacencyMap a
 graph vs es = overlay (vertices vs) (edges es)
+
+-- | Construct a graph from an adjacency list.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- fromAdjacencyList []                                  == 'empty'
+-- fromAdjacencyList [(x, [])]                           == 'vertex' x
+-- fromAdjacencyList [(x, [y])]                          == 'edge' x y
+-- fromAdjacencyList . 'adjacencyList'                     == id
+-- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
+-- @
+fromAdjacencyList :: Ord a => [(a, [a])] -> AdjacencyMap a
+fromAdjacencyList as = AdjacencyMap $ Map.unionWith Set.union vs es
+  where
+    ss = map (fmap Set.fromList) as
+    vs = Map.fromSet (const Set.empty) . Set.unions $ map snd ss
+    es = Map.fromListWith Set.union ss
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -192,6 +298,32 @@ edgeCount = Map.foldr (\es r -> (Set.size es + r)) 0 . adjacencyMap
 -- @
 vertexList :: Ord a => AdjacencyMap a -> [a]
 vertexList = Map.keys . adjacencyMap
+
+-- | The sorted list of edges of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- edgeList 'empty'          == []
+-- edgeList ('vertex' x)     == []
+-- edgeList ('edge' x y)     == [(x,y)]
+-- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
+-- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
+-- @
+edgeList :: AdjacencyMap a -> [(a, a)]
+edgeList (AdjacencyMap m) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
+
+-- | The sorted /adjacency list/ of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- adjacencyList 'empty'               == []
+-- adjacencyList ('vertex' x)          == [(x, [])]
+-- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
+-- 'fromAdjacencyList' . adjacencyList == id
+-- @
+adjacencyList :: AdjacencyMap a -> [(a, [a])]
+adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -295,6 +427,29 @@ tree = C.tree
 forest :: Ord a => Forest a -> AdjacencyMap a
 forest = C.forest
 
+-- | Remove a vertex from a given graph.
+-- Complexity: /O(n*log(n))/ time.
+--
+-- @
+-- removeVertex x ('vertex' x)       == 'empty'
+-- removeVertex x . removeVertex x == removeVertex x
+-- @
+removeVertex :: Ord a => a -> AdjacencyMap a -> AdjacencyMap a
+removeVertex x = AdjacencyMap . Map.map (Set.delete x) . Map.delete x . adjacencyMap
+
+-- | Remove an edge from a given graph.
+-- Complexity: /O(log(n))/ time.
+--
+-- @
+-- removeEdge x y ('edge' x y)       == 'vertices' [x, y]
+-- removeEdge x y . removeEdge x y == removeEdge x y
+-- removeEdge x y . 'removeVertex' x == 'removeVertex' x
+-- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
+-- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
+-- @
+removeEdge :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
+removeEdge x y = AdjacencyMap . Map.adjust (Set.delete y) x . adjacencyMap
+
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O((n + m) * log(n))/ time.
@@ -320,37 +475,35 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 mergeVertices :: Ord a => (a -> Bool) -> a -> AdjacencyMap a -> AdjacencyMap a
 mergeVertices p v = gmap $ \u -> if p u then v else u
 
--- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
--- the "Data.Graph" module of the @containers@ library. If @graphKL g == h@ then
--- the following holds:
+-- | Transform a graph by applying a function to each of its vertices. This is
+-- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
+-- 'AdjacencyMap'.
+-- Complexity: /O((n + m) * log(n))/ time.
 --
 -- @
--- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == Set.'Set.toAscList' ('vertexSet' g)
--- map (\\(x, y) -> ('getVertex' h x, 'getVertex' h y)) ('Data.Graph.edges' $ 'getGraph' h) == 'edgeList' g
+-- gmap f 'empty'      == 'empty'
+-- gmap f ('vertex' x) == 'vertex' (f x)
+-- gmap f ('edge' x y) == 'edge' (f x) (f y)
+-- gmap id           == id
+-- gmap f . gmap g   == gmap (f . g)
 -- @
-data GraphKL a = GraphKL {
-    -- | Array-based graph representation (King and Launchbury, 1995).
-    getGraph :: KL.Graph,
-    -- | A mapping of "Data.Graph.Vertex" to vertices of type @a@.
-    getVertex :: KL.Vertex -> a }
+gmap :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap a -> AdjacencyMap b
+gmap f = AdjacencyMap . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 
--- | Build 'GraphKL' from the adjacency map of a graph.
+-- | Construct the /induced subgraph/ of a given graph by removing the
+-- vertices that do not satisfy a given predicate.
+-- Complexity: /O(m)/ time, assuming that the predicate takes /O(1)/ to
+-- be evaluated.
 --
 -- @
--- 'fromGraphKL' . graphKL == id
+-- induce (const True)  x      == x
+-- induce (const False) x      == 'empty'
+-- induce (/= x)               == 'removeVertex' x
+-- induce p . induce q         == induce (\\x -> p x && q x)
+-- 'isSubgraphOf' (induce p x) x == True
 -- @
-graphKL :: Ord a => AdjacencyMap a -> GraphKL a
-graphKL m = GraphKL g $ \u -> case r u of (_, v, _) -> v
-  where
-    (g, r) = KL.graphFromEdges' [ ((), v, us) | (v, us) <- adjacencyList m ]
-
--- | Extract the adjacency map of a King-Launchbury graph.
---
--- @
--- fromGraphKL . 'graphKL' == id
--- @
-fromGraphKL :: Ord a => GraphKL a -> AdjacencyMap a
-fromGraphKL (GraphKL g r) = fromAdjacencyList $ map (\(x, ys) -> (r x, map r ys)) (assocs g)
+induce :: Ord a => (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
+induce p = AdjacencyMap . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjacencyMap
 
 -- | Compute the /depth-first search/ forest of a graph.
 --
@@ -420,3 +573,35 @@ scc m = gmap (\v -> Map.findWithDefault Set.empty v components) m
     GraphKL g r = graphKL m
     components  = Map.fromList $ concatMap (expand . fmap r . toList) (KL.scc g)
     expand xs   = let s = Set.fromList xs in map (\x -> (x, s)) xs
+
+-- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
+-- the "Data.Graph" module of the @containers@ library. If @graphKL g == h@ then
+-- the following holds:
+--
+-- @
+-- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == Set.'Set.toAscList' ('vertexSet' g)
+-- map (\\(x, y) -> ('getVertex' h x, 'getVertex' h y)) ('Data.Graph.edges' $ 'getGraph' h) == 'edgeList' g
+-- @
+data GraphKL a = GraphKL {
+    -- | Array-based graph representation (King and Launchbury, 1995).
+    getGraph :: KL.Graph,
+    -- | A mapping of "Data.Graph.Vertex" to vertices of type @a@.
+    getVertex :: KL.Vertex -> a }
+
+-- | Build 'GraphKL' from the adjacency map of a graph.
+--
+-- @
+-- 'fromGraphKL' . graphKL == id
+-- @
+graphKL :: Ord a => AdjacencyMap a -> GraphKL a
+graphKL m = GraphKL g $ \u -> case r u of (_, v, _) -> v
+  where
+    (g, r) = KL.graphFromEdges' [ ((), v, us) | (v, us) <- adjacencyList m ]
+
+-- | Extract the adjacency map of a King-Launchbury graph.
+--
+-- @
+-- fromGraphKL . 'graphKL' == id
+-- @
+fromGraphKL :: Ord a => GraphKL a -> AdjacencyMap a
+fromGraphKL (GraphKL g r) = fromAdjacencyList $ map (\(x, ys) -> (r x, map r ys)) (assocs g)
