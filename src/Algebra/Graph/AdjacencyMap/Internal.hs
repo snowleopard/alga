@@ -33,8 +33,8 @@ import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
 
 {-| The 'AdjacencyMap' data type represents a graph by a map of vertices to
-their adjacency sets. We define a law-abiding 'Num' instance as a convenient
-notation for working with graphs:
+their adjacency sets. We define a 'Num' instance as a convenient notation for
+working with graphs:
 
     > 0           == vertex 0
     > 1 + 2       == overlay (vertex 1) (vertex 2)

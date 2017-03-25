@@ -58,8 +58,8 @@ import qualified Data.Set                         as Set
 import qualified Data.Tree                        as Tree
 
 {-| The 'Graph' datatype is a deep embedding of the core graph construction
-primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a
-law-abiding 'Num' instance as a convenient notation for working with graphs:
+primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
+instance as a convenient notation for working with graphs:
 
     > 0           == Vertex 0
     > 1 + 2       == Overlay (Vertex 1) (Vertex 2)

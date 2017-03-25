@@ -48,8 +48,8 @@ import Data.Set (Set, union)
 import qualified Algebra.Graph.Class as C
 import qualified Data.Set            as Set
 
-{-| The 'Relation' data type represents a graph as a /binary relation/. We define
-a law-abiding 'Num' instance as a convenient notation for working with graphs:
+{-| The 'Relation' data type represents a graph as a /binary relation/. We
+define a 'Num' instance as a convenient notation for working with graphs:
 
     > 0           == vertex 0
     > 1 + 2       == overlay (vertex 1) (vertex 2)

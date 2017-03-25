@@ -61,7 +61,7 @@ import qualified Data.Set                         as Set
 
 {-| The 'Fold' datatype is the Boehm-Berarducci encoding of the core graph
 construction primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a
-law-abiding 'Num' instance as a convenient notation for working with graphs:
+'Num' instance as a convenient notation for working with graphs:
 
     > 0           == vertex 0
     > 1 + 2       == overlay (vertex 1) (vertex 2)
