@@ -15,6 +15,8 @@ module Algebra.Graph.Test.Relation (
     testRelation
   ) where
 
+import Data.Tuple
+
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.Preorder
@@ -499,6 +501,31 @@ testRelation = do
 
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
           mergeVertices odd  1 (3 + 4 * 5) == (4 * 1 :: RI)
+
+    putStrLn "\n============ Relation.transpose ============"
+    test "transpose empty       == empty" $
+          transpose empty       ==(empty :: RI)
+
+    test "transpose (vertex x)  == vertex x" $ \(x :: Int) ->
+          transpose (vertex x)  == vertex x
+
+    test "transpose (edge x y)  == edge y x" $ \(x :: Int) y ->
+          transpose (edge x y)  == edge y x
+
+    test "transpose . transpose == id" $ \(x :: RI) ->
+         (transpose . transpose) x == x
+
+    test "transpose . path      == path    . reverse" $ \(xs :: [Int]) ->
+         (transpose . path) xs  == (path . reverse) xs
+
+    test "transpose . circuit   == circuit . reverse" $ \(xs :: [Int]) ->
+         (transpose . circuit) xs == (circuit . reverse) xs
+
+    test "transpose . clique    == clique  . reverse" $ \(xs :: [Int]) ->
+         (transpose . clique) xs == (clique . reverse) xs
+
+    test "edgeList . transpose  == sort . map swap . edgeList" $ \(x :: RI) ->
+         (edgeList . transpose) x == (sort . map swap . edgeList) x
 
     putStrLn "\n============ Relation.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f :: II) ->

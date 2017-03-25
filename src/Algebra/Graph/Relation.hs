@@ -33,7 +33,7 @@ module Algebra.Graph.Relation (
     path, circuit, clique, biclique, star, tree, forest,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, gmap, induce,
+    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
 
     -- * Operations on binary relations
     reflexiveClosure, symmetricClosure, transitiveClosure, preorderClosure
@@ -293,8 +293,9 @@ vertexList = Set.toAscList . domain
 -- edgeList 'empty'          == []
 -- edgeList ('vertex' x)     == []
 -- edgeList ('edge' x y)     == [(x,y)]
--- edgeList ('star' 2 [1,3]) == [(2,1), (2,3)]
+-- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
+-- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: Ord a => Relation a -> [(a, a)]
 edgeList = Set.toAscList . relation
@@ -368,9 +369,10 @@ postset x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- path []    == 'empty'
--- path [x]   == 'vertex' x
--- path [x,y] == 'edge' x y
+-- path []        == 'empty'
+-- path [x]       == 'vertex' x
+-- path [x,y]     == 'edge' x y
+-- path . 'reverse' == 'transpose' . path
 -- @
 path :: Ord a => [a] -> Relation a
 path = C.path
@@ -379,9 +381,10 @@ path = C.path
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- circuit []    == 'empty'
--- circuit [x]   == 'edge' x x
--- circuit [x,y] == 'edges' [(x,y), (y,x)]
+-- circuit []        == 'empty'
+-- circuit [x]       == 'edge' x x
+-- circuit [x,y]     == 'edges' [(x,y), (y,x)]
+-- circuit . 'reverse' == 'transpose' . circuit
 -- @
 circuit :: Ord a => [a] -> Relation a
 circuit = C.circuit
@@ -390,10 +393,11 @@ circuit = C.circuit
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- clique []      == 'empty'
--- clique [x]     == 'vertex' x
--- clique [x,y]   == 'edge' x y
--- clique [x,y,z] == 'edges' [(x,y), (x,z), (y,z)]
+-- clique []        == 'empty'
+-- clique [x]       == 'vertex' x
+-- clique [x,y]     == 'edge' x y
+-- clique [x,y,z]   == 'edges' [(x,y), (x,z), (y,z)]
+-- clique . 'reverse' == 'transpose' . clique
 -- @
 clique :: Ord a => [a] -> Relation a
 clique = C.clique
@@ -481,6 +485,22 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 mergeVertices :: Ord a => (a -> Bool) -> a -> Relation a -> Relation a
 mergeVertices p v = gmap $ \u -> if p u then v else u
 
+-- | Transpose a given graph.
+-- Complexity: /O(m * log(m))/ time.
+--
+-- @
+-- transpose 'empty'       == 'empty'
+-- transpose ('vertex' x)  == 'vertex' x
+-- transpose ('edge' x y)  == 'edge' y x
+-- transpose . transpose == id
+-- transpose . 'path'      == 'path'    . 'reverse'
+-- transpose . 'circuit'   == 'circuit' . 'reverse'
+-- transpose . 'clique'    == 'clique'  . 'reverse'
+-- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
+-- @
+transpose :: Ord a => Relation a -> Relation a
+transpose (Relation d r) = Relation d (Set.map swap r)
+
 -- | Transform a graph by applying a function to each of its vertices. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
 -- 'Relation'.
@@ -514,7 +534,7 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
     pp (x, y) = p x && p y
 
 -- | Compute the /reflexive closure/ of a 'Relation'.
--- Complexity: /O(n*log(m))/ time.
+-- Complexity: /O(n * log(m))/ time.
 --
 -- @
 -- reflexiveClosure 'empty'      == 'empty'
@@ -525,7 +545,7 @@ reflexiveClosure (Relation d r) =
     Relation d $ r `Set.union` Set.fromDistinctAscList [ (a, a) | a <- Set.toAscList d ]
 
 -- | Compute the /symmetric closure/ of a 'Relation'.
--- Complexity: /O(m*log(m))/ time.
+-- Complexity: /O(m * log(m))/ time.
 --
 -- @
 -- symmetricClosure 'empty'      == 'empty'
