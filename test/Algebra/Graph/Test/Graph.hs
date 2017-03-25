@@ -36,7 +36,7 @@ testGraph = do
     test "Axioms of graphs"   $ (axioms   :: GraphTestsuite G)
     test "Theorems of graphs" $ (theorems :: GraphTestsuite G)
 
-    putStrLn "\n============ empty ============"
+    putStrLn "\n============ Graph.empty ============"
     test "isEmpty     empty == True" $
           isEmpty    (empty :: G) == True
 
@@ -52,7 +52,7 @@ testGraph = do
     test "size        empty == 1" $
           size       (empty :: G) == 1
 
-    putStrLn "\n============ vertex ============"
+    putStrLn "\n============ Graph.vertex ============"
     test "isEmpty     (vertex x) == False" $ \(x :: Int) ->
           isEmpty     (vertex x) == False
 
@@ -71,7 +71,7 @@ testGraph = do
     test "size        (vertex x) == 1" $ \(x :: Int) ->
           size        (vertex x) == 1
 
-    putStrLn "\n============ edge ============"
+    putStrLn "\n============ Graph.edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
           edge x y               == connect (vertex x) (vertex y)
 
@@ -87,7 +87,7 @@ testGraph = do
     test "vertexCount (edge 1 2) == 2" $
           vertexCount (edge 1 2 :: G) == 2
 
-    putStrLn "\n============ overlay ============"
+    putStrLn "\n============ Graph.overlay ============"
     test "isEmpty     (overlay x y) == isEmpty   x   && isEmpty   y" $ \(x :: G) y ->
           isEmpty     (overlay x y) ==(isEmpty   x   && isEmpty   y)
 
@@ -115,7 +115,7 @@ testGraph = do
     test "edgeCount   (overlay 1 2) == 0" $
           edgeCount   (overlay 1 2 :: G) == 0
 
-    putStrLn "\n============ connect ============"
+    putStrLn "\n============ Graph.connect ============"
     test "isEmpty     (connect x y) == isEmpty   x   && isEmpty   y" $ \(x :: G) y ->
           isEmpty     (connect x y) ==(isEmpty   x   && isEmpty   y)
 
@@ -149,7 +149,7 @@ testGraph = do
     test "edgeCount   (connect 1 2) == 1" $
           edgeCount   (connect 1 2 :: G) == 1
 
-    putStrLn "\n============ vertices ============"
+    putStrLn "\n============ Graph.vertices ============"
     test "vertices []            == empty" $
           vertices []            == (empty :: G)
 
@@ -165,7 +165,7 @@ testGraph = do
     test "vertexSet   . vertices == Set.fromList" $ \(xs :: [Int]) ->
          (vertexSet   . vertices) xs == Set.fromList xs
 
-    putStrLn "\n============ edges ============"
+    putStrLn "\n============ Graph.edges ============"
     test "edges []          == empty" $
           edges []          ==(empty :: G)
 
@@ -175,7 +175,7 @@ testGraph = do
     test "edgeCount . edges == length . nub" $ \(xs :: [(Int, Int)]) ->
          (edgeCount . edges) xs == (length . nubOrd) xs
 
-    putStrLn "\n============ overlays ============"
+    putStrLn "\n============ Graph.overlays ============"
     test "overlays []        == empty" $
           overlays []        ==(empty :: G)
 
@@ -188,7 +188,7 @@ testGraph = do
     test "isEmpty . overlays == all isEmpty" $ \(xs :: [G]) ->
          (isEmpty . overlays) xs == all isEmpty xs
 
-    putStrLn "\n============ connects ============"
+    putStrLn "\n============ Graph.connects ============"
     test "connects []        == empty" $
           connects []        ==(empty :: G)
 
@@ -201,7 +201,7 @@ testGraph = do
     test "isEmpty . connects == all isEmpty" $ \(xs :: [G]) ->
          (isEmpty . connects) xs == all isEmpty xs
 
-    putStrLn "\n============ graph ============"
+    putStrLn "\n============ Graph.graph ============"
     test "graph []  []      == empty" $
           graph []  []      ==(empty :: G)
 
@@ -214,7 +214,7 @@ testGraph = do
     test "graph vs  es      == overlay (vertices vs) (edges es)" $ \(vs :: [Int]) es ->
           graph vs  es      == overlay (vertices vs) (edges es)
 
-    putStrLn "\n============ foldg ============"
+    putStrLn "\n============ Graph.foldg ============"
     test "foldg empty vertex        overlay connect        == id" $ \(x :: G) ->
           foldg empty vertex        overlay connect x      == x
 
@@ -233,7 +233,7 @@ testGraph = do
     test "foldg True  (const False) (&&)    (&&)           == isEmpty" $ \(x :: G) ->
           foldg True  (const False) (&&)    (&&) x         == isEmpty x
 
-    putStrLn "\n============ isSubgraphOf ============"
+    putStrLn "\n============ Graph.isSubgraphOf ============"
     test "isSubgraphOf empty         x             == True" $ \(x :: G) ->
           isSubgraphOf empty         x             == True
 
@@ -249,7 +249,7 @@ testGraph = do
     test "isSubgraphOf (path xs)     (circuit xs)  == True" $ \xs ->
           isSubgraphOf (path xs :: G)(circuit xs)  == True
 
-    putStrLn "\n============ (===) ============"
+    putStrLn "\n============ Graph.(===) ============"
     test "    x === x         == True" $ \(x :: G) ->
              (x === x)        == True
 
@@ -265,7 +265,7 @@ testGraph = do
     test "x + y === x * y     == False" $ \(x :: G) y ->
          (x + y === x * y)    == False
 
-    putStrLn "\n============ isEmpty ============"
+    putStrLn "\n============ Graph.isEmpty ============"
     test "isEmpty empty                       == True" $
           isEmpty (empty :: G)                == True
 
@@ -281,7 +281,7 @@ testGraph = do
     test "isEmpty (removeEdge x y $ edge x y) == False" $ \(x :: Int) y ->
           isEmpty (removeEdge x y $ edge x y) == False
 
-    putStrLn "\n============ size ============"
+    putStrLn "\n============ Graph.size ============"
     test "size empty         == 1" $
           size (empty :: G)  == 1
 
@@ -300,7 +300,7 @@ testGraph = do
     test "size x             >= vertexCount x" $ \(x :: G) ->
           size x             >= vertexCount x
 
-    putStrLn "\n============ hasVertex ============"
+    putStrLn "\n============ Graph.hasVertex ============"
     test "hasVertex x empty            == False" $ \(x :: Int) ->
           hasVertex x empty            == False
 
@@ -310,7 +310,7 @@ testGraph = do
     test "hasVertex x . removeVertex x == const False" $ \(x :: Int) y ->
           hasVertex x (removeVertex x y)==const False y
 
-    putStrLn "\n============ hasEdge ============"
+    putStrLn "\n============ Graph.hasEdge ============"
     test "hasEdge x y empty            == False" $ \(x :: Int) y ->
           hasEdge x y empty            == False
 
@@ -323,7 +323,7 @@ testGraph = do
     test "hasEdge x y . removeEdge x y == const False" $ \(x :: Int) y z ->
           hasEdge x y (removeEdge x y z)==const False z
 
-    putStrLn "\n============ vertexCount ============"
+    putStrLn "\n============ Graph.vertexCount ============"
     test "vertexCount empty      == 0" $
           vertexCount (empty :: G) == 0
 
@@ -333,7 +333,7 @@ testGraph = do
     test "vertexCount            == length . vertexList" $ \(x :: G) ->
           vertexCount x          ==(length . vertexList) x
 
-    putStrLn "\n============ edgeCount ============"
+    putStrLn "\n============ Graph.edgeCount ============"
     test "edgeCount empty      == 0" $
           edgeCount (empty :: G) == 0
 
@@ -346,7 +346,7 @@ testGraph = do
     test "edgeCount            == length . edgeList" $ \(x :: G) ->
           edgeCount x          == (length . edgeList) x
 
-    putStrLn "\n============ vertexList ============"
+    putStrLn "\n============ Graph.vertexList ============"
     test "vertexList empty      == []" $
           vertexList (empty :: G) == []
 
@@ -356,7 +356,7 @@ testGraph = do
     test "vertexList . vertices == nub . sort" $ \(xs :: [Int]) ->
          (vertexList . vertices) xs == (nubOrd . sort) xs
 
-    putStrLn "\n============ edgeList ============"
+    putStrLn "\n============ Graph.edgeList ============"
     test "edgeList empty          == []" $
           edgeList (empty :: G )  == []
 
@@ -372,7 +372,7 @@ testGraph = do
     test "edgeList . edges        == nub . sort" $ \(xs :: [(Int, Int)]) ->
          (edgeList . edges) xs    ==(nubOrd . sort) xs
 
-    putStrLn "\n============ vertexSet ============"
+    putStrLn "\n============ Graph.vertexSet ============"
     test "vertexSet empty      == Set.empty" $
           vertexSet(empty :: G)== Set.empty
 
@@ -385,7 +385,7 @@ testGraph = do
     test "vertexSet . clique   == Set.fromList" $ \(xs :: [Int]) ->
          (vertexSet . clique) xs == Set.fromList xs
 
-    putStrLn "\n============ vertexIntSet ============"
+    putStrLn "\n============ Graph.vertexIntSet ============"
     test "vertexIntSet empty      == IntSet.empty" $
           vertexIntSet(empty :: G)== IntSet.empty
 
@@ -398,7 +398,7 @@ testGraph = do
     test "vertexIntSet . clique   == IntSet.fromList" $ \(xs :: [Int]) ->
          (vertexIntSet . clique) xs == IntSet.fromList xs
 
-    putStrLn "\n============ edgeSet ============"
+    putStrLn "\n============ Graph.edgeSet ============"
     test "edgeSet empty      == Set.empty" $
           edgeSet (empty :: G) == Set.empty
 
@@ -411,7 +411,7 @@ testGraph = do
     test "edgeSet . edges    == Set.fromList" $ \(xs :: [(Int, Int)]) ->
          (edgeSet . edges) xs== Set.fromList xs
 
-    putStrLn "\n============ path ============"
+    putStrLn "\n============ Graph.path ============"
     test "path []    == empty" $
           path []    ==(empty :: G)
 
@@ -421,7 +421,7 @@ testGraph = do
     test "path [x,y] == edge x y" $ \(x :: Int) y ->
           path [x,y] == edge x y
 
-    putStrLn "\n============ circuit ============"
+    putStrLn "\n============ Graph.circuit ============"
     test "circuit []    == empty" $
           circuit []    ==(empty :: G)
 
@@ -431,7 +431,7 @@ testGraph = do
     test "circuit [x,y] == edges [(x,y), (y,x)]" $ \(x :: Int) y ->
           circuit [x,y] == edges [(x,y), (y,x)]
 
-    putStrLn "\n============ clique ============"
+    putStrLn "\n============ Graph.clique ============"
     test "clique []      == empty" $
           clique []      ==(empty :: G)
 
@@ -444,7 +444,7 @@ testGraph = do
     test "clique [x,y,z] == edges [(x,y), (x,z), (y,z)]" $ \(x :: Int) y z ->
           clique [x,y,z] == edges [(x,y), (x,z), (y,z)]
 
-    putStrLn "\n============ biclique ============"
+    putStrLn "\n============ Graph.biclique ============"
     test "biclique []      []      == empty" $
           biclique []      []      ==(empty :: G)
 
@@ -457,7 +457,7 @@ testGraph = do
     test "biclique [x1,x2] [y1,y2] == edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]" $ \(x1 :: Int) x2 y1 y2 ->
           biclique [x1,x2] [y1,y2] == edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
 
-    putStrLn "\n============ star ============"
+    putStrLn "\n============ Graph.star ============"
     test "star x []    == vertex x" $ \(x :: Int) ->
           star x []    == vertex x
 
@@ -467,7 +467,7 @@ testGraph = do
     test "star x [y,z] == edges [(x,y), (x,z)]" $ \(x :: Int) y z ->
           star x [y,z] == edges [(x,y), (x,z)]
 
-    putStrLn "\n============ mesh ============"
+    putStrLn "\n============ Graph.mesh ============"
     test "mesh xs     []   == empty" $ \xs ->
           mesh xs     []   == (empty :: Graph (Int, Int))
 
@@ -484,7 +484,7 @@ testGraph = do
          mesh [1..3] "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
                                     , ((2,'a'),(3,'a')), ((2,'b'),(3,'b')), ((3,'a'),(3 :: Int,'b')) ]
 
-    putStrLn "\n============ torus ============"
+    putStrLn "\n============ Graph.torus ============"
     test "torus xs    []   == empty" $ \xs ->
           torus xs    []   == (empty :: Graph (Int, Int))
 
@@ -501,7 +501,7 @@ testGraph = do
          torus [1,2] "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
                                     , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ]
 
-    putStrLn "\n============ deBruijn ============"
+    putStrLn "\n============ Graph.deBruijn ============"
     test "deBruijn k []    == empty" $ \k ->
           deBruijn k []    == (empty :: Graph [Int])
 
@@ -515,14 +515,14 @@ testGraph = do
           deBruijn 2 "01"  == edges [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
                                     , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
 
-    putStrLn "\n============ removeVertex ============"
+    putStrLn "\n============ Graph.removeVertex ============"
     test "removeVertex x (vertex x)       == empty" $ \(x :: Int) ->
           removeVertex x (vertex x)       == empty
 
     test "removeVertex x . removeVertex x == removeVertex x" $ \x (y :: G) ->
          (removeVertex x . removeVertex x)y==removeVertex x y
 
-    putStrLn "\n============ removeEdge ============"
+    putStrLn "\n============ Graph.removeEdge ============"
     test "removeEdge x y (edge x y)       == vertices [x, y]" $ \(x :: Int) y ->
           removeEdge x y (edge x y)       == vertices [x, y]
 
@@ -538,7 +538,7 @@ testGraph = do
     test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
           removeEdge 1 2 (1 * 1 * 2 * 2)  ==(1 * 1 + 2 * (2 :: G))
 
-    putStrLn "\n============ replaceVertex ============"
+    putStrLn "\n============ Graph.replaceVertex ============"
     test "replaceVertex x x            == id" $ \x (y :: G) ->
           replaceVertex x x y          == y
 
@@ -548,7 +548,7 @@ testGraph = do
     test "replaceVertex x y            == mergeVertices (== x) y" $ \x y z ->
           replaceVertex x y z          == mergeVertices (== x) y (z :: G)
 
-    putStrLn "\n============ mergeVertices ============"
+    putStrLn "\n============ Graph.mergeVertices ============"
     test "mergeVertices (const False) x    == id" $ \x (y :: G) ->
           mergeVertices (const False) x y  == y
 
@@ -561,7 +561,7 @@ testGraph = do
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
           mergeVertices odd  1 (3 + 4 * 5) ==(4 * 1 :: G)
 
-    putStrLn "\n============ splitVertex ============"
+    putStrLn "\n============ Graph.splitVertex ============"
     test "splitVertex x []                   == removeVertex x" $ \x (y :: G) ->
          (splitVertex x []) y                == removeVertex x y
 
@@ -574,7 +574,7 @@ testGraph = do
     test "splitVertex 1 [0, 1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)" $
          (splitVertex 1 [0, 1] $ 1 * (2 + 3))==((0 + 1) * (2 + 3 :: G))
 
-    putStrLn "\n============ transpose ============"
+    putStrLn "\n============ Graph.transpose ============"
     test "transpose empty       == empty" $
           transpose empty       ==(empty :: G)
 
@@ -602,7 +602,7 @@ testGraph = do
     test "edgeList . transpose  == sort . map swap . edgeList" $ \(x :: G) ->
          (edgeList . transpose) x == (sort . map swap . edgeList) x
 
-    putStrLn "\n============ fmap ============"
+    putStrLn "\n============ Graph.fmap ============"
     test "fmap f empty      == empty" $ \(apply -> f :: II) ->
           fmap f empty      == empty
 
@@ -618,7 +618,7 @@ testGraph = do
     test "fmap f . fmap g   == fmap (f . g)" $ \(apply -> f :: II) (apply -> g :: II) (x :: G) ->
          (fmap f . fmap g) x== fmap (f . g) x
 
-    putStrLn "\n============ >>= ============"
+    putStrLn "\n============ Graph.>>= ============"
     test "empty >>= f       == empty" $ \(apply -> f :: IG) ->
          (empty >>= f)      == empty
 
@@ -640,7 +640,7 @@ testGraph = do
     test "(x >>= f) >>= g   == x >>= (\\y -> f y >>= g)" $ mapSize (min 10) $ \x (apply -> f :: IG) (apply -> g :: IG) ->
          ((x >>= f) >>= g)  ==(x >>= (\y  -> f y >>= g))
 
-    putStrLn "\n============ induce ============"
+    putStrLn "\n============ Graph.induce ============"
     test "induce (const True)  x      == x" $ \(x :: G) ->
           induce (const True)  x      == x
 
@@ -656,7 +656,7 @@ testGraph = do
     test "isSubgraphOf (induce p x) x == True" $ \(apply -> p :: IB) (x :: G) ->
           isSubgraphOf (induce p x) x == True
 
-    putStrLn "\n============ simplify ============"
+    putStrLn "\n============ Graph.simplify ============"
     test "simplify              == id" $ \(x :: G) ->
           simplify x            == x
 
@@ -678,7 +678,7 @@ testGraph = do
     test "simplify (1 * 1 * 1) === 1 * 1" $
           simplify (1 * 1 * 1) === (1 * 1 :: G)
 
-    putStrLn "\n============ box ============"
+    putStrLn "\n============ Graph.box ============"
     let unit = fmap $ \(a, ()) -> a
         comm = fmap $ \(a,  b) -> (b, a)
     test "box x y             ~~ box y x" $ mapSize (min 10) $ \(x :: G) (y :: G) ->

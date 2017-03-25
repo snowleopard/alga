@@ -35,7 +35,7 @@ testFold = do
     putStrLn "\n============ Fold ============"
     test "Axioms of graphs"   $ (axioms   :: GraphTestsuite F)
 
-    putStrLn "\n============ Show ============"
+    putStrLn "\n============ Fold.Show ============"
     test "show (empty     :: Fold Int) == \"empty\"" $
           show (empty     :: Fold Int) == "empty"
 
@@ -54,7 +54,7 @@ testFold = do
     test "show (1 * 2 + 3 :: Fold Int) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: Fold Int) == "graph [1,2,3] [(1,2)]"
 
-    putStrLn "\n============ empty ============"
+    putStrLn "\n============ Fold.empty ============"
     test "isEmpty     empty == True" $
           isEmpty    (empty :: F) == True
 
@@ -70,7 +70,7 @@ testFold = do
     test "size        empty == 1" $
           size       (empty :: F) == 1
 
-    putStrLn "\n============ vertex ============"
+    putStrLn "\n============ Fold.vertex ============"
     test "isEmpty     (vertex x) == False" $ \(x :: Int) ->
           isEmpty     (vertex x) == False
 
@@ -89,7 +89,7 @@ testFold = do
     test "size        (vertex x) == 1" $ \(x :: Int) ->
           size        (vertex x) == 1
 
-    putStrLn "\n============ edge ============"
+    putStrLn "\n============ Fold.edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
          (edge x y :: F)         == connect (vertex x) (vertex y)
 
@@ -105,7 +105,7 @@ testFold = do
     test "vertexCount (edge 1 2) == 2" $
           vertexCount (edge 1 2 :: F) == 2
 
-    putStrLn "\n============ overlay ============"
+    putStrLn "\n============ Fold.overlay ============"
     test "isEmpty     (overlay x y) == isEmpty   x   && isEmpty   y" $ \(x :: F) y ->
           isEmpty     (overlay x y) == (isEmpty   x   && isEmpty   y)
 
@@ -133,7 +133,7 @@ testFold = do
     test "edgeCount   (overlay 1 2) == 0" $
           edgeCount   (overlay 1 2 :: F) == 0
 
-    putStrLn "\n============ connect ============"
+    putStrLn "\n============ Fold.connect ============"
     test "isEmpty     (connect x y) == isEmpty   x   && isEmpty   y" $ \(x :: F) y ->
           isEmpty     (connect x y) == (isEmpty   x   && isEmpty   y)
 
@@ -167,7 +167,7 @@ testFold = do
     test "edgeCount   (connect 1 2) == 1" $
           edgeCount   (connect 1 2 :: F) == 1
 
-    putStrLn "\n============ vertices ============"
+    putStrLn "\n============ Fold.vertices ============"
     test "vertices []            == empty" $
           vertices []            == (empty :: F)
 
@@ -183,7 +183,7 @@ testFold = do
     test "vertexSet   . vertices == Set.fromList" $ \(xs :: [Int]) ->
          (vertexSet   . vertices) xs == Set.fromList xs
 
-    putStrLn "\n============ edges ============"
+    putStrLn "\n============ Fold.edges ============"
     test "edges []          == empty" $
           edges []          == (empty :: F)
 
@@ -193,7 +193,7 @@ testFold = do
     test "edgeCount . edges == length . nub" $ \(xs :: [(Int, Int)]) ->
          (edgeCount . edges) xs == (length . nubOrd) xs
 
-    putStrLn "\n============ overlays ============"
+    putStrLn "\n============ Fold.overlays ============"
     test "overlays []        == empty" $
           overlays []        == (empty :: F)
 
@@ -206,7 +206,7 @@ testFold = do
     test "isEmpty . overlays == all isEmpty" $ \(xs :: [F]) ->
          (isEmpty . overlays) xs == all isEmpty xs
 
-    putStrLn "\n============ connects ============"
+    putStrLn "\n============ Fold.connects ============"
     test "connects []        == empty" $
           connects []        == (empty :: F)
 
@@ -219,7 +219,7 @@ testFold = do
     test "isEmpty . connects == all isEmpty" $ \(xs :: [F]) ->
          (isEmpty . connects) xs == all isEmpty xs
 
-    putStrLn "\n============ graph ============"
+    putStrLn "\n============ Fold.graph ============"
     test "graph []  []      == empty" $
           graph []  []      == (empty :: F)
 
@@ -232,7 +232,7 @@ testFold = do
     test "graph vs  es      == overlay (vertices vs) (edges es)" $ \(vs :: [Int]) es ->
           graph vs  es      == (overlay (vertices vs) (edges es) :: F)
 
-    putStrLn "\n============ foldg ============"
+    putStrLn "\n============ Fold.foldg ============"
     test "foldg empty vertex        overlay connect        == id" $ \(x :: F) ->
           foldg empty vertex        overlay connect x      == x
 
@@ -251,7 +251,7 @@ testFold = do
     test "foldg True  (const False) (&&)    (&&)           == isEmpty" $ \(x :: F) ->
           foldg True  (const False) (&&)    (&&) x         == isEmpty x
 
-    putStrLn "\n============ isSubgraphOf ============"
+    putStrLn "\n============ Fold.isSubgraphOf ============"
     test "isSubgraphOf empty         x             == True" $ \(x :: F) ->
           isSubgraphOf empty         x             == True
 
@@ -267,7 +267,7 @@ testFold = do
     test "isSubgraphOf (path xs)     (circuit xs)  == True" $ \xs ->
           isSubgraphOf (path xs :: F)(circuit xs)  == True
 
-    putStrLn "\n============ isEmpty ============"
+    putStrLn "\n============ Fold.isEmpty ============"
     test "isEmpty empty                       == True" $
           isEmpty (empty :: F)                == True
 
@@ -283,7 +283,7 @@ testFold = do
     test "isEmpty (removeEdge x y $ edge x y) == False" $ \(x :: Int) y ->
           isEmpty (removeEdge x y $ edge x y) == False
 
-    putStrLn "\n============ size ============"
+    putStrLn "\n============ Fold.size ============"
     test "size empty         == 1" $
           size (empty :: F)  == 1
 
@@ -302,7 +302,7 @@ testFold = do
     test "size x             >= vertexCount x" $ \(x :: F) ->
           size x             >= vertexCount x
 
-    putStrLn "\n============ hasVertex ============"
+    putStrLn "\n============ Fold.hasVertex ============"
     test "hasVertex x empty            == False" $ \(x :: Int) ->
           hasVertex x empty            == False
 
@@ -312,7 +312,7 @@ testFold = do
     test "hasVertex x . removeVertex x == const False" $ \(x :: Int) y ->
           hasVertex x (removeVertex x y)==const False y
 
-    putStrLn "\n============ hasEdge ============"
+    putStrLn "\n============ Fold.hasEdge ============"
     test "hasEdge x y empty            == False" $ \(x :: Int) y ->
           hasEdge x y empty            == False
 
@@ -325,7 +325,7 @@ testFold = do
     test "hasEdge x y . removeEdge x y == const False" $ \(x :: Int) y z ->
           hasEdge x y (removeEdge x y z)==const False z
 
-    putStrLn "\n============ vertexCount ============"
+    putStrLn "\n============ Fold.vertexCount ============"
     test "vertexCount empty      == 0" $
           vertexCount (empty :: F) == 0
 
@@ -335,7 +335,7 @@ testFold = do
     test "vertexCount            == length . vertexList" $ \(x :: F) ->
           vertexCount x          == (length . vertexList) x
 
-    putStrLn "\n============ edgeCount ============"
+    putStrLn "\n============ Fold.edgeCount ============"
     test "edgeCount empty      == 0" $
           edgeCount (empty :: F) == 0
 
@@ -348,7 +348,7 @@ testFold = do
     test "edgeCount            == length . edgeList" $ \(x :: F) ->
           edgeCount x          == (length . edgeList) x
 
-    putStrLn "\n============ vertexList ============"
+    putStrLn "\n============ Fold.vertexList ============"
     test "vertexList empty      == []" $
           vertexList (empty :: F) == []
 
@@ -358,7 +358,7 @@ testFold = do
     test "vertexList . vertices == nub . sort" $ \(xs :: [Int]) ->
          (vertexList . vertices) xs == (nubOrd . sort) xs
 
-    putStrLn "\n============ edgeList ============"
+    putStrLn "\n============ Fold.edgeList ============"
     test "edgeList empty          == []" $
           edgeList (empty :: F )  == []
 
@@ -374,7 +374,7 @@ testFold = do
     test "edgeList . edges        == nub . sort" $ \(xs :: [(Int, Int)]) ->
          (edgeList . edges) xs    == (nubOrd . sort) xs
 
-    putStrLn "\n============ vertexSet ============"
+    putStrLn "\n============ Fold.vertexSet ============"
     test "vertexSet empty      == Set.empty" $
           vertexSet(empty :: F)== Set.empty
 
@@ -387,7 +387,7 @@ testFold = do
     test "vertexSet . clique   == Set.fromList" $ \(xs :: [Int]) ->
          (vertexSet . clique) xs == Set.fromList xs
 
-    putStrLn "\n============ vertexIntSet ============"
+    putStrLn "\n============ Fold.vertexIntSet ============"
     test "vertexIntSet empty      == IntSet.empty" $
           vertexIntSet(empty :: F)== IntSet.empty
 
@@ -400,7 +400,7 @@ testFold = do
     test "vertexIntSet . clique   == IntSet.fromList" $ \(xs :: [Int]) ->
          (vertexIntSet . clique) xs == IntSet.fromList xs
 
-    putStrLn "\n============ edgeSet ============"
+    putStrLn "\n============ Fold.edgeSet ============"
     test "edgeSet empty      == Set.empty" $
           edgeSet (empty :: F) == Set.empty
 
@@ -413,7 +413,7 @@ testFold = do
     test "edgeSet . edges    == Set.fromList" $ \(xs :: [(Int, Int)]) ->
          (edgeSet . edges) xs== Set.fromList xs
 
-    putStrLn "\n============ path ============"
+    putStrLn "\n============ Fold.path ============"
     test "path []    == empty" $
           path []    == (empty :: F)
 
@@ -423,7 +423,7 @@ testFold = do
     test "path [x,y] == edge x y" $ \(x :: Int) y ->
           path [x,y] == (edge x y :: F)
 
-    putStrLn "\n============ circuit ============"
+    putStrLn "\n============ Fold.circuit ============"
     test "circuit []    == empty" $
           circuit []    == (empty :: F)
 
@@ -433,7 +433,7 @@ testFold = do
     test "circuit [x,y] == edges [(x,y), (y,x)]" $ \(x :: Int) y ->
           circuit [x,y] == (edges [(x,y), (y,x)] :: F)
 
-    putStrLn "\n============ clique ============"
+    putStrLn "\n============ Fold.clique ============"
     test "clique []      == empty" $
           clique []      == (empty :: F)
 
@@ -446,7 +446,7 @@ testFold = do
     test "clique [x,y,z] == edges [(x,y), (x,z), (y,z)]" $ \(x :: Int) y z ->
           clique [x,y,z] == (edges [(x,y), (x,z), (y,z)] :: F)
 
-    putStrLn "\n============ biclique ============"
+    putStrLn "\n============ Fold.biclique ============"
     test "biclique []      []      == empty" $
           biclique []      []      == (empty :: F)
 
@@ -459,7 +459,7 @@ testFold = do
     test "biclique [x1,x2] [y1,y2] == edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]" $ \(x1 :: Int) x2 y1 y2 ->
           biclique [x1,x2] [y1,y2] == (edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)] :: F)
 
-    putStrLn "\n============ star ============"
+    putStrLn "\n============ Fold.star ============"
     test "star x []    == vertex x" $ \(x :: Int) ->
           star x []    == (vertex x :: F)
 
@@ -469,7 +469,7 @@ testFold = do
     test "star x [y,z] == edges [(x,y), (x,z)]" $ \(x :: Int) y z ->
           star x [y,z] == (edges [(x,y), (x,z)] :: F)
 
-    putStrLn "\n============ mesh ============"
+    putStrLn "\n============ Fold.mesh ============"
     test "mesh xs     []   == empty" $ \xs ->
           mesh xs     []   == (empty :: Fold (Int, Int))
 
@@ -486,7 +486,7 @@ testFold = do
          (mesh [1..3] "ab" :: Fold (Int, Char)) == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
                                                          , ((2,'a'),(3,'a')), ((2,'b'),(3,'b')), ((3,'a'),(3,'b')) ]
 
-    putStrLn "\n============ torus ============"
+    putStrLn "\n============ Fold.torus ============"
     test "torus xs    []   == empty" $ \xs ->
           torus xs    []   == (empty :: Fold (Int, Int))
 
@@ -503,7 +503,7 @@ testFold = do
          (torus [1,2] "ab" :: Fold (Int, Char)) == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
                                                          , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2,'a')) ]
 
-    putStrLn "\n============ deBruijn ============"
+    putStrLn "\n============ Fold.deBruijn ============"
     test "deBruijn k []    == empty" $ \k ->
           deBruijn k []    == (empty :: Fold [Int])
 
@@ -517,14 +517,14 @@ testFold = do
           (deBruijn 2 "01" :: Fold String) == edges [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
                                                     , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
 
-    putStrLn "\n============ removeVertex ============"
+    putStrLn "\n============ Fold.removeVertex ============"
     test "removeVertex x (vertex x)       == empty" $ \(x :: Int) ->
           removeVertex x (vertex x)       == (empty :: F)
 
     test "removeVertex x . removeVertex x == removeVertex x" $ \x (y :: F) ->
          (removeVertex x . removeVertex x)y==(removeVertex x y :: F)
 
-    putStrLn "\n============ removeEdge ============"
+    putStrLn "\n============ Fold.removeEdge ============"
     test "removeEdge x y (edge x y)       == vertices [x, y]" $ \(x :: Int) y ->
           removeEdge x y (edge x y)       == (vertices [x, y] :: F)
 
@@ -540,7 +540,7 @@ testFold = do
     test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
           removeEdge 1 2 (1 * 1 * 2 * 2)  == (1 * 1 + 2 * (2 :: F))
 
-    putStrLn "\n============ replaceVertex ============"
+    putStrLn "\n============ Fold.replaceVertex ============"
     test "replaceVertex x x            == id" $ \x (y :: F) ->
           replaceVertex x x y          == y
 
@@ -550,7 +550,7 @@ testFold = do
     test "replaceVertex x y            == mergeVertices (== x) y" $ \x y z ->
           replaceVertex x y z          == (mergeVertices (== x) y z :: F)
 
-    putStrLn "\n============ mergeVertices ============"
+    putStrLn "\n============ Fold.mergeVertices ============"
     test "mergeVertices (const False) x    == id" $ \x (y :: F) ->
           mergeVertices (const False) x y  == y
 
@@ -563,7 +563,7 @@ testFold = do
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
           mergeVertices odd  1 (3 + 4 * 5) == (4 * 1 :: F)
 
-    putStrLn "\n============ splitVertex ============"
+    putStrLn "\n============ Fold.splitVertex ============"
     test "splitVertex x []                   == removeVertex x" $ \x (y :: F) ->
          (splitVertex x []) y                == (removeVertex x y :: F)
 
@@ -576,7 +576,7 @@ testFold = do
     test "splitVertex 1 [0, 1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)" $
          (splitVertex 1 [0, 1] $ 1 * (2 + 3))== ((0 + 1) * (2 + 3 :: F))
 
-    putStrLn "\n============ transpose ============"
+    putStrLn "\n============ Fold.transpose ============"
     test "transpose empty       == empty" $
           transpose empty       == (empty :: F)
 
@@ -604,7 +604,7 @@ testFold = do
     test "edgeList . transpose  == sort . map swap . edgeList" $ \(x :: F) ->
          (edgeList . transpose) x == (sort . map swap . edgeList) x
 
-    putStrLn "\n============ gmap ============"
+    putStrLn "\n============ Fold.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f :: II) ->
           gmap f empty      == (empty :: F)
 
@@ -620,7 +620,7 @@ testFold = do
     test "gmap f . gmap g   == gmap (f . g)" $ \(apply -> f :: II) (apply -> g :: II) (x :: F) ->
          (gmap f . gmap g) x== (gmap (f . g) x :: F)
 
-    putStrLn "\n============ bind ============"
+    putStrLn "\n============ Fold.bind ============"
     test "bind empty f         == empty" $ \(apply -> f :: IF) ->
           bind empty f         == empty
 
@@ -642,7 +642,7 @@ testFold = do
     test "bind (bind x f) g    == bind x (\\y -> bind (f y) g)" $ mapSize (min 10) $ \x (apply -> f :: IF) (apply -> g :: IF) ->
           bind (bind x f) g    == bind x (\y -> bind (f y) g)
 
-    putStrLn "\n============ induce ============"
+    putStrLn "\n============ Fold.induce ============"
     test "induce (const True)  x      == x" $ \(x :: F) ->
           induce (const True)  x      == x
 
@@ -658,14 +658,14 @@ testFold = do
     test "isSubgraphOf (induce p x) x == True" $ \(apply -> p :: IB) (x :: F) ->
           isSubgraphOf (induce p x) x == True
 
-    putStrLn "\n============ simplify ============"
+    putStrLn "\n============ Fold.simplify ============"
     test "simplify              == id" $ \(x :: F) ->
           simplify x            == x
 
     test "size (simplify x)     <= size x" $ \(x :: F) ->
           size (simplify x)     <= size x
 
-    putStrLn "\n============ box ============"
+    putStrLn "\n============ Fold.box ============"
     let unit = fmap $ \(a, ()) -> a
         comm = fmap $ \(a,  b) -> (b, a)
     test "box x y             ~~ box y x" $ mapSize (min 10) $ \(x :: F) (y :: F) ->

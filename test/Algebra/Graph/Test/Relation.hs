@@ -44,7 +44,7 @@ testRelation = do
     test "Consistency of fromAdjacencyList" $ \xs ->
         consistent (fromAdjacencyList xs :: RI)
 
-    putStrLn "\n============ Show ============"
+    putStrLn "\n============ Relation.Show ============"
     test "show (empty     :: Relation Int) == \"empty\"" $
           show (empty     :: Relation Int) == "empty"
 
@@ -63,7 +63,7 @@ testRelation = do
     test "show (1 * 2 + 3 :: Relation Int) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: Relation Int) == "graph [1,2,3] [(1,2)]"
 
-    putStrLn "\n============ empty ============"
+    putStrLn "\n============ Relation.empty ============"
     test "isEmpty     empty == True" $
           isEmpty    (empty :: RI) == True
 
@@ -76,7 +76,7 @@ testRelation = do
     test "edgeCount   empty == 0" $
           edgeCount  (empty :: RI) == 0
 
-    putStrLn "\n============ vertex ============"
+    putStrLn "\n============ Relation.vertex ============"
     test "isEmpty     (vertex x) == False" $ \(x :: Int) ->
           isEmpty     (vertex x) == False
 
@@ -92,7 +92,7 @@ testRelation = do
     test "edgeCount   (vertex x) == 0" $ \(x :: Int) ->
           edgeCount   (vertex x) == 0
 
-    putStrLn "\n============ edge ============"
+    putStrLn "\n============ Relation.edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
          (edge x y :: RI)        == connect (vertex x) (vertex y)
 
@@ -108,7 +108,7 @@ testRelation = do
     test "vertexCount (edge 1 2) == 2" $
           vertexCount (edge 1 2 :: RI) == 2
 
-    putStrLn "\n============ overlay ============"
+    putStrLn "\n============ Relation.overlay ============"
     test "isEmpty     (overlay x y) == isEmpty   x   && isEmpty   y" $ \(x :: RI) y ->
           isEmpty     (overlay x y) == (isEmpty   x   && isEmpty   y)
 
@@ -133,7 +133,7 @@ testRelation = do
     test "edgeCount   (overlay 1 2) == 0" $
           edgeCount   (overlay 1 2 :: RI) == 0
 
-    putStrLn "\n============ connect ============"
+    putStrLn "\n============ Relation.connect ============"
     test "isEmpty     (connect x y) == isEmpty   x   && isEmpty   y" $ \(x :: RI) y ->
           isEmpty     (connect x y) == (isEmpty   x   && isEmpty   y)
 
@@ -164,7 +164,7 @@ testRelation = do
     test "edgeCount   (connect 1 2) == 1" $
           edgeCount   (connect 1 2 :: RI) == 1
 
-    putStrLn "\n============ vertices ============"
+    putStrLn "\n============ Relation.vertices ============"
     test "vertices []            == empty" $
           vertices []            == (empty :: RI)
 
@@ -180,7 +180,7 @@ testRelation = do
     test "vertexSet   . vertices == Set.fromList" $ \(xs :: [Int]) ->
          (vertexSet   . vertices) xs == Set.fromList xs
 
-    putStrLn "\n============ edges ============"
+    putStrLn "\n============ Relation.edges ============"
     test "edges []          == empty" $
           edges []          == (empty :: RI)
 
@@ -190,7 +190,7 @@ testRelation = do
     test "edgeCount . edges == length . nub" $ \(xs :: [(Int, Int)]) ->
          (edgeCount . edges) xs == (length . nubOrd) xs
 
-    putStrLn "\n============ overlays ============"
+    putStrLn "\n============ Relation.overlays ============"
     test "overlays []        == empty" $
           overlays []        == (empty :: RI)
 
@@ -203,7 +203,7 @@ testRelation = do
     test "isEmpty . overlays == all isEmpty" $ mapSize (min 10) $ \(xs :: [RI]) ->
          (isEmpty . overlays) xs == all isEmpty xs
 
-    putStrLn "\n============ connects ============"
+    putStrLn "\n============ Relation.connects ============"
     test "connects []        == empty" $
           connects []        == (empty :: RI)
 
@@ -216,7 +216,7 @@ testRelation = do
     test "isEmpty . connects == all isEmpty" $ mapSize (min 10) $ \(xs :: [RI]) ->
          (isEmpty . connects) xs == all isEmpty xs
 
-    putStrLn "\n============ graph ============"
+    putStrLn "\n============ Relation.graph ============"
     test "graph []  []      == empty" $
           graph []  []      == (empty :: RI)
 
@@ -229,7 +229,7 @@ testRelation = do
     test "graph vs  es      == overlay (vertices vs) (edges es)" $ \(vs :: [Int]) es ->
           graph vs  es      == (overlay (vertices vs) (edges es) :: RI)
 
-    putStrLn "\n============ fromAdjacencyList ============"
+    putStrLn "\n============ Relation.fromAdjacencyList ============"
     test "fromAdjacencyList []                                  == empty" $
           fromAdjacencyList []                                  == (empty :: RI)
 
@@ -242,7 +242,7 @@ testRelation = do
     test "overlay (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)" $ \xs ys ->
           overlay (fromAdjacencyList xs) (fromAdjacencyList ys) ==(fromAdjacencyList (xs ++ ys) :: RI)
 
-    putStrLn "\n============ isSubgraphOf ============"
+    putStrLn "\n============ Relation.isSubgraphOf ============"
     test "isSubgraphOf empty         x             == True" $ \(x :: RI) ->
           isSubgraphOf empty         x             == True
 
@@ -258,7 +258,7 @@ testRelation = do
     test "isSubgraphOf (path xs)     (circuit xs)  == True" $ \xs ->
           isSubgraphOf (path xs :: RI)(circuit xs)  == True
 
-    putStrLn "\n============ isEmpty ============"
+    putStrLn "\n============ Relation.isEmpty ============"
     test "isEmpty empty                       == True" $
           isEmpty (empty :: RI)                == True
 
@@ -274,7 +274,7 @@ testRelation = do
     test "isEmpty (removeEdge x y $ edge x y) == False" $ \(x :: Int) y ->
           isEmpty (removeEdge x y $ edge x y) == False
 
-    putStrLn "\n============ hasVertex ============"
+    putStrLn "\n============ Relation.hasVertex ============"
     test "hasVertex x empty            == False" $ \(x :: Int) ->
           hasVertex x empty            == False
 
@@ -284,7 +284,7 @@ testRelation = do
     test "hasVertex x . removeVertex x == const False" $ \(x :: Int) y ->
           hasVertex x (removeVertex x y)==const False y
 
-    putStrLn "\n============ hasEdge ============"
+    putStrLn "\n============ Relation.hasEdge ============"
     test "hasEdge x y empty            == False" $ \(x :: Int) y ->
           hasEdge x y empty            == False
 
@@ -297,7 +297,7 @@ testRelation = do
     test "hasEdge x y . removeEdge x y == const False" $ \(x :: Int) y z ->
           hasEdge x y (removeEdge x y z)==const False z
 
-    putStrLn "\n============ vertexCount ============"
+    putStrLn "\n============ Relation.vertexCount ============"
     test "vertexCount empty      == 0" $
           vertexCount (empty :: RI) == 0
 
@@ -307,7 +307,7 @@ testRelation = do
     test "vertexCount            == length . vertexList" $ \(x :: RI) ->
           vertexCount x          == (length . vertexList) x
 
-    putStrLn "\n============ edgeCount ============"
+    putStrLn "\n============ Relation.edgeCount ============"
     test "edgeCount empty      == 0" $
           edgeCount (empty :: RI) == 0
 
@@ -320,7 +320,7 @@ testRelation = do
     test "edgeCount            == length . edgeList" $ \(x :: RI) ->
           edgeCount x          == (length . edgeList) x
 
-    putStrLn "\n============ vertexList ============"
+    putStrLn "\n============ Relation.vertexList ============"
     test "vertexList empty      == []" $
           vertexList (empty :: RI) == []
 
@@ -330,7 +330,7 @@ testRelation = do
     test "vertexList . vertices == nub . sort" $ \(xs :: [Int]) ->
          (vertexList . vertices) xs == (nubOrd . sort) xs
 
-    putStrLn "\n============ edgeList ============"
+    putStrLn "\n============ Relation.edgeList ============"
     test "edgeList empty          == []" $
           edgeList (empty :: RI )  == []
 
@@ -346,7 +346,7 @@ testRelation = do
     test "edgeList . edges        == nub . sort" $ \(xs :: [(Int, Int)]) ->
          (edgeList . edges) xs    == (nubOrd . sort) xs
 
-    putStrLn "\n============ vertexSet ============"
+    putStrLn "\n============ Relation.vertexSet ============"
     test "vertexSet empty      == Set.empty" $
           vertexSet(empty :: RI)== Set.empty
 
@@ -359,7 +359,7 @@ testRelation = do
     test "vertexSet . clique   == Set.fromList" $ \(xs :: [Int]) ->
          (vertexSet . clique) xs == Set.fromList xs
 
-    putStrLn "\n============ edgeSet ============"
+    putStrLn "\n============ Relation.edgeSet ============"
     test "edgeSet empty      == Set.empty" $
           edgeSet (empty :: RI) == Set.empty
 
@@ -372,7 +372,7 @@ testRelation = do
     test "edgeSet . edges    == Set.fromList" $ \(xs :: [(Int, Int)]) ->
          (edgeSet . edges) xs== Set.fromList xs
 
-    putStrLn "\n============ preset ============"
+    putStrLn "\n============ Relation.preset ============"
     test "preset x empty      == Set.empty" $ \(x :: Int) ->
           preset x empty      == Set.empty
 
@@ -385,7 +385,7 @@ testRelation = do
     test "preset y (edge x y) == Set.fromList [x]" $ \(x :: Int) y ->
           preset y (edge x y) ==(Set.fromList [x] :: Set.Set Int)
 
-    putStrLn "\n============ postset ============"
+    putStrLn "\n============ Relation.postset ============"
     test "postset x empty      == Set.empty" $ \(x :: Int) ->
           postset x empty      == Set.empty
 
@@ -398,7 +398,7 @@ testRelation = do
     test "postset 2 (edge 1 2) == Set.empty" $
           postset 2 (edge 1 2) ==(Set.empty :: Set.Set Int)
 
-    putStrLn "\n============ path ============"
+    putStrLn "\n============ Relation.path ============"
     test "path []    == empty" $
           path []    == (empty :: RI)
 
@@ -408,7 +408,7 @@ testRelation = do
     test "path [x,y] == edge x y" $ \(x :: Int) y ->
           path [x,y] == (edge x y :: RI)
 
-    putStrLn "\n============ circuit ============"
+    putStrLn "\n============ Relation.circuit ============"
     test "circuit []    == empty" $
           circuit []    == (empty :: RI)
 
@@ -418,7 +418,7 @@ testRelation = do
     test "circuit [x,y] == edges [(x,y), (y,x)]" $ \(x :: Int) y ->
           circuit [x,y] == (edges [(x,y), (y,x)] :: RI)
 
-    putStrLn "\n============ clique ============"
+    putStrLn "\n============ Relation.clique ============"
     test "clique []      == empty" $
           clique []      == (empty :: RI)
 
@@ -431,7 +431,7 @@ testRelation = do
     test "clique [x,y,z] == edges [(x,y), (x,z), (y,z)]" $ \(x :: Int) y z ->
           clique [x,y,z] == (edges [(x,y), (x,z), (y,z)] :: RI)
 
-    putStrLn "\n============ biclique ============"
+    putStrLn "\n============ Relation.biclique ============"
     test "biclique []      []      == empty" $
           biclique []      []      == (empty :: RI)
 
@@ -444,7 +444,7 @@ testRelation = do
     test "biclique [x1,x2] [y1,y2] == edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]" $ \(x1 :: Int) x2 y1 y2 ->
           biclique [x1,x2] [y1,y2] == (edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)] :: RI)
 
-    putStrLn "\n============ star ============"
+    putStrLn "\n============ Relation.star ============"
     test "star x []    == vertex x" $ \(x :: Int) ->
           star x []    == (vertex x :: RI)
 
@@ -454,14 +454,14 @@ testRelation = do
     test "star x [y,z] == edges [(x,y), (x,z)]" $ \(x :: Int) y z ->
           star x [y,z] == (edges [(x,y), (x,z)] :: RI)
 
-    putStrLn "\n============ removeVertex ============"
+    putStrLn "\n============ Relation.removeVertex ============"
     test "removeVertex x (vertex x)       == empty" $ \(x :: Int) ->
           removeVertex x (vertex x)       == (empty :: RI)
 
     test "removeVertex x . removeVertex x == removeVertex x" $ \x (y :: RI) ->
          (removeVertex x . removeVertex x)y==(removeVertex x y :: RI)
 
-    putStrLn "\n============ removeEdge ============"
+    putStrLn "\n============ Relation.removeEdge ============"
     test "removeEdge x y (edge x y)       == vertices [x, y]" $ \(x :: Int) y ->
           removeEdge x y (edge x y)       == (vertices [x, y] :: RI)
 
@@ -477,7 +477,7 @@ testRelation = do
     test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
           removeEdge 1 2 (1 * 1 * 2 * 2)  == (1 * 1 + 2 * (2 :: RI))
 
-    putStrLn "\n============ replaceVertex ============"
+    putStrLn "\n============ Relation.replaceVertex ============"
     test "replaceVertex x x            == id" $ \x (y :: RI) ->
           replaceVertex x x y          == y
 
@@ -487,7 +487,7 @@ testRelation = do
     test "replaceVertex x y            == mergeVertices (== x) y" $ \x y z ->
           replaceVertex x y z          == (mergeVertices (== x) y z :: RI)
 
-    putStrLn "\n============ mergeVertices ============"
+    putStrLn "\n============ Relation.mergeVertices ============"
     test "mergeVertices (const False) x    == id" $ \x (y :: RI) ->
           mergeVertices (const False) x y  == y
 
@@ -500,7 +500,7 @@ testRelation = do
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
           mergeVertices odd  1 (3 + 4 * 5) == (4 * 1 :: RI)
 
-    putStrLn "\n============ gmap ============"
+    putStrLn "\n============ Relation.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f :: II) ->
           gmap f empty      == empty
 
@@ -516,7 +516,7 @@ testRelation = do
     test "gmap f . gmap g   == gmap (f . g)" $ \(apply -> f :: II) (apply -> g :: II) x ->
          (gmap f . gmap g) x== gmap (f . g) x
 
-    putStrLn "\n============ induce ============"
+    putStrLn "\n============ Relation.induce ============"
     test "induce (const True)  x      == x" $ \(x :: RI) ->
           induce (const True)  x      == x
 
@@ -532,14 +532,14 @@ testRelation = do
     test "isSubgraphOf (induce p x) x == True" $ \(apply -> p :: IB) (x :: RI) ->
           isSubgraphOf (induce p x) x == True
 
-    putStrLn "\n============ reflexiveClosure ============"
+    putStrLn "\n============ Relation.reflexiveClosure ============"
     test "reflexiveClosure empty      == empty" $
           reflexiveClosure empty      ==(empty :: RI)
 
     test "reflexiveClosure (vertex x) == edge x x" $ \(x :: Int) ->
           reflexiveClosure (vertex x) == edge x x
 
-    putStrLn "\n============ symmetricClosure ============"
+    putStrLn "\n============ Relation.symmetricClosure ============"
 
     test "symmetricClosure empty      == empty" $
           symmetricClosure empty      ==(empty :: RI)
@@ -550,7 +550,7 @@ testRelation = do
     test "symmetricClosure (edge x y) == edges [(x, y), (y, x)]" $ \(x :: Int) y ->
           symmetricClosure (edge x y) == edges [(x, y), (y, x)]
 
-    putStrLn "\n============ transitiveClosure ============"
+    putStrLn "\n============ Relation.transitiveClosure ============"
     test "transitiveClosure empty           == empty" $
           transitiveClosure empty           ==(empty :: RI)
 
@@ -560,7 +560,7 @@ testRelation = do
     test "transitiveClosure (path $ nub xs) == clique (nub $ xs)" $ \(xs :: [Int]) ->
           transitiveClosure (path $ nubOrd xs) == clique (nubOrd $ xs)
 
-    putStrLn "\n============ preorderClosure ============"
+    putStrLn "\n============ Relation.preorderClosure ============"
     test "preorderClosure empty           == empty" $
           preorderClosure empty           ==(empty :: RI)
 
@@ -578,7 +578,7 @@ testRelation = do
     test "Axioms of undirected graphs" $ sizeLimit
         (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))
 
-    putStrLn "\n============ neighbours ============"
+    putStrLn "\n============ SymmetricRelation.neighbours ============"
     test "neighbours x empty      == Set.empty" $ \(x :: Int) ->
           neighbours x C.empty      == Set.empty
 

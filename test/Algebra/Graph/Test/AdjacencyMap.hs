@@ -39,7 +39,7 @@ testAdjacencyMap = do
     test "Consistency of fromAdjacencyList" $ \xs ->
         consistent (fromAdjacencyList xs :: AI)
 
-    putStrLn "\n============ Show ============"
+    putStrLn "\n============ AdjacencyMap.Show ============"
     test "show (empty     :: AdjacencyMap Int) == \"empty\"" $
           show (empty     :: AdjacencyMap Int) == "empty"
 
@@ -58,7 +58,7 @@ testAdjacencyMap = do
     test "show (1 * 2 + 3 :: AdjacencyMap Int) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: AdjacencyMap Int) == "graph [1,2,3] [(1,2)]"
 
-    putStrLn "\n============ empty ============"
+    putStrLn "\n============ AdjacencyMap.empty ============"
     test "isEmpty     empty == True" $
           isEmpty    (empty :: AI) == True
 
@@ -71,7 +71,7 @@ testAdjacencyMap = do
     test "edgeCount   empty == 0" $
           edgeCount  (empty :: AI) == 0
 
-    putStrLn "\n============ vertex ============"
+    putStrLn "\n============ AdjacencyMap.vertex ============"
     test "isEmpty     (vertex x) == False" $ \(x :: Int) ->
           isEmpty     (vertex x) == False
 
@@ -87,7 +87,7 @@ testAdjacencyMap = do
     test "edgeCount   (vertex x) == 0" $ \(x :: Int) ->
           edgeCount   (vertex x) == 0
 
-    putStrLn "\n============ edge ============"
+    putStrLn "\n============ AdjacencyMap.edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
          (edge x y :: AI)        == connect (vertex x) (vertex y)
 
@@ -103,7 +103,7 @@ testAdjacencyMap = do
     test "vertexCount (edge 1 2) == 2" $
           vertexCount (edge 1 2 :: AI) == 2
 
-    putStrLn "\n============ overlay ============"
+    putStrLn "\n============ AdjacencyMap.overlay ============"
     test "isEmpty     (overlay x y) == isEmpty   x   && isEmpty   y" $ \(x :: AI) y ->
           isEmpty     (overlay x y) == (isEmpty   x   && isEmpty   y)
 
@@ -128,7 +128,7 @@ testAdjacencyMap = do
     test "edgeCount   (overlay 1 2) == 0" $
           edgeCount   (overlay 1 2 :: AI) == 0
 
-    putStrLn "\n============ connect ============"
+    putStrLn "\n============ AdjacencyMap.connect ============"
     test "isEmpty     (connect x y) == isEmpty   x   && isEmpty   y" $ \(x :: AI) y ->
           isEmpty     (connect x y) == (isEmpty   x   && isEmpty   y)
 
@@ -159,7 +159,7 @@ testAdjacencyMap = do
     test "edgeCount   (connect 1 2) == 1" $
           edgeCount   (connect 1 2 :: AI) == 1
 
-    putStrLn "\n============ vertices ============"
+    putStrLn "\n============ AdjacencyMap.vertices ============"
     test "vertices []            == empty" $
           vertices []            == (empty :: AI)
 
@@ -175,7 +175,7 @@ testAdjacencyMap = do
     test "vertexSet   . vertices == Set.fromList" $ \(xs :: [Int]) ->
          (vertexSet   . vertices) xs == Set.fromList xs
 
-    putStrLn "\n============ edges ============"
+    putStrLn "\n============ AdjacencyMap.edges ============"
     test "edges []          == empty" $
           edges []          == (empty :: AI)
 
@@ -185,7 +185,7 @@ testAdjacencyMap = do
     test "edgeCount . edges == length . nub" $ \(xs :: [(Int, Int)]) ->
          (edgeCount . edges) xs == (length . nubOrd) xs
 
-    putStrLn "\n============ overlays ============"
+    putStrLn "\n============ AdjacencyMap.overlays ============"
     test "overlays []        == empty" $
           overlays []        == (empty :: AI)
 
@@ -198,7 +198,7 @@ testAdjacencyMap = do
     test "isEmpty . overlays == all isEmpty" $ mapSize (min 10) $ \(xs :: [AI]) ->
          (isEmpty . overlays) xs == all isEmpty xs
 
-    putStrLn "\n============ connects ============"
+    putStrLn "\n============ AdjacencyMap.connects ============"
     test "connects []        == empty" $
           connects []        == (empty :: AI)
 
@@ -211,7 +211,7 @@ testAdjacencyMap = do
     test "isEmpty . connects == all isEmpty" $ mapSize (min 10) $ \(xs :: [AI]) ->
          (isEmpty . connects) xs == all isEmpty xs
 
-    putStrLn "\n============ graph ============"
+    putStrLn "\n============ AdjacencyMap.graph ============"
     test "graph []  []      == empty" $
           graph []  []      == (empty :: AI)
 
@@ -224,7 +224,7 @@ testAdjacencyMap = do
     test "graph vs  es      == overlay (vertices vs) (edges es)" $ \(vs :: [Int]) es ->
           graph vs  es      == (overlay (vertices vs) (edges es) :: AI)
 
-    putStrLn "\n============ fromAdjacencyList ============"
+    putStrLn "\n============ AdjacencyMap.fromAdjacencyList ============"
     test "fromAdjacencyList []                                  == empty" $
           fromAdjacencyList []                                  == (empty :: AI)
 
@@ -240,7 +240,7 @@ testAdjacencyMap = do
     test "overlay (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)" $ \xs ys ->
           overlay (fromAdjacencyList xs) (fromAdjacencyList ys) ==(fromAdjacencyList (xs ++ ys) :: AI)
 
-    putStrLn "\n============ isSubgraphOf ============"
+    putStrLn "\n============ AdjacencyMap.isSubgraphOf ============"
     test "isSubgraphOf empty         x             == True" $ \(x :: AI) ->
           isSubgraphOf empty         x             == True
 
@@ -256,7 +256,7 @@ testAdjacencyMap = do
     test "isSubgraphOf (path xs)     (circuit xs)  == True" $ \xs ->
           isSubgraphOf (path xs :: AI)(circuit xs)  == True
 
-    putStrLn "\n============ isEmpty ============"
+    putStrLn "\n============ AdjacencyMap.isEmpty ============"
     test "isEmpty empty                       == True" $
           isEmpty (empty :: AI)                == True
 
@@ -272,7 +272,7 @@ testAdjacencyMap = do
     test "isEmpty (removeEdge x y $ edge x y) == False" $ \(x :: Int) y ->
           isEmpty (removeEdge x y $ edge x y) == False
 
-    putStrLn "\n============ hasVertex ============"
+    putStrLn "\n============ AdjacencyMap.hasVertex ============"
     test "hasVertex x empty            == False" $ \(x :: Int) ->
           hasVertex x empty            == False
 
@@ -282,7 +282,7 @@ testAdjacencyMap = do
     test "hasVertex x . removeVertex x == const False" $ \(x :: Int) y ->
           hasVertex x (removeVertex x y)==const False y
 
-    putStrLn "\n============ hasEdge ============"
+    putStrLn "\n============ AdjacencyMap.hasEdge ============"
     test "hasEdge x y empty            == False" $ \(x :: Int) y ->
           hasEdge x y empty            == False
 
@@ -295,7 +295,7 @@ testAdjacencyMap = do
     test "hasEdge x y . removeEdge x y == const False" $ \(x :: Int) y z ->
           hasEdge x y (removeEdge x y z)==const False z
 
-    putStrLn "\n============ vertexCount ============"
+    putStrLn "\n============ AdjacencyMap.vertexCount ============"
     test "vertexCount empty      == 0" $
           vertexCount (empty :: AI) == 0
 
@@ -305,7 +305,7 @@ testAdjacencyMap = do
     test "vertexCount            == length . vertexList" $ \(x :: AI) ->
           vertexCount x          == (length . vertexList) x
 
-    putStrLn "\n============ edgeCount ============"
+    putStrLn "\n============ AdjacencyMap.edgeCount ============"
     test "edgeCount empty      == 0" $
           edgeCount (empty :: AI) == 0
 
@@ -318,7 +318,7 @@ testAdjacencyMap = do
     test "edgeCount            == length . edgeList" $ \(x :: AI) ->
           edgeCount x          == (length . edgeList) x
 
-    putStrLn "\n============ vertexList ============"
+    putStrLn "\n============ AdjacencyMap.vertexList ============"
     test "vertexList empty      == []" $
           vertexList (empty :: AI) == []
 
@@ -328,7 +328,7 @@ testAdjacencyMap = do
     test "vertexList . vertices == nub . sort" $ \(xs :: [Int]) ->
          (vertexList . vertices) xs == (nubOrd . sort) xs
 
-    putStrLn "\n============ edgeList ============"
+    putStrLn "\n============ AdjacencyMap.edgeList ============"
     test "edgeList empty          == []" $
           edgeList (empty :: AI )  == []
 
@@ -344,7 +344,7 @@ testAdjacencyMap = do
     test "edgeList . edges        == nub . sort" $ \(xs :: [(Int, Int)]) ->
          (edgeList . edges) xs    == (nubOrd . sort) xs
 
-    putStrLn "\n============ adjacencyList ============"
+    putStrLn "\n============ AdjacencyMap.adjacencyList ============"
     test "adjacencyList empty          == []" $
           adjacencyList (empty :: AI)  == []
 
@@ -357,7 +357,7 @@ testAdjacencyMap = do
     test "adjacencyList (star 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]" $
           adjacencyList (star 2 [3,1::Int]) == [(1, []), (2, [1,3]), (3, [])]
 
-    putStrLn "\n============ vertexSet ============"
+    putStrLn "\n============ AdjacencyMap.vertexSet ============"
     test "vertexSet empty      == Set.empty" $
           vertexSet(empty :: AI)== Set.empty
 
@@ -370,7 +370,7 @@ testAdjacencyMap = do
     test "vertexSet . clique   == Set.fromList" $ \(xs :: [Int]) ->
          (vertexSet . clique) xs == Set.fromList xs
 
-    putStrLn "\n============ edgeSet ============"
+    putStrLn "\n============ AdjacencyMap.edgeSet ============"
     test "edgeSet empty      == Set.empty" $
           edgeSet (empty :: AI) == Set.empty
 
@@ -383,7 +383,7 @@ testAdjacencyMap = do
     test "edgeSet . edges    == Set.fromList" $ \(xs :: [(Int, Int)]) ->
          (edgeSet . edges) xs== Set.fromList xs
 
-    putStrLn "\n============ postset ============"
+    putStrLn "\n============ AdjacencyMap.postset ============"
     test "postset x empty      == Set.empty" $ \(x :: Int) ->
           postset x empty      == Set.empty
 
@@ -396,7 +396,7 @@ testAdjacencyMap = do
     test "postset 2 (edge 1 2) == Set.empty" $
           postset 2 (edge 1 2) ==(Set.empty :: Set.Set Int)
 
-    putStrLn "\n============ path ============"
+    putStrLn "\n============ AdjacencyMap.path ============"
     test "path []    == empty" $
           path []    == (empty :: AI)
 
@@ -406,7 +406,7 @@ testAdjacencyMap = do
     test "path [x,y] == edge x y" $ \(x :: Int) y ->
           path [x,y] == (edge x y :: AI)
 
-    putStrLn "\n============ circuit ============"
+    putStrLn "\n============ AdjacencyMap.circuit ============"
     test "circuit []    == empty" $
           circuit []    == (empty :: AI)
 
@@ -416,7 +416,7 @@ testAdjacencyMap = do
     test "circuit [x,y] == edges [(x,y), (y,x)]" $ \(x :: Int) y ->
           circuit [x,y] == (edges [(x,y), (y,x)] :: AI)
 
-    putStrLn "\n============ clique ============"
+    putStrLn "\n============ AdjacencyMap.clique ============"
     test "clique []      == empty" $
           clique []      == (empty :: AI)
 
@@ -429,7 +429,7 @@ testAdjacencyMap = do
     test "clique [x,y,z] == edges [(x,y), (x,z), (y,z)]" $ \(x :: Int) y z ->
           clique [x,y,z] == (edges [(x,y), (x,z), (y,z)] :: AI)
 
-    putStrLn "\n============ biclique ============"
+    putStrLn "\n============ AdjacencyMap.biclique ============"
     test "biclique []      []      == empty" $
           biclique []      []      == (empty :: AI)
 
@@ -442,7 +442,7 @@ testAdjacencyMap = do
     test "biclique [x1,x2] [y1,y2] == edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]" $ \(x1 :: Int) x2 y1 y2 ->
           biclique [x1,x2] [y1,y2] == (edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)] :: AI)
 
-    putStrLn "\n============ star ============"
+    putStrLn "\n============ AdjacencyMap.star ============"
     test "star x []    == vertex x" $ \(x :: Int) ->
           star x []    == (vertex x :: AI)
 
@@ -452,14 +452,14 @@ testAdjacencyMap = do
     test "star x [y,z] == edges [(x,y), (x,z)]" $ \(x :: Int) y z ->
           star x [y,z] == (edges [(x,y), (x,z)] :: AI)
 
-    putStrLn "\n============ removeVertex ============"
+    putStrLn "\n============ AdjacencyMap.removeVertex ============"
     test "removeVertex x (vertex x)       == empty" $ \(x :: Int) ->
           removeVertex x (vertex x)       == (empty :: AI)
 
     test "removeVertex x . removeVertex x == removeVertex x" $ \x (y :: AI) ->
          (removeVertex x . removeVertex x)y==(removeVertex x y :: AI)
 
-    putStrLn "\n============ removeEdge ============"
+    putStrLn "\n============ AdjacencyMap.removeEdge ============"
     test "removeEdge x y (edge x y)       == vertices [x, y]" $ \(x :: Int) y ->
           removeEdge x y (edge x y)       == (vertices [x, y] :: AI)
 
@@ -475,7 +475,7 @@ testAdjacencyMap = do
     test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
           removeEdge 1 2 (1 * 1 * 2 * 2)  == (1 * 1 + 2 * (2 :: AI))
 
-    putStrLn "\n============ replaceVertex ============"
+    putStrLn "\n============ AdjacencyMap.replaceVertex ============"
     test "replaceVertex x x            == id" $ \x (y :: AI) ->
           replaceVertex x x y          == y
 
@@ -485,7 +485,7 @@ testAdjacencyMap = do
     test "replaceVertex x y            == mergeVertices (== x) y" $ \x y z ->
           replaceVertex x y z          == (mergeVertices (== x) y z :: AI)
 
-    putStrLn "\n============ mergeVertices ============"
+    putStrLn "\n============ AdjacencyMap.mergeVertices ============"
     test "mergeVertices (const False) x    == id" $ \x (y :: AI) ->
           mergeVertices (const False) x y  == y
 
@@ -498,7 +498,7 @@ testAdjacencyMap = do
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
           mergeVertices odd  1 (3 + 4 * 5) == (4 * 1 :: AI)
 
-    putStrLn "\n============ gmap ============"
+    putStrLn "\n============ AdjacencyMap.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f :: II) ->
           gmap f empty      == empty
 
@@ -514,7 +514,7 @@ testAdjacencyMap = do
     test "gmap f . gmap g   == gmap (f . g)" $ \(apply -> f :: II) (apply -> g :: II) x ->
          (gmap f . gmap g) x== gmap (f . g) x
 
-    putStrLn "\n============ induce ============"
+    putStrLn "\n============ AdjacencyMap.induce ============"
     test "induce (const True)  x      == x" $ \(x :: AI) ->
           induce (const True)  x      == x
 
@@ -530,7 +530,7 @@ testAdjacencyMap = do
     test "isSubgraphOf (induce p x) x == True" $ \(apply -> p :: IB) (x :: AI) ->
           isSubgraphOf (induce p x) x == True
 
-    putStrLn "\n============ dfsForest ============"
+    putStrLn "\n============ AdjacencyMap.dfsForest ============"
     test "forest (dfsForest $ edge 1 1)         == vertex 1" $
           forest (dfsForest $ edge 1 (1 :: Int))==(vertex 1 :: AI)
 
@@ -554,7 +554,7 @@ testAdjacencyMap = do
                                                    , subForest = [ Node { rootLabel = 4
                                                                         , subForest = [] }]}]
 
-    putStrLn "\n============ topSort ============"
+    putStrLn "\n============ AdjacencyMap.topSort ============"
     test "topSort (1 * 2 + 3 * 1)             == Just [3,1,2]" $
           topSort (1 * 2 + 3 * 1)             == Just [3,1,2 :: Int]
 
@@ -564,7 +564,7 @@ testAdjacencyMap = do
     test "fmap (flip isTopSort x) (topSort x) /= Just False" $ \(x :: AI) ->
           fmap (flip isTopSort x) (topSort x) /= Just False
 
-    putStrLn "\n============ isTopSort  ============"
+    putStrLn "\n============ AdjacencyMap.isTopSort  ============"
     test "isTopSort [3, 1, 2] (1 * 2 + 3 * 1) == True" $
           isTopSort [3, 1, 2] (1 * 2 + 3 * 1 :: AI) == True
 
@@ -583,7 +583,7 @@ testAdjacencyMap = do
     test "isTopSort [x]       (edge x x)      == False" $ \(x :: Int) ->
           isTopSort [x]       (edge x x)      == False
 
-    putStrLn "\n============ scc ============"
+    putStrLn "\n============ AdjacencyMap.scc ============"
     test "scc empty               == empty" $
           scc(empty :: AI)        == empty
 
@@ -602,7 +602,7 @@ testAdjacencyMap = do
                                            , (Set.fromList [3]  , Set.fromList [1,4])
                                            , (Set.fromList [3]  , Set.fromList [5 :: Int])]
 
-    putStrLn "\n============ GraphKL ============"
+    putStrLn "\n============ AdjacencyMap.GraphKL ============"
     test "map (getVertex h) (vertices $ getGraph h) == Set.toAscList (vertexSet g)"
       $ \(g :: AI) -> let h = graphKL g in
         map (getVertex h) (KL.vertices $ getGraph h) == Set.toAscList (vertexSet g)
