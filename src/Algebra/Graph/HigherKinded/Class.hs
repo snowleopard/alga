@@ -394,6 +394,7 @@ clique = connects . map vertex
 -- biclique [x]     []      == 'vertex' x
 -- biclique []      [y]     == 'vertex' y
 -- biclique [x1,x2] [y1,y2] == 'edges' [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
+-- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: Graph g => [a] -> [a] -> g a
 biclique xs ys = connect (vertices xs) (vertices ys)

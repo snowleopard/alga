@@ -439,6 +439,9 @@ testIntAdjacencyMap = do
     test "biclique [x1,x2] [y1,y2] == edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]" $ \(x1) x2 y1 y2 ->
           biclique [x1,x2] [y1,y2] == edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
 
+    test "biclique xs      ys      == connect (vertices xs) (vertices ys)" $ \xs ys ->
+          biclique xs      ys      == connect (vertices xs) (vertices ys)
+
     putStrLn "\n============ IntAdjacencyMap.star ============"
     test "star x []    == vertex x" $ \x ->
           star x []    == vertex x

@@ -398,16 +398,23 @@ clique :: [Int] -> IntAdjacencyMap
 clique = C.clique
 
 -- | The /biclique/ on a list of vertices.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+-- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
 --
 -- @
 -- biclique []      []      == 'empty'
 -- biclique [x]     []      == 'vertex' x
 -- biclique []      [y]     == 'vertex' y
 -- biclique [x1,x2] [y1,y2] == 'edges' [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
+-- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: [Int] -> [Int] -> IntAdjacencyMap
-biclique = C.biclique
+biclique xs ys = IntAdjacencyMap $ IntMap.fromSet adjacent (x `IntSet.union` y)
+  where
+    x = IntSet.fromList xs
+    y = IntSet.fromList ys
+    adjacent v
+        | v `IntSet.member` x = y
+        | otherwise        = IntSet.empty
 
 -- | The /star/ formed by a centre vertex and a list of leaves.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
