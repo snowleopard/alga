@@ -532,18 +532,24 @@ testGraph = do
                                     , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ]
 
     putStrLn "\n============ Graph.deBruijn ============"
-    test "deBruijn k []    == empty" $ \k ->
-          deBruijn k []    == (empty :: Graph [Int])
+    test "deBruijn 0 xs               == vertex []" $ \(xs :: [Int]) ->
+          deBruijn 0 xs               == (vertex [] :: Graph [Int])
 
-    test "deBruijn 1 [0,1] == edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]" $
-          deBruijn 1 [0,1] == edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1 :: Int]) ]
+    test "deBruijn k []               == empty" $ \(Positive k) ->
+          deBruijn k []               == (empty :: Graph [Int])
 
-    test "deBruijn 2 \"0\"   == edge \"00\" \"00\"" $
-          deBruijn 2 "0"   == edge "00" "00"
+    test "deBruijn 1 [0,1]            == edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]" $
+          deBruijn 1 [0,1]            == edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1 :: Int]) ]
 
-    test ("deBruijn 2 \"01\"  == <correct result>") $
-          deBruijn 2 "01"  == edges [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
-                                    , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
+    test "deBruijn 2 \"0\"              == edge \"00\" \"00\"" $
+          deBruijn 2 "0"              == edge "00" "00"
+
+    test ("deBruijn 2 \"01\"             == <correct result>") $
+          deBruijn 2 "01"             == edges [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
+                                               , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
+
+    test "vertexCount (deBruijn k xs) == (length $ nub xs)^k" $ mapSize (min 5) $ \(NonNegative k) (xs :: [Int]) ->
+          vertexCount (deBruijn k xs) == (length $ nubOrd xs)^k
 
     putStrLn "\n============ Graph.removeVertex ============"
     test "removeVertex x (vertex x)       == empty" $ \(x :: Int) ->
@@ -711,18 +717,26 @@ testGraph = do
     putStrLn "\n============ Graph.box ============"
     let unit = fmap $ \(a, ()) -> a
         comm = fmap $ \(a,  b) -> (b, a)
-    test "box x y             ~~ box y x" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
-          comm (box x y)      == box y x
+    test "box x y               ~~ box y x" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
+          comm (box x y)        == box y x
 
-    test "box x (overlay y z) == overlay (box x y) (box x z)" $ mapSize (min 10) $ \(x :: G) (y :: G) z ->
-          box x (overlay y z) == overlay (box x y) (box x z)
+    test "box x (overlay y z)   == overlay (box x y) (box x z)" $ mapSize (min 10) $ \(x :: G) (y :: G) z ->
+          box x (overlay y z)   == overlay (box x y) (box x z)
 
-    test "box x (vertex ())   ~~ x" $ mapSize (min 10) $ \(x :: G) ->
-     unit(box x (vertex ()))  == x
+    test "box x (vertex ())     ~~ x" $ mapSize (min 10) $ \(x :: G) ->
+     unit(box x (vertex ()))    == x
 
-    test "box x empty         ~~ empty" $ mapSize (min 10) $ \(x :: G) ->
-     unit(box x empty)        == empty
+    test "box x empty           ~~ empty" $ mapSize (min 10) $ \(x :: G) ->
+     unit(box x empty)          == empty
 
     let assoc = fmap $ \(a, (b, c)) -> ((a, b), c)
-    test "box x (box y z)     ~~ box (box x y) z" $ mapSize (min 10) $ \(x :: G) (y :: G) (z :: G) ->
-      assoc (box x (box y z)) == box (box x y) z
+    test "box x (box y z)       ~~ box (box x y) z" $ mapSize (min 10) $ \(x :: G) (y :: G) (z :: G) ->
+      assoc (box x (box y z))   == box (box x y) z
+
+    test "vertexCount (box x y) == vertexCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
+          vertexCount (box x y) == vertexCount x * vertexCount y
+
+    test "edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
+          edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
+
+

@@ -534,18 +534,24 @@ testFold = do
                                                          , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2,'a')) ]
 
     putStrLn "\n============ Fold.deBruijn ============"
-    test "deBruijn k []    == empty" $ \k ->
-          deBruijn k []    == (empty :: Fold [Int])
+    test "deBruijn 0 xs               == vertex []" $ \(xs :: [Int]) ->
+          deBruijn 0 xs               == (vertex [] :: Fold [Int])
 
-    test "deBruijn 1 [0,1] == edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]" $
-          deBruijn 1 [0,1] == (edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ] :: Fold [Int])
+    test "deBruijn k []               == empty" $ \(Positive k) ->
+          deBruijn k []               == (empty :: Fold [Int])
 
-    test "deBruijn 2 \"0\"   == edge \"00\" \"00\"" $
-          deBruijn 2 "0"   == (edge "00" "00" :: Fold String)
+    test "deBruijn 1 [0,1]            == edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]" $
+          deBruijn 1 [0,1]            == (edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ] :: Fold [Int])
 
-    test ("deBruijn 2 \"01\"  == <correct result>") $
-          (deBruijn 2 "01" :: Fold String) == edges [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
-                                                    , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
+    test "deBruijn 2 \"0\"              == edge \"00\" \"00\"" $
+          deBruijn 2 "0"              == (edge "00" "00" :: Fold String)
+
+    test ("deBruijn 2 \"01\"             == <correct result>") $
+          deBruijn 2 "01"             == (edges [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
+                                                , ("10","00"), ("10","01"), ("11","10"), ("11","11") ] :: Fold String)
+
+    test "vertexCount (deBruijn k xs) == (length $ nub xs)^k" $ mapSize (min 5) $ \(NonNegative k) (xs :: [Int]) ->
+          vertexCount (deBruijn k xs) == (length $ nubOrd xs)^k
 
     putStrLn "\n============ Fold.removeVertex ============"
     test "removeVertex x (vertex x)       == empty" $ \(x :: Int) ->
@@ -713,3 +719,9 @@ testFold = do
     let assoc = fmap $ \(a, (b, c)) -> ((a, b), c)
     test "box x (box y z)     ~~ box (box x y) z" $ mapSize (min 10) $ \(x :: F) (y :: F) (z :: F) ->
       assoc (box x (box y z)) == (box (box x y) z :: Fold ((Int, Int), Int))
+
+    test "vertexCount (box x y) == vertexCount x * vertexCount y" $ mapSize (min 10) $ \(x :: F) (y :: F) ->
+          vertexCount (box x y) == vertexCount x * vertexCount y
+
+    test "edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ mapSize (min 10) $ \(x :: F) (y :: F) ->
+          edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y

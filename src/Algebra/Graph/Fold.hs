@@ -550,19 +550,22 @@ mesh xs ys = C.path xs `box` C.path ys
 torus :: (C.Graph g, C.Vertex g ~ (a, b)) => [a] -> [b] -> g
 torus xs ys = C.circuit xs `box` C.circuit ys
 
--- | Construct a /De Bruijn graph/ of given dimension and symbols of a given
--- alphabet.
--- Complexity: /O(A * D^A)/ time, memory and size, where /A/ is the size of the
+-- | Construct a /De Bruijn graph/ of a given non-negative dimension using symbols
+-- from a given alphabet.
+-- Complexity: /O(A^(D + 1))/ time, memory and size, where /A/ is the size of the
 -- alphabet and /D/ is the dimention of the graph.
 --
 -- @
--- deBruijn k []    == 'empty'
--- deBruijn 1 [0,1] == 'edges' [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]
--- deBruijn 2 "0"   == 'edge' "00" "00"
--- deBruijn 2 "01"  == 'edges' [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
---                           , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
+-- deBruijn 0 xs               == 'vertex' []
+-- deBruijn k []               == 'empty'
+-- deBruijn 1 [0,1]            == 'edges' [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]
+-- deBruijn 2 "0"              == 'edge' "00" "00"
+-- deBruijn 2 "01"             == 'edges' [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
+--                                      , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
+-- 'vertexCount' (deBruijn k xs) == ('length' $ 'Data.List.nub' xs)^k
 -- @
 deBruijn :: (C.Graph g, C.Vertex g ~ [a]) => Int -> [a] -> g
+deBruijn 0   _        = vertex []
 deBruijn len alphabet = bind skeleton expand
   where
     overlaps = mapM (const alphabet) [2..len]
@@ -736,12 +739,14 @@ simple op x y
 -- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @
--- box x y             ~~ box y x
--- box x (box y z)     ~~ box (box x y) z
--- box x ('overlay' y z) == 'overlay' (box x y) (box x z)
--- box x ('vertex' ())   ~~ x
--- box x 'empty'         ~~ 'empty'
--- 'transpose' (box x y) == box ('transpose' x) ('transpose' y)
+-- box x y               ~~ box y x
+-- box x (box y z)       ~~ box (box x y) z
+-- box x ('overlay' y z)   == 'overlay' (box x y) (box x z)
+-- box x ('vertex' ())     ~~ x
+-- box x 'empty'           ~~ 'empty'
+-- 'transpose'   (box x y) == box ('transpose' x) ('transpose' y)
+-- 'vertexCount' (box x y) == 'vertexCount' x * 'vertexCount' y
+-- 'edgeCount'   (box x y) <= 'vertexCount' x * 'edgeCount' y + 'edgeCount' x * 'vertexCount' y
 -- @
 box :: (C.Graph g, C.Vertex g ~ (a, b)) => Fold a -> Fold b -> g
 box x y = C.overlays $ xs ++ ys
