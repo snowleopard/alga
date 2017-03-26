@@ -7,14 +7,15 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Generators and orphan Arbitrary instances for various graph data types.
---
+-- Generators and orphan Arbitrary instances for various data types.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Arbitrary (
     -- * Generators of arbitrary graph instances
     arbitraryGraph, arbitraryRelation, arbitraryAdjacencyMap, arbitraryIntAdjacencyMap
   ) where
 
+import Control.Monad
+import Data.Tree
 import Test.QuickCheck
 
 import Algebra.Graph
@@ -88,3 +89,16 @@ instance Arbitrary IntAdjacencyMap where
 
 instance Arbitrary a => Arbitrary (Fold a) where
     arbitrary = arbitraryGraph
+
+instance Arbitrary a => Arbitrary (Tree a) where
+    arbitrary = sized go
+      where
+        go 0 = do
+            root <- arbitrary
+            return $ Node root []
+        go n = do
+            subTrees <- choose (0, n - 1)
+            let subSize = (n - 1) `div` subTrees
+            root     <- arbitrary
+            children <- replicateM subTrees (go subSize)
+            return $ Node root children

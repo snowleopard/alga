@@ -15,6 +15,7 @@ module Algebra.Graph.Test.Relation (
     testRelation
   ) where
 
+import Data.Tree
 import Data.Tuple
 
 import Algebra.Graph.Relation
@@ -455,6 +456,32 @@ testRelation = do
 
     test "star x [y,z] == edges [(x,y), (x,z)]" $ \(x :: Int) y z ->
           star x [y,z] == (edges [(x,y), (x,z)] :: RI)
+
+    putStrLn "\n============ Relation.tree ============"
+    test "tree (Node x [])                                         == vertex x" $ \(x :: Int) ->
+          tree (Node x [])                                         == vertex x
+
+    test "tree (Node x [Node y [Node z []]])                       == path [x,y,z]" $ \(x :: Int) y z ->
+          tree (Node x [Node y [Node z []]])                       == path [x,y,z]
+
+    test "tree (Node x [Node y [], Node z []])                     == star x [y,z]" $ \(x :: Int) y z ->
+          tree (Node x [Node y [], Node z []])                     == star x [y,z]
+
+    test "tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == edges [(1,2), (1,3), (3,4), (3,5)]" $
+          tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == edges [(1,2), (1,3), (3,4), (3,5::Int)]
+
+    putStrLn "\n============ Relation.forest ============"
+    test "forest []                                                  == empty" $
+          forest []                                                  == (empty :: RI)
+
+    test "forest [x]                                                 == tree x" $ \(x :: Tree Int) ->
+          forest [x]                                                 == tree x
+
+    test "forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == edges [(1,2), (1,3), (4,5)]" $
+          forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == edges [(1,2), (1,3), (4,5::Int)]
+
+    test "forest                                                     == overlays . map tree" $ \(x :: Forest Int) ->
+         (forest x)                                                  ==(overlays . map tree) x
 
     putStrLn "\n============ Relation.removeVertex ============"
     test "removeVertex x (vertex x)       == empty" $ \(x :: Int) ->

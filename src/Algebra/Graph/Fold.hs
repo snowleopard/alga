@@ -71,7 +71,7 @@ construction primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a
 
 The 'Show' instance is defined using basic graph construction primitives:
 
-@show ('empty'     :: Fold Int) == "empty"
+@show (empty     :: Fold Int) == "empty"
 show (1         :: Fold Int) == "vertex 1"
 show (1 + 2     :: Fold Int) == "vertices [1,2]"
 show (1 * 2     :: Fold Int) == "edge 1 2"

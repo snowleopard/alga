@@ -17,6 +17,7 @@ module Algebra.Graph.Test.Fold (
   ) where
 
 import Data.Foldable
+import Data.Tree
 import Data.Tuple
 
 import Algebra.Graph.Fold
@@ -468,6 +469,32 @@ testFold = do
 
     test "star x [y,z] == edges [(x,y), (x,z)]" $ \(x :: Int) y z ->
           star x [y,z] == (edges [(x,y), (x,z)] :: F)
+
+    putStrLn "\n============ Fold.tree ============"
+    test "tree (Node x [])                                         == vertex x" $ \x ->
+          tree (Node x [])                                         ==(vertex x :: F)
+
+    test "tree (Node x [Node y [Node z []]])                       == path [x,y,z]" $ \x y z ->
+          tree (Node x [Node y [Node z []]])                       ==(path [x,y,z] :: F)
+
+    test "tree (Node x [Node y [], Node z []])                     == star x [y,z]" $ \x y z ->
+          tree (Node x [Node y [], Node z []])                     ==(star x [y,z] :: F)
+
+    test "tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == edges [(1,2), (1,3), (3,4), (3,5)]" $
+          tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) ==(edges [(1,2), (1,3), (3,4), (3,5)] :: F)
+
+    putStrLn "\n============ Fold.forest ============"
+    test "forest []                                                  == empty" $
+          forest []                                                  == (empty :: F)
+
+    test "forest [x]                                                 == tree x" $ \x ->
+          forest [x]                                                 == (tree x :: F)
+
+    test "forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == edges [(1,2), (1,3), (4,5)]" $
+          forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] ==(edges [(1,2), (1,3), (4,5)] :: F)
+
+    test "forest                                                     == overlays . map tree" $ \x ->
+         (forest x)                                                  ==((overlays . map tree) x :: F)
 
     putStrLn "\n============ Fold.mesh ============"
     test "mesh xs     []   == empty" $ \xs ->

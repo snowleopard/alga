@@ -422,11 +422,25 @@ star = C.star
 
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- tree (Node x [])                                         == 'vertex' x
+-- tree (Node x [Node y [Node z []]])                       == 'path' [x,y,z]
+-- tree (Node x [Node y [], Node z []])                     == 'star' x [y,z]
+-- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges' [(1,2), (1,3), (3,4), (3,5)]
+-- @
 tree :: Tree Int -> IntAdjacencyMap
 tree = C.tree
 
 -- | The /forest graph/ constructed from a given 'Forest' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- forest []                                                  == 'empty'
+-- forest [x]                                                 == 'tree' x
+-- forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == 'edges' [(1,2), (1,3), (4,5)]
+-- forest                                                     == 'overlays' . map 'tree'
+-- @
 forest :: Forest Int -> IntAdjacencyMap
 forest = C.forest
 

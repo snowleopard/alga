@@ -369,12 +369,26 @@ star x ys = connect (vertex x) (vertices ys)
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
 -- given tree (i.e. the number of vertices in the tree).
+--
+-- @
+-- tree (Node x [])                                         == 'vertex' x
+-- tree (Node x [Node y [Node z []]])                       == 'path' [x,y,z]
+-- tree (Node x [Node y [], Node z []])                     == 'star' x [y,z]
+-- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges' [(1,2), (1,3), (3,4), (3,5)]
+-- @
 tree :: Graph g => Tree (Vertex g) -> g
 tree (Node x f) = overlay (star x $ map rootLabel f) (forest f)
 
 -- | The /forest graph/ constructed from a given 'Forest' data structure.
 -- Complexity: /O(F)/ time, memory and size, where /F/ is the size of the
 -- given forest (i.e. the number of vertices in the forest).
+--
+-- @
+-- forest []                                                  == 'empty'
+-- forest [x]                                                 == 'tree' x
+-- forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == 'edges' [(1,2), (1,3), (4,5)]
+-- forest                                                     == 'overlays' . map 'tree'
+-- @
 forest :: Graph g => Forest (Vertex g) -> g
 forest = overlays . map tree
 
