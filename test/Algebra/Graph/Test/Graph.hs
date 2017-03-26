@@ -532,24 +532,27 @@ testGraph = do
                                     , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ]
 
     putStrLn "\n============ Graph.deBruijn ============"
-    test "deBruijn 0 xs               == vertex []" $ \(xs :: [Int]) ->
-          deBruijn 0 xs               == (vertex [] :: Graph [Int])
+    test "          deBruijn 0 xs               == edge [] []" $ \(xs :: [Int]) ->
+                    deBruijn 0 xs               ==(edge [] [] :: Graph [Int])
 
-    test "deBruijn k []               == empty" $ \(Positive k) ->
-          deBruijn k []               == (empty :: Graph [Int])
+    test "n > 0 ==> deBruijn n []               == empty" $ \n ->
+          n > 0 ==> deBruijn n []               == (empty :: Graph [Int])
 
-    test "deBruijn 1 [0,1]            == edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]" $
-          deBruijn 1 [0,1]            == edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1 :: Int]) ]
+    test "          deBruijn 1 [0,1]            == edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]" $
+                    deBruijn 1 [0,1::Int]       == edges [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]
 
-    test "deBruijn 2 \"0\"              == edge \"00\" \"00\"" $
-          deBruijn 2 "0"              == edge "00" "00"
+    test "          deBruijn 2 \"0\"              == edge \"00\" \"00\"" $
+                    deBruijn 2 "0"              == edge "00" "00"
 
-    test ("deBruijn 2 \"01\"             == <correct result>") $
-          deBruijn 2 "01"             == edges [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
-                                               , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
+    test "          deBruijn 2 \"01\"             == <correct result>" $
+                    deBruijn 2 "01"             == edges [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
+                                                         , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
 
-    test "vertexCount (deBruijn k xs) == (length $ nub xs)^k" $ mapSize (min 5) $ \(NonNegative k) (xs :: [Int]) ->
-          vertexCount (deBruijn k xs) == (length $ nubOrd xs)^k
+    test "          vertexCount (deBruijn n xs) == (length $ nub xs)^n" $ mapSize (min 5) $ \(NonNegative n) (xs :: [Int]) ->
+                    vertexCount (deBruijn n xs) == (length $ nubOrd xs)^n
+
+    test "n > 0 ==> edgeCount   (deBruijn n xs) == (length $ nub xs)^(n + 1)" $ mapSize (min 5) $ \(NonNegative n) (xs :: [Int]) ->
+          n > 0 ==> edgeCount   (deBruijn n xs) == (length $ nubOrd xs)^(n + 1)
 
     putStrLn "\n============ Graph.removeVertex ============"
     test "removeVertex x (vertex x)       == empty" $ \(x :: Int) ->
