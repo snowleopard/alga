@@ -12,7 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.Internal (
     -- * Binary relation implementation
-    Relation (..), consistent, setProduct
+    Relation (..), consistent, setProduct, referredToVertexSet
   ) where
 
 import Data.Set (Set, union)
@@ -142,6 +142,7 @@ instance (Ord a, Num a) => Num (Relation a) where
 consistent :: Ord a => Relation a -> Bool
 consistent (Relation d r) = referredToVertexSet r `Set.isSubsetOf` d
 
--- The set of vertices that are referred to by the edges
+-- | The set of elements that appear in a given set of pairs.
+-- /Note: this function is for internal use only/.
 referredToVertexSet :: Ord a => Set (a, a) -> Set a
 referredToVertexSet = Set.fromList . uncurry (++) . unzip . Set.toAscList

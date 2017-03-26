@@ -589,6 +589,25 @@ testRelation = do
     test "isSubgraphOf (induce p x) x == True" $ \(apply -> p :: IB) (x :: RI) ->
           isSubgraphOf (induce p x) x == True
 
+    putStrLn "\n============ Relation.compose ============"
+    test "compose empty            x                == empty" $ \(x :: RI) ->
+          compose empty            x                == empty
+
+    test "compose x                empty            == empty" $ \(x :: RI) ->
+          compose x                empty            == empty
+
+    test "compose x                (compose y z)    == compose (compose x y) z" $ sizeLimit $ \(x :: RI) y z ->
+          compose x                (compose y z)    == compose (compose x y) z
+
+    test "compose (edge y z)       (edge x y)       == edge x z" $ \(x :: Int) y z ->
+          compose (edge y z)       (edge x y)       == edge x z
+
+    test "compose (path    [1..5]) (path    [1..5]) == edges [(1,3),(2,4),(3,5)]" $
+          compose (path    [1..5]) (path    [1..5]) == edges [(1,3),(2,4),(3,5::Int)]
+
+    test "compose (circuit [1..5]) (circuit [1..5]) == circuit [1,3,5,2,4]" $
+          compose (circuit [1..5]) (circuit [1..5]) == circuit [1,3,5,2,4::Int]
+
     putStrLn "\n============ Relation.reflexiveClosure ============"
     test "reflexiveClosure empty      == empty" $
           reflexiveClosure empty      ==(empty :: RI)

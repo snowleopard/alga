@@ -36,7 +36,7 @@ module Algebra.Graph.Relation (
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
 
     -- * Operations on binary relations
-    reflexiveClosure, symmetricClosure, transitiveClosure, preorderClosure
+    compose, reflexiveClosure, symmetricClosure, transitiveClosure, preorderClosure
   ) where
 
 import Data.Tuple
@@ -551,6 +551,26 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
   where
     pp (x, y) = p x && p y
 
+-- | /Compose/ two relations: @R = 'compose' Q P@. Two elements @x@ and @y@ are
+-- related in the resulting relation, i.e. @xRy@, if there exists an element @z@,
+-- such that @xPz@ and @zQy@. This is an associative operation which has 'empty'
+-- as the /annihilating zero/.
+-- Complexity: /O(n * m * log(m))/ time and /O(n + m)/ memory.
+--
+-- @
+-- compose 'empty'            x                == 'empty'
+-- compose x                'empty'            == 'empty'
+-- compose x                (compose y z)    == compose (compose x y) z
+-- compose ('edge' y z)       ('edge' x y)       == 'edge' x z
+-- compose ('path'    [1..5]) ('path'    [1..5]) == 'edges' [(1,3),(2,4),(3,5)]
+-- compose ('circuit' [1..5]) ('circuit' [1..5]) == 'circuit' [1,3,5,2,4]
+-- @
+compose :: Ord a => Relation a -> Relation a -> Relation a
+compose x y = Relation (referredToVertexSet r) r
+  where
+    d = domain x `Set.union` domain y
+    r = Set.unions [ preset z y `setProduct` postset z x | z <- Set.toAscList d ]
+
 -- | Compute the /reflexive closure/ of a 'Relation'.
 -- Complexity: /O(n * log(m))/ time.
 --
@@ -574,7 +594,7 @@ symmetricClosure :: Ord a => Relation a -> Relation a
 symmetricClosure (Relation d r) = Relation d $ r `Set.union` (Set.map swap r)
 
 -- | Compute the /transitive closure/ of a 'Relation'.
--- Complexity: /O(n * m * log(m))/ time.
+-- Complexity: /O(n * m * log(n) * log(m))/ time.
 --
 -- @
 -- transitiveClosure 'empty'           == 'empty'
@@ -582,11 +602,11 @@ symmetricClosure (Relation d r) = Relation d $ r `Set.union` (Set.map swap r)
 -- transitiveClosure ('path' $ 'Data.List.nub' xs) == 'clique' ('Data.List.nub' xs)
 -- @
 transitiveClosure :: Ord a => Relation a -> Relation a
-transitiveClosure old@(Relation d r)
-    | r == newR = old
-    | otherwise = transitiveClosure $ Relation d newR
+transitiveClosure old
+    | old == new = old
+    | otherwise  = transitiveClosure new
   where
-    newR = Set.unions $ r : [ preset x old `setProduct` postset x old | x <- Set.toAscList d ]
+    new = overlay old (old `compose` old)
 
 -- | Compute the /preorder closure/ of a 'Relation'.
 -- Complexity: /O(n * m * log(m))/ time.
