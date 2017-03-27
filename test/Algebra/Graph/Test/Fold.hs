@@ -550,6 +550,9 @@ testFold = do
                     deBruijn 2 "01"             ==(edges [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
                                                          , ("10","00"), ("10","01"), ("11","10"), ("11","11") ] :: Fold String)
 
+    test "          transpose   (deBruijn n xs) == gmap reverse $ deBruijn n xs" $ mapSize (min 5) $ \(NonNegative n) (xs :: [Int]) ->
+                    transpose   (deBruijn n xs) == ((gmap reverse $ deBruijn n xs) :: Fold [Int])
+
     test "          vertexCount (deBruijn n xs) == (length $ nub xs)^n" $ mapSize (min 5) $ \(NonNegative n) (xs :: [Int]) ->
                     vertexCount (deBruijn n xs) == (length $ nubOrd xs)^n
 

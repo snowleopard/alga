@@ -658,6 +658,7 @@ torus = H.torus
 --           deBruijn 2 "0"              == 'edge' "00" "00"
 --           deBruijn 2 "01"             == 'edges' [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
 --                                                , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
+--           'transpose'   (deBruijn n xs) == 'fmap' 'reverse' $ deBruijn n xs
 --           'vertexCount' (deBruijn n xs) == ('length' $ 'Data.List.nub' xs)^n
 -- n > 0 ==> 'edgeCount'   (deBruijn n xs) == ('length' $ 'Data.List.nub' xs)^(n + 1)
 -- @
