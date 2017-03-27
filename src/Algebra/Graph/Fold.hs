@@ -557,13 +557,13 @@ torus xs ys = C.circuit xs `box` C.circuit ys
 --
 -- @
 --           deBruijn 0 xs               == 'edge' [] []
--- n > 0 'Test.QuickCheck.==>' deBruijn n []               == 'empty'
+-- n > 0 ==> deBruijn n []               == 'empty'
 --           deBruijn 1 [0,1]            == 'edges' [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]
 --           deBruijn 2 "0"              == 'edge' "00" "00"
 --           deBruijn 2 "01"             == 'edges' [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
 --                                                , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
 --           'vertexCount' (deBruijn n xs) == ('length' $ 'Data.List.nub' xs)^n
--- n > 0 'Test.QuickCheck.==>' 'edgeCount'   (deBruijn n xs) == ('length' $ 'Data.List.nub' xs)^(n + 1)
+-- n > 0 ==> 'edgeCount'   (deBruijn n xs) == ('length' $ 'Data.List.nub' xs)^(n + 1)
 -- @
 deBruijn :: (C.Graph g, C.Vertex g ~ [a]) => Int -> [a] -> g
 deBruijn 0   _        = edge [] []
