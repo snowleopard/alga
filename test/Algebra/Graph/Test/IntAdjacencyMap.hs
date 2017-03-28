@@ -157,20 +157,20 @@ testIntAdjacencyMap = do
           edgeCount   (connect 1 2) == 1
 
     putStrLn "\n============ IntAdjacencyMap.vertices ============"
-    test "vertices []            == empty" $
-          vertices []            == empty
+    test "vertices []             == empty" $
+          vertices []             == empty
 
-    test "vertices [x]           == vertex x" $ \x ->
-          vertices [x]           == vertex x
+    test "vertices [x]            == vertex x" $ \x ->
+          vertices [x]            == vertex x
 
-    test "hasVertex x . vertices == elem x" $ \x xs ->
-         (hasVertex x . vertices) xs == elem x xs
+    test "hasVertex x  . vertices == elem x" $ \x xs ->
+         (hasVertex x  . vertices) xs == elem x xs
 
-    test "vertexCount . vertices == length . nub" $ \xs ->
-         (vertexCount . vertices) xs == (length . nubOrd) xs
+    test "vertexCount  . vertices == length . nub" $ \xs ->
+         (vertexCount  . vertices) xs == (length . nubOrd) xs
 
-    test "vertexSet   . vertices == IntSet.fromList" $ \xs ->
-         (vertexSet   . vertices) xs == IntSet.fromList xs
+    test "vertexIntSet . vertices == IntSet.fromList" $ \xs ->
+         (vertexIntSet . vertices) xs == IntSet.fromList xs
 
     putStrLn "\n============ IntAdjacencyMap.edges ============"
     test "edges []          == empty" $
@@ -354,18 +354,18 @@ testIntAdjacencyMap = do
     test "adjacencyList (star 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]" $
           adjacencyList (star 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
 
-    putStrLn "\n============ IntAdjacencyMap.vertexSet ============"
-    test "vertexSet empty      == IntSet.empty" $
-          vertexSet empty      == IntSet.empty
+    putStrLn "\n============ IntAdjacencyMap.vertexIntSet ============"
+    test "vertexIntSet empty      == IntSet.empty" $
+          vertexIntSet empty      == IntSet.empty
 
-    test "vertexSet . vertex   == IntSet.singleton" $ \x ->
-         (vertexSet . vertex) x== IntSet.singleton x
+    test "vertexIntSet . vertex   == IntSet.singleton" $ \x ->
+         (vertexIntSet . vertex) x== IntSet.singleton x
 
-    test "vertexSet . vertices == IntSet.fromList" $ \xs ->
-         (vertexSet . vertices) xs == IntSet.fromList xs
+    test "vertexIntSet . vertices == IntSet.fromList" $ \xs ->
+         (vertexIntSet . vertices) xs == IntSet.fromList xs
 
-    test "vertexSet . clique   == IntSet.fromList" $ \xs ->
-         (vertexSet . clique) xs == IntSet.fromList xs
+    test "vertexIntSet . clique   == IntSet.fromList" $ \xs ->
+         (vertexIntSet . clique) xs == IntSet.fromList xs
 
     putStrLn "\n============ IntAdjacencyMap.edgeSet ============"
     test "edgeSet empty      == Set.empty" $
@@ -610,9 +610,9 @@ testIntAdjacencyMap = do
           isTopSort [x]       (edge x x)      == False
 
     putStrLn "\n============ IntAdjacencyMap.GraphKL ============"
-    test "map (getVertex h) (vertices $ getGraph h) == IntSet.toAscList (vertexSet g)"
+    test "map (getVertex h) (vertices $ getGraph h) == IntSet.toAscList (vertexIntSet g)"
       $ \g -> let h = graphKL g in
-        map (getVertex h) (KL.vertices $ getGraph h) == IntSet.toAscList (vertexSet g)
+        map (getVertex h) (KL.vertices $ getGraph h) == IntSet.toAscList (vertexIntSet g)
 
     test "map (\\(x, y) -> (getVertex h x, getVertex h y)) (edges $ getGraph h) == edgeList g"
       $ \g -> let h = graphKL g in

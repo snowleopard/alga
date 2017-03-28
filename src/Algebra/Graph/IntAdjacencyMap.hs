@@ -29,7 +29,7 @@ module Algebra.Graph.IntAdjacencyMap (
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    adjacencyList, vertexSet, edgeSet, postset,
+    adjacencyList, vertexIntSet, edgeSet, postset,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, tree, forest,
@@ -138,11 +138,11 @@ connect = C.connect
 -- of the given list.
 --
 -- @
--- vertices []            == 'empty'
--- vertices [x]           == 'vertex' x
--- 'hasVertex' x . vertices == 'elem' x
--- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
--- 'vertexSet'   . vertices == IntSet.'IntSet.fromList'
+-- vertices []             == 'empty'
+-- vertices [x]            == 'vertex' x
+-- 'hasVertex' x  . vertices == 'elem' x
+-- 'vertexCount'  . vertices == 'length' . 'Data.List.nub'
+-- 'vertexIntSet' . vertices == IntSet.'IntSet.fromList'
 -- @
 vertices :: [Int] -> IntAdjacencyMap
 vertices = IntAdjacencyMap . IntMap.fromList . map (\x -> (x, IntSet.empty))
@@ -330,13 +330,13 @@ adjacencyList = map (fmap IntSet.toAscList) . IntMap.toAscList . adjacencyMap
 -- Complexity: /O(n)/ time and memory.
 --
 -- @
--- vertexSet 'empty'      == IntSet.'IntSet.empty'
--- vertexSet . 'vertex'   == IntSet.'IntSet.singleton'
--- vertexSet . 'vertices' == IntSet.'IntSet.fromList'
--- vertexSet . 'clique'   == IntSet.'IntSet.fromList'
+-- vertexIntSet 'empty'      == IntSet.'IntSet.empty'
+-- vertexIntSet . 'vertex'   == IntSet.'IntSet.singleton'
+-- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
+-- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
 -- @
-vertexSet :: IntAdjacencyMap -> IntSet
-vertexSet = IntMap.keysSet . adjacencyMap
+vertexIntSet :: IntAdjacencyMap -> IntSet
+vertexIntSet = IntMap.keysSet . adjacencyMap
 
 -- | The set of edges of a given graph.
 -- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
@@ -583,7 +583,7 @@ isTopSort xs m = go IntSet.empty xs
 -- the following holds:
 --
 -- @
--- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == IntSet.'IntSet.toAscList' ('vertexSet' g)
+-- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == IntSet.'IntSet.toAscList' ('vertexIntSet' g)
 -- map (\\(x, y) -> ('getVertex' h x, 'getVertex' h y)) ('Data.Graph.edges' $ 'getGraph' h) == 'edgeList' g
 -- @
 data GraphKL = GraphKL {
