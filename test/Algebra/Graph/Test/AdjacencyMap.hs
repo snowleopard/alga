@@ -383,18 +383,18 @@ testAdjacencyMap = do
     test "edgeSet . edges    == Set.fromList" $ \(xs :: [(Int, Int)]) ->
          (edgeSet . edges) xs== Set.fromList xs
 
-    putStrLn "\n============ AdjacencyMap.postset ============"
-    test "postset x empty      == Set.empty" $ \(x :: Int) ->
-          postset x empty      == Set.empty
+    putStrLn "\n============ AdjacencyMap.postSet ============"
+    test "postSet x empty      == Set.empty" $ \(x :: Int) ->
+          postSet x empty      == Set.empty
 
-    test "postset x (vertex x) == Set.empty" $ \(x :: Int) ->
-          postset x (vertex x) == Set.empty
+    test "postSet x (vertex x) == Set.empty" $ \(x :: Int) ->
+          postSet x (vertex x) == Set.empty
 
-    test "postset x (edge x y) == Set.fromList [y]" $ \(x :: Int) y ->
-          postset x (edge x y) == Set.fromList [y]
+    test "postSet x (edge x y) == Set.fromList [y]" $ \(x :: Int) y ->
+          postSet x (edge x y) == Set.fromList [y]
 
-    test "postset 2 (edge 1 2) == Set.empty" $
-          postset 2 (edge 1 2) ==(Set.empty :: Set.Set Int)
+    test "postSet 2 (edge 1 2) == Set.empty" $
+          postSet 2 (edge 1 2) ==(Set.empty :: Set.Set Int)
 
     putStrLn "\n============ AdjacencyMap.path ============"
     test "path []    == empty" $

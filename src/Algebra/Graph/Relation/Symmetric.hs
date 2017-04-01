@@ -43,4 +43,4 @@ toRelation = symmetricClosure . fromSymmetric
 -- neighbours y ('Algebra.Graph.Class.edge' x y) == Set.'Set.fromList' [x]
 -- @
 neighbours :: Ord a => a -> SymmetricRelation a -> Set.Set a
-neighbours x = preset x . toRelation
+neighbours x = postSet x . toRelation

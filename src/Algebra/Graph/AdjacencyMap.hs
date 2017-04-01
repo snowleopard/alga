@@ -29,7 +29,7 @@ module Algebra.Graph.AdjacencyMap (
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    adjacencyList, vertexSet, edgeSet, postset,
+    adjacencyList, vertexSet, edgeSet, postSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, tree, forest,
@@ -352,13 +352,13 @@ edgeSet = Map.foldrWithKey (\v es -> Set.union (Set.mapMonotonic (v,) es)) Set.e
 -- | The /postset/ of a vertex is the set of its /direct successors/.
 --
 -- @
--- postset x 'empty'      == Set.'Set.empty'
--- postset x ('vertex' x) == Set.'Set.empty'
--- postset x ('edge' x y) == Set.'Set.fromList' [y]
--- postset 2 ('edge' 1 2) == Set.'Set.empty'
+-- postSet x 'empty'      == Set.'Set.empty'
+-- postSet x ('vertex' x) == Set.'Set.empty'
+-- postSet x ('edge' x y) == Set.'Set.fromList' [y]
+-- postSet 2 ('edge' 1 2) == Set.'Set.empty'
 -- @
-postset :: Ord a => a -> AdjacencyMap a -> Set a
-postset x = Map.findWithDefault Set.empty x . adjacencyMap
+postSet :: Ord a => a -> AdjacencyMap a -> Set a
+postSet x = Map.findWithDefault Set.empty x . adjacencyMap
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -573,7 +573,7 @@ isTopSort xs m = go Set.empty xs
   where
     go seen []     = seen == Map.keysSet (adjacencyMap m)
     go seen (v:vs) = let newSeen = seen `seq` Set.insert v seen
-        in postset v m `Set.intersection` newSeen == Set.empty && go newSeen vs
+        in postSet v m `Set.intersection` newSeen == Set.empty && go newSeen vs
 
 -- | Compute the /condensation/ of a graph, where each vertex corresponds to a
 -- /strongly-connected component/ of the original graph.

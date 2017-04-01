@@ -29,7 +29,7 @@ module Algebra.Graph.IntAdjacencyMap (
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    adjacencyList, vertexIntSet, edgeSet, postset,
+    adjacencyList, vertexIntSet, edgeSet, postIntSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, tree, forest,
@@ -355,13 +355,13 @@ edgeSet = IntMap.foldrWithKey combine Set.empty . adjacencyMap
 -- | The /postset/ of a vertex is the set of its /direct successors/.
 --
 -- @
--- postset x 'empty'      == IntSet.'IntSet.empty'
--- postset x ('vertex' x) == IntSet.'IntSet.empty'
--- postset x ('edge' x y) == IntSet.'IntSet.fromList' [y]
--- postset 2 ('edge' 1 2) == IntSet.'IntSet.empty'
+-- postIntSet x 'empty'      == IntSet.'IntSet.empty'
+-- postIntSet x ('vertex' x) == IntSet.'IntSet.empty'
+-- postIntSet x ('edge' x y) == IntSet.'IntSet.fromList' [y]
+-- postIntSet 2 ('edge' 1 2) == IntSet.'IntSet.empty'
 -- @
-postset :: Int -> IntAdjacencyMap -> IntSet
-postset x = IntMap.findWithDefault IntSet.empty x . adjacencyMap
+postIntSet :: Int -> IntAdjacencyMap -> IntSet
+postIntSet x = IntMap.findWithDefault IntSet.empty x . adjacencyMap
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -576,7 +576,7 @@ isTopSort xs m = go IntSet.empty xs
   where
     go seen []     = seen == IntMap.keysSet (adjacencyMap m)
     go seen (v:vs) = let newSeen = seen `seq` IntSet.insert v seen
-        in postset v m `IntSet.intersection` newSeen == IntSet.empty && go newSeen vs
+        in postIntSet v m `IntSet.intersection` newSeen == IntSet.empty && go newSeen vs
 
 -- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
 -- the "Data.Graph" module of the @containers@ library. If @graphKL g == h@ then

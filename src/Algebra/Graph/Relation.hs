@@ -27,7 +27,7 @@ module Algebra.Graph.Relation (
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    vertexSet, vertexIntSet, edgeSet, preset, postset,
+    vertexSet, vertexIntSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, tree, forest,
@@ -338,32 +338,32 @@ edgeSet :: Ord a => Relation a -> Set.Set (a, a)
 edgeSet = relation
 
 -- | The /preset/ of an element @x@ is the set of elements that are related to
--- it on the /left/, i.e. @preset x == { a | aRx }@. In the context of directed
+-- it on the /left/, i.e. @preSet x == { a | aRx }@. In the context of directed
 -- graphs, this corresponds to the set of /direct predecessors/ of vertex @x@.
 -- Complexity: /O(n + m)/ time and /O(n)/ memory.
 --
 -- @
--- preset x 'empty'      == Set.empty
--- preset x ('vertex' x) == Set.empty
--- preset 1 ('edge' 1 2) == Set.empty
--- preset y ('edge' x y) == Set.fromList [x]
+-- preSet x 'empty'      == Set.'Set.empty'
+-- preSet x ('vertex' x) == Set.'Set.empty'
+-- preSet 1 ('edge' 1 2) == Set.'Set.empty'
+-- preSet y ('edge' x y) == Set.'Set.fromList' [x]
 -- @
-preset :: Ord a => a -> Relation a -> Set.Set a
-preset x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
+preSet :: Ord a => a -> Relation a -> Set.Set a
+preSet x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
 
 -- | The /postset/ of an element @x@ is the set of elements that are related to
--- it on the /right/, i.e. @postset x == { a | xRa }@. In the context of directed
+-- it on the /right/, i.e. @postSet x == { a | xRa }@. In the context of directed
 -- graphs, this corresponds to the set of /direct successors/ of vertex @x@.
 -- Complexity: /O(n + m)/ time and /O(n)/ memory.
 --
 -- @
--- postset x 'empty'      == Set.empty
--- postset x ('vertex' x) == Set.empty
--- postset x ('edge' x y) == Set.fromList [y]
--- postset 2 ('edge' 1 2) == Set.empty
+-- postSet x 'empty'      == Set.'Set.empty'
+-- postSet x ('vertex' x) == Set.'Set.empty'
+-- postSet x ('edge' x y) == Set.'Set.fromList' [y]
+-- postSet 2 ('edge' 1 2) == Set.'Set.empty'
 -- @
-postset :: Ord a => a -> Relation a -> Set.Set a
-postset x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation
+postSet :: Ord a => a -> Relation a -> Set.Set a
+postSet x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -569,7 +569,7 @@ compose :: Ord a => Relation a -> Relation a -> Relation a
 compose x y = Relation (referredToVertexSet r) r
   where
     d = domain x `Set.union` domain y
-    r = Set.unions [ preset z y `setProduct` postset z x | z <- Set.toAscList d ]
+    r = Set.unions [ preSet z y `setProduct` postSet z x | z <- Set.toAscList d ]
 
 -- | Compute the /reflexive closure/ of a 'Relation'.
 -- Complexity: /O(n * log(m))/ time.
