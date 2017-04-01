@@ -676,7 +676,8 @@ removeVertex :: Eq a => a -> Graph a -> Graph a
 removeVertex = H.removeVertex
 
 -- | Remove an edge from a given graph.
--- Complexity: /O(s)/ time and memory.
+-- Complexity: /O(s)/ time and memory. The worst case size complexity is /O(s^2)/,
+-- although in practice it is usually also linear /O(s)/.
 --
 -- @
 -- removeEdge x y ('edge' x y)       == 'vertices' [x, y]
