@@ -35,7 +35,7 @@ module Algebra.Graph.AdjacencyMap (
     path, circuit, clique, biclique, star, tree, forest,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, gmap, induce,
+    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
 
     -- * Algorithms
     dfsForest, topSort, isTopSort, scc,
@@ -308,6 +308,7 @@ vertexList = Map.keys . adjacencyMap
 -- edgeList ('edge' x y)     == [(x,y)]
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
+-- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList (AdjacencyMap m) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
@@ -364,9 +365,10 @@ postSet x = Map.findWithDefault Set.empty x . adjacencyMap
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- path []    == 'empty'
--- path [x]   == 'vertex' x
--- path [x,y] == 'edge' x y
+-- path []        == 'empty'
+-- path [x]       == 'vertex' x
+-- path [x,y]     == 'edge' x y
+-- path . 'reverse' == 'transpose' . path
 -- @
 path :: Ord a => [a] -> AdjacencyMap a
 path = C.path
@@ -375,9 +377,10 @@ path = C.path
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- circuit []    == 'empty'
--- circuit [x]   == 'edge' x x
--- circuit [x,y] == 'edges' [(x,y), (y,x)]
+-- circuit []        == 'empty'
+-- circuit [x]       == 'edge' x x
+-- circuit [x,y]     == 'edges' [(x,y), (y,x)]
+-- circuit . 'reverse' == 'transpose' . circuit
 -- @
 circuit :: Ord a => [a] -> AdjacencyMap a
 circuit = C.circuit
@@ -391,6 +394,7 @@ circuit = C.circuit
 -- clique [x,y]      == 'edge' x y
 -- clique [x,y,z]    == 'edges' [(x,y), (x,z), (y,z)]
 -- clique (xs ++ ys) == 'connect' (clique xs) (clique ys)
+-- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: Ord a => [a] -> AdjacencyMap a
 clique = C.clique
@@ -496,6 +500,25 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- @
 mergeVertices :: Ord a => (a -> Bool) -> a -> AdjacencyMap a -> AdjacencyMap a
 mergeVertices p v = gmap $ \u -> if p u then v else u
+
+-- | Transpose a given graph.
+-- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
+--
+-- @
+-- transpose 'empty'       == 'empty'
+-- transpose ('vertex' x)  == 'vertex' x
+-- transpose ('edge' x y)  == 'edge' y x
+-- transpose . transpose == id
+-- transpose . 'path'      == 'path'    . 'reverse'
+-- transpose . 'circuit'   == 'circuit' . 'reverse'
+-- transpose . 'clique'    == 'clique'  . 'reverse'
+-- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
+-- @
+transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
+transpose (AdjacencyMap m) = AdjacencyMap $ Map.foldrWithKey combine vs m
+  where
+    combine v es = Map.unionWith Set.union (Map.fromSet (const $ Set.singleton v) es)
+    vs           = Map.fromSet (const Set.empty) (Map.keysSet m)
 
 -- | Transform a graph by applying a function to each of its vertices. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric

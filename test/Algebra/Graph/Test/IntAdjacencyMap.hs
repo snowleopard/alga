@@ -16,6 +16,7 @@ module Algebra.Graph.Test.IntAdjacencyMap (
   ) where
 
 import Data.Tree
+import Data.Tuple
 
 import Algebra.Graph.IntAdjacencyMap
 import Algebra.Graph.IntAdjacencyMap.Internal
@@ -526,6 +527,31 @@ testIntAdjacencyMap = do
 
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
           mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
+
+    putStrLn "\n============ IntAdjacencyMap.transpose ============"
+    test "transpose empty       == empty" $
+          transpose empty       == empty
+
+    test "transpose (vertex x)  == vertex x" $ \x ->
+          transpose (vertex x)  == vertex x
+
+    test "transpose (edge x y)  == edge y x" $ \x y ->
+          transpose (edge x y)  == edge y x
+
+    test "transpose . transpose == id" $ \x ->
+         (transpose . transpose) x == x
+
+    test "transpose . path      == path    . reverse" $ \xs ->
+         (transpose . path) xs  == (path . reverse) xs
+
+    test "transpose . circuit   == circuit . reverse" $ \xs ->
+         (transpose . circuit) xs == (circuit . reverse) xs
+
+    test "transpose . clique    == clique  . reverse" $ \xs ->
+         (transpose . clique) xs == (clique . reverse) xs
+
+    test "edgeList . transpose  == sort . map swap . edgeList" $ \x ->
+         (edgeList . transpose) x == (sort . map swap . edgeList) x
 
     putStrLn "\n============ IntAdjacencyMap.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f) ->

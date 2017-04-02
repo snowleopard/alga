@@ -16,6 +16,7 @@ module Algebra.Graph.Test.AdjacencyMap (
   ) where
 
 import Data.Tree
+import Data.Tuple
 
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.AdjacencyMap.Internal
@@ -529,6 +530,31 @@ testAdjacencyMap = do
 
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
           mergeVertices odd  1 (3 + 4 * 5) == (4 * 1 :: AI)
+
+    putStrLn "\n============ AdjacencyMap.transpose ============"
+    test "transpose empty       == empty" $
+          transpose empty       ==(empty :: AI)
+
+    test "transpose (vertex x)  == vertex x" $ \(x :: Int) ->
+          transpose (vertex x)  == vertex x
+
+    test "transpose (edge x y)  == edge y x" $ \(x :: Int) y ->
+          transpose (edge x y)  == edge y x
+
+    test "transpose . transpose == id" $ \(x :: AI) ->
+         (transpose . transpose) x == x
+
+    test "transpose . path      == path    . reverse" $ \(xs :: [Int]) ->
+         (transpose . path) xs  == (path . reverse) xs
+
+    test "transpose . circuit   == circuit . reverse" $ \(xs :: [Int]) ->
+         (transpose . circuit) xs == (circuit . reverse) xs
+
+    test "transpose . clique    == clique  . reverse" $ \(xs :: [Int]) ->
+         (transpose . clique) xs == (clique . reverse) xs
+
+    test "edgeList . transpose  == sort . map swap . edgeList" $ \(x :: AI) ->
+         (edgeList . transpose) x == (sort . map swap . edgeList) x
 
     putStrLn "\n============ AdjacencyMap.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f :: II) ->
