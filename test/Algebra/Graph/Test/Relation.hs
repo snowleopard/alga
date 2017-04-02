@@ -422,17 +422,20 @@ testRelation = do
           circuit [x,y] == (edges [(x,y), (y,x)] :: RI)
 
     putStrLn "\n============ Relation.clique ============"
-    test "clique []      == empty" $
-          clique []      == (empty :: RI)
+    test "clique []         == empty" $
+          clique []         == (empty :: RI)
 
-    test "clique [x]     == vertex x" $ \(x :: Int) ->
-          clique [x]     == (vertex x :: RI)
+    test "clique [x]        == vertex x" $ \(x :: Int) ->
+          clique [x]        == (vertex x :: RI)
 
-    test "clique [x,y]   == edge x y" $ \(x :: Int) y ->
-          clique [x,y]   == (edge x y :: RI)
+    test "clique [x,y]      == edge x y" $ \(x :: Int) y ->
+          clique [x,y]      == (edge x y :: RI)
 
-    test "clique [x,y,z] == edges [(x,y), (x,z), (y,z)]" $ \(x :: Int) y z ->
-          clique [x,y,z] == (edges [(x,y), (x,z), (y,z)] :: RI)
+    test "clique [x,y,z]    == edges [(x,y), (x,z), (y,z)]" $ \(x :: Int) y z ->
+          clique [x,y,z]    == (edges [(x,y), (x,z), (y,z)] :: RI)
+
+    test "clique (xs ++ ys) == connect (clique xs) (clique ys)" $ \(xs :: [Int]) ys ->
+          clique (xs ++ ys) == connect (clique xs) (clique ys)
 
     putStrLn "\n============ Relation.biclique ============"
     test "biclique []      []      == empty" $

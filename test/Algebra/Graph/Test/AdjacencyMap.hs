@@ -417,17 +417,20 @@ testAdjacencyMap = do
           circuit [x,y] == (edges [(x,y), (y,x)] :: AI)
 
     putStrLn "\n============ AdjacencyMap.clique ============"
-    test "clique []      == empty" $
-          clique []      == (empty :: AI)
+    test "clique []         == empty" $
+          clique []         == (empty :: AI)
 
-    test "clique [x]     == vertex x" $ \(x :: Int) ->
-          clique [x]     == (vertex x :: AI)
+    test "clique [x]        == vertex x" $ \(x :: Int) ->
+          clique [x]        == (vertex x :: AI)
 
-    test "clique [x,y]   == edge x y" $ \(x :: Int) y ->
-          clique [x,y]   == (edge x y :: AI)
+    test "clique [x,y]      == edge x y" $ \(x :: Int) y ->
+          clique [x,y]      == (edge x y :: AI)
 
-    test "clique [x,y,z] == edges [(x,y), (x,z), (y,z)]" $ \(x :: Int) y z ->
-          clique [x,y,z] == (edges [(x,y), (x,z), (y,z)] :: AI)
+    test "clique [x,y,z]    == edges [(x,y), (x,z), (y,z)]" $ \(x :: Int) y z ->
+          clique [x,y,z]    == (edges [(x,y), (x,z), (y,z)] :: AI)
+
+    test "clique (xs ++ ys) == connect (clique xs) (clique ys)" $ \(xs :: [Int]) ys ->
+          clique (xs ++ ys) == connect (clique xs) (clique ys)
 
     putStrLn "\n============ AdjacencyMap.biclique ============"
     test "biclique []      []      == empty" $

@@ -393,11 +393,12 @@ circuit = C.circuit
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- clique []        == 'empty'
--- clique [x]       == 'vertex' x
--- clique [x,y]     == 'edge' x y
--- clique [x,y,z]   == 'edges' [(x,y), (x,z), (y,z)]
--- clique . 'reverse' == 'transpose' . clique
+-- clique []         == 'empty'
+-- clique [x]        == 'vertex' x
+-- clique [x,y]      == 'edge' x y
+-- clique [x,y,z]    == 'edges' [(x,y), (x,z), (y,z)]
+-- clique (xs ++ ys) == 'connect' (clique xs) (clique ys)
+-- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: Ord a => [a] -> Relation a
 clique = C.clique

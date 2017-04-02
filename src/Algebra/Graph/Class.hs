@@ -333,10 +333,11 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- given list.
 --
 -- @
--- clique []      == 'empty'
--- clique [x]     == 'vertex' x
--- clique [x,y]   == 'edge' x y
--- clique [x,y,z] == 'edges' [(x,y), (x,z), (y,z)]
+-- clique []         == 'empty'
+-- clique [x]        == 'vertex' x
+-- clique [x,y]      == 'edge' x y
+-- clique [x,y,z]    == 'edges' [(x,y), (x,z), (y,z)]
+-- clique (xs ++ ys) == 'connect' (clique xs) (clique ys)
 -- @
 clique :: Graph g => [Vertex g] -> g
 clique = connects . map vertex

@@ -555,11 +555,12 @@ circuit = H.circuit
 -- given list.
 --
 -- @
--- clique []        == 'empty'
--- clique [x]       == 'vertex' x
--- clique [x,y]     == 'edge' x y
--- clique [x,y,z]   == 'edges' [(x,y), (x,z), (y,z)]
--- clique . 'reverse' == 'transpose' . clique
+-- clique []         == 'empty'
+-- clique [x]        == 'vertex' x
+-- clique [x,y]      == 'edge' x y
+-- clique [x,y,z]    == 'edges' [(x,y), (x,z), (y,z)]
+-- clique (xs ++ ys) == 'connect' (clique xs) (clique ys)
+-- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: [a] -> Graph a
 clique = H.clique

@@ -433,17 +433,20 @@ testGraph = do
           circuit [x,y] == edges [(x,y), (y,x)]
 
     putStrLn "\n============ Graph.clique ============"
-    test "clique []      == empty" $
-          clique []      ==(empty :: G)
+    test "clique []         == empty" $
+          clique []         ==(empty :: G)
 
-    test "clique [x]     == vertex x" $ \(x :: Int) ->
-          clique [x]     == vertex x
+    test "clique [x]        == vertex x" $ \(x :: Int) ->
+          clique [x]        == vertex x
 
-    test "clique [x,y]   == edge x y" $ \(x :: Int) y ->
-          clique [x,y]   == edge x y
+    test "clique [x,y]      == edge x y" $ \(x :: Int) y ->
+          clique [x,y]      == edge x y
 
-    test "clique [x,y,z] == edges [(x,y), (x,z), (y,z)]" $ \(x :: Int) y z ->
-          clique [x,y,z] == edges [(x,y), (x,z), (y,z)]
+    test "clique [x,y,z]    == edges [(x,y), (x,z), (y,z)]" $ \(x :: Int) y z ->
+          clique [x,y,z]    == edges [(x,y), (x,z), (y,z)]
+
+    test "clique (xs ++ ys) == connect (clique xs) (clique ys)" $ \(xs :: [Int]) ys ->
+          clique (xs ++ ys) == connect (clique xs) (clique ys)
 
     putStrLn "\n============ Graph.biclique ============"
     test "biclique []      []      == empty" $

@@ -414,17 +414,20 @@ testIntAdjacencyMap = do
           circuit [x,y] == edges [(x,y), (y,x)]
 
     putStrLn "\n============ IntAdjacencyMap.clique ============"
-    test "clique []      == empty" $
-          clique []      == empty
+    test "clique []         == empty" $
+          clique []         == empty
 
-    test "clique [x]     == vertex x" $ \x ->
-          clique [x]     == vertex x
+    test "clique [x]        == vertex x" $ \x ->
+          clique [x]        == vertex x
 
-    test "clique [x,y]   == edge x y" $ \x y ->
-          clique [x,y]   == edge x y
+    test "clique [x,y]      == edge x y" $ \x y ->
+          clique [x,y]      == edge x y
 
-    test "clique [x,y,z] == edges [(x,y), (x,z), (y,z)]" $ \x y z ->
-          clique [x,y,z] == edges [(x,y), (x,z), (y,z)]
+    test "clique [x,y,z]    == edges [(x,y), (x,z), (y,z)]" $ \x y z ->
+          clique [x,y,z]    == edges [(x,y), (x,z), (y,z)]
+
+    test "clique (xs ++ ys) == connect (clique xs) (clique ys)" $ \xs ys ->
+          clique (xs ++ ys) == connect (clique xs) (clique ys)
 
     putStrLn "\n============ IntAdjacencyMap.biclique ============"
     test "biclique []      []      == empty" $
