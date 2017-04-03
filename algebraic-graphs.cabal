@@ -84,9 +84,11 @@ test-suite test-alga
     type:               exitcode-stdio-1.0
     main-is:            Main.hs
     other-modules:      Algebra.Graph.Test,
+                        Algebra.Graph.Test.API,
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,
                         Algebra.Graph.Test.Fold,
+                        Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
                         Algebra.Graph.Test.IntAdjacencyMap,
                         Algebra.Graph.Test.Relation
@@ -101,7 +103,9 @@ test-suite test-alga
                         GeneralizedNewtypeDeriving
                         TypeFamilies
                         ScopedTypeVariables
-    other-extensions:   RankNTypes
+    other-extensions:   ConstrainedClassMethods
+                        ConstraintKinds
+                        RankNTypes
                         ViewPatterns
 
 benchmark benchmark-alga

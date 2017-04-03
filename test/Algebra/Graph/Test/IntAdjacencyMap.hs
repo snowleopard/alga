@@ -7,8 +7,7 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Testsuite for 'IntAdjacencyMap'.
---
+-- Testsuite for "Algebra.Graph.IntAdjacencyMap".
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.IntAdjacencyMap (
     -- * Testsuite
@@ -16,11 +15,11 @@ module Algebra.Graph.Test.IntAdjacencyMap (
   ) where
 
 import Data.Tree
-import Data.Tuple
 
 import Algebra.Graph.IntAdjacencyMap
 import Algebra.Graph.IntAdjacencyMap.Internal
 import Algebra.Graph.Test
+import Algebra.Graph.Test.Generic
 
 import qualified Data.Graph  as KL
 import qualified Data.IntSet as IntSet
@@ -56,34 +55,8 @@ testIntAdjacencyMap = do
     test "show (1 * 2 + 3 :: IntAdjacencyMap) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: IntAdjacencyMap) == "graph [1,2,3] [(1,2)]"
 
-    putStrLn "\n============ IntAdjacencyMap.empty ============"
-    test "isEmpty     empty == True" $
-          isEmpty     empty == True
-
-    test "hasVertex x empty == False" $ \x ->
-          hasVertex x empty == False
-
-    test "vertexCount empty == 0" $
-          vertexCount empty == 0
-
-    test "edgeCount   empty == 0" $
-          edgeCount   empty == 0
-
-    putStrLn "\n============ IntAdjacencyMap.vertex ============"
-    test "isEmpty     (vertex x) == False" $ \x ->
-          isEmpty     (vertex x) == False
-
-    test "hasVertex x (vertex x) == True" $ \x ->
-          hasVertex x (vertex x) == True
-
-    test "hasVertex 1 (vertex 2) == False" $
-          hasVertex 1 (vertex 2) == False
-
-    test "vertexCount (vertex x) == 1" $ \x ->
-          vertexCount (vertex x) == 1
-
-    test "edgeCount   (vertex x) == 0" $ \x ->
-          edgeCount   (vertex x) == 0
+    testEmpty  empty
+    testVertex empty
 
     putStrLn "\n============ IntAdjacencyMap.edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \x y ->
@@ -528,30 +501,7 @@ testIntAdjacencyMap = do
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
           mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
 
-    putStrLn "\n============ IntAdjacencyMap.transpose ============"
-    test "transpose empty       == empty" $
-          transpose empty       == empty
-
-    test "transpose (vertex x)  == vertex x" $ \x ->
-          transpose (vertex x)  == vertex x
-
-    test "transpose (edge x y)  == edge y x" $ \x y ->
-          transpose (edge x y)  == edge y x
-
-    test "transpose . transpose == id" $ \x ->
-         (transpose . transpose) x == x
-
-    test "transpose . path      == path    . reverse" $ \xs ->
-         (transpose . path) xs  == (path . reverse) xs
-
-    test "transpose . circuit   == circuit . reverse" $ \xs ->
-         (transpose . circuit) xs == (circuit . reverse) xs
-
-    test "transpose . clique    == clique  . reverse" $ \xs ->
-         (transpose . clique) xs == (clique . reverse) xs
-
-    test "edgeList . transpose  == sort . map swap . edgeList" $ \x ->
-         (edgeList . transpose) x == (sort . map swap . edgeList) x
+    testTranspose empty
 
     putStrLn "\n============ IntAdjacencyMap.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f) ->

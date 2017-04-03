@@ -7,9 +7,8 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Testsuite for 'Graph' and polymorphic functions defined in
+-- Testsuite for "Algebra.Graph" and polymorphic functions defined in
 -- "Algebra.Graph.HigherKinded.Class".
---
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Graph (
     -- * Testsuite
@@ -18,10 +17,10 @@ module Algebra.Graph.Test.Graph (
 
 import Data.Foldable
 import Data.Tree
-import Data.Tuple
 
 import Algebra.Graph
 import Algebra.Graph.Test
+import Algebra.Graph.Test.Generic
 
 import qualified Data.Set    as Set
 import qualified Data.IntSet as IntSet
@@ -37,40 +36,8 @@ testGraph = do
     test "Axioms of graphs"   $ (axioms   :: GraphTestsuite G)
     test "Theorems of graphs" $ (theorems :: GraphTestsuite G)
 
-    putStrLn "\n============ Graph.empty ============"
-    test "isEmpty     empty == True" $
-          isEmpty    (empty :: G) == True
-
-    test "hasVertex x empty == False" $ \(x :: Int) ->
-          hasVertex x empty == False
-
-    test "vertexCount empty == 0" $
-          vertexCount(empty :: G) == 0
-
-    test "edgeCount   empty == 0" $
-          edgeCount  (empty :: G) == 0
-
-    test "size        empty == 1" $
-          size       (empty :: G) == 1
-
-    putStrLn "\n============ Graph.vertex ============"
-    test "isEmpty     (vertex x) == False" $ \(x :: Int) ->
-          isEmpty     (vertex x) == False
-
-    test "hasVertex x (vertex x) == True" $ \(x :: Int) ->
-          hasVertex x (vertex x) == True
-
-    test "hasVertex 1 (vertex 2) == False" $
-          hasVertex 1 (vertex 2 :: G) == False
-
-    test "vertexCount (vertex x) == 1" $ \(x :: Int) ->
-          vertexCount (vertex x) == 1
-
-    test "edgeCount   (vertex x) == 0" $ \(x :: Int) ->
-          edgeCount   (vertex x) == 0
-
-    test "size        (vertex x) == 1" $ \(x :: Int) ->
-          size        (vertex x) == 1
+    testEmpty  (empty :: G)
+    testVertex (empty :: G)
 
     putStrLn "\n============ Graph.edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
@@ -619,33 +586,7 @@ testGraph = do
     test "splitVertex 1 [0, 1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)" $
          (splitVertex 1 [0, 1] $ 1 * (2 + 3))==((0 + 1) * (2 + 3 :: G))
 
-    putStrLn "\n============ Graph.transpose ============"
-    test "transpose empty       == empty" $
-          transpose empty       ==(empty :: G)
-
-    test "transpose (vertex x)  == vertex x" $ \(x :: Int) ->
-          transpose (vertex x)  == vertex x
-
-    test "transpose (edge x y)  == edge y x" $ \(x :: Int) y ->
-          transpose (edge x y)  == edge y x
-
-    test "transpose . transpose == id" $ \(x :: G) ->
-         (transpose . transpose) x == x
-
-    test "transpose . path      == path    . reverse" $ \(xs :: [Int]) ->
-         (transpose . path) xs  == (path . reverse) xs
-
-    test "transpose . circuit   == circuit . reverse" $ \(xs :: [Int]) ->
-         (transpose . circuit) xs == (circuit . reverse) xs
-
-    test "transpose . clique    == clique  . reverse" $ \(xs :: [Int]) ->
-         (transpose . clique) xs == (clique . reverse) xs
-
-    test "transpose (box x y)   == box (transpose x) (transpose y)" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
-          transpose (box x y)   == box (transpose x) (transpose y)
-
-    test "edgeList . transpose  == sort . map swap . edgeList" $ \(x :: G) ->
-         (edgeList . transpose) x == (sort . map swap . edgeList) x
+    testTranspose (empty :: G)
 
     putStrLn "\n============ Graph.fmap ============"
     test "fmap f empty      == empty" $ \(apply -> f :: II) ->
@@ -742,10 +683,11 @@ testGraph = do
     test "box x (box y z)       ~~ box (box x y) z" $ mapSize (min 10) $ \(x :: G) (y :: G) (z :: G) ->
       assoc (box x (box y z))   == box (box x y) z
 
+    test "transpose   (box x y) == box (transpose x) (transpose y)" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
+          transpose   (box x y) == box (transpose x) (transpose y)
+
     test "vertexCount (box x y) == vertexCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
           vertexCount (box x y) == vertexCount x * vertexCount y
 
     test "edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
           edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
-
-

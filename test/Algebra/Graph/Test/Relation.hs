@@ -7,8 +7,7 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Testsuite for 'Relation'.
---
+-- Testsuite for "Algebra.Graph.Relation".
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Relation (
     -- * Testsuite
@@ -16,7 +15,6 @@ module Algebra.Graph.Test.Relation (
   ) where
 
 import Data.Tree
-import Data.Tuple
 
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.Internal
@@ -25,6 +23,7 @@ import Algebra.Graph.Relation.Reflexive
 import Algebra.Graph.Relation.Symmetric
 import Algebra.Graph.Relation.Transitive
 import Algebra.Graph.Test
+import Algebra.Graph.Test.Generic
 
 import qualified Algebra.Graph.Class as C
 import qualified Data.Set            as Set
@@ -66,34 +65,8 @@ testRelation = do
     test "show (1 * 2 + 3 :: Relation Int) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: Relation Int) == "graph [1,2,3] [(1,2)]"
 
-    putStrLn "\n============ Relation.empty ============"
-    test "isEmpty     empty == True" $
-          isEmpty    (empty :: RI) == True
-
-    test "hasVertex x empty == False" $ \(x :: Int) ->
-          hasVertex x empty == False
-
-    test "vertexCount empty == 0" $
-          vertexCount(empty :: RI) == 0
-
-    test "edgeCount   empty == 0" $
-          edgeCount  (empty :: RI) == 0
-
-    putStrLn "\n============ Relation.vertex ============"
-    test "isEmpty     (vertex x) == False" $ \(x :: Int) ->
-          isEmpty     (vertex x) == False
-
-    test "hasVertex x (vertex x) == True" $ \(x :: Int) ->
-          hasVertex x (vertex x) == True
-
-    test "hasVertex 1 (vertex 2) == False" $
-          hasVertex 1 (vertex 2 :: RI) == False
-
-    test "vertexCount (vertex x) == 1" $ \(x :: Int) ->
-          vertexCount (vertex x) == 1
-
-    test "edgeCount   (vertex x) == 0" $ \(x :: Int) ->
-          edgeCount   (vertex x) == 0
+    testEmpty  (empty :: RI)
+    testVertex (empty :: RI)
 
     putStrLn "\n============ Relation.edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
@@ -535,30 +508,7 @@ testRelation = do
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
           mergeVertices odd  1 (3 + 4 * 5) == (4 * 1 :: RI)
 
-    putStrLn "\n============ Relation.transpose ============"
-    test "transpose empty       == empty" $
-          transpose empty       ==(empty :: RI)
-
-    test "transpose (vertex x)  == vertex x" $ \(x :: Int) ->
-          transpose (vertex x)  == vertex x
-
-    test "transpose (edge x y)  == edge y x" $ \(x :: Int) y ->
-          transpose (edge x y)  == edge y x
-
-    test "transpose . transpose == id" $ \(x :: RI) ->
-         (transpose . transpose) x == x
-
-    test "transpose . path      == path    . reverse" $ \(xs :: [Int]) ->
-         (transpose . path) xs  == (path . reverse) xs
-
-    test "transpose . circuit   == circuit . reverse" $ \(xs :: [Int]) ->
-         (transpose . circuit) xs == (circuit . reverse) xs
-
-    test "transpose . clique    == clique  . reverse" $ \(xs :: [Int]) ->
-         (transpose . clique) xs == (clique . reverse) xs
-
-    test "edgeList . transpose  == sort . map swap . edgeList" $ \(x :: RI) ->
-         (edgeList . transpose) x == (sort . map swap . edgeList) x
+    testTranspose (empty :: RI)
 
     putStrLn "\n============ Relation.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f :: II) ->

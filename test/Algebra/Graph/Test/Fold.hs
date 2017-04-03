@@ -7,9 +7,8 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Testsuite for 'Fold' and polymorphic functions defined in
+-- Testsuite for "Algebra.Graph.Fold" and polymorphic functions defined in
 -- "Algebra.Graph.Class".
---
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Fold (
     -- * Testsuite
@@ -18,10 +17,10 @@ module Algebra.Graph.Test.Fold (
 
 import Data.Foldable
 import Data.Tree
-import Data.Tuple
 
 import Algebra.Graph.Fold
 import Algebra.Graph.Test
+import Algebra.Graph.Test.Generic
 
 import qualified Data.Set    as Set
 import qualified Data.IntSet as IntSet
@@ -55,40 +54,8 @@ testFold = do
     test "show (1 * 2 + 3 :: Fold Int) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: Fold Int) == "graph [1,2,3] [(1,2)]"
 
-    putStrLn "\n============ Fold.empty ============"
-    test "isEmpty     empty == True" $
-          isEmpty    (empty :: F) == True
-
-    test "hasVertex x empty == False" $ \(x :: Int) ->
-          hasVertex x empty == False
-
-    test "vertexCount empty == 0" $
-          vertexCount(empty :: F) == 0
-
-    test "edgeCount   empty == 0" $
-          edgeCount  (empty :: F) == 0
-
-    test "size        empty == 1" $
-          size       (empty :: F) == 1
-
-    putStrLn "\n============ Fold.vertex ============"
-    test "isEmpty     (vertex x) == False" $ \(x :: Int) ->
-          isEmpty     (vertex x) == False
-
-    test "hasVertex x (vertex x) == True" $ \(x :: Int) ->
-          hasVertex x (vertex x) == True
-
-    test "hasVertex 1 (vertex 2) == False" $
-          hasVertex 1 (vertex 2 :: F) == False
-
-    test "vertexCount (vertex x) == 1" $ \(x :: Int) ->
-          vertexCount (vertex x) == 1
-
-    test "edgeCount   (vertex x) == 0" $ \(x :: Int) ->
-          edgeCount   (vertex x) == 0
-
-    test "size        (vertex x) == 1" $ \(x :: Int) ->
-          size        (vertex x) == 1
+    testEmpty  (empty :: F)
+    testVertex (empty :: F)
 
     putStrLn "\n============ Fold.edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
@@ -621,33 +588,7 @@ testFold = do
     test "splitVertex 1 [0, 1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)" $
          (splitVertex 1 [0, 1] $ 1 * (2 + 3))== ((0 + 1) * (2 + 3 :: F))
 
-    putStrLn "\n============ Fold.transpose ============"
-    test "transpose empty       == empty" $
-          transpose empty       == (empty :: F)
-
-    test "transpose (vertex x)  == vertex x" $ \(x :: Int) ->
-          transpose (vertex x)  == (vertex x :: F)
-
-    test "transpose (edge x y)  == edge y x" $ \(x :: Int) y ->
-          transpose (edge x y)  == (edge y x :: F)
-
-    test "transpose . transpose == id" $ \(x :: F) ->
-         (transpose . transpose) x == x
-
-    test "transpose . path      == path    . reverse" $ \(xs :: [Int]) ->
-         (transpose . path) xs  == ((path . reverse) xs :: F)
-
-    test "transpose . circuit   == circuit . reverse" $ \(xs :: [Int]) ->
-         (transpose . circuit) xs == ((circuit . reverse) xs :: F)
-
-    test "transpose . clique    == clique  . reverse" $ \(xs :: [Int]) ->
-         (transpose . clique) xs == ((clique . reverse) xs :: F)
-
-    test "transpose (box x y)   == box (transpose x) (transpose y)" $ mapSize (min 10) $ \(x :: F) (y :: F) ->
-          transpose (box x y)   == (box (transpose x) (transpose y) :: Fold (Int, Int))
-
-    test "edgeList . transpose  == sort . map swap . edgeList" $ \(x :: F) ->
-         (edgeList . transpose) x == (sort . map swap . edgeList) x
+    testTranspose (empty :: F)
 
     putStrLn "\n============ Fold.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f :: II) ->
@@ -728,6 +669,9 @@ testFold = do
     let assoc = fmap $ \(a, (b, c)) -> ((a, b), c)
     test "box x (box y z)     ~~ box (box x y) z" $ mapSize (min 10) $ \(x :: F) (y :: F) (z :: F) ->
       assoc (box x (box y z)) == (box (box x y) z :: Fold ((Int, Int), Int))
+
+    test "transpose   (box x y) == box (transpose x) (transpose y)" $ mapSize (min 10) $ \(x :: F) (y :: F) ->
+          transpose   (box x y) == (box (transpose x) (transpose y) :: Fold (Int, Int))
 
     test "vertexCount (box x y) == vertexCount x * vertexCount y" $ mapSize (min 10) $ \(x :: F) (y :: F) ->
           vertexCount (box x y) == vertexCount x * vertexCount y
