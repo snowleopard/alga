@@ -123,6 +123,10 @@ instance (Ord a, Num a) => Num (Relation a) where
     abs         = id
     negate      = id
 
+instance ToGraph (Relation a) where
+    type ToVertex (Relation a) = a
+    toGraph (Relation d r) = graph (Set.toList d) (Set.toList r)
+
 -- | Check if the internal representation of a relation is consistent, i.e. if all
 -- pairs of elements in the 'relation' refer to existing elements in the 'domain'.
 -- It should be impossible to create an inconsistent 'Relation', and we use this

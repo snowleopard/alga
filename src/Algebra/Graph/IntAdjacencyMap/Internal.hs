@@ -120,6 +120,10 @@ instance Num IntAdjacencyMap where
     abs         = id
     negate      = id
 
+instance ToGraph IntAdjacencyMap where
+    type ToVertex IntAdjacencyMap = Int
+    toGraph = overlays . map (uncurry star . fmap IntSet.toList) . IntMap.toList . adjacencyMap
+
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices. It should be impossible to create an
 -- inconsistent adjacency map, and we use this function in testing.

@@ -120,6 +120,10 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
     abs         = id
     negate      = id
 
+instance ToGraph (AdjacencyMap a) where
+    type ToVertex (AdjacencyMap a) = a
+    toGraph = overlays . map (uncurry star . fmap Set.toList) . Map.toList . adjacencyMap
+
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices. It should be impossible to create an
 -- inconsistent adjacency map, and we use this function in testing.
