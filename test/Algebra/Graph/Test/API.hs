@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, ConstrainedClassMethods #-}
+{-# LANGUAGE ConstrainedClassMethods #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.API
@@ -11,7 +11,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.API (
     -- * Graph manipulation API
-    Graph (..), GraphAPI (..)
+    GraphAPI (..)
   ) where
 
 import Data.IntSet (IntSet)
@@ -27,7 +27,6 @@ import qualified Algebra.Graph.IntAdjacencyMap as IntAdjacencyMap
 import qualified Algebra.Graph.Relation        as Relation
 
 class Graph g => GraphAPI g where
-    apiName       :: g -> String
     edge          :: Vertex g -> Vertex g -> g
     edge          = notImplemented
     vertices      :: [Vertex g] -> g
@@ -111,7 +110,6 @@ notImplemented :: a
 notImplemented = error "Not implemented"
 
 instance Ord a => GraphAPI (AdjacencyMap.AdjacencyMap a) where
-    apiName       = const "AdjacencyMap"
     edge          = AdjacencyMap.edge
     vertices      = AdjacencyMap.vertices
     edges         = AdjacencyMap.edges
@@ -143,7 +141,6 @@ instance Ord a => GraphAPI (AdjacencyMap.AdjacencyMap a) where
     induce        = AdjacencyMap.induce
 
 instance Ord a => GraphAPI (Fold.Fold a) where
-    apiName       = const "Fold"
     edge          = Fold.edge
     vertices      = Fold.vertices
     edges         = Fold.edges
@@ -184,7 +181,6 @@ instance Ord a => GraphAPI (Fold.Fold a) where
     box           = Fold.box
 
 instance Ord a => GraphAPI (Graph.Graph a) where
-    apiName       = const "Graph"
     edge          = Graph.edge
     vertices      = Graph.vertices
     edges         = Graph.edges
@@ -226,7 +222,6 @@ instance Ord a => GraphAPI (Graph.Graph a) where
     box           = Graph.box
 
 instance GraphAPI IntAdjacencyMap.IntAdjacencyMap where
-    apiName       = const "IntAdjacencyMap"
     edge          = IntAdjacencyMap.edge
     vertices      = IntAdjacencyMap.vertices
     edges         = IntAdjacencyMap.edges
@@ -258,7 +253,6 @@ instance GraphAPI IntAdjacencyMap.IntAdjacencyMap where
     induce        = IntAdjacencyMap.induce
 
 instance Ord a => GraphAPI (Relation.Relation a) where
-    apiName       = const "Relation"
     edge          = Relation.edge
     vertices      = Relation.vertices
     edges         = Relation.edges

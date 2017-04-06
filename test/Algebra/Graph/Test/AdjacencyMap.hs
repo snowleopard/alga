@@ -24,6 +24,9 @@ import Algebra.Graph.Test.Generic
 import qualified Data.Graph as KL
 import qualified Data.Set   as Set
 
+t :: Testsuite (AdjacencyMap Int)
+t = Testsuite "AdjacencyMap." empty
+
 type AI = AdjacencyMap Int
 type II = Int -> Int
 type IB = Int -> Bool
@@ -58,8 +61,8 @@ testAdjacencyMap = do
     test "show (1 * 2 + 3 :: AdjacencyMap Int) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: AdjacencyMap Int) == "graph [1,2,3] [(1,2)]"
 
-    testEmpty  (empty :: AI)
-    testVertex (empty :: AI)
+    testEmpty  t
+    testVertex t
 
     putStrLn "\n============ AdjacencyMap.edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
@@ -504,7 +507,7 @@ testAdjacencyMap = do
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
           mergeVertices odd  1 (3 + 4 * 5) == (4 * 1 :: AI)
 
-    testTranspose (empty :: AI)
+    testTranspose t
 
     putStrLn "\n============ AdjacencyMap.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f :: II) ->

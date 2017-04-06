@@ -28,6 +28,9 @@ import Algebra.Graph.Test.Generic
 import qualified Algebra.Graph.Class as C
 import qualified Data.Set            as Set
 
+t :: Testsuite (Relation Int)
+t = Testsuite "Relation." empty
+
 type RI = Relation Int
 type II = Int -> Int
 type IB = Int -> Bool
@@ -65,8 +68,8 @@ testRelation = do
     test "show (1 * 2 + 3 :: Relation Int) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: Relation Int) == "graph [1,2,3] [(1,2)]"
 
-    testEmpty  (empty :: RI)
-    testVertex (empty :: RI)
+    testEmpty  t
+    testVertex t
 
     putStrLn "\n============ Relation.edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
@@ -508,7 +511,7 @@ testRelation = do
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
           mergeVertices odd  1 (3 + 4 * 5) == (4 * 1 :: RI)
 
-    testTranspose (empty :: RI)
+    testTranspose t
 
     putStrLn "\n============ Relation.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f :: II) ->

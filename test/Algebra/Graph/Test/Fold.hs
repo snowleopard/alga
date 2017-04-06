@@ -25,6 +25,9 @@ import Algebra.Graph.Test.Generic
 import qualified Data.Set    as Set
 import qualified Data.IntSet as IntSet
 
+t :: Testsuite (Fold Int)
+t = Testsuite "Fold." empty
+
 type F  = Fold Int
 type II = Int -> Int
 type IB = Int -> Bool
@@ -54,8 +57,8 @@ testFold = do
     test "show (1 * 2 + 3 :: Fold Int) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: Fold Int) == "graph [1,2,3] [(1,2)]"
 
-    testEmpty  (empty :: F)
-    testVertex (empty :: F)
+    testEmpty  t
+    testVertex t
 
     putStrLn "\n============ Fold.edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
@@ -588,7 +591,7 @@ testFold = do
     test "splitVertex 1 [0, 1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)" $
          (splitVertex 1 [0, 1] $ 1 * (2 + 3))== ((0 + 1) * (2 + 3 :: F))
 
-    testTranspose (empty :: F)
+    testTranspose t
 
     putStrLn "\n============ Fold.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f :: II) ->

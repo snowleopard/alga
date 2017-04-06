@@ -25,6 +25,9 @@ import qualified Data.Graph  as KL
 import qualified Data.IntSet as IntSet
 import qualified Data.Set    as Set
 
+t :: Testsuite IntAdjacencyMap
+t = Testsuite "IntAdjacencyMap." empty
+
 testIntAdjacencyMap :: IO ()
 testIntAdjacencyMap = do
     putStrLn "\n============ IntAdjacencyMap ============"
@@ -55,8 +58,8 @@ testIntAdjacencyMap = do
     test "show (1 * 2 + 3 :: IntAdjacencyMap) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: IntAdjacencyMap) == "graph [1,2,3] [(1,2)]"
 
-    testEmpty  empty
-    testVertex empty
+    testEmpty  t
+    testVertex t
 
     putStrLn "\n============ IntAdjacencyMap.edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \x y ->
@@ -501,7 +504,7 @@ testIntAdjacencyMap = do
     test "mergeVertices odd  1 (3 + 4 * 5) == 4 * 1" $
           mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
 
-    testTranspose empty
+    testTranspose t
 
     putStrLn "\n============ IntAdjacencyMap.gmap ============"
     test "gmap f empty      == empty" $ \(apply -> f) ->

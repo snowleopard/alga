@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, RankNTypes #-}
+{-# LANGUAGE GADTs #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Generic
@@ -11,20 +11,22 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Generic (
     -- * Generic tests
-    testEmpty, testVertex, testTranspose
+    Testsuite (..), testEmpty, testVertex, testTranspose
   ) where
 
 import Data.List (sort)
 import Data.Tuple
 
+import Algebra.Graph.Class (Vertex, empty, vertex)
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API
 
-type TestableGraph g = (Arbitrary g, Eq g, GraphAPI g, Show g, Vertex g ~ Int)
+data Testsuite g where
+    Testsuite :: (Arbitrary g, Eq g, GraphAPI g, Show g, Vertex g ~ Int) => String -> g -> Testsuite g
 
-testEmpty :: TestableGraph g => g -> IO ()
-testEmpty g = do
-    putStrLn $ "\n============ " ++ apiName g ++ ".empty ============"
+testEmpty :: Testsuite g -> IO ()
+testEmpty (Testsuite prefix g) = do
+    putStrLn $ "\n============ " ++ prefix ++ "empty ============"
     test "isEmpty     empty == True" $
           isEmpty    (empty `asTypeOf` g) == True
 
@@ -37,9 +39,9 @@ testEmpty g = do
     test "edgeCount   empty == 0" $
           edgeCount  (empty `asTypeOf` g) == 0
 
-testVertex :: TestableGraph g => g -> IO ()
-testVertex g = do
-    putStrLn $ "\n============ " ++ apiName g ++ ".vertex ============"
+testVertex :: Testsuite g -> IO ()
+testVertex (Testsuite prefix g) = do
+    putStrLn $ "\n============ " ++ prefix ++ "vertex ============"
     test "isEmpty     (vertex x) == False" $ \x ->
           isEmpty     (vertex x `asTypeOf` g) == False
 
@@ -55,9 +57,9 @@ testVertex g = do
     test "edgeCount   (vertex x) == 0" $ \x ->
           edgeCount   (vertex x `asTypeOf` g) == 0
 
-testTranspose :: TestableGraph g => g -> IO ()
-testTranspose g = do
-    putStrLn $ "\n============ " ++ apiName g ++ ".transpose ============"
+testTranspose :: Testsuite g -> IO ()
+testTranspose (Testsuite prefix g) = do
+    putStrLn $ "\n============ " ++ prefix ++ "transpose ============"
     test "transpose empty       == empty" $
           transpose empty       == empty `asTypeOf` g
 
