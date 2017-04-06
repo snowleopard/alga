@@ -25,6 +25,8 @@ import qualified Algebra.Graph.Fold            as Fold
 import qualified Algebra.Graph                 as Graph
 import qualified Algebra.Graph.IntAdjacencyMap as IntAdjacencyMap
 import qualified Algebra.Graph.Relation        as Relation
+import qualified Data.Set                      as Set
+import qualified Data.IntSet                   as IntSet
 
 class Graph g => GraphAPI g where
     edge          :: Vertex g -> Vertex g -> g
@@ -236,6 +238,7 @@ instance GraphAPI IntAdjacencyMap.IntAdjacencyMap where
     edgeCount     = IntAdjacencyMap.edgeCount
     vertexList    = IntAdjacencyMap.vertexList
     edgeList      = IntAdjacencyMap.edgeList
+    vertexSet     = Set.fromAscList . IntSet.toAscList . IntAdjacencyMap.vertexIntSet
     vertexIntSet  = IntAdjacencyMap.vertexIntSet
     edgeSet       = IntAdjacencyMap.edgeSet
     path          = IntAdjacencyMap.path
