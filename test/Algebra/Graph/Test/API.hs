@@ -104,8 +104,8 @@ class Graph g => GraphAPI g where
     induce        = notImplemented
     simplify      :: g -> g
     simplify      = notImplemented
-    -- box           :: (GraphAPI g2, GraphAPI g3, Vertex g ~ a, Vertex g2 ~ b, Vertex g3 ~ (a, b)) => g -> g2 -> g3
-    -- box           = notImplemented
+    box           :: forall a b f. g ~ f (a, b) => f a -> f b -> f (a, b)
+    box           = notImplemented
 
 notImplemented :: a
 notImplemented = error "Not implemented"
@@ -181,6 +181,7 @@ instance Ord a => GraphAPI (Fold.Fold a) where
     transpose     = Fold.transpose
     induce        = Fold.induce
     simplify      = Fold.simplify
+    box           = Fold.box
 
 instance Ord a => GraphAPI (Graph.Graph a) where
     apiName       = const "Graph"
@@ -222,6 +223,7 @@ instance Ord a => GraphAPI (Graph.Graph a) where
     transpose     = Graph.transpose
     induce        = Graph.induce
     simplify      = Graph.simplify
+    box           = Graph.box
 
 instance GraphAPI IntAdjacencyMap.IntAdjacencyMap where
     apiName       = const "IntAdjacencyMap"
