@@ -25,8 +25,8 @@ import Algebra.Graph.Test.Generic
 import qualified Data.Set    as Set
 import qualified Data.IntSet as IntSet
 
-t :: Testsuite (Graph Int)
-t = Testsuite "Graph." empty
+t :: Testsuite
+t = testsuite "Graph." empty
 
 type G  = Graph Int
 type II = Int -> Int
@@ -39,151 +39,7 @@ testGraph = do
     test "Axioms of graphs"   $ (axioms   :: GraphTestsuite G)
     test "Theorems of graphs" $ (theorems :: GraphTestsuite G)
 
-    testEmpty  t
-    testVertex t
-
-    putStrLn "\n============ Graph.edge ============"
-    test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
-          edge x y               == connect (vertex x) (vertex y)
-
-    test "hasEdge x y (edge x y) == True" $ \(x :: Int) y ->
-          hasEdge x y (edge x y) == True
-
-    test "edgeCount   (edge x y) == 1" $ \(x :: Int) y ->
-          edgeCount   (edge x y) == 1
-
-    test "vertexCount (edge 1 1) == 1" $
-          vertexCount (edge 1 1 :: G) == 1
-
-    test "vertexCount (edge 1 2) == 2" $
-          vertexCount (edge 1 2 :: G) == 2
-
-    putStrLn "\n============ Graph.overlay ============"
-    test "isEmpty     (overlay x y) == isEmpty   x   && isEmpty   y" $ \(x :: G) y ->
-          isEmpty     (overlay x y) ==(isEmpty   x   && isEmpty   y)
-
-    test "hasVertex z (overlay x y) == hasVertex z x || hasVertex z y" $ \(x :: G) y z ->
-          hasVertex z (overlay x y) ==(hasVertex z x || hasVertex z y)
-
-    test "vertexCount (overlay x y) >= vertexCount x" $ \(x :: G) y ->
-          vertexCount (overlay x y) >= vertexCount x
-
-    test "vertexCount (overlay x y) <= vertexCount x + vertexCount y" $ \(x :: G) y ->
-          vertexCount (overlay x y) <= vertexCount x + vertexCount y
-
-    test "edgeCount   (overlay x y) >= edgeCount x" $ \(x :: G) y ->
-          edgeCount   (overlay x y) >= edgeCount x
-
-    test "edgeCount   (overlay x y) <= edgeCount x   + edgeCount y" $ \(x :: G) y ->
-          edgeCount   (overlay x y) <= edgeCount x   + edgeCount y
-
-    test "size        (overlay x y) == size x        + size y" $ \(x :: G) y ->
-          size        (overlay x y) == size x        + size y
-
-    test "vertexCount (overlay 1 2) == 2" $
-          vertexCount (overlay 1 2 :: G) == 2
-
-    test "edgeCount   (overlay 1 2) == 0" $
-          edgeCount   (overlay 1 2 :: G) == 0
-
-    putStrLn "\n============ Graph.connect ============"
-    test "isEmpty     (connect x y) == isEmpty   x   && isEmpty   y" $ \(x :: G) y ->
-          isEmpty     (connect x y) ==(isEmpty   x   && isEmpty   y)
-
-    test "hasVertex z (connect x y) == hasVertex z x || hasVertex z y" $ \(x :: G) y z ->
-          hasVertex z (connect x y) ==(hasVertex z x || hasVertex z y)
-
-    test "vertexCount (connect x y) >= vertexCount x" $ \(x :: G) y ->
-          vertexCount (connect x y) >= vertexCount x
-
-    test "vertexCount (connect x y) <= vertexCount x + vertexCount y" $ \(x :: G) y ->
-          vertexCount (connect x y) <= vertexCount x + vertexCount y
-
-    test "edgeCount   (connect x y) >= edgeCount x" $ \(x :: G) y ->
-          edgeCount   (connect x y) >= edgeCount x
-
-    test "edgeCount   (connect x y) >= edgeCount y" $ \(x :: G) y ->
-          edgeCount   (connect x y) >= edgeCount y
-
-    test "edgeCount   (connect x y) >= vertexCount x * vertexCount y" $ \(x :: G) y ->
-          edgeCount   (connect x y) >= vertexCount x * vertexCount y
-
-    test "edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y" $ \(x :: G) y ->
-          edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y
-
-    test "size        (connect x y) == size x        + size y" $ \(x :: G) y ->
-          size        (connect x y) == size x        + size y
-
-    test "vertexCount (connect 1 2) == 2" $
-          vertexCount (connect 1 2 :: G) == 2
-
-    test "edgeCount   (connect 1 2) == 1" $
-          edgeCount   (connect 1 2 :: G) == 1
-
-    putStrLn "\n============ Graph.vertices ============"
-    test "vertices []            == empty" $
-          vertices []            == (empty :: G)
-
-    test "vertices [x]           == vertex x" $ \(x :: Int) ->
-          vertices [x]           == vertex x
-
-    test "hasVertex x . vertices == elem x" $ \x (xs :: [Int]) ->
-         (hasVertex x . vertices) xs == elem x xs
-
-    test "vertexCount . vertices == length . nub" $ \(xs :: [Int]) ->
-         (vertexCount . vertices) xs == (length . nubOrd) xs
-
-    test "vertexSet   . vertices == Set.fromList" $ \(xs :: [Int]) ->
-         (vertexSet   . vertices) xs == Set.fromList xs
-
-    putStrLn "\n============ Graph.edges ============"
-    test "edges []          == empty" $
-          edges []          ==(empty :: G)
-
-    test "edges [(x,y)]     == edge x y" $ \(x :: Int) y ->
-          edges [(x,y)]     == edge x y
-
-    test "edgeCount . edges == length . nub" $ \(xs :: [(Int, Int)]) ->
-         (edgeCount . edges) xs == (length . nubOrd) xs
-
-    putStrLn "\n============ Graph.overlays ============"
-    test "overlays []        == empty" $
-          overlays []        ==(empty :: G)
-
-    test "overlays [x]       == x" $ \(x :: G) ->
-          overlays [x]       == x
-
-    test "overlays [x,y]     == overlay x y" $ \(x :: G) y ->
-          overlays [x,y]     == overlay x y
-
-    test "isEmpty . overlays == all isEmpty" $ \(xs :: [G]) ->
-         (isEmpty . overlays) xs == all isEmpty xs
-
-    putStrLn "\n============ Graph.connects ============"
-    test "connects []        == empty" $
-          connects []        ==(empty :: G)
-
-    test "connects [x]       == x" $ \(x :: G) ->
-          connects [x]       == x
-
-    test "connects [x,y]     == connect x y" $ \(x :: G) y ->
-          connects [x,y]     == connect x y
-
-    test "isEmpty . connects == all isEmpty" $ \(xs :: [G]) ->
-         (isEmpty . connects) xs == all isEmpty xs
-
-    putStrLn "\n============ Graph.graph ============"
-    test "graph []  []      == empty" $
-          graph []  []      ==(empty :: G)
-
-    test "graph [x] []      == vertex x" $ \(x :: Int) ->
-          graph [x] []      == vertex x
-
-    test "graph []  [(x,y)] == edge x y" $ \(x :: Int) y ->
-          graph []  [(x,y)] == edge x y
-
-    test "graph vs  es      == overlay (vertices vs) (edges es)" $ \(vs :: [Int]) es ->
-          graph vs  es      == overlay (vertices vs) (edges es)
+    testBasicPrimitives t
 
     putStrLn "\n============ Graph.foldg ============"
     test "foldg empty vertex        overlay connect        == id" $ \(x :: G) ->

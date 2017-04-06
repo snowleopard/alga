@@ -25,8 +25,8 @@ import Algebra.Graph.Test.Generic
 import qualified Data.Set    as Set
 import qualified Data.IntSet as IntSet
 
-t :: Testsuite (Fold Int)
-t = Testsuite "Fold." empty
+t :: Testsuite
+t = testsuite "Fold." (empty :: Fold Int)
 
 type F  = Fold Int
 type II = Int -> Int
@@ -57,151 +57,7 @@ testFold = do
     test "show (1 * 2 + 3 :: Fold Int) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: Fold Int) == "graph [1,2,3] [(1,2)]"
 
-    testEmpty  t
-    testVertex t
-
-    putStrLn "\n============ Fold.edge ============"
-    test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
-         (edge x y :: F)         == connect (vertex x) (vertex y)
-
-    test "hasEdge x y (edge x y) == True" $ \(x :: Int) y ->
-          hasEdge x y (edge x y) == True
-
-    test "edgeCount   (edge x y) == 1" $ \(x :: Int) y ->
-          edgeCount   (edge x y) == 1
-
-    test "vertexCount (edge 1 1) == 1" $
-          vertexCount (edge 1 1 :: F) == 1
-
-    test "vertexCount (edge 1 2) == 2" $
-          vertexCount (edge 1 2 :: F) == 2
-
-    putStrLn "\n============ Fold.overlay ============"
-    test "isEmpty     (overlay x y) == isEmpty   x   && isEmpty   y" $ \(x :: F) y ->
-          isEmpty     (overlay x y) == (isEmpty   x   && isEmpty   y)
-
-    test "hasVertex z (overlay x y) == hasVertex z x || hasVertex z y" $ \(x :: F) y z ->
-          hasVertex z (overlay x y) == (hasVertex z x || hasVertex z y)
-
-    test "vertexCount (overlay x y) >= vertexCount x" $ \(x :: F) y ->
-          vertexCount (overlay x y) >= vertexCount x
-
-    test "vertexCount (overlay x y) <= vertexCount x + vertexCount y" $ \(x :: F) y ->
-          vertexCount (overlay x y) <= vertexCount x + vertexCount y
-
-    test "edgeCount   (overlay x y) >= edgeCount x" $ \(x :: F) y ->
-          edgeCount   (overlay x y) >= edgeCount x
-
-    test "edgeCount   (overlay x y) <= edgeCount x   + edgeCount y" $ \(x :: F) y ->
-          edgeCount   (overlay x y) <= edgeCount x   + edgeCount y
-
-    test "size        (overlay x y) == size x        + size y" $ \(x :: F) y ->
-          size        (overlay x y) == size x        + size y
-
-    test "vertexCount (overlay 1 2) == 2" $
-          vertexCount (overlay 1 2 :: F) == 2
-
-    test "edgeCount   (overlay 1 2) == 0" $
-          edgeCount   (overlay 1 2 :: F) == 0
-
-    putStrLn "\n============ Fold.connect ============"
-    test "isEmpty     (connect x y) == isEmpty   x   && isEmpty   y" $ \(x :: F) y ->
-          isEmpty     (connect x y) == (isEmpty   x   && isEmpty   y)
-
-    test "hasVertex z (connect x y) == hasVertex z x || hasVertex z y" $ \(x :: F) y z ->
-          hasVertex z (connect x y) == (hasVertex z x || hasVertex z y)
-
-    test "vertexCount (connect x y) >= vertexCount x" $ \(x :: F) y ->
-          vertexCount (connect x y) >= vertexCount x
-
-    test "vertexCount (connect x y) <= vertexCount x + vertexCount y" $ \(x :: F) y ->
-          vertexCount (connect x y) <= vertexCount x + vertexCount y
-
-    test "edgeCount   (connect x y) >= edgeCount x" $ \(x :: F) y ->
-          edgeCount   (connect x y) >= edgeCount x
-
-    test "edgeCount   (connect x y) >= edgeCount y" $ \(x :: F) y ->
-          edgeCount   (connect x y) >= edgeCount y
-
-    test "edgeCount   (connect x y) >= vertexCount x * vertexCount y" $ \(x :: F) y ->
-          edgeCount   (connect x y) >= vertexCount x * vertexCount y
-
-    test "edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y" $ \(x :: F) y ->
-          edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y
-
-    test "size        (connect x y) == size x        + size y" $ \(x :: F) y ->
-          size        (connect x y) == size x        + size y
-
-    test "vertexCount (connect 1 2) == 2" $
-          vertexCount (connect 1 2 :: F) == 2
-
-    test "edgeCount   (connect 1 2) == 1" $
-          edgeCount   (connect 1 2 :: F) == 1
-
-    putStrLn "\n============ Fold.vertices ============"
-    test "vertices []            == empty" $
-          vertices []            == (empty :: F)
-
-    test "vertices [x]           == vertex x" $ \(x :: Int) ->
-          vertices [x]           == (vertex x :: F)
-
-    test "hasVertex x . vertices == elem x" $ \x (xs :: [Int]) ->
-         (hasVertex x . vertices) xs == elem x xs
-
-    test "vertexCount . vertices == length . nub" $ \(xs :: [Int]) ->
-         (vertexCount . vertices) xs == (length . nubOrd) xs
-
-    test "vertexSet   . vertices == Set.fromList" $ \(xs :: [Int]) ->
-         (vertexSet   . vertices) xs == Set.fromList xs
-
-    putStrLn "\n============ Fold.edges ============"
-    test "edges []          == empty" $
-          edges []          == (empty :: F)
-
-    test "edges [(x,y)]     == edge x y" $ \(x :: Int) y ->
-          edges [(x,y)]     == (edge x y :: F)
-
-    test "edgeCount . edges == length . nub" $ \(xs :: [(Int, Int)]) ->
-         (edgeCount . edges) xs == (length . nubOrd) xs
-
-    putStrLn "\n============ Fold.overlays ============"
-    test "overlays []        == empty" $
-          overlays []        == (empty :: F)
-
-    test "overlays [x]       == x" $ \(x :: F) ->
-          overlays [x]       == x
-
-    test "overlays [x,y]     == overlay x y" $ \(x :: F) y ->
-          overlays [x,y]     == overlay x y
-
-    test "isEmpty . overlays == all isEmpty" $ \(xs :: [F]) ->
-         (isEmpty . overlays) xs == all isEmpty xs
-
-    putStrLn "\n============ Fold.connects ============"
-    test "connects []        == empty" $
-          connects []        == (empty :: F)
-
-    test "connects [x]       == x" $ \(x :: F) ->
-          connects [x]       == x
-
-    test "connects [x,y]     == connect x y" $ \(x :: F) y ->
-          connects [x,y]     == connect x y
-
-    test "isEmpty . connects == all isEmpty" $ \(xs :: [F]) ->
-         (isEmpty . connects) xs == all isEmpty xs
-
-    putStrLn "\n============ Fold.graph ============"
-    test "graph []  []      == empty" $
-          graph []  []      == (empty :: F)
-
-    test "graph [x] []      == vertex x" $ \(x :: Int) ->
-          graph [x] []      == (vertex x :: F)
-
-    test "graph []  [(x,y)] == edge x y" $ \(x :: Int) y ->
-          graph []  [(x,y)] == (edge x y :: F)
-
-    test "graph vs  es      == overlay (vertices vs) (edges es)" $ \(vs :: [Int]) es ->
-          graph vs  es      == (overlay (vertices vs) (edges es) :: F)
+    testBasicPrimitives t
 
     putStrLn "\n============ Fold.foldg ============"
     test "foldg empty vertex        overlay connect        == id" $ \(x :: F) ->

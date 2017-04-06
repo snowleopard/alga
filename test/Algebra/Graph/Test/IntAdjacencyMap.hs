@@ -25,8 +25,8 @@ import qualified Data.Graph  as KL
 import qualified Data.IntSet as IntSet
 import qualified Data.Set    as Set
 
-t :: Testsuite IntAdjacencyMap
-t = Testsuite "IntAdjacencyMap." empty
+t :: Testsuite
+t = testsuite "IntAdjacencyMap." empty
 
 testIntAdjacencyMap :: IO ()
 testIntAdjacencyMap = do
@@ -58,145 +58,7 @@ testIntAdjacencyMap = do
     test "show (1 * 2 + 3 :: IntAdjacencyMap) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: IntAdjacencyMap) == "graph [1,2,3] [(1,2)]"
 
-    testEmpty  t
-    testVertex t
-
-    putStrLn "\n============ IntAdjacencyMap.edge ============"
-    test "edge x y               == connect (vertex x) (vertex y)" $ \x y ->
-          edge x y               == connect (vertex x) (vertex y)
-
-    test "hasEdge x y (edge x y) == True" $ \x y ->
-          hasEdge x y (edge x y) == True
-
-    test "edgeCount   (edge x y) == 1" $ \x y ->
-          edgeCount   (edge x y) == 1
-
-    test "vertexCount (edge 1 1) == 1" $
-          vertexCount (edge 1 1) == 1
-
-    test "vertexCount (edge 1 2) == 2" $
-          vertexCount (edge 1 2) == 2
-
-    putStrLn "\n============ IntAdjacencyMap.overlay ============"
-    test "isEmpty     (overlay x y) == isEmpty   x   && isEmpty   y" $ \x y ->
-          isEmpty     (overlay x y) == (isEmpty  x   && isEmpty   y)
-
-    test "hasVertex z (overlay x y) == hasVertex z x || hasVertex z y" $ \x y z ->
-          hasVertex z (overlay x y) == (hasVertex z x|| hasVertex z y)
-
-    test "vertexCount (overlay x y) >= vertexCount x" $ \x y ->
-          vertexCount (overlay x y) >= vertexCount x
-
-    test "vertexCount (overlay x y) <= vertexCount x + vertexCount y" $ \x y ->
-          vertexCount (overlay x y) <= vertexCount x + vertexCount y
-
-    test "edgeCount   (overlay x y) >= edgeCount x" $ \x y ->
-          edgeCount   (overlay x y) >= edgeCount x
-
-    test "edgeCount   (overlay x y) <= edgeCount x   + edgeCount y" $ \x y ->
-          edgeCount   (overlay x y) <= edgeCount x   + edgeCount y
-
-    test "vertexCount (overlay 1 2) == 2" $
-          vertexCount (overlay 1 2) == 2
-
-    test "edgeCount   (overlay 1 2) == 0" $
-          edgeCount   (overlay 1 2) == 0
-
-    putStrLn "\n============ IntAdjacencyMap.connect ============"
-    test "isEmpty     (connect x y) == isEmpty   x   && isEmpty   y" $ \x y ->
-          isEmpty     (connect x y) == (isEmpty  x   && isEmpty   y)
-
-    test "hasVertex z (connect x y) == hasVertex z x || hasVertex z y" $ \x y z ->
-          hasVertex z (connect x y) == (hasVertex z x || hasVertex z y)
-
-    test "vertexCount (connect x y) >= vertexCount x" $ \x y ->
-          vertexCount (connect x y) >= vertexCount x
-
-    test "vertexCount (connect x y) <= vertexCount x + vertexCount y" $ \x y ->
-          vertexCount (connect x y) <= vertexCount x + vertexCount y
-
-    test "edgeCount   (connect x y) >= edgeCount x" $ \x y ->
-          edgeCount   (connect x y) >= edgeCount x
-
-    test "edgeCount   (connect x y) >= edgeCount y" $ \x y ->
-          edgeCount   (connect x y) >= edgeCount y
-
-    test "edgeCount   (connect x y) >= vertexCount x * vertexCount y" $ \x y ->
-          edgeCount   (connect x y) >= vertexCount x * vertexCount y
-
-    test "edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y" $ \x y ->
-          edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y
-
-    test "vertexCount (connect 1 2) == 2" $
-          vertexCount (connect 1 2) == 2
-
-    test "edgeCount   (connect 1 2) == 1" $
-          edgeCount   (connect 1 2) == 1
-
-    putStrLn "\n============ IntAdjacencyMap.vertices ============"
-    test "vertices []             == empty" $
-          vertices []             == empty
-
-    test "vertices [x]            == vertex x" $ \x ->
-          vertices [x]            == vertex x
-
-    test "hasVertex x  . vertices == elem x" $ \x xs ->
-         (hasVertex x  . vertices) xs == elem x xs
-
-    test "vertexCount  . vertices == length . nub" $ \xs ->
-         (vertexCount  . vertices) xs == (length . nubOrd) xs
-
-    test "vertexIntSet . vertices == IntSet.fromList" $ \xs ->
-         (vertexIntSet . vertices) xs == IntSet.fromList xs
-
-    putStrLn "\n============ IntAdjacencyMap.edges ============"
-    test "edges []          == empty" $
-          edges []          ==  empty
-
-    test "edges [(x,y)]     == edge x y" $ \x y ->
-          edges [(x,y)]     == edge x y
-
-    test "edgeCount . edges == length . nub" $ \xs ->
-         (edgeCount . edges) xs == (length . nubOrd) xs
-
-    putStrLn "\n============ IntAdjacencyMap.overlays ============"
-    test "overlays []        == empty" $
-          overlays []        == empty
-
-    test "overlays [x]       == x" $ \x ->
-          overlays [x]       == x
-
-    test "overlays [x,y]     == overlay x y" $ \x y ->
-          overlays [x,y]     == overlay x y
-
-    test "isEmpty . overlays == all isEmpty" $ mapSize (min 10) $ \xs ->
-         (isEmpty . overlays) xs == all isEmpty xs
-
-    putStrLn "\n============ IntAdjacencyMap.connects ============"
-    test "connects []        == empty" $
-          connects []        == empty
-
-    test "connects [x]       == x" $ \x ->
-          connects [x]       == x
-
-    test "connects [x,y]     == connect x y" $ \x y ->
-          connects [x,y]     == connect x y
-
-    test "isEmpty . connects == all isEmpty" $ mapSize (min 10) $ \xs ->
-         (isEmpty . connects) xs == all isEmpty xs
-
-    putStrLn "\n============ IntAdjacencyMap.graph ============"
-    test "graph []  []      == empty" $
-          graph []  []      == empty
-
-    test "graph [x] []      == vertex x" $ \x ->
-          graph [x] []      == vertex x
-
-    test "graph []  [(x,y)] == edge x y" $ \x y ->
-          graph []  [(x,y)] == edge x y
-
-    test "graph vs  es      == overlay (vertices vs) (edges es)" $ \(vs :: [Int]) es ->
-          graph vs  es      == overlay (vertices vs) (edges es)
+    testBasicPrimitives t
 
     putStrLn "\n============ IntAdjacencyMap.fromAdjacencyList ============"
     test "fromAdjacencyList []                                  == empty" $

@@ -28,8 +28,8 @@ import Algebra.Graph.Test.Generic
 import qualified Algebra.Graph.Class as C
 import qualified Data.Set            as Set
 
-t :: Testsuite (Relation Int)
-t = Testsuite "Relation." empty
+t :: Testsuite
+t = testsuite "Relation." empty
 
 type RI = Relation Int
 type II = Int -> Int
@@ -68,145 +68,7 @@ testRelation = do
     test "show (1 * 2 + 3 :: Relation Int) == \"graph [1,2,3] [(1,2)]\"" $
           show (1 * 2 + 3 :: Relation Int) == "graph [1,2,3] [(1,2)]"
 
-    testEmpty  t
-    testVertex t
-
-    putStrLn "\n============ Relation.edge ============"
-    test "edge x y               == connect (vertex x) (vertex y)" $ \(x :: Int) y ->
-         (edge x y :: RI)        == connect (vertex x) (vertex y)
-
-    test "hasEdge x y (edge x y) == True" $ \(x :: Int) y ->
-          hasEdge x y (edge x y) == True
-
-    test "edgeCount   (edge x y) == 1" $ \(x :: Int) y ->
-          edgeCount   (edge x y) == 1
-
-    test "vertexCount (edge 1 1) == 1" $
-          vertexCount (edge 1 1 :: RI) == 1
-
-    test "vertexCount (edge 1 2) == 2" $
-          vertexCount (edge 1 2 :: RI) == 2
-
-    putStrLn "\n============ Relation.overlay ============"
-    test "isEmpty     (overlay x y) == isEmpty   x   && isEmpty   y" $ \(x :: RI) y ->
-          isEmpty     (overlay x y) == (isEmpty   x   && isEmpty   y)
-
-    test "hasVertex z (overlay x y) == hasVertex z x || hasVertex z y" $ \(x :: RI) y z ->
-          hasVertex z (overlay x y) == (hasVertex z x || hasVertex z y)
-
-    test "vertexCount (overlay x y) >= vertexCount x" $ \(x :: RI) y ->
-          vertexCount (overlay x y) >= vertexCount x
-
-    test "vertexCount (overlay x y) <= vertexCount x + vertexCount y" $ \(x :: RI) y ->
-          vertexCount (overlay x y) <= vertexCount x + vertexCount y
-
-    test "edgeCount   (overlay x y) >= edgeCount x" $ \(x :: RI) y ->
-          edgeCount   (overlay x y) >= edgeCount x
-
-    test "edgeCount   (overlay x y) <= edgeCount x   + edgeCount y" $ \(x :: RI) y ->
-          edgeCount   (overlay x y) <= edgeCount x   + edgeCount y
-
-    test "vertexCount (overlay 1 2) == 2" $
-          vertexCount (overlay 1 2 :: RI) == 2
-
-    test "edgeCount   (overlay 1 2) == 0" $
-          edgeCount   (overlay 1 2 :: RI) == 0
-
-    putStrLn "\n============ Relation.connect ============"
-    test "isEmpty     (connect x y) == isEmpty   x   && isEmpty   y" $ \(x :: RI) y ->
-          isEmpty     (connect x y) == (isEmpty   x   && isEmpty   y)
-
-    test "hasVertex z (connect x y) == hasVertex z x || hasVertex z y" $ \(x :: RI) y z ->
-          hasVertex z (connect x y) == (hasVertex z x || hasVertex z y)
-
-    test "vertexCount (connect x y) >= vertexCount x" $ \(x :: RI) y ->
-          vertexCount (connect x y) >= vertexCount x
-
-    test "vertexCount (connect x y) <= vertexCount x + vertexCount y" $ \(x :: RI) y ->
-          vertexCount (connect x y) <= vertexCount x + vertexCount y
-
-    test "edgeCount   (connect x y) >= edgeCount x" $ \(x :: RI) y ->
-          edgeCount   (connect x y) >= edgeCount x
-
-    test "edgeCount   (connect x y) >= edgeCount y" $ \(x :: RI) y ->
-          edgeCount   (connect x y) >= edgeCount y
-
-    test "edgeCount   (connect x y) >= vertexCount x * vertexCount y" $ \(x :: RI) y ->
-          edgeCount   (connect x y) >= vertexCount x * vertexCount y
-
-    test "edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y" $ \(x :: RI) y ->
-          edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y
-
-    test "vertexCount (connect 1 2) == 2" $
-          vertexCount (connect 1 2 :: RI) == 2
-
-    test "edgeCount   (connect 1 2) == 1" $
-          edgeCount   (connect 1 2 :: RI) == 1
-
-    putStrLn "\n============ Relation.vertices ============"
-    test "vertices []            == empty" $
-          vertices []            == (empty :: RI)
-
-    test "vertices [x]           == vertex x" $ \(x :: Int) ->
-          vertices [x]           == (vertex x :: RI)
-
-    test "hasVertex x . vertices == elem x" $ \x (xs :: [Int]) ->
-         (hasVertex x . vertices) xs == elem x xs
-
-    test "vertexCount . vertices == length . nub" $ \(xs :: [Int]) ->
-         (vertexCount . vertices) xs == (length . nubOrd) xs
-
-    test "vertexSet   . vertices == Set.fromList" $ \(xs :: [Int]) ->
-         (vertexSet   . vertices) xs == Set.fromList xs
-
-    putStrLn "\n============ Relation.edges ============"
-    test "edges []          == empty" $
-          edges []          == (empty :: RI)
-
-    test "edges [(x,y)]     == edge x y" $ \(x :: Int) y ->
-          edges [(x,y)]     == (edge x y :: RI)
-
-    test "edgeCount . edges == length . nub" $ \(xs :: [(Int, Int)]) ->
-         (edgeCount . edges) xs == (length . nubOrd) xs
-
-    putStrLn "\n============ Relation.overlays ============"
-    test "overlays []        == empty" $
-          overlays []        == (empty :: RI)
-
-    test "overlays [x]       == x" $ \(x :: RI) ->
-          overlays [x]       == x
-
-    test "overlays [x,y]     == overlay x y" $ \(x :: RI) y ->
-          overlays [x,y]     == overlay x y
-
-    test "isEmpty . overlays == all isEmpty" $ mapSize (min 10) $ \(xs :: [RI]) ->
-         (isEmpty . overlays) xs == all isEmpty xs
-
-    putStrLn "\n============ Relation.connects ============"
-    test "connects []        == empty" $
-          connects []        == (empty :: RI)
-
-    test "connects [x]       == x" $ \(x :: RI) ->
-          connects [x]       == x
-
-    test "connects [x,y]     == connect x y" $ \(x :: RI) y ->
-          connects [x,y]     == connect x y
-
-    test "isEmpty . connects == all isEmpty" $ mapSize (min 10) $ \(xs :: [RI]) ->
-         (isEmpty . connects) xs == all isEmpty xs
-
-    putStrLn "\n============ Relation.graph ============"
-    test "graph []  []      == empty" $
-          graph []  []      == (empty :: RI)
-
-    test "graph [x] []      == vertex x" $ \(x :: Int) ->
-          graph [x] []      == (vertex x :: RI)
-
-    test "graph []  [(x,y)] == edge x y" $ \(x :: Int) y ->
-          graph []  [(x,y)] == (edge x y :: RI)
-
-    test "graph vs  es      == overlay (vertices vs) (edges es)" $ \(vs :: [Int]) es ->
-          graph vs  es      == (overlay (vertices vs) (edges es) :: RI)
+    testBasicPrimitives t
 
     putStrLn "\n============ Relation.fromAdjacencyList ============"
     test "fromAdjacencyList []                                  == empty" $
