@@ -436,7 +436,7 @@ hasVertex = H.hasVertex
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> Graph a -> Bool
-hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
+hasEdge = H.hasEdge
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
