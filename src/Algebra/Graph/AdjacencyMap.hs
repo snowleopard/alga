@@ -259,6 +259,7 @@ hasVertex x = Map.member x . adjacencyMap
 -- hasEdge x y ('vertex' z)       == False
 -- hasEdge x y ('edge' x y)       == True
 -- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
 hasEdge u v a = case Map.lookup u (adjacencyMap a) of

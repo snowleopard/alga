@@ -42,7 +42,7 @@ module Algebra.Graph.HigherKinded.Class (
     isSubgraphOf,
 
     -- * Graph properties
-    isEmpty, hasVertex, vertexCount, vertexList, vertexSet, vertexIntSet,
+    isEmpty, hasVertex, hasEdge, vertexCount, vertexList, vertexSet, vertexIntSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, tree, forest, mesh, torus, deBruijn,
@@ -297,6 +297,18 @@ isEmpty = null
 -- @
 hasVertex :: (Eq a, Graph g) => a -> g a -> Bool
 hasVertex = elem
+
+-- | Check if a graph contains a given edge.
+-- Complexity: /O(s)/ time.
+--
+-- @
+-- hasEdge x y 'empty'            == False
+-- hasEdge x y ('vertex' z)       == False
+-- hasEdge x y ('edge' x y)       == True
+-- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
+-- @
+hasEdge :: (Eq (g a), Graph g, Ord a) => a -> a -> g a -> Bool
+hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.

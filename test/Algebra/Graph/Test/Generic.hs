@@ -419,6 +419,10 @@ testHasEdge (Testsuite prefix (%)) = do
     test "hasEdge x y . removeEdge x y == const False" $ \x y z ->
          (hasEdge x y . removeEdge x y) z == const False % z
 
+    test "hasEdge x y                  == elem (x,y) . edgeList" $ \x y z -> do
+        (u, v) <- elements ((x, y) : edgeList z)
+        return $ hasEdge u v z == elem (u, v) (edgeList % z)
+
 testVertexCount :: Testsuite -> IO ()
 testVertexCount (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "vertexCount ============"

@@ -397,12 +397,10 @@ hasVertex = H.hasVertex
 -- hasEdge x y ('vertex' z)       == False
 -- hasEdge x y ('edge' x y)       == True
 -- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
-hasEdge :: Eq a => a -> a -> Fold a -> Bool
-hasEdge s t = not . intact . edgelessPiece s t
-
-edgelessPiece :: forall a. Eq a => a -> a -> Fold a -> Piece (Fold a)
-edgelessPiece s t g = st where (_, _, st :: Piece (Fold a)) = smash s t g
+hasEdge :: Ord a => a -> a -> Fold a -> Bool
+hasEdge = H.hasEdge
 
 data Piece g = Piece { piece :: g, intact :: Bool, trivial :: Bool }
 

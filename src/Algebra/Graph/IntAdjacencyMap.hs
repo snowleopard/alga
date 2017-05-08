@@ -260,6 +260,7 @@ hasVertex x = IntMap.member x . adjacencyMap
 -- hasEdge x y ('vertex' z)       == False
 -- hasEdge x y ('edge' x y)       == True
 -- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Int -> Int -> IntAdjacencyMap -> Bool
 hasEdge u v a = case IntMap.lookup u (adjacencyMap a) of

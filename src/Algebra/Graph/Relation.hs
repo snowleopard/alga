@@ -248,6 +248,7 @@ hasVertex x = Set.member x . domain
 -- hasEdge x y ('vertex' z)       == False
 -- hasEdge x y ('edge' x y)       == True
 -- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> Relation a -> Bool
 hasEdge x y = Set.member (x, y) . relation
