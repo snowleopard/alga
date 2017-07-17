@@ -38,16 +38,17 @@ module Algebra.Graph.AdjacencyMap (
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
 
     -- * Algorithms
-    dfsForest, topSort, isTopSort, scc,
+    dfsForest, dfsForestFrom, topSort, isTopSort, scc,
 
     -- * Interoperability with King-Launchbury graphs
-    GraphKL, getGraph, getVertex, graphKL, fromGraphKL
+    GraphKL, getGraph, getVertex, klVertex, graphKL, fromGraphKL
   ) where
 
 import Data.Array
 import Data.Foldable (toList)
 import Data.Set (Set)
 import Data.Tree
+import Data.Maybe
 
 import Algebra.Graph.AdjacencyMap.Internal
 
@@ -567,7 +568,18 @@ induce p = AdjacencyMap . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p 
 --                                                                      , subForest = [] }]}]
 -- @
 dfsForest :: Ord a => AdjacencyMap a -> Forest a
-dfsForest m = let GraphKL g r = graphKL m in fmap (fmap r) (KL.dff g)
+dfsForest m = let GraphKL g r _ = graphKL m in fmap (fmap r) (KL.dff g)
+
+-- | A spanning forest of the part of the graph reachable from the listed
+-- vertices, obtained from a depth-first search of the graph starting at
+-- each of the listed vertices in order.
+dfsForestFrom :: Ord a => AdjacencyMap a -> [a] -> Forest a
+dfsForestFrom m vs =
+  let
+    GraphKL g r t = graphKL m
+  in
+    fmap (fmap r) (KL.dfs g (mapMaybe t vs))
+
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.
@@ -580,8 +592,8 @@ dfsForest m = let GraphKL g r = graphKL m in fmap (fmap r) (KL.dff g)
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
 topSort m = if isTopSort result m then Just result else Nothing
   where
-    GraphKL g r = graphKL m
-    result      = map r (KL.topSort g)
+    GraphKL g r _ = graphKL m
+    result        = map r (KL.topSort g)
 
 -- | Check if a given list of vertices is a valid /topological sort/ of a graph.
 --
@@ -616,9 +628,9 @@ isTopSort xs m = go Set.empty xs
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (Set a)
 scc m = gmap (\v -> Map.findWithDefault Set.empty v components) m
   where
-    GraphKL g r = graphKL m
-    components  = Map.fromList $ concatMap (expand . fmap r . toList) (KL.scc g)
-    expand xs   = let s = Set.fromList xs in map (\x -> (x, s)) xs
+    GraphKL g r _ = graphKL m
+    components    = Map.fromList $ concatMap (expand . fmap r . toList) (KL.scc g)
+    expand xs     = let s = Set.fromList xs in map (\x -> (x, s)) xs
 
 -- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
 -- the "Data.Graph" module of the @containers@ library. If @graphKL g == h@ then
@@ -632,7 +644,10 @@ data GraphKL a = GraphKL {
     -- | Array-based graph representation (King and Launchbury, 1995).
     getGraph :: KL.Graph,
     -- | A mapping of "Data.Graph.Vertex" to vertices of type @a@.
-    getVertex :: KL.Vertex -> a }
+    getVertex :: KL.Vertex -> a,
+    -- | A mapping from vertices of type @a@ to "Data.Graph.Vertex".
+    -- Returns 'Nothing' if the argument is not in the graph.
+    klVertex :: a -> Maybe KL.Vertex }
 
 -- | Build 'GraphKL' from the adjacency map of a graph.
 --
@@ -640,9 +655,13 @@ data GraphKL a = GraphKL {
 -- 'fromGraphKL' . graphKL == id
 -- @
 graphKL :: Ord a => AdjacencyMap a -> GraphKL a
-graphKL m = GraphKL g $ \u -> case r u of (_, v, _) -> v
+graphKL m = GraphKL
+  { getGraph = g
+  , getVertex = \u -> case r u of (_, v, _) -> v
+  , klVertex = t
+  }
   where
-    (g, r) = KL.graphFromEdges' [ ((), v, us) | (v, us) <- adjacencyList m ]
+    (g, r, t) = KL.graphFromEdges [ ((), v, us) | (v, us) <- adjacencyList m ]
 
 -- | Extract the adjacency map of a King-Launchbury graph.
 --
@@ -650,4 +669,4 @@ graphKL m = GraphKL g $ \u -> case r u of (_, v, _) -> v
 -- fromGraphKL . 'graphKL' == id
 -- @
 fromGraphKL :: Ord a => GraphKL a -> AdjacencyMap a
-fromGraphKL (GraphKL g r) = fromAdjacencyList $ map (\(x, ys) -> (r x, map r ys)) (assocs g)
+fromGraphKL (GraphKL g r _) = fromAdjacencyList $ map (\(x, ys) -> (r x, map r ys)) (assocs g)
