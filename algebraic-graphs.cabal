@@ -54,6 +54,7 @@ library
                         Algebra.Graph.AdjacencyMap.Internal,
                         Algebra.Graph.Class,
                         Algebra.Graph.Fold,
+                        Algebra.Graph.Export,
                         Algebra.Graph.HigherKinded.Class,
                         Algebra.Graph.IntAdjacencyMap,
                         Algebra.Graph.IntAdjacencyMap.Internal,
@@ -77,6 +78,7 @@ library
                         DeriveFunctor
                         DeriveTraversable
                         OverloadedStrings
+                        RecordWildCards
     GHC-options:        -Wall -fwarn-tabs
 
 test-suite test-alga
