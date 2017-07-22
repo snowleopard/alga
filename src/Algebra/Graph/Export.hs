@@ -64,7 +64,7 @@ literal = Doc . Endo . (:)
 -- 'literal'.
 --
 -- @
--- export ('literal' "al" <> 'literal' "ga") :: ('Monoid' s, 'IsString' s) => s
+-- export ('literal' "al" <> 'literal' "ga") :: ('IsString' s, 'Monoid' s) => s
 -- export ('literal' "al" <> 'literal' "ga") == "alga"
 -- export 'mempty'                         == 'mempty'
 -- export . 'literal'                      == 'id'
@@ -73,19 +73,40 @@ literal = Doc . Endo . (:)
 export :: Monoid s => Doc s -> s
 export (Doc x) = mconcat $ appEndo x []
 
--- | Wrap a document into square brackets.
+-- | Wrap a document in square brackets.
+--
+-- @
+-- brackets "i"    == "[i]"
+-- brackets 'mempty' == "[]"
+-- @
 brackets :: IsString s => Doc s -> Doc s
 brackets x = "[" <> x <> "]"
 
 -- | Wrap a document into double quotes.
+--
+-- @
+-- doubleQuotes "\/path\/with spaces"   == "\\"\/path\/with spaces\\""
+-- doubleQuotes (doubleQuotes 'mempty') == "\\"\\"\\"\\""
+-- @
 doubleQuotes :: IsString s => Doc s -> Doc s
 doubleQuotes x = "\"" <> x <> "\""
 
 -- | Prepend a given number of spaces to a document.
+--
+-- @
+-- indent 0        == 'id'
+-- indent 1 'mempty' == " "
+-- @
 indent :: IsString s => Int -> Doc s -> Doc s
 indent spaces x = fromString (replicate spaces ' ') <> x
 
 -- | Concatenate documents after appending a terminating newline symbol to each.
+--
+-- @
+-- unlines []                    == 'mempty'
+-- unlines ['mempty']              == "\\n"
+-- unlines ["title", "subtitle"] == "title\\nsubtitle\\n"
+-- @
 unlines :: IsString s => [Doc s] -> Doc s
 unlines []     = mempty
 unlines (x:xs) = x <> "\n" <> unlines xs
