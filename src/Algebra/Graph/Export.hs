@@ -20,7 +20,7 @@ module Algebra.Graph.Export (
     Doc, literal, export,
 
     -- * Common combinators for text documents
-    newLine, brackets, doubleQuotes, indent, unlines
+    brackets, doubleQuotes, indent, unlines
   ) where
 
 import Prelude hiding (unlines)
@@ -73,10 +73,6 @@ literal = Doc . Endo . (:)
 export :: Monoid s => Doc s -> s
 export (Doc x) = mconcat $ appEndo x []
 
--- | A document comprising a single newline symbol.
-newLine :: IsString s => Doc s
-newLine = "\n"
-
 -- | Wrap a document into square brackets.
 brackets :: IsString s => Doc s -> Doc s
 brackets x = "[" <> x <> "]"
@@ -89,7 +85,7 @@ doubleQuotes x = "\"" <> x <> "\""
 indent :: IsString s => Int -> Doc s -> Doc s
 indent spaces x = fromString (replicate spaces ' ') <> x
 
--- | Concatenate documents after appending a terminating 'newLine' to each.
+-- | Concatenate documents after appending a terminating newline symbol to each.
 unlines :: IsString s => [Doc s] -> Doc s
 unlines []     = mempty
-unlines (x:xs) = x <> newLine <> unlines xs
+unlines (x:xs) = x <> "\n" <> unlines xs
