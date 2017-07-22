@@ -27,18 +27,28 @@ import Prelude hiding (unlines)
 import Data.Monoid
 import Data.String hiding (unlines)
 
--- | An abstract document type, where @s@ is the type of symbols or words (text
--- or binary). Note that most operations on 'Doc' @s@ require the 'Monoid' @s@
--- instance.
+-- | An abstract document type, where @s@ is the type of strings or words (text
+-- or binary). 'Doc' @s@ is a 'Monoid', therefore 'mempty' corresponds to the
+-- empty document and two documents can be concatenated with 'mappend' (or
+-- operator 'Data.Monoid.<>'). Note that most functions on 'Doc' @s@ require
+-- that the underlying type @s@ is also a 'Monoid'.
 newtype Doc s = Doc (Endo [s]) deriving Monoid
+
+instance (Monoid s, Show s) => Show (Doc s) where
+    show = show . export
+
+instance (Monoid s, Eq s) => Eq (Doc s) where
+    x == y = export x == export y
+
+instance (Monoid s, Ord s) => Ord (Doc s) where
+    compare x y = compare (export x) (export y)
 
 instance IsString s => IsString (Doc s) where
     fromString = literal . fromString
 
--- | Construct a document comprising a single symbol or word. An inverse of the
--- function 'export'. If @s@ is an instance of class 'IsString', then documents
--- of type 'Doc' @s@ can be constructed directly from string literals (see the
--- second example below).
+-- | Construct a document comprising a single string or word. If @s@ is an
+-- instance of class 'IsString', then documents of type 'Doc' @s@ can be
+-- constructed directly from string literals (see the second example below).
 --
 -- @
 -- literal "Hello, " <> literal "World!" == literal "Hello, World!"
@@ -50,10 +60,11 @@ instance IsString s => IsString (Doc s) where
 literal :: s -> Doc s
 literal = Doc . Endo . (:)
 
--- | Export a document by concatenating the contents. An inverse of the function
+-- | Export a document as a single string or word. An inverse of the function
 -- 'literal'.
 --
 -- @
+-- export ('literal' "al" <> 'literal' "ga") :: ('Monoid' s, 'IsString' s) => s
 -- export ('literal' "al" <> 'literal' "ga") == "alga"
 -- export 'mempty'                         == 'mempty'
 -- export . 'literal'                      == 'id'
