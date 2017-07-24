@@ -20,12 +20,18 @@ module Algebra.Graph.Export (
     Doc, literal, render,
 
     -- * Common combinators for text documents
-    brackets, doubleQuotes, indent, unlines
+    brackets, doubleQuotes, indent, unlines,
+
+    -- * Generic graph export
+    export
   ) where
 
-import Prelude hiding (unlines)
 import Data.Monoid
 import Data.String hiding (unlines)
+import Prelude hiding (unlines)
+
+import Algebra.Graph.AdjacencyMap
+import Algebra.Graph.Class (ToGraph (..))
 
 -- | An abstract document type, where @s@ is the type of strings or words (text
 -- or binary). 'Doc' @s@ is a 'Monoid', therefore 'mempty' corresponds to the
@@ -110,3 +116,29 @@ indent spaces x = fromString (replicate spaces ' ') <> x
 unlines :: IsString s => [Doc s] -> Doc s
 unlines []     = mempty
 unlines (x:xs) = x <> "\n" <> unlines xs
+
+-- TODO: Avoid round-trip graph conversion if g :: AdjacencyMap a.
+-- | Export a graph into a document given two functions that construct documents
+-- for individual vertices and edges. The order of export is: vertices, sorted
+-- by 'Ord' @a@, and then edges, sorted by 'Ord' @(a, a)@.
+--
+-- For example:
+--
+-- @
+-- vDoc x   = 'literal' ('show' x) <> "\\n"
+-- eDoc x y = 'literal' ('show' x) <> " -> " <> 'literal' ('show' y) <> "\\n"
+-- > putStrLn $ 'render' $ export vDoc eDoc (1 + 2 * (3 + 4) :: 'Algebra.Graph.Graph' Int)
+--
+-- 1
+-- 2
+-- 3
+-- 4
+-- 2 -> 3
+-- 2 -> 4
+-- @
+export :: (Ord a, ToGraph g, ToVertex g ~ a) => (a -> Doc s) -> (a -> a -> Doc s) -> g -> Doc s
+export vs es g = vDoc <> eDoc
+  where
+    vDoc   = mconcat $ map (vs        ) (vertexList adjMap)
+    eDoc   = mconcat $ map (uncurry es) (edgeList   adjMap)
+    adjMap = toGraph g

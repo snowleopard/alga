@@ -17,8 +17,10 @@ module Algebra.Graph.Test.Export (
 import Prelude hiding (unlines)
 import Data.Monoid
 
-import Algebra.Graph.Test
+import Algebra.Graph (Graph)
 import Algebra.Graph.Export
+import Algebra.Graph.Export.Dot (exportViaShow)
+import Algebra.Graph.Test
 
 testExport :: IO ()
 testExport = do
@@ -75,3 +77,14 @@ testExport = do
 
     test "unlines [\"title\", \"subtitle\"] == \"title\\nsubtitle\\n\"" $
           unlines ["title",    "subtitle" ] == ("title\nsubtitle\n" :: Doc String)
+
+    putStrLn "\n============ Export.export ============"
+    let vDoc x   = literal (show x) <> "\n"
+        eDoc x y = literal (show x) <> " -> " <> literal (show y) <> "\n"
+    test "render $ export vDoc eDoc (1 + 2 * (3 + 4) :: Graph Int)" $
+        render (export vDoc eDoc (1 + 2 * (3 + 4) :: Graph Int)) == "1\n2\n3\n4\n2 -> 3\n2 -> 4\n"
+
+    putStrLn "\n============ Export.Dot.exportViaShow ============"
+    test "exportViaShow (1 + 2 * (3 + 4) :: Graph Int)" $
+        exportViaShow (1 + 2 * (3 + 4) :: Graph Int) ==
+            "digraph \n{\n  \"1\"\n  \"2\"\n  \"3\"\n  \"4\"\n  \"2\" -> \"3\"\n  \"2\" -> \"4\"\n}\n"

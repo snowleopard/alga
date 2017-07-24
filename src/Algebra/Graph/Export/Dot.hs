@@ -21,14 +21,14 @@ module Algebra.Graph.Export.Dot (
     export, exportAsIs, exportViaShow
   ) where
 
-import Prelude hiding (unlines)
 import Data.List hiding (unlines)
 import Data.Monoid
 import Data.String hiding (unlines)
+import Prelude hiding (unlines)
 
-import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Class (ToGraph (..))
-import Algebra.Graph.Export
+import Algebra.Graph.Export hiding (export)
+import qualified Algebra.Graph.Export as E
 
 -- | An attribute is just a key-value pair, for example @"shape" := "box"@.
 -- Attributes are used to specify the style of graph elements during export.
@@ -74,7 +74,6 @@ defaultStyle v = Style mempty mempty [] [] [] v (\_ -> []) (\_ _ -> [])
 defaultStyleViaShow :: (Show a, IsString s, Monoid s) => Style a s
 defaultStyleViaShow = defaultStyle (fromString . show)
 
--- TODO: Avoid round-trip graph conversion if g :: AdjacencyMap a.
 -- | Export a graph with a given style.
 --
 -- For example:
@@ -111,19 +110,19 @@ defaultStyleViaShow = defaultStyle (fromString . show)
 -- }
 -- @
 export :: (IsString s, Monoid s, Eq s, Ord a, ToGraph g, ToVertex g ~ a) => Style a s -> g -> s
-export Style {..} g = render $ unlines $ header ++ map (indent 2) body ++ ["}"]
+export Style {..} g = render $ header <> body <> "}\n"
   where
-    header    = ["digraph " <> literal graphName, "{"]
-             ++ [ literal preamble | preamble /= mempty ]
-    with x as = if null as then [] else [x <> attributes as]
+    header    = "digraph " <> literal graphName <> "\n{\n"
+             <> if preamble == mempty then mempty else (literal preamble <> "\n")
+    with x as = if null as            then mempty else line (x <> attributes as)
+    line s    = indent 2 s <> "\n"
     body      = ("graph" `with` graphAttributes)
-             ++ ("node"  `with` defaultVertexAttributes)
-             ++ ("edge"  `with` defaultEdgeAttributes)
-             ++ map v (vertexList adj) ++ map e (edgeList adj)
+             <> ("node"  `with` defaultVertexAttributes)
+             <> ("edge"  `with` defaultEdgeAttributes)
+             <> E.export vDoc eDoc g
     label     = doubleQuotes . literal . vertexName
-    v x       = label x <> attributes (vertexAttributes x)
-    e (x, y)  = label x <> " -> " <> label y <> attributes (edgeAttributes x y)
-    adj       = toGraph g
+    vDoc x    = line $ label x <> attributes (vertexAttributes x)
+    eDoc x y  = line $ label x <> " -> " <> label y <> attributes (edgeAttributes x y)
 
 -- A list of attributes formatted as a DOT document.
 -- Example: @attributes ["label" := "A label", "shape" := "box"]@
@@ -139,7 +138,7 @@ attributes as = indent 1 . brackets . mconcat . intersperse " " $ map dot as
 -- For example:
 --
 -- @
--- > Text.putStrLn $ exportAsIs ('circuit' ["a", "b", "c"] :: 'AdjacencyMap' Text)
+-- > Text.putStrLn $ exportAsIs ('Algebra.Graph.AdjacencyMap.circuit' ["a", "b", "c"] :: 'Algebra.Graph.AdjacencyMap.AdjacencyMap' Text)
 --
 -- digraph
 -- {
@@ -159,7 +158,7 @@ exportAsIs = export (defaultStyle id)
 -- For example:
 --
 -- @
--- > putStrLn $ exportViaShow (1 + 2 * (3 + 4) :: 'Graph' Int)
+-- > putStrLn $ exportViaShow (1 + 2 * (3 + 4) :: 'Algebra.Graph.Graph' Int)
 --
 -- digraph
 -- {
