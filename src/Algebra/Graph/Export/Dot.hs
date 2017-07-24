@@ -11,11 +11,14 @@
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines functions for exporting graphs in DOT file format.
+-- This module defines functions for exporting graphs in the DOT file format.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Export.Dot (
-    Attribute (..), Style (..), defaultStyle, defaultStyleViaShow, exportWith,
-    export, exportViaShow
+    -- * Graph attributes and style
+    Attribute (..), Style (..), defaultStyle, defaultStyleViaShow,
+
+    -- * Export functions
+    export, exportAsIs, exportViaShow
   ) where
 
 import Prelude hiding (unlines)
@@ -24,28 +27,19 @@ import Data.Monoid
 import Data.String hiding (unlines)
 
 import Algebra.Graph.AdjacencyMap
-import qualified Algebra.Graph.Export as E
-import Algebra.Graph.Export hiding (export)
 import Algebra.Graph.Class (ToGraph (..))
+import Algebra.Graph.Export
 
 -- | An attribute is just a key-value pair, for example @"shape" := "box"@.
 -- Attributes are used to specify the style of graph elements during export.
 data Attribute s = (:=) s s
 
--- Example: @dotAttributes ["label" := "A label", "shape" := "box"]@
--- corresponds to document: @ [label="A label" shape="box"]@.
-dotAttributes :: IsString s => [Attribute s] -> Doc s
-dotAttributes [] = mempty
-dotAttributes as = indent 1 . brackets . mconcat . intersperse " " $ map dot as
-  where
-    dot (k := v) = mconcat [literal k <> "=" <> doubleQuotes (literal v)]
-
 -- | The record 'Style' @a@ @s@ specifies the style to use when exporting a
 -- graph in the DOT format. Here @a@ is the type of the graph vertices, and @s@
 -- is the type of string to represent the resulting DOT document (e.g. String,
--- ByteString, etc.). Most fields can be empty. The only field that has no
--- obvious default value is 'vertexName', which holds a function of type
--- @a -> s@ to compute vertex names. See the example for the function 'exportWith'.
+-- Text, etc.). Most fields can be empty. The only field that has no obvious
+-- default value is 'vertexName', which holds a function of type @a -> s@ to
+-- compute vertex names. See the example for the function 'export'.
 data Style a s = Style
     { graphName :: s
     -- ^ Name of the graph.
@@ -97,7 +91,7 @@ defaultStyleViaShow = defaultStyle (fromString . show)
 --     , 'vertexAttributes'        = \x   -> ["color" := "blue"   | 'odd' x      ]
 --     , 'edgeAttributes'          = \x y -> ["style" := "dashed" | 'odd' (x * y)] }
 --
--- > putStrLn $ exportWith style (1 * 2 + 3 * 4 * 5 :: 'Graph' Int)
+-- > putStrLn $ export style (1 * 2 + 3 * 4 * 5 :: 'Graph' Int)
 --
 -- digraph Example
 -- {
@@ -116,27 +110,36 @@ defaultStyleViaShow = defaultStyle (fromString . show)
 --   "v4" -> "v5"
 -- }
 -- @
-exportWith :: (IsString s, Monoid s, Eq s, Ord a, ToGraph g, ToVertex g ~ a) => Style a s -> g -> s
-exportWith Style {..} g = E.export $ unlines $ header ++ map (indent 2) body ++ ["}"]
+export :: (IsString s, Monoid s, Eq s, Ord a, ToGraph g, ToVertex g ~ a) => Style a s -> g -> s
+export Style {..} g = render $ unlines $ header ++ map (indent 2) body ++ ["}"]
   where
     header    = ["digraph " <> literal graphName, "{"]
              ++ [ literal preamble | preamble /= mempty ]
-    with x as = if null as then [] else [x <> dotAttributes as]
+    with x as = if null as then [] else [x <> attributes as]
     body      = ("graph" `with` graphAttributes)
              ++ ("node"  `with` defaultVertexAttributes)
              ++ ("edge"  `with` defaultEdgeAttributes)
              ++ map v (vertexList adj) ++ map e (edgeList adj)
     label     = doubleQuotes . literal . vertexName
-    v x       = label x <> dotAttributes (vertexAttributes x)
-    e (x, y)  = label x <> " -> " <> label y <> dotAttributes (edgeAttributes x y)
+    v x       = label x <> attributes (vertexAttributes x)
+    e (x, y)  = label x <> " -> " <> label y <> attributes (edgeAttributes x y)
     adj       = toGraph g
+
+-- A list of attributes formatted as a DOT document.
+-- Example: @attributes ["label" := "A label", "shape" := "box"]@
+-- corresponds to document: @ [label="A label" shape="box"]@.
+attributes :: IsString s => [Attribute s] -> Doc s
+attributes [] = mempty
+attributes as = indent 1 . brackets . mconcat . intersperse " " $ map dot as
+  where
+    dot (k := v) = mconcat [literal k <> "=" <> doubleQuotes (literal v)]
 
 -- | Export a graph whose vertices are represented simply by their names.
 --
 -- For example:
 --
 -- @
--- > ByteString.putStrLn $ export ('circuit' ["a", "b", "c"] :: 'AdjacencyMap' ByteString)
+-- > Text.putStrLn $ exportAsIs ('circuit' ["a", "b", "c"] :: 'AdjacencyMap' Text)
 --
 -- digraph
 -- {
@@ -148,8 +151,8 @@ exportWith Style {..} g = E.export $ unlines $ header ++ map (indent 2) body ++ 
 --   "c" -> "a"
 -- }
 -- @
-export :: (IsString s, Monoid s, Ord s, ToGraph g, ToVertex g ~ s) => g -> s
-export = exportWith (defaultStyle id)
+exportAsIs :: (IsString s, Monoid s, Ord s, ToGraph g, ToVertex g ~ s) => g -> s
+exportAsIs = export (defaultStyle id)
 
 -- | Export a graph using the 'defaultStyleViaShow'.
 --
@@ -169,4 +172,4 @@ export = exportWith (defaultStyle id)
 -- }
 -- @
 exportViaShow :: (IsString s, Monoid s, Eq s, ToGraph g, Ord (ToVertex g), Show (ToVertex g)) => g -> s
-exportViaShow = exportWith defaultStyleViaShow
+exportViaShow = export defaultStyleViaShow

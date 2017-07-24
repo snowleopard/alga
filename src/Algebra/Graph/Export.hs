@@ -17,7 +17,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Export (
     -- * Constructing and exporting documents
-    Doc, literal, export,
+    Doc, literal, render,
 
     -- * Common combinators for text documents
     brackets, doubleQuotes, indent, unlines
@@ -35,13 +35,13 @@ import Data.String hiding (unlines)
 newtype Doc s = Doc (Endo [s]) deriving Monoid
 
 instance (Monoid s, Show s) => Show (Doc s) where
-    show = show . export
+    show = show . render
 
 instance (Monoid s, Eq s) => Eq (Doc s) where
-    x == y = export x == export y
+    x == y = render x == render y
 
 instance (Monoid s, Ord s) => Ord (Doc s) where
-    compare x y = compare (export x) (export y)
+    compare x y = compare (render x) (render y)
 
 instance IsString s => IsString (Doc s) where
     fromString = literal . fromString
@@ -54,24 +54,24 @@ instance IsString s => IsString (Doc s) where
 -- literal "Hello, " <> literal "World!" == literal "Hello, World!"
 -- literal "I am just a string literal"  == "I am just a string literal"
 -- literal 'mempty'                        == 'mempty'
--- 'export' . literal                      == 'id'
--- literal . 'export'                      == 'id'
+-- 'render' . literal                      == 'id'
+-- literal . 'render'                      == 'id'
 -- @
 literal :: s -> Doc s
 literal = Doc . Endo . (:)
 
--- | Export a document as a single string or word. An inverse of the function
+-- | Render a document as a single string or word. An inverse of the function
 -- 'literal'.
 --
 -- @
--- export ('literal' "al" <> 'literal' "ga") :: ('IsString' s, 'Monoid' s) => s
--- export ('literal' "al" <> 'literal' "ga") == "alga"
--- export 'mempty'                         == 'mempty'
--- export . 'literal'                      == 'id'
--- 'literal' . export                      == 'id'
+-- render ('literal' "al" <> 'literal' "ga") :: ('IsString' s, 'Monoid' s) => s
+-- render ('literal' "al" <> 'literal' "ga") == "alga"
+-- render 'mempty'                         == 'mempty'
+-- render . 'literal'                      == 'id'
+-- 'literal' . render                      == 'id'
 -- @
-export :: Monoid s => Doc s -> s
-export (Doc x) = mconcat $ appEndo x []
+render :: Monoid s => Doc s -> s
+render (Doc x) = mconcat $ appEndo x []
 
 -- | Wrap a document in square brackets.
 --

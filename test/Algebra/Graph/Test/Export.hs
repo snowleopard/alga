@@ -32,18 +32,18 @@ testExport = do
     test "literal mempty                        == mempty" $
           literal mempty                        == (mempty :: Doc String)
 
-    test "export . literal                      == id" $ \(x :: String) ->
-         (export . literal) x                   == x
+    test "render . literal                      == id" $ \(x :: String) ->
+         (render . literal) x                   == x
 
-    test "literal . export                      == id" $ \(xs :: [String]) -> let x = mconcat (map literal xs) in
-         (literal . export) x                   == x
+    test "literal . render                      == id" $ \(xs :: [String]) -> let x = mconcat (map literal xs) in
+         (literal . render) x                   == x
 
-    putStrLn "\n============ Export.export ============"
-    test "export (literal \"al\" <> literal \"ga\") == \"alga\"" $
-          export (literal "al" <> literal "ga") == ("alga" :: String)
+    putStrLn "\n============ Export.render ============"
+    test "render (literal \"al\" <> literal \"ga\") == \"alga\"" $
+          render (literal "al" <> literal "ga") == ("alga" :: String)
 
-    test "export mempty                         == mempty" $
-          export mempty                         == (mempty :: Doc String)
+    test "render mempty                         == mempty" $
+          render mempty                         == (mempty :: Doc String)
 
     putStrLn "\n============ Export.brackets ============"
     test "brackets \"i\"    == \"[i]\"" $
