@@ -69,14 +69,11 @@ testAdjacencyMap = do
                                            , (Set.fromList [3]  , Set.fromList [1,4])
                                            , (Set.fromList [3]  , Set.fromList [5 :: Int])]
 
-    putStrLn "\n============ AdjacencyMap.GraphKL ============"
-    test "map (getVertex h) (vertices $ getGraph h) == Set.toAscList (vertexSet g)"
-      $ \(g :: AI) -> let h = graphKL g in
-        map (getVertex h) (KL.vertices $ getGraph h) == Set.toAscList (vertexSet g)
+    putStrLn "\n============ AdjacencyMap.Internal.GraphKL ============"
+    test "map (fromVertexKL h) (vertices $ toGraphKL h) == vertexList g"
+      $ \(g :: AI) -> let h = mkGraphKL (adjacencyMap g) in
+          map (fromVertexKL h) (KL.vertices $ toGraphKL h) == vertexList g
 
-    test "map (\\(x, y) -> (getVertex h x, getVertex h y)) (edges $ getGraph h) == edgeList g"
-      $ \(g :: AI) -> let h = graphKL g in
-        map (\(x, y) -> (getVertex h x, getVertex h y)) (KL.edges $ getGraph h) == edgeList g
-
-    test "fromGraphKL . graphKL == id" $ \(x :: AI) ->
-        (fromGraphKL . graphKL) x == x
+    test "map (\\(x, y) -> (fromVertexKL h x, fromVertexKL h y)) (edges $ toGraphKL h) == edgeList g"
+      $ \(g :: AI) -> let h = mkGraphKL (adjacencyMap g) in
+          map ( \(x, y) -> (fromVertexKL h x, fromVertexKL h y)) (KL.edges $ toGraphKL h) == edgeList g

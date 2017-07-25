@@ -38,13 +38,9 @@ module Algebra.Graph.AdjacencyMap (
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
 
     -- * Algorithms
-    dfsForest, dfsForestFrom, topSort, isTopSort, scc,
-
-    -- * Interoperability with King-Launchbury graphs
-    GraphKL, getGraph, getVertex, klVertex, graphKL, fromGraphKL
+    dfsForest, dfsForestFrom, topSort, isTopSort, scc
   ) where
 
-import Data.Array
 import Data.Foldable (toList)
 import Data.Set (Set)
 import Data.Tree
@@ -145,7 +141,7 @@ connect = C.connect
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: Ord a => [a] -> AdjacencyMap a
-vertices = AdjacencyMap . Map.fromList . map (\x -> (x, Set.empty))
+vertices = mkAM . Map.fromList . map (\x -> (x, Set.empty))
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -208,7 +204,7 @@ graph vs es = overlay (vertices vs) (edges es)
 -- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
 -- @
 fromAdjacencyList :: Ord a => [(a, [a])] -> AdjacencyMap a
-fromAdjacencyList as = AdjacencyMap $ Map.unionWith Set.union vs es
+fromAdjacencyList as = mkAM $ Map.unionWith Set.union vs es
   where
     ss = map (fmap Set.fromList) as
     vs = Map.fromSet (const Set.empty) . Set.unions $ map snd ss
@@ -313,7 +309,7 @@ vertexList = Map.keys . adjacencyMap
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
-edgeList (AdjacencyMap m) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
+edgeList (AdjacencyMap m _) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -412,7 +408,7 @@ clique = C.clique
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: Ord a => [a] -> [a] -> AdjacencyMap a
-biclique xs ys = AdjacencyMap $ Map.fromSet adjacent (x `Set.union` y)
+biclique xs ys = mkAM $ Map.fromSet adjacent (x `Set.union` y)
   where
     x = Set.fromList xs
     y = Set.fromList ys
@@ -463,7 +459,7 @@ forest = C.forest
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Ord a => a -> AdjacencyMap a -> AdjacencyMap a
-removeVertex x = AdjacencyMap . Map.map (Set.delete x) . Map.delete x . adjacencyMap
+removeVertex x = mkAM . Map.map (Set.delete x) . Map.delete x . adjacencyMap
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(log(n))/ time.
@@ -476,7 +472,7 @@ removeVertex x = AdjacencyMap . Map.map (Set.delete x) . Map.delete x . adjacenc
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
-removeEdge x y = AdjacencyMap . Map.adjust (Set.delete y) x . adjacencyMap
+removeEdge x y = mkAM . Map.adjust (Set.delete y) x . adjacencyMap
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
@@ -517,7 +513,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
-transpose (AdjacencyMap m) = AdjacencyMap $ Map.foldrWithKey combine vs m
+transpose (AdjacencyMap m _) = mkAM $ Map.foldrWithKey combine vs m
   where
     combine v es = Map.unionWith Set.union (Map.fromSet (const $ Set.singleton v) es)
     vs           = Map.fromSet (const Set.empty) (Map.keysSet m)
@@ -535,7 +531,7 @@ transpose (AdjacencyMap m) = AdjacencyMap $ Map.foldrWithKey combine vs m
 -- gmap f . gmap g   == gmap (f . g)
 -- @
 gmap :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap a -> AdjacencyMap b
-gmap f = AdjacencyMap . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
+gmap f = mkAM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -550,7 +546,7 @@ gmap f = AdjacencyMap . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adja
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: Ord a => (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
-induce p = AdjacencyMap . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjacencyMap
+induce p = mkAM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjacencyMap
 
 -- | Compute the /depth-first search/ forest of a graph.
 --
@@ -568,18 +564,14 @@ induce p = AdjacencyMap . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p 
 --                                                                      , subForest = [] }]}]
 -- @
 dfsForest :: Ord a => AdjacencyMap a -> Forest a
-dfsForest m = let GraphKL g r _ = graphKL m in fmap (fmap r) (KL.dff g)
+dfsForest (AdjacencyMap _ (GraphKL g r _)) = fmap (fmap r) (KL.dff g)
 
 -- | A spanning forest of the part of the graph reachable from the listed
 -- vertices, obtained from a depth-first search of the graph starting at
 -- each of the listed vertices in order.
 dfsForestFrom :: Ord a => AdjacencyMap a -> [a] -> Forest a
-dfsForestFrom m vs =
-  let
-    GraphKL g r t = graphKL m
-  in
+dfsForestFrom (AdjacencyMap _ (GraphKL g r t)) vs =
     fmap (fmap r) (KL.dfs g (mapMaybe t vs))
-
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.
@@ -590,10 +582,10 @@ dfsForestFrom m vs =
 -- fmap (flip 'isTopSort' x) (topSort x) /= Just False
 -- @
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
-topSort m = if isTopSort result m then Just result else Nothing
+topSort m@(AdjacencyMap _ (GraphKL g r _)) =
+    if isTopSort result m then Just result else Nothing
   where
-    GraphKL g r _ = graphKL m
-    result        = map r (KL.topSort g)
+    result = map r (KL.topSort g)
 
 -- | Check if a given list of vertices is a valid /topological sort/ of a graph.
 --
@@ -626,47 +618,8 @@ isTopSort xs m = go Set.empty xs
 --                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [5]  )]
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (Set a)
-scc m = gmap (\v -> Map.findWithDefault Set.empty v components) m
+scc m@(AdjacencyMap _ (GraphKL g r _)) =
+    gmap (\v -> Map.findWithDefault Set.empty v components) m
   where
-    GraphKL g r _ = graphKL m
-    components    = Map.fromList $ concatMap (expand . fmap r . toList) (KL.scc g)
-    expand xs     = let s = Set.fromList xs in map (\x -> (x, s)) xs
-
--- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
--- the "Data.Graph" module of the @containers@ library. If @graphKL g == h@ then
--- the following holds:
---
--- @
--- map ('getVertex' h) ('Data.Graph.vertices' $ 'getGraph' h)                            == Set.'Set.toAscList' ('vertexSet' g)
--- map (\\(x, y) -> ('getVertex' h x, 'getVertex' h y)) ('Data.Graph.edges' $ 'getGraph' h) == 'edgeList' g
--- @
-data GraphKL a = GraphKL {
-    -- | Array-based graph representation (King and Launchbury, 1995).
-    getGraph :: KL.Graph,
-    -- | A mapping of "Data.Graph.Vertex" to vertices of type @a@.
-    getVertex :: KL.Vertex -> a,
-    -- | A mapping from vertices of type @a@ to "Data.Graph.Vertex".
-    -- Returns 'Nothing' if the argument is not in the graph.
-    klVertex :: a -> Maybe KL.Vertex }
-
--- | Build 'GraphKL' from the adjacency map of a graph.
---
--- @
--- 'fromGraphKL' . graphKL == id
--- @
-graphKL :: Ord a => AdjacencyMap a -> GraphKL a
-graphKL m = GraphKL
-  { getGraph = g
-  , getVertex = \u -> case r u of (_, v, _) -> v
-  , klVertex = t
-  }
-  where
-    (g, r, t) = KL.graphFromEdges [ ((), v, us) | (v, us) <- adjacencyList m ]
-
--- | Extract the adjacency map of a King-Launchbury graph.
---
--- @
--- fromGraphKL . 'graphKL' == id
--- @
-fromGraphKL :: Ord a => GraphKL a -> AdjacencyMap a
-fromGraphKL (GraphKL g r _) = fromAdjacencyList $ map (\(x, ys) -> (r x, map r ys)) (assocs g)
+    components = Map.fromList $ concatMap (expand . fmap r . toList) (KL.scc g)
+    expand xs  = let s = Set.fromList xs in map (\x -> (x, s)) xs
