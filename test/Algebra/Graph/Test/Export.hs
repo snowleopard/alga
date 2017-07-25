@@ -82,9 +82,10 @@ testExport = do
     let vDoc x   = literal (show x) <> "\n"
         eDoc x y = literal (show x) <> " -> " <> literal (show y) <> "\n"
     test "render $ export vDoc eDoc (1 + 2 * (3 + 4) :: Graph Int)" $
-        render (export vDoc eDoc (1 + 2 * (3 + 4) :: Graph Int)) == "1\n2\n3\n4\n2 -> 3\n2 -> 4\n"
+         (render (export vDoc eDoc (1 + 2 * (3 + 4) :: Graph Int)) :: String) ==
+            "1\n2\n3\n4\n2 -> 3\n2 -> 4\n"
 
     putStrLn "\n============ Export.Dot.exportViaShow ============"
     test "exportViaShow (1 + 2 * (3 + 4) :: Graph Int)" $
-        exportViaShow (1 + 2 * (3 + 4) :: Graph Int) ==
+         (exportViaShow (1 + 2 * (3 + 4) :: Graph Int) :: String) ==
             "digraph \n{\n  \"1\"\n  \"2\"\n  \"3\"\n  \"4\"\n  \"2\" -> \"3\"\n  \"2\" -> \"4\"\n}\n"
