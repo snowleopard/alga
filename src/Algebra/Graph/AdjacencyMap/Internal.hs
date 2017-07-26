@@ -87,7 +87,7 @@ The following useful theorems can be proved from the above set of axioms.
 When specifying the time and memory complexity of graph algorithms, /n/ and /m/
 will denote the number of vertices and edges in the graph, respectively.
 -}
-data AdjacencyMap a = AdjacencyMap {
+data AdjacencyMap a = AM {
     -- | The /adjacency map/ of the graph: each vertex is associated with a set
     -- of its direct successors.
     adjacencyMap :: Map a (Set a),
@@ -99,13 +99,13 @@ data AdjacencyMap a = AdjacencyMap {
 -- compute the corresponding King-Launchbury representation.
 -- /Note: this function is for internal use only/.
 mkAM :: Ord a => Map a (Set a) -> AdjacencyMap a
-mkAM m = AdjacencyMap m (mkGraphKL m)
+mkAM m = AM m (mkGraphKL m)
 
 instance Eq a => Eq (AdjacencyMap a) where
     x == y = adjacencyMap x == adjacencyMap y
 
 instance (Ord a, Show a) => Show (AdjacencyMap a) where
-    show (AdjacencyMap m _)
+    show (AM m _)
         | m == Map.empty = "empty"
         | es == []       = if Set.size vs > 1 then "vertices " ++ show (Set.toAscList vs)
                                               else "vertex "   ++ show v
@@ -155,7 +155,7 @@ instance ToGraph (AdjacencyMap a) where
 -- consistent ('Algebra.Graph.AdjacencyMap.fromAdjacencyList' xs) == True
 -- @
 consistent :: Ord a => AdjacencyMap a -> Bool
-consistent (AdjacencyMap m _) = referredToVertexSet m `Set.isSubsetOf` keysSet m
+consistent (AM m _) = referredToVertexSet m `Set.isSubsetOf` keysSet m
 
 -- The set of vertices that are referred to by the edges
 referredToVertexSet :: Ord a => Map a (Set a) -> Set a

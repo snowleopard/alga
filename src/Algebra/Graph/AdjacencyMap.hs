@@ -309,7 +309,7 @@ vertexList = Map.keys . adjacencyMap
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
-edgeList (AdjacencyMap m _) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
+edgeList (AM m _) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -513,7 +513,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
-transpose (AdjacencyMap m _) = mkAM $ Map.foldrWithKey combine vs m
+transpose (AM m _) = mkAM $ Map.foldrWithKey combine vs m
   where
     combine v es = Map.unionWith Set.union (Map.fromSet (const $ Set.singleton v) es)
     vs           = Map.fromSet (const Set.empty) (Map.keysSet m)
@@ -564,13 +564,13 @@ induce p = mkAM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adj
 --                                                                      , subForest = [] }]}]
 -- @
 dfsForest :: Ord a => AdjacencyMap a -> Forest a
-dfsForest (AdjacencyMap _ (GraphKL g r _)) = fmap (fmap r) (KL.dff g)
+dfsForest (AM _ (GraphKL g r _)) = fmap (fmap r) (KL.dff g)
 
 -- | A spanning forest of the part of the graph reachable from the listed
 -- vertices, obtained from a depth-first search of the graph starting at
 -- each of the listed vertices in order.
 dfsForestFrom :: Ord a => AdjacencyMap a -> [a] -> Forest a
-dfsForestFrom (AdjacencyMap _ (GraphKL g r t)) vs =
+dfsForestFrom (AM _ (GraphKL g r t)) vs =
     fmap (fmap r) (KL.dfs g (mapMaybe t vs))
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
@@ -582,7 +582,7 @@ dfsForestFrom (AdjacencyMap _ (GraphKL g r t)) vs =
 -- fmap (flip 'isTopSort' x) (topSort x) /= Just False
 -- @
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
-topSort m@(AdjacencyMap _ (GraphKL g r _)) =
+topSort m@(AM _ (GraphKL g r _)) =
     if isTopSort result m then Just result else Nothing
   where
     result = map r (KL.topSort g)
@@ -618,7 +618,7 @@ isTopSort xs m = go Set.empty xs
 --                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [5]  )]
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (Set a)
-scc m@(AdjacencyMap _ (GraphKL g r _)) =
+scc m@(AM _ (GraphKL g r _)) =
     gmap (\v -> Map.findWithDefault Set.empty v components) m
   where
     components = Map.fromList $ concatMap (expand . fmap r . toList) (KL.scc g)
