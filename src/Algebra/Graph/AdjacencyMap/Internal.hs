@@ -90,7 +90,7 @@ will denote the number of vertices and edges in the graph, respectively.
 data AdjacencyMap a = AM {
     -- | The /adjacency map/ of the graph: each vertex is associated with a set
     -- of its direct successors.
-    adjacencyMap :: Map a (Set a),
+    adjacencyMap :: !(Map a (Set a)),
     -- | Cached King-Launchbury representation.
     -- /Note: this field is for internal use only/.
     graphKL :: GraphKL a }
