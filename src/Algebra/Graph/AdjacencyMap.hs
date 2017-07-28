@@ -556,6 +556,8 @@ induce p = mkAM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adj
 -- 'forest' (dfsForest $ 'edge' 2 1)         == 'vertices' [1, 2]
 -- 'isSubgraphOf' ('forest' $ dfsForest x) x == True
 -- dfsForest . 'forest' . dfsForest        == dfsForest
+-- dfsForest ('vertices' vs)               == map (\\v -> Node v []) ('Data.List.nub' $ 'Data.List.sort' vs)
+-- 'dfsForestFrom' ('vertexList' x) x        == dfsForest x
 -- dfsForest $ 3 * (1 + 4) * (1 + 5)     == [ Node { rootLabel = 1
 --                                                 , subForest = [ Node { rootLabel = 5
 --                                                                      , subForest = [] }]}
@@ -571,12 +573,14 @@ dfsForest (AM _ (GraphKL g r _)) = fmap (fmap r) (KL.dff g)
 -- necessarily span the whole graph, as some vertices may be unreachable.
 --
 -- @
--- 'forest' (dfsForestFrom [1] $ 'edge' 1 1)        == 'vertex' 1
--- 'forest' (dfsForestFrom [1] $ 'edge' 1 2)        == 'edge' 1 2
--- 'forest' (dfsForestFrom [2] $ 'edge' 1 2)        == 'vertex' 2
--- 'forest' (dfsForestFrom [3] $ 'edge' 1 2)        == 'empty'
+-- 'forest' (dfsForestFrom [1]    $ 'edge' 1 1)     == 'vertex' 1
+-- 'forest' (dfsForestFrom [1]    $ 'edge' 1 2)     == 'edge' 1 2
+-- 'forest' (dfsForestFrom [2]    $ 'edge' 1 2)     == 'vertex' 2
+-- 'forest' (dfsForestFrom [3]    $ 'edge' 1 2)     == 'empty'
+-- 'forest' (dfsForestFrom [2, 1] $ 'edge' 1 2)     == 'vertices' [1, 2]
 -- 'isSubgraphOf' ('forest' $ dfsForestFrom vs x) x == True
 -- dfsForestFrom ('vertexList' x) x               == 'dfsForest' x
+-- dfsForestFrom vs             ('vertices' vs)   == map (\\v -> Node v []) ('Data.List.nub' vs)
 -- dfsForestFrom []             x               == []
 -- dfsForestFrom [1, 4] $ 3 * (1 + 4) * (1 + 5) == [ Node { rootLabel = 1
 --                                                        , subForest = [ Node { rootLabel = 5

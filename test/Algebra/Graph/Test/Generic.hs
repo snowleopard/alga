@@ -19,7 +19,7 @@ module Algebra.Graph.Test.Generic (
   ) where
 
 import Data.Foldable
-import Data.List (sort)
+import Data.List (nub, sort)
 import Data.Tree
 import Data.Tuple
 
@@ -871,6 +871,9 @@ testDfsForest (Testsuite prefix (%)) = do
     test "dfsForest . forest . dfsForest        == dfsForest" $ \x ->
           dfsForest % (forest $ dfsForest x)    == dfsForest % x
 
+    test "dfsForest (vertices vs)               == map (\\v -> Node v []) (nub $ sort vs)" $ \vs ->
+          dfsForest % (vertices vs)             == map (\v -> Node v []) (nub $ sort vs)
+
     test "dfsForest $ 3 * (1 + 4) * (1 + 5)     == <correct result>" $
           dfsForest % (3 * (1 + 4) * (1 + 5))   == [ Node { rootLabel = 1
                                                    , subForest = [ Node { rootLabel = 5
@@ -882,23 +885,29 @@ testDfsForest (Testsuite prefix (%)) = do
 testDfsForestFrom :: Testsuite -> IO ()
 testDfsForestFrom (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "dfsForestFrom ============"
-    test "forest (dfsForestFrom [1] $ edge 1 1)        == vertex 1" $
-          forest (dfsForestFrom [1] % edge 1 1)        == id % vertex 1
+    test "forest (dfsForestFrom [1]    $ edge 1 1)     == vertex 1" $
+          forest (dfsForestFrom [1]    % edge 1 1)     == id % vertex 1
 
-    test "forest (dfsForestFrom [1] $ edge 1 2)        == edge 1 2" $
-          forest (dfsForestFrom [1] % edge 1 2)        == id % edge 1 2
+    test "forest (dfsForestFrom [1]    $ edge 1 2)     == edge 1 2" $
+          forest (dfsForestFrom [1]    % edge 1 2)     == id % edge 1 2
 
-    test "forest (dfsForestFrom [2] $ edge 1 2)        == vertex 2" $
-          forest (dfsForestFrom [2] % edge 1 2)        == id % vertex 2
+    test "forest (dfsForestFrom [2]    $ edge 1 2)     == vertex 2" $
+          forest (dfsForestFrom [2]    % edge 1 2)     == id % vertex 2
 
-    test "forest (dfsForestFrom [3] $ edge 1 2)        == empty" $
-          forest (dfsForestFrom [3] % edge 1 2)        == id % empty
+    test "forest (dfsForestFrom [3]    $ edge 1 2)     == empty" $
+          forest (dfsForestFrom [3]    % edge 1 2)     == id % empty
+
+    test "forest (dfsForestFrom [2, 1] $ edge 1 2)     == vertices [1, 2]" $
+          forest (dfsForestFrom [2, 1] % edge 1 2)     == id % vertices [1, 2]
 
     test "isSubgraphOf (forest $ dfsForestFrom vs x) x == True" $ \vs x ->
           isSubgraphOf (forest $ dfsForestFrom vs x) % x == True
 
     test "dfsForestFrom (vertexList x) x               == dfsForest x" $ \x ->
           dfsForestFrom (vertexList x) % x             == dfsForest % x
+
+    test "dfsForestFrom vs             (vertices vs)   == map (\\v -> Node v []) (nub vs)" $ \vs ->
+          dfsForestFrom vs           % (vertices vs)   == map (\v -> Node v []) (nub vs)
 
     test "dfsForestFrom []             x               == []" $ \x ->
           dfsForestFrom []           % x               == []
