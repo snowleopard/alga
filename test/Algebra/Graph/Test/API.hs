@@ -123,6 +123,8 @@ class Graph g => GraphAPI g where
     box               = notImplemented
     dfsForest         :: g -> Forest (Vertex g)
     dfsForest         = notImplemented
+    dfsForestFrom     :: [Vertex g] -> g -> Forest (Vertex g)
+    dfsForestFrom     = notImplemented
     topSort           :: g -> Maybe [Vertex g]
     topSort           = notImplemented
     isTopSort         :: [Vertex g] -> g -> Bool
@@ -167,6 +169,7 @@ instance Ord a => GraphAPI (AdjacencyMap.AdjacencyMap a) where
     gmap              = AdjacencyMap.gmap
     induce            = AdjacencyMap.induce
     dfsForest         = AdjacencyMap.dfsForest
+    dfsForestFrom     = AdjacencyMap.dfsForestFrom
     topSort           = AdjacencyMap.topSort
     isTopSort         = AdjacencyMap.isTopSort
 

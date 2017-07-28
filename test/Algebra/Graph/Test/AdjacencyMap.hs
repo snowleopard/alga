@@ -47,6 +47,7 @@ testAdjacencyMap = do
     testGraphFamilies     t
     testTransformations   t
     testDfsForest         t
+    testDfsForestFrom     t
     testTopSort           t
     testIsTopSort         t
 

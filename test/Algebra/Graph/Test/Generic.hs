@@ -14,8 +14,8 @@ module Algebra.Graph.Test.Generic (
     Testsuite, testsuite, HTestsuite, hTestsuite, testShow, testFromAdjacencyList,
     testBasicPrimitives, testFoldg, testIsSubgraphOf, testSize, testProperties,
     testAdjacencyList, testPreSet, testPostSet, testPostIntSet, testGraphFamilies,
-    testTransformations, testDfsForest, testTopSort, testIsTopSort, testSplitVertex,
-    testBind, testSimplify
+    testTransformations, testDfsForest, testDfsForestFrom, testTopSort,
+    testIsTopSort, testSplitVertex, testBind, testSimplify
   ) where
 
 import Data.Foldable
@@ -878,6 +878,39 @@ testDfsForest (Testsuite prefix (%)) = do
                                                    , Node { rootLabel = 3
                                                    , subForest = [ Node { rootLabel = 4
                                                                         , subForest = [] }]}]
+
+testDfsForestFrom :: Testsuite -> IO ()
+testDfsForestFrom (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "dfsForestFrom ============"
+    test "forest (dfsForestFrom [1] $ edge 1 1)        == vertex 1" $
+          forest (dfsForestFrom [1] % edge 1 1)        == id % vertex 1
+
+    test "forest (dfsForestFrom [1] $ edge 1 2)        == edge 1 2" $
+          forest (dfsForestFrom [1] % edge 1 2)        == id % edge 1 2
+
+    test "forest (dfsForestFrom [2] $ edge 1 2)        == vertex 2" $
+          forest (dfsForestFrom [2] % edge 1 2)        == id % vertex 2
+
+    test "forest (dfsForestFrom [3] $ edge 1 2)        == empty" $
+          forest (dfsForestFrom [3] % edge 1 2)        == id % empty
+
+    test "isSubgraphOf (forest $ dfsForestFrom vs x) x == True" $ \vs x ->
+          isSubgraphOf (forest $ dfsForestFrom vs x) % x == True
+
+    test "dfsForestFrom (vertexList x) x               == dfsForest x" $ \x ->
+          dfsForestFrom (vertexList x) % x             == dfsForest % x
+
+    test "dfsForestFrom []             x               == []" $ \x ->
+          dfsForestFrom []           % x               == []
+
+    test "dfsForestFrom [1, 4] $ 3 * (1 + 4) * (1 + 5) == <correct result>" $
+          dfsForestFrom [1, 4] % (3 * (1 + 4) * (1 + 5)) == [ Node { rootLabel = 1
+                                                                   , subForest = [ Node { rootLabel = 5
+                                                                                        , subForest = [] }]}
+                                                            , Node { rootLabel = 4
+                                                                   , subForest = [] }]
+
+
 testTopSort :: Testsuite -> IO ()
 testTopSort (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "topSort ============"

@@ -566,12 +566,26 @@ induce p = mkAM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adj
 dfsForest :: Ord a => AdjacencyMap a -> Forest a
 dfsForest (AM _ (GraphKL g r _)) = fmap (fmap r) (KL.dff g)
 
--- | A spanning forest of the part of the graph reachable from the listed
--- vertices, obtained from a depth-first search of the graph starting at
--- each of the listed vertices in order.
-dfsForestFrom :: Ord a => AdjacencyMap a -> [a] -> Forest a
-dfsForestFrom (AM _ (GraphKL g r t)) vs =
-    fmap (fmap r) (KL.dfs g (mapMaybe t vs))
+-- | Compute the /depth-first search/ forest of a graph, searching from each of
+-- the given vertices in order. Note that the resulting forest does not
+-- necessarily span the whole graph, as some vertices may be unreachable.
+--
+-- @
+-- 'forest' (dfsForestFrom [1] $ 'edge' 1 1)        == 'vertex' 1
+-- 'forest' (dfsForestFrom [1] $ 'edge' 1 2)        == 'edge' 1 2
+-- 'forest' (dfsForestFrom [2] $ 'edge' 1 2)        == 'vertex' 2
+-- 'forest' (dfsForestFrom [3] $ 'edge' 1 2)        == 'empty'
+-- 'isSubgraphOf' ('forest' $ dfsForestFrom vs x) x == True
+-- dfsForestFrom ('vertexList' x) x               == 'dfsForest' x
+-- dfsForestFrom []             x               == []
+-- dfsForestFrom [1, 4] $ 3 * (1 + 4) * (1 + 5) == [ Node { rootLabel = 1
+--                                                        , subForest = [ Node { rootLabel = 5
+--                                                                             , subForest = [] }
+--                                                 , Node { rootLabel = 4
+--                                                        , subForest = [] }]
+-- @
+dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
+dfsForestFrom vs (AM _ (GraphKL g r t)) = fmap (fmap r) (KL.dfs g (mapMaybe t vs))
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.
