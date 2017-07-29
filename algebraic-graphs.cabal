@@ -82,10 +82,10 @@ library
                         RecordWildCards
     GHC-options:        -O2
                         -Wall
-                        -Wincomplete-uni-patterns
-                        -Wincomplete-record-updates
-                        -Wtabs
                         -Wcompat
+                        -Wincomplete-record-updates
+                        -Wincomplete-uni-patterns
+                        -Wredundant-constraints
 
 test-suite test-alga
     hs-source-dirs:     test
@@ -109,9 +109,10 @@ test-suite test-alga
     default-language:   Haskell2010
     GHC-options:        -O2
                         -Wall
-                        -Wincomplete-uni-patterns
+                        -Wcompat
                         -Wincomplete-record-updates
-                        -Wtabs
+                        -Wincomplete-uni-patterns
+                        -Wredundant-constraints
     default-extensions: FlexibleContexts
                         GeneralizedNewtypeDeriving
                         TypeFamilies
@@ -132,9 +133,10 @@ benchmark benchmark-alga
     default-language:   Haskell2010
     GHC-options:        -O2
                         -Wall
-                        -Wincomplete-uni-patterns
+                        -Wcompat
                         -Wincomplete-record-updates
-                        -Wtabs
+                        -Wincomplete-uni-patterns
+                        -Wredundant-constraints
     default-extensions: FlexibleContexts
                         TypeFamilies
                         ScopedTypeVariables

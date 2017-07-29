@@ -741,7 +741,7 @@ replaceVertex = H.replaceVertex
 -- mergeVertices even 1 (0 * 2)     == 1 * 1
 -- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
 -- @
-mergeVertices :: Eq a => (a -> Bool) -> a -> Graph a -> Graph a
+mergeVertices :: (a -> Bool) -> a -> Graph a -> Graph a
 mergeVertices = H.mergeVertices
 
 -- | Split a vertex into a list of vertices with the same connectivity.

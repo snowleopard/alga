@@ -271,7 +271,7 @@ hasEdge u v a = case Map.lookup u (adjacencyMap a) of
 -- vertexCount ('vertex' x) == 1
 -- vertexCount            == 'length' . 'vertexList'
 -- @
-vertexCount :: Ord a => AdjacencyMap a -> Int
+vertexCount :: AdjacencyMap a -> Int
 vertexCount = Map.size . adjacencyMap
 
 -- | The number of edges in a graph.
@@ -283,7 +283,7 @@ vertexCount = Map.size . adjacencyMap
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-edgeCount :: Ord a => AdjacencyMap a -> Int
+edgeCount :: AdjacencyMap a -> Int
 edgeCount = Map.foldr (\es r -> (Set.size es + r)) 0 . adjacencyMap
 
 -- | The sorted list of vertices of a given graph.
@@ -294,7 +294,7 @@ edgeCount = Map.foldr (\es r -> (Set.size es + r)) 0 . adjacencyMap
 -- vertexList ('vertex' x) == [x]
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
-vertexList :: Ord a => AdjacencyMap a -> [a]
+vertexList :: AdjacencyMap a -> [a]
 vertexList = Map.keys . adjacencyMap
 
 -- | The sorted list of edges of a graph.
@@ -333,7 +333,7 @@ adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
 -- vertexSet . 'vertices' == Set.'Set.fromList'
 -- vertexSet . 'clique'   == Set.'Set.fromList'
 -- @
-vertexSet :: Ord a => AdjacencyMap a -> Set a
+vertexSet :: AdjacencyMap a -> Set a
 vertexSet = Map.keysSet . adjacencyMap
 
 -- | The set of edges of a given graph.
@@ -565,7 +565,7 @@ induce p = mkAM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adj
 --                                                 , subForest = [ Node { rootLabel = 4
 --                                                                      , subForest = [] }]}]
 -- @
-dfsForest :: Ord a => AdjacencyMap a -> Forest a
+dfsForest :: AdjacencyMap a -> Forest a
 dfsForest (AM _ (GraphKL g r _)) = fmap (fmap r) (KL.dff g)
 
 -- | Compute the /depth-first search/ forest of a graph, searching from each of
@@ -588,7 +588,7 @@ dfsForest (AM _ (GraphKL g r _)) = fmap (fmap r) (KL.dff g)
 --                                                 , Node { rootLabel = 4
 --                                                        , subForest = [] }]
 -- @
-dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
+dfsForestFrom :: [a] -> AdjacencyMap a -> Forest a
 dfsForestFrom vs (AM _ (GraphKL g r t)) = fmap (fmap r) (KL.dfs g (mapMaybe t vs))
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph

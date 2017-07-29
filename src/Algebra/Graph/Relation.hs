@@ -261,7 +261,7 @@ hasEdge x y = Set.member (x, y) . relation
 -- vertexCount ('vertex' x) == 1
 -- vertexCount            == 'length' . 'vertexList'
 -- @
-vertexCount :: Ord a => Relation a -> Int
+vertexCount :: Relation a -> Int
 vertexCount = Set.size . domain
 
 -- | The number of edges in a graph.
@@ -273,7 +273,7 @@ vertexCount = Set.size . domain
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-edgeCount :: Ord a => Relation a -> Int
+edgeCount :: Relation a -> Int
 edgeCount = Set.size . relation
 
 -- | The sorted list of vertices of a given graph.
@@ -284,7 +284,7 @@ edgeCount = Set.size . relation
 -- vertexList ('vertex' x) == [x]
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
-vertexList :: Ord a => Relation a -> [a]
+vertexList :: Relation a -> [a]
 vertexList = Set.toAscList . domain
 
 -- | The sorted list of edges of a graph.
@@ -298,7 +298,7 @@ vertexList = Set.toAscList . domain
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
-edgeList :: Ord a => Relation a -> [(a, a)]
+edgeList :: Relation a -> [(a, a)]
 edgeList = Set.toAscList . relation
 
 -- | The set of vertices of a given graph.
@@ -310,7 +310,7 @@ edgeList = Set.toAscList . relation
 -- vertexSet . 'vertices' == Set.'Set.fromList'
 -- vertexSet . 'clique'   == Set.'Set.fromList'
 -- @
-vertexSet :: Ord a => Relation a -> Set.Set a
+vertexSet :: Relation a -> Set.Set a
 vertexSet = domain
 
 -- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
@@ -335,7 +335,7 @@ vertexIntSet = IntSet.fromAscList . vertexList
 -- edgeSet ('edge' x y) == Set.'Set.singleton' (x,y)
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
-edgeSet :: Ord a => Relation a -> Set.Set (a, a)
+edgeSet :: Relation a -> Set.Set (a, a)
 edgeSet = relation
 
 -- | The /preset/ of an element @x@ is the set of elements that are related to
@@ -533,7 +533,7 @@ transpose (Relation d r) = Relation d (Set.map swap r)
 -- gmap id           == id
 -- gmap f . gmap g   == gmap (f . g)
 -- @
-gmap :: (Ord a, Ord b) => (a -> b) -> Relation a -> Relation b
+gmap :: Ord b => (a -> b) -> Relation a -> Relation b
 gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) r)
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
@@ -548,7 +548,7 @@ gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) 
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
-induce :: Ord a => (a -> Bool) -> Relation a -> Relation a
+induce :: (a -> Bool) -> Relation a -> Relation a
 induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
   where
     pp (x, y) = p x && p y
