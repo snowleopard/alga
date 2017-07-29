@@ -294,6 +294,7 @@ instance GraphAPI IntAdjacencyMap.IntAdjacencyMap where
     gmap              = IntAdjacencyMap.gmap
     induce            = IntAdjacencyMap.induce
     dfsForest         = IntAdjacencyMap.dfsForest
+    dfsForestFrom     = IntAdjacencyMap.dfsForestFrom
     topSort           = IntAdjacencyMap.topSort
     isTopSort         = IntAdjacencyMap.isTopSort
 

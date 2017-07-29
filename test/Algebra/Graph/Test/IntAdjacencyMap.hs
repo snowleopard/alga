@@ -45,17 +45,15 @@ testIntAdjacencyMap = do
     testGraphFamilies     t
     testTransformations   t
     testDfsForest         t
+    testDfsForestFrom     t
     testTopSort           t
     testIsTopSort         t
 
-    putStrLn "\n============ IntAdjacencyMap.GraphKL ============"
-    test "map (getVertex h) (vertices $ getGraph h) == IntSet.toAscList (vertexIntSet g)"
-      $ \g -> let h = graphKL g in
-        map (getVertex h) (KL.vertices $ getGraph h) == IntSet.toAscList (vertexIntSet g)
+    putStrLn "\n============ IntAdjacencyMap.Internal.GraphKL ============"
+    test "map (fromVertexKL h) (vertices $ toGraphKL h) == IntSet.toAscList (vertexIntSet g)"
+      $ \g -> let h = mkGraphKL (adjacencyMap g) in
+        map (fromVertexKL h) (KL.vertices $ toGraphKL h) == IntSet.toAscList (vertexIntSet g)
 
-    test "map (\\(x, y) -> (getVertex h x, getVertex h y)) (edges $ getGraph h) == edgeList g"
-      $ \g -> let h = graphKL g in
-        map (\(x, y) -> (getVertex h x, getVertex h y)) (KL.edges $ getGraph h) == edgeList g
-
-    test "fromGraphKL . graphKL == id" $ \x ->
-        (fromGraphKL . graphKL) x == x
+    test "map (\\(x, y) -> (fromVertexKL h x, fromVertexKL h y)) (edges $ toGraphKL h) == edgeList g"
+      $ \g -> let h = mkGraphKL (adjacencyMap g) in
+        map (\(x, y) -> (fromVertexKL h x, fromVertexKL h y)) (KL.edges $ toGraphKL h) == edgeList g

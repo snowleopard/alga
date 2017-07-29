@@ -42,9 +42,9 @@ module Algebra.Graph.AdjacencyMap (
   ) where
 
 import Data.Foldable (toList)
+import Data.Maybe
 import Data.Set (Set)
 import Data.Tree
-import Data.Maybe
 
 import Algebra.Graph.AdjacencyMap.Internal
 
