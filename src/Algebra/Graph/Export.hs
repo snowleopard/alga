@@ -26,7 +26,7 @@ module Algebra.Graph.Export (
     export
   ) where
 
-import Data.Monoid
+import Data.Semigroup
 import Data.String hiding (unlines)
 import Prelude hiding (unlines)
 
@@ -38,7 +38,7 @@ import Algebra.Graph.Class (ToGraph (..))
 -- empty document and two documents can be concatenated with 'mappend' (or
 -- operator 'Data.Monoid.<>'). Note that most functions on 'Doc' @s@ require
 -- that the underlying type @s@ is also a 'Monoid'.
-newtype Doc s = Doc (Endo [s]) deriving Monoid
+newtype Doc s = Doc (Endo [s]) deriving (Monoid, Semigroup)
 
 instance (Monoid s, Show s) => Show (Doc s) where
     show = show . render

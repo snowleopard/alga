@@ -80,7 +80,12 @@ library
                         DeriveTraversable
                         OverloadedStrings
                         RecordWildCards
-    GHC-options:        -Wall -fwarn-tabs
+    GHC-options:        -O2
+                        -Wall
+                        -Wincomplete-uni-patterns
+                        -Wincomplete-record-updates
+                        -Wtabs
+                        -Wcompat
 
 test-suite test-alga
     hs-source-dirs:     test
@@ -102,7 +107,11 @@ test-suite test-alga
                         extra      >= 1.5,
                         QuickCheck >= 2.9
     default-language:   Haskell2010
-    GHC-options:        -O -Wall -fwarn-tabs
+    GHC-options:        -O2
+                        -Wall
+                        -Wincomplete-uni-patterns
+                        -Wincomplete-record-updates
+                        -Wtabs
     default-extensions: FlexibleContexts
                         GeneralizedNewtypeDeriving
                         TypeFamilies
@@ -121,7 +130,11 @@ benchmark benchmark-alga
                         containers >= 0.5,
                         criterion  >= 1.1
     default-language:   Haskell2010
-    GHC-options:        -O2 -Wall -fwarn-tabs
+    GHC-options:        -O2
+                        -Wall
+                        -Wincomplete-uni-patterns
+                        -Wincomplete-record-updates
+                        -Wtabs
     default-extensions: FlexibleContexts
                         TypeFamilies
                         ScopedTypeVariables
