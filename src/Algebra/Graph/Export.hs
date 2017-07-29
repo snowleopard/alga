@@ -20,7 +20,7 @@ module Algebra.Graph.Export (
     Doc, literal, render,
 
     -- * Common combinators for text documents
-    brackets, doubleQuotes, indent, unlines,
+    (<+>), brackets, doubleQuotes, indent, unlines,
 
     -- * Generic graph export
     export
@@ -78,6 +78,22 @@ literal = Doc . Endo . (:)
 -- @
 render :: Monoid s => Doc s -> s
 render (Doc x) = mconcat $ appEndo x []
+
+-- | Concatenate two documents, separated by a single space, unless one of the
+-- documents is empty. The operator \<+\> is associative with identity 'mempty'.
+--
+-- @
+-- x \<+\> 'mempty'         == x
+-- 'mempty' \<+\> x         == x
+-- x \<+\> (y \<+\> z)      == (x \<+\> y) \<+\> z
+-- "name" \<+\> "surname" == "name surname"
+-- @
+(<+>) :: (Eq s, IsString s, Monoid s) => Doc s -> Doc s -> Doc s
+x <+> y | x == mempty = y
+        | y == mempty = x
+        | otherwise   = x <> " " <> y
+
+infixl 7 <+>
 
 -- | Wrap a document in square brackets.
 --

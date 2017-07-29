@@ -20,15 +20,16 @@ import Test.QuickCheck
 
 import Algebra.Graph
 import Algebra.Graph.AdjacencyMap.Internal
+import Algebra.Graph.Export
 import Algebra.Graph.Fold (Fold)
 import Algebra.Graph.IntAdjacencyMap.Internal
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived
 
-import qualified Algebra.Graph.Class             as C
-import qualified Algebra.Graph.AdjacencyMap      as AdjacencyMap
-import qualified Algebra.Graph.IntAdjacencyMap   as IntAdjacencyMap
-import qualified Algebra.Graph.Relation          as Relation
+import qualified Algebra.Graph.Class           as C
+import qualified Algebra.Graph.AdjacencyMap    as AdjacencyMap
+import qualified Algebra.Graph.IntAdjacencyMap as IntAdjacencyMap
+import qualified Algebra.Graph.Relation        as Relation
 
 -- | Generate an arbitrary 'Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
@@ -102,3 +103,6 @@ instance Arbitrary a => Arbitrary (Tree a) where
             root     <- arbitrary
             children <- replicateM subTrees (go subSize)
             return $ Node root children
+
+instance Arbitrary s => Arbitrary (Doc s) where
+    arbitrary = (mconcat . map literal) <$> arbitrary

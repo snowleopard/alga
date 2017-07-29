@@ -86,9 +86,9 @@ defaultStyleViaShow = defaultStyle (fromString . show)
 --     , 'graphAttributes'         = ["label" := \"Example\", "labelloc" := "top"]
 --     , 'defaultVertexAttributes' = ["shape" := "circle"]
 --     , 'defaultEdgeAttributes'   = 'mempty'
---     , 'vertexName'              = \x   -> "v" ++ 'show' x
---     , 'vertexAttributes'        = \x   -> ["color" := "blue"   | 'odd' x      ]
---     , 'edgeAttributes'          = \x y -> ["style" := "dashed" | 'odd' (x * y)] }
+--     , 'vertexName'              = \\x   -> "v" ++ 'show' x
+--     , 'vertexAttributes'        = \\x   -> ["color" := "blue"   | 'odd' x      ]
+--     , 'edgeAttributes'          = \\x y -> ["style" := "dashed" | 'odd' (x * y)] }
 --
 -- > putStrLn $ export style (1 * 2 + 3 * 4 * 5 :: 'Graph' Int)
 --
@@ -112,26 +112,26 @@ defaultStyleViaShow = defaultStyle (fromString . show)
 export :: (IsString s, Monoid s, Eq s, Ord a, ToGraph g, ToVertex g ~ a) => Style a s -> g -> s
 export Style {..} g = render $ header <> body <> "}\n"
   where
-    header    = "digraph " <> literal graphName <> "\n{\n"
+    header    = "digraph" <+> literal graphName <> "\n{\n"
              <> if preamble == mempty then mempty else (literal preamble <> "\n")
-    with x as = if null as            then mempty else line (x <> attributes as)
+    with x as = if null as            then mempty else line (x <+> attributes as)
     line s    = indent 2 s <> "\n"
     body      = ("graph" `with` graphAttributes)
              <> ("node"  `with` defaultVertexAttributes)
              <> ("edge"  `with` defaultEdgeAttributes)
              <> E.export vDoc eDoc g
     label     = doubleQuotes . literal . vertexName
-    vDoc x    = line $ label x <> attributes (vertexAttributes x)
-    eDoc x y  = line $ label x <> " -> " <> label y <> attributes (edgeAttributes x y)
+    vDoc x    = line $ label x <+>                      attributes (vertexAttributes x)
+    eDoc x y  = line $ label x <> " -> " <> label y <+> attributes (edgeAttributes x y)
 
 -- A list of attributes formatted as a DOT document.
 -- Example: @attributes ["label" := "A label", "shape" := "box"]@
 -- corresponds to document: @ [label="A label" shape="box"]@.
 attributes :: IsString s => [Attribute s] -> Doc s
 attributes [] = mempty
-attributes as = indent 1 . brackets . mconcat . intersperse " " $ map dot as
+attributes as = brackets . mconcat . intersperse " " $ map dot as
   where
-    dot (k := v) = mconcat [literal k <> "=" <> doubleQuotes (literal v)]
+    dot (k := v) = literal k <> "=" <> doubleQuotes (literal v)
 
 -- | Export a graph whose vertices are represented simply by their names.
 --
