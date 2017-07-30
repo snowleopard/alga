@@ -81,7 +81,7 @@ library
                         DeriveTraversable
                         OverloadedStrings
                         RecordWildCards
-    GHC-options:        -O2
+    GHC-options:        -O
                         -Wall
                         -Wcompat
                         -Wincomplete-record-updates
