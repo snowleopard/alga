@@ -38,7 +38,7 @@ module Algebra.Graph.AdjacencyMap (
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
 
     -- * Algorithms
-    dfsForest, dfsForestFrom, topSort, isTopSort, scc
+    dfsForest, dfsForestFrom, dfs, topSort, isTopSort, scc
   ) where
 
 import Data.Foldable (toList)
@@ -590,6 +590,23 @@ dfsForest (AM _ (GraphKL g r _)) = fmap (fmap r) (KL.dff g)
 -- @
 dfsForestFrom :: [a] -> AdjacencyMap a -> Forest a
 dfsForestFrom vs (AM _ (GraphKL g r t)) = fmap (fmap r) (KL.dfs g (mapMaybe t vs))
+
+-- | Compute the list of vertices visited by the /depth-first search/ in a graph,
+-- when searching from each of the given vertices in order.
+--
+-- @
+-- dfs [1]    $ 'edge' 1 1                == [1]
+-- dfs [1]    $ 'edge' 1 2                == [1, 2]
+-- dfs [2]    $ 'edge' 1 2                == [2]
+-- dfs [3]    $ 'edge' 1 2                == []
+-- dfs [1, 2] $ 'edge' 1 2                == [1, 2]
+-- dfs [2, 1] $ 'edge' 1 2                == [2, 1]
+-- dfs []     $ x                       == []
+-- dfs [1, 4] $ 3 * (1 + 4) * (1 + 5)   == [1, 5, 4]
+-- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
+-- @
+dfs :: [a] -> AdjacencyMap a -> [a]
+dfs vs = concatMap flatten . dfsForestFrom vs
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.

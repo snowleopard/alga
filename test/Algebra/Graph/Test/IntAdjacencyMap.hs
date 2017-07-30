@@ -46,6 +46,7 @@ testIntAdjacencyMap = do
     testTransformations   t
     testDfsForest         t
     testDfsForestFrom     t
+    testDfs               t
     testTopSort           t
     testIsTopSort         t
 

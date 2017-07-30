@@ -14,7 +14,7 @@ module Algebra.Graph.Test.Generic (
     Testsuite, testsuite, HTestsuite, hTestsuite, testShow, testFromAdjacencyList,
     testBasicPrimitives, testFoldg, testIsSubgraphOf, testSize, testProperties,
     testAdjacencyList, testPreSet, testPostSet, testPostIntSet, testGraphFamilies,
-    testTransformations, testDfsForest, testDfsForestFrom, testTopSort,
+    testTransformations, testDfsForest, testDfsForestFrom, testDfs, testTopSort,
     testIsTopSort, testSplitVertex, testBind, testSimplify
   ) where
 
@@ -919,6 +919,35 @@ testDfsForestFrom (Testsuite prefix (%)) = do
                                                             , Node { rootLabel = 4
                                                                    , subForest = [] }]
 
+testDfs :: Testsuite -> IO ()
+testDfs (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "dfs ============"
+    test "dfs [1]    $ edge 1 1                == [1]" $
+          dfs [1]    % edge 1 1                == [1]
+
+    test "dfs [1]    $ edge 1 2                == [1, 2]" $
+          dfs [1]    % edge 1 2                == [1, 2]
+
+    test "dfs [2]    $ edge 1 2                == [2]" $
+          dfs [2]    % edge 1 2                == [2]
+
+    test "dfs [3]    $ edge 1 2                == []" $
+          dfs [3]    % edge 1 2                == []
+
+    test "dfs [1, 2] $ edge 1 2                == [1, 2]" $
+          dfs [1, 2] % edge 1 2                == [1, 2]
+
+    test "dfs [2, 1] $ edge 1 2                == [2, 1]" $
+          dfs [2, 1] % edge 1 2                == [2, 1]
+
+    test "dfs []     $ x                       == []" $ \x ->
+          dfs []     % x                       == []
+
+    test "dfs [1, 4] $ 3 * (1 + 4) * (1 + 5)   == [1, 5, 4]" $
+          dfs [1, 4] % (3 * (1 + 4) * (1 + 5))   == [1, 5, 4]
+
+    test "isSubgraphOf (vertices $ dfs vs x) x == True" $ \vs x ->
+          isSubgraphOf (vertices $ dfs vs x) % x == True
 
 testTopSort :: Testsuite -> IO ()
 testTopSort (Testsuite prefix (%)) = do
