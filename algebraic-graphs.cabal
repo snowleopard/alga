@@ -41,6 +41,7 @@ description:
     <https://github.com/snowleopard/alga/issues discussions on the library API>.
 
 extra-doc-files:
+    CHANGES.md
     README.md
 
 source-repository head
