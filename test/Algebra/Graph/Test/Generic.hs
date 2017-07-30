@@ -263,7 +263,7 @@ testOverlays (Testsuite prefix (%)) = do
     test "overlays [x,y]     == overlay x y" $ \x y ->
           overlays [x,y]     == id % overlay x y
 
-    test "isEmpty . overlays == all isEmpty" $ \xs ->
+    test "isEmpty . overlays == all isEmpty" $ mapSize (min 10) $ \xs ->
           isEmpty % overlays xs == all isEmpty xs
 
 testConnects :: Testsuite -> IO ()
@@ -278,7 +278,7 @@ testConnects (Testsuite prefix (%)) = do
     test "connects [x,y]     == connect x y" $ \x y ->
           connects [x,y]     == id % connect x y
 
-    test "isEmpty . connects == all isEmpty" $ \xs ->
+    test "isEmpty . connects == all isEmpty" $ mapSize (min 10) $ \xs ->
           isEmpty % connects xs == all isEmpty xs
 
 testGraph :: Testsuite -> IO ()
