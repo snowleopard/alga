@@ -483,7 +483,7 @@ torus xs ys = circuit xs `box` circuit ys
 -- | Construct a /De Bruijn graph/ of a given non-negative dimension using symbols
 -- from a given alphabet.
 -- Complexity: /O(A^(D + 1))/ time, memory and size, where /A/ is the size of the
--- alphabet and /D/ is the dimention of the graph.
+-- alphabet and /D/ is the dimension of the graph.
 --
 -- @
 --           deBruijn 0 xs               == 'edge' [] []
