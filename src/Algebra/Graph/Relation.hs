@@ -338,7 +338,7 @@ vertexIntSet = IntSet.fromAscList . vertexList
 edgeSet :: Relation a -> Set.Set (a, a)
 edgeSet = relation
 
--- | The /preSet/ of an element @x@ is the set of elements that are related to
+-- | The /preset/ (here 'preSet') of an element @x@ is the set of elements that are related to
 -- it on the /left/, i.e. @preSet x == { a | aRx }@. In the context of directed
 -- graphs, this corresponds to the set of /direct predecessors/ of vertex @x@.
 -- Complexity: /O(n + m)/ time and /O(n)/ memory.
@@ -352,7 +352,7 @@ edgeSet = relation
 preSet :: Ord a => a -> Relation a -> Set.Set a
 preSet x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
 
--- | The /postSet/ of an element @x@ is the set of elements that are related to
+-- | The /postset/ (here 'postSet') of an element @x@ is the set of elements that are related to
 -- it on the /right/, i.e. @postSet x == { a | xRa }@. In the context of directed
 -- graphs, this corresponds to the set of /direct successors/ of vertex @x@.
 -- Complexity: /O(n + m)/ time and /O(n)/ memory.
