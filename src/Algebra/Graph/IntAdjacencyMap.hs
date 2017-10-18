@@ -351,7 +351,7 @@ edgeSet = IntMap.foldrWithKey combine Set.empty . adjacencyMap
   where
     combine u es = Set.union (Set.fromAscList [ (u, v) | v <- IntSet.toAscList es ])
 
--- | The /postIntSet/ of a vertex is the set of its /direct successors/.
+-- | The /postset/ (here 'postIntSet') of a vertex is the set of its /direct successors/.
 --
 -- @
 -- postIntSet x 'empty'      == IntSet.'IntSet.empty'
