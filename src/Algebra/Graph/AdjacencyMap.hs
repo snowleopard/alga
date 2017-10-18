@@ -348,7 +348,7 @@ vertexSet = Map.keysSet . adjacencyMap
 edgeSet :: Ord a => AdjacencyMap a -> Set (a, a)
 edgeSet = Map.foldrWithKey (\v es -> Set.union (Set.mapMonotonic (v,) es)) Set.empty . adjacencyMap
 
--- | The /postSet/ of a vertex is the set of its /direct successors/.
+-- | The /postset/ (here 'postSet') of a vertex is the set of its /direct successors/.
 --
 -- @
 -- postSet x 'empty'      == Set.'Set.empty'
