@@ -115,7 +115,7 @@ test-suite test-alga
     build-depends:      algebraic-graphs,
                         base,
                         base-compat,
-                        base-orphans >= 0.6 && <0.7,
+                        base-orphans >= 0.5.4 && <0.7,
                         containers,
                         extra      >= 1.5,
                         QuickCheck >= 2.9
