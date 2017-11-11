@@ -50,6 +50,9 @@ module Algebra.Graph.Class (
     ToGraph (..)
   ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Data.Tree
 
 {-|

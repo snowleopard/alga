@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.HigherKinded.Class
@@ -58,9 +59,12 @@ module Algebra.Graph.HigherKinded.Class (
 
   ) where
 
-import Control.Applicative (empty, (<|>))
-import Control.Monad
-import Data.Foldable
+import Prelude ()
+import Prelude.Compat
+
+import Control.Applicative (Alternative(empty, (<|>)))
+import Control.Monad.Compat (MonadPlus, msum, mfilter)
+import Data.Foldable (toList)
 import Data.Tree
 
 import qualified Data.IntSet as IntSet
@@ -125,7 +129,11 @@ denote the number of vertices in the graph, /m/ will denote the number of
 edges in the graph, and /s/ will denote the /size/ of the corresponding
 'Graph' expression.
 -}
-class (Traversable g, MonadPlus g) => Graph g where
+class (Traversable g,
+#if !MIN_VERSION_base(4,8,0)
+  Alternative g,
+#endif
+  MonadPlus g) => Graph g where
     -- | Connect two graphs.
     connect :: g a -> g a -> g a
 
@@ -500,7 +508,7 @@ deBruijn :: Graph g => Int -> [a] -> g [a]
 deBruijn 0   _        = edge [] []
 deBruijn len alphabet = skeleton >>= expand
   where
-    overlaps = mapM (const alphabet) [2..len]
+    overlaps = traverse (const alphabet) [2..len]
     skeleton = edges    [        (Left s, Right s)   | s <- overlaps ]
     expand v = vertices [ either ([a] ++) (++ [a]) v | a <- alphabet ]
 

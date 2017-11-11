@@ -48,9 +48,12 @@ module Algebra.Graph.Fold (
     box
   ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Control.Applicative hiding (empty)
-import Control.Monad
-import Data.Foldable
+import Control.Monad.Compat (MonadPlus (..), ap)
+import Data.Foldable (toList)
 
 import qualified Algebra.Graph.AdjacencyMap       as AM
 import qualified Algebra.Graph.Class              as C

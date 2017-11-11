@@ -1,6 +1,9 @@
+import Prelude ()
+import Prelude.Compat
+
 import Criterion.Main
 import Data.Char
-import Data.Foldable
+import Data.Foldable (toList)
 
 import Algebra.Graph.Class
 import Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap)

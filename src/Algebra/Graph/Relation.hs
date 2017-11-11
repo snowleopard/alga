@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Relation
@@ -38,6 +39,9 @@ module Algebra.Graph.Relation (
     -- * Operations on binary relations
     compose, reflexiveClosure, symmetricClosure, transitiveClosure, preorderClosure
   ) where
+
+import Prelude ()
+import Prelude.Compat
 
 import Data.Tuple
 

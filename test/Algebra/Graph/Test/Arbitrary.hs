@@ -14,6 +14,9 @@ module Algebra.Graph.Test.Arbitrary (
     arbitraryGraph, arbitraryRelation, arbitraryAdjacencyMap, arbitraryIntAdjacencyMap
   ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Control.Monad
 import Data.Tree
 import Test.QuickCheck

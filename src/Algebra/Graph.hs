@@ -46,9 +46,12 @@ module Algebra.Graph (
     box
   ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Control.Applicative (Alternative, (<|>))
 import Control.DeepSeq (NFData (..))
-import Control.Monad
+import Control.Monad.Compat
 
 import qualified Algebra.Graph.AdjacencyMap       as AM
 import qualified Algebra.Graph.Class              as C
