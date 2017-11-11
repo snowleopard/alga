@@ -1,5 +1,9 @@
 # Change log
 
+## next
+
+* add `NFData Graph` instance
+
 ## 0.0.5
 
 * Add `dfs`.

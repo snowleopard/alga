@@ -47,6 +47,7 @@ module Algebra.Graph (
   ) where
 
 import Control.Applicative (Alternative, (<|>))
+import Control.DeepSeq (NFData (..))
 import Control.Monad
 
 import qualified Algebra.Graph.AdjacencyMap       as AM
@@ -137,6 +138,12 @@ data Graph a = Empty
              | Overlay (Graph a) (Graph a)
              | Connect (Graph a) (Graph a)
              deriving (Foldable, Functor, Show, Traversable)
+
+instance NFData a => NFData (Graph a) where
+    rnf Empty         = ()
+    rnf (Vertex a)    = rnf a
+    rnf (Overlay x y) = rnf x `seq` rnf y
+    rnf (Connect x y) = rnf x `seq` rnf y
 
 instance C.Graph (Graph a) where
     type Vertex (Graph a) = a
