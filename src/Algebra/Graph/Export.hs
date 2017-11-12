@@ -155,6 +155,6 @@ unlines (x:xs) = x <> "\n" <> unlines xs
 export :: (Ord a, ToGraph g, ToVertex g ~ a) => (a -> Doc s) -> (a -> a -> Doc s) -> g -> Doc s
 export vs es g = vDoc <> eDoc
   where
-    vDoc   = mconcat $ map (vs        ) (vertexList adjMap)
+    vDoc   = mconcat $ map  vs          (vertexList adjMap)
     eDoc   = mconcat $ map (uncurry es) (edgeList   adjMap)
     adjMap = toGraph g

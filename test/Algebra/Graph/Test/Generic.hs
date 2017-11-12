@@ -151,46 +151,46 @@ testEdge :: Testsuite -> IO ()
 testEdge (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "edge ============"
     test "edge x y               == connect (vertex x) (vertex y)" $ \x y ->
-          edge x y               == connect (vertex x) % (vertex y)
+          edge x y               == connect (vertex x) % vertex y
 
     test "hasEdge x y (edge x y) == True" $ \x y ->
-          hasEdge x y % (edge x y) == True
+          hasEdge x y % edge x y == True
 
     test "edgeCount   (edge x y) == 1" $ \x y ->
-          edgeCount % (edge x y) == 1
+          edgeCount %  edge x y  == 1
 
     test "vertexCount (edge 1 1) == 1" $
-          vertexCount % (edge 1 1) == 1
+          vertexCount % edge 1 1 == 1
 
     test "vertexCount (edge 1 2) == 2" $
-          vertexCount % (edge 1 2) == 2
+          vertexCount % edge 1 2 == 2
 
 testOverlay :: Testsuite -> IO ()
 testOverlay (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "overlay ============"
     test "isEmpty     (overlay x y) == isEmpty   x   && isEmpty   y" $ \x y ->
-          isEmpty   % (overlay x y) == (isEmpty   x   && isEmpty   y)
+          isEmpty   %  overlay x y  == (isEmpty  x   && isEmpty   y)
 
     test "hasVertex z (overlay x y) == hasVertex z x || hasVertex z y" $ \x y z ->
-          hasVertex z % (overlay x y) == (hasVertex z x || hasVertex z y)
+          hasVertex z % overlay x y == (hasVertex z x || hasVertex z y)
 
     test "vertexCount (overlay x y) >= vertexCount x" $ \x y ->
-          vertexCount % (overlay x y) >= vertexCount x
+          vertexCount % overlay x y >= vertexCount x
 
     test "vertexCount (overlay x y) <= vertexCount x + vertexCount y" $ \x y ->
-          vertexCount % (overlay x y) <= vertexCount x + vertexCount y
+          vertexCount % overlay x y <= vertexCount x + vertexCount y
 
     test "edgeCount   (overlay x y) >= edgeCount x" $ \x y ->
-          edgeCount % (overlay x y) >= edgeCount x
+          edgeCount %  overlay x y  >= edgeCount x
 
     test "edgeCount   (overlay x y) <= edgeCount x   + edgeCount y" $ \x y ->
-          edgeCount % (overlay x y) <= edgeCount x   + edgeCount y
+          edgeCount %  overlay x y  <= edgeCount x   + edgeCount y
 
     test "vertexCount (overlay 1 2) == 2" $
-          vertexCount % (overlay 1 2) == 2
+          vertexCount % overlay 1 2 == 2
 
     test "edgeCount   (overlay 1 2) == 0" $
-          edgeCount % (overlay 1 2) == 0
+          edgeCount %  overlay 1 2  == 0
 
 testConnect :: Testsuite -> IO ()
 testConnect (Testsuite prefix (%)) = do
@@ -629,7 +629,7 @@ testClique (Testsuite prefix (%)) = do
           clique [x,y,z]    == id % edges [(x,y), (x,z), (y,z)]
 
     test "clique (xs ++ ys) == connect (clique xs) (clique ys)" $ \xs ys ->
-          clique (xs ++ ys) == connect (clique xs) % (clique ys)
+          clique (xs ++ ys) == connect (clique xs) % clique ys
 
 testBiclique :: Testsuite -> IO ()
 testBiclique (Testsuite prefix (%)) = do
@@ -643,11 +643,11 @@ testBiclique (Testsuite prefix (%)) = do
     test "biclique []      [y]     == vertex y" $ \y ->
           biclique []      [y]     == id % vertex y
 
-    test "biclique [x1,x2] [y1,y2] == edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]" $ \(x1) x2 y1 y2 ->
+    test "biclique [x1,x2] [y1,y2] == edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]" $ \x1 x2 y1 y2 ->
           biclique [x1,x2] [y1,y2] == id % edges [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
 
     test "biclique xs      ys      == connect (vertices xs) (vertices ys)" $ \xs ys ->
-          biclique xs      ys      == connect (vertices xs) % (vertices ys)
+          biclique xs      ys      == connect (vertices xs) % vertices ys
 
 testStar :: Testsuite -> IO ()
 testStar (Testsuite prefix (%)) = do
@@ -689,7 +689,7 @@ testForest (Testsuite prefix (%)) = do
           forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == id % edges [(1,2), (1,3), (4,5)]
 
     test "forest                                                     == overlays . map tree" $ \x ->
-         (forest x)                                                  == id % (overlays . map tree) x
+          forest x                                                   == id % (overlays . map tree) x
 
 testRemoveVertex :: Testsuite -> IO ()
 testRemoveVertex (Testsuite prefix (%)) = do
@@ -752,25 +752,25 @@ testTranspose (Testsuite prefix (%)) = do
           transpose % empty     == empty
 
     test "transpose (vertex x)  == vertex x" $ \x ->
-          transpose % (vertex x) == vertex x
+          transpose % vertex x  == vertex x
 
     test "transpose (edge x y)  == edge y x" $ \x y ->
-          transpose % (edge x y) == edge y x
+          transpose % edge x y  == edge y x
 
     test "transpose . transpose == id" $ \x ->
          (transpose . transpose) % x == x
 
     test "transpose . path      == path    . reverse" $ \xs ->
-          transpose % (path xs) == (path . reverse) xs
+          transpose % path xs  == (path . reverse) xs
 
     test "transpose . circuit   == circuit . reverse" $ \xs ->
-          transpose % (circuit xs) == (circuit . reverse) xs
+          transpose % circuit xs == (circuit . reverse) xs
 
     test "transpose . clique    == clique  . reverse" $ \xs ->
-          transpose % (clique xs) == (clique . reverse) xs
+          transpose % clique xs == (clique . reverse) xs
 
     test "edgeList . transpose  == sort . map swap . edgeList" $ \x ->
-          edgeList % (transpose x) == (sort . map swap . edgeList) x
+          edgeList % transpose x == (sort . map swap . edgeList) x
 
 testGmap :: Testsuite -> IO ()
 testGmap (Testsuite prefix (%)) = do
@@ -833,7 +833,7 @@ testBind (Testsuite prefix (%)) = do
           bind (vertex x) f    == id % f x
 
     test "bind (edge x y) f    == connect (f x) (f y)" $ \(apply -> f) x y ->
-          bind (edge x y) f    == connect (f x) % (f y)
+          bind (edge x y) f    == connect (f x) % f y
 
     test "bind (vertices xs) f == overlays (map f xs)" $ mapSize (min 10) $ \xs (apply -> f) ->
           bind (vertices xs) f == id % overlays (map f xs)
@@ -873,10 +873,10 @@ testDfsForest (Testsuite prefix (%)) = do
           isSubgraphOf (forest $ dfsForest x) % x == True
 
     test "dfsForest . forest . dfsForest        == dfsForest" $ \x ->
-          dfsForest % (forest $ dfsForest x)    == dfsForest % x
+          dfsForest % forest (dfsForest x)      == dfsForest % x
 
     test "dfsForest (vertices vs)               == map (\\v -> Node v []) (nub $ sort vs)" $ \vs ->
-          dfsForest % (vertices vs)             == map (\v -> Node v []) (nub $ sort vs)
+          dfsForest % vertices vs               == map (\v -> Node v []) (nub $ sort vs)
 
     test "dfsForest $ 3 * (1 + 4) * (1 + 5)     == <correct result>" $
           dfsForest % (3 * (1 + 4) * (1 + 5))   == [ Node { rootLabel = 1
@@ -911,7 +911,7 @@ testDfsForestFrom (Testsuite prefix (%)) = do
           dfsForestFrom (vertexList x) % x             == dfsForest % x
 
     test "dfsForestFrom vs             (vertices vs)   == map (\\v -> Node v []) (nub vs)" $ \vs ->
-          dfsForestFrom vs           % (vertices vs)   == map (\v -> Node v []) (nub vs)
+          dfsForestFrom vs           %  vertices vs    == map (\v -> Node v []) (nub vs)
 
     test "dfsForestFrom []             x               == []" $ \x ->
           dfsForestFrom []           % x               == []

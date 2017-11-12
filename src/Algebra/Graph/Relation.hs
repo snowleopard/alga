@@ -202,7 +202,7 @@ graph = C.graph
 fromAdjacencyList :: Ord a => [(a, [a])] -> Relation a
 fromAdjacencyList as = Relation (Set.fromList vs) (Set.fromList es)
   where
-    vs = concatMap (\(x, ys) -> x : ys) as
+    vs = concatMap (uncurry (:)) as
     es = [ (x, y) | (x, ys) <- as, y <- ys ]
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
@@ -596,7 +596,7 @@ reflexiveClosure (Relation d r) =
 -- symmetricClosure ('edge' x y) == 'edges' [(x, y), (y, x)]
 -- @
 symmetricClosure :: Ord a => Relation a -> Relation a
-symmetricClosure (Relation d r) = Relation d $ r `Set.union` (Set.map swap r)
+symmetricClosure (Relation d r) = Relation d $ r `Set.union` Set.map swap r
 
 -- | Compute the /transitive closure/ of a 'Relation'.
 -- Complexity: /O(n * m * log(n) * log(m))/ time.

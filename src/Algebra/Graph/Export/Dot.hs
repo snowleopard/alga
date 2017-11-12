@@ -113,7 +113,7 @@ export :: (IsString s, Monoid s, Eq s, Ord a, ToGraph g, ToVertex g ~ a) => Styl
 export Style {..} g = render $ header <> body <> "}\n"
   where
     header    = "digraph" <+> literal graphName <> "\n{\n"
-             <> if preamble == mempty then mempty else (literal preamble <> "\n")
+             <> if preamble == mempty then mempty else literal preamble <> "\n"
     with x as = if null as            then mempty else line (x <+> attributes as)
     line s    = indent 2 s <> "\n"
     body      = ("graph" `with` graphAttributes)
