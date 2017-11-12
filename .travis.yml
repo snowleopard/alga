@@ -49,6 +49,9 @@ matrix:
       before_install:
         - brew update
         - brew install ghc cabal-install
+        - HC=ghc
+        - HCPKG=ghc-pkg
+        - unset CC
 
 before_install:
   - HC=${CC}
