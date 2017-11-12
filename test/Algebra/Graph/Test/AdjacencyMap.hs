@@ -29,7 +29,7 @@ type AI = AdjacencyMap Int
 testAdjacencyMap :: IO ()
 testAdjacencyMap = do
     putStrLn "\n============ AdjacencyMap ============"
-    test "Axioms of graphs" $ (axioms :: GraphTestsuite AI)
+    test "Axioms of graphs" (axioms :: GraphTestsuite AI)
 
     test "Consistency of arbitraryAdjacencyMap" $ \(m :: AI) ->
         consistent m

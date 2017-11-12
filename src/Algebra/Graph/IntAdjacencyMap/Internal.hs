@@ -107,7 +107,7 @@ instance Eq IntAdjacencyMap where
 instance Show IntAdjacencyMap where
     show (AM m _)
         | m == IntMap.empty = "empty"
-        | es == []          = if IntSet.size vs > 1 then "vertices " ++ show (IntSet.toAscList vs)
+        | null es           = if IntSet.size vs > 1 then "vertices " ++ show (IntSet.toAscList vs)
                                                     else "vertex "   ++ show v
         | vs == referred    = if length es > 1 then "edges " ++ show es
                                                else "edge "  ++ show e ++ " " ++ show f
@@ -121,7 +121,7 @@ instance Show IntAdjacencyMap where
 
 instance Graph IntAdjacencyMap where
     type Vertex IntAdjacencyMap = Int
-    empty       = mkAM $ IntMap.empty
+    empty       = mkAM   IntMap.empty
     vertex x    = mkAM $ IntMap.singleton x IntSet.empty
     overlay x y = mkAM $ IntMap.unionWith IntSet.union (adjacencyMap x) (adjacencyMap y)
     connect x y = mkAM $ IntMap.unionsWith IntSet.union [ adjacencyMap x, adjacencyMap y,

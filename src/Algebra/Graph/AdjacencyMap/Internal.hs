@@ -107,7 +107,7 @@ instance Eq a => Eq (AdjacencyMap a) where
 instance (Ord a, Show a) => Show (AdjacencyMap a) where
     show (AM m _)
         | m == Map.empty = "empty"
-        | es == []       = if Set.size vs > 1 then "vertices " ++ show (Set.toAscList vs)
+        | null es        = if Set.size vs > 1 then "vertices " ++ show (Set.toAscList vs)
                                               else "vertex "   ++ show v
         | vs == referred = if length es > 1 then "edges " ++ show es
                                             else "edge "  ++ show e ++ " " ++ show f
@@ -121,7 +121,7 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
 
 instance Ord a => Graph (AdjacencyMap a) where
     type Vertex (AdjacencyMap a) = a
-    empty       = mkAM $ Map.empty
+    empty       = mkAM   Map.empty
     vertex x    = mkAM $ Map.singleton x Set.empty
     overlay x y = mkAM $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
     connect x y = mkAM $ Map.unionsWith Set.union [ adjacencyMap x, adjacencyMap y,

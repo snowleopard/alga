@@ -42,8 +42,8 @@ arbitraryGraph = sized expr
     expr 1 = C.vertex <$> arbitrary
     expr n = do
         left <- choose (0, n)
-        oneof [ C.overlay <$> (expr left) <*> (expr $ n - left)
-              , C.connect <$> (expr left) <*> (expr $ n - left) ]
+        oneof [ C.overlay <$> expr left <*> expr (n - left)
+              , C.connect <$> expr left <*> expr (n - left) ]
 
 instance Arbitrary a => Arbitrary (Graph a) where
     arbitrary = arbitraryGraph

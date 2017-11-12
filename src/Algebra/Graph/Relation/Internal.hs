@@ -90,8 +90,8 @@ data Relation a = Relation {
 
 instance (Ord a, Show a) => Show (Relation a) where
     show (Relation d r)
-        | vs == []      = "empty"
-        | es == []      = if Set.size d > 1 then "vertices " ++ show vs
+        | null vs       = "empty"
+        | null es       = if Set.size d > 1 then "vertices " ++ show vs
                                             else "vertex "   ++ show v
         | d == referred = if Set.size r > 1 then "edges " ++ show es
                                             else "edge "  ++ show e ++ " " ++ show f

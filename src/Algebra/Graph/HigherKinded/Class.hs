@@ -508,7 +508,7 @@ deBruijn :: Graph g => Int -> [a] -> g [a]
 deBruijn 0   _        = edge [] []
 deBruijn len alphabet = skeleton >>= expand
   where
-    overlaps = traverse (const alphabet) [2..len]
+    overlaps = mapM (const alphabet) [2..len]
     skeleton = edges    [        (Left s, Right s)   | s <- overlaps ]
     expand v = vertices [ either ([a] ++) (++ [a]) v | a <- alphabet ]
 

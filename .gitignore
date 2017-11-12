@@ -19,4 +19,5 @@ cabal.sandbox.config
 .stack-work/
 cabal.project.local
 .ghci
+ghcid.txt
 .vscode/

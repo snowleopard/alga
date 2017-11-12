@@ -29,8 +29,8 @@ type G  = Graph Int
 testGraph :: IO ()
 testGraph = do
     putStrLn "\n============ Graph ============"
-    test "Axioms of graphs"   $ (axioms   :: GraphTestsuite G)
-    test "Theorems of graphs" $ (theorems :: GraphTestsuite G)
+    test "Axioms of graphs"   (axioms   :: GraphTestsuite G)
+    test "Theorems of graphs" (theorems :: GraphTestsuite G)
 
     testBasicPrimitives t
     testFoldg           h
@@ -69,8 +69,8 @@ testGraph = do
     test "mesh xs     ys   == box (path xs) (path ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
           mesh xs     ys   == box (path xs) (path ys)
 
-    test ("mesh [1..3] \"ab\" == <correct result>") $
-         mesh [1..3] "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
+    test "mesh [1..3] \"ab\" == <correct result>" $
+          mesh [1..3]  "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
                                     , ((2,'a'),(3,'a')), ((2,'b'),(3,'b')), ((3,'a'),(3 :: Int,'b')) ]
 
     putStrLn "\n============ Graph.torus ============"
@@ -86,9 +86,9 @@ testGraph = do
     test "torus xs    ys   == box (circuit xs) (circuit ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
           torus xs    ys   == box (circuit xs) (circuit ys)
 
-    test ("torus [1,2] \"ab\" == <correct result>") $
-         torus [1,2] "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
-                                    , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ]
+    test "torus [1,2] \"ab\" == <correct result>" $
+          torus [1,2]  "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
+                                      , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ]
 
     putStrLn "\n============ Graph.deBruijn ============"
     test "          deBruijn 0 xs               == edge [] []" $ \(xs :: [Int]) ->
@@ -108,7 +108,7 @@ testGraph = do
                                                          , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
 
     test "          transpose   (deBruijn n xs) == fmap reverse $ deBruijn n xs" $ mapSize (min 5) $ \(NonNegative n) (xs :: [Int]) ->
-                    transpose   (deBruijn n xs) == (fmap reverse $ deBruijn n xs)
+                    transpose   (deBruijn n xs) == fmap reverse (deBruijn n xs)
 
     test "          vertexCount (deBruijn n xs) == (length $ nub xs)^n" $ mapSize (min 5) $ \(NonNegative n) (xs :: [Int]) ->
                     vertexCount (deBruijn n xs) == (length $ nubOrd xs)^n
