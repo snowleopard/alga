@@ -50,6 +50,7 @@ matrix:
         - brew update
         - brew install ghc cabal-install
         - HC=ghc
+        - ghc --version
         - HCPKG=ghc-pkg
         - unset CC
 
