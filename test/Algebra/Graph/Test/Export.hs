@@ -79,7 +79,7 @@ testExport = do
 
     putStrLn "\n============ Export.indent ============"
     test "indent 0        == id" $ \(x :: String) ->
-         (indent 0) (literal x) == literal x
+          indent 0 (literal x) == literal x
 
     test "indent 1 mempty == \" \"" $
           indent 1 mempty == (" " :: Doc String)

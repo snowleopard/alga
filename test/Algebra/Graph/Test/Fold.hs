@@ -29,7 +29,7 @@ type F  = Fold Int
 testFold :: IO ()
 testFold = do
     putStrLn "\n============ Fold ============"
-    test "Axioms of graphs"   $ (axioms   :: GraphTestsuite F)
+    test "Axioms of graphs" (axioms   :: GraphTestsuite F)
 
     testShow            t
     testBasicPrimitives t
@@ -53,9 +53,9 @@ testFold = do
     test "mesh xs     ys   == box (path xs) (path ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
           mesh xs     ys   == (box (path xs) (path ys) :: Fold (Int, Int))
 
-    test ("mesh [1..3] \"ab\" == <correct result>") $
-         (mesh [1..3] "ab" :: Fold (Int, Char)) == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
-                                                         , ((2,'a'),(3,'a')), ((2,'b'),(3,'b')), ((3,'a'),(3,'b')) ]
+    test "mesh [1..3] \"ab\" == <correct result>" $
+         (mesh [1..3]  "ab" :: Fold (Int, Char)) == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
+                                                          , ((2,'a'),(3,'a')), ((2,'b'),(3,'b')), ((3,'a'),(3,'b')) ]
 
     putStrLn "\n============ Fold.torus ============"
     test "torus xs    []   == empty" $ \xs ->
@@ -70,9 +70,9 @@ testFold = do
     test "torus xs    ys   == box (circuit xs) (circuit ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
           torus xs    ys   == (box (circuit xs) (circuit ys) :: Fold (Int, Int))
 
-    test ("torus [1,2] \"ab\" == <correct result>") $
-         (torus [1,2] "ab" :: Fold (Int, Char)) == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
-                                                         , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2,'a')) ]
+    test "torus [1,2] \"ab\" == <correct result>" $
+         (torus [1,2]  "ab" :: Fold (Int, Char)) == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
+                                                          , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2,'a')) ]
 
     putStrLn "\n============ Fold.deBruijn ============"
     test "          deBruijn 0 xs               == edge [] []" $ \(xs :: [Int]) ->

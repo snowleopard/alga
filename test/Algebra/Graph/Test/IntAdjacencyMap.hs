@@ -27,7 +27,7 @@ t = testsuite "IntAdjacencyMap." empty
 testIntAdjacencyMap :: IO ()
 testIntAdjacencyMap = do
     putStrLn "\n============ IntAdjacencyMap ============"
-    test "Axioms of graphs" $ (axioms :: GraphTestsuite IntAdjacencyMap)
+    test "Axioms of graphs" (axioms :: GraphTestsuite IntAdjacencyMap)
 
     test "Consistency of arbitraryAdjacencyMap" $ \m ->
         consistent m

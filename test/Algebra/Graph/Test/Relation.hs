@@ -36,7 +36,7 @@ sizeLimit = mapSize (min 10)
 testRelation :: IO ()
 testRelation = do
     putStrLn "\n============ Relation ============"
-    test "Axioms of graphs" $ sizeLimit $ (axioms :: GraphTestsuite RI)
+    test "Axioms of graphs" $ sizeLimit (axioms :: GraphTestsuite RI)
 
     test "Consistency of arbitraryRelation" $ \(m :: RI) ->
         consistent m
@@ -100,7 +100,7 @@ testRelation = do
           transitiveClosure (vertex x)      == vertex x
 
     test "transitiveClosure (path $ nub xs) == clique (nub $ xs)" $ \(xs :: [Int]) ->
-          transitiveClosure (path $ nubOrd xs) == clique (nubOrd $ xs)
+          transitiveClosure (path $ nubOrd xs) == clique (nubOrd xs)
 
     putStrLn "\n============ Relation.preorderClosure ============"
     test "preorderClosure empty           == empty" $
@@ -122,7 +122,7 @@ testRelation = do
 
     putStrLn "\n============ SymmetricRelation.neighbours ============"
     test "neighbours x empty      == Set.empty" $ \(x :: Int) ->
-          neighbours x C.empty      == Set.empty
+          neighbours x C.empty    == Set.empty
 
     test "neighbours x (vertex x) == Set.empty" $ \(x :: Int) ->
           neighbours x (C.vertex x) == Set.empty
