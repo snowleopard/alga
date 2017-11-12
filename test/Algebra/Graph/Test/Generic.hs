@@ -18,7 +18,11 @@ module Algebra.Graph.Test.Generic (
     testIsTopSort, testSplitVertex, testBind, testSimplify
   ) where
 
-import Data.Foldable
+import Prelude ()
+import Prelude.Compat
+import Data.Orphans ()
+
+import Data.Foldable (toList)
 import Data.List (nub, sort)
 import Data.Tree
 import Data.Tuple

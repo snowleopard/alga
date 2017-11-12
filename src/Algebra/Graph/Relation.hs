@@ -39,6 +39,9 @@ module Algebra.Graph.Relation (
     compose, reflexiveClosure, symmetricClosure, transitiveClosure, preorderClosure
   ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Data.Tuple
 
 import Algebra.Graph.Relation.Internal
