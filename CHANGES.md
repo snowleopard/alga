@@ -1,8 +1,11 @@
 # Change log
 
-## next
+## 0.1.0
 
-* add `NFData Graph` instance
+* Start complying with PVP.
+* #27: Support GHC >= 7.8.
+* #25: Add `NFData Graph` instance.
+* Minor code and documentation revision.
 
 ## 0.0.5
 

@@ -1,5 +1,5 @@
 name:          algebraic-graphs
-version:       0.0.5
+version:       0.1.0
 synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
@@ -10,11 +10,10 @@ homepage:      https://github.com/snowleopard/alga
 category:      Algebra, Algorithms, Data Structures, Graphs
 build-type:    Simple
 cabal-version: >=1.18
-tested-with:
-  GHC==7.8.4,
-  GHC==7.10.3,
-  GHC==8.0.2,
-  GHC==8.2.1
+tested-with:   GHC==7.8.4,
+               GHC==7.10.3,
+               GHC==8.0.2,
+               GHC==8.2.1
 stability:     experimental
 description:
     <https://github.com/snowleopard/alga Alga> is a library for algebraic construction and
@@ -40,8 +39,8 @@ description:
     that defines the Boehm-Berarducci encoding of algebraic graphs and provides additional
     flexibility for polymorphic graph manipulation.
     .
-    This is an experimental library and the API will be unstable until version 1.0.0. Please
-    consider contributing to the on-going
+    This is an experimental library and the API is expected to remain unstable until version 1.0.0.
+    Please consider contributing to the on-going
     <https://github.com/snowleopard/alga/issues discussions on the library API>.
 
 extra-doc-files:
@@ -77,23 +76,22 @@ library
                         containers  >= 0.5.5.1 && < 0.8,
                         deepseq     >= 1.3.0.1 && < 1.5
     if !impl(ghc >= 8.0)
-      build-depends:
-                        semigroups >=0.18.3 && <0.18.4
+        build-depends:  semigroups  >= 0.18.3  && < 0.18.4
     default-language:   Haskell2010
     default-extensions: FlexibleContexts
                         GeneralizedNewtypeDeriving
                         ScopedTypeVariables
                         TupleSections
                         TypeFamilies
-    other-extensions:   DeriveFoldable
+    other-extensions:   CPP
+                        DeriveFoldable
                         DeriveFunctor
                         DeriveTraversable
                         OverloadedStrings
                         RecordWildCards
     GHC-options:        -Wall
     if impl(ghc >= 8.0)
-      GHC-options:
-                        -Wcompat
+        GHC-options:    -Wcompat
                         -Wincomplete-record-updates
                         -Wincomplete-uni-patterns
                         -Wredundant-constraints
@@ -117,14 +115,13 @@ test-suite test-alga
                         base-compat,
                         base-orphans >= 0.5.4 && <0.7,
                         containers,
-                        extra      >= 1.5,
-                        QuickCheck >= 2.9
+                        extra        >= 1.5,
+                        QuickCheck   >= 2.9
     default-language:   Haskell2010
     GHC-options:        -O2
                         -Wall
     if impl(ghc >= 8.0)
-      GHC-options:
-                        -Wcompat
+        GHC-options:    -Wcompat
                         -Wincomplete-record-updates
                         -Wincomplete-uni-patterns
                         -Wredundant-constraints
@@ -150,8 +147,7 @@ benchmark benchmark-alga
     GHC-options:        -O2
                         -Wall
     if impl(ghc >= 8.0)
-      GHC-options:
-                        -Wcompat
+        GHC-options:    -Wcompat
                         -Wincomplete-record-updates
                         -Wincomplete-uni-patterns
                         -Wredundant-constraints
