@@ -23,7 +23,6 @@ module Algebra.Graph (
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
-    graph,
 
     -- * Graph folding
     foldg,
@@ -325,20 +324,6 @@ overlays = H.overlays
 -- @
 connects :: [Graph a] -> Graph a
 connects = H.connects
-
--- | Construct the graph from given lists of vertices /V/ and edges /E/.
--- The resulting graph contains the vertices /V/ as well as all the vertices
--- referred to by the edges /E/.
--- Complexity: /O(|V| + |E|)/ time, memory and size.
---
--- @
--- graph []  []      == 'empty'
--- graph [x] []      == 'vertex' x
--- graph []  [(x,y)] == 'edge' x y
--- graph vs  es      == 'overlay' ('vertices' vs) ('edges' es)
--- @
-graph :: [a] -> [(a, a)] -> Graph a
-graph = H.graph
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.

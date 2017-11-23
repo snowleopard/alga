@@ -60,8 +60,7 @@ testBasicPrimitives = mconcat [ testEmpty
                               , testVertices
                               , testEdges
                               , testOverlays
-                              , testConnects
-                              , testGraph ]
+                              , testConnects ]
 
 testProperties :: Testsuite -> IO ()
 testProperties = mconcat [ testIsEmpty
@@ -96,23 +95,23 @@ testTransformations = mconcat [ testRemoveVertex
 testShow :: Testsuite -> IO ()
 testShow (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "Show ============"
-    test "show (empty     :: IntAdjacencyMap) == \"empty\"" $
-          show % empty                        == "empty"
+    test "show (empty    ) == \"empty\"" $
+          show % empty     ==  "empty"
 
-    test "show (1         :: IntAdjacencyMap) == \"vertex 1\"" $
-          show % 1                            == "vertex 1"
+    test "show (1        ) == \"vertex 1\"" $
+          show % 1         ==  "vertex 1"
 
-    test "show (1 + 2     :: IntAdjacencyMap) == \"vertices [1,2]\"" $
-          show % (1 + 2)                      == "vertices [1,2]"
+    test "show (1 + 2    ) == \"vertices [1,2]\"" $
+          show % (1 + 2)   ==  "vertices [1,2]"
 
-    test "show (1 * 2     :: IntAdjacencyMap) == \"edge 1 2\"" $
-          show % (1 * 2)                      == "edge 1 2"
+    test "show (1 * 2    ) == \"edge 1 2\"" $
+          show % (1 * 2)   ==  "edge 1 2"
 
-    test "show (1 * 2 * 3 :: IntAdjacencyMap) == \"edges [(1,2),(1,3),(2,3)]\"" $
-          show % (1 * 2 * 3)                  == "edges [(1,2),(1,3),(2,3)]"
+    test "show (1 * 2 * 3) == \"edges [(1,2),(1,3),(2,3)]\"" $
+          show % (1 * 2 * 3) == "edges [(1,2),(1,3),(2,3)]"
 
-    test "show (1 * 2 + 3 :: IntAdjacencyMap) == \"graph [1,2,3] [(1,2)]\"" $
-          show % (1 * 2 + 3)                  == "graph [1,2,3] [(1,2)]"
+    test "show (1 * 2 + 3) == \"overlay (vertex 3) (edge 1 2)\"" $
+          show % (1 * 2 + 3) == "overlay (vertex 3) (edge 1 2)"
 
 testEmpty :: Testsuite -> IO ()
 testEmpty (Testsuite prefix (%)) = do
@@ -284,21 +283,6 @@ testConnects (Testsuite prefix (%)) = do
 
     test "isEmpty . connects == all isEmpty" $ mapSize (min 10) $ \xs ->
           isEmpty % connects xs == all isEmpty xs
-
-testGraph :: Testsuite -> IO ()
-testGraph (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "graph ============"
-    test "graph []  []      == empty" $
-          graph []  []      == id % empty
-
-    test "graph [x] []      == vertex x" $ \x ->
-          graph [x] []      == id % vertex x
-
-    test "graph []  [(x,y)] == edge x y" $ \x y ->
-          graph []  [(x,y)] == id % edge x y
-
-    test "graph vs  es      == overlay (vertices vs) (edges es)" $ \vs es ->
-          graph vs  es      == overlay (vertices vs) % edges es
 
 testFromAdjacencyList :: Testsuite -> IO ()
 testFromAdjacencyList (Testsuite prefix (%)) = do

@@ -22,7 +22,7 @@ module Algebra.Graph.AdjacencyMap (
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
-    graph, fromAdjacencyList,
+    fromAdjacencyList,
 
     -- * Relations on graphs
     isSubgraphOf,
@@ -178,20 +178,6 @@ overlays = C.overlays
 -- @
 connects :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
 connects = C.connects
-
--- | Construct the graph from given lists of vertices /V/ and edges /E/.
--- The resulting graph contains the vertices /V/ as well as all the vertices
--- referred to by the edges /E/.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- graph []  []      == 'empty'
--- graph [x] []      == 'vertex' x
--- graph []  [(x,y)] == 'edge' x y
--- graph vs  es      == 'overlay' ('vertices' vs) ('edges' es)
--- @
-graph :: Ord a => [a] -> [(a, a)] -> AdjacencyMap a
-graph vs es = overlay (vertices vs) (edges es)
 
 -- | Construct a graph from an adjacency list.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.

@@ -38,7 +38,7 @@ module Algebra.Graph.Class (
     Preorder,
 
     -- * Basic graph construction primitives
-    edge, vertices, overlays, connects, edges, graph,
+    edge, vertices, overlays, connects, edges,
 
     -- * Relations on graphs
     isSubgraphOf,
@@ -270,20 +270,6 @@ overlays = foldr overlay empty
 -- @
 connects :: Graph g => [g] -> g
 connects = foldr connect empty
-
--- | Construct the graph from given lists of vertices /V/ and edges /E/.
--- The resulting graph contains the vertices /V/ as well as all the vertices
--- referred to by the edges /E/.
--- Complexity: /O(|V| + |E|)/ time, memory and size.
---
--- @
--- graph []  []      == 'empty'
--- graph [x] []      == 'vertex' x
--- graph []  [(x,y)] == 'edge' x y
--- graph vs  es      == 'overlay' ('vertices' vs) ('edges' es)
--- @
-graph :: Graph g => [Vertex g] -> [(Vertex g, Vertex g)] -> g
-graph vs es = overlay (vertices vs) (edges es)
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second. Here is the current implementation:
