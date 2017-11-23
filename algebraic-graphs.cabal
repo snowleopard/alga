@@ -63,6 +63,7 @@ library
                         Algebra.Graph.HigherKinded.Class,
                         Algebra.Graph.IntAdjacencyMap,
                         Algebra.Graph.IntAdjacencyMap.Internal,
+                        Algebra.Graph.NonEmpty,
                         Algebra.Graph.Relation,
                         Algebra.Graph.Relation.Internal,
                         Algebra.Graph.Relation.InternalDerived,
