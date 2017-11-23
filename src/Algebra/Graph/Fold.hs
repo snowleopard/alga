@@ -24,7 +24,6 @@ module Algebra.Graph.Fold (
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
-    C.graph,
 
     -- * Graph folding
     foldg,
@@ -79,7 +78,7 @@ show (1         :: Fold Int) == "vertex 1"
 show (1 + 2     :: Fold Int) == "vertices [1,2]"
 show (1 * 2     :: Fold Int) == "edge 1 2"
 show (1 * 2 * 3 :: Fold Int) == "edges [(1,2),(1,3),(2,3)]"
-show (1 * 2 + 3 :: Fold Int) == "graph [1,2,3] [(1,2)]"@
+show (1 * 2 + 3 :: Fold Int) == "overlay (vertex 3) (edge 1 2)"@
 
 The 'Eq' instance is currently implemented using the 'AM.AdjacencyMap' as the
 /canonical graph representation/ and satisfies all axioms of algebraic graphs:

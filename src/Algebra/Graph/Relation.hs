@@ -20,7 +20,7 @@ module Algebra.Graph.Relation (
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
-    graph, fromAdjacencyList,
+    fromAdjacencyList,
 
     -- * Relations on graphs
     isSubgraphOf,
@@ -175,20 +175,6 @@ overlays = C.overlays
 -- @
 connects :: Ord a => [Relation a] -> Relation a
 connects = C.connects
-
--- | Construct the graph from given lists of vertices /V/ and edges /E/.
--- The resulting graph contains the vertices /V/ as well as all the vertices
--- referred to by the edges /E/.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- graph []  []      == 'empty'
--- graph [x] []      == 'vertex' x
--- graph []  [(x,y)] == 'edge' x y
--- graph vs  es      == 'overlay' ('vertices' vs) ('edges' es)
--- @
-graph :: Ord a => [a] -> [(a, a)] -> Relation a
-graph = C.graph
 
 -- | Construct a graph from an adjacency list.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.

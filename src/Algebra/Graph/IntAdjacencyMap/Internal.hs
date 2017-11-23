@@ -20,6 +20,7 @@ module Algebra.Graph.IntAdjacencyMap.Internal (
 
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)
 import Data.IntSet (IntSet)
+import Data.List
 
 import Algebra.Graph.Class
 
@@ -44,7 +45,7 @@ show (1         :: IntAdjacencyMap Int) == "vertex 1"
 show (1 + 2     :: IntAdjacencyMap Int) == "vertices [1,2]"
 show (1 * 2     :: IntAdjacencyMap Int) == "edge 1 2"
 show (1 * 2 * 3 :: IntAdjacencyMap Int) == "edges [(1,2),(1,3),(2,3)]"
-show (1 * 2 + 3 :: IntAdjacencyMap Int) == "graph [1,2,3] [(1,2)]"@
+show (1 * 2 + 3 :: IntAdjacencyMap Int) == "overlay (vertex 3) (edge 1 2)"@
 
 The 'Eq' instance satisfies all axioms of algebraic graphs:
 
@@ -106,18 +107,18 @@ instance Eq IntAdjacencyMap where
 
 instance Show IntAdjacencyMap where
     show (AM m _)
-        | m == IntMap.empty = "empty"
-        | null es           = if IntSet.size vs > 1 then "vertices " ++ show (IntSet.toAscList vs)
-                                                    else "vertex "   ++ show v
-        | vs == referred    = if length es > 1 then "edges " ++ show es
-                                               else "edge "  ++ show e ++ " " ++ show f
-        | otherwise         = "graph " ++ show (IntSet.toAscList vs) ++ " " ++ show es
+        | null vs    = "empty"
+        | null es    = vshow vs
+        | vs == used = eshow es
+        | otherwise  = "overlay (" ++ vshow (vs \\ used) ++ ") (" ++ eshow es ++ ")"
       where
-        vs       = keysSet m
-        es       = internalEdgeList m
-        v        = head $ IntSet.toList vs
-        (e, f)   = head es
-        referred = referredToVertexSet m
+        vs             = IntSet.toAscList (keysSet m)
+        es             = internalEdgeList m
+        vshow [x]      = "vertex "   ++ show x
+        vshow xs       = "vertices " ++ show xs
+        eshow [(x, y)] = "edge "     ++ show x ++ " " ++ show y
+        eshow xs       = "edges "    ++ show xs
+        used           = IntSet.toAscList (referredToVertexSet m)
 
 instance Graph IntAdjacencyMap where
     type Vertex IntAdjacencyMap = Int

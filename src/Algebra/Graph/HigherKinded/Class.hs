@@ -37,7 +37,7 @@ module Algebra.Graph.HigherKinded.Class (
     Preorder,
 
     -- * Basic graph construction primitives
-    edge, vertices, edges, overlays, connects, graph,
+    edge, vertices, edges, overlays, connects,
 
     -- * Relations on graphs
     isSubgraphOf,
@@ -249,20 +249,6 @@ overlays = msum
 -- @
 connects :: Graph g => [g a] -> g a
 connects = foldr connect empty
-
--- | Construct the graph from given lists of vertices /V/ and edges /E/.
--- The resulting graph contains the vertices /V/ as well as all the vertices
--- referred to by the edges /E/.
--- Complexity: /O(|V| + |E|)/ time, memory and size.
---
--- @
--- graph []  []      == 'empty'
--- graph [x] []      == 'vertex' x
--- graph []  [(x,y)] == 'edge' x y
--- graph vs  es      == 'overlay' ('vertices' vs) ('edges' es)
--- @
-graph :: Graph g => [a] -> [(a, a)] -> g a
-graph vs es = overlay (vertices vs) (edges es)
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second. Here is the current implementation:
@@ -617,4 +603,3 @@ box x y = msum $ xs ++ ys
 -- @
 class ToGraph t where
     toGraph :: Graph g => t a -> g a
-

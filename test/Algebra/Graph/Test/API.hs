@@ -39,8 +39,6 @@ class Graph g => GraphAPI g where
     overlays          = notImplemented
     connects          :: [g] -> g
     connects          = notImplemented
-    graph             :: [Vertex g] -> [(Vertex g, Vertex g)] -> g
-    graph             = notImplemented
     fromAdjacencyList :: [(Vertex g, [Vertex g])] -> g
     fromAdjacencyList = notImplemented
     foldg             :: r -> (Vertex g -> r) -> (r -> r -> r) -> (r -> r -> r) -> g -> r
@@ -141,7 +139,6 @@ instance Ord a => GraphAPI (AdjacencyMap.AdjacencyMap a) where
     edges             = AdjacencyMap.edges
     overlays          = AdjacencyMap.overlays
     connects          = AdjacencyMap.connects
-    graph             = AdjacencyMap.graph
     fromAdjacencyList = AdjacencyMap.fromAdjacencyList
     isSubgraphOf      = AdjacencyMap.isSubgraphOf
     isEmpty           = AdjacencyMap.isEmpty
@@ -182,7 +179,6 @@ instance Ord a => GraphAPI (Fold.Fold a) where
     edges         = Fold.edges
     overlays      = Fold.overlays
     connects      = Fold.connects
-    graph         = Fold.graph
     foldg         = Fold.foldg
     isSubgraphOf  = Fold.isSubgraphOf
     isEmpty       = Fold.isEmpty
@@ -224,7 +220,6 @@ instance Ord a => GraphAPI (Graph.Graph a) where
     edges         = Graph.edges
     overlays      = Graph.overlays
     connects      = Graph.connects
-    graph         = Graph.graph
     foldg         = Graph.foldg
     isSubgraphOf  = Graph.isSubgraphOf
     (===)         = (Graph.===)
@@ -267,7 +262,6 @@ instance GraphAPI IntAdjacencyMap.IntAdjacencyMap where
     edges             = IntAdjacencyMap.edges
     overlays          = IntAdjacencyMap.overlays
     connects          = IntAdjacencyMap.connects
-    graph             = IntAdjacencyMap.graph
     fromAdjacencyList = IntAdjacencyMap.fromAdjacencyList
     isSubgraphOf      = IntAdjacencyMap.isSubgraphOf
     isEmpty           = IntAdjacencyMap.isEmpty
@@ -308,7 +302,6 @@ instance Ord a => GraphAPI (Relation.Relation a) where
     edges             = Relation.edges
     overlays          = Relation.overlays
     connects          = Relation.connects
-    graph             = Relation.graph
     fromAdjacencyList = Relation.fromAdjacencyList
     isSubgraphOf      = Relation.isSubgraphOf
     isEmpty           = Relation.isEmpty

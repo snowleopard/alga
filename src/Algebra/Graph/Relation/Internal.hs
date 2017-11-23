@@ -37,7 +37,7 @@ show (1         :: Relation Int) == "vertex 1"
 show (1 + 2     :: Relation Int) == "vertices [1,2]"
 show (1 * 2     :: Relation Int) == "edge 1 2"
 show (1 * 2 * 3 :: Relation Int) == "edges [(1,2),(1,3),(2,3)]"
-show (1 * 2 + 3 :: Relation Int) == "graph [1,2,3] [(1,2)]"@
+show (1 * 2 + 3 :: Relation Int) == "overlay (vertex 3) (edge 1 2)"@
 
 The 'Eq' instance satisfies all axioms of algebraic graphs:
 
@@ -90,18 +90,17 @@ data Relation a = Relation {
 
 instance (Ord a, Show a) => Show (Relation a) where
     show (Relation d r)
-        | null vs       = "empty"
-        | null es       = if Set.size d > 1 then "vertices " ++ show vs
-                                            else "vertex "   ++ show v
-        | d == referred = if Set.size r > 1 then "edges " ++ show es
-                                            else "edge "  ++ show e ++ " " ++ show f
-        | otherwise     = "graph " ++ show vs ++ " " ++ show es
+        | Set.null d = "empty"
+        | Set.null r = vshow (Set.toAscList d)
+        | d == used  = eshow (Set.toAscList r)
+        | otherwise  = "overlay (" ++ vshow (Set.toAscList $ Set.difference d used)
+                    ++ ") (" ++ eshow (Set.toAscList r) ++ ")"
       where
-        vs       = Set.toAscList d
-        es       = Set.toAscList r
-        v        = head vs
-        (e, f)   = head es
-        referred = referredToVertexSet r
+        vshow [x]      = "vertex "   ++ show x
+        vshow xs       = "vertices " ++ show xs
+        eshow [(x, y)] = "edge "     ++ show x ++ " " ++ show y
+        eshow xs       = "edges "    ++ show xs
+        used           = referredToVertexSet r
 
 instance Ord a => Graph (Relation a) where
     type Vertex (Relation a) = a
@@ -125,7 +124,7 @@ instance (Ord a, Num a) => Num (Relation a) where
 
 instance ToGraph (Relation a) where
     type ToVertex (Relation a) = a
-    toGraph (Relation d r) = graph (Set.toList d) (Set.toList r)
+    toGraph (Relation d r) = vertices (Set.toList d) `overlay` edges (Set.toList r)
 
 -- | Check if the internal representation of a relation is consistent, i.e. if all
 -- pairs of elements in the 'relation' refer to existing elements in the 'domain'.
