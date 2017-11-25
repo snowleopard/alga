@@ -143,7 +143,7 @@ data Graph a = Empty
 
 instance NFData a => NFData (Graph a) where
     rnf Empty         = ()
-    rnf (Vertex a)    = rnf a
+    rnf (Vertex  x  ) = rnf x
     rnf (Overlay x y) = rnf x `seq` rnf y
     rnf (Connect x y) = rnf x `seq` rnf y
 
@@ -343,7 +343,7 @@ foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
   where
     go Empty         = e
-    go (Vertex x)    = v x
+    go (Vertex  x  ) = v x
     go (Overlay x y) = o (go x) (go y)
     go (Connect x y) = c (go x) (go y)
 
@@ -374,7 +374,7 @@ isSubgraphOf = H.isSubgraphOf
 -- @
 (===) :: Eq a => Graph a -> Graph a -> Bool
 Empty           === Empty           = True
-(Vertex x)      === (Vertex y)      = x == y
+(Vertex  x1   ) === (Vertex  x2   ) = x1 ==  x2
 (Overlay x1 y1) === (Overlay x2 y2) = x1 === x2 && y1 === y2
 (Connect x1 y1) === (Connect x2 y2) = x1 === x2 && y1 === y2
 _               === _               = False
