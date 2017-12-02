@@ -60,7 +60,7 @@ import qualified Data.IntSet                      as IntSet
 import qualified Data.Set                         as Set
 import qualified Data.Tree                        as Tree
 
-{-| The 'Graph' datatype is a deep embedding of the core graph construction
+{-| The 'Graph' data type is a deep embedding of the core graph construction
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
 instance as a convenient notation for working with graphs:
 
@@ -109,8 +109,8 @@ The following useful theorems can be proved from the above set of axioms.
 When specifying the time and memory complexity of graph algorithms, /n/ will
 denote the number of vertices in the graph, /m/ will denote the number of
 edges in the graph, and /s/ will denote the /size/ of the corresponding
-'Graph' expression. For example, if g is a 'Graph' then /n/, /m/ and /s/ can be
-computed as follows:
+'Graph' expression. For example, if @g@ is a 'Graph' then /n/, /m/ and /s/ can
+be computed as follows:
 
 @n == 'vertexCount' g
 m == 'edgeCount' g

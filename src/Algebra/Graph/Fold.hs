@@ -61,7 +61,7 @@ import qualified Algebra.Graph.Relation           as R
 import qualified Data.IntSet                      as IntSet
 import qualified Data.Set                         as Set
 
-{-| The 'Fold' datatype is the Boehm-Berarducci encoding of the core graph
+{-| The 'Fold' data type is the Boehm-Berarducci encoding of the core graph
 construction primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a
 'Num' instance as a convenient notation for working with graphs:
 
