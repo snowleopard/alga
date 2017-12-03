@@ -91,7 +91,7 @@ vertex = C.vertex
 edge :: Ord a => a -> a -> AdjacencyMap a
 edge = C.edge
 
--- | /Overlay/ two graphs. This is an idempotent, commutative and associative
+-- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
@@ -109,7 +109,7 @@ overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
 overlay = C.overlay
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
--- 'empty', which distributes over the overlay and obeys the decomposition axiom.
+-- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
 -- number of edges in the resulting graph is quadratic with respect to the number
 -- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.

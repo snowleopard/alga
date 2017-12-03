@@ -243,7 +243,7 @@ vertex = C.vertex
 edge :: C.Graph g => C.Vertex g -> C.Vertex g -> g
 edge = C.edge
 
--- | /Overlay/ two graphs. This is an idempotent, commutative and associative
+-- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
 --
@@ -262,7 +262,7 @@ overlay :: C.Graph g => g -> g -> g
 overlay = C.overlay
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
--- 'empty', which distributes over the overlay and obeys the decomposition axiom.
+-- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
 -- of edges in the resulting graph is quadratic with respect to the number of
 -- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.

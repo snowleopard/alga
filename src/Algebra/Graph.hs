@@ -232,8 +232,8 @@ vertex = Vertex
 edge :: a -> a -> Graph a
 edge = H.edge
 
--- | /Overlay/ two graphs. An alias for the constructor 'Overlay'. This is an
--- idempotent, commutative and associative operation with the identity 'empty'.
+-- | /Overlay/ two graphs. An alias for the constructor 'Overlay'. This is a
+-- commutative, associative and idempotent operation with the identity 'empty'.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
 --
 -- @
@@ -251,8 +251,8 @@ overlay :: Graph a -> Graph a -> Graph a
 overlay = Overlay
 
 -- | /Connect/ two graphs. An alias for the constructor 'Connect'. This is an
--- associative operation with the identity 'empty', which distributes over the
--- overlay and obeys the decomposition axiom.
+-- associative operation with the identity 'empty', which distributes over
+-- 'overlay' and obeys the decomposition axiom.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
 -- of edges in the resulting graph is quadratic with respect to the number of
 -- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
