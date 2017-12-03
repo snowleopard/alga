@@ -172,7 +172,7 @@ testNonEmptyGraph = do
           vertices1 (x :| [])     == vertex x
 
     test "hasVertex x . vertices1 == elem x" $ \(x :: Int) (xs :: NonEmpty Int) ->
-         (hasVertex x . vertices1) xs == elem x xs
+         (hasVertex x . vertices1) xs == elem x (NonEmpty.toList xs)
 
     test "vertexCount . vertices1 == length . nub" $ \(xs :: NonEmpty Int) ->
          (vertexCount . vertices1) xs == (NonEmpty.length . NonEmpty.nub) xs

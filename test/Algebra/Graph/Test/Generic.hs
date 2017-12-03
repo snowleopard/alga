@@ -23,7 +23,7 @@ import Prelude.Compat
 import Data.Orphans ()
 
 import Data.Foldable (toList)
-import Data.List (nub, sort)
+import Data.List (nub)
 import Data.Tree
 import Data.Tuple
 
