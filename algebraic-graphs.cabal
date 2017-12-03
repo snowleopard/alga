@@ -110,6 +110,7 @@ test-suite test-alga
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
                         Algebra.Graph.Test.IntAdjacencyMap,
+                        Algebra.Graph.Test.NonEmptyGraph,
                         Algebra.Graph.Test.Relation
     build-depends:      algebraic-graphs,
                         base,

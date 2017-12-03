@@ -5,7 +5,7 @@ module Algebra.Graph.Test (
     module Test.QuickCheck,
     module Test.QuickCheck.Function,
 
-    GraphTestsuite, axioms, theorems, undirectedAxioms, reflexiveAxioms,
+    GraphTestsuite, (//), axioms, theorems, undirectedAxioms, reflexiveAxioms,
     transitiveAxioms, preorderAxioms, test,
     ) where
 

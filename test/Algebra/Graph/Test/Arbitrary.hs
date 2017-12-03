@@ -29,9 +29,10 @@ import Algebra.Graph.IntAdjacencyMap.Internal
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived
 
-import qualified Algebra.Graph.Class           as C
 import qualified Algebra.Graph.AdjacencyMap    as AdjacencyMap
+import qualified Algebra.Graph.Class           as C
 import qualified Algebra.Graph.IntAdjacencyMap as IntAdjacencyMap
+import qualified Algebra.Graph.NonEmpty        as NE
 import qualified Algebra.Graph.Relation        as Relation
 
 -- | Generate an arbitrary 'Graph' value of a specified size.
@@ -54,6 +55,26 @@ instance Arbitrary a => Arbitrary (Graph a) where
                         ++ [Overlay x' y' | (x', y') <- shrink (x, y) ]
     shrink (Connect x y) = [Empty, x, y, Overlay x y]
                         ++ [Connect x' y' | (x', y') <- shrink (x, y) ]
+
+-- | Generate an arbitrary 'NonEmptyGraph' value of a specified size.
+arbitraryNonEmptyGraph :: Arbitrary a => Gen (NE.NonEmptyGraph a)
+arbitraryNonEmptyGraph = sized expr
+  where
+    expr 0 = NE.vertex <$> arbitrary -- can't generate non-empty graph of size 0
+    expr 1 = NE.vertex <$> arbitrary
+    expr n = do
+        left <- choose (1, n)
+        oneof [ NE.overlay <$> expr left <*> expr (n - left)
+              , NE.connect <$> expr left <*> expr (n - left) ]
+
+instance Arbitrary a => Arbitrary (NE.NonEmptyGraph a) where
+    arbitrary = arbitraryNonEmptyGraph
+
+    shrink (NE.Vertex    _) = []
+    shrink (NE.Overlay x y) = [x, y]
+                           ++ [NE.Overlay x' y' | (x', y') <- shrink (x, y) ]
+    shrink (NE.Connect x y) = [x, y, NE.Overlay x y]
+                           ++ [NE.Connect x' y' | (x', y') <- shrink (x, y) ]
 
 -- | Generate an arbitrary 'Relation'.
 arbitraryRelation :: (Arbitrary a, Ord a) => Gen (Relation a)
