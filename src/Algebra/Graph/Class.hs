@@ -331,7 +331,7 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 clique :: Graph g => [Vertex g] -> g
 clique = connects . map vertex
 
--- | The /biclique/ on a list of vertices.
+-- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
 -- lengths of the given lists.
 --

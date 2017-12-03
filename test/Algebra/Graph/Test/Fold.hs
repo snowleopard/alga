@@ -107,21 +107,21 @@ testFold = do
     putStrLn "\n============ Fold.box ============"
     let unit = fmap $ \(a, ()) -> a
         comm = fmap $ \(a,  b) -> (b, a)
-    test "box x y             ~~ box y x" $ mapSize (min 10) $ \(x :: F) (y :: F) ->
-          comm (box x y)      == (box y x :: Fold (Int, Int))
+    test "box x y               ~~ box y x" $ mapSize (min 10) $ \(x :: F) (y :: F) ->
+          comm (box x y)        == (box y x :: Fold (Int, Int))
 
-    test "box x (overlay y z) == overlay (box x y) (box x z)" $ mapSize (min 10) $ \(x :: F) (y :: F) z ->
-          box x (overlay y z) == (overlay (box x y) (box x z) :: Fold (Int, Int))
+    test "box x (overlay y z)   == overlay (box x y) (box x z)" $ mapSize (min 10) $ \(x :: F) (y :: F) z ->
+          box x (overlay y z)   == (overlay (box x y) (box x z) :: Fold (Int, Int))
 
-    test "box x (vertex ())   ~~ x" $ mapSize (min 10) $ \(x :: F) ->
-     unit(box x (vertex ()))  == x
+    test "box x (vertex ())     ~~ x" $ mapSize (min 10) $ \(x :: F) ->
+     unit(box x (vertex ()))    == x
 
-    test "box x empty         ~~ empty" $ mapSize (min 10) $ \(x :: F) ->
-     unit(box x empty)        == empty
+    test "box x empty           ~~ empty" $ mapSize (min 10) $ \(x :: F) ->
+     unit(box x empty)          == empty
 
     let assoc = fmap $ \(a, (b, c)) -> ((a, b), c)
-    test "box x (box y z)     ~~ box (box x y) z" $ mapSize (min 10) $ \(x :: F) (y :: F) (z :: F) ->
-      assoc (box x (box y z)) == (box (box x y) z :: Fold ((Int, Int), Int))
+    test "box x (box y z)       ~~ box (box x y) z" $ mapSize (min 10) $ \(x :: F) (y :: F) (z :: F) ->
+      assoc (box x (box y z))   == (box (box x y) z :: Fold ((Int, Int), Int))
 
     test "transpose   (box x y) == box (transpose x) (transpose y)" $ mapSize (min 10) $ \(x :: F) (y :: F) ->
           transpose   (box x y) == (box (transpose x) (transpose y) :: Fold (Int, Int))

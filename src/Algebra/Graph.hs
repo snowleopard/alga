@@ -211,7 +211,6 @@ empty = Empty
 -- @
 -- 'isEmpty'     (vertex x) == False
 -- 'hasVertex' x (vertex x) == True
--- 'hasVertex' 1 (vertex 2) == False
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- 'size'        (vertex x) == 1
@@ -415,6 +414,7 @@ size = foldg 1 (const 1) (+) (+)
 -- @
 -- hasVertex x 'empty'            == False
 -- hasVertex x ('vertex' x)       == True
+-- hasVertex 1 ('vertex' 2)       == False
 -- hasVertex x . 'removeVertex' x == const False
 -- @
 hasVertex :: Eq a => a -> Graph a -> Bool
@@ -561,7 +561,7 @@ circuit = H.circuit
 clique :: [a] -> Graph a
 clique = H.clique
 
--- | The /biclique/ on a list of vertices.
+-- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
 -- lengths of the given lists.
 --
@@ -726,7 +726,7 @@ smash s t = foldg C.empty v C.overlay c
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
 replaceVertex = H.replaceVertex
 
--- | Merge vertices satisfying a given predicate with a given vertex.
+-- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
 -- /O(1)/ to be evaluated.
 --
@@ -761,9 +761,6 @@ splitVertex = H.splitVertex
 -- transpose ('vertex' x)  == 'vertex' x
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
--- transpose . 'path'      == 'path'    . 'reverse'
--- transpose . 'circuit'   == 'circuit' . 'reverse'
--- transpose . 'clique'    == 'clique'  . 'reverse'
 -- transpose ('box' x y)   == 'box' (transpose x) (transpose y)
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @

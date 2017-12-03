@@ -137,9 +137,6 @@ testVertex (Testsuite prefix (%)) = do
     test "hasVertex x (vertex x) == True" $ \x ->
           hasVertex x % vertex x == True
 
-    test "hasVertex 1 (vertex 2) == False" $
-          hasVertex 1 % vertex 2 == False
-
     test "vertexCount (vertex x) == 1" $ \x ->
           vertexCount % vertex x == 1
 
@@ -387,7 +384,10 @@ testHasVertex (Testsuite prefix (%)) = do
           hasVertex x % empty          == False
 
     test "hasVertex x (vertex x)       == True" $ \x ->
-          hasVertex x % vertex x     == True
+          hasVertex x % vertex x       == True
+
+    test "hasVertex 1 (vertex 2)       == False" $
+          hasVertex 1 % vertex 2       == False
 
     test "hasVertex x . removeVertex x == const False" $ \x y ->
          (hasVertex x . removeVertex x) y == const False % y
@@ -741,17 +741,8 @@ testTranspose (Testsuite prefix (%)) = do
     test "transpose (edge x y)  == edge y x" $ \x y ->
           transpose % edge x y  == edge y x
 
-    test "transpose . transpose == id" $ \x ->
+    test "transpose . transpose == id" $ mapSize (min 10) $ \x ->
          (transpose . transpose) % x == x
-
-    test "transpose . path      == path    . reverse" $ \xs ->
-          transpose % path xs  == (path . reverse) xs
-
-    test "transpose . circuit   == circuit . reverse" $ \xs ->
-          transpose % circuit xs == (circuit . reverse) xs
-
-    test "transpose . clique    == clique  . reverse" $ \xs ->
-          transpose % clique xs == (clique . reverse) xs
 
     test "edgeList . transpose  == sort . map swap . edgeList" $ \x ->
           edgeList % transpose x == (sort . map swap . edgeList) x

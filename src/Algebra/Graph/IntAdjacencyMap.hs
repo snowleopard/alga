@@ -72,7 +72,6 @@ empty = C.empty
 -- @
 -- 'isEmpty'     (vertex x) == False
 -- 'hasVertex' x (vertex x) == True
--- 'hasVertex' 1 (vertex 2) == False
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- @
@@ -230,6 +229,7 @@ isEmpty = IntMap.null . adjacencyMap
 -- @
 -- hasVertex x 'empty'            == False
 -- hasVertex x ('vertex' x)       == True
+-- hasVertex 1 ('vertex' 2)       == False
 -- hasVertex x . 'removeVertex' x == const False
 -- @
 hasVertex :: Int -> IntAdjacencyMap -> Bool
@@ -386,7 +386,7 @@ circuit = C.circuit
 clique :: [Int] -> IntAdjacencyMap
 clique = C.clique
 
--- | The /biclique/ on a list of vertices.
+-- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
 --
 -- @
@@ -475,7 +475,7 @@ removeEdge x y = mkAM . IntMap.adjust (IntSet.delete y) x . adjacencyMap
 replaceVertex :: Int -> Int -> IntAdjacencyMap -> IntAdjacencyMap
 replaceVertex u v = gmap $ \w -> if w == u then v else w
 
--- | Merge vertices satisfying a given predicate with a given vertex.
+-- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
 -- /O(1)/ to be evaluated.
 --
@@ -496,9 +496,6 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- transpose ('vertex' x)  == 'vertex' x
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
--- transpose . 'path'      == 'path'    . 'reverse'
--- transpose . 'circuit'   == 'circuit' . 'reverse'
--- transpose . 'clique'    == 'clique'  . 'reverse'
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: IntAdjacencyMap -> IntAdjacencyMap

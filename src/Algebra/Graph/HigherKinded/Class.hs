@@ -287,6 +287,7 @@ isEmpty = null
 -- @
 -- hasVertex x 'empty'            == False
 -- hasVertex x ('vertex' x)       == True
+-- hasVertex 1 ('vertex' 2)       == False
 -- hasVertex x . 'removeVertex' x == const False
 -- @
 hasVertex :: (Eq a, Graph g) => a -> g a -> Bool
@@ -392,7 +393,7 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 clique :: Graph g => [a] -> g a
 clique = connects . map vertex
 
--- | The /biclique/ on a list of vertices.
+-- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
 -- lengths of the given lists.
 --
@@ -535,7 +536,7 @@ removeVertex v = induce (/= v)
 replaceVertex :: (Eq a, Graph g) => a -> a -> g a -> g a
 replaceVertex u v = fmap $ \w -> if w == u then v else w
 
--- | Merge vertices satisfying a given predicate with a given vertex.
+-- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
 -- /O(1)/ to be evaluated.
 --

@@ -222,7 +222,6 @@ empty = C.empty
 -- @
 -- 'isEmpty'     (vertex x) == False
 -- 'hasVertex' x (vertex x) == True
--- 'hasVertex' 1 (vertex 2) == False
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- 'size'        (vertex x) == 1
@@ -386,6 +385,7 @@ size = foldg 1 (const 1) (+) (+)
 -- @
 -- hasVertex x 'empty'            == False
 -- hasVertex x ('vertex' x)       == True
+-- hasVertex 1 ('vertex' 2)       == False
 -- hasVertex x . 'removeVertex' x == const False
 -- @
 hasVertex :: Eq a => a -> Fold a -> Bool
@@ -610,7 +610,7 @@ removeEdge s t g = piece st where (_, _, st) = smash s t g
 replaceVertex :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
 replaceVertex u v = gmap $ \w -> if w == u then v else w
 
--- | Merge vertices satisfying a given predicate with a given vertex.
+-- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
 -- /O(1)/ to be evaluated.
 --
@@ -645,9 +645,6 @@ splitVertex v vs g = bind g $ \u -> if u == v then C.vertices vs else C.vertex u
 -- transpose ('vertex' x)  == 'vertex' x
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
--- transpose . 'C.path'      == 'C.path'    . 'reverse'
--- transpose . 'C.circuit'   == 'C.circuit' . 'reverse'
--- transpose . 'C.clique'    == 'C.clique'  . 'reverse'
 -- transpose ('box' x y)   == 'box' (transpose x) (transpose y)
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
