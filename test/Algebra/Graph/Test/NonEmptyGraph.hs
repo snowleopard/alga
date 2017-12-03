@@ -171,7 +171,7 @@ testNonEmptyGraph = do
     test "vertices1 (x :| [])     == vertex x" $ \(x :: Int) ->
           vertices1 (x :| [])     == vertex x
 
-    test "hasVertex x . vertices1 == elem x" $ \(x :: Int) xs ->
+    test "hasVertex x . vertices1 == elem x" $ \(x :: Int) (xs :: NonEmpty Int) ->
          (hasVertex x . vertices1) xs == elem x xs
 
     test "vertexCount . vertices1 == length . nub" $ \(xs :: NonEmpty Int) ->
@@ -273,7 +273,7 @@ testNonEmptyGraph = do
           vertexCount x          >= 1
 
     test "vertexCount            == length . vertexList1" $ \(x :: G) ->
-          vertexCount x          == (length . vertexList1) x
+          vertexCount x          == (NonEmpty.length . vertexList1) x
 
     putStrLn $ "\n============ Graph.NonEmpty.edgeCount ============"
     test "edgeCount (vertex x) == 0" $ \(x :: Int) ->
