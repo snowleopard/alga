@@ -587,7 +587,7 @@ biclique = H.biclique
 star :: a -> [a] -> Graph a
 star = H.star
 
--- | The /tree graph/ constructed from a given 'Tree' data structure.
+-- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
 -- given tree (i.e. the number of vertices in the tree).
 --
@@ -600,7 +600,7 @@ star = H.star
 tree :: Tree.Tree a -> Graph a
 tree = H.tree
 
--- | The /forest graph/ constructed from a given 'Forest' data structure.
+-- | The /forest graph/ constructed from a given 'Tree.Forest' data structure.
 -- Complexity: /O(F)/ time, memory and size, where /F/ is the size of the
 -- given forest (i.e. the number of vertices in the forest).
 --

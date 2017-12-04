@@ -420,7 +420,7 @@ biclique xs ys = Relation (x `Set.union` y) (x `setProduct` y)
 star :: Ord a => a -> [a] -> Relation a
 star = C.star
 
--- | The /tree graph/ constructed from a given 'Tree' data structure.
+-- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
@@ -432,7 +432,7 @@ star = C.star
 tree :: Ord a => Tree.Tree a -> Relation a
 tree = C.tree
 
--- | The /forest graph/ constructed from a given 'Forest' data structure.
+-- | The /forest graph/ constructed from a given 'Tree.Forest' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @

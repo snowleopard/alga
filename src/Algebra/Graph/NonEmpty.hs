@@ -32,7 +32,7 @@ module Algebra.Graph.NonEmpty (
     vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
-    path1, circuit1, clique1, biclique1, star, mesh1, torus1,
+    path1, circuit1, clique1, biclique1, star, tree, mesh1, torus1,
 
     -- * Graph transformation
     replaceVertex, mergeVertices, splitVertex1, transpose, simplify,
@@ -58,6 +58,7 @@ import qualified Algebra.Graph.Relation           as R
 import qualified Data.IntSet                      as IntSet
 import qualified Data.List.NonEmpty               as NonEmpty
 import qualified Data.Set                         as Set
+import qualified Data.Tree                        as Tree
 
 {-| The 'NonEmptyGraph' data type is a deep embedding of the core graph
 construction primitives 'vertex', 'overlay' and 'connect'. As one can guess from
@@ -494,6 +495,19 @@ star :: a -> [a] -> NonEmptyGraph a
 star u []     = vertex u
 star u (x:xs) = connect (vertex u) (vertices1 $ x :| xs)
 
+-- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
+-- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
+-- given tree (i.e. the number of vertices in the tree).
+--
+-- @
+-- tree (Node x [])                                         == 'vertex' x
+-- tree (Node x [Node y [Node z []]])                       == 'path1' (x ':|' [y,z])
+-- tree (Node x [Node y [], Node z []])                     == 'star' x [y,z]
+-- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges1' ((1,2) ':|' [(1,3), (3,4), (3,5)])
+-- @
+tree :: Tree.Tree a -> NonEmptyGraph a
+tree (Tree.Node x f) = overlays1 $ star x (map Tree.rootLabel f) :| map tree f
+
 -- | Construct a /mesh graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
 -- lengths of the given lists.
@@ -631,6 +645,6 @@ box x y = overlays1 xs `overlay` overlays1 ys
     xs = fmap (\b -> fmap (,b) x) $ toNonEmpty y
     ys = fmap (\a -> fmap (a,) y) $ toNonEmpty x
 
--- Shall we export this?
+-- Shall we export this? I suggest to wait for Foldable1 type class instead.
 toNonEmpty :: NonEmptyGraph a -> NonEmpty a
 toNonEmpty = foldg1 (:| []) (<>) (<>)

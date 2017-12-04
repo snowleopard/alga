@@ -16,6 +16,7 @@ module Algebra.Graph.Test.NonEmptyGraph (
 
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup
+import Data.Tree
 import Data.Tuple
 
 import Algebra.Graph.NonEmpty
@@ -390,6 +391,19 @@ testNonEmptyGraph = do
 
     test "star x [y,z] == edges1 ((x,y) :| [(x,z)])" $ \(x :: Int) y z ->
           star x [y,z] == edges1 ((x,y) :| [(x,z)])
+
+    putStrLn $ "\n============ Graph.NonEmpty.tree ============"
+    test "tree (Node x [])                                         == vertex x" $ \(x :: Int) ->
+          tree (Node x [])                                         == vertex x
+
+    test "tree (Node x [Node y [Node z []]])                       == path1 (x :| [y,z])" $ \(x :: Int) y z ->
+          tree (Node x [Node y [Node z []]])                       == path1 (x :| [y,z])
+
+    test "tree (Node x [Node y [], Node z []])                     == star x [y,z]" $ \(x :: Int) y z ->
+          tree (Node x [Node y [], Node z []])                     == star x [y,z]
+
+    test "tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == edges1 ((1,2) :| [(1,3), (3,4), (3,5)])" $
+          tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == edges1 ((1,2) :| [(1,3), (3,4), (3,5 :: Int)])
 
     putStrLn $ "\n============ Graph.NonEmpty.mesh1 ============"
     test "mesh1 (x :| [])    (y :| [])    == vertex (x, y)" $ \(x :: Int) (y :: Int) ->
