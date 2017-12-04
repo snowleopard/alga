@@ -60,7 +60,7 @@ import qualified Data.IntSet                      as IntSet
 import qualified Data.Set                         as Set
 import qualified Data.Tree                        as Tree
 
-{-| The 'Graph' datatype is a deep embedding of the core graph construction
+{-| The 'Graph' data type is a deep embedding of the core graph construction
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
 instance as a convenient notation for working with graphs:
 
@@ -109,8 +109,8 @@ The following useful theorems can be proved from the above set of axioms.
 When specifying the time and memory complexity of graph algorithms, /n/ will
 denote the number of vertices in the graph, /m/ will denote the number of
 edges in the graph, and /s/ will denote the /size/ of the corresponding
-'Graph' expression. For example, if g is a 'Graph' then /n/, /m/ and /s/ can be
-computed as follows:
+'Graph' expression. For example, if @g@ is a 'Graph' then /n/, /m/ and /s/ can
+be computed as follows:
 
 @n == 'vertexCount' g
 m == 'edgeCount' g
@@ -143,7 +143,7 @@ data Graph a = Empty
 
 instance NFData a => NFData (Graph a) where
     rnf Empty         = ()
-    rnf (Vertex a)    = rnf a
+    rnf (Vertex  x  ) = rnf x
     rnf (Overlay x y) = rnf x `seq` rnf y
     rnf (Connect x y) = rnf x `seq` rnf y
 
@@ -211,7 +211,6 @@ empty = Empty
 -- @
 -- 'isEmpty'     (vertex x) == False
 -- 'hasVertex' x (vertex x) == True
--- 'hasVertex' 1 (vertex 2) == False
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- 'size'        (vertex x) == 1
@@ -232,8 +231,8 @@ vertex = Vertex
 edge :: a -> a -> Graph a
 edge = H.edge
 
--- | /Overlay/ two graphs. An alias for the constructor 'Overlay'. This is an
--- idempotent, commutative and associative operation with the identity 'empty'.
+-- | /Overlay/ two graphs. An alias for the constructor 'Overlay'. This is a
+-- commutative, associative and idempotent operation with the identity 'empty'.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
 --
 -- @
@@ -251,8 +250,8 @@ overlay :: Graph a -> Graph a -> Graph a
 overlay = Overlay
 
 -- | /Connect/ two graphs. An alias for the constructor 'Connect'. This is an
--- associative operation with the identity 'empty', which distributes over the
--- overlay and obeys the decomposition axiom.
+-- associative operation with the identity 'empty', which distributes over
+-- 'overlay' and obeys the decomposition axiom.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
 -- of edges in the resulting graph is quadratic with respect to the number of
 -- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
@@ -343,7 +342,7 @@ foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
   where
     go Empty         = e
-    go (Vertex x)    = v x
+    go (Vertex  x  ) = v x
     go (Overlay x y) = o (go x) (go y)
     go (Connect x y) = c (go x) (go y)
 
@@ -374,7 +373,7 @@ isSubgraphOf = H.isSubgraphOf
 -- @
 (===) :: Eq a => Graph a -> Graph a -> Bool
 Empty           === Empty           = True
-(Vertex x)      === (Vertex y)      = x == y
+(Vertex  x1   ) === (Vertex  x2   ) = x1 ==  x2
 (Overlay x1 y1) === (Overlay x2 y2) = x1 === x2 && y1 === y2
 (Connect x1 y1) === (Connect x2 y2) = x1 === x2 && y1 === y2
 _               === _               = False
@@ -415,6 +414,7 @@ size = foldg 1 (const 1) (+) (+)
 -- @
 -- hasVertex x 'empty'            == False
 -- hasVertex x ('vertex' x)       == True
+-- hasVertex 1 ('vertex' 2)       == False
 -- hasVertex x . 'removeVertex' x == const False
 -- @
 hasVertex :: Eq a => a -> Graph a -> Bool
@@ -561,7 +561,7 @@ circuit = H.circuit
 clique :: [a] -> Graph a
 clique = H.clique
 
--- | The /biclique/ on a list of vertices.
+-- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
 -- lengths of the given lists.
 --
@@ -587,7 +587,7 @@ biclique = H.biclique
 star :: a -> [a] -> Graph a
 star = H.star
 
--- | The /tree graph/ constructed from a given 'Tree' data structure.
+-- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
 -- given tree (i.e. the number of vertices in the tree).
 --
@@ -600,7 +600,7 @@ star = H.star
 tree :: Tree.Tree a -> Graph a
 tree = H.tree
 
--- | The /forest graph/ constructed from a given 'Forest' data structure.
+-- | The /forest graph/ constructed from a given 'Tree.Forest' data structure.
 -- Complexity: /O(F)/ time, memory and size, where /F/ is the size of the
 -- given forest (i.e. the number of vertices in the forest).
 --
@@ -726,7 +726,7 @@ smash s t = foldg C.empty v C.overlay c
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
 replaceVertex = H.replaceVertex
 
--- | Merge vertices satisfying a given predicate with a given vertex.
+-- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
 -- /O(1)/ to be evaluated.
 --
@@ -761,9 +761,6 @@ splitVertex = H.splitVertex
 -- transpose ('vertex' x)  == 'vertex' x
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
--- transpose . 'path'      == 'path'    . 'reverse'
--- transpose . 'circuit'   == 'circuit' . 'reverse'
--- transpose . 'clique'    == 'clique'  . 'reverse'
 -- transpose ('box' x y)   == 'box' (transpose x) (transpose y)
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @

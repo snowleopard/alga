@@ -24,7 +24,7 @@ t = testsuite "Graph." empty
 h :: HTestsuite
 h = hTestsuite "Graph." empty
 
-type G  = Graph Int
+type G = Graph Int
 
 testGraph :: IO ()
 testGraph = do
