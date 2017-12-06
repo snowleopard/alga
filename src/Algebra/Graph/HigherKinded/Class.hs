@@ -362,9 +362,9 @@ vertexIntSet = foldr IntSet.insert IntSet.empty
 -- path [x,y] == 'edge' x y
 -- @
 path :: Graph g => [a] -> g a
-path []  = empty
-path [x] = vertex x
-path xs  = edges $ zip xs (tail xs)
+path xs = case xs of []     -> empty
+                     [x]    -> vertex x
+                     (_:ys) -> edges (zip xs ys)
 
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
