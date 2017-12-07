@@ -684,35 +684,36 @@ removeVertex = H.removeVertex
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
-removeEdge s t g = piece st where (_, _, st) = smash s t g
-
-data Piece a = Piece { piece :: Graph a, intact :: Bool }
-
-breakIf :: Bool -> Piece a -> Piece a
-breakIf True  _ = Piece Empty False
-breakIf False x = x
-
-instance C.Graph (Piece a) where
-    type Vertex (Piece a) = a
-    empty       = Piece Empty True
-    vertex x    = Piece (Vertex x) True
-    overlay x y = Piece (nonTrivial Overlay (piece x) (piece y)) (intact x && intact y)
-    connect x y = Piece (nonTrivial Connect (piece x) (piece y)) (intact x && intact y)
-
-nonTrivial :: (Graph a -> Graph a -> Graph a) -> Graph a -> Graph a -> Graph a
-nonTrivial _ Empty x = x
-nonTrivial _ x Empty = x
-nonTrivial f x y     = f x y
-
-type Pieces a = (Piece a, Piece a, Piece a)
-
-smash :: Eq a => a -> a -> Graph a -> Pieces a
-smash s t = foldg C.empty v C.overlay c
+removeEdge s t g | hasVertex s g = overlay (induce (/=s) g) neighbours
+                 | otherwise     = g
   where
-    v x = (breakIf (x == s) $ C.vertex x, breakIf (x == t) $ C.vertex x, C.vertex x)
-    c x@(sx, tx, stx) y@(sy, ty, sty)
-        | intact sx || intact ty = C.connect x y
-        | otherwise = (C.connect sx sy, C.connect tx ty, C.connect sx sty `C.overlay` C.connect stx ty)
+    neighbours = transpose (star s is) `overlay` star s os
+    is         = filter (/=s) $ preList s g
+    os         = filter (/=t) $ postList s g
+
+preList :: Eq a => a -> Graph a -> [a]
+preList v g = pre (foldg eResult vResult oResult cResult g) []
+  where
+    eResult     = Result False id id id
+    vResult x   = Result (x==v) id id (x:)
+    oResult x y = Result (seen x || seen y) (pre x . pre y) (post x . post y) (leaves x . leaves y)
+    cResult x y = Result (seen x || seen y) (prex  . pre y) (post x . posty ) (leaves x . leaves y)
+      where
+        prex  = if seen y then leaves x else pre x
+        posty = if seen x then leaves y else post y
+
+postList :: Eq a => a -> Graph a -> [a]
+postList v g = post (foldg eResult vResult oResult cResult g) []
+  where
+    eResult     = Result False id id id
+    vResult x   = Result (x==v) id id (x:)
+    oResult x y = Result (seen x || seen y) (pre x . pre y) (post x . post y) (leaves x . leaves y)
+    cResult x y = Result (seen x || seen y) (prex  . pre y) (post x . posty ) (leaves x . leaves y)
+      where
+        prex  = if seen y then leaves x else pre x
+        posty = if seen x then leaves y else post y
+
+data Result a = Result { seen :: Bool, pre :: [a] -> [a], post :: [a] -> [a], leaves :: [a] -> [a] }
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
