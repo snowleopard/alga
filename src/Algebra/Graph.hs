@@ -685,12 +685,12 @@ removeVertex = H.removeVertex
 -- @
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t g
-    | blank p   = g
+    | blank ctx = g
     | otherwise = overlays [ induce (/=s) g, star s os, transpose (star s is) ]
   where
-    p  = pivot s g
-    is = filter (/=s) (preds p [])
-    os = filter (/=t) (succs p [])
+    ctx = context s g
+    is  = filter (/=s) (preds ctx [])
+    os  = filter (/=t) (succs ctx [])
 
 -- TODO: Factor out difference lists into a separate module
 data Context a = Context
@@ -699,8 +699,8 @@ data Context a = Context
     , succs  :: [a] -> [a]   -- list of the vertex successors
     , leaves :: [a] -> [a] } -- list of all vertices (leaves) of the expression
 
-pivot :: Eq a => a -> Graph a -> Context a
-pivot v = foldg (Context True id id id) (\x -> Context (x /= v) id id (x:)) o c
+context :: Eq a => a -> Graph a -> Context a
+context v = foldg (Context True id id id) (\x -> Context (x /= v) id id (x:)) o c
   where
     o x y = Context (blank x && blank y) (preds x . preds y) (succs x . succs y) (leaves x . leaves y)
     c x y = Context (blank x && blank y) (cpredsx . preds y) (succs x . csuccsy) (leaves x . leaves y)
