@@ -684,36 +684,29 @@ removeVertex = H.removeVertex
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
-removeEdge s t g | hasVertex s g = overlay (induce (/=s) g) neighbours
-                 | otherwise     = g
+removeEdge s t g
+    | blank p   = g
+    | otherwise = overlays [ induce (/=s) g, star s os, transpose (star s is) ]
   where
-    neighbours = transpose (star s is) `overlay` star s os
-    is         = filter (/=s) $ preList s g
-    os         = filter (/=t) $ postList s g
+    p  = pivot s g
+    is = filter (/=s) (preds p [])
+    os = filter (/=t) (succs p [])
 
-preList :: Eq a => a -> Graph a -> [a]
-preList v g = pre (foldg eResult vResult oResult cResult g) []
+-- TODO: Factor out difference lists into a separate module
+data Context a = Context
+    { blank  :: Bool         -- True if the vertex doesn't appear in the expression
+    , preds  :: [a] -> [a]   -- list of the vertex predecessors
+    , succs  :: [a] -> [a]   -- list of the vertex successors
+    , leaves :: [a] -> [a] } -- list of all vertices (leaves) of the expression
+
+pivot :: Eq a => a -> Graph a -> Context a
+pivot v = foldg (Context True id id id) (\x -> Context (x /= v) id id (x:)) o c
   where
-    eResult     = Result False id id id
-    vResult x   = Result (x==v) id id (x:)
-    oResult x y = Result (seen x || seen y) (pre x . pre y) (post x . post y) (leaves x . leaves y)
-    cResult x y = Result (seen x || seen y) (prex  . pre y) (post x . posty ) (leaves x . leaves y)
+    o x y = Context (blank x && blank y) (preds x . preds y) (succs x . succs y) (leaves x . leaves y)
+    c x y = Context (blank x && blank y) (cpredsx . preds y) (succs x . csuccsy) (leaves x . leaves y)
       where
-        prex  = if seen y then leaves x else pre x
-        posty = if seen x then leaves y else post y
-
-postList :: Eq a => a -> Graph a -> [a]
-postList v g = post (foldg eResult vResult oResult cResult g) []
-  where
-    eResult     = Result False id id id
-    vResult x   = Result (x==v) id id (x:)
-    oResult x y = Result (seen x || seen y) (pre x . pre y) (post x . post y) (leaves x . leaves y)
-    cResult x y = Result (seen x || seen y) (prex  . pre y) (post x . posty ) (leaves x . leaves y)
-      where
-        prex  = if seen y then leaves x else pre x
-        posty = if seen x then leaves y else post y
-
-data Result a = Result { seen :: Bool, pre :: [a] -> [a], post :: [a] -> [a], leaves :: [a] -> [a] }
+        cpredsx = if blank y then preds x else leaves x
+        csuccsy = if blank x then succs y else leaves y
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
