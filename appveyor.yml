@@ -3,7 +3,7 @@ build: off
 install:
   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
 before_test:
-  - curl -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
+  - curl -sS -ostack.zip -L --insecure http://www.stackage.org/stack/windows-x86_64
   - 7z x stack.zip stack.exe
 test_script:
   - stack setup > nul
