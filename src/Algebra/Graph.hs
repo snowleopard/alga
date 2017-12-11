@@ -684,35 +684,29 @@ removeVertex = H.removeVertex
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
-removeEdge s t g = piece st where (_, _, st) = smash s t g
-
-data Piece a = Piece { piece :: Graph a, intact :: Bool }
-
-breakIf :: Bool -> Piece a -> Piece a
-breakIf True  _ = Piece Empty False
-breakIf False x = x
-
-instance C.Graph (Piece a) where
-    type Vertex (Piece a) = a
-    empty       = Piece Empty True
-    vertex x    = Piece (Vertex x) True
-    overlay x y = Piece (nonTrivial Overlay (piece x) (piece y)) (intact x && intact y)
-    connect x y = Piece (nonTrivial Connect (piece x) (piece y)) (intact x && intact y)
-
-nonTrivial :: (Graph a -> Graph a -> Graph a) -> Graph a -> Graph a -> Graph a
-nonTrivial _ Empty x = x
-nonTrivial _ x Empty = x
-nonTrivial f x y     = f x y
-
-type Pieces a = (Piece a, Piece a, Piece a)
-
-smash :: Eq a => a -> a -> Graph a -> Pieces a
-smash s t = foldg C.empty v C.overlay c
+removeEdge s t g
+    | blank ctx = g
+    | otherwise = overlays [ induce (/=s) g, star s os, transpose (star s is) ]
   where
-    v x = (breakIf (x == s) $ C.vertex x, breakIf (x == t) $ C.vertex x, C.vertex x)
-    c x@(sx, tx, stx) y@(sy, ty, sty)
-        | intact sx || intact ty = C.connect x y
-        | otherwise = (C.connect sx sy, C.connect tx ty, C.connect sx sty `C.overlay` C.connect stx ty)
+    ctx = context s g
+    is  = filter (/=s) (preds ctx [])
+    os  = filter (/=t) (succs ctx [])
+
+-- TODO: Factor out difference lists into a separate module
+data Context a = Context
+    { blank  :: Bool         -- True if the vertex doesn't appear in the expression
+    , preds  :: [a] -> [a]   -- list of the vertex predecessors
+    , succs  :: [a] -> [a]   -- list of the vertex successors
+    , leaves :: [a] -> [a] } -- list of all vertices (leaves) of the expression
+
+context :: Eq a => a -> Graph a -> Context a
+context v = foldg (Context True id id id) (\x -> Context (x /= v) id id (x:)) o c
+  where
+    o x y = Context (blank x && blank y) (preds x . preds y) (succs x . succs y) (leaves x . leaves y)
+    c x y = Context (blank x && blank y) (cpredsx . preds y) (succs x . csuccsy) (leaves x . leaves y)
+      where
+        cpredsx = if blank y then preds x else leaves x
+        csuccsy = if blank x then succs y else leaves y
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
