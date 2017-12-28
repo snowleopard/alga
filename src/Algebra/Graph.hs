@@ -52,6 +52,9 @@ import Control.Applicative (Alternative, (<|>))
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Data.Semigroup
+import GHC.Exts (toList)
+
+import Algebra.Graph.Utilities
 
 import qualified Algebra.Graph.AdjacencyMap       as AM
 import qualified Algebra.Graph.Class              as C
@@ -686,38 +689,36 @@ removeVertex = H.removeVertex
 -- @
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t g
-    | seen ctx  = overlays [ induce (/=s) g, star s os, transpose (star s is) ]
+    | ok        = overlays [ induce (/=s) g, edgesFromS, edgesToS ]
     | otherwise = g
   where
-    ctx = focus (==s) g
-    is  = filter (/=s) (extract $ preds ctx)
-    os  = filter (/=t) (extract $ succs ctx)
+    Focus ok is os _ = focus (==s) g
+    edgesFromS       = star s $ filter (/=t) (toList os)
+    edgesToS         = vertices (filter (/=s) (toList is)) `connect` vertex s
 
-newtype List a = List (Endo [a]) deriving (Monoid, Semigroup)
-
-literal :: a -> List a
-literal = List . Endo . (:)
-
-extract :: List a -> [a]
-extract (List x) = appEndo x []
-
--- TODO: Factor out difference lists into a separate module
 data Focus a = Focus
-    { seen   :: Bool     -- True if the vertex doesn't appear in the expression
-    , preds  :: List a   -- list of the vertex predecessors
-    , succs  :: List a   -- list of the vertex successors
-    , leaves :: List a } -- list of all vertices (leaves) of the expression
+    { ok :: Bool    -- True if focus on the specified subgraph is obtained.
+    , is :: Doc a   -- Inputs into the focused subgraph.
+    , os :: Doc a   -- Outputs out of the focused subgraph.
+    , vs :: Doc a } -- All vertices (leaves) of the graph expression.
+
+data Context a = Context { inputs :: [a], outputs :: [a] }
+
+context :: (a -> Bool) -> Graph a -> Maybe (Context a)
+context f g = if ok then Just (Context (toList is) (toList os)) else Nothing
+  where
+    Focus ok is os _ = focus f g
 
 focus :: (a -> Bool) -> Graph a -> Focus a
 focus f = foldg e v o c
   where
     e     = Focus False mempty mempty mempty
     v x   = Focus (f x) mempty mempty (literal x)
-    o x y = Focus (seen x || seen y) (preds x <> preds y) (succs x <> succs y) (leaves x <> leaves y)
-    c x y = Focus (seen x || seen y) (cpredsx <> preds y) (succs x <> csuccsy) (leaves x <> leaves y)
+    o x y = Focus (ok x || ok y) (is x <> is y) (os x <> os y) (vs x <> vs y)
+    c x y = Focus (ok x || ok y) (visx <> is y) (os x <> vosy) (vs x <> vs y)
       where
-        cpredsx = if seen y then leaves x else preds x
-        csuccsy = if seen x then leaves y else succs y
+        visx = if ok y then vs x else is x
+        vosy = if ok x then vs y else os y
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
