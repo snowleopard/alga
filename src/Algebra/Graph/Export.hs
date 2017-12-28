@@ -11,9 +11,8 @@
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines basic data types and functions for exporting graphs in
--- textual and binary formats. "Algebra.Graph.Export.Dot" provides DOT-specific
--- functionality.
+-- This module defines basic functionality for exporting graphs in textual and
+-- binary formats. "Algebra.Graph.Export.Dot" provides DOT-specific functions.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Export (
     -- * Constructing and exporting documents
@@ -32,52 +31,7 @@ import Prelude hiding (unlines)
 
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Class (ToGraph (..))
-
--- | An abstract document type, where @s@ is the type of strings or words (text
--- or binary). 'Doc' @s@ is a 'Monoid', therefore 'mempty' corresponds to the
--- empty document and two documents can be concatenated with 'mappend' (or
--- operator 'Data.Monoid.<>'). Note that most functions on 'Doc' @s@ require
--- that the underlying type @s@ is also a 'Monoid'.
-newtype Doc s = Doc (Endo [s]) deriving (Monoid, Semigroup)
-
-instance (Monoid s, Show s) => Show (Doc s) where
-    show = show . render
-
-instance (Monoid s, Eq s) => Eq (Doc s) where
-    x == y = render x == render y
-
-instance (Monoid s, Ord s) => Ord (Doc s) where
-    compare x y = compare (render x) (render y)
-
-instance IsString s => IsString (Doc s) where
-    fromString = literal . fromString
-
--- | Construct a document comprising a single string or word. If @s@ is an
--- instance of class 'IsString', then documents of type 'Doc' @s@ can be
--- constructed directly from string literals (see the second example below).
---
--- @
--- literal "Hello, " <> literal "World!" == literal "Hello, World!"
--- literal "I am just a string literal"  == "I am just a string literal"
--- literal 'mempty'                        == 'mempty'
--- 'render' . literal                      == 'id'
--- literal . 'render'                      == 'id'
--- @
-literal :: s -> Doc s
-literal = Doc . Endo . (:)
-
--- | Render a document as a single string or word. An inverse of the function
--- 'literal'.
---
--- @
--- render ('literal' "al" <> 'literal' "ga") :: ('IsString' s, 'Monoid' s) => s
--- render ('literal' "al" <> 'literal' "ga") == "alga"
--- render 'mempty'                         == 'mempty'
--- render . 'literal'                      == 'id'
--- 'literal' . render                      == 'id'
--- @
-render :: Monoid s => Doc s -> s
-render (Doc x) = mconcat $ appEndo x []
+import Algebra.Graph.Utilities
 
 -- | Concatenate two documents, separated by a single space, unless one of the
 -- documents is empty. The operator \<+\> is associative with identity 'mempty'.
