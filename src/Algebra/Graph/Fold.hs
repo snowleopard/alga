@@ -52,12 +52,16 @@ import Prelude.Compat
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Compat (MonadPlus (..), ap)
-import Data.Foldable (toList)
+import Data.Semigroup
+import GHC.Exts (toList)
+
+import Algebra.Graph.Utilities
 
 import qualified Algebra.Graph.AdjacencyMap       as AM
 import qualified Algebra.Graph.Class              as C
 import qualified Algebra.Graph.HigherKinded.Class as H
 import qualified Algebra.Graph.Relation           as R
+import qualified Data.Foldable                    as Foldable
 import qualified Data.IntSet                      as IntSet
 import qualified Data.Set                         as Set
 
@@ -404,34 +408,22 @@ hasVertex = H.hasVertex
 hasEdge :: Ord a => a -> a -> Fold a -> Bool
 hasEdge = H.hasEdge
 
-data Piece g = Piece { piece :: g, intact :: Bool, trivial :: Bool }
+data Focus a = Focus
+    { ok :: Bool    -- True if focus on the specified subgraph is obtained.
+    , is :: Doc a   -- Inputs into the focused subgraph.
+    , os :: Doc a   -- Outputs out of the focused subgraph.
+    , vs :: Doc a } -- All vertices (leaves) of the graph expression.
 
-breakIf :: C.Graph g => Bool -> Piece g -> Piece g
-breakIf True  _ = Piece C.empty False True
-breakIf False x = x
-
-instance C.Graph g => C.Graph (Piece g) where
-    type Vertex (Piece g) = C.Vertex g
-    empty       = Piece C.empty True True
-    vertex x    = Piece (C.vertex x) True False
-    overlay x y = Piece (nonTrivial C.overlay x y) (intact x && intact y) False
-    connect x y = Piece (nonTrivial C.connect x y) (intact x && intact y) False
-
-nonTrivial :: (g -> g -> g) -> Piece g -> Piece g -> g
-nonTrivial f x y
-    | trivial x = piece y
-    | trivial y = piece x
-    | otherwise = f (piece x) (piece y)
-
-type Pieces a = (Piece a, Piece a, Piece a)
-
-smash :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> Pieces g
-smash s t = foldg C.empty v C.overlay c
+focus :: (a -> Bool) -> Fold a -> Focus a
+focus f = foldg e v o c
   where
-    v x = (breakIf (x == s) $ C.vertex x, breakIf (x == t) $ C.vertex x, C.vertex x)
-    c x@(sx, tx, stx) y@(sy, ty, sty)
-        | intact sx || intact ty = C.connect x y
-        | otherwise = (C.connect sx sy, C.connect tx ty, C.connect sx sty `C.overlay` C.connect stx ty)
+    e     = Focus False mempty mempty mempty
+    v x   = Focus (f x) mempty mempty (literal x)
+    o x y = Focus (ok x || ok y) (is x <> is y) (os x <> os y) (vs x <> vs y)
+    c x y = Focus (ok x || ok y) (visx <> is y) (os x <> vosy) (vs x <> vs y)
+      where
+        visx = if ok y then vs x else is x
+        vosy = if ok x then vs y else os y
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
@@ -596,7 +588,13 @@ removeVertex v = induce (/= v)
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
-removeEdge s t g = piece st where (_, _, st) = smash s t g
+removeEdge s t g
+    | ok        = overlays [ induce (/=s) g, edgesFromS, edgesToS ]
+    | otherwise = C.toGraph g
+  where
+    Focus ok is os _ = focus (==s) g
+    edgesFromS       = C.star s $ filter (/=t) (toList os)
+    edgesToS         = C.vertices (filter (/=s) (toList is)) `connect` C.vertex s
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given graph expression. If @y@ already exists, @x@ and @y@ will be merged.
@@ -751,5 +749,5 @@ simple op x y
 box :: (C.Graph g, C.Vertex g ~ (a, b)) => Fold a -> Fold b -> g
 box x y = C.overlays $ xs ++ ys
   where
-    xs = map (\b -> gmap (,b) x) $ toList y
-    ys = map (\a -> gmap (a,) y) $ toList x
+    xs = map (\b -> gmap (,b) x) $ Foldable.toList y
+    ys = map (\a -> gmap (a,) y) $ Foldable.toList x
