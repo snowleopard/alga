@@ -25,6 +25,7 @@ module Algebra.Graph.Export (
     export
   ) where
 
+import Data.Foldable (fold)
 import Data.Semigroup
 import Data.String hiding (unlines)
 import Prelude hiding (unlines)
@@ -32,6 +33,47 @@ import Prelude hiding (unlines)
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Class (ToGraph (..))
 import Algebra.Graph.Utilities
+
+newtype Doc s = Doc (List s) deriving (Monoid, Semigroup)
+
+instance (Monoid s, Show s) => Show (Doc s) where
+    show = show . render
+
+instance (Monoid s, Eq s) => Eq (Doc s) where
+    x == y = render x == render y
+
+instance (Monoid s, Ord s) => Ord (Doc s) where
+    compare x y = compare (render x) (render y)
+
+instance IsString s => IsString (Doc s) where
+    fromString = literal . fromString
+
+-- | Construct a document comprising a single symbol or word. If @a@ is an
+-- instance of class 'IsString', then documents of type 'Doc' @a@ can be
+-- constructed directly from string literals (see the second example below).
+--
+-- @
+-- literal "Hello, " 'Data.Monoid.<>' literal "World!" == literal "Hello, World!"
+-- literal "I am just a string literal"  == "I am just a string literal"
+-- literal 'mempty'                        == 'mempty'
+-- 'render' . literal                      == 'id'
+-- literal . 'render'                      == 'id'
+-- @
+literal :: s -> Doc s
+literal = Doc . pure
+
+-- | Render a document as a single string or word. An inverse of the function
+-- 'literal'.
+--
+-- @
+-- render ('literal' "al" 'Data.Monoid.<>' 'literal' "ga") :: ('IsString' s, 'Monoid' s) => s
+-- render ('literal' "al" 'Data.Monoid.<>' 'literal' "ga") == "alga"
+-- render 'mempty'                         == 'mempty'
+-- render . 'literal'                      == 'id'
+-- 'literal' . render                      == 'id'
+-- @
+render :: Monoid s => Doc s -> s
+render (Doc x) = fold x
 
 -- | Concatenate two documents, separated by a single space, unless one of the
 -- documents is empty. The operator \<+\> is associative with identity 'mempty'.

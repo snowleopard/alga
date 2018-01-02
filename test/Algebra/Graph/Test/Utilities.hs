@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedLists, OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Utilities
@@ -22,28 +22,6 @@ import Algebra.Graph.Test
 
 testUtilities :: IO ()
 testUtilities = do
-    putStrLn "\n============ Utilities.literal ============"
-    test "literal \"Hello, \" <> literal \"World!\" == literal \"Hello, World!\"" $
-          literal "Hello, " <> literal "World!" == literal ("Hello, World!" :: String)
-
-    test "literal \"I am just a string literal\"  == \"I am just a string literal\"" $
-          literal "I am just a string literal"  == ("I am just a string literal" :: Doc String)
-
-    test "literal mempty                        == mempty" $
-          literal mempty                        == (mempty :: Doc String)
-
-    test "literal \"al\" <> literal \"ga\"          == [\"al\", \"ga\"]" $
-          literal "al" <> literal "ga"          == (["al", "ga"] :: Doc String)
-
-    test "render . literal                      == id" $ \(x :: String) ->
-         (render . literal) x                   == x
-
-    test "literal . render                      == id" $ \(xs :: [String]) -> let x = mconcat (map literal xs) in
-         (literal . render) x                   == x
-
-    putStrLn "\n============ Utilities.render ============"
-    test "render (literal \"al\" <> literal \"ga\") == \"alga\"" $
-          render (literal "al" <> literal "ga") == ("alga" :: String)
-
-    test "render mempty                         == mempty" $
-          render mempty                         == (mempty :: Doc String)
+    putStrLn "\n============ Utilities.List ============"
+    test "pure \"al\" <> pure \"ga\"          == [\"al\", \"ga\"]" $
+          pure "al" <> pure "ga"          == (["al", "ga"] :: List String)

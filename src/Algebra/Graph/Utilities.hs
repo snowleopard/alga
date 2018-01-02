@@ -11,15 +11,14 @@
 -- motivation behind the library, the underlying theory, and implementation details.
 --
 -- This module defines various utilities used throughout the library, such as
--- documents with fast concatenation implemented via difference lists.
+-- lists with fast concatenation.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Utilities (
-    -- * Documents
-    Doc, literal, render
+    -- * Data structures
+    List (..)
   ) where
 
 import Data.Semigroup
-import Data.String
 import GHC.Exts
 
 -- | An abstract document data type with /O(1)/ time concatenation (the current
@@ -34,49 +33,32 @@ import GHC.Exts
 -- this requires the @OverloadedLists@ GHC extension. Finally, by using the
 -- @OverloadedStrings@ GHC extension you can construct documents as string
 -- literals, e.g. simply as @"alga"@. See some examples below.
-newtype Doc a = Doc (Endo [a]) deriving (Monoid, Semigroup)
+newtype List a = List (Endo [a]) deriving (Monoid, Semigroup)
 
-instance (Monoid a, Show a) => Show (Doc a) where
-    show = show . render
+instance Show a => Show (List a) where
+    show = show . toList
 
-instance (Monoid a, Eq a) => Eq (Doc a) where
-    x == y = render x == render y
+instance Eq a => Eq (List a) where
+    x == y = toList x == toList y
 
-instance (Monoid a, Ord a) => Ord (Doc a) where
-    compare x y = compare (render x) (render y)
+instance Ord a => Ord (List a) where
+    compare x y = compare (toList x) (toList y)
 
-instance IsString a => IsString (Doc a) where
-    fromString = literal . fromString
+instance IsList (List a) where
+    type Item (List a) = a
+    fromList        = List . Endo . (<>)
+    toList (List x) = appEndo x []
 
-instance IsList (Doc a) where
-  type Item (Doc a) = a
-  fromList       = Doc . Endo . (<>)
-  toList (Doc x) = appEndo x []
+instance Foldable List where
+    foldMap f (List x) = foldMap f (appEndo x [])
 
--- | Construct a document comprising a single symbol or word. If @a@ is an
--- instance of class 'IsString', then documents of type 'Doc' @a@ can be
--- constructed directly from string literals (see the second example below).
---
--- @
--- literal "Hello, " 'Data.Monoid.<>' literal "World!" == literal "Hello, World!"
--- literal "I am just a string literal"  == "I am just a string literal"
--- literal 'mempty'                        == 'mempty'
--- literal "al" 'Data.Monoid.<>' literal "ga"          == ["al", "ga"]
--- 'render' . literal                      == 'id'
--- literal . 'render'                      == 'id'
--- @
-literal :: a -> Doc a
-literal = Doc . Endo . (:)
+instance Functor List where
+    fmap f = fromList . map f . toList
 
--- | Render a document as a single string or word. An inverse of the function
--- 'literal'.
---
--- @
--- render ('literal' "al" 'Data.Monoid.<>' 'literal' "ga") :: ('IsString' s, 'Monoid' s) => s
--- render ('literal' "al" 'Data.Monoid.<>' 'literal' "ga") == "alga"
--- render 'mempty'                         == 'mempty'
--- render . 'literal'                      == 'id'
--- 'literal' . render                      == 'id'
--- @
-render :: Monoid a => Doc a -> a
-render = mconcat . toList
+instance Applicative List where
+    pure    = List . Endo . (:)
+    f <*> x = fromList (toList f <*> toList x)
+
+instance Monad List where
+    return  = pure
+    x >>= f = fromList (toList x >>= toList . f)

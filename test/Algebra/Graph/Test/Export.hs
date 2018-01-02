@@ -27,6 +27,29 @@ import qualified Algebra.Graph.Export.Dot as ED
 
 testExport :: IO ()
 testExport = do
+    putStrLn "\n============ Export.literal ============"
+    test "literal \"Hello, \" <> literal \"World!\" == literal \"Hello, World!\"" $
+          literal "Hello, " <> literal "World!" == literal ("Hello, World!" :: String)
+
+    test "literal \"I am just a string literal\"  == \"I am just a string literal\"" $
+          literal "I am just a string literal"  == ("I am just a string literal" :: Doc String)
+
+    test "literal mempty                        == mempty" $
+          literal mempty                        == (mempty :: Doc String)
+
+    test "render . literal                      == id" $ \(x :: String) ->
+         (render . literal) x                   == x
+
+    test "literal . render                      == id" $ \(xs :: [String]) -> let x = mconcat (map literal xs) in
+         (literal . render) x                   == x
+
+    putStrLn "\n============ Export.render ============"
+    test "render (literal \"al\" <> literal \"ga\") == \"alga\"" $
+          render (literal "al" <> literal "ga") == ("alga" :: String)
+
+    test "render mempty                         == mempty" $
+          render mempty                         == (mempty :: Doc String)
+
     putStrLn "\n============ Export.<+> ============"
     test "x <+> mempty         == x" $ \(x :: Doc String) ->
           x <+> mempty         == x
