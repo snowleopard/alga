@@ -18,9 +18,8 @@ module Algebra.Graph.Internal (
     List (..)
   ) where
 
-import Prelude ()
-import Prelude.Compat
-
+import Control.Applicative (Applicative (..))
+import Data.Foldable (Foldable (foldMap))
 import Data.Semigroup
 import GHC.Exts
 
