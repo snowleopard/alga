@@ -32,7 +32,7 @@ import Prelude hiding (unlines)
 
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Class (ToGraph (..))
-import Algebra.Graph.Utilities
+import Algebra.Graph.Internal
 
 newtype Doc s = Doc (List s) deriving (Monoid, Semigroup)
 

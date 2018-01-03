@@ -1,27 +1,27 @@
 {-# LANGUAGE OverloadedLists #-}
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Test.Utilities
+-- Module     : Algebra.Graph.Test.Internal
 -- Copyright  : (c) Andrey Mokhov 2016-2017
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Testsuite for "Algebra.Graph.Utilities".
+-- Testsuite for "Algebra.Graph.Internal".
 -----------------------------------------------------------------------------
-module Algebra.Graph.Test.Utilities (
+module Algebra.Graph.Test.Internal (
     -- * Testsuite
-    testUtilities
+    testInternal
   ) where
 
 import Prelude
 import Data.Monoid
 
-import Algebra.Graph.Utilities
+import Algebra.Graph.Internal
 import Algebra.Graph.Test
 
-testUtilities :: IO ()
-testUtilities = do
-    putStrLn "\n============ Utilities.List ============"
+testInternal :: IO ()
+testInternal = do
+    putStrLn "\n============ Internal.List ============"
     test "pure \"al\" <> pure \"ga\"          == [\"al\", \"ga\"]" $
           pure "al" <> pure "ga"          == (["al", "ga"] :: List String)

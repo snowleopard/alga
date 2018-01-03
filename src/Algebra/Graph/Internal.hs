@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Utilities
+-- Module     : Algebra.Graph.Internal
 -- Copyright  : (c) Andrey Mokhov 2016-2017
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -13,7 +13,7 @@
 -- This module defines various utilities used throughout the library, such as
 -- lists with fast concatenation.
 -----------------------------------------------------------------------------
-module Algebra.Graph.Utilities (
+module Algebra.Graph.Internal (
     -- * Data structures
     List (..)
   ) where
