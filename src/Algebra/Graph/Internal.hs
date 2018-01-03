@@ -10,8 +10,9 @@
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines various utilities used throughout the library, such as
--- lists with fast concatenation.
+-- This module defines various internal utilities and data structures used
+-- throughout the library, such as lists with fast concatenation. The API
+-- is unstable and unsafe.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Internal (
     -- * Data structures
@@ -23,18 +24,16 @@ import Data.Foldable (Foldable (foldMap))
 import Data.Semigroup
 import GHC.Exts
 
--- | An abstract document data type with /O(1)/ time concatenation (the current
--- implementation uses difference lists). Here @a@ is the type of abstract
--- symbols or words -- for example, text strings or binary blocks. 'Doc' @a@
--- is a 'Monoid': 'mempty' corresponds to the empty document and two documents
--- can be concatenated with 'mappend' (or operator 'Data.Monoid.<>'). Documents
--- comprising a single symbol or word can be constructed using the function
--- 'literal'. 'Doc' @a@ is also an instance of 'IsList', therefore you can use
--- list literals to construct documents, e.g. @["al", "ga"]@ @::@ 'Doc' @String@
--- is the same as 'literal' @"al"@ 'Data.Monoid.<>' 'literal' @"ga"@; note that
--- this requires the @OverloadedLists@ GHC extension. Finally, by using the
--- @OverloadedStrings@ GHC extension you can construct documents as string
--- literals, e.g. simply as @"alga"@. See some examples below.
+-- | An abstract list data type with /O(1)/ time concatenation (the current
+-- implementation uses difference lists). Here @a@ is the type of list elements.
+-- 'List' @a@ is a 'Monoid': 'mempty' corresponds to the empty list and two lists
+-- can be concatenated with 'mappend' (or operator 'Data.Monoid.<>'). Singleton
+-- lists can be constructed using the function 'pure' from the 'Applicative'
+-- instance. 'List' @a@ is also an instance of 'IsList', therefore you can use
+-- list literals, e.g. @[1,4]@ @::@ 'List' @Int@ is the same as 'pure' @1@
+-- 'Data.Monoid.<>' 'pure' @4@; note that this requires the @OverloadedLists@
+-- GHC extension. To extract plain Haskell lists you can use the 'toList'
+-- function from the 'Foldable' instance.
 newtype List a = List (Endo [a]) deriving (Monoid, Semigroup)
 
 instance Show a => Show (List a) where

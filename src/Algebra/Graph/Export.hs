@@ -35,6 +35,15 @@ import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Class (ToGraph (..))
 import Algebra.Graph.Internal
 
+-- | An abstract document data type with /O(1)/ time concatenation (the current
+-- implementation uses difference lists). Here @s@ is the type of abstract
+-- symbols or strings (text or binary). 'Doc' @s@ is a 'Monoid', therefore
+-- 'mempty' corresponds to the empty document and two documents can be
+-- concatenated with 'mappend' (or operator 'Data.Monoid.<>'). Documents
+-- comprising a single symbol or string can be constructed using the function
+-- 'literal'. Alternatively, you can construct documents as string literals, e.g.
+-- simply as @"alga"@, by using the @OverloadedStrings@ GHC extension. To extract
+-- the document contents use the function 'render'. See some examples below.
 newtype Doc s = Doc (List s) deriving (Monoid, Semigroup)
 
 instance (Monoid s, Show s) => Show (Doc s) where
@@ -49,8 +58,8 @@ instance (Monoid s, Ord s) => Ord (Doc s) where
 instance IsString s => IsString (Doc s) where
     fromString = literal . fromString
 
--- | Construct a document comprising a single symbol or word. If @a@ is an
--- instance of class 'IsString', then documents of type 'Doc' @a@ can be
+-- | Construct a document comprising a single symbol or string. If @s@ is an
+-- instance of class 'IsString', then documents of type 'Doc' @s@ can be
 -- constructed directly from string literals (see the second example below).
 --
 -- @
@@ -63,8 +72,7 @@ instance IsString s => IsString (Doc s) where
 literal :: s -> Doc s
 literal = Doc . pure
 
--- | Render a document as a single string or word. An inverse of the function
--- 'literal'.
+-- | Render the document as a single string. An inverse of the function 'literal'.
 --
 -- @
 -- render ('literal' "al" 'Data.Monoid.<>' 'literal' "ga") :: ('IsString' s, 'Monoid' s) => s

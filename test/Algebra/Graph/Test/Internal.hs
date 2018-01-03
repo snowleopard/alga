@@ -14,7 +14,7 @@ module Algebra.Graph.Test.Internal (
     testInternal
   ) where
 
-import Prelude
+import Control.Applicative (pure)
 import Data.Monoid
 
 import Algebra.Graph.Internal
@@ -23,5 +23,5 @@ import Algebra.Graph.Test
 testInternal :: IO ()
 testInternal = do
     putStrLn "\n============ Internal.List ============"
-    test "pure \"al\" <> pure \"ga\"          == [\"al\", \"ga\"]" $
-          pure "al" <> pure "ga"          == (["al", "ga"] :: List String)
+    test "pure 1 <> pure 4 == [1, 4]" $
+          pure 1 <> pure 4 == ([1, 4] :: List Int)
