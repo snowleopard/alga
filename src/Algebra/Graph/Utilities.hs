@@ -18,6 +18,9 @@ module Algebra.Graph.Utilities (
     List (..)
   ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Data.Semigroup
 import GHC.Exts
 
@@ -44,6 +47,7 @@ instance Eq a => Eq (List a) where
 instance Ord a => Ord (List a) where
     compare x y = compare (toList x) (toList y)
 
+-- TODO: Add rewrite rules? fromList . toList == toList . fromList == id
 instance IsList (List a) where
     type Item (List a) = a
     fromList        = List . Endo . (<>)
