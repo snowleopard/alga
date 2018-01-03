@@ -25,13 +25,64 @@ module Algebra.Graph.Export (
     export
   ) where
 
+import Control.Applicative (pure)
+import Data.Foldable (fold)
 import Data.Semigroup
 import Data.String hiding (unlines)
 import Prelude hiding (unlines)
 
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Class (ToGraph (..))
-import Algebra.Graph.Utilities
+import Algebra.Graph.Internal
+
+-- | An abstract document data type with /O(1)/ time concatenation (the current
+-- implementation uses difference lists). Here @s@ is the type of abstract
+-- symbols or strings (text or binary). 'Doc' @s@ is a 'Monoid', therefore
+-- 'mempty' corresponds to the empty document and two documents can be
+-- concatenated with 'mappend' (or operator 'Data.Monoid.<>'). Documents
+-- comprising a single symbol or string can be constructed using the function
+-- 'literal'. Alternatively, you can construct documents as string literals, e.g.
+-- simply as @"alga"@, by using the @OverloadedStrings@ GHC extension. To extract
+-- the document contents use the function 'render'. See some examples below.
+newtype Doc s = Doc (List s) deriving (Monoid, Semigroup)
+
+instance (Monoid s, Show s) => Show (Doc s) where
+    show = show . render
+
+instance (Monoid s, Eq s) => Eq (Doc s) where
+    x == y = render x == render y
+
+instance (Monoid s, Ord s) => Ord (Doc s) where
+    compare x y = compare (render x) (render y)
+
+instance IsString s => IsString (Doc s) where
+    fromString = literal . fromString
+
+-- | Construct a document comprising a single symbol or string. If @s@ is an
+-- instance of class 'IsString', then documents of type 'Doc' @s@ can be
+-- constructed directly from string literals (see the second example below).
+--
+-- @
+-- literal "Hello, " 'Data.Monoid.<>' literal "World!" == literal "Hello, World!"
+-- literal "I am just a string literal"  == "I am just a string literal"
+-- literal 'mempty'                        == 'mempty'
+-- 'render' . literal                      == 'id'
+-- literal . 'render'                      == 'id'
+-- @
+literal :: s -> Doc s
+literal = Doc . pure
+
+-- | Render the document as a single string. An inverse of the function 'literal'.
+--
+-- @
+-- render ('literal' "al" 'Data.Monoid.<>' 'literal' "ga") :: ('IsString' s, 'Monoid' s) => s
+-- render ('literal' "al" 'Data.Monoid.<>' 'literal' "ga") == "alga"
+-- render 'mempty'                         == 'mempty'
+-- render . 'literal'                      == 'id'
+-- 'literal' . render                      == 'id'
+-- @
+render :: Monoid s => Doc s -> s
+render (Doc x) = fold x
 
 -- | Concatenate two documents, separated by a single space, unless one of the
 -- documents is empty. The operator \<+\> is associative with identity 'mempty'.

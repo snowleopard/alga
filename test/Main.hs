@@ -3,9 +3,9 @@ import Algebra.Graph.Test.Export
 import Algebra.Graph.Test.Fold
 import Algebra.Graph.Test.Graph
 import Algebra.Graph.Test.IntAdjacencyMap
+import Algebra.Graph.Test.Internal
 import Algebra.Graph.Test.NonEmptyGraph
 import Algebra.Graph.Test.Relation
-import Algebra.Graph.Test.Utilities
 
 main :: IO ()
 main = do
@@ -14,6 +14,6 @@ main = do
     testFold
     testGraph
     testIntAdjacencyMap
+    testInternal
     testNonEmptyGraph
     testRelation
-    testUtilities
