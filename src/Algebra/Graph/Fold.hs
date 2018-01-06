@@ -53,7 +53,7 @@ import Prelude.Compat
 import Control.Applicative hiding (empty)
 import Control.Monad.Compat (MonadPlus (..), ap)
 import Data.Semigroup
-import GHC.Exts (toList)
+import Data.Foldable
 
 import Algebra.Graph.Internal
 
@@ -61,7 +61,6 @@ import qualified Algebra.Graph.AdjacencyMap       as AM
 import qualified Algebra.Graph.Class              as C
 import qualified Algebra.Graph.HigherKinded.Class as H
 import qualified Algebra.Graph.Relation           as R
-import qualified Data.Foldable                    as Foldable
 import qualified Data.IntSet                      as IntSet
 import qualified Data.Set                         as Set
 
@@ -743,5 +742,5 @@ simple op x y
 box :: (C.Graph g, C.Vertex g ~ (a, b)) => Fold a -> Fold b -> g
 box x y = C.overlays $ xs ++ ys
   where
-    xs = map (\b -> gmap (,b) x) $ Foldable.toList y
-    ys = map (\a -> gmap (a,) y) $ Foldable.toList x
+    xs = map (\b -> gmap (,b) x) $ toList y
+    ys = map (\a -> gmap (a,) y) $ toList x
