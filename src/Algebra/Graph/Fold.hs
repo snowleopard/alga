@@ -55,7 +55,7 @@ import Control.Monad.Compat (MonadPlus (..), ap)
 import Data.Semigroup
 import GHC.Exts (toList)
 
-import Algebra.Graph.Utilities
+import Algebra.Graph.Internal
 
 import qualified Algebra.Graph.AdjacencyMap       as AM
 import qualified Algebra.Graph.Class              as C
@@ -410,15 +410,15 @@ hasEdge = H.hasEdge
 
 data Focus a = Focus
     { ok :: Bool    -- True if focus on the specified subgraph is obtained.
-    , is :: Doc a   -- Inputs into the focused subgraph.
-    , os :: Doc a   -- Outputs out of the focused subgraph.
-    , vs :: Doc a } -- All vertices (leaves) of the graph expression.
+    , is :: List a   -- Inputs into the focused subgraph.
+    , os :: List a   -- Outputs out of the focused subgraph.
+    , vs :: List a } -- All vertices (leaves) of the graph expression.
 
 focus :: (a -> Bool) -> Fold a -> Focus a
 focus f = foldg e v o c
   where
     e     = Focus False mempty mempty mempty
-    v x   = Focus (f x) mempty mempty (literal x)
+    v x   = Focus (f x) mempty mempty (pure x)
     o x y = Focus (ok x || ok y) (is x <> is y) (os x <> os y) (vs x <> vs y)
     c x y = Focus (ok x || ok y) (visx <> is y) (os x <> vosy) (vs x <> vs y)
       where
