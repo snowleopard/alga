@@ -3,7 +3,7 @@
 ## 0.1.0
 
 * Start complying with PVP.
-* #39: Factor out difference lists into `Algebra.Graph.Utilities`.
+* #39: Factor out difference lists into `Algebra.Graph.Internal`.
 * #33: Add `Algebra.Graph.NonEmpty`.
 * #32: Remove smart constructor `graph`.
 * #27: Support GHC >= 7.8.
