@@ -408,12 +408,6 @@ hasVertex = H.hasVertex
 hasEdge :: Ord a => a -> a -> Fold a -> Bool
 hasEdge = H.hasEdge
 
-data Focus a = Focus
-    { ok :: Bool    -- True if focus on the specified subgraph is obtained.
-    , is :: List a   -- Inputs into the focused subgraph.
-    , os :: List a   -- Outputs out of the focused subgraph.
-    , vs :: List a } -- All vertices (leaves) of the graph expression.
-
 focus :: (a -> Bool) -> Fold a -> Focus a
 focus f = foldg e v o c
   where

@@ -696,12 +696,6 @@ removeEdge s t g
     edgesFromS       = star s $ filter (/=t) (toList os)
     edgesToS         = vertices (filter (/=s) (toList is)) `connect` vertex s
 
-data Focus a = Focus
-    { ok :: Bool    -- True if focus on the specified subgraph is obtained.
-    , is :: List a   -- Inputs into the focused subgraph.
-    , os :: List a   -- Outputs out of the focused subgraph.
-    , vs :: List a } -- All vertices (leaves) of the graph expression.
-
 data Context a = Context { inputs :: [a], outputs :: [a] }
 
 context :: (a -> Bool) -> Graph a -> Maybe (Context a)

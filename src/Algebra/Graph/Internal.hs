@@ -15,8 +15,11 @@
 -- is unstable and unsafe.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Internal (
-    -- * Data structures
-    List (..)
+    -- * General data structures
+    List (..),
+
+    -- * Data structures for graph traversal
+    Focus (..)
   ) where
 
 import Control.Applicative (Applicative (..))
@@ -64,3 +67,10 @@ instance Applicative List where
 instance Monad List where
     return  = pure
     x >>= f = fromList (toList x >>= toList . f)
+
+data Focus a = Focus
+    { ok :: Bool    -- True if focus on the specified subgraph is obtained.
+    , is :: List a   -- Inputs into the focused subgraph.
+    , os :: List a   -- Outputs out of the focused subgraph.
+    , vs :: List a } -- All vertices (leaves) of the graph expression.
+
