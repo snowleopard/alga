@@ -51,7 +51,6 @@ import Prelude.Compat
 import Control.Applicative (Alternative, (<|>))
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
-import GHC.Exts (toList)
 
 import Algebra.Graph.Internal
 
@@ -687,13 +686,12 @@ removeVertex = H.removeVertex
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
-removeEdge s t g
-    | ok        = overlays [ induce (/=s) g, edgesFromS, edgesToS ]
-    | otherwise = g
-  where
-    Focus ok is os _ = focus (==s) g
-    edgesFromS       = star s $ filter (/=t) (toList os)
-    edgesToS         = vertices (filter (/=s) (toList is)) `connect` vertex s
+removeEdge s t g = case interface (focus (==s) g) of
+    Nothing -> g
+    Just (Interface is os) ->
+        overlays [ induce (/=s) g
+                 , star s $ filter (/=t) os
+                 , vertices (filter (/=s) is) `connect` vertex s ]
 
 focus :: (a -> Bool) -> Graph a -> Focus a
 focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci

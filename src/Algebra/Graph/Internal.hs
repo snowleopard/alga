@@ -19,7 +19,8 @@ module Algebra.Graph.Internal (
     List (..),
 
     -- * Data structures for graph traversal
-    Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci
+    Focus, emptyFocus, vertexFocus, overlayFoci, connectFoci,
+    Interface (..), interface
   ) where
 
 import Control.Applicative (Applicative (..))
@@ -83,9 +84,14 @@ connectFoci x y = Focus (ok x || ok y) (visx <> is y) (os x <> vosy) (vs x <> vs
     visx = if ok y then vs x else is x
     vosy = if ok x then vs y else os y
 
+data Interface a = Interface { inputs :: [a], outputs :: [a] }
+
+interface :: Focus a -> Maybe (Interface a)
+interface f | ok f      = Just $ Interface (toList $ is f) (toList $ os f)
+            | otherwise = Nothing
+
 data Focus a = Focus
     { ok :: Bool     -- True if focus on the specified subgraph is obtained.
     , is :: List a   -- Inputs into the focused subgraph.
     , os :: List a   -- Outputs out of the focused subgraph.
     , vs :: List a } -- All vertices (leaves) of the graph expression.
-

@@ -572,13 +572,12 @@ removeVertex v = induce (/= v)
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
-removeEdge s t g
-    | ok        = overlays [ induce (/=s) g, edgesFromS, edgesToS ]
-    | otherwise = C.toGraph g
-  where
-    Focus ok is os _ = focus (==s) g
-    edgesFromS       = C.star s $ filter (/=t) (toList os)
-    edgesToS         = C.vertices (filter (/=s) (toList is)) `connect` C.vertex s
+removeEdge s t g = case interface (focus (==s) g) of
+    Nothing -> C.toGraph g
+    Just (Interface is os) ->
+        overlays [ induce (/=s) g
+                 , C.star s $ filter (/=t) os
+                 , C.vertices (filter (/=s) is) `connect` vertex s ]
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given graph expression. If @y@ already exists, @x@ and @y@ will be merged.
