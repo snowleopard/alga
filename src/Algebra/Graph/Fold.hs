@@ -52,7 +52,9 @@ import Prelude.Compat
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Compat (MonadPlus (..), ap)
-import Data.Foldable (toList)
+import Data.Foldable
+
+import Algebra.Graph.Internal
 
 import qualified Algebra.Graph.AdjacencyMap       as AM
 import qualified Algebra.Graph.Class              as C
@@ -404,34 +406,8 @@ hasVertex = H.hasVertex
 hasEdge :: Ord a => a -> a -> Fold a -> Bool
 hasEdge = H.hasEdge
 
-data Piece g = Piece { piece :: g, intact :: Bool, trivial :: Bool }
-
-breakIf :: C.Graph g => Bool -> Piece g -> Piece g
-breakIf True  _ = Piece C.empty False True
-breakIf False x = x
-
-instance C.Graph g => C.Graph (Piece g) where
-    type Vertex (Piece g) = C.Vertex g
-    empty       = Piece C.empty True True
-    vertex x    = Piece (C.vertex x) True False
-    overlay x y = Piece (nonTrivial C.overlay x y) (intact x && intact y) False
-    connect x y = Piece (nonTrivial C.connect x y) (intact x && intact y) False
-
-nonTrivial :: (g -> g -> g) -> Piece g -> Piece g -> g
-nonTrivial f x y
-    | trivial x = piece y
-    | trivial y = piece x
-    | otherwise = f (piece x) (piece y)
-
-type Pieces a = (Piece a, Piece a, Piece a)
-
-smash :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> Pieces g
-smash s t = foldg C.empty v C.overlay c
-  where
-    v x = (breakIf (x == s) $ C.vertex x, breakIf (x == t) $ C.vertex x, C.vertex x)
-    c x@(sx, tx, stx) y@(sy, ty, sty)
-        | intact sx || intact ty = C.connect x y
-        | otherwise = (C.connect sx sy, C.connect tx ty, C.connect sx sty `C.overlay` C.connect stx ty)
+focus :: (a -> Bool) -> Fold a -> Focus a
+focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
@@ -596,7 +572,12 @@ removeVertex v = induce (/= v)
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
-removeEdge s t g = piece st where (_, _, st) = smash s t g
+removeEdge s t g = case interface (focus (==s) g) of
+    Nothing -> C.toGraph g
+    Just (Interface is os) ->
+        overlays [ induce (/=s) g
+                 , C.star s $ filter (/=t) os
+                 , C.vertices (filter (/=s) is) `connect` vertex s ]
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given graph expression. If @y@ already exists, @x@ and @y@ will be merged.
