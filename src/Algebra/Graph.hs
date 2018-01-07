@@ -51,7 +51,6 @@ import Prelude.Compat
 import Control.Applicative (Alternative, (<|>))
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
-import Data.Semigroup
 import GHC.Exts (toList)
 
 import Algebra.Graph.Internal
@@ -696,23 +695,8 @@ removeEdge s t g
     edgesFromS       = star s $ filter (/=t) (toList os)
     edgesToS         = vertices (filter (/=s) (toList is)) `connect` vertex s
 
-data Context a = Context { inputs :: [a], outputs :: [a] }
-
-context :: (a -> Bool) -> Graph a -> Maybe (Context a)
-context f g = if ok then Just (Context (toList is) (toList os)) else Nothing
-  where
-    Focus ok is os _ = focus f g
-
 focus :: (a -> Bool) -> Graph a -> Focus a
-focus f = foldg e v o c
-  where
-    e     = Focus False mempty mempty mempty
-    v x   = Focus (f x) mempty mempty (pure x)
-    o x y = Focus (ok x || ok y) (is x <> is y) (os x <> os y) (vs x <> vs y)
-    c x y = Focus (ok x || ok y) (visx <> is y) (os x <> vosy) (vs x <> vs y)
-      where
-        visx = if ok y then vs x else is x
-        vosy = if ok x then vs y else os y
+focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.

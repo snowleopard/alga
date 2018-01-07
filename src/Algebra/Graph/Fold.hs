@@ -52,7 +52,6 @@ import Prelude.Compat
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Compat (MonadPlus (..), ap)
-import Data.Semigroup
 import Data.Foldable
 
 import Algebra.Graph.Internal
@@ -408,15 +407,7 @@ hasEdge :: Ord a => a -> a -> Fold a -> Bool
 hasEdge = H.hasEdge
 
 focus :: (a -> Bool) -> Fold a -> Focus a
-focus f = foldg e v o c
-  where
-    e     = Focus False mempty mempty mempty
-    v x   = Focus (f x) mempty mempty (pure x)
-    o x y = Focus (ok x || ok y) (is x <> is y) (os x <> os y) (vs x <> vs y)
-    c x y = Focus (ok x || ok y) (visx <> is y) (os x <> vosy) (vs x <> vs y)
-      where
-        visx = if ok y then vs x else is x
-        vosy = if ok x then vs y else os y
+focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.

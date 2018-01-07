@@ -19,7 +19,7 @@ module Algebra.Graph.Internal (
     List (..),
 
     -- * Data structures for graph traversal
-    Focus (..)
+    Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci
   ) where
 
 import Control.Applicative (Applicative (..))
@@ -68,8 +68,23 @@ instance Monad List where
     return  = pure
     x >>= f = fromList (toList x >>= toList . f)
 
+emptyFocus :: Focus a
+emptyFocus = Focus False mempty mempty mempty
+
+vertexFocus :: (a -> Bool) -> a -> Focus a
+vertexFocus f x = Focus (f x) mempty mempty (pure x)
+
+overlayFoci :: Focus a -> Focus a -> Focus a
+overlayFoci x y = Focus (ok x || ok y) (is x <> is y) (os x <> os y) (vs x <> vs y)
+
+connectFoci :: Focus a -> Focus a -> Focus a
+connectFoci x y = Focus (ok x || ok y) (visx <> is y) (os x <> vosy) (vs x <> vs y)
+  where
+    visx = if ok y then vs x else is x
+    vosy = if ok x then vs y else os y
+
 data Focus a = Focus
-    { ok :: Bool    -- True if focus on the specified subgraph is obtained.
+    { ok :: Bool     -- True if focus on the specified subgraph is obtained.
     , is :: List a   -- Inputs into the focused subgraph.
     , os :: List a   -- Outputs out of the focused subgraph.
     , vs :: List a } -- All vertices (leaves) of the graph expression.
