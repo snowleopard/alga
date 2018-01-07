@@ -561,8 +561,7 @@ removeVertex :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> Fold (C.Vertex g) 
 removeVertex v = induce (/= v)
 
 -- | Remove an edge from a given graph.
--- Complexity: /O(s)/ time and memory. The worst case size complexity is /O(s^2)/,
--- although in practice it is usually also linear /O(s)/.
+-- Complexity: /O(s)/ time, memory and size.
 --
 -- @
 -- removeEdge x y ('edge' x y)       == 'vertices' [x, y]
@@ -570,6 +569,7 @@ removeVertex v = induce (/= v)
 -- removeEdge x y . 'removeVertex' x == 'removeVertex' x
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
+-- 'size' (removeEdge x y z)         <= 3 * 'size' z + 3
 -- @
 removeEdge :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
 removeEdge s t g = case interface (focus (==s) g) of

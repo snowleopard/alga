@@ -20,6 +20,7 @@ module Algebra.Graph.Test.Generic (
 
 import Prelude ()
 import Prelude.Compat
+import Control.Monad (when)
 import Data.Orphans ()
 
 import Data.Foldable (toList)
@@ -701,6 +702,11 @@ testRemoveEdge (Testsuite prefix (%)) = do
 
     test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
           removeEdge 1 2 % (1 * 1 * 2 * 2) == 1 * 1 + 2 * 2
+
+    -- TODO: Ouch. Generic tests are becoming awkward. We need a better way.
+    when (prefix == "Graph." || prefix == "Fold.") $ do
+        test "size (removeEdge x y z)         <= 3 * size z + 3" $ \x y z ->
+              size % (removeEdge x y z)       <= 3 * size z + 3
 
 testReplaceVertex :: Testsuite -> IO ()
 testReplaceVertex (Testsuite prefix (%)) = do
