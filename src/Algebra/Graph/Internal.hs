@@ -24,9 +24,9 @@ module Algebra.Graph.Internal (
   ) where
 
 import Control.Applicative (Applicative (..))
-import Data.Foldable (Foldable (foldMap))
+import Data.Foldable
 import Data.Semigroup
-import GHC.Exts
+import qualified GHC.Exts as Exts
 
 -- | An abstract list data type with /O(1)/ time concatenation (the current
 -- implementation uses difference lists). Here @a@ is the type of list elements.
@@ -50,24 +50,25 @@ instance Ord a => Ord (List a) where
     compare x y = compare (toList x) (toList y)
 
 -- TODO: Add rewrite rules? fromList . toList == toList . fromList == id
-instance IsList (List a) where
+instance Exts.IsList (List a) where
     type Item (List a) = a
     fromList        = List . Endo . (<>)
     toList (List x) = appEndo x []
 
 instance Foldable List where
-    foldMap f (List x) = foldMap f (appEndo x [])
+    foldMap f = foldMap f . toList
+    toList    = Exts.toList
 
 instance Functor List where
-    fmap f = fromList . map f . toList
+    fmap f = Exts.fromList . map f . toList
 
 instance Applicative List where
     pure    = List . Endo . (:)
-    f <*> x = fromList (toList f <*> toList x)
+    f <*> x = Exts.fromList (toList f <*> toList x)
 
 instance Monad List where
     return  = pure
-    x >>= f = fromList (toList x >>= toList . f)
+    x >>= f = Exts.fromList (toList x >>= toList . f)
 
 emptyFocus :: Focus a
 emptyFocus = Focus False mempty mempty mempty
