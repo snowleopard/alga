@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Internal
@@ -24,9 +25,9 @@ module Algebra.Graph.Internal (
   ) where
 
 import Control.Applicative (Applicative (..))
-import Data.Foldable (Foldable (foldMap))
+import Data.Foldable
 import Data.Semigroup
-import GHC.Exts
+import qualified GHC.Exts as Exts
 
 -- | An abstract list data type with /O(1)/ time concatenation (the current
 -- implementation uses difference lists). Here @a@ is the type of list elements.
@@ -50,48 +51,62 @@ instance Ord a => Ord (List a) where
     compare x y = compare (toList x) (toList y)
 
 -- TODO: Add rewrite rules? fromList . toList == toList . fromList == id
-instance IsList (List a) where
+instance Exts.IsList (List a) where
     type Item (List a) = a
     fromList        = List . Endo . (<>)
     toList (List x) = appEndo x []
 
 instance Foldable List where
-    foldMap f (List x) = foldMap f (appEndo x [])
+    foldMap f = foldMap f . Exts.toList
+#if MIN_VERSION_base(4,8,0)
+    toList    = Exts.toList
+#endif
 
 instance Functor List where
-    fmap f = fromList . map f . toList
+    fmap f = Exts.fromList . map f . toList
 
 instance Applicative List where
     pure    = List . Endo . (:)
-    f <*> x = fromList (toList f <*> toList x)
+    f <*> x = Exts.fromList (toList f <*> toList x)
 
 instance Monad List where
     return  = pure
-    x >>= f = fromList (toList x >>= toList . f)
+    x >>= f = Exts.fromList (toList x >>= toList . f)
 
+-- | Focus on the empty graph.
 emptyFocus :: Focus a
 emptyFocus = Focus False mempty mempty mempty
 
+-- | Focus on the graph with a single vertex, given a predicate indicating
+-- whether the vertex is of interest.
 vertexFocus :: (a -> Bool) -> a -> Focus a
 vertexFocus f x = Focus (f x) mempty mempty (pure x)
 
+-- | Overlay two foci.
 overlayFoci :: Focus a -> Focus a -> Focus a
 overlayFoci x y = Focus (ok x || ok y) (is x <> is y) (os x <> os y) (vs x <> vs y)
 
+-- | Connect two foci.
 connectFoci :: Focus a -> Focus a -> Focus a
-connectFoci x y = Focus (ok x || ok y) (visx <> is y) (os x <> vosy) (vs x <> vs y)
+connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
   where
-    visx = if ok y then vs x else is x
-    vosy = if ok x then vs y else os y
+    xs = if ok y then vs x else is x
+    ys = if ok x then vs y else os y
 
+-- | An interface is a list of inputs and outputs.
 data Interface a = Interface { inputs :: [a], outputs :: [a] }
 
+-- | Extract the interface from a graph focus. Returns @Nothing@ if the focus
+-- could not be obtained.
 interface :: Focus a -> Maybe (Interface a)
 interface f | ok f      = Just $ Interface (toList $ is f) (toList $ os f)
             | otherwise = Nothing
 
+-- | The /focus/ of a graph expression is a flattened represenentation of the
+-- subgraph under focus, its interface, as well as the list of all encountered
+-- vertices. See 'Algebra.Graph.removeEdge' for a use-case example.
 data Focus a = Focus
-    { ok :: Bool     -- True if focus on the specified subgraph is obtained.
-    , is :: List a   -- Inputs into the focused subgraph.
-    , os :: List a   -- Outputs out of the focused subgraph.
-    , vs :: List a } -- All vertices (leaves) of the graph expression.
+    { ok :: Bool     -- ^ True if focus on the specified subgraph is obtained.
+    , is :: List a   -- ^ Inputs into the focused subgraph.
+    , os :: List a   -- ^ Outputs out of the focused subgraph.
+    , vs :: List a } -- ^ All vertices (leaves) of the graph expression.
