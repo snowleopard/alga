@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Internal
@@ -56,8 +57,10 @@ instance Exts.IsList (List a) where
     toList (List x) = appEndo x []
 
 instance Foldable List where
-    foldMap f = foldMap f . toList
+    foldMap f = foldMap f . Exts.toList
+#if MIN_VERSION_base(4,8,0)
     toList    = Exts.toList
+#endif
 
 instance Functor List where
     fmap f = Exts.fromList . map f . toList
