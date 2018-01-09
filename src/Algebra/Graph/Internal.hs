@@ -73,29 +73,40 @@ instance Monad List where
     return  = pure
     x >>= f = Exts.fromList (toList x >>= toList . f)
 
+-- | Focus on the empty graph.
 emptyFocus :: Focus a
 emptyFocus = Focus False mempty mempty mempty
 
+-- | Focus on the graph with a single vertex, given a predicate indicating
+-- whether the vertex is of interest.
 vertexFocus :: (a -> Bool) -> a -> Focus a
 vertexFocus f x = Focus (f x) mempty mempty (pure x)
 
+-- | Overlay two foci.
 overlayFoci :: Focus a -> Focus a -> Focus a
 overlayFoci x y = Focus (ok x || ok y) (is x <> is y) (os x <> os y) (vs x <> vs y)
 
+-- | Connect two foci.
 connectFoci :: Focus a -> Focus a -> Focus a
-connectFoci x y = Focus (ok x || ok y) (visx <> is y) (os x <> vosy) (vs x <> vs y)
+connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
   where
-    visx = if ok y then vs x else is x
-    vosy = if ok x then vs y else os y
+    xs = if ok y then vs x else is x
+    ys = if ok x then vs y else os y
 
+-- | An interface is a list of inputs and outputs.
 data Interface a = Interface { inputs :: [a], outputs :: [a] }
 
+-- | Extract the interface from a graph focus. Returns @Nothing@ if the focus
+-- could not be obtained.
 interface :: Focus a -> Maybe (Interface a)
 interface f | ok f      = Just $ Interface (toList $ is f) (toList $ os f)
             | otherwise = Nothing
 
+-- | The /focus/ of a graph expression is a flattened represenentation of the
+-- subgraph under focus, its interface, as well as the list of all encountered
+-- vertices. See 'Algebra.Graph.removeEdge' for a use-case example.
 data Focus a = Focus
-    { ok :: Bool     -- True if focus on the specified subgraph is obtained.
-    , is :: List a   -- Inputs into the focused subgraph.
-    , os :: List a   -- Outputs out of the focused subgraph.
-    , vs :: List a } -- All vertices (leaves) of the graph expression.
+    { ok :: Bool     -- ^ True if focus on the specified subgraph is obtained.
+    , is :: List a   -- ^ Inputs into the focused subgraph.
+    , os :: List a   -- ^ Outputs out of the focused subgraph.
+    , vs :: List a } -- ^ All vertices (leaves) of the graph expression.
