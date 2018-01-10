@@ -3,6 +3,7 @@
 ## 0.1.0
 
 * Start complying with PVP.
+* #15: Optimise `removeEdge`.
 * #39: Factor out difference lists into `Algebra.Graph.Internal`.
 * #33: Add `Algebra.Graph.NonEmpty`.
 * #32: Remove smart constructor `graph`.
