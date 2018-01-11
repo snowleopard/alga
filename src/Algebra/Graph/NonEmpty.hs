@@ -35,7 +35,7 @@ module Algebra.Graph.NonEmpty (
     path1, circuit1, clique1, biclique1, star, tree, mesh1, torus1,
 
     -- * Graph transformation
-    replaceVertex, mergeVertices, splitVertex1, transpose, simplify,
+    removeEdge, replaceVertex, mergeVertices, splitVertex1, transpose, simplify,
 
     -- * Graph composition
     box
@@ -48,6 +48,8 @@ import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup
+
+import Algebra.Graph.Internal
 
 import qualified Algebra.Graph                    as G
 import qualified Algebra.Graph.AdjacencyMap       as AM
@@ -539,6 +541,41 @@ mesh1 xs ys = path1 xs `box` path1 ys
 -- @
 torus1 :: NonEmpty a -> NonEmpty b -> NonEmptyGraph (a, b)
 torus1 xs ys = circuit1 xs `box` circuit1 ys
+
+-- | Remove an edge from a given graph.
+-- Complexity: /O(s)/ time, memory and size.
+--
+-- @
+-- removeEdge x y ('edge' x y)       == 'vertices1' (x ':|' [y])
+-- removeEdge x y . removeEdge x y == removeEdge x y
+-- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
+-- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
+-- 'size' (removeEdge x y z)         <= 3 * 'size' z + 3
+-- @
+removeEdge :: Eq a => a -> a -> NonEmptyGraph a -> NonEmptyGraph a
+removeEdge s t g = case interface (focus (==s) g) of
+    Nothing -> g
+    Just (Interface is os) -> G.induce (/=s) (C.toGraph g)
+        `overlay1` (star s $ filter (/=t) os)
+        `overlay`  (transpose $ star s (filter (/=s) is))
+
+focus :: (a -> Bool) -> NonEmptyGraph a -> Focus a
+focus f = foldg1 (vertexFocus f) overlayFoci connectFoci
+
+overlay1 :: G.Graph a -> NonEmptyGraph a -> NonEmptyGraph a
+overlay1 g = maybe id overlay (toNonEmptyGraph g)
+
+toNonEmptyGraph :: G.Graph a -> Maybe (NonEmptyGraph a)
+toNonEmptyGraph G.Empty = Nothing
+toNonEmptyGraph (G.Vertex x) = Just (Vertex x)
+toNonEmptyGraph (G.Overlay x y) = case (toNonEmptyGraph x, toNonEmptyGraph y) of
+    (Nothing, q      ) -> q
+    (p      , Nothing) -> p
+    (Just p , Just q ) -> Just (Overlay p q)
+toNonEmptyGraph (G.Connect x y) = case (toNonEmptyGraph x, toNonEmptyGraph y) of
+    (Nothing, q      ) -> q
+    (p      , Nothing) -> p
+    (Just p , Just q ) -> Just (Connect p q)
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'NonEmptyGraph'. If @y@ already exists, @x@ and @y@ will be merged.
