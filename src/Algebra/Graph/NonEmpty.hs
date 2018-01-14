@@ -15,7 +15,7 @@
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph.NonEmpty (
-    -- * Algebraic data type for graphs
+    -- * Algebraic data type for non-empty graphs
     NonEmptyGraph (..),
 
     -- * Basic graph construction primitives
@@ -160,6 +160,14 @@ instance Applicative NonEmptyGraph where
 instance Monad NonEmptyGraph where
     return  = pure
     g >>= f = foldg1 f Overlay Connect g
+
+-- TODO: Export
+toNonEmptyGraph :: G.Graph a -> Maybe (NonEmptyGraph a)
+toNonEmptyGraph = G.foldg Nothing (Just . Vertex) (go Overlay) (go Connect)
+  where
+    go _ Nothing  y        = y
+    go _ x        Nothing  = x
+    go f (Just x) (Just y) = Just (f x y)
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
@@ -562,20 +570,9 @@ removeEdge s t g = case interface (focus (==s) g) of
 focus :: (a -> Bool) -> NonEmptyGraph a -> Focus a
 focus f = foldg1 (vertexFocus f) overlayFoci connectFoci
 
+-- TODO: Export
 overlay1 :: G.Graph a -> NonEmptyGraph a -> NonEmptyGraph a
-overlay1 g = maybe id overlay (toNonEmptyGraph g)
-
-toNonEmptyGraph :: G.Graph a -> Maybe (NonEmptyGraph a)
-toNonEmptyGraph G.Empty = Nothing
-toNonEmptyGraph (G.Vertex x) = Just (Vertex x)
-toNonEmptyGraph (G.Overlay x y) = case (toNonEmptyGraph x, toNonEmptyGraph y) of
-    (Nothing, q      ) -> q
-    (p      , Nothing) -> p
-    (Just p , Just q ) -> Just (Overlay p q)
-toNonEmptyGraph (G.Connect x y) = case (toNonEmptyGraph x, toNonEmptyGraph y) of
-    (Nothing, q      ) -> q
-    (p      , Nothing) -> p
-    (Just p , Just q ) -> Just (Connect p q)
+overlay1 = maybe id overlay . toNonEmptyGraph
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'NonEmptyGraph'. If @y@ already exists, @x@ and @y@ will be merged.
