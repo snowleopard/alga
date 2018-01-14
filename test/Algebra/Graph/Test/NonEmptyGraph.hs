@@ -432,6 +432,22 @@ testNonEmptyGraph = do
                                                    , ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ])
 
     putStrLn $ "\n============ Graph.NonEmpty.replaceVertex ============"
+    test "removeEdge x y (edge x y)       == vertices1 (x :| [y])" $ \(x :: Int) y ->
+          removeEdge x y (edge x y)       == vertices1 (x :| [y])
+
+    test "removeEdge x y . removeEdge x y == removeEdge x y" $ \(x :: Int) y z ->
+         (removeEdge x y . removeEdge x y) z == removeEdge x y z
+
+    test "removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2" $
+          removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * (2 :: NonEmptyGraph Int)
+
+    test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
+          removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * (2 :: NonEmptyGraph Int)
+
+    test "size (removeEdge x y z)         <= 3 * size z + 3" $ \(x :: Int) y z ->
+          size (removeEdge x y z)         <= 3 * size z + (3 :: Int)
+
+    putStrLn $ "\n============ Graph.NonEmpty.replaceVertex ============"
     test "replaceVertex x x            == id" $ \(x :: Int) y ->
           replaceVertex x x y          == y
 

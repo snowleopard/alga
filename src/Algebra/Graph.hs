@@ -680,7 +680,7 @@ removeVertex = H.removeVertex
 -- @
 -- removeEdge x y ('edge' x y)       == 'vertices' [x, y]
 -- removeEdge x y . removeEdge x y == removeEdge x y
--- removeEdge x y . 'Algebra.Graph.HigherKinded.Util.removeVertex' x == 'Algebra.Graph.HigherKinded.Util.removeVertex' x
+-- removeEdge x y . 'removeVertex' x == 'removeVertex' x
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- 'size' (removeEdge x y z)         <= 3 * 'size' z + 3
