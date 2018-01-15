@@ -22,9 +22,11 @@ import Data.Tuple
 import Algebra.Graph.NonEmpty
 import Algebra.Graph.Test hiding (axioms, theorems)
 
-import qualified Data.List.NonEmpty as NonEmpty
-import qualified Data.Set           as Set
-import qualified Data.IntSet        as IntSet
+import qualified Algebra.Graph       as G
+import qualified Algebra.Graph.Class as C
+import qualified Data.List.NonEmpty  as NonEmpty
+import qualified Data.Set            as Set
+import qualified Data.IntSet         as IntSet
 
 type G = NonEmptyGraph Int
 
@@ -82,6 +84,13 @@ testNonEmptyGraph = do
 
     test "((x >>= f) >>= g)    == (x >>= (\\y -> (f y) >>= g))" $ mapSize (min 10) $ \(x :: G) (apply -> f) (apply -> g) ->
           ((x >>= f) >>= g)    == (x >>= (\(y :: Int) -> (f y) >>= (g :: Int -> G)))
+
+    putStrLn $ "\n============ Graph.NonEmpty.toNonEmptyGraph ============"
+    test "toNonEmptyGraph empty       == Nothing" $
+          toNonEmptyGraph (G.empty :: G.Graph Int) == Nothing
+
+    test "toNonEmptyGraph (toGraph x) == Just (g :: NonEmptyGraph a)" $ \x ->
+          toNonEmptyGraph (C.toGraph x) == Just (x :: NonEmptyGraph Int)
 
     putStrLn $ "\n============ Graph.NonEmpty.vertex ============"
     test "hasVertex x (vertex x) == True" $ \(x :: Int) ->

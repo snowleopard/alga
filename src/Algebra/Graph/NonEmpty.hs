@@ -16,7 +16,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.NonEmpty (
     -- * Algebraic data type for non-empty graphs
-    NonEmptyGraph (..),
+    NonEmptyGraph (..), toNonEmptyGraph,
 
     -- * Basic graph construction primitives
     vertex, edge, overlay, connect, vertices1, edges1, overlays1, connects1,
@@ -161,7 +161,13 @@ instance Monad NonEmptyGraph where
     return  = pure
     g >>= f = foldg1 f Overlay Connect g
 
--- TODO: Export
+-- | Convert a 'G.Graph' into 'NonEmptyGraph', returning 'Nothing' if the
+-- argument is 'G.empty'. Complexity: /O(s)/ time, memory and size.
+--
+-- @
+-- toNonEmptyGraph 'G.empty'       == Nothing
+-- toNonEmptyGraph ('C.toGraph' x) == Just (x :: NonEmptyGraph a)
+-- @
 toNonEmptyGraph :: G.Graph a -> Maybe (NonEmptyGraph a)
 toNonEmptyGraph = G.foldg Nothing (Just . Vertex) (go Overlay) (go Connect)
   where
