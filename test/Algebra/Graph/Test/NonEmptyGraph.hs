@@ -15,6 +15,7 @@ module Algebra.Graph.Test.NonEmptyGraph (
   ) where
 
 import Data.List.NonEmpty (NonEmpty (..))
+import Data.Maybe
 import Data.Semigroup
 import Data.Tree
 import Data.Tuple
@@ -89,7 +90,7 @@ testNonEmptyGraph = do
     test "toNonEmptyGraph empty       == Nothing" $
           toNonEmptyGraph (G.empty :: G.Graph Int) == Nothing
 
-    test "toNonEmptyGraph (toGraph x) == Just (g :: NonEmptyGraph a)" $ \x ->
+    test "toNonEmptyGraph (toGraph x) == Just (x :: NonEmptyGraph a)" $ \x ->
           toNonEmptyGraph (C.toGraph x) == Just (x :: NonEmptyGraph Int)
 
     putStrLn $ "\n============ Graph.NonEmpty.vertex ============"
@@ -145,6 +146,14 @@ testNonEmptyGraph = do
 
     test "edgeCount   (overlay 1 2) == 0" $
           edgeCount   (overlay 1 2 :: G) == 0
+
+    putStrLn $ "\n============ Graph.NonEmpty.overlay1 ============"
+    test "               overlay1 empty x == x" $ \(x :: G) ->
+                         overlay1 G.empty x == x
+
+    test "x /= empty ==> overlay1 x     y == overlay (fromJust $ toNonEmptyGraph x) y" $ \(x :: G.Graph Int) (y :: G) ->
+          x /= G.empty ==> overlay1 x   y == overlay (fromJust $ toNonEmptyGraph x) y
+
 
     putStrLn $ "\n============ Graph.NonEmpty.connect ============"
     test "hasVertex z (connect x y) == hasVertex z x || hasVertex z y" $ \(x :: G) y z ->
