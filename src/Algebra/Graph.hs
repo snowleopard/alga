@@ -686,12 +686,15 @@ removeVertex = H.removeVertex
 -- 'size' (removeEdge x y z)         <= 3 * 'size' z + 3
 -- @
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
-removeEdge s t g = case context (focus (==s) g) of
+removeEdge s t = filterContext s (/=s) (/=t)
+
+filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
+filterContext s i o g = case context (focus (==s) g) of
     Nothing -> g
     Just (Context is os) ->
         overlays [ induce (/=s) g
-                 , star s $ filter (/=t) os
-                 , vertices (filter (/=s) is) `connect` vertex s ]
+                 , star s $ filter o os
+                 , vertices (filter i is) `connect` vertex s ]
 
 focus :: (a -> Bool) -> Graph a -> Focus a
 focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
