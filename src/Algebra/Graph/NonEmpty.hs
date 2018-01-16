@@ -581,9 +581,9 @@ torus1 xs ys = circuit1 xs `box` circuit1 ys
 -- 'size' (removeEdge x y z)         <= 3 * 'size' z + 3
 -- @
 removeEdge :: Eq a => a -> a -> NonEmptyGraph a -> NonEmptyGraph a
-removeEdge s t g = case interface (focus (==s) g) of
+removeEdge s t g = case context (focus (==s) g) of
     Nothing -> g
-    Just (Interface is os) -> G.induce (/=s) (C.toGraph g)
+    Just (Context is os) -> G.induce (/=s) (C.toGraph g)
         `overlay1` (star s $ filter (/=t) os)
         `overlay`  (transpose $ star s (filter (/=s) is))
 

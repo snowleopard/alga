@@ -572,9 +572,9 @@ removeVertex v = induce (/= v)
 -- 'size' (removeEdge x y z)         <= 3 * 'size' z + 3
 -- @
 removeEdge :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
-removeEdge s t g = case interface (focus (==s) g) of
+removeEdge s t g = case context (focus (==s) g) of
     Nothing -> C.toGraph g
-    Just (Interface is os) ->
+    Just (Context is os) ->
         overlays [ induce (/=s) g
                  , C.star s $ filter (/=t) os
                  , C.vertices (filter (/=s) is) `connect` vertex s ]
