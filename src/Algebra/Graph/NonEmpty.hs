@@ -375,9 +375,10 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- Complexity: /O(s)/ time.
 --
 -- @
--- hasEdge x y ('vertex' z) == False
--- hasEdge x y ('edge' x y) == True
--- hasEdge x y            == 'elem' (x,y) . 'edgeList'
+-- hasEdge x y ('vertex' z)       == False
+-- hasEdge x y ('edge' x y)       == True
+-- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> NonEmptyGraph a -> Bool
 hasEdge u v = G.hasEdge u v . H.toGraph
