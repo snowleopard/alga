@@ -16,10 +16,11 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.NonEmpty (
     -- * Algebraic data type for non-empty graphs
-    NonEmptyGraph (..),
+    NonEmptyGraph (..), toNonEmptyGraph,
 
     -- * Basic graph construction primitives
-    vertex, edge, overlay, connect, vertices1, edges1, overlays1, connects1,
+    vertex, edge, overlay, overlay1, connect, vertices1, edges1, overlays1,
+    connects1,
 
     -- * Graph folding
     foldg1,
@@ -161,7 +162,13 @@ instance Monad NonEmptyGraph where
     return  = pure
     g >>= f = foldg1 f Overlay Connect g
 
--- TODO: Export
+-- | Convert a 'G.Graph' into 'NonEmptyGraph', returning 'Nothing' if the
+-- argument is 'G.empty'. Complexity: /O(s)/ time, memory and size.
+--
+-- @
+-- toNonEmptyGraph 'G.empty'       == Nothing
+-- toNonEmptyGraph ('C.toGraph' x) == Just (x :: NonEmptyGraph a)
+-- @
 toNonEmptyGraph :: G.Graph a -> Maybe (NonEmptyGraph a)
 toNonEmptyGraph = G.foldg Nothing (Just . Vertex) (go Overlay) (go Connect)
   where
@@ -211,6 +218,18 @@ edge u v = connect (vertex u) (vertex v)
 -- @
 overlay :: NonEmptyGraph a -> NonEmptyGraph a -> NonEmptyGraph a
 overlay = Overlay
+
+-- | Overlay a possibly empty graph with a non-empty graph. If the first
+-- argument is 'G.empty', the function returns the second argument; otherwise
+-- it is semantically the same as 'overlay'. Complexity: /O(s1)/ time and
+-- memory, and /O(s1 + s2)/ size.
+--
+-- @
+--                overlay1 'G.empty' x == x
+-- x /= 'G.empty' ==> overlay1 x     y == overlay (fromJust $ toNonEmptyGraph x) y
+-- @
+overlay1 :: G.Graph a -> NonEmptyGraph a -> NonEmptyGraph a
+overlay1 = maybe id overlay . toNonEmptyGraph
 
 -- | /Connect/ two graphs. An alias for the constructor 'Connect'. This is an
 -- associative operation, which distributes over 'overlay' and obeys the
@@ -569,10 +588,6 @@ removeEdge s t g = case interface (focus (==s) g) of
 
 focus :: (a -> Bool) -> NonEmptyGraph a -> Focus a
 focus f = foldg1 (vertexFocus f) overlayFoci connectFoci
-
--- TODO: Export
-overlay1 :: G.Graph a -> NonEmptyGraph a -> NonEmptyGraph a
-overlay1 = maybe id overlay . toNonEmptyGraph
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'NonEmptyGraph'. If @y@ already exists, @x@ and @y@ will be merged.
