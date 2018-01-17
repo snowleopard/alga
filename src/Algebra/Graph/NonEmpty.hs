@@ -375,9 +375,10 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- Complexity: /O(s)/ time.
 --
 -- @
--- hasEdge x y ('vertex' z) == False
--- hasEdge x y ('edge' x y) == True
--- hasEdge x y            == 'elem' (x,y) . 'edgeList'
+-- hasEdge x y ('vertex' z)       == False
+-- hasEdge x y ('edge' x y)       == True
+-- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> NonEmptyGraph a -> Bool
 hasEdge u v = G.hasEdge u v . H.toGraph
@@ -523,8 +524,8 @@ biclique1 xs ys = connect (vertices1 xs) (vertices1 ys)
 -- star x [y,z] == 'edges1' ((x,y) ':|' [(x,z)])
 -- @
 star :: a -> [a] -> NonEmptyGraph a
-star u []     = vertex u
-star u (x:xs) = connect (vertex u) (vertices1 $ x :| xs)
+star x []     = vertex x
+star x (y:ys) = connect (vertex x) (vertices1 $ y :| ys)
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
@@ -580,12 +581,21 @@ torus1 xs ys = circuit1 xs `box` circuit1 ys
 -- 'size' (removeEdge x y z)         <= 3 * 'size' z + 3
 -- @
 removeEdge :: Eq a => a -> a -> NonEmptyGraph a -> NonEmptyGraph a
-removeEdge s t g = case interface (focus (==s) g) of
-    Nothing -> g
-    Just (Interface is os) -> G.induce (/=s) (C.toGraph g)
-        `overlay1` (star s $ filter (/=t) os)
-        `overlay`  (transpose $ star s (filter (/=s) is))
+removeEdge s t = filterContext s (/=s) (/=t)
 
+-- TODO: Export
+filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> NonEmptyGraph a -> NonEmptyGraph a
+filterContext s i o g = maybe g go . context $ focus (==s) g
+  where
+    go (Context is os) = G.induce (/=s) (C.toGraph g) `overlay1`
+                         reverseStar s (filter i is)  `overlay` star s (filter o os)
+
+-- TODO: Export
+reverseStar :: a -> [a] -> NonEmptyGraph a
+reverseStar x []     = vertex x
+reverseStar x (y:ys) = connect (vertices1 $ y :| ys) (vertex x)
+
+-- TODO: Move to Internal
 focus :: (a -> Bool) -> NonEmptyGraph a -> Focus a
 focus f = foldg1 (vertexFocus f) overlayFoci connectFoci
 

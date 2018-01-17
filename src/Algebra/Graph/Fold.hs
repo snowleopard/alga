@@ -406,9 +406,6 @@ hasVertex = H.hasVertex
 hasEdge :: Ord a => a -> a -> Fold a -> Bool
 hasEdge = H.hasEdge
 
-focus :: (a -> Bool) -> Fold a -> Focus a
-focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
-
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
 --
@@ -572,12 +569,23 @@ removeVertex v = induce (/= v)
 -- 'size' (removeEdge x y z)         <= 3 * 'size' z + 3
 -- @
 removeEdge :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
-removeEdge s t g = case interface (focus (==s) g) of
-    Nothing -> C.toGraph g
-    Just (Interface is os) ->
-        overlays [ induce (/=s) g
-                 , C.star s $ filter (/=t) os
-                 , C.vertices (filter (/=s) is) `connect` vertex s ]
+removeEdge s t = filterContext s (/=s) (/=t)
+
+-- TODO: Export
+filterContext :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> (C.Vertex g -> Bool) -> (C.Vertex g -> Bool) -> Fold (C.Vertex g) -> g
+filterContext s i o g = maybe (C.toGraph g) go . context $ focus (==s) g
+  where
+    go (Context is os) = overlays [ induce (/=s) g
+                                  ,   reverseStar s (filter i is)
+                                  ,        C.star s (filter o os) ]
+
+-- TODO: Export
+reverseStar :: C.Graph g => C.Vertex g -> [C.Vertex g] -> g
+reverseStar x ys = connect (C.vertices ys) (vertex x)
+
+-- TODO: Move to Internal
+focus :: (a -> Bool) -> Fold a -> Focus a
+focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given graph expression. If @y@ already exists, @x@ and @y@ will be merged.

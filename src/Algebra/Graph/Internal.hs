@@ -21,7 +21,7 @@ module Algebra.Graph.Internal (
 
     -- * Data structures for graph traversal
     Focus, emptyFocus, vertexFocus, overlayFoci, connectFoci,
-    Interface (..), interface
+    Context (..), context
   ) where
 
 import Control.Applicative (Applicative (..))
@@ -93,14 +93,15 @@ connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
     xs = if ok y then vs x else is x
     ys = if ok x then vs y else os y
 
--- | An interface is a list of inputs and outputs.
-data Interface a = Interface { inputs :: [a], outputs :: [a] }
+-- | The context of a subgraph comprises the input and output vertices outside
+-- the subgraph that are connected to the vertices inside the subgraph.
+data Context a = Context { inputs :: [a], outputs :: [a] }
 
--- | Extract the interface from a graph focus. Returns @Nothing@ if the focus
+-- | Extract the context from a graph 'Focus'. Returns @Nothing@ if the focus
 -- could not be obtained.
-interface :: Focus a -> Maybe (Interface a)
-interface f | ok f      = Just $ Interface (toList $ is f) (toList $ os f)
-            | otherwise = Nothing
+context :: Focus a -> Maybe (Context a)
+context f | ok f      = Just $ Context (toList $ is f) (toList $ os f)
+          | otherwise = Nothing
 
 -- | The /focus/ of a graph expression is a flattened represenentation of the
 -- subgraph under focus, its interface, as well as the list of all encountered

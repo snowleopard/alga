@@ -274,13 +274,16 @@ testNonEmptyGraph = do
           hasVertex 1 (vertex 2 :: G) == False
 
     putStrLn $ "\n============ Graph.NonEmpty.hasEdge ============"
-    test "hasEdge x y (vertex z) == False" $ \(x :: Int) y z ->
-          hasEdge x y (vertex z) == False
+    test "hasEdge x y (vertex z)       == False" $ \(x :: Int) y z ->
+          hasEdge x y (vertex z)       == False
 
-    test "hasEdge x y (edge x y) == True" $ \(x :: Int) y ->
-          hasEdge x y (edge x y) == True
+    test "hasEdge x y (edge x y)       == True" $ \(x :: Int) y ->
+          hasEdge x y (edge x y)       == True
 
-    test "hasEdge x y            == elem (x,y) . edgeList" $ \(x :: Int) y z -> do
+    test "hasEdge x y . removeEdge x y == const False" $ \(x :: Int) y z ->
+         (hasEdge x y . removeEdge x y) z == False
+
+    test "hasEdge x y                  == elem (x,y) . edgeList" $ \(x :: Int) y z -> do
         (u, v) <- elements ((x, y) : edgeList z)
         return $ hasEdge u v z == elem (u, v) (edgeList z)
 
