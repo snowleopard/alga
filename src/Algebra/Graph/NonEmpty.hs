@@ -524,8 +524,8 @@ biclique1 xs ys = connect (vertices1 xs) (vertices1 ys)
 -- star x [y,z] == 'edges1' ((x,y) ':|' [(x,z)])
 -- @
 star :: a -> [a] -> NonEmptyGraph a
-star u []     = vertex u
-star u (x:xs) = connect (vertex u) (vertices1 $ x :| xs)
+star x []     = vertex x
+star x (y:ys) = connect (vertex x) (vertices1 $ y :| ys)
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
@@ -584,11 +584,14 @@ removeEdge :: Eq a => a -> a -> NonEmptyGraph a -> NonEmptyGraph a
 removeEdge s t = filterContext s (/=s) (/=t)
 
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> NonEmptyGraph a -> NonEmptyGraph a
-filterContext s i o g = case context (focus (==s) g) of
-    Nothing -> g
-    Just (Context is os) -> G.induce (/=s) (C.toGraph g)
-        `overlay1` (star s $ filter o os)
-        `overlay`  (transpose $ star s (filter i is))
+filterContext s i o g = maybe g go . context $ focus (==s) g
+  where
+    go (Context is os) = overlay1 (G.induce (/=s) (C.toGraph g))
+                       $ overlay  (reverseStar s (filter i is)) (star s (filter o os))
+
+reverseStar :: a -> [a] -> NonEmptyGraph a
+reverseStar x []     = vertex x
+reverseStar x (y:ys) = connect (vertices1 $ y :| ys) (vertex x)
 
 focus :: (a -> Bool) -> NonEmptyGraph a -> Focus a
 focus f = foldg1 (vertexFocus f) overlayFoci connectFoci

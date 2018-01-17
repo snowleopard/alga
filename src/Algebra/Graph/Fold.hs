@@ -575,12 +575,14 @@ removeEdge :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (
 removeEdge s t = filterContext s (/=s) (/=t)
 
 filterContext :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> (C.Vertex g -> Bool) -> (C.Vertex g -> Bool) -> Fold (C.Vertex g) -> g
-filterContext s i o g = case context (focus (==s) g) of
-    Nothing -> C.toGraph g
-    Just (Context is os) ->
-        overlays [ induce (/=s) g
-                 , C.star s $ filter o os
-                 , C.vertices (filter i is) `connect` vertex s ]
+filterContext s i o g = maybe (C.toGraph g) go . context $ focus (==s) g
+  where
+    go (Context is os) = overlays [ induce (/=s) g
+                                  ,   reverseStar s (filter i is)
+                                  ,        C.star s (filter o os) ]
+
+reverseStar :: C.Graph g => C.Vertex g -> [C.Vertex g] -> g
+reverseStar x ys = connect (C.vertices ys) (vertex x)
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given graph expression. If @y@ already exists, @x@ and @y@ will be merged.
