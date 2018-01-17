@@ -688,6 +688,7 @@ removeVertex = H.removeVertex
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t = filterContext s (/=s) (/=t)
 
+-- TODO: Export
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
 filterContext s i o g = maybe g go . context $ focus (==s) g
   where
@@ -695,9 +696,11 @@ filterContext s i o g = maybe g go . context $ focus (==s) g
                                   , reverseStar s (filter i is)
                                   ,        star s (filter o os) ]
 
+-- TODO: Export
 reverseStar :: a -> [a] -> Graph a
 reverseStar x ys = connect (vertices ys) (vertex x)
 
+-- TODO: Move to Internal
 focus :: (a -> Bool) -> Graph a -> Focus a
 focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
 

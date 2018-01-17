@@ -583,16 +583,19 @@ torus1 xs ys = circuit1 xs `box` circuit1 ys
 removeEdge :: Eq a => a -> a -> NonEmptyGraph a -> NonEmptyGraph a
 removeEdge s t = filterContext s (/=s) (/=t)
 
+-- TODO: Export
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> NonEmptyGraph a -> NonEmptyGraph a
 filterContext s i o g = maybe g go . context $ focus (==s) g
   where
-    go (Context is os) = overlay1 (G.induce (/=s) (C.toGraph g))
-                       $ overlay  (reverseStar s (filter i is)) (star s (filter o os))
+    go (Context is os) = G.induce (/=s) (C.toGraph g) `overlay1`
+                         reverseStar s (filter i is)  `overlay` star s (filter o os)
 
+-- TODO: Export
 reverseStar :: a -> [a] -> NonEmptyGraph a
 reverseStar x []     = vertex x
 reverseStar x (y:ys) = connect (vertices1 $ y :| ys) (vertex x)
 
+-- TODO: Move to Internal
 focus :: (a -> Bool) -> NonEmptyGraph a -> Focus a
 focus f = foldg1 (vertexFocus f) overlayFoci connectFoci
 
