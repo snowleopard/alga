@@ -392,6 +392,39 @@ forest = overlays . map tree
 --       toGraph (g     :: 'Algebra.Graph.Graph' a  ) :: 'Algebra.Graph.Graph' a       == g
 -- 'show' (toGraph (1 * 2 :: 'Algebra.Graph.Graph' Int) :: 'Algebra.Graph.Relation' Int) == "edge 1 2"
 -- @
+--
+-- The second method 'foldg' is used for generalised graph folding by recursively
+-- collapsing a given data type by applying the provided functions to the
+-- leaves and internal nodes of the expression. The order of arguments is: empty,
+-- vertex, overlay and connect, and it is assumed that the functions satisfy the
+-- axioms of the algebra.
+--
+-- @
+-- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
+-- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
+-- foldg []    return        (++)    (++)           == 'Data.Foldable.toList'
+-- foldg 0     (const 1)     (+)     (+)            == 'Data.Foldable.length'
+-- foldg 1     (const 1)     (+)     (+)            == 'size'
+-- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
 class ToGraph t where
     type ToVertex t
     toGraph :: (Graph g, Vertex g ~ ToVertex t) => t -> g
+    toGraph = foldg empty vertex overlay connect
+    foldg :: r -> (ToVertex t -> r) -> (r -> r -> r) -> (r -> r -> r) -> t -> r
+    foldg e v o c = go . toGraph
+      where
+        go E       = e
+        go (V x  ) = v x
+        go (O x y) = o (go x) (go y)
+        go (C x y) = c (go x) (go y)
+
+-- TODO: Get rid of code duplication. Note: we do not use the data type Graph
+-- here due to import cycle.
+data G a = E | V a | O (G a) (G a) | C (G a) (G a)
+
+instance Graph (G a) where
+    type Vertex (G a) = a
+    empty   = E
+    vertex  = V
+    overlay = O
+    connect = C

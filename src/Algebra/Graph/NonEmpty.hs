@@ -138,7 +138,7 @@ instance NFData a => NFData (NonEmptyGraph a) where
 
 instance C.ToGraph (NonEmptyGraph a) where
     type ToVertex (NonEmptyGraph a) = a
-    toGraph = foldg1 C.vertex C.overlay C.connect
+    foldg _ = foldg1
 
 instance H.ToGraph NonEmptyGraph where
     toGraph = foldg1 H.vertex H.overlay H.connect
@@ -585,7 +585,7 @@ removeEdge s t = filterContext s (/=s) (/=t)
 
 -- TODO: Export
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> NonEmptyGraph a -> NonEmptyGraph a
-filterContext s i o g = maybe g go . context $ focus (==s) g
+filterContext s i o g = maybe g go $ context (==s) g
   where
     go (Context is os) = G.induce (/=s) (C.toGraph g) `overlay1`
                          reverseStar s (filter i is)  `overlay` star s (filter o os)
@@ -594,10 +594,6 @@ filterContext s i o g = maybe g go . context $ focus (==s) g
 reverseStar :: a -> [a] -> NonEmptyGraph a
 reverseStar x []     = vertex x
 reverseStar x (y:ys) = connect (vertices1 $ y :| ys) (vertex x)
-
--- TODO: Move to Internal
-focus :: (a -> Bool) -> NonEmptyGraph a -> Focus a
-focus f = foldg1 (vertexFocus f) overlayFoci connectFoci
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'NonEmptyGraph'. If @y@ already exists, @x@ and @y@ will be merged.

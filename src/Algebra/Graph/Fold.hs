@@ -200,7 +200,7 @@ instance Traversable Fold where
 
 instance C.ToGraph (Fold a) where
     type ToVertex (Fold a) = a
-    toGraph = foldg C.empty C.vertex C.overlay C.connect
+    foldg e v o c g = runFold g e v o c
 
 instance H.ToGraph Fold where
     toGraph = foldg H.empty H.vertex H.overlay H.connect
@@ -351,7 +351,7 @@ connects = C.connects
 -- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
-foldg e v o c g = runFold g e v o c
+foldg = C.foldg
 
 -- | Check if a graph is empty. A convenient alias for 'null'.
 -- Complexity: /O(s)/ time.
@@ -573,7 +573,7 @@ removeEdge s t = filterContext s (/=s) (/=t)
 
 -- TODO: Export
 filterContext :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> (C.Vertex g -> Bool) -> (C.Vertex g -> Bool) -> Fold (C.Vertex g) -> g
-filterContext s i o g = maybe (C.toGraph g) go . context $ focus (==s) g
+filterContext s i o g = maybe (C.toGraph g) go $ context (==s) g
   where
     go (Context is os) = overlays [ induce (/=s) g
                                   ,   reverseStar s (filter i is)
@@ -582,10 +582,6 @@ filterContext s i o g = maybe (C.toGraph g) go . context $ focus (==s) g
 -- TODO: Export
 reverseStar :: C.Graph g => C.Vertex g -> [C.Vertex g] -> g
 reverseStar x ys = connect (C.vertices ys) (vertex x)
-
--- TODO: Move to Internal
-focus :: (a -> Bool) -> Fold a -> Focus a
-focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given graph expression. If @y@ already exists, @x@ and @y@ will be merged.

@@ -158,7 +158,12 @@ instance C.Graph (Graph a) where
 
 instance C.ToGraph (Graph a) where
     type ToVertex (Graph a) = a
-    toGraph = foldg C.empty C.vertex C.overlay C.connect
+    foldg e v o c = go
+      where
+        go Empty         = e
+        go (Vertex  x  ) = v x
+        go (Overlay x y) = o (go x) (go y)
+        go (Connect x y) = c (go x) (go y)
 
 instance H.ToGraph Graph where
     toGraph = foldg H.empty H.vertex H.overlay H.connect
@@ -341,12 +346,7 @@ connects = H.connects
 -- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
-foldg e v o c = go
-  where
-    go Empty         = e
-    go (Vertex  x  ) = v x
-    go (Overlay x y) = o (go x) (go y)
-    go (Connect x y) = c (go x) (go y)
+foldg = C.foldg
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -690,7 +690,7 @@ removeEdge s t = filterContext s (/=s) (/=t)
 
 -- TODO: Export
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
-filterContext s i o g = maybe g go . context $ focus (==s) g
+filterContext s i o g = maybe g go $ context (==s) g
   where
     go (Context is os) = overlays [ induce (/=s) g
                                   , reverseStar s (filter i is)
@@ -699,10 +699,6 @@ filterContext s i o g = maybe g go . context $ focus (==s) g
 -- TODO: Export
 reverseStar :: a -> [a] -> Graph a
 reverseStar x ys = connect (vertices ys) (vertex x)
-
--- TODO: Move to Internal
-focus :: (a -> Bool) -> Graph a -> Focus a
-focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
