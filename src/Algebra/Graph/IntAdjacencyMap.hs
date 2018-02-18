@@ -162,6 +162,7 @@ edges = fromAdjacencyList . map (fmap return)
 -- overlays []        == 'empty'
 -- overlays [x]       == x
 -- overlays [x,y]     == 'overlay' x y
+-- overlays           == 'foldr' 'overlay' 'empty'
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [IntAdjacencyMap] -> IntAdjacencyMap
@@ -174,6 +175,7 @@ overlays = C.overlays
 -- connects []        == 'empty'
 -- connects [x]       == x
 -- connects [x,y]     == 'connect' x y
+-- connects           == 'foldr' 'connect' 'empty'
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [IntAdjacencyMap] -> IntAdjacencyMap
@@ -412,6 +414,7 @@ biclique xs ys = mkAM $ IntMap.fromSet adjacent (x `IntSet.union` y)
 -- star x []    == 'vertex' x
 -- star x [y]   == 'edge' x y
 -- star x [y,z] == 'edges' [(x,y), (x,z)]
+-- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: Int -> [Int] -> IntAdjacencyMap
 star = C.star
@@ -424,6 +427,7 @@ star = C.star
 -- starTranspose x []    == 'vertex' x
 -- starTranspose x [y]   == 'edge' y x
 -- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
+-- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
 -- starTranspose x ys    == 'transpose' ('star' x ys)
 -- @
 starTranspose :: Int -> [Int] -> IntAdjacencyMap

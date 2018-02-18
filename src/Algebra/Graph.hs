@@ -314,6 +314,7 @@ edges = H.edges
 -- overlays []        == 'empty'
 -- overlays [x]       == x
 -- overlays [x,y]     == 'overlay' x y
+-- overlays           == 'foldr' 'overlay' 'empty'
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
@@ -327,6 +328,7 @@ overlays = H.overlays
 -- connects []        == 'empty'
 -- connects [x]       == x
 -- connects [x,y]     == 'connect' x y
+-- connects           == 'foldr' 'connect' 'empty'
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
@@ -586,6 +588,7 @@ biclique = H.biclique
 -- star x []    == 'vertex' x
 -- star x [y]   == 'edge' x y
 -- star x [y,z] == 'edges' [(x,y), (x,z)]
+-- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: a -> [a] -> Graph a
 star = H.star
@@ -598,6 +601,7 @@ star = H.star
 -- starTranspose x []    == 'vertex' x
 -- starTranspose x [y]   == 'edge' y x
 -- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
+-- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
 -- starTranspose x ys    == 'transpose' ('star' x ys)
 -- @
 starTranspose :: a -> [a] -> Graph a
@@ -753,7 +757,7 @@ splitVertex = H.splitVertex
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Graph a -> Graph a
-transpose = foldg empty vertex overlay (flip connect)
+transpose = foldg Empty Vertex Overlay (flip Connect)
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -768,7 +772,11 @@ transpose = foldg empty vertex overlay (flip connect)
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: (a -> Bool) -> Graph a -> Graph a
-induce = H.induce
+induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Connect)
+  where
+    k _ x     Empty = x -- Constant folding to get rid of Empty leaves
+    k _ Empty y     = y
+    k f x     y     = f x y
 
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given expression according to the laws of the algebra.

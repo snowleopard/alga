@@ -318,6 +318,7 @@ edges = C.edges
 -- overlays []        == 'empty'
 -- overlays [x]       == x
 -- overlays [x,y]     == 'overlay' x y
+-- overlays           == 'foldr' 'overlay' 'empty'
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: C.Graph g => [g] -> g
@@ -331,6 +332,7 @@ overlays = C.overlays
 -- connects []        == 'empty'
 -- connects [x]       == x
 -- connects [x,y]     == 'connect' x y
+-- connects           == 'foldr' 'connect' 'empty'
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: C.Graph g => [g] -> g
