@@ -36,8 +36,8 @@ module Algebra.Graph.Fold (
     edgeList, vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
-    C.path, C.circuit, C.clique, C.biclique, C.star, C.tree, C.forest,
-    mesh, torus, deBruijn,
+    C.path, C.circuit, C.clique, C.biclique, C.star, C.starTranspose, C.tree,
+    C.forest, mesh, torus, deBruijn,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
@@ -576,12 +576,8 @@ filterContext :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> (C.Vertex g -> Bo
 filterContext s i o g = maybe (C.toGraph g) go $ context (==s) g
   where
     go (Context is os) = overlays [ induce (/=s) g
-                                  ,   reverseStar s (filter i is)
-                                  ,        C.star s (filter o os) ]
-
--- TODO: Export
-reverseStar :: C.Graph g => C.Vertex g -> [C.Vertex g] -> g
-reverseStar x ys = connect (C.vertices ys) (vertex x)
+                                  , C.starTranspose s (filter i is)
+                                  , C.star          s (filter o os) ]
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given graph expression. If @y@ already exists, @x@ and @y@ will be merged.

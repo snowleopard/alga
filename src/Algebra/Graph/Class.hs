@@ -44,7 +44,7 @@ module Algebra.Graph.Class (
     isSubgraphOf,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, tree, forest,
+    path, circuit, clique, biclique, star, starTranspose, tree, forest,
 
     -- * Conversion between graph data types
     ToGraph (..)
@@ -345,7 +345,7 @@ clique = connects . map vertex
 biclique :: Graph g => [Vertex g] -> [Vertex g] -> g
 biclique xs ys = connect (vertices xs) (vertices ys)
 
--- | The /star/ formed by a centre vertex and a list of leaves.
+-- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
@@ -356,6 +356,19 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 -- @
 star :: Graph g => Vertex g -> [Vertex g] -> g
 star x ys = connect (vertex x) (vertices ys)
+
+-- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- starTranspose x []    == 'vertex' x
+-- starTranspose x [y]   == 'edge' y x
+-- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
+-- starTranspose x ys    == transpose ('star' x ys)
+-- @
+starTranspose :: Graph g => Vertex g -> [Vertex g] -> g
+starTranspose x ys = connect (vertices ys) (vertex x)
 
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
@@ -393,19 +406,15 @@ forest = overlays . map tree
 -- 'show' (toGraph (1 * 2 :: 'Algebra.Graph.Graph' Int) :: 'Algebra.Graph.Relation' Int) == "edge 1 2"
 -- @
 --
--- The second method 'foldg' is used for generalised graph folding by recursively
--- collapsing a given data type by applying the provided functions to the
--- leaves and internal nodes of the expression. The order of arguments is: empty,
--- vertex, overlay and connect, and it is assumed that the functions satisfy the
--- axioms of the algebra.
+-- The second method 'foldg' is used for generalised graph folding. It recursively
+-- collapses a given data type by applying the provided graph construction
+-- primitives. The order of arguments is: empty, vertex, overlay and connect,
+-- and it is assumed that the functions satisfy the axioms of the algebra.
+-- The following law establishes the relation between 'toGraph' and 'foldg':
 --
 -- @
--- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
--- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
--- foldg []    return        (++)    (++)           == 'Data.Foldable.toList'
--- foldg 0     (const 1)     (+)     (+)            == 'Data.Foldable.length'
--- foldg 1     (const 1)     (+)     (+)            == 'size'
--- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
+-- toGraph = foldg 'empty' 'vertex' 'overlay' 'connect'
+-- @
 class ToGraph t where
     type ToVertex t
     toGraph :: (Graph g, Vertex g ~ ToVertex t) => t -> g

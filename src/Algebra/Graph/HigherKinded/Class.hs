@@ -46,7 +46,8 @@ module Algebra.Graph.HigherKinded.Class (
     isEmpty, hasVertex, hasEdge, vertexCount, vertexList, vertexSet, vertexIntSet,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, tree, forest, mesh, torus, deBruijn,
+    path, circuit, clique, biclique, star, starTranspose, tree, forest, mesh,
+    torus, deBruijn,
 
     -- * Graph transformation
     removeVertex, replaceVertex, mergeVertices, splitVertex, induce,
@@ -407,7 +408,7 @@ clique = connects . map vertex
 biclique :: Graph g => [a] -> [a] -> g a
 biclique xs ys = connect (vertices xs) (vertices ys)
 
--- | The /star/ formed by a centre vertex and a list of leaves.
+-- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
@@ -418,6 +419,19 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 -- @
 star :: Graph g => a -> [a] -> g a
 star x ys = connect (vertex x) (vertices ys)
+
+-- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- starTranspose x []    == 'vertex' x
+-- starTranspose x [y]   == 'edge' y x
+-- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
+-- starTranspose x ys    == transpose ('star' x ys)
+-- @
+starTranspose :: Graph g => a -> [a] -> g a
+starTranspose x ys = connect (vertices ys) (vertex x)
 
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
@@ -487,7 +501,7 @@ torus xs ys = circuit xs `box` circuit ys
 --           deBruijn 2 "0"              == 'edge' "00" "00"
 --           deBruijn 2 "01"             == 'edges' [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
 --                                                , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
---           'transpose'   (deBruijn n xs) == 'fmap' 'reverse' $ deBruijn n xs
+--           transpose   (deBruijn n xs) == 'fmap' 'reverse' $ deBruijn n xs
 --           'vertexCount' (deBruijn n xs) == ('length' $ 'Data.List.nub' xs)^n
 -- n > 0 ==> 'edgeCount'   (deBruijn n xs) == ('length' $ 'Data.List.nub' xs)^(n + 1)
 -- @

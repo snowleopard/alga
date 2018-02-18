@@ -35,7 +35,8 @@ module Algebra.Graph (
     edgeList, vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, tree, forest, mesh, torus, deBruijn,
+    path, circuit, clique, biclique, star, starTranspose, tree, forest, mesh,
+    torus, deBruijn,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
@@ -577,7 +578,7 @@ clique = H.clique
 biclique :: [a] -> [a] -> Graph a
 biclique = H.biclique
 
--- | The /star/ formed by a centre vertex and a list of leaves.
+-- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
@@ -588,6 +589,19 @@ biclique = H.biclique
 -- @
 star :: a -> [a] -> Graph a
 star = H.star
+
+-- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- starTranspose x []    == 'vertex' x
+-- starTranspose x [y]   == 'edge' y x
+-- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
+-- starTranspose x ys    == 'transpose' ('star' x ys)
+-- @
+starTranspose :: a -> [a] -> Graph a
+starTranspose = H.starTranspose
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
@@ -693,12 +707,8 @@ filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
 filterContext s i o g = maybe g go $ context (==s) g
   where
     go (Context is os) = overlays [ induce (/=s) g
-                                  , reverseStar s (filter i is)
-                                  ,        star s (filter o os) ]
-
--- TODO: Export
-reverseStar :: a -> [a] -> Graph a
-reverseStar x ys = connect (vertices ys) (vertex x)
+                                  , starTranspose s (filter i is)
+                                  , star          s (filter o os) ]
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.

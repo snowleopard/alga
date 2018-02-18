@@ -81,6 +81,7 @@ testGraphFamilies = mconcat [ testPath
                             , testClique
                             , testBiclique
                             , testStar
+                            , testStarTranspose
                             , testTree
                             , testForest ]
 
@@ -645,6 +646,21 @@ testStar (Testsuite prefix (%)) = do
 
     test "star x [y,z] == edges [(x,y), (x,z)]" $ \x y z ->
           star x [y,z] == id % edges [(x,y), (x,z)]
+
+testStarTranspose :: Testsuite -> IO ()
+testStarTranspose (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "starTranspose ============"
+    test "starTranspose x []    == vertex x" $ \x ->
+          starTranspose x []    == id % vertex x
+
+    test "starTranspose x [y]   == edge y x" $ \x y ->
+          starTranspose x [y]   == id % edge y x
+
+    test "starTranspose x [y,z] == edges [(y,x), (z,x)]" $ \x y z ->
+          starTranspose x [y,z] == id % edges [(y,x), (z,x)]
+
+    test "starTranspose x ys    == transpose (star x ys)" $ \x ys ->
+          starTranspose x ys    == transpose % (star x ys)
 
 testTree :: Testsuite -> IO ()
 testTree (Testsuite prefix (%)) = do
