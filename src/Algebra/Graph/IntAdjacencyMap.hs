@@ -32,7 +32,7 @@ module Algebra.Graph.IntAdjacencyMap (
     adjacencyList, vertexIntSet, edgeSet, postIntSet,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, tree, forest,
+    path, circuit, clique, biclique, star, starTranspose, tree, forest,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
@@ -405,7 +405,7 @@ biclique xs ys = mkAM $ IntMap.fromSet adjacent (x `IntSet.union` y)
         | v `IntSet.member` x = y
         | otherwise        = IntSet.empty
 
--- | The /star/ formed by a centre vertex and a list of leaves.
+-- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
@@ -415,6 +415,19 @@ biclique xs ys = mkAM $ IntMap.fromSet adjacent (x `IntSet.union` y)
 -- @
 star :: Int -> [Int] -> IntAdjacencyMap
 star = C.star
+
+-- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- starTranspose x []    == 'vertex' x
+-- starTranspose x [y]   == 'edge' y x
+-- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
+-- starTranspose x ys    == 'transpose' ('star' x ys)
+-- @
+starTranspose :: Int -> [Int] -> IntAdjacencyMap
+starTranspose = C.starTranspose
 
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.

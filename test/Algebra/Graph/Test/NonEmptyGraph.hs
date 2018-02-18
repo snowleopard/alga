@@ -413,6 +413,19 @@ testNonEmptyGraph = do
     test "star x [y,z] == edges1 ((x,y) :| [(x,z)])" $ \(x :: Int) y z ->
           star x [y,z] == edges1 ((x,y) :| [(x,z)])
 
+    putStrLn $ "\n============ Graph.NonEmpty.starTranspose ============"
+    test "starTranspose x []    == vertex x" $ \(x :: Int) ->
+          starTranspose x []    == vertex x
+
+    test "starTranspose x [y]   == edge y x" $ \(x :: Int) y ->
+          starTranspose x [y]   == edge y x
+
+    test "starTranspose x [y,z] == edges1 ((y,x) :| [(z,x)])" $ \(x :: Int) y z ->
+          starTranspose x [y,z] == edges1 ((y,x) :| [(z,x)])
+
+    test "starTranspose x ys    == transpose (star x ys)" $ \(x :: Int) ys ->
+          starTranspose x ys    == transpose (star x ys)
+
     putStrLn $ "\n============ Graph.NonEmpty.tree ============"
     test "tree (Node x [])                                         == vertex x" $ \(x :: Int) ->
           tree (Node x [])                                         == vertex x

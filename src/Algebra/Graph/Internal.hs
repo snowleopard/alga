@@ -20,14 +20,17 @@ module Algebra.Graph.Internal (
     List (..),
 
     -- * Data structures for graph traversal
-    Focus, emptyFocus, vertexFocus, overlayFoci, connectFoci,
-    Context (..), context
+    Focus, focus, Context (..), context, filterContext
   ) where
 
 import Control.Applicative (Applicative (..))
 import Data.Foldable
 import Data.Semigroup
-import qualified GHC.Exts as Exts
+
+import Algebra.Graph.Class (ToGraph(..))
+
+import qualified Algebra.Graph.HigherKinded.Class as H
+import qualified GHC.Exts                         as Exts
 
 -- | An abstract list data type with /O(1)/ time concatenation (the current
 -- implementation uses difference lists). Here @a@ is the type of list elements.
@@ -99,9 +102,11 @@ data Context a = Context { inputs :: [a], outputs :: [a] }
 
 -- | Extract the context from a graph 'Focus'. Returns @Nothing@ if the focus
 -- could not be obtained.
-context :: Focus a -> Maybe (Context a)
-context f | ok f      = Just $ Context (toList $ is f) (toList $ os f)
-          | otherwise = Nothing
+context :: ToGraph g => (ToVertex g -> Bool) -> g -> Maybe (Context (ToVertex g))
+context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
+            | otherwise = Nothing
+  where
+    f = focus p g
 
 -- | The /focus/ of a graph expression is a flattened represenentation of the
 -- subgraph under focus, its interface, as well as the list of all encountered
@@ -111,3 +116,17 @@ data Focus a = Focus
     , is :: List a   -- ^ Inputs into the focused subgraph.
     , os :: List a   -- ^ Outputs out of the focused subgraph.
     , vs :: List a } -- ^ All vertices (leaves) of the graph expression.
+
+-- | 'Focus' on a specified subgraph.
+focus :: ToGraph g => (ToVertex g -> Bool) -> g -> Focus (ToVertex g)
+focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
+
+-- TODO: This can be generalised to support non-empty graphs.
+-- | Filter vertices in a subgraph context.
+filterContext :: (Eq a, H.Graph g, ToGraph (g a), ToVertex (g a) ~ a)
+              => a -> (a -> Bool) -> (a -> Bool) -> g a -> g a
+filterContext s i o g = maybe g go $ context (==s) g
+  where
+    go (Context is os) = H.overlays [ H.induce (/=s) g
+                                    , H.starTranspose s (filter i is)
+                                    , H.star          s (filter o os) ]

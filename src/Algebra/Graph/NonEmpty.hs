@@ -33,7 +33,7 @@ module Algebra.Graph.NonEmpty (
     vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
-    path1, circuit1, clique1, biclique1, star, tree, mesh1, torus1,
+    path1, circuit1, clique1, biclique1, star, starTranspose, tree, mesh1, torus1,
 
     -- * Graph transformation
     removeEdge, replaceVertex, mergeVertices, splitVertex1, transpose, simplify,
@@ -50,7 +50,7 @@ import Control.Monad.Compat
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup
 
-import Algebra.Graph.Internal
+import Algebra.Graph.Internal hiding (filterContext)
 
 import qualified Algebra.Graph                    as G
 import qualified Algebra.Graph.AdjacencyMap       as AM
@@ -138,7 +138,7 @@ instance NFData a => NFData (NonEmptyGraph a) where
 
 instance C.ToGraph (NonEmptyGraph a) where
     type ToVertex (NonEmptyGraph a) = a
-    toGraph = foldg1 C.vertex C.overlay C.connect
+    foldg _ = foldg1
 
 instance H.ToGraph NonEmptyGraph where
     toGraph = foldg1 H.vertex H.overlay H.connect
@@ -514,7 +514,7 @@ clique1 = connects1 . fmap vertex
 biclique1 :: NonEmpty a -> NonEmpty a -> NonEmptyGraph a
 biclique1 xs ys = connect (vertices1 xs) (vertices1 ys)
 
--- | The /star/ formed by a centre vertex and a list of leaves.
+-- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
@@ -526,6 +526,20 @@ biclique1 xs ys = connect (vertices1 xs) (vertices1 ys)
 star :: a -> [a] -> NonEmptyGraph a
 star x []     = vertex x
 star x (y:ys) = connect (vertex x) (vertices1 $ y :| ys)
+
+-- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- starTranspose x []    == 'vertex' x
+-- starTranspose x [y]   == 'edge' y x
+-- starTranspose x [y,z] == 'edges1' ((y,x) ':|' [(z,x)])
+-- starTranspose x ys    == 'transpose' ('star' x ys)
+-- @
+starTranspose :: a -> [a] -> NonEmptyGraph a
+starTranspose x []     = vertex x
+starTranspose x (y:ys) = connect (vertices1 $ y :| ys) (vertex x)
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
@@ -585,19 +599,10 @@ removeEdge s t = filterContext s (/=s) (/=t)
 
 -- TODO: Export
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> NonEmptyGraph a -> NonEmptyGraph a
-filterContext s i o g = maybe g go . context $ focus (==s) g
+filterContext s i o g = maybe g go $ context (==s) g
   where
-    go (Context is os) = G.induce (/=s) (C.toGraph g) `overlay1`
-                         reverseStar s (filter i is)  `overlay` star s (filter o os)
-
--- TODO: Export
-reverseStar :: a -> [a] -> NonEmptyGraph a
-reverseStar x []     = vertex x
-reverseStar x (y:ys) = connect (vertices1 $ y :| ys) (vertex x)
-
--- TODO: Move to Internal
-focus :: (a -> Bool) -> NonEmptyGraph a -> Focus a
-focus f = foldg1 (vertexFocus f) overlayFoci connectFoci
+    go (Context is os) = G.induce (/=s) (C.toGraph g)  `overlay1`
+                         starTranspose s (filter i is) `overlay` star s (filter o os)
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'NonEmptyGraph'. If @y@ already exists, @x@ and @y@ will be merged.

@@ -18,9 +18,10 @@ import Data.IntSet (IntSet)
 import Data.Set (Set)
 import Data.Tree
 
-import Algebra.Graph.Class
+import Algebra.Graph.Class hiding (toGraph)
 
 import qualified Algebra.Graph.AdjacencyMap    as AdjacencyMap
+import qualified Algebra.Graph.Class           as Class
 import qualified Algebra.Graph.Fold            as Fold
 import qualified Algebra.Graph                 as Graph
 import qualified Algebra.Graph.IntAdjacencyMap as IntAdjacencyMap
@@ -41,6 +42,8 @@ class Graph g => GraphAPI g where
     connects          = notImplemented
     fromAdjacencyList :: [(Vertex g, [Vertex g])] -> g
     fromAdjacencyList = notImplemented
+    toGraph           :: (Graph h, Vertex g ~ Vertex h) => g -> h
+    toGraph           = notImplemented
     foldg             :: r -> (Vertex g -> r) -> (r -> r -> r) -> (r -> r -> r) -> g -> r
     foldg             = notImplemented
     isSubgraphOf      :: g -> g -> Bool
@@ -87,6 +90,8 @@ class Graph g => GraphAPI g where
     biclique          = notImplemented
     star              :: Vertex g -> [Vertex g] -> g
     star              = notImplemented
+    starTranspose     :: Vertex g -> [Vertex g] -> g
+    starTranspose     = notImplemented
     tree              :: Tree (Vertex g) -> g
     tree              = notImplemented
     forest            :: Forest (Vertex g) -> g
@@ -158,6 +163,7 @@ instance Ord a => GraphAPI (AdjacencyMap.AdjacencyMap a) where
     clique            = AdjacencyMap.clique
     biclique          = AdjacencyMap.biclique
     star              = AdjacencyMap.star
+    starTranspose     = AdjacencyMap.starTranspose
     tree              = AdjacencyMap.tree
     forest            = AdjacencyMap.forest
     removeVertex      = AdjacencyMap.removeVertex
@@ -179,6 +185,7 @@ instance Ord a => GraphAPI (Fold.Fold a) where
     edges         = Fold.edges
     overlays      = Fold.overlays
     connects      = Fold.connects
+    toGraph       = Class.toGraph
     foldg         = Fold.foldg
     isSubgraphOf  = Fold.isSubgraphOf
     isEmpty       = Fold.isEmpty
@@ -197,6 +204,7 @@ instance Ord a => GraphAPI (Fold.Fold a) where
     clique        = Fold.clique
     biclique      = Fold.biclique
     star          = Fold.star
+    starTranspose = Fold.starTranspose
     tree          = Fold.tree
     forest        = Fold.forest
     mesh          = Fold.mesh
@@ -220,6 +228,7 @@ instance Ord a => GraphAPI (Graph.Graph a) where
     edges         = Graph.edges
     overlays      = Graph.overlays
     connects      = Graph.connects
+    toGraph       = Class.toGraph
     foldg         = Graph.foldg
     isSubgraphOf  = Graph.isSubgraphOf
     (===)         = (Graph.===)
@@ -239,6 +248,7 @@ instance Ord a => GraphAPI (Graph.Graph a) where
     clique        = Graph.clique
     biclique      = Graph.biclique
     star          = Graph.star
+    starTranspose = Graph.starTranspose
     tree          = Graph.tree
     forest        = Graph.forest
     mesh          = Graph.mesh
@@ -281,6 +291,7 @@ instance GraphAPI IntAdjacencyMap.IntAdjacencyMap where
     clique            = IntAdjacencyMap.clique
     biclique          = IntAdjacencyMap.biclique
     star              = IntAdjacencyMap.star
+    starTranspose     = IntAdjacencyMap.starTranspose
     tree              = IntAdjacencyMap.tree
     forest            = IntAdjacencyMap.forest
     removeVertex      = IntAdjacencyMap.removeVertex
@@ -313,7 +324,7 @@ instance Ord a => GraphAPI (Relation.Relation a) where
     edgeList          = Relation.edgeList
     preSet            = Relation.preSet
     postSet           = Relation.postSet
-    adjacencyList     = AdjacencyMap.adjacencyList . toGraph
+    adjacencyList     = AdjacencyMap.adjacencyList . Class.toGraph
     vertexSet         = Relation.vertexSet
     vertexIntSet      = IntSet.fromAscList . Set.toAscList . Relation.vertexSet
     edgeSet           = Relation.edgeSet
@@ -322,6 +333,7 @@ instance Ord a => GraphAPI (Relation.Relation a) where
     clique            = Relation.clique
     biclique          = Relation.biclique
     star              = Relation.star
+    starTranspose     = Relation.starTranspose
     tree              = Relation.tree
     forest            = Relation.forest
     removeVertex      = Relation.removeVertex

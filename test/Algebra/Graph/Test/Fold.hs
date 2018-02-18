@@ -33,7 +33,7 @@ testFold = do
 
     testShow            t
     testBasicPrimitives t
-    testFoldg           h
+    testToGraph         h
     testIsSubgraphOf    t
     testSize            t
     testProperties      t
