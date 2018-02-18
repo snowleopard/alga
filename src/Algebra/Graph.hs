@@ -702,14 +702,6 @@ removeVertex = H.removeVertex
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t = filterContext s (/=s) (/=t)
 
--- TODO: Export
-filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
-filterContext s i o g = maybe g go $ context (==s) g
-  where
-    go (Context is os) = overlays [ induce (/=s) g
-                                  , starTranspose s (filter i is)
-                                  , star          s (filter o os) ]
-
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O(s)/ time, memory and size.

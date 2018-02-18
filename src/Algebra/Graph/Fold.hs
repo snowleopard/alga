@@ -569,15 +569,7 @@ removeVertex v = induce (/= v)
 -- 'size' (removeEdge x y z)         <= 3 * 'size' z + 3
 -- @
 removeEdge :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
-removeEdge s t = filterContext s (/=s) (/=t)
-
--- TODO: Export
-filterContext :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> (C.Vertex g -> Bool) -> (C.Vertex g -> Bool) -> Fold (C.Vertex g) -> g
-filterContext s i o g = maybe (C.toGraph g) go $ context (==s) g
-  where
-    go (Context is os) = overlays [ induce (/=s) g
-                                  , C.starTranspose s (filter i is)
-                                  , C.star          s (filter o os) ]
+removeEdge s t = C.toGraph . filterContext s (/=s) (/=t)
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given graph expression. If @y@ already exists, @x@ and @y@ will be merged.
