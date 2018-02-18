@@ -33,7 +33,7 @@ testGraph = do
     test "Theorems of graphs" (theorems :: GraphTestsuite G)
 
     testBasicPrimitives t
-    testFoldg           h
+    testToGraph         h
     testIsSubgraphOf    t
     testSize            t
     testProperties      t

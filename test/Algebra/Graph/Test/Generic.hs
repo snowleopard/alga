@@ -12,7 +12,7 @@
 module Algebra.Graph.Test.Generic (
     -- * Generic tests
     Testsuite, testsuite, HTestsuite, hTestsuite, testShow, testFromAdjacencyList,
-    testBasicPrimitives, testFoldg, testIsSubgraphOf, testSize, testProperties,
+    testBasicPrimitives, testToGraph, testIsSubgraphOf, testSize, testProperties,
     testAdjacencyList, testPreSet, testPostSet, testPostIntSet, testGraphFamilies,
     testTransformations, testDfsForest, testDfsForestFrom, testDfs, testTopSort,
     testIsTopSort, testSplitVertex, testBind, testSimplify
@@ -31,6 +31,7 @@ import Data.Tuple
 import Algebra.Graph.Class (Graph (..))
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API
+import Algebra.Graph.Relation (Relation)
 
 import qualified Data.Set    as Set
 import qualified Data.IntSet as IntSet
@@ -301,8 +302,18 @@ testFromAdjacencyList (Testsuite prefix (%)) = do
     test "overlay (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)" $ \xs ys ->
           overlay (fromAdjacencyList xs) % fromAdjacencyList ys == fromAdjacencyList (xs ++ ys)
 
-testFoldg :: HTestsuite -> IO ()
-testFoldg (HTestsuite prefix (%)) = do
+testToGraph :: HTestsuite -> IO ()
+testToGraph (HTestsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "toGraph ============"
+    test "      toGraph (g     :: Graph a  ) :: Graph a       == g" $ \g ->
+                toGraph % g                                   == g
+
+    test "show (toGraph (1 * 2 :: Graph Int) :: Relation Int) == \"edge 1 2\"" $
+          show (toGraph % (1 * 2)            :: Relation Int) == "edge 1 2"
+
+    test "\ntoGraph == foldg empty vertex overlay connect" $ \x ->
+          toGraph % x == id % foldg empty vertex overlay connect x
+
     putStrLn $ "\n============ " ++ prefix ++ "foldg ============"
     test "foldg empty vertex        overlay connect        == id" $ \x ->
           foldg empty vertex        overlay connect x      == id % x

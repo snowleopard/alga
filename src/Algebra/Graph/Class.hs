@@ -413,7 +413,7 @@ forest = overlays . map tree
 -- The following law establishes the relation between 'toGraph' and 'foldg':
 --
 -- @
--- toGraph = foldg 'empty' 'vertex' 'overlay' 'connect'
+-- toGraph == foldg 'empty' 'vertex' 'overlay' 'connect'
 -- @
 class ToGraph t where
     type ToVertex t
