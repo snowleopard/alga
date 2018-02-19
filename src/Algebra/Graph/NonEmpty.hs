@@ -50,7 +50,7 @@ import Control.Monad.Compat
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup
 
-import Algebra.Graph.Internal hiding (filterContext)
+import Algebra.Graph.Internal
 
 import qualified Algebra.Graph                    as G
 import qualified Algebra.Graph.AdjacencyMap       as AM

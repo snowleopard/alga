@@ -53,7 +53,7 @@ import Control.Applicative (Alternative, (<|>))
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 
-import Algebra.Graph.Internal hiding (filterContext)
+import Algebra.Graph.Internal
 
 import qualified Algebra.Graph.AdjacencyMap       as AM
 import qualified Algebra.Graph.Class              as C

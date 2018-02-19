@@ -54,7 +54,7 @@ import Control.Applicative hiding (empty)
 import Control.Monad.Compat (MonadPlus (..), ap)
 import Data.Foldable
 
-import Algebra.Graph.Internal hiding (filterContext)
+import Algebra.Graph.Internal
 
 import qualified Algebra.Graph.AdjacencyMap       as AM
 import qualified Algebra.Graph.Class              as C
