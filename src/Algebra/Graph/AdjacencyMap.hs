@@ -161,6 +161,7 @@ edges = fromAdjacencyList . map (fmap return)
 -- overlays []        == 'empty'
 -- overlays [x]       == x
 -- overlays [x,y]     == 'overlay' x y
+-- overlays           == 'foldr' 'overlay' 'empty'
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
@@ -173,6 +174,7 @@ overlays = C.overlays
 -- connects []        == 'empty'
 -- connects [x]       == x
 -- connects [x,y]     == 'connect' x y
+-- connects           == 'foldr' 'connect' 'empty'
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
@@ -409,6 +411,7 @@ biclique xs ys = mkAM $ Map.fromSet adjacent (x `Set.union` y)
 -- star x []    == 'vertex' x
 -- star x [y]   == 'edge' x y
 -- star x [y,z] == 'edges' [(x,y), (x,z)]
+-- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: Ord a => a -> [a] -> AdjacencyMap a
 star = C.star
@@ -421,6 +424,7 @@ star = C.star
 -- starTranspose x []    == 'vertex' x
 -- starTranspose x [y]   == 'edge' y x
 -- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
+-- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
 -- starTranspose x ys    == 'transpose' ('star' x ys)
 -- @
 starTranspose :: Ord a => a -> [a] -> AdjacencyMap a

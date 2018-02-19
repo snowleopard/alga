@@ -318,6 +318,7 @@ edges = C.edges
 -- overlays []        == 'empty'
 -- overlays [x]       == x
 -- overlays [x,y]     == 'overlay' x y
+-- overlays           == 'foldr' 'overlay' 'empty'
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: C.Graph g => [g] -> g
@@ -331,6 +332,7 @@ overlays = C.overlays
 -- connects []        == 'empty'
 -- connects [x]       == x
 -- connects [x,y]     == 'connect' x y
+-- connects           == 'foldr' 'connect' 'empty'
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: C.Graph g => [g] -> g
@@ -566,10 +568,20 @@ removeVertex v = induce (/= v)
 -- removeEdge x y . 'removeVertex' x == 'removeVertex' x
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
--- 'size' (removeEdge x y z)         <= 3 * 'size' z + 3
+-- 'size' (removeEdge x y z)         <= 3 * 'size' z
 -- @
 removeEdge :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
-removeEdge s t = C.toGraph . filterContext s (/=s) (/=t)
+removeEdge s t = filterContext s (/=s) (/=t)
+
+-- TODO: Export
+-- | Filter vertices in a subgraph context.
+filterContext :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> (C.Vertex g -> Bool)
+              -> (C.Vertex g -> Bool) -> Fold (C.Vertex g) -> g
+filterContext s i o g = maybe (C.toGraph g) go $ context (==s) g
+  where
+    go (Context is os) = overlays [ induce (/=s) g
+                                  , C.starTranspose s (filter i is)
+                                  , C.star          s (filter o os) ]
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given graph expression. If @y@ already exists, @x@ and @y@ will be merged.
@@ -666,7 +678,11 @@ bind g f = foldg C.empty f C.overlay C.connect g
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: C.Graph g => (C.Vertex g -> Bool) -> Fold (C.Vertex g) -> g
-induce p g = bind g $ \v -> if p v then C.vertex v else C.empty
+induce p = C.toGraph . foldg empty (\x -> if p x then vertex x else empty) (k overlay) (k connect)
+  where
+    k f x y | isEmpty x = y -- Constant folding to get rid of Empty leaves
+            | isEmpty y = x
+            | otherwise = f x y
 
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given polymorphic graph expression according to the laws

@@ -314,6 +314,7 @@ edges = H.edges
 -- overlays []        == 'empty'
 -- overlays [x]       == x
 -- overlays [x,y]     == 'overlay' x y
+-- overlays           == 'foldr' 'overlay' 'empty'
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
@@ -327,6 +328,7 @@ overlays = H.overlays
 -- connects []        == 'empty'
 -- connects [x]       == x
 -- connects [x,y]     == 'connect' x y
+-- connects           == 'foldr' 'connect' 'empty'
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
@@ -586,6 +588,7 @@ biclique = H.biclique
 -- star x []    == 'vertex' x
 -- star x [y]   == 'edge' x y
 -- star x [y,z] == 'edges' [(x,y), (x,z)]
+-- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: a -> [a] -> Graph a
 star = H.star
@@ -598,6 +601,7 @@ star = H.star
 -- starTranspose x []    == 'vertex' x
 -- starTranspose x [y]   == 'edge' y x
 -- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
+-- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
 -- starTranspose x ys    == 'transpose' ('star' x ys)
 -- @
 starTranspose :: a -> [a] -> Graph a
@@ -697,10 +701,19 @@ removeVertex = H.removeVertex
 -- removeEdge x y . 'removeVertex' x == 'removeVertex' x
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
--- 'size' (removeEdge x y z)         <= 3 * 'size' z + 3
+-- 'size' (removeEdge x y z)         <= 3 * 'size' z
 -- @
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t = filterContext s (/=s) (/=t)
+
+-- TODO: Export
+-- | Filter vertices in a subgraph context.
+filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
+filterContext s i o g = maybe g go $ context (==s) g
+  where
+    go (Context is os) = overlays [ induce (/=s) g
+                                  , starTranspose s (filter i is)
+                                  , star          s (filter o os) ]
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
@@ -753,7 +766,7 @@ splitVertex = H.splitVertex
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Graph a -> Graph a
-transpose = foldg empty vertex overlay (flip connect)
+transpose = foldg Empty Vertex Overlay (flip Connect)
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -768,7 +781,11 @@ transpose = foldg empty vertex overlay (flip connect)
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: (a -> Bool) -> Graph a -> Graph a
-induce = H.induce
+induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Connect)
+  where
+    k _ x     Empty = x -- Constant folding to get rid of Empty leaves
+    k _ Empty y     = y
+    k f x     y     = f x y
 
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given expression according to the laws of the algebra.

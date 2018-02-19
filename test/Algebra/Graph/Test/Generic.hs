@@ -266,6 +266,9 @@ testOverlays (Testsuite prefix (%)) = do
     test "overlays [x,y]     == overlay x y" $ \x y ->
           overlays [x,y]     == id % overlay x y
 
+    test "overlays           == foldr overlay empty" $ mapSize (min 10) $ \xs ->
+          overlays xs        == id % foldr overlay empty xs
+
     test "isEmpty . overlays == all isEmpty" $ mapSize (min 10) $ \xs ->
           isEmpty % overlays xs == all isEmpty xs
 
@@ -280,6 +283,9 @@ testConnects (Testsuite prefix (%)) = do
 
     test "connects [x,y]     == connect x y" $ \x y ->
           connects [x,y]     == id % connect x y
+
+    test "connects           == foldr connect empty" $ mapSize (min 10) $ \xs ->
+          connects xs        == id % foldr connect empty xs
 
     test "isEmpty . connects == all isEmpty" $ mapSize (min 10) $ \xs ->
           isEmpty % connects xs == all isEmpty xs
@@ -658,6 +664,9 @@ testStar (Testsuite prefix (%)) = do
     test "star x [y,z] == edges [(x,y), (x,z)]" $ \x y z ->
           star x [y,z] == id % edges [(x,y), (x,z)]
 
+    test "star x ys    == connect (vertex x) (vertices ys)" $ \x ys ->
+          star x ys    == connect (vertex x) % (vertices ys)
+
 testStarTranspose :: Testsuite -> IO ()
 testStarTranspose (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "starTranspose ============"
@@ -669,6 +678,9 @@ testStarTranspose (Testsuite prefix (%)) = do
 
     test "starTranspose x [y,z] == edges [(y,x), (z,x)]" $ \x y z ->
           starTranspose x [y,z] == id % edges [(y,x), (z,x)]
+
+    test "starTranspose x ys    == connect (vertices ys) (vertex x)" $ \x ys ->
+          starTranspose x ys    == connect (vertices ys) % (vertex x)
 
     test "starTranspose x ys    == transpose (star x ys)" $ \x ys ->
           starTranspose x ys    == transpose % (star x ys)
@@ -731,9 +743,9 @@ testRemoveEdge (Testsuite prefix (%)) = do
           removeEdge 1 2 % (1 * 1 * 2 * 2) == 1 * 1 + 2 * 2
 
     -- TODO: Ouch. Generic tests are becoming awkward. We need a better way.
-    when (prefix == "Graph." || prefix == "Fold.") $ do
-        test "size (removeEdge x y z)         <= 3 * size z + 3" $ \x y z ->
-              size % (removeEdge x y z)       <= 3 * size z + 3
+    when (prefix == "Fold." || prefix == "Graph.") $ do
+        test "size (removeEdge x y z)         <= 3 * size z" $ \x y z ->
+              size % (removeEdge x y z)       <= 3 * size z
 
 testReplaceVertex :: Testsuite -> IO ()
 testReplaceVertex (Testsuite prefix (%)) = do

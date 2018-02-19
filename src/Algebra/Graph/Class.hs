@@ -255,9 +255,12 @@ edges = overlays . map (uncurry edge)
 -- overlays []    == 'empty'
 -- overlays [x]   == x
 -- overlays [x,y] == 'overlay' x y
+-- overlays       == 'foldr' 'overlay' 'empty'
 -- @
 overlays :: Graph g => [g] -> g
-overlays = foldr overlay empty
+overlays []     = empty
+overlays [x]    = x
+overlays (x:xs) = x `overlay` overlays xs
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -267,9 +270,12 @@ overlays = foldr overlay empty
 -- connects []    == 'empty'
 -- connects [x]   == x
 -- connects [x,y] == 'connect' x y
+-- connects       == 'foldr' 'connect' 'empty'
 -- @
 connects :: Graph g => [g] -> g
-connects = foldr connect empty
+connects []     = empty
+connects [x]    = x
+connects (x:xs) = x `connect` connects xs
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second. Here is the current implementation:
@@ -343,6 +349,8 @@ clique = connects . map vertex
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: Graph g => [Vertex g] -> [Vertex g] -> g
+biclique xs [] = vertices xs
+biclique [] ys = vertices ys
 biclique xs ys = connect (vertices xs) (vertices ys)
 
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
@@ -353,8 +361,10 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 -- star x []    == 'vertex' x
 -- star x [y]   == 'edge' x y
 -- star x [y,z] == 'edges' [(x,y), (x,z)]
+-- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: Graph g => Vertex g -> [Vertex g] -> g
+star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
 
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
@@ -365,9 +375,11 @@ star x ys = connect (vertex x) (vertices ys)
 -- starTranspose x []    == 'vertex' x
 -- starTranspose x [y]   == 'edge' y x
 -- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
+-- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
 -- starTranspose x ys    == transpose ('star' x ys)
 -- @
 starTranspose :: Graph g => Vertex g -> [Vertex g] -> g
+starTranspose x [] = vertex x
 starTranspose x ys = connect (vertices ys) (vertex x)
 
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
@@ -381,7 +393,9 @@ starTranspose x ys = connect (vertices ys) (vertex x)
 -- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges' [(1,2), (1,3), (3,4), (3,5)]
 -- @
 tree :: Graph g => Tree (Vertex g) -> g
-tree (Node x f) = overlay (star x $ map rootLabel f) (forest f)
+tree (Node x []) = vertex x
+tree (Node x f ) = star x (map rootLabel f)
+         `overlay` forest (filter (not . null . subForest) f)
 
 -- | The /forest graph/ constructed from a given 'Forest' data structure.
 -- Complexity: /O(F)/ time, memory and size, where /F/ is the size of the
