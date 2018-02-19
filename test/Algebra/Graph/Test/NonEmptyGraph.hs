@@ -11,7 +11,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.NonEmptyGraph (
     -- * Testsuite
-    testNonEmptyGraph
+    testGraphNonEmpty
   ) where
 
 import Data.List.NonEmpty (NonEmpty (..))
@@ -51,8 +51,8 @@ theorems x y = conjoin
     (<=) = isSubgraphOf
     infixl 4 <=
 
-testNonEmptyGraph :: IO ()
-testNonEmptyGraph = do
+testGraphNonEmpty :: IO ()
+testGraphNonEmpty = do
     putStrLn "\n============ Graph.NonEmpty ============"
     test "Axioms of non-empty graphs"   axioms
     test "Theorems of non-empty graphs" theorems
@@ -478,8 +478,8 @@ testNonEmptyGraph = do
     test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
           removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * (2 :: NonEmptyGraph Int)
 
-    test "size (removeEdge x y z)         <= 3 * size z + 3" $ \(x :: Int) y z ->
-          size (removeEdge x y z)         <= 3 * size z + (3 :: Int)
+    test "size (removeEdge x y z)         <= 3 * size z" $ \(x :: Int) y z ->
+          size (removeEdge x y z)         <= 3 * size z
 
     putStrLn $ "\n============ Graph.NonEmpty.replaceVertex ============"
     test "replaceVertex x x            == id" $ \(x :: Int) y ->

@@ -592,7 +592,7 @@ torus1 xs ys = circuit1 xs `box` circuit1 ys
 -- removeEdge x y . removeEdge x y == removeEdge x y
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
--- 'size' (removeEdge x y z)         <= 3 * 'size' z + 3
+-- 'size' (removeEdge x y z)         <= 3 * 'size' z
 -- @
 removeEdge :: Eq a => a -> a -> NonEmptyGraph a -> NonEmptyGraph a
 removeEdge s t = filterContext s (/=s) (/=t)

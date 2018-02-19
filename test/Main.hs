@@ -13,7 +13,7 @@ main = do
     testExport
     testFold
     testGraph
+    testGraphNonEmpty
     testIntAdjacencyMap
     testInternal
-    testNonEmptyGraph
     testRelation
