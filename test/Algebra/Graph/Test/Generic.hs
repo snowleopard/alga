@@ -743,9 +743,9 @@ testRemoveEdge (Testsuite prefix (%)) = do
           removeEdge 1 2 % (1 * 1 * 2 * 2) == 1 * 1 + 2 * 2
 
     -- TODO: Ouch. Generic tests are becoming awkward. We need a better way.
-    when (prefix == "Graph." || prefix == "Fold.") $ do
-        test "size (removeEdge x y z)         <= 3 * size z + 3" $ \x y z ->
-              size % (removeEdge x y z)       <= 3 * size z + 3
+    when (prefix == "Fold." || prefix == "Graph.") $ do
+        test "size (removeEdge x y z)         <= 3 * size z" $ \x y z ->
+              size % (removeEdge x y z)       <= 3 * size z
 
 testReplaceVertex :: Testsuite -> IO ()
 testReplaceVertex (Testsuite prefix (%)) = do
