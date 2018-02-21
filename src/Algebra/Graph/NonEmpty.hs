@@ -36,7 +36,8 @@ module Algebra.Graph.NonEmpty (
     path1, circuit1, clique1, biclique1, star, starTranspose, tree, mesh1, torus1,
 
     -- * Graph transformation
-    removeEdge, replaceVertex, mergeVertices, splitVertex1, transpose, simplify,
+    removeVertex1, removeEdge, replaceVertex, mergeVertices, splitVertex1,
+    transpose, induce1, simplify,
 
     -- * Graph composition
     box
@@ -162,8 +163,9 @@ instance Monad NonEmptyGraph where
     return  = pure
     g >>= f = foldg1 f Overlay Connect g
 
--- | Convert a 'G.Graph' into 'NonEmptyGraph', returning 'Nothing' if the
--- argument is 'G.empty'. Complexity: /O(s)/ time, memory and size.
+-- | Convert a 'G.Graph' into 'NonEmptyGraph'. Returns 'Nothing' if the argument
+-- is 'G.empty'.
+-- Complexity: /O(s)/ time, memory and size.
 --
 -- @
 -- toNonEmptyGraph 'G.empty'       == Nothing
@@ -221,8 +223,8 @@ overlay = Overlay
 
 -- | Overlay a possibly empty graph with a non-empty graph. If the first
 -- argument is 'G.empty', the function returns the second argument; otherwise
--- it is semantically the same as 'overlay'. Complexity: /O(s1)/ time and
--- memory, and /O(s1 + s2)/ size.
+-- it is semantically the same as 'overlay'.
+-- Complexity: /O(s1)/ time and memory, and /O(s1 + s2)/ size.
 --
 -- @
 --                overlay1 'G.empty' x == x
@@ -584,6 +586,20 @@ mesh1 xs ys = path1 xs `box` path1 ys
 torus1 :: NonEmpty a -> NonEmpty b -> NonEmptyGraph (a, b)
 torus1 xs ys = circuit1 xs `box` circuit1 ys
 
+-- | Remove a vertex from a given graph. Returns @Nothing@ if the resulting
+-- graph is empty.
+-- Complexity: /O(s)/ time, memory and size.
+--
+-- @
+-- removeVertex1 x ('vertex' x)          == Nothing
+-- removeVertex1 1 ('vertex' 2)          == Just ('vertex' 2)
+-- removeVertex1 x ('edge' x x)          == Nothing
+-- removeVertex1 1 ('edge' 1 2)          == Just ('vertex' 2)
+-- removeVertex1 x '>=>' removeVertex1 x == removeVertex1 x
+-- @
+removeVertex1 :: Eq a => a -> NonEmptyGraph a -> Maybe (NonEmptyGraph a)
+removeVertex1 x = induce1 (/= x)
+
 -- | Remove an edge from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
 --
@@ -654,6 +670,21 @@ splitVertex1 v us g = g >>= \w -> if w == v then vertices1 us else vertex w
 -- @
 transpose :: NonEmptyGraph a -> NonEmptyGraph a
 transpose = foldg1 vertex overlay (flip connect)
+
+-- | Construct the /induced subgraph/ of a given graph by removing the
+-- vertices that do not satisfy a given predicate. Returns @Nothing@ if the
+-- resulting graph is empty.
+-- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
+-- /O(1)/ to be evaluated.
+--
+-- @
+-- induce1 (const True ) x == Just x
+-- induce1 (const False) x == Nothing
+-- induce1 (/= x)          == 'removeVertex1' x
+-- induce1 p '>=>' induce1 q == induce1 (\\x -> p x && q x)
+-- @
+induce1 :: (a -> Bool) -> NonEmptyGraph a -> Maybe (NonEmptyGraph a)
+induce1 p = toNonEmptyGraph . G.induce p . C.toGraph
 
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given expression according to the laws of the algebra.

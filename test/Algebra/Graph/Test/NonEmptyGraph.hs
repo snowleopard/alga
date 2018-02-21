@@ -14,6 +14,7 @@ module Algebra.Graph.Test.NonEmptyGraph (
     testGraphNonEmpty
   ) where
 
+import Control.Monad
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe
 import Data.Semigroup
@@ -465,7 +466,23 @@ testGraphNonEmpty = do
                                                    , ((2,'a'),(1,'a')), ((2,'a'),(2,'b'))
                                                    , ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ])
 
-    putStrLn $ "\n============ Graph.NonEmpty.replaceVertex ============"
+    putStrLn $ "\n============ Graph.NonEmpty.removeVertex1 ============"
+    test "removeVertex1 x (vertex x)          == Nothing" $ \(x :: Int) ->
+          removeVertex1 x (vertex x)          == Nothing
+
+    test "removeVertex1 1 (vertex 2)          == Just (vertex 2)" $
+          removeVertex1 1 (vertex 2)          == Just (vertex 2 :: G)
+
+    test "removeVertex1 x (edge x x)          == Nothing" $ \(x :: Int) ->
+          removeVertex1 x (edge x x)          == Nothing
+
+    test "removeVertex1 1 (edge 1 2)          == Just (vertex 2)" $
+          removeVertex1 1 (edge 1 2)          == Just (vertex 2 :: G)
+
+    test "removeVertex1 x >=> removeVertex1 x == removeVertex1 x" $ \(x :: Int) y ->
+         (removeVertex1 x >=> removeVertex1 x) y == removeVertex1 x y
+
+    putStrLn $ "\n============ Graph.NonEmpty.removeEdge ============"
     test "removeEdge x y (edge x y)       == vertices1 (x :| [y])" $ \(x :: Int) y ->
           removeEdge x y (edge x y)       == vertices1 (x :| [y])
 
@@ -529,6 +546,19 @@ testGraphNonEmpty = do
 
     test "edgeList . transpose  == sort . map swap . edgeList" $ \(x :: G) ->
          (edgeList . transpose) x == (sort . map swap . edgeList) x
+
+    putStrLn $ "\n============ Graph.NonEmpty.induce1 ============"
+    test "induce1 (const True ) x == Just x" $ \(x :: G) ->
+          induce1 (const True ) x == Just x
+
+    test "induce1 (const False) x == Nothing" $ \(x :: G) ->
+          induce1 (const False) x == Nothing
+
+    test "induce1 (/= x)          == removeVertex1 x" $ \(x :: Int) y ->
+          induce1 (/= x) y        == removeVertex1 x y
+
+    test "induce1 p >=> induce1 q == induce1 (\\x -> p x && q x)" $ \(apply -> p) (apply -> q) (y :: G) ->
+         (induce1 p >=> induce1 q) y == induce1 (\x -> p x && q x) y
 
     putStrLn $ "\n============ Graph.NonEmpty.simplify ============"
     test "simplify              == id" $ \(x :: G) ->

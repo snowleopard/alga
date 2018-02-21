@@ -721,6 +721,15 @@ testRemoveVertex (Testsuite prefix (%)) = do
     test "removeVertex x (vertex x)       == empty" $ \x ->
           removeVertex x % vertex x       == empty
 
+    test "removeVertex 1 (vertex 2)       == vertex 2" $
+          removeVertex 1 % (vertex 2)     == vertex 2
+
+    test "removeVertex x (edge x x)       == empty" $ \x ->
+          removeVertex x % (edge x x)     == empty
+
+    test "removeVertex 1 (edge 1 2)       == vertex 2" $
+          removeVertex 1 % (edge 1 2)     == vertex 2
+
     test "removeVertex x . removeVertex x == removeVertex x" $ \x y ->
          (removeVertex x . removeVertex x) y == removeVertex x % y
 
@@ -813,8 +822,8 @@ testGmap (Testsuite prefix (%)) = do
 testInduce :: Testsuite -> IO ()
 testInduce (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "induce ============"
-    test "induce (const True)  x      == x" $ \x ->
-          induce (const True) % x     == x
+    test "induce (const True ) x      == x" $ \x ->
+          induce (const True ) % x    == x
 
     test "induce (const False) x      == empty" $ \x ->
           induce (const False) % x    == empty

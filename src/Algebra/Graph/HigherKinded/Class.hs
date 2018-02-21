@@ -533,7 +533,7 @@ deBruijn len alphabet = skeleton >>= expand
 -- /O(1)/ to be evaluated.
 --
 -- @
--- induce (const True)  x      == x
+-- induce (const True ) x      == x
 -- induce (const False) x      == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)
@@ -547,6 +547,9 @@ induce = mfilter
 --
 -- @
 -- removeVertex x ('vertex' x)       == 'empty'
+-- removeVertex 1 ('vertex' 2)       == 'vertex' 2
+-- removeVertex x ('edge' x x)       == 'empty'
+-- removeVertex 1 ('edge' 1 2)       == 'vertex' 2
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: (Eq a, Graph g) => a -> g a -> g a
