@@ -7,11 +7,11 @@
 * #48: Add `foldg` to `ToGraph`.
 * #15: Optimise `removeEdge`.
 * #39: Factor out difference lists into `Algebra.Graph.Internal`.
-* #33: Add `Algebra.Graph.NonEmpty`.
+* #31: Add `Algebra.Graph.NonEmpty`.
 * #32: Remove smart constructor `graph`.
 * #27: Support GHC >= 7.8.
 * #25: Add `NFData Graph` instance.
-* Code and documentation revision.
+* General improvements to code, documentation and tests.
 
 ## 0.0.5
 

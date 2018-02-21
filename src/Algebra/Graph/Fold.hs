@@ -554,6 +554,9 @@ deBruijn len alphabet = bind skeleton expand
 --
 -- @
 -- removeVertex x ('vertex' x)       == 'empty'
+-- removeVertex 1 ('vertex' 2)       == 'vertex' 2
+-- removeVertex x ('edge' x x)       == 'empty'
+-- removeVertex 1 ('edge' 1 2)       == 'vertex' 2
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> Fold (C.Vertex g) -> g
@@ -671,7 +674,7 @@ bind g f = foldg C.empty f C.overlay C.connect g
 -- /O(1)/ to be evaluated.
 --
 -- @
--- induce (const True)  x      == x
+-- induce (const True ) x      == x
 -- induce (const False) x      == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)

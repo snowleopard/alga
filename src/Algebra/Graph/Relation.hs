@@ -466,6 +466,9 @@ forest = C.forest
 --
 -- @
 -- removeVertex x ('vertex' x)       == 'empty'
+-- removeVertex 1 ('vertex' 2)       == 'vertex' 2
+-- removeVertex x ('edge' x x)       == 'empty'
+-- removeVertex 1 ('edge' 1 2)       == 'vertex' 2
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Ord a => a -> Relation a -> Relation a
@@ -545,7 +548,7 @@ gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) 
 -- be evaluated.
 --
 -- @
--- induce (const True)  x      == x
+-- induce (const True ) x      == x
 -- induce (const False) x      == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)
