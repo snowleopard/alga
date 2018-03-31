@@ -25,11 +25,12 @@ module Algebra.Graph.Export (
     export
   ) where
 
-import Control.Applicative (pure)
+import Prelude ()
+import Prelude.Compat hiding (unlines)
+
 import Data.Foldable (fold)
 import Data.Semigroup
 import Data.String hiding (unlines)
-import Prelude hiding (unlines)
 
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Class (ToGraph (..))

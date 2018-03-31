@@ -14,6 +14,9 @@ module Algebra.Graph.Test.Internal (
     testInternal
   ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Control.Applicative (pure)
 import Data.Semigroup
 

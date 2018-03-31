@@ -14,6 +14,9 @@ module Algebra.Graph.Test.NonEmptyGraph (
     testGraphNonEmpty
   ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Control.Monad
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe

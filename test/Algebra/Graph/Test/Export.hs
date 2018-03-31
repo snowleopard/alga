@@ -14,6 +14,9 @@ module Algebra.Graph.Test.Export (
     testExport
   ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Data.Semigroup
 
 import Algebra.Graph (Graph, circuit)
