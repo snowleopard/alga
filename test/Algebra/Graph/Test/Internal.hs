@@ -15,7 +15,7 @@ module Algebra.Graph.Test.Internal (
   ) where
 
 import Control.Applicative (pure)
-import Data.Monoid
+import Data.Semigroup
 
 import Algebra.Graph.Internal
 import Algebra.Graph.Test

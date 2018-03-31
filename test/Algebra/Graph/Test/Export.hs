@@ -14,8 +14,7 @@ module Algebra.Graph.Test.Export (
     testExport
   ) where
 
-import Prelude
-import Data.Monoid
+import Data.Semigroup
 
 import Algebra.Graph (Graph, circuit)
 import Algebra.Graph.Export hiding (unlines)

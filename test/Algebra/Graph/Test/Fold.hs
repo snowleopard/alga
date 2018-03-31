@@ -29,7 +29,7 @@ type F  = Fold Int
 testFold :: IO ()
 testFold = do
     putStrLn "\n============ Fold ============"
-    test "Axioms of graphs" (axioms   :: GraphTestsuite F)
+    test "Axioms of graphs" (axioms :: GraphTestsuite F)
 
     testShow            t
     testBasicPrimitives t

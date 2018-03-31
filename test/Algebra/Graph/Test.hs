@@ -47,9 +47,9 @@ infixl 4 <=
 infixl 6 +
 infixl 7 *
 
-type GraphTestsuite g = (Eq g, Graph g) => g -> g -> g -> Property
+type GraphTestsuite g = g -> g -> g -> Property
 
-axioms :: GraphTestsuite g
+axioms :: (Eq g, Graph g) => GraphTestsuite g
 axioms x y z = conjoin
     [       x + y == y + x                      // "Overlay commutativity"
     , x + (y + z) == (x + y) + z                // "Overlay associativity"
@@ -60,7 +60,7 @@ axioms x y z = conjoin
     , (x + y) * z == x * z + y * z              // "Right distributivity"
     ,   x * y * z == x * y + x * z + y * z      // "Decomposition" ]
 
-theorems :: GraphTestsuite g
+theorems :: (Eq g, Graph g) => GraphTestsuite g
 theorems x y z = conjoin
     [     x + empty == x                        // "Overlay identity"
     ,         x + x == x                        // "Overlay idempotence"
@@ -72,23 +72,23 @@ theorems x y z = conjoin
     ,             x <= x + y                    // "Overlay order"
     ,         x + y <= x * y                    // "Overlay-connect order" ]
 
-undirectedAxioms :: GraphTestsuite g
+undirectedAxioms :: (Eq g, Graph g) => GraphTestsuite g
 undirectedAxioms x y z = conjoin
     [ axioms x y z
     , x * y == y * x                            // "Connect commutativity" ]
 
-reflexiveAxioms :: (Arbitrary (Vertex g), Show (Vertex g)) => GraphTestsuite g
+reflexiveAxioms :: (Eq g, Graph g, Arbitrary (Vertex g), Show (Vertex g)) => GraphTestsuite g
 reflexiveAxioms x y z = conjoin
     [ axioms x y z
     , forAll arbitrary (\v -> vertex v `asTypeOf` x == vertex v * vertex v)
                                                 // "Vertex self-loop" ]
 
-transitiveAxioms :: GraphTestsuite g
+transitiveAxioms :: (Eq g, Graph g) => GraphTestsuite g
 transitiveAxioms x y z = conjoin
     [ axioms x y z
     , y == empty || x * y * z == x * y + y * z  // "Closure" ]
 
-preorderAxioms :: (Arbitrary (Vertex g), Show (Vertex g)) => GraphTestsuite g
+preorderAxioms :: (Eq g, Graph g, Arbitrary (Vertex g), Show (Vertex g)) => GraphTestsuite g
 preorderAxioms x y z = conjoin
     [ axioms x y z
     , forAll arbitrary (\v -> vertex v `asTypeOf` x == vertex v * vertex v)
