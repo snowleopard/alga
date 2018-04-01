@@ -20,6 +20,7 @@ module Algebra.Graph.Test.Generic (
 
 import Prelude ()
 import Prelude.Compat
+
 import Control.Monad (when)
 import Data.Orphans ()
 

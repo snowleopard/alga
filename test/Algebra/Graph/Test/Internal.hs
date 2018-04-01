@@ -18,7 +18,7 @@ import Prelude ()
 import Prelude.Compat
 
 import Control.Applicative (pure)
-import Data.Semigroup
+import Data.Monoid.Compat
 
 import Algebra.Graph.Internal
 import Algebra.Graph.Test

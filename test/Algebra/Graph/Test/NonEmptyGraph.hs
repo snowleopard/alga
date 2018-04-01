@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE CPP, ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.NonEmptyGraph
@@ -17,10 +17,13 @@ module Algebra.Graph.Test.NonEmptyGraph (
 import Prelude ()
 import Prelude.Compat
 
+#if !MIN_VERSION_base(4,11,0)
+import Data.Semigroup
+#endif
+
 import Control.Monad
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe
-import Data.Semigroup
 import Data.Tree
 import Data.Tuple
 
