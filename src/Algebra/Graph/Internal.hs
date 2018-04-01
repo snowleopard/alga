@@ -13,7 +13,7 @@
 --
 -- This module defines various internal utilities and data structures used
 -- throughout the library, such as lists with fast concatenation. The API
--- is unstable and unsafe.
+-- is unstable and unsafe, and is exposed only for documentation.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Internal (
     -- * General data structures
@@ -110,7 +110,7 @@ context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
     f = focus p g
 
 -- | The /focus/ of a graph expression is a flattened represenentation of the
--- subgraph under focus, its interface, as well as the list of all encountered
+-- subgraph under focus, its context, as well as the list of all encountered
 -- vertices. See 'Algebra.Graph.removeEdge' for a use-case example.
 data Focus a = Focus
     { ok :: Bool     -- ^ True if focus on the specified subgraph is obtained.

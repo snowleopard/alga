@@ -7,8 +7,8 @@
 -- Stability  : unstable
 --
 -- This module exposes the implementation of adjacency maps. The API is unstable
--- and unsafe. Where possible use non-internal module "Algebra.Graph.AdjacencyMap"
--- instead.
+-- and unsafe, and is exposed only for documentation. You should use the
+-- non-internal module "Algebra.Graph.AdjacencyMap" instead.
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap.Internal (
     -- * Adjacency map implementation

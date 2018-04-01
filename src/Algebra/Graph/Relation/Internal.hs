@@ -7,8 +7,8 @@
 -- Stability  : unstable
 --
 -- This module exposes the implementation of the 'Relation' data type. The API
--- is unstable and unsafe. Where possible use the non-internal module
--- "Algebra.Graph.Relation" instead.
+-- is unstable and unsafe, and is exposed only for documentation. You should
+-- use the non-internal module "Algebra.Graph.Relation" instead.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.Internal (
     -- * Binary relation implementation

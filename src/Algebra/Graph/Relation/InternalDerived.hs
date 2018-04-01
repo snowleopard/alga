@@ -7,10 +7,10 @@
 -- Stability  : unstable
 --
 -- This module exposes the implementation of derived binary relation data types.
--- The API is unstable and unsafe. Where possible use the non-internal modules
--- "Algebra.Graph.Relation.Reflexive", "Algebra.Graph.Relation.Symmetric",
--- "Algebra.Graph.Relation.Transitive" and "Algebra.Graph.Relation.Preorder"
--- instead.
+-- The API is unstable and unsafe, and is exposed only for documentation. You
+-- should use the non-internal modules "Algebra.Graph.Relation.Reflexive",
+-- "Algebra.Graph.Relation.Symmetric", "Algebra.Graph.Relation.Transitive" and
+-- "Algebra.Graph.Relation.Preorder" instead.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.InternalDerived (
     -- * Implementation of derived binary relations

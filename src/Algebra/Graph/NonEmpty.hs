@@ -11,7 +11,10 @@
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines the data type 'NonEmptyGraph' and associated algorithms.
+-- This module defines the data type 'NonEmptyGraph' for graphs that are known
+-- to be non-empty at compile time. The naming convention generally follows that
+-- of "Data.List.NonEmpty": we use suffix @1@ to indicate the functions whose
+-- interface must be changed compared to "Algebra.Graph", e.g. 'vertices1'.
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph.NonEmpty (
