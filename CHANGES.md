@@ -9,7 +9,7 @@
 * #39: Factor out difference lists into `Algebra.Graph.Internal`.
 * #31: Add `Algebra.Graph.NonEmpty`.
 * #32: Remove smart constructor `graph`.
-* #27: Support GHC >= 7.8.
+* #27, #55: Support GHC versions 7.8.4, 7.10.3, 8.0.2, 8.2.2, 8.4.1.
 * #25: Add `NFData Graph` instance.
 * General improvements to code, documentation and tests.
 
