@@ -5,7 +5,7 @@ license:       MIT
 license-file:  LICENSE
 author:        Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard
 maintainer:    Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard
-copyright:     Andrey Mokhov, 2016-2017
+copyright:     Andrey Mokhov, 2016-2018
 homepage:      https://github.com/snowleopard/alga
 category:      Algebra, Algorithms, Data Structures, Graphs
 build-type:    Simple
