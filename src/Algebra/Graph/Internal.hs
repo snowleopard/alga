@@ -23,7 +23,9 @@ module Algebra.Graph.Internal (
     Focus, focus, Context (..), context
   ) where
 
-import Control.Applicative (Applicative (..))
+import Prelude ()
+import Prelude.Compat
+
 import Data.Foldable
 import Data.Semigroup
 

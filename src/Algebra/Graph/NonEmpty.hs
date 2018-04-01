@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE CPP, DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.NonEmpty
@@ -46,10 +46,13 @@ module Algebra.Graph.NonEmpty (
 import Prelude ()
 import Prelude.Compat
 
+#if !MIN_VERSION_base(4,11,0)
+import Data.Semigroup
+#endif
+
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Semigroup
 
 import Algebra.Graph.Internal
 
