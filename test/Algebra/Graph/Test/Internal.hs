@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE CPP, OverloadedLists #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Internal
@@ -17,8 +17,11 @@ module Algebra.Graph.Test.Internal (
 import Prelude ()
 import Prelude.Compat
 
+#if !MIN_VERSION_base(4,11,0)
+import Data.Semigroup
+#endif
+
 import Control.Applicative (pure)
-import Data.Monoid.Compat
 
 import Algebra.Graph.Internal
 import Algebra.Graph.Test

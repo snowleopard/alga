@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP, OverloadedStrings #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Export
@@ -16,7 +16,10 @@ module Algebra.Graph.Test.Export (
 
 import Prelude ()
 import Prelude.Compat
-import Data.Monoid.Compat
+
+#if !MIN_VERSION_base(4,11,0)
+import Data.Semigroup
+#endif
 
 import Algebra.Graph (Graph, circuit)
 import Algebra.Graph.Export hiding (unlines)
