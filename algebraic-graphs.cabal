@@ -1,5 +1,5 @@
 name:          algebraic-graphs
-version:       0.1.0
+version:       0.1.1
 synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
@@ -26,7 +26,9 @@ description:
     defines the core data type
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph.html#t:Graph Graph>,
     which is a deep embedding of four graph construction primitives /empty/,
-    /vertex/, /overlay/ and /connect/. More conventional graph representations can be found in
+    /vertex/, /overlay/ and /connect/. To represent non-empty graphs, see
+    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-NonEmpty.html Algebra.Graph.NonEmpty>.
+    More conventional graph representations can be found in
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-AdjacencyMap.html Algebra.Graph.AdjacencyMap>
     and
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Relation.html Algebra.Graph.Relation>.
