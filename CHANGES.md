@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+* #58: Update documentation.
 * #57: Allow newer QuickCheck.
 
 ## 0.1.0

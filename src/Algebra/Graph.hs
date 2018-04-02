@@ -12,9 +12,10 @@
 -- motivation behind the library, the underlying theory, and implementation details.
 --
 -- This module defines the core data type 'Graph' and associated algorithms.
--- 'Graph' is an instance of type classes defined in modules "Algebra.Graph.Class"
--- and "Algebra.Graph.HigherKinded.Class", which can be used for polymorphic
--- graph construction and manipulation.
+-- For graphs that are known to be /non-empty/ at compile time, see
+-- "Algebra.Graph.NonEmpty". 'Graph' is an instance of type classes defined in
+-- modules "Algebra.Graph.Class" and "Algebra.Graph.HigherKinded.Class", which
+-- can be used for polymorphic graph construction and manipulation.
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph (

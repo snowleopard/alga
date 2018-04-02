@@ -13,7 +13,7 @@ Consider the following data type, which is defined in the top-level module
 of the library:
 
 ```haskell
-data Graph a = Empty | Vertex a | Overlay (Graph a) (Graph a) | Connect (Graph a) (Graph a)  
+data Graph a = Empty | Vertex a | Overlay (Graph a) (Graph a) | Connect (Graph a) (Graph a)
 ```
 
 We can give the following semantics to the constructors in terms of the pair **(V, E)** of graph *vertices* and *edges*:
@@ -47,6 +47,9 @@ This algebraic structure corresponds to *unlabelled directed graphs*: every expr
 graph can be represented by an expression. Other types of graphs (e.g. undirected) can be obtained by modifying the
 above set of laws. Algebraic graphs provide a convenient, safe and powerful interface for working with graphs in Haskell,
 and allow the application of equational reasoning for proving the correctness of graph algorithms.
+
+To represent *non-empty graphs*, we can drop the `Empty` constructor -- see module
+[Algebra.Graph.NonEmpty](http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-NonEmpty.html).
 
 ## How fast is the library?
 
