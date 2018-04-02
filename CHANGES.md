@@ -1,5 +1,9 @@
 # Change log
 
+## 0.1.1
+
+* #57: Allow newer QuickCheck.
+
 ## 0.1.0
 
 * Start complying with PVP.
