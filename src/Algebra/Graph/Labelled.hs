@@ -22,6 +22,9 @@ module Algebra.Graph.Labelled (
     edgeWeight
   ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import qualified Algebra.Graph.Class as C
 
 -- This class has usual semiring laws:
