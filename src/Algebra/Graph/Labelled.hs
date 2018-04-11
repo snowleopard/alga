@@ -16,7 +16,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled (
     -- * Algebraic data type for edge-labeleld graphs
-    Semiring (..), Graph (..),
+    Semiring (..), Graph (..), UnlabelledGraph,
 
     -- * Operations
     edgeWeight
@@ -63,7 +63,7 @@ overlay = LabelledConnect zero
 connect :: Semiring e => Graph e a -> Graph e a -> Graph e a
 connect = LabelledConnect one
 
--- TODO: Test the C.Graph laws
+-- TODO: Prove the C.Graph laws
 instance Dioid e => C.Graph (Graph e a) where
     type Vertex (Graph e a) = a
     empty   = Empty
@@ -78,3 +78,14 @@ edgeWeight x y (LabelledConnect e g h) = edgeWeight x y g |+| edgeWeight x y h |
   where
     new | x `elem` g && y `elem` h = e
         | otherwise                = zero
+
+instance Semiring Bool where
+    zero  = False
+    one   = True
+    (|+|) = (||)
+    (|*|) = (&&)
+
+instance Dioid Bool where
+
+-- TODO: Prove that this is identical to Algebra.Graph
+type UnlabelledGraph a = Graph Bool a
