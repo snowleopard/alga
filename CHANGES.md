@@ -1,5 +1,9 @@
 # Change log
 
+## 0.1.1.1
+
+* #59: Allow base-compat-0.10.
+
 ## 0.1.1
 
 * #58: Update documentation.
