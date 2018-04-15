@@ -16,7 +16,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled (
     -- * Algebraic data type for edge-labeleld graphs
-    Semiring (..), Graph (..), UnlabelledGraph,
+    Dioid (..), Graph (..), UnlabelledGraph,
 
     -- * Operations
     edgeWeight
@@ -32,6 +32,7 @@ import qualified Algebra.Graph.Class as C
 --            x |+| y == x |+| y
 --    x |+| (y |+| z) == (x |+| y) |+| z
 --         x |+| zero == x
+--            x |+| x == x
 --
 --    x |*| (y |*| z) == (x |*| y) |*| z
 --         x |*| zero == zero
@@ -42,7 +43,7 @@ import qualified Algebra.Graph.Class as C
 --    x |*| (y |+| z) == x |*| y |+| x |*| z
 --    (x |+| y) |*| z == x |*| z |+| y |*| z
 --
-class Semiring a where
+class Dioid a where
     zero  :: a
     one   :: a
     (|+|) :: a -> a -> a
@@ -51,19 +52,16 @@ class Semiring a where
 infixl 6 |+|
 infixl 7 |*|
 
--- This adds the idempotence law for |+|: x |+| x == x
-class Semiring a => Dioid a where
-
 -- Type variable e stands for edge labels
 data Graph e a = Empty
                | Vertex a
                | LabelledConnect e (Graph e a) (Graph e a)
                deriving (Foldable, Functor, Show, Traversable)
 
-overlay :: Semiring e => Graph e a -> Graph e a -> Graph e a
+overlay :: Dioid e => Graph e a -> Graph e a -> Graph e a
 overlay = LabelledConnect zero
 
-connect :: Semiring e => Graph e a -> Graph e a -> Graph e a
+connect :: Dioid e => Graph e a -> Graph e a -> Graph e a
 connect = LabelledConnect one
 
 -- TODO: Prove the C.Graph laws
@@ -82,13 +80,11 @@ edgeWeight x y (LabelledConnect e g h) = edgeWeight x y g |+| edgeWeight x y h |
     new | x `elem` g && y `elem` h = e
         | otherwise                = zero
 
-instance Semiring Bool where
+instance Dioid Bool where
     zero  = False
     one   = True
     (|+|) = (||)
     (|*|) = (&&)
-
-instance Dioid Bool where
 
 -- TODO: Prove that this is identical to Algebra.Graph
 type UnlabelledGraph a = Graph Bool a
