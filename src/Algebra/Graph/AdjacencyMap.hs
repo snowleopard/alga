@@ -42,16 +42,15 @@ module Algebra.Graph.AdjacencyMap (
   ) where
 
 import Data.Foldable (toList)
-import Data.Maybe
 import Data.Set (Set)
 import Data.Tree
 
 import Algebra.Graph.AdjacencyMap.Internal
 
 import qualified Algebra.Graph.Class as C
-import qualified Data.Graph          as KL
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
+import qualified Data.List           as List
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
@@ -140,7 +139,7 @@ connect = C.connect
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: Ord a => [a] -> AdjacencyMap a
-vertices = mkAM . Map.fromList . map (\x -> (x, Set.empty))
+vertices = AM . Map.fromList . map (\x -> (x, Set.empty))
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -191,7 +190,7 @@ connects = C.connects
 -- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
 -- @
 fromAdjacencyList :: Ord a => [(a, [a])] -> AdjacencyMap a
-fromAdjacencyList as = mkAM $ Map.unionWith Set.union vs es
+fromAdjacencyList as = AM $ Map.unionWith Set.union vs es
   where
     ss = map (fmap Set.fromList) as
     vs = Map.fromSet (const Set.empty) . Set.unions $ map snd ss
@@ -297,7 +296,7 @@ vertexList = Map.keys . adjacencyMap
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
-edgeList (AM m _) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
+edgeList (AM m) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -396,7 +395,7 @@ clique = C.clique
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: Ord a => [a] -> [a] -> AdjacencyMap a
-biclique xs ys = mkAM $ Map.fromSet adjacent (x `Set.union` y)
+biclique xs ys = AM $ Map.fromSet adjacent (x `Set.union` y)
   where
     x = Set.fromList xs
     y = Set.fromList ys
@@ -465,7 +464,7 @@ forest = C.forest
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Ord a => a -> AdjacencyMap a -> AdjacencyMap a
-removeVertex x = mkAM . Map.map (Set.delete x) . Map.delete x . adjacencyMap
+removeVertex x = AM . Map.map (Set.delete x) . Map.delete x . adjacencyMap
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(log(n))/ time.
@@ -478,7 +477,7 @@ removeVertex x = mkAM . Map.map (Set.delete x) . Map.delete x . adjacencyMap
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
-removeEdge x y = mkAM . Map.adjust (Set.delete y) x . adjacencyMap
+removeEdge x y = AM . Map.adjust (Set.delete y) x . adjacencyMap
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
@@ -516,7 +515,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
-transpose (AM m _) = mkAM $ Map.foldrWithKey combine vs m
+transpose (AM m) = AM $ Map.foldrWithKey combine vs m
   where
     combine v es = Map.unionWith Set.union (Map.fromSet (const $ Set.singleton v) es)
     vs           = Map.fromSet (const Set.empty) (Map.keysSet m)
@@ -534,7 +533,7 @@ transpose (AM m _) = mkAM $ Map.foldrWithKey combine vs m
 -- gmap f . gmap g   == gmap (f . g)
 -- @
 gmap :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap a -> AdjacencyMap b
-gmap f = mkAM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
+gmap f = AM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -548,8 +547,8 @@ gmap f = mkAM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
-induce :: Ord a => (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
-induce p = mkAM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjacencyMap
+induce :: (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
+induce p = AM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjacencyMap
 
 -- | Compute the /depth-first search/ forest of a graph.
 --
@@ -568,8 +567,8 @@ induce p = mkAM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adj
 --                                                 , subForest = [ Node { rootLabel = 4
 --                                                                      , subForest = [] }]}]
 -- @
-dfsForest :: AdjacencyMap a -> Forest a
-dfsForest (AM _ (GraphKL g r _)) = fmap (fmap r) (KL.dff g)
+dfsForest :: Ord a => AdjacencyMap a -> Forest a
+dfsForest g = dfsForestFrom (vertexList g) g
 
 -- | Compute the /depth-first search/ forest of a graph, searching from each of
 -- the given vertices in order. Note that the resulting forest does not
@@ -591,8 +590,20 @@ dfsForest (AM _ (GraphKL g r _)) = fmap (fmap r) (KL.dff g)
 --                                                 , Node { rootLabel = 4
 --                                                        , subForest = [] }]
 -- @
-dfsForestFrom :: [a] -> AdjacencyMap a -> Forest a
-dfsForestFrom vs (AM _ (GraphKL g r t)) = fmap (fmap r) (KL.dfs g (mapMaybe t vs))
+dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
+dfsForestFrom vs g = snd (chop Set.empty (map (go g) valid))
+  where
+    valid = List.intersect vs (vertexList g)
+
+    go :: Ord a => AdjacencyMap a -> a -> Tree a
+    go g v = Node v (map (go g) (maybe [] Set.toList (adjacencyMap g Map.!? v)))
+
+    chop :: Ord a => Set a -> Forest a -> (Set a, Forest a)
+    chop known [] = (known, [])
+    chop known (Node v ts:xs) = if Set.member v known then chop known xs
+      else let (known' , ts') = chop (Set.insert v known) ts
+               (known'', xs') = chop known' xs
+           in (known'', Node v ts' : xs')
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a graph,
 -- when searching from each of the given vertices in order.
@@ -608,7 +619,7 @@ dfsForestFrom vs (AM _ (GraphKL g r t)) = fmap (fmap r) (KL.dfs g (mapMaybe t vs
 -- dfs [1, 4] $ 3 * (1 + 4) * (1 + 5)   == [1, 5, 4]
 -- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
 -- @
-dfs :: [a] -> AdjacencyMap a -> [a]
+dfs :: Ord a => [a] -> AdjacencyMap a -> [a]
 dfs vs = concatMap flatten . dfsForestFrom vs
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
@@ -620,10 +631,16 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- fmap (flip 'isTopSort' x) (topSort x) /= Just False
 -- @
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
-topSort m@(AM _ (GraphKL g r _)) =
-    if isTopSort result m then Just result else Nothing
+topSort g = if isTopSort result g then Just result else Nothing
   where
-    result = map r (KL.topSort g)
+    result = reverse $ postOrder g
+
+-- | Compute the /post order/ of a graph.
+postOrder :: Ord a => AdjacencyMap a -> [a]
+postOrder g = go (dfsForest g) []
+  where
+    go ts = foldr (.) id $ map visitNode ts
+    visitNode (Node a ts) = go ts . (a :)
 
 -- | Check if a given list of vertices is a valid /topological sort/ of a graph.
 --
@@ -656,8 +673,8 @@ isTopSort xs m = go Set.empty xs
 --                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [5]  )]
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (Set a)
-scc m@(AM _ (GraphKL g r _)) =
-    gmap (\v -> Map.findWithDefault Set.empty v components) m
+scc g = gmap (\v -> Map.findWithDefault Set.empty v components) g
   where
-    components = Map.fromList $ concatMap (expand . fmap r . toList) (KL.scc g)
+    components = Map.fromList $ concatMap (expand . toList) $
+      flip dfsForestFrom g $ reverse $ postOrder $ transpose g
     expand xs  = let s = Set.fromList xs in map (\x -> (x, s)) xs
