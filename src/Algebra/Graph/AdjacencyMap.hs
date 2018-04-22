@@ -50,7 +50,6 @@ import Algebra.Graph.AdjacencyMap.Internal
 import qualified Algebra.Graph.Class as C
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
-import qualified Data.List           as List
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
@@ -593,7 +592,9 @@ dfsForest g = dfsForestFrom (vertexList g) g
 dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
 dfsForestFrom vs g = snd (chop Set.empty (map (go g) valid))
   where
-    valid = List.intersect vs (vertexList g)
+    -- We need to keep the order of vs
+    valid = filter (flip Set.member valid') vs
+    valid' = Set.intersection (Set.fromList vs) (Map.keysSet (adjacencyMap g))
 
     go :: Ord a => AdjacencyMap a -> a -> Tree a
     go g v = Node v (map (go g) (maybe [] Set.toList (Map.lookup v (adjacencyMap g))))
