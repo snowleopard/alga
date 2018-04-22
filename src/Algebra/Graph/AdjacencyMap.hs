@@ -596,7 +596,7 @@ dfsForestFrom vs g = snd (chop Set.empty (map (go g) valid))
     valid = List.intersect vs (vertexList g)
 
     go :: Ord a => AdjacencyMap a -> a -> Tree a
-    go g v = Node v (map (go g) (maybe [] Set.toList (adjacencyMap g Map.!? v)))
+    go g v = Node v (map (go g) (maybe [] Set.toList (Map.lookup v (adjacencyMap g))))
 
     chop :: Ord a => Set a -> Forest a -> (Set a, Forest a)
     chop known [] = (known, [])
