@@ -140,3 +140,15 @@ instance (Num a, Ord a) => Dioid (Distance a) where
     Infinite |*| _ = Infinite
     _ |*| Infinite = Infinite
     Finite x |*| Finite y = Finite (x + y)
+
+instance (Num a, Ord a) => Dioid (Maybe a) where
+    zero = Nothing
+    one  = Just 0
+
+    Nothing |+| x = x
+    x |+| Nothing = x
+    Just x |+| Just y = Just (min x y)
+
+    Nothing |*| _ = Nothing
+    _ |*| Nothing = Nothing
+    Just x |*| Just y = Just (x + y)
