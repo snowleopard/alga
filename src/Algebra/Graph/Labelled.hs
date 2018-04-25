@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, TypeFamilies #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled
@@ -28,8 +28,10 @@ module Algebra.Graph.Labelled (
 
 import Prelude ()
 import Prelude.Compat
+import GHC.Exts
 
 import qualified Algebra.Graph.Class as C
+import qualified Data.Set as Set
 
 -- This class has usual semiring laws:
 --
@@ -152,3 +154,24 @@ instance (Num a, Ord a) => Dioid (Maybe a) where
     Nothing |*| _ = Nothing
     _ |*| Nothing = Nothing
     Just x |*| Just y = Just (x + y)
+
+data Set a = Set (Set.Set a) | Universe
+
+instance (Bounded a, Enum a, Ord a) => IsList (Set a) where
+    type Item (Set a) = a
+    fromList = Set . Set.fromList
+
+    toList (Set s)  = Set.toList s
+    toList Universe = [minBound..maxBound]
+
+instance Ord a => Dioid (Set a) where
+    zero = Set Set.empty
+    one  = Universe
+
+    Universe |+| _  = Universe
+    _ |+| Universe  = Universe
+    Set x |+| Set y = Set (Set.union x y)
+
+    Universe |*| x  = x
+    x |*| Universe  = x
+    Set x |*| Set y = Set (Set.intersection x y)
