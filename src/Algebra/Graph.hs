@@ -451,7 +451,7 @@ vertexCount :: Ord a => Graph a -> Int
 vertexCount = length . vertexList
 
 -- | The number of edges in a graph.
--- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
+-- Complexity: /O(s + log(m))/ time. Note that the number of edges /m/ of a
 -- graph can be quadratic with respect to the expression size /s/.
 --
 -- @
@@ -475,7 +475,7 @@ vertexList :: Ord a => Graph a -> [a]
 vertexList = Set.toAscList . vertexSet
 
 -- | The sorted list of edges of a graph.
--- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
+-- Complexity: /O(s + log(m))/ time and /O(m)/ memory. Note that the number of
 -- edges /m/ of a graph can be quadratic with respect to the expression size /s/.
 --
 -- @
@@ -487,7 +487,7 @@ vertexList = Set.toAscList . vertexSet
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: Ord a => Graph a -> [(a, a)]
-edgeList = AM.edgeList . C.toGraph
+edgeList = Set.toAscList . edgeSet
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
