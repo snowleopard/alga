@@ -21,6 +21,8 @@ import Algebra.Graph.Class
 
 import qualified Data.Set as Set
 
+import Control.DeepSeq (NFData, rnf)
+
 {-| The 'Relation' data type represents a graph as a /binary relation/. We
 define a 'Num' instance as a convenient notation for working with graphs:
 
@@ -109,6 +111,9 @@ instance Ord a => Graph (Relation a) where
     overlay x y = Relation (domain x `union` domain y) (relation x `union` relation y)
     connect x y = Relation (domain x `union` domain y) (relation x `union` relation y
         `union` (domain x `setProduct` domain y))
+
+instance NFData a => NFData (Relation a) where
+    rnf (Relation d r) = rnf d `seq` rnf r `seq` ()
 
 -- | Compute the Cartesian product of two sets. /Note: this function is for internal use only/.
 setProduct :: Set a -> Set b -> Set (a, b)
