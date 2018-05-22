@@ -67,7 +67,6 @@ library
                         Algebra.Graph.IntAdjacencyMap,
                         Algebra.Graph.IntAdjacencyMap.Internal,
                         Algebra.Graph.Internal,
-                        Algebra.Graph.KingLaunchbury,
                         Algebra.Graph.NonEmpty,
                         Algebra.Graph.Relation,
                         Algebra.Graph.Relation.Internal,
@@ -75,7 +74,8 @@ library
                         Algebra.Graph.Relation.Preorder,
                         Algebra.Graph.Relation.Reflexive,
                         Algebra.Graph.Relation.Symmetric,
-                        Algebra.Graph.Relation.Transitive
+                        Algebra.Graph.Relation.Transitive,
+                        Data.Graph.Typed
     build-depends:      array       >= 0.4     && < 0.6,
                         base        >= 4.7     && < 5,
                         base-compat >= 0.9.1   && < 0.11,
