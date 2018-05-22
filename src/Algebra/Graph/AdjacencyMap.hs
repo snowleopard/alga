@@ -48,6 +48,8 @@ import Data.Tree
 import Algebra.Graph.AdjacencyMap.Internal
 
 import qualified Algebra.Graph.Class as C
+import qualified Data.Graph.Typed    as Typed
+import qualified Data.Graph          as KL (scc)
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
 
@@ -590,21 +592,7 @@ dfsForest g = dfsForestFrom (vertexList g) g
 --                                                        , subForest = [] }]
 -- @
 dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
-dfsForestFrom vs g = snd (chop Set.empty (map (go g) valid))
-  where
-    -- We need to keep the order of vs
-    valid = filter (flip Set.member valid') vs
-    valid' = Set.intersection (Set.fromList vs) (Map.keysSet (adjacencyMap g))
-
-    go :: Ord a => AdjacencyMap a -> a -> Tree a
-    go g v = Node v (map (go g) (maybe [] Set.toList (Map.lookup v (adjacencyMap g))))
-
-    chop :: Ord a => Set a -> Forest a -> (Set a, Forest a)
-    chop known [] = (known, [])
-    chop known (Node v ts:xs) = if Set.member v known then chop known xs
-      else let (known' , ts') = chop (Set.insert v known) ts
-               (known'', xs') = chop known' xs
-           in (known'', Node v ts' : xs')
+dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a graph,
 -- when searching from each of the given vertices in order.
@@ -632,16 +620,7 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- fmap (flip 'isTopSort' x) (topSort x) /= Just False
 -- @
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
-topSort g = if isTopSort result g then Just result else Nothing
-  where
-    result = reverse $ postOrder g
-
--- | Compute the /post order/ of a graph.
-postOrder :: Ord a => AdjacencyMap a -> [a]
-postOrder g = go (dfsForest g) []
-  where
-    go ts = foldr (.) id $ map visitNode ts
-    visitNode (Node a ts) = go ts . (a :)
+topSort = Typed.topSort . Typed.fromAdjacencyMap
 
 -- | Check if a given list of vertices is a valid /topological sort/ of a graph.
 --
@@ -654,11 +633,7 @@ postOrder g = go (dfsForest g) []
 -- isTopSort [x]       ('edge' x x)      == False
 -- @
 isTopSort :: Ord a => [a] -> AdjacencyMap a -> Bool
-isTopSort xs m = go Set.empty xs
-  where
-    go seen []     = seen == Map.keysSet (adjacencyMap m)
-    go seen (v:vs) = let newSeen = seen `seq` Set.insert v seen
-        in postSet v m `Set.intersection` newSeen == Set.empty && go newSeen vs
+isTopSort xs = Typed.isTopSort xs . Typed.fromAdjacencyMap
 
 -- | Compute the /condensation/ of a graph, where each vertex corresponds to a
 -- /strongly-connected component/ of the original graph.
@@ -674,8 +649,8 @@ isTopSort xs m = go Set.empty xs
 --                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [5]  )]
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (Set a)
-scc g = gmap (\v -> Map.findWithDefault Set.empty v components) g
+scc m = gmap (\v -> Map.findWithDefault Set.empty v components) m
   where
-    components = Map.fromList $ concatMap (expand . toList) $
-      flip dfsForestFrom g $ reverse $ postOrder $ transpose g
+    (Typed.GraphKL g r _) = Typed.fromAdjacencyMap m
+    components = Map.fromList $ concatMap (expand . fmap r . toList) (KL.scc g)
     expand xs  = let s = Set.fromList xs in map (\x -> (x, s)) xs

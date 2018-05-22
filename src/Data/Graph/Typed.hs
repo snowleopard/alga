@@ -4,34 +4,33 @@
 -- Copyright  : (c) Anton Lorenzen 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
--- Stability  : experimental
+-- Stability  : unstable
 --
 -- __Alga__ is a library for algebraic construction and manipulation of graphs
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
 -- This module provides primitives for interoperability between this library and
--- the 'Data.Graph' module of the containers library.
+-- the 'Data.Graph' module of the containers library. It is for internal use only
+-- and MAY BE REMOVED WITHOUT NOTICE at any point!
 -----------------------------------------------------------------------------
-module Algebra.Graph.KingLaunchbury (
+module Data.Graph.Typed (
   GraphKL(..),
   fromAdjacencyMap, toAdjacenyMap, toAdjacenyMap2,
-  dfsForest, dfsForestFrom, dfs, topSort, isTopSort, scc
+  dfsForest, dfsForestFrom, dfs, topSort, isTopSort
   ) where
 
-import qualified Algebra.Graph.AdjacencyMap as AM
-import Algebra.Graph.AdjacencyMap.Internal
+import Algebra.Graph.AdjacencyMap.Internal (AdjacencyMap(..))
 
 import Data.Tree
 import Data.Set (Set)
-import Data.Foldable (toList)
 import Data.Maybe
 
-import qualified Data.Graph as KL
-import qualified Data.Map.Strict     as Map
-import qualified Data.Set            as Set
-import qualified Data.Array          as Array
-import qualified Data.List           as List
+import qualified Data.Graph      as KL
+import qualified Data.Map.Strict as Map
+import qualified Data.Set        as Set
+import qualified Data.Array      as Array
+import qualified Data.List       as List
 
 -- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
 -- the "Data.Graph" module of the @containers@ library.
@@ -160,23 +159,3 @@ isTopSort xs (GraphKL g _ t) = maybe False (go []) (mapM t xs)
     go seen []     = seen == KL.vertices g
     go seen (v:vs) = let newSeen = seen `seq` v:seen
         in KL.reachable g v `List.intersect` newSeen == [] && go newSeen vs
-
--- | Compute the /condensation/ of a graph, where each vertex corresponds to a
--- /strongly-connected component/ of the original graph.
---
--- @
--- scc 'empty'               == 'empty'
--- scc ('vertex' x)          == 'vertex' (Set.'Set.singleton' x)
--- scc ('edge' x y)          == 'edge' (Set.'Set.singleton' x) (Set.'Set.singleton' y)
--- scc ('circuit' (1:xs))    == 'edge' (Set.'Set.fromList' (1:xs)) (Set.'Set.fromList' (1:xs))
--- scc (3 * 1 * 4 * 1 * 5) == 'edges' [ (Set.'Set.fromList' [1,4], Set.'Set.fromList' [1,4])
---                                  , (Set.'Set.fromList' [1,4], Set.'Set.fromList' [5]  )
---                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [1,4])
---                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [5]  )]
--- @
-scc :: Ord a => AdjacencyMap a -> GraphKL a -> AdjacencyMap (Set a)
-scc m (GraphKL g r _) =
-    AM.gmap (\v -> Map.findWithDefault Set.empty v components) m
-  where
-    components = Map.fromList $ concatMap (expand . fmap r . toList) (KL.scc g)
-    expand xs  = let s = Set.fromList xs in map (\x -> (x, s)) xs
