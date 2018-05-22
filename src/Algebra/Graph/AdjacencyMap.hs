@@ -49,7 +49,7 @@ import Algebra.Graph.AdjacencyMap.Internal
 
 import qualified Algebra.Graph.Class as C
 import qualified Data.Graph.Typed    as Typed
-import qualified Data.Graph          as KL (scc)
+import qualified Data.Graph          as KL
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
 
@@ -620,7 +620,11 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- fmap (flip 'isTopSort' x) (topSort x) /= Just False
 -- @
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
-topSort = Typed.topSort . Typed.fromAdjacencyMap
+topSort m =
+    if isTopSort result m then Just result else Nothing
+  where
+    (Typed.GraphKL g r _) = Typed.fromAdjacencyMap m
+    result = map r (KL.topSort g)
 
 -- | Check if a given list of vertices is a valid /topological sort/ of a graph.
 --
@@ -633,7 +637,11 @@ topSort = Typed.topSort . Typed.fromAdjacencyMap
 -- isTopSort [x]       ('edge' x x)      == False
 -- @
 isTopSort :: Ord a => [a] -> AdjacencyMap a -> Bool
-isTopSort xs = Typed.isTopSort xs . Typed.fromAdjacencyMap
+isTopSort xs m = go Set.empty xs
+  where
+    go seen []     = seen == Map.keysSet (adjacencyMap m)
+    go seen (v:vs) = let newSeen = seen `seq` Set.insert v seen
+        in postSet v m `Set.intersection` newSeen == Set.empty && go newSeen vs
 
 -- | Compute the /condensation/ of a graph, where each vertex corresponds to a
 -- /strongly-connected component/ of the original graph.

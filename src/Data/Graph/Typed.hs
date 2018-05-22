@@ -17,20 +17,18 @@
 module Data.Graph.Typed (
   GraphKL(..),
   fromAdjacencyMap, toAdjacenyMap, toAdjacenyMap2,
-  dfsForest, dfsForestFrom, dfs, topSort, isTopSort
+  dfsForest, dfsForestFrom, dfs
   ) where
 
 import Algebra.Graph.AdjacencyMap.Internal (AdjacencyMap(..))
 
 import Data.Tree
-import Data.Set (Set)
 import Data.Maybe
 
 import qualified Data.Graph      as KL
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
 import qualified Data.Array      as Array
-import qualified Data.List       as List
 
 -- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
 -- the "Data.Graph" module of the @containers@ library.
@@ -128,34 +126,3 @@ dfsForestFrom vs (GraphKL g r t) = fmap (fmap r) (KL.dfs g (mapMaybe t vs))
 -- @
 dfs :: [a] -> GraphKL a -> [a]
 dfs vs = concatMap flatten . dfsForestFrom vs
-
--- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
--- is cyclic.
---
--- @
--- topSort (1 * 2 + 3 * 1)             == Just [3,1,2]
--- topSort (1 * 2 + 2 * 1)             == Nothing
--- fmap (flip 'isTopSort' x) (topSort x) /= Just False
--- @
-topSort :: GraphKL a -> Maybe [a]
-topSort m@(GraphKL g r _) =
-    if isTopSort result m then Just result else Nothing
-  where
-    result = map r (KL.topSort g)
-
--- | Check if a given list of vertices is a valid /topological sort/ of a graph.
---
--- @
--- isTopSort [3, 1, 2] (1 * 2 + 3 * 1) == True
--- isTopSort [1, 2, 3] (1 * 2 + 3 * 1) == False
--- isTopSort []        (1 * 2 + 3 * 1) == False
--- isTopSort []        'empty'           == True
--- isTopSort [x]       ('vertex' x)      == True
--- isTopSort [x]       ('edge' x x)      == False
--- @
-isTopSort :: [a] -> GraphKL a -> Bool
-isTopSort xs (GraphKL g _ t) = maybe False (go []) (mapM t xs)
-  where
-    go seen []     = seen == KL.vertices g
-    go seen (v:vs) = let newSeen = seen `seq` v:seen
-        in KL.reachable g v `List.intersect` newSeen == [] && go newSeen vs
