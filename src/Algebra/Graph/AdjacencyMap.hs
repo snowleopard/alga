@@ -152,7 +152,7 @@ vertices = mkAM . Map.fromList . map (\x -> (x, Set.empty))
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
 edges :: Ord a => [(a, a)] -> AdjacencyMap a
-edges = fromAdjacencyList . map (fmap return)
+edges = fromAdjacencyList' . map (fmap Set.singleton)
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -191,9 +191,11 @@ connects = C.connects
 -- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
 -- @
 fromAdjacencyList :: Ord a => [(a, [a])] -> AdjacencyMap a
-fromAdjacencyList as = mkAM $ Map.unionWith Set.union vs es
+fromAdjacencyList = fromAdjacencyList' . map (fmap Set.fromList)
+
+fromAdjacencyList' :: Ord a => [(a, Set a)] -> AdjacencyMap a
+fromAdjacencyList' ss = mkAM $ Map.unionWith Set.union vs es
   where
-    ss = map (fmap Set.fromList) as
     vs = Map.fromSet (const Set.empty) . Set.unions $ map snd ss
     es = Map.fromListWith Set.union ss
 
