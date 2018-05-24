@@ -18,9 +18,6 @@ import Algebra.Graph.IntAdjacencyMap.Internal
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
-import qualified Data.Graph  as KL
-import qualified Data.IntSet as IntSet
-
 t :: Testsuite
 t = testsuite "IntAdjacencyMap." empty
 
@@ -49,12 +46,3 @@ testIntAdjacencyMap = do
     testDfs               t
     testTopSort           t
     testIsTopSort         t
-
-    putStrLn "\n============ IntAdjacencyMap.Internal.GraphKL ============"
-    test "map (fromVertexKL h) (vertices $ toGraphKL h) == IntSet.toAscList (vertexIntSet g)"
-      $ \g -> let h = mkGraphKL (adjacencyMap g) in
-        map (fromVertexKL h) (KL.vertices $ toGraphKL h) == IntSet.toAscList (vertexIntSet g)
-
-    test "map (\\(x, y) -> (fromVertexKL h x, fromVertexKL h y)) (edges $ toGraphKL h) == edgeList g"
-      $ \g -> let h = mkGraphKL (adjacencyMap g) in
-        map (\(x, y) -> (fromVertexKL h x, fromVertexKL h y)) (KL.edges $ toGraphKL h) == edgeList g
