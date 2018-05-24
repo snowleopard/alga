@@ -18,7 +18,7 @@ module Data.Graph.Typed (
   GraphKL(..),
   fromAdjacencyMap, toAdjacenyMap, toAdjacenyMap2,
   fromIntAdjacencyMap, toIntAdjacencyMap,
-  dfsForest, dfsForestFrom, dfs
+  dfsForest, dfsForestFrom, dfs, topSort
   ) where
 
 import Algebra.Graph.AdjacencyMap.Internal as AM (AdjacencyMap(..))
@@ -143,3 +143,14 @@ dfsForestFrom vs (GraphKL g r t) = fmap (fmap r) (KL.dfs g (mapMaybe t vs))
 -- @
 dfs :: [a] -> GraphKL a -> [a]
 dfs vs = concatMap flatten . dfsForestFrom vs
+
+-- | Compute the /topological sort/ of a graph.
+-- Unlike the (Int)AdjacencyMap algorithm this returns
+-- a result even if the graph is cyclic.
+--
+-- @
+-- topSort (1 * 2 + 3 * 1)             == [3,1,2]
+-- topSort (1 * 2 + 2 * 1)             == [1,2]
+-- @
+topSort :: GraphKL a -> [a]
+topSort (GraphKL g r _) = map r (KL.topSort g)

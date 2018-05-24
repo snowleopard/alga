@@ -623,8 +623,7 @@ topSort :: Ord a => AdjacencyMap a -> Maybe [a]
 topSort m =
     if isTopSort result m then Just result else Nothing
   where
-    (Typed.GraphKL g r _) = Typed.fromAdjacencyMap m
-    result = map r (KL.topSort g)
+    result = Typed.topSort (Typed.fromAdjacencyMap m)
 
 -- | Check if a given list of vertices is a valid /topological sort/ of a graph.
 --

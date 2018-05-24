@@ -49,7 +49,6 @@ import Algebra.Graph.IntAdjacencyMap.Internal
 
 import qualified Algebra.Graph.Class as C
 import qualified Data.Graph.Typed    as Typed
-import qualified Data.Graph          as KL
 import qualified Data.IntMap.Strict  as IntMap
 import qualified Data.IntSet         as IntSet
 import qualified Data.Set            as Set
@@ -626,8 +625,7 @@ topSort :: IntAdjacencyMap -> Maybe [Int]
 topSort m =
     if isTopSort result m then Just result else Nothing
   where
-    (Typed.GraphKL g r _) = Typed.fromIntAdjacencyMap m
-    result = map r (KL.topSort g)
+    result = Typed.topSort (Typed.fromIntAdjacencyMap m)
 
 -- | Check if a given list of vertices is a valid /topological sort/ of a graph.
 --
