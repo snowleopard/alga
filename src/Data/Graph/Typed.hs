@@ -1,9 +1,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.KingLaunchbury
--- Copyright  : (c) Anton Lorenzen 2016-2018
+-- Copyright  : (c) Anton Lorenzen, Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
--- Maintainer : andrey.mokhov@gmail.com
+-- Maintainer : anfelor@posteo.de, andrey.mokhov@gmail.com
 -- Stability  : unstable
 --
 -- __Alga__ is a library for algebraic construction and manipulation of graphs
