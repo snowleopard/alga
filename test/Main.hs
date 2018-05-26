@@ -6,6 +6,7 @@ import Algebra.Graph.Test.IntAdjacencyMap
 import Algebra.Graph.Test.Internal
 import Algebra.Graph.Test.NonEmptyGraph
 import Algebra.Graph.Test.Relation
+import Data.Graph.Test.Typed
 
 main :: IO ()
 main = do
@@ -17,3 +18,4 @@ main = do
     testIntAdjacencyMap
     testInternal
     testRelation
+    testTyped
