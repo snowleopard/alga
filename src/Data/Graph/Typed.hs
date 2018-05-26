@@ -16,8 +16,7 @@
 -----------------------------------------------------------------------------
 module Data.Graph.Typed (
   GraphKL(..),
-  fromAdjacencyMap, toAdjacenyMap, toAdjacenyMap2,
-  fromIntAdjacencyMap, toIntAdjacencyMap,
+  fromAdjacencyMap, fromIntAdjacencyMap,
   dfsForest, dfsForestFrom, dfs, topSort
   ) where
 
@@ -32,7 +31,6 @@ import qualified Data.Map.Strict    as Map
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.Set           as Set
 import qualified Data.IntSet        as IntSet
-import qualified Data.Array         as Array
 
 -- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
 -- the "Data.Graph" module of the @containers@ library.
@@ -67,22 +65,6 @@ fromIntAdjacencyMap (IAM.AM m) = GraphKL
     , toVertexKL   = t }
   where
     (g, r, t) = KL.graphFromEdges [ ((), v, IntSet.toAscList us) | (v, us) <- IntMap.toAscList m ]
-
--- | Build an 'AdjacencyMap' from a 'GraphKL'.
-toAdjacenyMap :: Ord a => GraphKL a -> AdjacencyMap a
-toAdjacenyMap (GraphKL g from _) = AM.AM $ Map.fromList
-  $ map (\v -> (from v, Set.fromList $ map from $ g Array.! v)) $ KL.vertices g
-
--- | Build an 'AdjacencyMap' from a 'GraphKL'.
--- Alternative, possible faster implementation -> TODO: Benchmark!
-toAdjacenyMap2 :: Ord a => GraphKL a -> AdjacencyMap a
-toAdjacenyMap2 (GraphKL g from _) = AM.AM $ Map.mapKeys from $ Map.fromDistinctAscList
-  $ map (\v -> (v, Set.fromList $ map from $ g Array.! v)) $ KL.vertices g
-
-toIntAdjacencyMap :: GraphKL Int -> IntAdjacencyMap
-toIntAdjacencyMap (GraphKL g from _) = IAM.AM $ IntMap.mapKeys from
-  $ IntMap.fromDistinctAscList $ map (\v -> (v, IntSet.fromList $ map from $ g Array.! v))
-  $ KL.vertices g
 
 -- | Compute the /depth-first search/ forest of a graph.
 --
