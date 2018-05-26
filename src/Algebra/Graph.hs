@@ -445,7 +445,7 @@ hasEdge = H.hasEdge
 -- @
 -- vertexCount 'empty'      == 0
 -- vertexCount ('vertex' x) == 1
--- vertexCount            == 'Data.Set.size' . 'vertexSet'
+-- vertexCount            == 'Set.size' . 'vertexSet'
 -- @
 vertexCount :: Ord a => Graph a -> Int
 vertexCount = Set.size . vertexSet
