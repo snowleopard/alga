@@ -38,13 +38,14 @@ data GraphKL a = GraphKL {
     -- | Array-based graph representation (King and Launchbury, 1995).
     toGraphKL :: KL.Graph,
     -- | A mapping of "Data.Graph.Vertex" to vertices of type @a@.
+    -- This is partial and may fail if the vertex is out of bounds.
     fromVertexKL :: KL.Vertex -> a,
     -- | A mapping from vertices of type @a@ to "Data.Graph.Vertex".
     -- Returns 'Nothing' if the argument is not in the graph.
     toVertexKL :: a -> Maybe KL.Vertex }
 
 -- | Build 'GraphKL' from an 'AdjacencyMap'.
--- If @mkGraphKL (adjacencyMap g) == h@ then the following holds:
+-- If @fromAdjacencyMap g == h@ then the following holds:
 --
 -- @
 -- map ('fromVertexKL' h) ('Data.Graph.vertices' $ 'toGraphKL' h)                               == 'Algebra.Graph.AdjacencyMap.vertexList' g
@@ -58,6 +59,13 @@ fromAdjacencyMap (AM.AM m) = GraphKL
   where
     (g, r, t) = KL.graphFromEdges [ ((), v, Set.toAscList us) | (v, us) <- Map.toAscList m ]
 
+-- | Build 'GraphKL' from an 'IntAdjacencyMap'.
+-- If @fromIntAdjacencyMap g == h@ then the following holds:
+--
+-- @
+-- map ('fromVertexKL' h) ('Data.Graph.vertices' $ 'toGraphKL' h)                               == 'Data.IntSet.toAscList' ('Algebra.Graph.IntAdjacencyMap.vertexIntSet' g)
+-- map (\\(x, y) -> ('fromVertexKL' h x, 'fromVertexKL' h y)) ('Data.Graph.edges' $ 'toGraphKL' h) == 'Algebra.Graph.IntAdjacencyMap.edgeList' g
+-- @
 fromIntAdjacencyMap :: IntAdjacencyMap -> GraphKL Int
 fromIntAdjacencyMap (IAM.AM m) = GraphKL
     { toGraphKL    = g
@@ -68,15 +76,22 @@ fromIntAdjacencyMap (IAM.AM m) = GraphKL
 
 -- | Compute the /depth-first search/ forest of a graph.
 --
+-- In the following we will use the helper function:
 -- @
--- 'forest' (dfsForest $ 'edge' 1 1)         == 'vertex' 1
--- 'forest' (dfsForest $ 'edge' 1 2)         == 'edge' 1 2
--- 'forest' (dfsForest $ 'edge' 2 1)         == 'vertices' [1, 2]
--- 'isSubgraphOf' ('forest' $ dfsForest x) x == True
--- dfsForest . 'forest' . dfsForest        == dfsForest
--- dfsForest ('vertices' vs)               == map (\\v -> Node v []) ('Data.List.nub' $ 'Data.List.sort' vs)
--- 'dfsForestFrom' ('vertexList' x) x        == dfsForest x
--- dfsForest $ 3 * (1 + 4) * (1 + 5)     == [ Node { rootLabel = 1
+-- (%) :: (GraphKL Int -> a) -> AM.AdjacencyMap Int -> a
+-- a % g = a $ fromAdjacencyMap g
+-- @
+-- for greater clarity. (One could use an IntAdjacencyMap just as well)
+--
+-- @
+-- 'forest' (dfsForest % 'edge' 1 1)         == 'vertex' 1
+-- 'forest' (dfsForest % 'edge' 1 2)         == 'edge' 1 2
+-- 'forest' (dfsForest % 'edge' 2 1)         == 'vertices' [1, 2]
+-- 'isSubgraphOf' ('forest' $ dfsForest % x) x == True
+-- dfsForest % 'forest' (dfsForest % x)        == dfsForest % x
+-- dfsForest % 'vertices' vs               == map (\\v -> Node v []) ('Data.List.nub' $ 'Data.List.sort' vs)
+-- 'dfsForestFrom' ('vertexList' x) % x        == dfsForest % x
+-- dfsForest % (3 * (1 + 4) * (1 + 5))     == [ Node { rootLabel = 1
 --                                                 , subForest = [ Node { rootLabel = 5
 --                                                                      , subForest = [] }]}
 --                                          , Node { rootLabel = 3
@@ -91,16 +106,16 @@ dfsForest (GraphKL g r _) = fmap (fmap r) (KL.dff g)
 -- necessarily span the whole graph, as some vertices may be unreachable.
 --
 -- @
--- 'forest' (dfsForestFrom [1]    $ 'edge' 1 1)     == 'vertex' 1
--- 'forest' (dfsForestFrom [1]    $ 'edge' 1 2)     == 'edge' 1 2
--- 'forest' (dfsForestFrom [2]    $ 'edge' 1 2)     == 'vertex' 2
--- 'forest' (dfsForestFrom [3]    $ 'edge' 1 2)     == 'empty'
--- 'forest' (dfsForestFrom [2, 1] $ 'edge' 1 2)     == 'vertices' [1, 2]
--- 'isSubgraphOf' ('forest' $ dfsForestFrom vs x) x == True
--- dfsForestFrom ('vertexList' x) x               == 'dfsForest' x
--- dfsForestFrom vs             ('vertices' vs)   == map (\\v -> Node v []) ('Data.List.nub' vs)
--- dfsForestFrom []             x               == []
--- dfsForestFrom [1, 4] $ 3 * (1 + 4) * (1 + 5) == [ Node { rootLabel = 1
+-- 'forest' (dfsForestFrom [1]    % 'edge' 1 1)     == 'vertex' 1
+-- 'forest' (dfsForestFrom [1]    % 'edge' 1 2)     == 'edge' 1 2
+-- 'forest' (dfsForestFrom [2]    % 'edge' 1 2)     == 'vertex' 2
+-- 'forest' (dfsForestFrom [3]    % 'edge' 1 2)     == 'empty'
+-- 'forest' (dfsForestFrom [2, 1] % 'edge' 1 2)     == 'vertices' [1, 2]
+-- 'isSubgraphOf' ('forest' $ dfsForestFrom vs % x) x == True
+-- dfsForestFrom ('vertexList' x) % x               == 'dfsForest' % x
+-- dfsForestFrom vs               % 'vertices' vs   == map (\\v -> Node v []) ('Data.List.nub' vs)
+-- dfsForestFrom []               % x               == []
+-- dfsForestFrom [1, 4] % (3 * (1 + 4) * (1 + 5))   == [ Node { rootLabel = 1
 --                                                        , subForest = [ Node { rootLabel = 5
 --                                                                             , subForest = [] }
 --                                                 , Node { rootLabel = 4
@@ -113,14 +128,14 @@ dfsForestFrom vs (GraphKL g r t) = fmap (fmap r) (KL.dfs g (mapMaybe t vs))
 -- when searching from each of the given vertices in order.
 --
 -- @
--- dfs [1]    $ 'edge' 1 1                == [1]
--- dfs [1]    $ 'edge' 1 2                == [1, 2]
--- dfs [2]    $ 'edge' 1 2                == [2]
--- dfs [3]    $ 'edge' 1 2                == []
--- dfs [1, 2] $ 'edge' 1 2                == [1, 2]
--- dfs [2, 1] $ 'edge' 1 2                == [2, 1]
--- dfs []     $ x                       == []
--- dfs [1, 4] $ 3 * (1 + 4) * (1 + 5)   == [1, 5, 4]
+-- dfs [1]    % 'edge' 1 1                == [1]
+-- dfs [1]    % 'edge' 1 2                == [1, 2]
+-- dfs [2]    % 'edge' 1 2                == [2]
+-- dfs [3]    % 'edge' 1 2                == []
+-- dfs [1, 2] % 'edge' 1 2                == [1, 2]
+-- dfs [2, 1] % 'edge' 1 2                == [2, 1]
+-- dfs []     % x                         == []
+-- dfs [1, 4] % (3 * (1 + 4) * (1 + 5))   == [1, 5, 4]
 -- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
 -- @
 dfs :: [a] -> GraphKL a -> [a]
@@ -131,8 +146,8 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- a result even if the graph is cyclic.
 --
 -- @
--- topSort (1 * 2 + 3 * 1)             == [3,1,2]
--- topSort (1 * 2 + 2 * 1)             == [1,2]
+-- topSort % (1 * 2 + 3 * 1) == [3,1,2]
+-- topSort % (1 * 2 + 2 * 1) == [1,2]
 -- @
 topSort :: GraphKL a -> [a]
 topSort (GraphKL g r _) = map r (KL.topSort g)
