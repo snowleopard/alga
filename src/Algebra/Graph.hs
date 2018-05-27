@@ -448,7 +448,7 @@ hasEdge = H.hasEdge
 -- vertexCount            == 'length' . 'vertexList'
 -- @
 vertexCount :: Ord a => Graph a -> Int
-vertexCount = length . vertexList
+vertexCount = Set.size . vertexSet
 
 -- | The number of edges in a graph.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
