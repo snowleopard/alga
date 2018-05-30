@@ -50,7 +50,7 @@ module Algebra.Graph.HigherKinded.Class (
     torus, deBruijn,
 
     -- * Graph transformation
-    removeVertex, replaceVertex, mergeVertices, splitVertex,
+    removeVertex, replaceVertex, mergeVertices, splitVertex, induce,
 
     -- * Graph composition
     box,
@@ -137,24 +137,6 @@ class (Traversable g,
   MonadPlus g) => Graph g where
     -- | Connect two graphs.
     connect :: g a -> g a -> g a
-
-    -- | Construct the /induced subgraph/ of a given graph by removing the
-    -- vertices that do not satisfy a given predicate.
-    -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
-    -- /O(1)/ to be evaluated.
-    --
-    -- A default version is implemented using the 'MonadPlus' instance, but it can
-    -- be improved by the implementation
-    --
-    -- @
-    -- induce (const True ) x      == x
-    -- induce (const False) x      == 'empty'
-    -- induce (/= x)               == 'removeVertex' x
-    -- induce p . induce q         == induce (\\x -> p x && q x)
-    -- 'isSubgraphOf' (induce p x) x == True
-    -- @
-    induce :: (a -> Bool) -> g a -> g a
-    induce = mfilter
 
 -- | Construct the graph comprising a single isolated vertex. An alias for 'pure'.
 vertex :: Graph g => a -> g a
@@ -544,6 +526,21 @@ deBruijn len alphabet = skeleton >>= expand
     overlaps = mapM (const alphabet) [2..len]
     skeleton = edges    [        (Left s, Right s)   | s <- overlaps ]
     expand v = vertices [ either ([a] ++) (++ [a]) v | a <- alphabet ]
+
+-- | Construct the /induced subgraph/ of a given graph by removing the
+-- vertices that do not satisfy a given predicate.
+-- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
+-- /O(1)/ to be evaluated.
+--
+-- @
+-- induce (const True ) x      == x
+-- induce (const False) x      == 'empty'
+-- induce (/= x)               == 'removeVertex' x
+-- induce p . induce q         == induce (\\x -> p x && q x)
+-- 'isSubgraphOf' (induce p x) x == True
+-- @
+induce :: Graph g => (a -> Bool) -> g a -> g a
+induce = mfilter
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(s)/ time, memory and size.

@@ -172,7 +172,6 @@ instance H.ToGraph Graph where
 
 instance H.Graph Graph where
     connect = connect
-    induce = induce
 
 instance Num a => Num (Graph a) where
     fromInteger = Vertex . fromInteger

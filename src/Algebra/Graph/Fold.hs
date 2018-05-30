@@ -191,7 +191,6 @@ instance Monad Fold where
 
 instance H.Graph Fold where
     connect = connect
-    induce = induce
 
 instance Foldable Fold where
     foldMap f = foldg mempty f mappend mappend
