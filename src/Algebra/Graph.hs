@@ -437,7 +437,7 @@ hasVertex = H.hasVertex
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> Graph a -> Bool
-hasEdge = H.hasEdge
+hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
@@ -694,7 +694,7 @@ deBruijn = H.deBruijn
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Eq a => a -> Graph a -> Graph a
-removeVertex = H.removeVertex
+removeVertex v = induce (/= v)
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
