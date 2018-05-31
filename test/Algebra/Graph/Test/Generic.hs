@@ -311,7 +311,7 @@ testFromAdjacencyList (Testsuite prefix (%)) = do
 
 testFromAdjacencySets :: Testsuite -> IO ()
 testFromAdjacencySets (Testsuite prefix (%)) = do
-    putStrLn "\n============ " ++ prefix ++ "fromAdjacencySets ============"
+    putStrLn $ "\n============ " ++ prefix ++ "fromAdjacencySets ============"
     test "fromAdjacencySets []                                  == empty" $
           fromAdjacencySets []                                  == id % empty
 
