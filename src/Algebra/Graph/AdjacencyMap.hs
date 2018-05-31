@@ -22,7 +22,7 @@ module Algebra.Graph.AdjacencyMap (
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
-    fromAdjacencyList,
+    fromAdjacencyList, fromAdjacencySets,
 
     -- * Relations on graphs
     isSubgraphOf,
@@ -152,7 +152,7 @@ vertices = mkAM . Map.fromList . map (\x -> (x, Set.empty))
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
 edges :: Ord a => [(a, a)] -> AdjacencyMap a
-edges = fromAdjacencyList' . map (fmap Set.singleton)
+edges = fromAdjacencySets . map (fmap Set.singleton)
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -191,10 +191,20 @@ connects = C.connects
 -- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
 -- @
 fromAdjacencyList :: Ord a => [(a, [a])] -> AdjacencyMap a
-fromAdjacencyList = fromAdjacencyList' . map (fmap Set.fromList)
+fromAdjacencyList = fromAdjacencySets . map (fmap Set.fromList)
 
-fromAdjacencyList' :: Ord a => [(a, Set a)] -> AdjacencyMap a
-fromAdjacencyList' ss = mkAM $ Map.unionWith Set.union vs es
+-- | Construct a graph from an adjacency list.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- fromAdjacencySets []                                        == 'empty'
+-- fromAdjacencySets [(x, Set.'Set.empty')]                          == 'vertex' x
+-- fromAdjacencySets [(x, Set.'Set.singleton' y)]                    == 'edge' x y
+-- fromAdjacencySets . map (fmap Set.'Set.fromList') . 'adjacencyList' == id
+-- 'overlay' (fromAdjacencySets xs) (fromAdjacencySets ys)       == fromAdjacencySets (xs ++ ys)
+-- @
+fromAdjacencySets :: Ord a => [(a, Set a)] -> AdjacencyMap a
+fromAdjacencySets ss = mkAM $ Map.unionWith Set.union vs es
   where
     vs = Map.fromSet (const Set.empty) . Set.unions $ map snd ss
     es = Map.fromListWith Set.union ss
