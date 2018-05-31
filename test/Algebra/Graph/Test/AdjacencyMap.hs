@@ -40,6 +40,7 @@ testAdjacencyMap = do
     testShow              t
     testBasicPrimitives   t
     testFromAdjacencyList t
+    testFromAdjacencySets t
     testIsSubgraphOf      t
     testProperties        t
     testAdjacencyList     t

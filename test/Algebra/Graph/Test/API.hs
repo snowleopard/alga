@@ -42,6 +42,8 @@ class Graph g => GraphAPI g where
     connects          = notImplemented
     fromAdjacencyList :: [(Vertex g, [Vertex g])] -> g
     fromAdjacencyList = notImplemented
+    fromAdjacencySets :: [(Vertex g, Set.Set (Vertex g))] -> g
+    fromAdjacencySets = notImplemented
     toGraph           :: (Graph h, Vertex g ~ Vertex h) => g -> h
     toGraph           = notImplemented
     foldg             :: r -> (Vertex g -> r) -> (r -> r -> r) -> (r -> r -> r) -> g -> r
@@ -145,6 +147,7 @@ instance Ord a => GraphAPI (AdjacencyMap.AdjacencyMap a) where
     overlays          = AdjacencyMap.overlays
     connects          = AdjacencyMap.connects
     fromAdjacencyList = AdjacencyMap.fromAdjacencyList
+    fromAdjacencySets = AdjacencyMap.fromAdjacencySets
     isSubgraphOf      = AdjacencyMap.isSubgraphOf
     isEmpty           = AdjacencyMap.isEmpty
     hasVertex         = AdjacencyMap.hasVertex
