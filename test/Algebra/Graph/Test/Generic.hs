@@ -12,10 +12,10 @@
 module Algebra.Graph.Test.Generic (
     -- * Generic tests
     Testsuite, testsuite, HTestsuite, hTestsuite, testShow, testFromAdjacencyList,
-    testBasicPrimitives, testToGraph, testIsSubgraphOf, testSize, testProperties,
-    testAdjacencyList, testPreSet, testPostSet, testPostIntSet, testGraphFamilies,
-    testTransformations, testDfsForest, testDfsForestFrom, testDfs, testTopSort,
-    testIsTopSort, testSplitVertex, testBind, testSimplify
+    testFromAdjacencySets, testBasicPrimitives, testToGraph, testIsSubgraphOf, testSize,
+    testProperties, testAdjacencyList, testPreSet, testPostSet, testPostIntSet,
+    testGraphFamilies, testTransformations, testDfsForest, testDfsForestFrom, testDfs,
+    testTopSort, testIsTopSort, testSplitVertex, testBind, testSimplify
   ) where
 
 import Prelude ()
@@ -308,6 +308,24 @@ testFromAdjacencyList (Testsuite prefix (%)) = do
 
     test "overlay (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)" $ \xs ys ->
           overlay (fromAdjacencyList xs) % fromAdjacencyList ys == fromAdjacencyList (xs ++ ys)
+
+testFromAdjacencySets :: Testsuite -> IO ()
+testFromAdjacencySets (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "fromAdjacencySets ============"
+    test "fromAdjacencySets []                                  == empty" $
+          fromAdjacencySets []                                  == id % empty
+
+    test "fromAdjacencySets [(x, Set.empty)]                           == vertex x" $ \x ->
+          fromAdjacencySets [(x, Set.empty)]                           == id % vertex x
+
+    test "fromAdjacencySets [(x, Set.singleton y)]                          == edge x y" $ \x y ->
+          fromAdjacencySets [(x, Set.singleton y)]                          == id % edge x y
+
+    test "fromAdjacencySets . map (fmap Set.fromList) . adjacencyList       == id" $ \x ->
+         (fromAdjacencySets . map (fmap Set.fromList) . adjacencyList) % x  == x
+
+    test "overlay (fromAdjacencySets xs) (fromAdjacencySets ys)  == fromAdjacencySets (xs ++ ys)" $ \xs ys ->
+          overlay (fromAdjacencySets xs) % fromAdjacencySets ys  == fromAdjacencySets (xs ++ ys)
 
 testToGraph :: HTestsuite -> IO ()
 testToGraph (HTestsuite prefix (%)) = do
