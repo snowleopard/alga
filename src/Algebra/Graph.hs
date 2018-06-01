@@ -59,7 +59,6 @@ import Algebra.Graph.Internal
 import qualified Algebra.Graph.AdjacencyMap       as AM
 import qualified Algebra.Graph.Class              as C
 import qualified Algebra.Graph.HigherKinded.Class as H
-import qualified Algebra.Graph.Relation           as R
 import qualified Data.IntSet                      as IntSet
 import qualified Data.Set                         as Set
 import qualified Data.Tree                        as Tree
@@ -524,7 +523,9 @@ vertexIntSet = H.vertexIntSet
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
 edgeSet :: Ord a => Graph a -> Set.Set (a, a)
-edgeSet = R.edgeSet . C.toGraph
+edgeSet (Overlay a b) = edgeSet a `Set.union` edgeSet b
+edgeSet (Connect a b) = Set.unions (map (\x -> Set.map (\y -> (x,y)) $ vertexSet b) (vertexList a)) `Set.union` (edgeSet a `Set.union` edgeSet b)
+edgeSet _ = Set.empty
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
