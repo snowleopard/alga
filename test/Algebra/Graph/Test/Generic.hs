@@ -312,20 +312,20 @@ testFromAdjacencyList (Testsuite prefix (%)) = do
 testFromAdjacencySets :: Testsuite -> IO ()
 testFromAdjacencySets (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "fromAdjacencySets ============"
-    test "fromAdjacencySets []                                  == empty" $
-          fromAdjacencySets []                                  == id % empty
+    test "fromAdjacencySets []                                        == empty" $
+          fromAdjacencySets []                                        == id % empty
 
-    test "fromAdjacencySets [(x, Set.empty)]                           == vertex x" $ \x ->
-          fromAdjacencySets [(x, Set.empty)]                           == id % vertex x
+    test "fromAdjacencySets [(x, Set.empty)]                          == vertex x" $ \x ->
+          fromAdjacencySets [(x, Set.empty)]                          == id % vertex x
 
-    test "fromAdjacencySets [(x, Set.singleton y)]                          == edge x y" $ \x y ->
-          fromAdjacencySets [(x, Set.singleton y)]                          == id % edge x y
+    test "fromAdjacencySets [(x, Set.singleton y)]                    == edge x y" $ \x y ->
+          fromAdjacencySets [(x, Set.singleton y)]                    == id % edge x y
 
-    test "fromAdjacencySets . map (fmap Set.fromList) . adjacencyList       == id" $ \x ->
-         (fromAdjacencySets . map (fmap Set.fromList) . adjacencyList) % x  == x
+    test "fromAdjacencySets . map (fmap Set.fromList) . adjacencyList == id" $ \x ->
+         (fromAdjacencySets . map (fmap Set.fromList) . adjacencyList) % x == x
 
-    test "overlay (fromAdjacencySets xs) (fromAdjacencySets ys)  == fromAdjacencySets (xs ++ ys)" $ \xs ys ->
-          overlay (fromAdjacencySets xs) % fromAdjacencySets ys  == fromAdjacencySets (xs ++ ys)
+    test "overlay (fromAdjacencySets xs) (fromAdjacencySets ys)       == fromAdjacencySets (xs ++ ys)" $ \xs ys ->
+          overlay (fromAdjacencySets xs) % fromAdjacencySets ys       == fromAdjacencySets (xs ++ ys)
 
 testToGraph :: HTestsuite -> IO ()
 testToGraph (HTestsuite prefix (%)) = do

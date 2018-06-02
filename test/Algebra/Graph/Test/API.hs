@@ -20,14 +20,15 @@ import Data.Tree
 
 import Algebra.Graph.Class hiding (toGraph)
 
-import qualified Algebra.Graph.AdjacencyMap    as AdjacencyMap
-import qualified Algebra.Graph.Class           as Class
-import qualified Algebra.Graph.Fold            as Fold
-import qualified Algebra.Graph                 as Graph
-import qualified Algebra.Graph.IntAdjacencyMap as IntAdjacencyMap
-import qualified Algebra.Graph.Relation        as Relation
-import qualified Data.Set                      as Set
-import qualified Data.IntSet                   as IntSet
+import qualified Algebra.Graph.AdjacencyMap          as AdjacencyMap
+import qualified Algebra.Graph.AdjacencyMap.Internal as AdjacencyMap
+import qualified Algebra.Graph.Class                 as Class
+import qualified Algebra.Graph.Fold                  as Fold
+import qualified Algebra.Graph                       as Graph
+import qualified Algebra.Graph.IntAdjacencyMap       as IntAdjacencyMap
+import qualified Algebra.Graph.Relation              as Relation
+import qualified Data.Set                            as Set
+import qualified Data.IntSet                         as IntSet
 
 class Graph g => GraphAPI g where
     edge              :: Vertex g -> Vertex g -> g

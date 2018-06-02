@@ -22,7 +22,7 @@ module Algebra.Graph.AdjacencyMap (
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
-    fromAdjacencyList, fromAdjacencySets,
+    fromAdjacencyList,
 
     -- * Relations on graphs
     isSubgraphOf,
@@ -192,22 +192,6 @@ connects = C.connects
 -- @
 fromAdjacencyList :: Ord a => [(a, [a])] -> AdjacencyMap a
 fromAdjacencyList = fromAdjacencySets . map (fmap Set.fromList)
-
--- | Construct a graph from an adjacency list.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- fromAdjacencySets []                                        == 'empty'
--- fromAdjacencySets [(x, Set.'Set.empty')]                          == 'vertex' x
--- fromAdjacencySets [(x, Set.'Set.singleton' y)]                    == 'edge' x y
--- fromAdjacencySets . map (fmap Set.'Set.fromList') . 'adjacencyList' == id
--- 'overlay' (fromAdjacencySets xs) (fromAdjacencySets ys)       == fromAdjacencySets (xs ++ ys)
--- @
-fromAdjacencySets :: Ord a => [(a, Set a)] -> AdjacencyMap a
-fromAdjacencySets ss = mkAM $ Map.unionWith Set.union vs es
-  where
-    vs = Map.fromSet (const Set.empty) . Set.unions $ map snd ss
-    es = Map.fromListWith Set.union ss
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
