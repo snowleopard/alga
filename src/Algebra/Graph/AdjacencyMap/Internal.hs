@@ -12,7 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap.Internal (
     -- * Adjacency map implementation
-    AdjacencyMap (..), mkAM, consistent, fromAdjacencySets,
+    AdjacencyMap (..), mkAM, fromAdjacencySets, consistent,
 
     -- * Interoperability with King-Launchbury graphs
     GraphKL (..), mkGraphKL

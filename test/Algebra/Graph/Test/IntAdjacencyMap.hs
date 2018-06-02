@@ -35,20 +35,21 @@ testIntAdjacencyMap = do
     test "Consistency of fromAdjacencyList" $ \xs ->
         consistent (fromAdjacencyList xs)
 
-    testShow              t
-    testBasicPrimitives   t
-    testFromAdjacencyList t
-    testIsSubgraphOf      t
-    testProperties        t
-    testAdjacencyList     t
-    testPostIntSet        t
-    testGraphFamilies     t
-    testTransformations   t
-    testDfsForest         t
-    testDfsForestFrom     t
-    testDfs               t
-    testTopSort           t
-    testIsTopSort         t
+    testShow                 t
+    testBasicPrimitives      t
+    testFromAdjacencyList    t
+    testFromAdjacencyIntSets t
+    testIsSubgraphOf         t
+    testProperties           t
+    testAdjacencyList        t
+    testPostIntSet           t
+    testGraphFamilies        t
+    testTransformations      t
+    testDfsForest            t
+    testDfsForestFrom        t
+    testDfs                  t
+    testTopSort              t
+    testIsTopSort            t
 
     putStrLn "\n============ IntAdjacencyMap.Internal.GraphKL ============"
     test "map (fromVertexKL h) (vertices $ toGraphKL h) == IntSet.toAscList (vertexIntSet g)"

@@ -12,10 +12,11 @@
 module Algebra.Graph.Test.Generic (
     -- * Generic tests
     Testsuite, testsuite, HTestsuite, hTestsuite, testShow, testFromAdjacencyList,
-    testFromAdjacencySets, testBasicPrimitives, testToGraph, testIsSubgraphOf, testSize,
-    testProperties, testAdjacencyList, testPreSet, testPostSet, testPostIntSet,
-    testGraphFamilies, testTransformations, testDfsForest, testDfsForestFrom, testDfs,
-    testTopSort, testIsTopSort, testSplitVertex, testBind, testSimplify
+    testFromAdjacencySets, testFromAdjacencyIntSets, testBasicPrimitives,
+    testToGraph, testIsSubgraphOf, testSize, testProperties, testAdjacencyList,
+    testPreSet, testPostSet, testPostIntSet, testGraphFamilies,
+    testTransformations, testDfsForest, testDfsForestFrom, testDfs, testTopSort,
+    testIsTopSort, testSplitVertex, testBind, testSimplify
   ) where
 
 import Prelude ()
@@ -326,6 +327,24 @@ testFromAdjacencySets (Testsuite prefix (%)) = do
 
     test "overlay (fromAdjacencySets xs) (fromAdjacencySets ys)       == fromAdjacencySets (xs ++ ys)" $ \xs ys ->
           overlay (fromAdjacencySets xs) % fromAdjacencySets ys       == fromAdjacencySets (xs ++ ys)
+
+testFromAdjacencyIntSets :: Testsuite -> IO ()
+testFromAdjacencyIntSets (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "fromAdjacencyIntSets ============"
+    test "fromAdjacencyIntSets []                                           == empty" $
+          fromAdjacencyIntSets []                                           == id % empty
+
+    test "fromAdjacencyIntSets [(x, IntSet.empty)]                          == vertex x" $ \x ->
+          fromAdjacencyIntSets [(x, IntSet.empty)]                          == id % vertex x
+
+    test "fromAdjacencyIntSets [(x, IntSet.singleton y)]                    == edge x y" $ \x y ->
+          fromAdjacencyIntSets [(x, IntSet.singleton y)]                    == id % edge x y
+
+    test "fromAdjacencyIntSets . map (fmap IntSet.fromList) . adjacencyList == id" $ \x ->
+         (fromAdjacencyIntSets . map (fmap IntSet.fromList) . adjacencyList) % x == x
+
+    test "overlay (fromAdjacencyIntSets xs) (fromAdjacencyIntSets ys)       == fromAdjacencyIntSets (xs ++ ys)" $ \xs ys ->
+          overlay (fromAdjacencyIntSets xs) % fromAdjacencyIntSets ys       == fromAdjacencyIntSets (xs ++ ys)
 
 testToGraph :: HTestsuite -> IO ()
 testToGraph (HTestsuite prefix (%)) = do
