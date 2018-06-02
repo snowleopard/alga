@@ -74,7 +74,8 @@ library
                         Algebra.Graph.Relation.Preorder,
                         Algebra.Graph.Relation.Reflexive,
                         Algebra.Graph.Relation.Symmetric,
-                        Algebra.Graph.Relation.Transitive
+                        Algebra.Graph.Relation.Transitive,
+                        Data.Graph.Typed
     build-depends:      array       >= 0.4     && < 0.6,
                         base        >= 4.7     && < 5,
                         base-compat >= 0.9.1   && < 0.11,
@@ -117,8 +118,10 @@ test-suite test-alga
                         Algebra.Graph.Test.IntAdjacencyMap,
                         Algebra.Graph.Test.Internal,
                         Algebra.Graph.Test.NonEmptyGraph,
-                        Algebra.Graph.Test.Relation
+                        Algebra.Graph.Test.Relation,
+                        Data.Graph.Test.Typed
     build-depends:      algebraic-graphs,
+                        array        >= 0.4     && < 0.6,
                         base         >= 4.7     && < 5,
                         base-compat  >= 0.9.1   && < 0.10,
                         base-orphans >= 0.5.4   && < 0.8,

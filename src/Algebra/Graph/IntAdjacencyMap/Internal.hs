@@ -12,10 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.IntAdjacencyMap.Internal (
     -- * Adjacency map implementation
-    IntAdjacencyMap (..), mkAM, fromAdjacencyIntSets, consistent,
-
-    -- * Interoperability with King-Launchbury graphs
-    GraphKL (..), mkGraphKL
+    IntAdjacencyMap(..), fromAdjacencyIntSets, consistent
   ) where
 
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)
@@ -24,7 +21,6 @@ import Data.List
 
 import Algebra.Graph.Class
 
-import qualified Data.Graph         as KL
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.IntSet        as IntSet
 
@@ -88,25 +84,16 @@ The following useful theorems can be proved from the above set of axioms.
 When specifying the time and memory complexity of graph algorithms, /n/ and /m/
 will denote the number of vertices and edges in the graph, respectively.
 -}
-data IntAdjacencyMap = AM {
+newtype IntAdjacencyMap = AM {
     -- | The /adjacency map/ of the graph: each vertex is associated with a set
     -- of its direct successors.
-    adjacencyMap :: !(IntMap IntSet),
-    -- | Cached King-Launchbury representation.
-    -- /Note: this field is for internal use only/.
-    graphKL :: GraphKL }
-
--- | Construct an 'AdjacencyMap' from a map of successor sets and (lazily)
--- compute the corresponding King-Launchbury representation.
--- /Note: this function is for internal use only/.
-mkAM :: IntMap IntSet -> IntAdjacencyMap
-mkAM m = AM m (mkGraphKL m)
+    adjacencyMap :: IntMap IntSet}
 
 instance Eq IntAdjacencyMap where
     x == y = adjacencyMap x == adjacencyMap y
 
 instance Show IntAdjacencyMap where
-    show (AM m _)
+    show (AM m)
         | null vs    = "empty"
         | null es    = vshow vs
         | vs == used = eshow es
@@ -122,10 +109,10 @@ instance Show IntAdjacencyMap where
 
 instance Graph IntAdjacencyMap where
     type Vertex IntAdjacencyMap = Int
-    empty       = mkAM   IntMap.empty
-    vertex x    = mkAM $ IntMap.singleton x IntSet.empty
-    overlay x y = mkAM $ IntMap.unionWith IntSet.union (adjacencyMap x) (adjacencyMap y)
-    connect x y = mkAM $ IntMap.unionsWith IntSet.union [ adjacencyMap x, adjacencyMap y,
+    empty       = AM   IntMap.empty
+    vertex x    = AM $ IntMap.singleton x IntSet.empty
+    overlay x y = AM $ IntMap.unionWith IntSet.union (adjacencyMap x) (adjacencyMap y)
+    connect x y = AM $ IntMap.unionsWith IntSet.union [ adjacencyMap x, adjacencyMap y,
         fromSet (const . keysSet $ adjacencyMap y) (keysSet $ adjacencyMap x) ]
 
 instance Num IntAdjacencyMap where
@@ -151,7 +138,7 @@ instance ToGraph IntAdjacencyMap where
 -- 'Algebra.Graph.IntAdjacencyMap.overlay' (fromAdjacencyIntSets xs) (fromAdjacencyIntSets ys)       == fromAdjacencyIntSets (xs ++ ys)
 -- @
 fromAdjacencyIntSets :: [(Int, IntSet)] -> IntAdjacencyMap
-fromAdjacencyIntSets ss = mkAM $ IntMap.unionWith IntSet.union vs es
+fromAdjacencyIntSets ss = AM $ IntMap.unionWith IntSet.union vs es
   where
     vs = IntMap.fromSet (const IntSet.empty) . IntSet.unions $ map snd ss
     es = IntMap.fromListWith IntSet.union ss
@@ -172,7 +159,7 @@ fromAdjacencyIntSets ss = mkAM $ IntMap.unionWith IntSet.union vs es
 -- consistent ('Algebra.Graph.IntAdjacencyMap.fromAdjacencyList' xs) == True
 -- @
 consistent :: IntAdjacencyMap -> Bool
-consistent (AM m _) = referredToVertexSet m `IntSet.isSubsetOf` keysSet m
+consistent (AM m) = referredToVertexSet m `IntSet.isSubsetOf` keysSet m
 
 -- The set of vertices that are referred to by the edges
 referredToVertexSet :: IntMap IntSet -> IntSet
@@ -181,32 +168,3 @@ referredToVertexSet = IntSet.fromList . uncurry (++) . unzip . internalEdgeList
 -- The list of edges in adjacency map
 internalEdgeList :: IntMap IntSet -> [(Int, Int)]
 internalEdgeList m = [ (x, y) | (x, ys) <- IntMap.toAscList m, y <- IntSet.toAscList ys ]
-
--- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
--- the "Data.Graph" module of the @containers@ library.
--- /Note: this data structure is for internal use only/.
---
--- If @mkGraphKL (adjacencyMap g) == h@ then the following holds:
---
--- @
--- map ('fromVertexKL' h) ('Data.Graph.vertices' $ 'toGraphKL' h)                               == 'Algebra.Graph.AdjacencyMap.vertexList' g
--- map (\\(x, y) -> ('fromVertexKL' h x, 'fromVertexKL' h y)) ('Data.Graph.edges' $ 'toGraphKL' h) == 'Algebra.Graph.AdjacencyMap.edgeList' g
--- @
-data GraphKL = GraphKL {
-    -- | Array-based graph representation (King and Launchbury, 1995).
-    toGraphKL :: KL.Graph,
-    -- | A mapping of "Data.Graph.Vertex" to vertices of type @Int@.
-    fromVertexKL :: KL.Vertex -> Int,
-    -- | A mapping from vertices of type @Int@ to "Data.Graph.Vertex".
-    -- Returns 'Nothing' if the argument is not in the graph.
-    toVertexKL :: Int -> Maybe KL.Vertex }
-
--- | Build 'GraphKL' from a map of successor sets.
--- /Note: this function is for internal use only/.
-mkGraphKL :: IntMap IntSet -> GraphKL
-mkGraphKL m = GraphKL
-    { toGraphKL    = g
-    , fromVertexKL = \u -> case r u of (_, v, _) -> v
-    , toVertexKL   = t }
-  where
-    (g, r, t) = KL.graphFromEdges [ ((), v, IntSet.toAscList us) | (v, us) <- IntMap.toAscList m ]
