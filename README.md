@@ -4,7 +4,8 @@
 
 **Alga** is a library for algebraic construction and manipulation of graphs in Haskell. See
 [this paper](https://github.com/snowleopard/alga-paper) for the motivation behind the library, the underlying
-theory and implementation details.
+theory and implementation details. There is also a
+[Haskell eXchange talk](https://skillsmatter.com/skillscasts/10635-algebraic-graphs).
 
 ## Main idea
 

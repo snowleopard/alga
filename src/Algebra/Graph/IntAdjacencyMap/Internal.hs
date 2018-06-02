@@ -12,7 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.IntAdjacencyMap.Internal (
     -- * Adjacency map implementation
-    IntAdjacencyMap(..), consistent
+    IntAdjacencyMap(..), fromAdjacencyIntSets, consistent
   ) where
 
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)
@@ -126,6 +126,22 @@ instance Num IntAdjacencyMap where
 instance ToGraph IntAdjacencyMap where
     type ToVertex IntAdjacencyMap = Int
     toGraph = overlays . map (uncurry star . fmap IntSet.toList) . IntMap.toList . adjacencyMap
+
+-- | Construct a graph from a list of adjacency sets.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- fromAdjacencyIntSets []                                           == 'Algebra.Graph.IntAdjacencyMap.empty'
+-- fromAdjacencyIntSets [(x, IntSet.'IntSet.empty')]                          == 'Algebra.Graph.IntAdjacencyMap.vertex' x
+-- fromAdjacencyIntSets [(x, IntSet.'IntSet.singleton' y)]                    == 'Algebra.Graph.IntAdjacencyMap.edge' x y
+-- fromAdjacencyIntSets . map (fmap IntSet.'IntSet.fromList') . 'Algebra.Graph.IntAdjacencyMap.adjacencyList' == id
+-- 'Algebra.Graph.IntAdjacencyMap.overlay' (fromAdjacencyIntSets xs) (fromAdjacencyIntSets ys)       == fromAdjacencyIntSets (xs ++ ys)
+-- @
+fromAdjacencyIntSets :: [(Int, IntSet)] -> IntAdjacencyMap
+fromAdjacencyIntSets ss = AM $ IntMap.unionWith IntSet.union vs es
+  where
+    vs = IntMap.fromSet (const IntSet.empty) . IntSet.unions $ map snd ss
+    es = IntMap.fromListWith IntSet.union ss
 
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices. It should be impossible to create an

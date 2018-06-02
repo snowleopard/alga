@@ -152,7 +152,7 @@ vertices = AM . IntMap.fromList . map (\x -> (x, IntSet.empty))
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
 edges :: [(Int, Int)] -> IntAdjacencyMap
-edges = fromAdjacencyList . map (fmap return)
+edges = fromAdjacencyIntSets . map (fmap IntSet.singleton)
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -191,11 +191,7 @@ connects = C.connects
 -- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
 -- @
 fromAdjacencyList :: [(Int, [Int])] -> IntAdjacencyMap
-fromAdjacencyList as = AM $ IntMap.unionWith IntSet.union vs es
-  where
-    ss = map (fmap IntSet.fromList) as
-    vs = IntMap.fromSet (const IntSet.empty) . IntSet.unions $ map snd ss
-    es = IntMap.fromListWith IntSet.union ss
+fromAdjacencyList = fromAdjacencyIntSets . map (fmap IntSet.fromList)
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.

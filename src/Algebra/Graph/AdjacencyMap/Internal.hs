@@ -12,7 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap.Internal (
     -- * Adjacency map implementation
-    AdjacencyMap (..), consistent,
+    AdjacencyMap (..), fromAdjacencySets, consistent,
   ) where
 
 import Data.List
@@ -126,6 +126,22 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
 instance ToGraph (AdjacencyMap a) where
     type ToVertex (AdjacencyMap a) = a
     toGraph = overlays . map (uncurry star . fmap Set.toList) . Map.toList . adjacencyMap
+
+-- | Construct a graph from a list of adjacency sets.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- fromAdjacencySets []                                        == 'Algebra.Graph.AdjacencyMap.empty'
+-- fromAdjacencySets [(x, Set.'Set.empty')]                          == 'Algebra.Graph.AdjacencyMap.vertex' x
+-- fromAdjacencySets [(x, Set.'Set.singleton' y)]                    == 'Algebra.Graph.AdjacencyMap.edge' x y
+-- fromAdjacencySets . map (fmap Set.'Set.fromList') . 'Algebra.Graph.AdjacencyMap.adjacencyList' == id
+-- 'Algebra.Graph.AdjacencyMap.overlay' (fromAdjacencySets xs) (fromAdjacencySets ys)       == fromAdjacencySets (xs ++ ys)
+-- @
+fromAdjacencySets :: Ord a => [(a, Set a)] -> AdjacencyMap a
+fromAdjacencySets ss = AM $ Map.unionWith Set.union vs es
+  where
+    vs = Map.fromSet (const Set.empty) . Set.unions $ map snd ss
+    es = Map.fromListWith Set.union ss
 
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices. It should be impossible to create an
