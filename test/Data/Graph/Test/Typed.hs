@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Test.IntAdjacencyMap
+-- Module     : Data.Graph.Test.Typed
 -- Copyright  : (c) Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : anfelor@posteo.de, andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Testsuite for "Algebra.Graph.IntAdjacencyMap".
+-- Testsuite for "Data.Graph.Typed".
 -----------------------------------------------------------------------------
 module Data.Graph.Test.Typed (
     -- * Testsuite
