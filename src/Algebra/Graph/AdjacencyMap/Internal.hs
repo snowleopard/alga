@@ -19,6 +19,8 @@ import Data.List
 import Data.Map.Strict (Map, keysSet, fromSet)
 import Data.Set (Set)
 
+import Control.DeepSeq (NFData (..))
+
 import Algebra.Graph.Class
 
 import qualified Data.Map.Strict as Map
@@ -126,6 +128,9 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
 instance ToGraph (AdjacencyMap a) where
     type ToVertex (AdjacencyMap a) = a
     toGraph = overlays . map (uncurry star . fmap Set.toList) . Map.toList . adjacencyMap
+
+instance NFData a => NFData (AdjacencyMap a) where
+    rnf (AM a) = rnf a
 
 -- | Construct a graph from a list of adjacency sets.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
