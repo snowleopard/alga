@@ -239,9 +239,8 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: Graph g => [g a] -> g a
-overlays []     = empty
-overlays [x]    = x
-overlays (x:xs) = x `overlay` overlays xs
+overlays []   = empty
+overlays list = foldr1 overlay list
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -255,9 +254,8 @@ overlays (x:xs) = x `overlay` overlays xs
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: Graph g => [g a] -> g a
-connects []     = empty
-connects [x]    = x
-connects (x:xs) = x `connect` connects xs
+connects []   = empty
+connects list = foldr1 connect list
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second. Here is the current implementation:
