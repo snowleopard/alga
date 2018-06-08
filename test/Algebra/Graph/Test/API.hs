@@ -18,12 +18,12 @@ import Data.IntSet (IntSet)
 import Data.Set (Set)
 import Data.Tree
 
-import Algebra.Graph.Class
+import Algebra.Graph.Class (Graph (..))
 
+import qualified Algebra.Graph                          as Graph
 import qualified Algebra.Graph.AdjacencyMap             as AdjacencyMap
 import qualified Algebra.Graph.AdjacencyMap.Internal    as AdjacencyMap
 import qualified Algebra.Graph.Fold                     as Fold
-import qualified Algebra.Graph                          as Graph
 import qualified Algebra.Graph.IntAdjacencyMap          as IntAdjacencyMap
 import qualified Algebra.Graph.IntAdjacencyMap.Internal as IntAdjacencyMap
 import qualified Algebra.Graph.Relation                 as Relation

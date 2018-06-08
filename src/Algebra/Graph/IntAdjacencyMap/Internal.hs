@@ -12,7 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.IntAdjacencyMap.Internal (
     -- * Adjacency map implementation
-    IntAdjacencyMap(..), empty, vertex, overlay, connect, fromAdjacencyIntSets,
+    IntAdjacencyMap (..), empty, vertex, overlay, connect, fromAdjacencyIntSets,
     consistent
   ) where
 
@@ -109,10 +109,10 @@ instance Show IntAdjacencyMap where
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'isEmpty'     empty == True
--- 'hasVertex' x empty == False
--- 'vertexCount' empty == 0
--- 'edgeCount'   empty == 0
+-- 'Algebra.Graph.IntAdjacencyMap.isEmpty'     empty == True
+-- 'Algebra.Graph.IntAdjacencyMap.hasVertex' x empty == False
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' empty == 0
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   empty == 0
 -- @
 empty :: IntAdjacencyMap
 empty = AM IntMap.empty
@@ -121,10 +121,10 @@ empty = AM IntMap.empty
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
--- 'vertexCount' (vertex x) == 1
--- 'edgeCount'   (vertex x) == 0
+-- 'Algebra.Graph.IntAdjacencyMap.isEmpty'     (vertex x) == False
+-- 'Algebra.Graph.IntAdjacencyMap.hasVertex' x (vertex x) == True
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (vertex x) == 1
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (vertex x) == 0
 -- @
 vertex :: Int -> IntAdjacencyMap
 vertex x = AM $ IntMap.singleton x IntSet.empty
@@ -134,14 +134,14 @@ vertex x = AM $ IntMap.singleton x IntSet.empty
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (overlay x y) >= 'vertexCount' x
--- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (overlay x y) >= 'edgeCount' x
--- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
--- 'vertexCount' (overlay 1 2) == 2
--- 'edgeCount'   (overlay 1 2) == 0
+-- 'Algebra.Graph.IntAdjacencyMap.isEmpty'     (overlay x y) == 'Algebra.Graph.IntAdjacencyMap.isEmpty'   x   && 'Algebra.Graph.IntAdjacencyMap.isEmpty'   y
+-- 'Algebra.Graph.IntAdjacencyMap.hasVertex' z (overlay x y) == 'Algebra.Graph.IntAdjacencyMap.hasVertex' z x || 'Algebra.Graph.IntAdjacencyMap.hasVertex' z y
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (overlay x y) >= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (overlay x y) <= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x + 'Algebra.Graph.IntAdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (overlay x y) >= 'Algebra.Graph.IntAdjacencyMap.edgeCount' x
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (overlay x y) <= 'Algebra.Graph.IntAdjacencyMap.edgeCount' x   + 'Algebra.Graph.IntAdjacencyMap.edgeCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (overlay 1 2) == 2
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: IntAdjacencyMap -> IntAdjacencyMap -> IntAdjacencyMap
 overlay x y = AM $ IntMap.unionWith IntSet.union (adjacencyMap x) (adjacencyMap y)
@@ -153,16 +153,16 @@ overlay x y = AM $ IntMap.unionWith IntSet.union (adjacencyMap x) (adjacencyMap 
 -- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
 --
 -- @
--- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (connect x y) >= 'vertexCount' x
--- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (connect x y) >= 'edgeCount' x
--- 'edgeCount'   (connect x y) >= 'edgeCount' y
--- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
--- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
--- 'vertexCount' (connect 1 2) == 2
--- 'edgeCount'   (connect 1 2) == 1
+-- 'Algebra.Graph.IntAdjacencyMap.isEmpty'     (connect x y) == 'Algebra.Graph.IntAdjacencyMap.isEmpty'   x   && 'Algebra.Graph.IntAdjacencyMap.isEmpty'   y
+-- 'Algebra.Graph.IntAdjacencyMap.hasVertex' z (connect x y) == 'Algebra.Graph.IntAdjacencyMap.hasVertex' z x || 'Algebra.Graph.IntAdjacencyMap.hasVertex' z y
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (connect x y) >= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (connect x y) <= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x + 'Algebra.Graph.IntAdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.IntAdjacencyMap.edgeCount' x
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.IntAdjacencyMap.edgeCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x * 'Algebra.Graph.IntAdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) <= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x * 'Algebra.Graph.IntAdjacencyMap.vertexCount' y + 'edgeCount' x + 'edgeCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (connect 1 2) == 2
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect 1 2) == 1
 -- @
 connect :: IntAdjacencyMap -> IntAdjacencyMap -> IntAdjacencyMap
 connect x y = AM $ IntMap.unionsWith IntSet.union [ adjacencyMap x, adjacencyMap y,

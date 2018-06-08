@@ -63,7 +63,8 @@ import qualified Data.Set            as Set
 -- 'vertexCount' (edge 1 2) == 2
 -- @
 edge :: Int -> Int -> IntAdjacencyMap
-edge x y = connect (vertex x) (vertex y)
+edge x y | x == y    = AM $ IntMap.singleton x (IntSet.singleton y)
+         | otherwise = AM $ IntMap.fromList [(x, IntSet.singleton y), (y, IntSet.empty)]
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -102,9 +103,7 @@ edges = fromAdjacencyIntSets . map (fmap IntSet.singleton)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [IntAdjacencyMap] -> IntAdjacencyMap
-overlays []     = empty
-overlays [x]    = x
-overlays (x:xs) = x `overlay` overlays xs
+overlays = AM . IntMap.unionsWith IntSet.union . map adjacencyMap
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -325,7 +324,10 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: [Int] -> IntAdjacencyMap
-clique = connects . map vertex
+clique = fromAdjacencyIntSets . fst . go
+  where
+    go []     = ([], IntSet.empty)
+    go (x:xs) = let (res, set) = go xs in ((x, set) : res, IntSet.insert x set)
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
@@ -342,9 +344,7 @@ biclique xs ys = AM $ IntMap.fromSet adjacent (x `IntSet.union` y)
   where
     x = IntSet.fromList xs
     y = IntSet.fromList ys
-    adjacent v
-        | v `IntSet.member` x = y
-        | otherwise        = IntSet.empty
+    adjacent v = if v `IntSet.member` x then y else IntSet.empty
 
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -566,8 +566,7 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- fmap (flip 'isTopSort' x) (topSort x) /= Just False
 -- @
 topSort :: IntAdjacencyMap -> Maybe [Int]
-topSort m =
-    if isTopSort result m then Just result else Nothing
+topSort m = if isTopSort result m then Just result else Nothing
   where
     result = Typed.topSort (Typed.fromIntAdjacencyMap m)
 

@@ -63,7 +63,8 @@ import qualified Data.Set            as Set
 -- 'vertexCount' (edge 1 2) == 2
 -- @
 edge :: Ord a => a -> a -> AdjacencyMap a
-edge x y = connect (vertex x) (vertex y)
+edge x y | x == y    = AM $ Map.singleton x (Set.singleton y)
+         | otherwise = AM $ Map.fromList [(x, Set.singleton y), (y, Set.empty)]
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -102,9 +103,7 @@ edges = fromAdjacencySets . map (fmap Set.singleton)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
-overlays []     = empty
-overlays [x]    = x
-overlays (x:xs) = x `overlay` overlays xs
+overlays = AM . Map.unionsWith Set.union . map adjacencyMap
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -323,7 +322,10 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: Ord a => [a] -> AdjacencyMap a
-clique = connects . map vertex
+clique = fromAdjacencySets . fst . go
+  where
+    go []     = ([], Set.empty)
+    go (x:xs) = let (res, set) = go xs in ((x, set) : res, Set.insert x set)
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
@@ -340,9 +342,7 @@ biclique xs ys = AM $ Map.fromSet adjacent (x `Set.union` y)
   where
     x = Set.fromList xs
     y = Set.fromList ys
-    adjacent v
-        | v `Set.member` x = y
-        | otherwise        = Set.empty
+    adjacent v = if v `Set.member` x then y else Set.empty
 
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -564,8 +564,7 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- fmap (flip 'isTopSort' x) (topSort x) /= Just False
 -- @
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
-topSort m =
-    if isTopSort result m then Just result else Nothing
+topSort m = if isTopSort result m then Just result else Nothing
   where
     result = Typed.topSort (Typed.fromAdjacencyMap m)
 
