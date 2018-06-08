@@ -13,7 +13,7 @@ module Algebra.Graph.Test.Generic (
     -- * Generic tests
     Testsuite, testsuite, HTestsuite, hTestsuite, testShow, testFromAdjacencyList,
     testFromAdjacencySets, testFromAdjacencyIntSets, testBasicPrimitives,
-    testToGraph, testIsSubgraphOf, testSize, testProperties, testAdjacencyList,
+    testIsSubgraphOf, testSize, testProperties, testAdjacencyList,
     testPreSet, testPostSet, testPostIntSet, testGraphFamilies,
     testTransformations, testDfsForest, testDfsForestFrom, testDfs, testTopSort,
     testIsTopSort, testSplitVertex, testBind, testSimplify
@@ -25,7 +25,6 @@ import Prelude.Compat
 import Control.Monad (when)
 import Data.Orphans ()
 
-import Data.Foldable (toList)
 import Data.List (nub)
 import Data.Tree
 import Data.Tuple
@@ -33,7 +32,6 @@ import Data.Tuple
 import Algebra.Graph.Class (Graph (..))
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API
-import Algebra.Graph.Relation (Relation)
 
 import qualified Data.Set    as Set
 import qualified Data.IntSet as IntSet
@@ -346,36 +344,36 @@ testFromAdjacencyIntSets (Testsuite prefix (%)) = do
     test "overlay (fromAdjacencyIntSets xs) (fromAdjacencyIntSets ys)       == fromAdjacencyIntSets (xs ++ ys)" $ \xs ys ->
           overlay (fromAdjacencyIntSets xs) % fromAdjacencyIntSets ys       == fromAdjacencyIntSets (xs ++ ys)
 
-testToGraph :: HTestsuite -> IO ()
-testToGraph (HTestsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "toGraph ============"
-    test "      toGraph (g     :: Graph a  ) :: Graph a       == g" $ \g ->
-                toGraph % g                                   == g
+-- testToGraph :: HTestsuite -> IO ()
+-- testToGraph (HTestsuite prefix (%)) = do
+--     putStrLn $ "\n============ " ++ prefix ++ "toGraph ============"
+--     test "      toGraph (g     :: Graph a  ) :: Graph a       == g" $ \g ->
+--                 toGraph % g                                   == g
 
-    test "show (toGraph (1 * 2 :: Graph Int) :: Relation Int) == \"edge 1 2\"" $
-          show (toGraph % (1 * 2)            :: Relation Int) == "edge 1 2"
+--     test "show (toGraph (1 * 2 :: Graph Int) :: Relation Int) == \"edge 1 2\"" $
+--           show (toGraph % (1 * 2)            :: Relation Int) == "edge 1 2"
 
-    test "\ntoGraph == foldg empty vertex overlay connect" $ \x ->
-          toGraph % x == id % foldg empty vertex overlay connect x
+--     test "\ntoGraph == foldg empty vertex overlay connect" $ \x ->
+--           toGraph % x == id % foldg empty vertex overlay connect x
 
-    putStrLn $ "\n============ " ++ prefix ++ "foldg ============"
-    test "foldg empty vertex        overlay connect        == id" $ \x ->
-          foldg empty vertex        overlay connect x      == id % x
+--     putStrLn $ "\n============ " ++ prefix ++ "foldg ============"
+--     test "foldg empty vertex        overlay connect        == id" $ \x ->
+--           foldg empty vertex        overlay connect x      == id % x
 
-    test "foldg empty vertex        overlay (flip connect) == transpose" $ \x ->
-          foldg empty vertex        overlay (flip connect)x== transpose % x
+--     test "foldg empty vertex        overlay (flip connect) == transpose" $ \x ->
+--           foldg empty vertex        overlay (flip connect)x== transpose % x
 
-    test "foldg []    return        (++)    (++)           == toList" $ \x ->
-          foldg []    return        (++)    (++) x         == toList % x
+--     test "foldg []    return        (++)    (++)           == toList" $ \x ->
+--           foldg []    return        (++)    (++) x         == toList % x
 
-    test "foldg 0     (const 1)     (+)     (+)            == length" $ \x ->
-          foldg 0     (const 1)     (+)     (+) x          == length % x
+--     test "foldg 0     (const 1)     (+)     (+)            == length" $ \x ->
+--           foldg 0     (const 1)     (+)     (+) x          == length % x
 
-    test "foldg 1     (const 1)     (+)     (+)            == size" $ \x ->
-          foldg 1     (const 1)     (+)     (+) x          == size % x
+--     test "foldg 1     (const 1)     (+)     (+)            == size" $ \x ->
+--           foldg 1     (const 1)     (+)     (+) x          == size % x
 
-    test "foldg True  (const False) (&&)    (&&)           == isEmpty" $ \x ->
-          foldg True  (const False) (&&)    (&&) x         == isEmpty % x
+--     test "foldg True  (const False) (&&)    (&&)           == isEmpty" $ \x ->
+--           foldg True  (const False) (&&)    (&&) x         == isEmpty % x
 
 testIsSubgraphOf :: Testsuite -> IO ()
 testIsSubgraphOf (Testsuite prefix (%)) = do

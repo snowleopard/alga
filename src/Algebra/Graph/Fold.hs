@@ -54,12 +54,10 @@ import Control.Applicative hiding (empty)
 import Control.Monad.Compat (MonadPlus (..), ap)
 import Data.Foldable
 
-import Algebra.Graph.Internal
-
+import qualified Algebra.Graph                    as G
 import qualified Algebra.Graph.AdjacencyMap       as AM
 import qualified Algebra.Graph.Class              as C
 import qualified Algebra.Graph.HigherKinded.Class as H
-import qualified Algebra.Graph.Relation           as R
 import qualified Data.IntSet                      as IntSet
 import qualified Data.Set                         as Set
 
@@ -150,10 +148,10 @@ representations based on adjacency maps.
 newtype Fold a = Fold { runFold :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b }
 
 instance (Ord a, Show a) => Show (Fold a) where
-    show f = show (C.toGraph f :: AM.AdjacencyMap a)
+    show = show . foldg AM.empty AM.vertex AM.overlay AM.connect
 
 instance Ord a => Eq (Fold a) where
-    x == y = C.toGraph x == (C.toGraph y :: AM.AdjacencyMap a)
+    x == y = G.toGraph x == G.toGraph y
 
 instance C.Graph (Fold a) where
     type Vertex (Fold a) = a
@@ -198,9 +196,9 @@ instance Foldable Fold where
 instance Traversable Fold where
     traverse f = foldg (pure empty) (fmap vertex . f) (liftA2 overlay) (liftA2 connect)
 
-instance C.ToGraph (Fold a) where
+instance G.ToGraph (Fold a) where
     type ToVertex (Fold a) = a
-    foldg e v o c g = runFold g e v o c
+    toGraph g = runFold g G.empty G.vertex G.overlay G.connect
 
 instance H.ToGraph Fold where
     toGraph = foldg H.empty H.vertex H.overlay H.connect
@@ -353,7 +351,7 @@ connects = C.connects
 -- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
-foldg = C.foldg
+foldg e v o c g = runFold g e v o c
 
 -- | Check if a graph is empty. A convenient alias for 'null'.
 -- Complexity: /O(s)/ time.
@@ -456,7 +454,7 @@ vertexList = Set.toAscList . vertexSet
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: Ord a => Fold a -> [(a, a)]
-edgeList = AM.edgeList . C.toGraph
+edgeList = G.edgeList . G.toGraph
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -493,7 +491,7 @@ vertexIntSet = H.vertexIntSet
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
 edgeSet :: Ord a => Fold a -> Set.Set (a, a)
-edgeSet = R.edgeSet . C.toGraph
+edgeSet = G.edgeSet . G.toGraph
 
 -- | Construct a /mesh graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -576,15 +574,18 @@ removeVertex v = induce (/= v)
 removeEdge :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
 removeEdge s t = filterContext s (/=s) (/=t)
 
+toPolymorphic :: C.Graph g => Fold (C.Vertex g) -> g
+toPolymorphic = foldg C.empty C.vertex C.overlay C.connect
+
 -- TODO: Export
 -- | Filter vertices in a subgraph context.
 filterContext :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> (C.Vertex g -> Bool)
               -> (C.Vertex g -> Bool) -> Fold (C.Vertex g) -> g
-filterContext s i o g = maybe (C.toGraph g) go $ context (==s) g
+filterContext s i o g = maybe (toPolymorphic g) go $ G.context (==s) (G.toGraph g)
   where
-    go (Context is os) = overlays [ induce (/=s) g
-                                  , C.starTranspose s (filter i is)
-                                  , C.star          s (filter o os) ]
+    go (G.Context is os) = overlays [ induce (/=s) g
+                                    , C.starTranspose s (filter i is)
+                                    , C.star          s (filter o os) ]
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given graph expression. If @y@ already exists, @x@ and @y@ will be merged.
@@ -681,7 +682,7 @@ bind g f = foldg C.empty f C.overlay C.connect g
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: C.Graph g => (C.Vertex g -> Bool) -> Fold (C.Vertex g) -> g
-induce p = C.toGraph . foldg empty (\x -> if p x then vertex x else empty) (k overlay) (k connect)
+induce p = toPolymorphic . foldg empty (\x -> if p x then vertex x else empty) (k overlay) (k connect)
   where
     k f x y | isEmpty x = y -- Constant folding to get rid of Empty leaves
             | isEmpty y = x

@@ -30,11 +30,10 @@ import Data.Tuple
 import Algebra.Graph.NonEmpty
 import Algebra.Graph.Test hiding (axioms, theorems)
 
-import qualified Algebra.Graph       as G
-import qualified Algebra.Graph.Class as C
-import qualified Data.List.NonEmpty  as NonEmpty
-import qualified Data.Set            as Set
-import qualified Data.IntSet         as IntSet
+import qualified Algebra.Graph      as G
+import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Set           as Set
+import qualified Data.IntSet        as IntSet
 
 type G = NonEmptyGraph Int
 
@@ -99,7 +98,7 @@ testGraphNonEmpty = do
           toNonEmptyGraph (G.empty :: G.Graph Int) == Nothing
 
     test "toNonEmptyGraph (toGraph x) == Just (x :: NonEmptyGraph a)" $ \x ->
-          toNonEmptyGraph (C.toGraph x) == Just (x :: NonEmptyGraph Int)
+          toNonEmptyGraph (G.toGraph x) == Just (x :: NonEmptyGraph Int)
 
     putStrLn $ "\n============ Graph.NonEmpty.vertex ============"
     test "hasVertex x (vertex x) == True" $ \(x :: Int) ->

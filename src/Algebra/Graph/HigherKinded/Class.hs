@@ -68,6 +68,8 @@ import Control.Monad.Compat (MonadPlus, msum, mfilter)
 import Data.Foldable (toList)
 import Data.Tree
 
+import qualified Algebra.Graph as G
+
 import qualified Data.IntSet as IntSet
 import qualified Data.Set    as Set
 
@@ -137,6 +139,12 @@ class (Traversable g,
   MonadPlus g) => Graph g where
     -- | Connect two graphs.
     connect :: g a -> g a -> g a
+
+instance ToGraph G.Graph where
+    toGraph = G.foldg empty vertex overlay connect
+
+instance Graph G.Graph where
+    connect = G.connect
 
 -- | Construct the graph comprising a single isolated vertex. An alias for 'pure'.
 vertex :: Graph g => a -> g a

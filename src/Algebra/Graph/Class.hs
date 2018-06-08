@@ -44,16 +44,17 @@ module Algebra.Graph.Class (
     isSubgraphOf,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, starTranspose, tree, forest,
-
-    -- * Conversion between graph data types
-    ToGraph (..)
+    path, circuit, clique, biclique, star, starTranspose, tree, forest
   ) where
 
 import Prelude ()
 import Prelude.Compat
 
 import Data.Tree
+
+import qualified Algebra.Graph                 as G
+import qualified Algebra.Graph.AdjacencyMap    as AM
+import qualified Algebra.Graph.IntAdjacencyMap as IAM
 
 {-|
 The core type class for constructing algebraic graphs, characterised by the
@@ -113,6 +114,27 @@ class Graph g where
     overlay :: g -> g -> g
     -- | Connect two graphs.
     connect :: g -> g -> g
+
+instance Graph (G.Graph a) where
+    type Vertex (G.Graph a) = a
+    empty   = G.empty
+    vertex  = G.vertex
+    overlay = G.overlay
+    connect = G.connect
+
+instance Ord a => Graph (AM.AdjacencyMap a) where
+    type Vertex (AM.AdjacencyMap a) = a
+    empty   = AM.empty
+    vertex  = AM.vertex
+    overlay = AM.overlay
+    connect = AM.connect
+
+instance Graph IAM.IntAdjacencyMap where
+    type Vertex IAM.IntAdjacencyMap = Int
+    empty   = IAM.empty
+    vertex  = IAM.vertex
+    overlay = IAM.overlay
+    connect = IAM.connect
 
 {-|
 The class of /undirected graphs/ that satisfy the following additional axiom.
@@ -395,7 +417,7 @@ starTranspose x ys = connect (vertices ys) (vertex x)
 tree :: Graph g => Tree (Vertex g) -> g
 tree (Node x []) = vertex x
 tree (Node x f ) = star x (map rootLabel f)
-         `overlay` forest (filter (not . null . subForest) f)
+    `overlay` forest (filter (not . null . subForest) f)
 
 -- | The /forest graph/ constructed from a given 'Forest' data structure.
 -- Complexity: /O(F)/ time, memory and size, where /F/ is the size of the
@@ -409,45 +431,3 @@ tree (Node x f ) = star x (map rootLabel f)
 -- @
 forest :: Graph g => Forest (Vertex g) -> g
 forest = overlays . map tree
-
--- | The 'ToGraph' type class captures data types that can be converted to
--- polymorphic graph expressions. The conversion method 'toGraph' semantically
--- acts as the identity on graph data structures, but allows to convert graphs
--- between different data representations.
---
--- @
---       toGraph (g     :: 'Algebra.Graph.Graph' a  ) :: 'Algebra.Graph.Graph' a       == g
--- 'show' (toGraph (1 * 2 :: 'Algebra.Graph.Graph' Int) :: 'Algebra.Graph.Relation' Int) == "edge 1 2"
--- @
---
--- The second method 'foldg' is used for generalised graph folding. It recursively
--- collapses a given data type by applying the provided graph construction
--- primitives. The order of arguments is: empty, vertex, overlay and connect,
--- and it is assumed that the functions satisfy the axioms of the algebra.
--- The following law establishes the relation between 'toGraph' and 'foldg':
---
--- @
--- toGraph == foldg 'empty' 'vertex' 'overlay' 'connect'
--- @
-class ToGraph t where
-    type ToVertex t
-    toGraph :: (Graph g, Vertex g ~ ToVertex t) => t -> g
-    toGraph = foldg empty vertex overlay connect
-    foldg :: r -> (ToVertex t -> r) -> (r -> r -> r) -> (r -> r -> r) -> t -> r
-    foldg e v o c = go . toGraph
-      where
-        go E       = e
-        go (V x  ) = v x
-        go (O x y) = o (go x) (go y)
-        go (C x y) = c (go x) (go y)
-
--- TODO: Get rid of code duplication. Note: we do not use the data type Graph
--- here due to import cycle.
-data G a = E | V a | O (G a) (G a) | C (G a) (G a)
-
-instance Graph (G a) where
-    type Vertex (G a) = a
-    empty   = E
-    vertex  = V
-    overlay = O
-    connect = C

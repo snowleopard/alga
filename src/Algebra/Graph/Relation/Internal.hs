@@ -17,6 +17,7 @@ module Algebra.Graph.Relation.Internal (
 
 import Data.Set (Set, union)
 
+import Algebra.Graph (ToGraph (..))
 import Algebra.Graph.Class
 
 import qualified Data.Set as Set

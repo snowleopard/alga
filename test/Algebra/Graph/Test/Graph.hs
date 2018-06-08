@@ -21,8 +21,8 @@ import Algebra.Graph.Test.Generic
 t :: Testsuite
 t = testsuite "Graph." empty
 
-h :: HTestsuite
-h = hTestsuite "Graph." empty
+-- h :: HTestsuite
+-- h = hTestsuite "Graph." empty
 
 type G = Graph Int
 
@@ -33,7 +33,7 @@ testGraph = do
     test "Theorems of graphs" (theorems :: GraphTestsuite G)
 
     testBasicPrimitives t
-    testToGraph         h
+    -- testToGraph         h
     testIsSubgraphOf    t
     testSize            t
     testProperties      t

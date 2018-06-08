@@ -21,8 +21,8 @@ import Algebra.Graph.Test.Generic
 t :: Testsuite
 t = testsuite "Fold." (empty :: Fold Int)
 
-h :: HTestsuite
-h = hTestsuite "Fold." (empty :: Fold Int)
+-- h :: HTestsuite
+-- h = hTestsuite "Fold." (empty :: Fold Int)
 
 type F  = Fold Int
 
@@ -33,7 +33,7 @@ testFold = do
 
     testShow            t
     testBasicPrimitives t
-    testToGraph         h
+    -- testToGraph         h
     testIsSubgraphOf    t
     testSize            t
     testProperties      t

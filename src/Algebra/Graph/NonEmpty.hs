@@ -57,14 +57,8 @@ import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Data.List.NonEmpty (NonEmpty (..))
 
-import Algebra.Graph.Internal
-
 import qualified Algebra.Graph                    as G
-import qualified Algebra.Graph.AdjacencyMap       as AM
-import qualified Algebra.Graph.Class              as C
 import qualified Algebra.Graph.HigherKinded.Class as H
-import qualified Algebra.Graph.IntAdjacencyMap    as IAM
-import qualified Algebra.Graph.Relation           as R
 import qualified Data.IntSet                      as IntSet
 import qualified Data.List.NonEmpty               as NonEmpty
 import qualified Data.Set                         as Set
@@ -143,9 +137,9 @@ instance NFData a => NFData (NonEmptyGraph a) where
     rnf (Overlay x y) = rnf x `seq` rnf y
     rnf (Connect x y) = rnf x `seq` rnf y
 
-instance C.ToGraph (NonEmptyGraph a) where
+instance G.ToGraph (NonEmptyGraph a) where
     type ToVertex (NonEmptyGraph a) = a
-    foldg _ = foldg1
+    toGraph = foldg1 G.vertex G.overlay G.connect
 
 instance H.ToGraph NonEmptyGraph where
     toGraph = foldg1 H.vertex H.overlay H.connect
@@ -159,7 +153,7 @@ instance Num a => Num (NonEmptyGraph a) where
     negate      = id
 
 instance Ord a => Eq (NonEmptyGraph a) where
-    x == y = C.toGraph x == (C.toGraph y :: AM.AdjacencyMap a)
+    x == y = G.toGraph x == G.toGraph y
 
 instance Applicative NonEmptyGraph where
     pure  = Vertex
@@ -412,7 +406,7 @@ vertexCount = length . vertexList1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: Ord a => NonEmptyGraph a -> Int
-edgeCount = AM.edgeCount . C.toGraph
+edgeCount = G.edgeCount . G.toGraph
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -436,7 +430,7 @@ vertexList1 = NonEmpty.fromList . G.vertexList . H.toGraph
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: Ord a => NonEmptyGraph a -> [(a, a)]
-edgeList = AM.edgeList . C.toGraph
+edgeList = G.edgeList . G.toGraph
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -447,7 +441,7 @@ edgeList = AM.edgeList . C.toGraph
 -- vertexSet . 'clique1'   == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
 -- @
 vertexSet :: Ord a => NonEmptyGraph a -> Set.Set a
-vertexSet = AM.vertexSet . C.toGraph
+vertexSet = G.vertexSet . G.toGraph
 
 -- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
 -- graphs with vertices of type 'Int'.
@@ -459,7 +453,7 @@ vertexSet = AM.vertexSet . C.toGraph
 -- vertexIntSet . 'clique1'   == IntSet.'IntSet.fromList' . 'Data.List.NonEmpty.toList'
 -- @
 vertexIntSet :: NonEmptyGraph Int -> IntSet.IntSet
-vertexIntSet = IAM.vertexIntSet . C.toGraph
+vertexIntSet = G.vertexIntSet . G.toGraph
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
@@ -470,7 +464,7 @@ vertexIntSet = IAM.vertexIntSet . C.toGraph
 -- edgeSet . 'edges1'   == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
 -- @
 edgeSet :: Ord a => NonEmptyGraph a -> Set.Set (a, a)
-edgeSet = R.edgeSet . C.toGraph
+edgeSet = G.edgeSet . G.toGraph
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -623,10 +617,10 @@ removeEdge s t = filterContext s (/=s) (/=t)
 -- TODO: Here if @context (==s) g == Just ctx@ then we know for sure that
 -- @induce1 (/=s) g == Just subgraph@. Can we exploit this?
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> NonEmptyGraph a -> NonEmptyGraph a
-filterContext s i o g = maybe g go $ context (==s) g
+filterContext s i o g = maybe g go $ G.context (==s) (G.toGraph g)
   where
-    go (Context is os) = G.induce (/=s) (C.toGraph g)  `overlay1`
-                         starTranspose s (filter i is) `overlay` star s (filter o os)
+    go (G.Context is os) = G.induce (/=s) (G.toGraph g)  `overlay1`
+                           starTranspose s (filter i is) `overlay` star s (filter o os)
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'NonEmptyGraph'. If @y@ already exists, @x@ and @y@ will be merged.
@@ -692,7 +686,7 @@ transpose = foldg1 vertex overlay (flip connect)
 -- induce1 p '>=>' induce1 q == induce1 (\\x -> p x && q x)
 -- @
 induce1 :: (a -> Bool) -> NonEmptyGraph a -> Maybe (NonEmptyGraph a)
-induce1 p = toNonEmptyGraph . G.induce p . C.toGraph
+induce1 p = toNonEmptyGraph . G.induce p . G.toGraph
 
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given expression according to the laws of the algebra.
