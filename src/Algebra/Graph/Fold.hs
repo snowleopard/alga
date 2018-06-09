@@ -49,10 +49,11 @@ import Control.Applicative (Alternative, liftA2)
 import Control.Monad.Compat (MonadPlus (..), ap)
 import Data.Function
 
-import Algebra.Graph.ToGraph
+import Algebra.Graph.ToGraph (ToGraph, ToVertex, toGraph)
 
 import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
+import qualified Algebra.Graph.ToGraph      as T
 import qualified Control.Applicative        as Ap
 import qualified Data.IntSet                as IntSet
 import qualified Data.Set                   as Set
@@ -147,7 +148,7 @@ instance (Ord a, Show a) => Show (Fold a) where
     show = show . foldg AM.empty AM.vertex AM.overlay AM.connect
 
 instance Ord a => Eq (Fold a) where
-    x == y = toAdjacencyMap x == toAdjacencyMap y
+    x == y = T.toAdjacencyMap x == T.toAdjacencyMap y
 
 instance Num a => Num (Fold a) where
     fromInteger = vertex . fromInteger
@@ -184,11 +185,7 @@ instance Traversable Fold where
 
 instance ToGraph (Fold a) where
     type ToVertex (Fold a) = a
-    foldg e v o c g = runFold g e v o c
-
--- | Convert a graph to 'AM.AdjacencyMap'.
-toAdjacencyMap :: Ord a => Fold a -> AM.AdjacencyMap a
-toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
+    foldg = foldg
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -308,8 +305,7 @@ edges es = Fold $ \e v o c -> foldr (flip o . uncurry (c `on` v)) e es
 -- @
 overlays :: [Fold a] -> Fold a
 overlays []     = empty
-overlays [x]    = x
-overlays (x:xs) = x `overlay` overlays xs
+overlays (x:xs) = foldl overlay x xs
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -324,8 +320,24 @@ overlays (x:xs) = x `overlay` overlays xs
 -- @
 connects :: [Fold a] -> Fold a
 connects []     = empty
-connects [x]    = x
-connects (x:xs) = x `connect` connects xs
+connects (x:xs) = foldl connect x xs
+
+-- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
+-- the provided functions to the leaves and internal nodes of the expression.
+-- The order of arguments is: empty, vertex, overlay and connect.
+-- Complexity: /O(s)/ applications of given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+--
+-- @
+-- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
+-- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
+-- foldg []    return        (++)    (++)           == 'Data.Foldable.toList'
+-- foldg 0     (const 1)     (+)     (+)            == 'Data.Foldable.length'
+-- foldg 1     (const 1)     (+)     (+)            == 'size'
+-- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
+-- @
+foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
+foldg e v o c g = runFold g e v o c
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -353,7 +365,7 @@ isSubgraphOf x y = overlay x y == y
 -- isEmpty ('removeEdge' x y $ 'edge' x y) == False
 -- @
 isEmpty :: Fold a -> Bool
-isEmpty = foldg True (const False) (&&) (&&)
+isEmpty = T.isEmpty
 
 -- | The /size/ of a graph, i.e. the number of leaves of the expression
 -- including 'empty' leaves.
@@ -368,7 +380,7 @@ isEmpty = foldg True (const False) (&&) (&&)
 -- size x             >= 'vertexCount' x
 -- @
 size :: Fold a -> Int
-size = foldg 1 (const 1) (+) (+)
+size = T.size
 
 -- | Check if a graph contains a given vertex. A convenient alias for `elem`.
 -- Complexity: /O(s)/ time.
@@ -380,7 +392,7 @@ size = foldg 1 (const 1) (+) (+)
 -- hasVertex x . 'removeVertex' x == const False
 -- @
 hasVertex :: Eq a => a -> Fold a -> Bool
-hasVertex x = foldg False (==x) (||) (||)
+hasVertex = T.hasVertex
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
@@ -393,7 +405,7 @@ hasVertex x = foldg False (==x) (||) (||)
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> Fold a -> Bool
-hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
+hasEdge = T.hasEdge
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
@@ -404,7 +416,7 @@ hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
 -- vertexCount            == 'length' . 'vertexList'
 -- @
 vertexCount :: Ord a => Fold a -> Int
-vertexCount = length . vertexList
+vertexCount = T.vertexCount
 
 -- | The number of edges in a graph.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
@@ -417,7 +429,7 @@ vertexCount = length . vertexList
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: Ord a => Fold a -> Int
-edgeCount = length . edgeList
+edgeCount = T.edgeCount
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -428,7 +440,7 @@ edgeCount = length . edgeList
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
 vertexList :: Ord a => Fold a -> [a]
-vertexList = Set.toAscList . vertexSet
+vertexList = T.vertexList
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
@@ -443,7 +455,7 @@ vertexList = Set.toAscList . vertexSet
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: Ord a => Fold a -> [(a, a)]
-edgeList = AM.edgeList . toAdjacencyMap
+edgeList = T.edgeList
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -455,7 +467,7 @@ edgeList = AM.edgeList . toAdjacencyMap
 -- vertexSet . 'clique'   == Set.'Set.fromList'
 -- @
 vertexSet :: Ord a => Fold a -> Set.Set a
-vertexSet = foldg Set.empty Set.singleton Set.union Set.union
+vertexSet = T.vertexSet
 
 -- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
 -- graphs with vertices of type 'Int'.
@@ -468,7 +480,7 @@ vertexSet = foldg Set.empty Set.singleton Set.union Set.union
 -- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
 -- @
 vertexIntSet :: Fold Int -> IntSet.IntSet
-vertexIntSet = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
+vertexIntSet = T.vertexIntSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
@@ -480,7 +492,7 @@ vertexIntSet = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
 edgeSet :: Ord a => Fold a -> Set.Set (a, a)
-edgeSet = AM.edgeSet . toAdjacencyMap
+edgeSet = T.edgeSet
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the

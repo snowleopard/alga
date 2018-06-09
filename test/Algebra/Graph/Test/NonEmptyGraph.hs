@@ -29,7 +29,7 @@ import Data.Tuple
 
 import Algebra.Graph.NonEmpty
 import Algebra.Graph.Test hiding (axioms, theorems)
-import Algebra.Graph.ToGraph
+import Algebra.Graph.ToGraph (toGraph)
 
 import qualified Algebra.Graph      as G
 import qualified Data.List.NonEmpty as NonEmpty

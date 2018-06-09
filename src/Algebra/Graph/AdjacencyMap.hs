@@ -29,7 +29,7 @@ module Algebra.Graph.AdjacencyMap (
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    adjacencyList, vertexSet, edgeSet, postSet,
+    adjacencyList, vertexSet, vertexIntSet, edgeSet, postSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, starTranspose, tree, forest,
@@ -51,6 +51,7 @@ import qualified Data.Graph.Typed    as Typed
 import qualified Data.Graph          as KL
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
+import qualified Data.IntSet         as IntSet
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
@@ -259,6 +260,19 @@ adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
 -- @
 vertexSet :: AdjacencyMap a -> Set a
 vertexSet = Map.keysSet . adjacencyMap
+
+-- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
+-- graphs with vertices of type 'Int'.
+-- Complexity: /O(n)/ time and memory.
+--
+-- @
+-- vertexIntSet 'empty'      == IntSet.'IntSet.empty'
+-- vertexIntSet . 'vertex'   == IntSet.'IntSet.singleton'
+-- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
+-- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
+-- @
+vertexIntSet :: AdjacencyMap Int -> IntSet.IntSet
+vertexIntSet = IntSet.fromAscList . Set.toAscList . vertexSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.

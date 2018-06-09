@@ -32,13 +32,14 @@ testGraph = do
     test "Axioms of graphs"   (axioms   :: GraphTestsuite G)
     test "Theorems of graphs" (theorems :: GraphTestsuite G)
 
-    testBasicPrimitives t
+    testBasicPrimitives   t
+    testFromAdjacencyList t
     -- testToGraph         h
-    testIsSubgraphOf    t
-    testSize            t
-    testProperties      t
-    testGraphFamilies   t
-    testTransformations t
+    testIsSubgraphOf      t
+    testSize              t
+    testProperties        t
+    testGraphFamilies     t
+    testTransformations   t
 
     putStrLn "\n============ Graph.(===) ============"
     test "    x === x         == True" $ \(x :: G) ->

@@ -32,8 +32,7 @@ import Data.Foldable (fold)
 import Data.Semigroup
 import Data.String hiding (unlines)
 
-import Algebra.Graph (toAdjacencyMap)
-import Algebra.Graph.ToGraph
+import Algebra.Graph.ToGraph (ToGraph, ToVertex, toAdjacencyMap)
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Internal
 
@@ -164,4 +163,4 @@ export vs es g = vDoc <> eDoc
   where
     vDoc   = mconcat $ map  vs          (vertexList adjMap)
     eDoc   = mconcat $ map (uncurry es) (edgeList   adjMap)
-    adjMap = toAdjacencyMap $ toGraph g
+    adjMap = toAdjacencyMap g

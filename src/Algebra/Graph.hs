@@ -24,6 +24,7 @@ module Algebra.Graph (
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
+    fromAdjacencyList,
 
     -- * Graph folding
     foldg,
@@ -33,7 +34,7 @@ module Algebra.Graph (
 
     -- * Graph properties
     isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, vertexIntSet, edgeSet,
+    edgeList, adjacencyList, vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, starTranspose, tree, forest, mesh,
@@ -308,8 +309,7 @@ edges = overlays . map (uncurry edge)
 -- @
 overlays :: [Graph a] -> Graph a
 overlays []     = empty
-overlays [x]    = x
-overlays (x:xs) = x `overlay` overlays xs
+overlays (x:xs) = foldl overlay x xs
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -324,8 +324,20 @@ overlays (x:xs) = x `overlay` overlays xs
 -- @
 connects :: [Graph a] -> Graph a
 connects []     = empty
-connects [x]    = x
-connects (x:xs) = x `connect` connects xs
+connects (x:xs) = foldl connect x xs
+
+-- | Construct a graph from an adjacency list.
+-- Complexity: /O((n + m))/ time, memory and size.
+--
+-- @
+-- fromAdjacencyList []                                  == 'empty'
+-- fromAdjacencyList [(x, [])]                           == 'vertex' x
+-- fromAdjacencyList [(x, [y])]                          == 'edge' x y
+-- fromAdjacencyList . 'adjacencyList'                     == id
+-- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
+-- @
+fromAdjacencyList :: [(a, [a])] -> Graph a
+fromAdjacencyList = overlays . map (uncurry star)
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
@@ -485,6 +497,19 @@ vertexList = Set.toAscList . vertexSet
 -- @
 edgeList :: Ord a => Graph a -> [(a, a)]
 edgeList = AM.edgeList . toAdjacencyMap
+
+-- | The sorted /adjacency list/ of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- adjacencyList 'empty'               == []
+-- adjacencyList ('vertex' x)          == [(x, [])]
+-- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
+-- 'fromAdjacencyList' . adjacencyList == id
+-- @
+adjacencyList :: Ord a => Graph a -> [(a, [a])]
+adjacencyList = AM.adjacencyList . toAdjacencyMap
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
