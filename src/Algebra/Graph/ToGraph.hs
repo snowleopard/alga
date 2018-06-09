@@ -173,6 +173,14 @@ class ToGraph t where
     edgeSet :: Ord (ToVertex t) => t -> Set.Set (ToVertex t, ToVertex t)
     edgeSet = AM.edgeSet . toAdjacencyMap
 
+    -- | The sorted /adjacency list/ of a graph.
+    --
+    -- @
+    -- adjacencyList == 'AM.adjacencyList' . 'toAdjacencyMap'
+    -- @
+    adjacencyList :: Ord (ToVertex t) => t -> [(ToVertex t, [ToVertex t])]
+    adjacencyList = AM.adjacencyList . toAdjacencyMap
+
 instance ToGraph (G.Graph a) where
     type ToVertex (G.Graph a) = a
     toGraph = id
@@ -195,6 +203,7 @@ instance Ord a => ToGraph (AM.AdjacencyMap a) where
     vertexIntSet   = AM.vertexIntSet
     edgeList       = AM.edgeList
     edgeSet        = AM.edgeSet
+    adjacencyList  = AM.adjacencyList
 
 instance ToGraph IAM.IntAdjacencyMap where
     type ToVertex IAM.IntAdjacencyMap = Int
@@ -217,10 +226,12 @@ instance ToGraph IAM.IntAdjacencyMap where
     vertexIntSet   = IAM.vertexIntSet
     edgeList       = IAM.edgeList
     edgeSet        = IAM.edgeSet
+    adjacencyList  = IAM.adjacencyList
 
 instance Ord a => ToGraph (R.Relation a) where
     type ToVertex (R.Relation a) = a
-    toGraph r = G.vertices (Set.toList $ R.domain r) `G.overlay` G.edges (Set.toList $ R.relation r)
+    toGraph r      = G.vertices (Set.toList $ R.domain   r) `G.overlay`
+                     G.edges    (Set.toList $ R.relation r)
     toAdjacencyMap = AM.AM
                    . Map.fromAscList
                    . map (fmap Set.fromAscList)
@@ -235,3 +246,4 @@ instance Ord a => ToGraph (R.Relation a) where
     vertexIntSet   = R.vertexIntSet
     edgeList       = R.edgeList
     edgeSet        = R.edgeSet
+    adjacencyList  = R.adjacencyList
