@@ -47,7 +47,6 @@ import Prelude.Compat
 
 import Control.Applicative (Alternative, liftA2)
 import Control.Monad.Compat (MonadPlus (..), ap)
-import Data.Foldable
 import Data.Function
 
 import qualified Algebra.Graph              as G
@@ -280,7 +279,7 @@ connect x y = Fold $ \e v o c -> runFold x e v o c `c` runFold y e v o c
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: [a] -> Fold a
-vertices xs = Fold $ \e v o _ -> foldr (flip o . v) e xs
+vertices = overlays . map vertex
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -540,7 +539,7 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: [a] -> Fold a
-clique xs = Fold $ \e v _ c -> foldr (c . v) e xs
+clique = connects . map vertex
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -619,9 +618,9 @@ removeEdge s t = filterContext s (/=s) (/=t)
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Fold a -> Fold a
 filterContext s i o g = maybe g go $ G.context (==s) (G.toGraph g)
   where
-    go (G.Context is os) = msum [ induce (/=s) g
-                                , starTranspose s (filter i is)
-                                , star          s (filter o os) ]
+    go (G.Context is os) = overlays [ induce (/=s) g
+                                    , starTranspose s (filter i is)
+                                    , star          s (filter o os) ]
 
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
