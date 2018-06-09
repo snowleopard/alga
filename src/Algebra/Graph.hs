@@ -63,7 +63,7 @@ import Algebra.Graph.Internal
 
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.IntAdjacencyMap as IAM
-import qualified Control.Applicative           as Alternative
+import qualified Control.Applicative           as Ap
 import qualified Data.IntMap                   as IntMap
 import qualified Data.IntSet                   as IntSet
 import qualified Data.Map                      as Map

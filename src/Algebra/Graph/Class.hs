@@ -54,6 +54,7 @@ import Data.Tree
 
 import qualified Algebra.Graph                 as G
 import qualified Algebra.Graph.AdjacencyMap    as AM
+import qualified Algebra.Graph.Fold            as F
 import qualified Algebra.Graph.IntAdjacencyMap as IAM
 import qualified Algebra.Graph.Relation        as R
 
@@ -129,6 +130,13 @@ instance Ord a => Graph (AM.AdjacencyMap a) where
     vertex  = AM.vertex
     overlay = AM.overlay
     connect = AM.connect
+
+instance Graph (F.Fold a) where
+    type Vertex (F.Fold a) = a
+    empty   = F.empty
+    vertex  = F.vertex
+    overlay = F.overlay
+    connect = F.connect
 
 instance Graph IAM.IntAdjacencyMap where
     type Vertex IAM.IntAdjacencyMap = Int

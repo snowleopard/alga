@@ -68,10 +68,10 @@ import Control.Monad.Compat (MonadPlus, msum, mfilter)
 import Data.Foldable (toList)
 import Data.Tree
 
-import qualified Algebra.Graph as G
-
-import qualified Data.IntSet as IntSet
-import qualified Data.Set    as Set
+import qualified Algebra.Graph      as G
+import qualified Algebra.Graph.Fold as F
+import qualified Data.IntSet        as IntSet
+import qualified Data.Set           as Set
 
 {-|
 The core type class for constructing algebraic graphs is defined by introducing
@@ -140,11 +140,11 @@ class (Traversable g,
     -- | Connect two graphs.
     connect :: g a -> g a -> g a
 
-instance ToGraph G.Graph where
-    toGraph = G.foldg empty vertex overlay connect
-
 instance Graph G.Graph where
     connect = G.connect
+
+instance Graph F.Fold where
+    connect = F.connect
 
 -- | Construct the graph comprising a single isolated vertex. An alias for 'pure'.
 vertex :: Graph g => a -> g a
@@ -643,3 +643,9 @@ box x y = msum $ xs ++ ys
 -- @
 class ToGraph t where
     toGraph :: Graph g => t a -> g a
+
+instance ToGraph G.Graph where
+    toGraph = G.foldg empty vertex overlay connect
+
+instance ToGraph F.Fold where
+    toGraph = F.foldg empty vertex overlay connect

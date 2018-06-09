@@ -24,6 +24,7 @@ import qualified Algebra.Graph                          as Graph
 import qualified Algebra.Graph.AdjacencyMap             as AdjacencyMap
 import qualified Algebra.Graph.AdjacencyMap.Internal    as AdjacencyMap
 import qualified Algebra.Graph.Fold                     as Fold
+import qualified Algebra.Graph.HigherKinded.Class       as HClass
 import qualified Algebra.Graph.IntAdjacencyMap          as IntAdjacencyMap
 import qualified Algebra.Graph.IntAdjacencyMap.Internal as IntAdjacencyMap
 import qualified Algebra.Graph.Relation                 as Relation
@@ -211,22 +212,22 @@ instance Ord a => GraphAPI (Fold.Fold a) where
     biclique      = Fold.biclique
     star          = Fold.star
     starTranspose = Fold.starTranspose
-    tree          = Fold.tree
-    forest        = Fold.forest
-    mesh          = Fold.mesh
-    torus         = Fold.torus
-    deBruijn      = Fold.deBruijn
+    tree          = HClass.tree
+    forest        = HClass.forest
+    mesh          = HClass.mesh
+    torus         = HClass.torus
+    deBruijn      = HClass.deBruijn
     removeVertex  = Fold.removeVertex
     removeEdge    = Fold.removeEdge
-    replaceVertex = Fold.replaceVertex
-    mergeVertices = Fold.mergeVertices
-    splitVertex   = Fold.splitVertex
+    replaceVertex = HClass.replaceVertex
+    mergeVertices = HClass.mergeVertices
+    splitVertex   = HClass.splitVertex
     transpose     = Fold.transpose
     gmap          = fmap
     induce        = Fold.induce
     bind          = (>>=)
     simplify      = Fold.simplify
-    box           = Fold.box
+    box           = HClass.box
 
 instance Ord a => GraphAPI (Graph.Graph a) where
     edge          = Graph.edge
