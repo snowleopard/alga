@@ -12,15 +12,15 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.Internal (
     -- * Binary relation implementation
-    Relation (..), consistent, setProduct, referredToVertexSet
+    Relation (..), empty, vertex, overlay, connect, setProduct, consistent,
+    referredToVertexSet
   ) where
 
 import Data.Set (Set, union)
 
-import Algebra.Graph (ToGraph (..))
-import Algebra.Graph.Class
 
-import qualified Data.Set as Set
+import qualified Algebra.Graph as G
+import qualified Data.Set      as Set
 
 import Control.DeepSeq (NFData, rnf)
 
@@ -105,13 +105,68 @@ instance (Ord a, Show a) => Show (Relation a) where
         eshow xs       = "edges "    ++ show xs
         used           = referredToVertexSet r
 
-instance Ord a => Graph (Relation a) where
-    type Vertex (Relation a) = a
-    empty       = Relation Set.empty Set.empty
-    vertex x    = Relation (Set.singleton x) Set.empty
-    overlay x y = Relation (domain x `union` domain y) (relation x `union` relation y)
-    connect x y = Relation (domain x `union` domain y) (relation x `union` relation y
-        `union` (domain x `setProduct` domain y))
+-- | Construct the /empty graph/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'Algebra.Graph.Relation.isEmpty'     empty == True
+-- 'Algebra.Graph.Relation.hasVertex' x empty == False
+-- 'Algebra.Graph.Relation.vertexCount' empty == 0
+-- 'Algebra.Graph.Relation.edgeCount'   empty == 0
+-- @
+empty :: Relation a
+empty = Relation Set.empty Set.empty
+
+-- | Construct the graph comprising /a single isolated vertex/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'Algebra.Graph.Relation.isEmpty'     (vertex x) == False
+-- 'Algebra.Graph.Relation.hasVertex' x (vertex x) == True
+-- 'Algebra.Graph.Relation.vertexCount' (vertex x) == 1
+-- 'Algebra.Graph.Relation.edgeCount'   (vertex x) == 0
+-- @
+vertex :: a -> Relation a
+vertex x = Relation (Set.singleton x) Set.empty
+
+-- | /Overlay/ two graphs. This is a commutative, associative and idempotent
+-- operation with the identity 'empty'.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- 'Algebra.Graph.Relation.isEmpty'     (overlay x y) == 'Algebra.Graph.Relation.isEmpty'   x   && 'iAlgebra.Graph.Relation.sEmpty'   y
+-- 'Algebra.Graph.Relation.hasVertex' z (overlay x y) == 'Algebra.Graph.Relation.hasVertex' z x || 'Algebra.Graph.Relation.hasVertex' z y
+-- 'Algebra.Graph.Relation.vertexCount' (overlay x y) >= 'Algebra.Graph.Relation.vertexCount' x
+-- 'Algebra.Graph.Relation.vertexCount' (overlay x y) <= 'Algebra.Graph.Relation.vertexCount' x + 'Algebra.Graph.Relation.vertexCount' y
+-- 'Algebra.Graph.Relation.edgeCount'   (overlay x y) >= 'Algebra.Graph.Relation.edgeCount' x
+-- 'Algebra.Graph.Relation.edgeCount'   (overlay x y) <= 'Algebra.Graph.Relation.edgeCount' x   + 'Algebra.Graph.Relation.edgeCount' y
+-- 'Algebra.Graph.Relation.vertexCount' (overlay 1 2) == 2
+-- 'Algebra.Graph.Relation.edgeCount'   (overlay 1 2) == 0
+-- @
+overlay :: Ord a => Relation a -> Relation a -> Relation a
+overlay x y = Relation (domain x `union` domain y) (relation x `union` relation y)
+
+-- | /Connect/ two graphs. This is an associative operation with the identity
+-- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
+-- number of edges in the resulting graph is quadratic with respect to the number
+-- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
+--
+-- @
+-- 'Algebra.Graph.Relation.isEmpty'     (connect x y) == 'Algebra.Graph.Relation.isEmpty'   x   && 'Algebra.Graph.Relation.isEmpty'   y
+-- 'Algebra.Graph.Relation.hasVertex' z (connect x y) == 'Algebra.Graph.Relation.hasVertex' z x || 'Algebra.Graph.Relation.hasVertex' z y
+-- 'Algebra.Graph.Relation.vertexCount' (connect x y) >= 'Algebra.Graph.Relation.vertexCount' x
+-- 'Algebra.Graph.Relation.vertexCount' (connect x y) <= 'Algebra.Graph.Relation.vertexCount' x + 'Algebra.Graph.Relation.vertexCount' y
+-- 'Algebra.Graph.Relation.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.edgeCount' x
+-- 'Algebra.Graph.Relation.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.edgeCount' y
+-- 'Algebra.Graph.Relation.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.vertexCount' x * 'Algebra.Graph.Relation.vertexCount' y
+-- 'Algebra.Graph.Relation.edgeCount'   (connect x y) <= 'Algebra.Graph.Relation.vertexCount' x * 'Algebra.Graph.Relation.vertexCount' y + 'Algebra.Graph.Relation.edgeCount' x + 'Algebra.Graph.Relation.edgeCount' y
+-- 'Algebra.Graph.Relation.vertexCount' (connect 1 2) == 2
+-- 'Algebra.Graph.Relation.edgeCount'   (connect 1 2) == 1
+-- @
+connect :: Ord a => Relation a -> Relation a -> Relation a
+connect x y = Relation (domain x `union` domain y)
+    (relation x `union` relation y `union` (domain x `setProduct` domain y))
 
 instance NFData a => NFData (Relation a) where
     rnf (Relation d r) = rnf d `seq` rnf r `seq` ()
@@ -128,9 +183,9 @@ instance (Ord a, Num a) => Num (Relation a) where
     abs         = id
     negate      = id
 
-instance ToGraph (Relation a) where
+instance G.ToGraph (Relation a) where
     type ToVertex (Relation a) = a
-    toGraph (Relation d r) = vertices (Set.toList d) `overlay` edges (Set.toList r)
+    toGraph (Relation d r) = G.vertices (Set.toList d) `G.overlay` G.edges (Set.toList r)
 
 -- | Check if the internal representation of a relation is consistent, i.e. if all
 -- pairs of elements in the 'relation' refer to existing elements in the 'domain'.

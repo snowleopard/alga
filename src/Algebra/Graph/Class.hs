@@ -55,6 +55,7 @@ import Data.Tree
 import qualified Algebra.Graph                 as G
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.IntAdjacencyMap as IAM
+import qualified Algebra.Graph.Relation        as R
 
 {-|
 The core type class for constructing algebraic graphs, characterised by the
@@ -135,6 +136,13 @@ instance Graph IAM.IntAdjacencyMap where
     vertex  = IAM.vertex
     overlay = IAM.overlay
     connect = IAM.connect
+
+instance Ord a => Graph (R.Relation a) where
+    type Vertex (R.Relation a) = a
+    empty   = R.empty
+    vertex  = R.vertex
+    overlay = R.overlay
+    connect = R.connect
 
 {-|
 The class of /undirected graphs/ that satisfy the following additional axiom.

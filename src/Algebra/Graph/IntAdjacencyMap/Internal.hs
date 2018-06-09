@@ -160,7 +160,7 @@ overlay x y = AM $ IntMap.unionWith IntSet.union (adjacencyMap x) (adjacencyMap 
 -- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.IntAdjacencyMap.edgeCount' x
 -- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.IntAdjacencyMap.edgeCount' y
 -- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x * 'Algebra.Graph.IntAdjacencyMap.vertexCount' y
--- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) <= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x * 'Algebra.Graph.IntAdjacencyMap.vertexCount' y + 'edgeCount' x + 'edgeCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) <= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x * 'Algebra.Graph.IntAdjacencyMap.vertexCount' y + 'Algebra.Graph.IntAdjacencyMap.edgeCount' x + 'Algebra.Graph.IntAdjacencyMap.edgeCount' y
 -- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (connect 1 2) == 2
 -- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect 1 2) == 1
 -- @

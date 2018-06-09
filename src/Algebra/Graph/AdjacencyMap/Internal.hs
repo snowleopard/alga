@@ -109,10 +109,10 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'isEmpty'     empty == True
--- 'hasVertex' x empty == False
--- 'vertexCount' empty == 0
--- 'edgeCount'   empty == 0
+-- 'Algebra.Graph.AdjacencyMap.isEmpty'     empty == True
+-- 'Algebra.Graph.AdjacencyMap.hasVertex' x empty == False
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' empty == 0
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   empty == 0
 -- @
 empty :: AdjacencyMap a
 empty = AM Map.empty
@@ -121,10 +121,10 @@ empty = AM Map.empty
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
--- 'vertexCount' (vertex x) == 1
--- 'edgeCount'   (vertex x) == 0
+-- 'Algebra.Graph.AdjacencyMap.isEmpty'     (vertex x) == False
+-- 'Algebra.Graph.AdjacencyMap.hasVertex' x (vertex x) == True
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' (vertex x) == 1
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (vertex x) == 0
 -- @
 vertex :: a -> AdjacencyMap a
 vertex x = AM $ Map.singleton x Set.empty
@@ -134,14 +134,14 @@ vertex x = AM $ Map.singleton x Set.empty
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (overlay x y) >= 'vertexCount' x
--- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (overlay x y) >= 'edgeCount' x
--- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
--- 'vertexCount' (overlay 1 2) == 2
--- 'edgeCount'   (overlay 1 2) == 0
+-- 'Algebra.Graph.AdjacencyMap.isEmpty'     (overlay x y) == 'Algebra.Graph.AdjacencyMap.isEmpty'   x   && 'Algebra.Graph.AdjacencyMap.isEmpty'   y
+-- 'Algebra.Graph.AdjacencyMap.hasVertex' z (overlay x y) == 'Algebra.Graph.AdjacencyMap.hasVertex' z x || 'Algebra.Graph.AdjacencyMap.hasVertex' z y
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' (overlay x y) >= 'Algebra.Graph.AdjacencyMap.vertexCount' x
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' (overlay x y) <= 'Algebra.Graph.AdjacencyMap.vertexCount' x + 'Algebra.Graph.AdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (overlay x y) >= 'Algebra.Graph.AdjacencyMap.edgeCount' x
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (overlay x y) <= 'Algebra.Graph.AdjacencyMap.edgeCount' x   + 'Algebra.Graph.AdjacencyMap.edgeCount' y
+-- 'Algebra.Graph.AdjacencyMap.vertexCount' (overlay 1 2) == 2
+-- 'Algebra.Graph.AdjacencyMap.edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
 overlay x y = AM $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
@@ -153,14 +153,14 @@ overlay x y = AM $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
 -- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
 --
 -- @
--- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'Algebra.Graph.AdjacencyMap.isEmpty'   y
+-- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'Algebra.Graph.AdjacencyMap.hasVertex' z y
 -- 'vertexCount' (connect x y) >= 'vertexCount' x
--- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'vertexCount' (connect x y) <= 'vertexCount' x + 'Algebra.Graph.AdjacencyMap.vertexCount' y
 -- 'edgeCount'   (connect x y) >= 'edgeCount' x
 -- 'edgeCount'   (connect x y) >= 'edgeCount' y
--- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
--- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
+-- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'Algebra.Graph.AdjacencyMap.vertexCount' y
+-- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'Algebra.Graph.AdjacencyMap.vertexCount' y + 'Algebra.Graph.AdjacencyMap.edgeCount' x + 'Algebra.Graph.AdjacencyMap.edgeCount' y
 -- 'vertexCount' (connect 1 2) == 2
 -- 'edgeCount'   (connect 1 2) == 1
 -- @
