@@ -32,7 +32,8 @@ import Data.Foldable (fold)
 import Data.Semigroup
 import Data.String hiding (unlines)
 
-import Algebra.Graph (ToGraph (..), toAdjacencyMap)
+import Algebra.Graph (toAdjacencyMap)
+import Algebra.Graph.ToGraph
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Internal
 

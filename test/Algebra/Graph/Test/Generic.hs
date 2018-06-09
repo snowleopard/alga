@@ -347,14 +347,8 @@ testFromAdjacencyIntSets (Testsuite prefix (%)) = do
 -- testToGraph :: HTestsuite -> IO ()
 -- testToGraph (HTestsuite prefix (%)) = do
 --     putStrLn $ "\n============ " ++ prefix ++ "toGraph ============"
---     test "      toGraph (g     :: Graph a  ) :: Graph a       == g" $ \g ->
---                 toGraph % g                                   == g
-
---     test "show (toGraph (1 * 2 :: Graph Int) :: Relation Int) == \"edge 1 2\"" $
---           show (toGraph % (1 * 2)            :: Relation Int) == "edge 1 2"
-
---     test "\ntoGraph == foldg empty vertex overlay connect" $ \x ->
---           toGraph % x == id % foldg empty vertex overlay connect x
+--     test "\ntoGraph == foldg Empty Vertex Overlay Connect" $ \x ->
+--           toGraph % x == id % foldg Empty Vertex Overlay Connect x
 
 --     putStrLn $ "\n============ " ++ prefix ++ "foldg ============"
 --     test "foldg empty vertex        overlay connect        == id" $ \x ->

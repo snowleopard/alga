@@ -47,7 +47,7 @@ module Algebra.Graph (
     box,
 
     -- * Conversion to graphs
-    toAdjacencyMap, ToGraph (..), Context (..), context
+    toAdjacencyMap, Context (..), context
   ) where
 
 import Prelude ()
@@ -61,14 +61,11 @@ import Data.Tree
 
 import Algebra.Graph.Internal
 
-import qualified Algebra.Graph.AdjacencyMap    as AM
-import qualified Algebra.Graph.IntAdjacencyMap as IAM
-import qualified Control.Applicative           as Ap
-import qualified Data.IntMap                   as IntMap
-import qualified Data.IntSet                   as IntSet
-import qualified Data.Map                      as Map
-import qualified Data.Set                      as Set
-import qualified Data.Tree                     as Tree
+import qualified Algebra.Graph.AdjacencyMap as AM
+import qualified Control.Applicative        as Ap
+import qualified Data.IntSet                as IntSet
+import qualified Data.Set                   as Set
+import qualified Data.Tree                  as Tree
 
 {-| The 'Graph' data type is a deep embedding of the core graph construction
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
@@ -862,49 +859,6 @@ box x y = overlays $ xs ++ ys
   where
     xs = map (\b -> fmap (,b) x) $ toList y
     ys = map (\a -> fmap (a,) y) $ toList x
-
--- | The 'ToGraph' type class captures data types that can be converted to
--- polymorphic graph expressions. The conversion method 'toGraph' semantically
--- acts as the identity on graph data structures, but allows to convert graphs
--- between different data representations.
---
--- @
---       toGraph (g     :: 'Algebra.Graph.Graph' a  ) :: 'Algebra.Graph.Graph' a       == g
--- 'show' (toGraph (1 * 2 :: 'Algebra.Graph.Graph' Int) :: 'Algebra.Graph.Relation' Int) == "edge 1 2"
--- @
---
--- The second method 'foldg' is used for generalised graph folding. It recursively
--- collapses a given data type by applying the provided graph construction
--- primitives. The order of arguments is: empty, vertex, overlay and connect,
--- and it is assumed that the functions satisfy the axioms of the algebra.
--- The following law establishes the relation between 'toGraph' and 'foldg':
---
--- @
--- toGraph == foldg 'empty' 'vertex' 'overlay' 'connect'
--- @
-class ToGraph t where
-    type ToVertex t
-    toGraph :: t -> Graph (ToVertex t)
-    -- toGraph = foldg empty vertex overlay connect
-    -- foldg :: r -> (ToVertex t -> r) -> (r -> r -> r) -> (r -> r -> r) -> t -> r
-    -- foldg e v o c = go . toGraph
-    --   where
-    --     go Empty         = e
-    --     go (Vertex x   ) = v x
-    --     go (Overlay x y) = o (go x) (go y)
-    --     go (Connect x y) = c (go x) (go y)
-
-instance ToGraph (Graph a) where
-    type ToVertex (Graph a) = a
-    toGraph = id
-
-instance ToGraph (AM.AdjacencyMap a) where
-    type ToVertex (AM.AdjacencyMap a) = a
-    toGraph = overlays . map (uncurry star . fmap Set.toList) . Map.toList . AM.adjacencyMap
-
-instance ToGraph IAM.IntAdjacencyMap where
-    type ToVertex IAM.IntAdjacencyMap = Int
-    toGraph = overlays . map (uncurry star . fmap IntSet.toList) . IntMap.toList . IAM.adjacencyMap
 
 -- | 'Focus' on a specified subgraph.
 focus :: (a -> Bool) -> Graph a -> Focus a

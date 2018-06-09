@@ -18,9 +18,7 @@ module Algebra.Graph.Relation.Internal (
 
 import Data.Set (Set, union)
 
-
-import qualified Algebra.Graph as G
-import qualified Data.Set      as Set
+import qualified Data.Set as Set
 
 import Control.DeepSeq (NFData, rnf)
 
@@ -182,10 +180,6 @@ instance (Ord a, Num a) => Num (Relation a) where
     signum      = const empty
     abs         = id
     negate      = id
-
-instance G.ToGraph (Relation a) where
-    type ToVertex (Relation a) = a
-    toGraph (Relation d r) = G.vertices (Set.toList d) `G.overlay` G.edges (Set.toList r)
 
 -- | Check if the internal representation of a relation is consistent, i.e. if all
 -- pairs of elements in the 'relation' refer to existing elements in the 'domain'.

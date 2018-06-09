@@ -28,6 +28,7 @@ import qualified Algebra.Graph.HigherKinded.Class       as HClass
 import qualified Algebra.Graph.IntAdjacencyMap          as IntAdjacencyMap
 import qualified Algebra.Graph.IntAdjacencyMap.Internal as IntAdjacencyMap
 import qualified Algebra.Graph.Relation                 as Relation
+import qualified Algebra.Graph.ToGraph                  as ToGraph
 import qualified Data.Set                               as Set
 import qualified Data.IntSet                            as IntSet
 
@@ -48,9 +49,9 @@ class Graph g => GraphAPI g where
     fromAdjacencySets    = notImplemented
     fromAdjacencyIntSets :: [(Int, IntSet.IntSet)] -> g
     fromAdjacencyIntSets = notImplemented
-    toGraph              :: Graph.ToGraph g => g -> Graph.Graph (Graph.ToVertex g)
+    toGraph              :: ToGraph.ToGraph g => g -> Graph.Graph (ToGraph.ToVertex g)
     toGraph              = notImplemented
-    foldg                :: r -> (Vertex g -> r) -> (r -> r -> r) -> (r -> r -> r) -> g -> r
+    foldg                :: r -> (ToGraph.ToVertex g -> r) -> (r -> r -> r) -> (r -> r -> r) -> g -> r
     foldg                = notImplemented
     isSubgraphOf         :: g -> g -> Bool
     isSubgraphOf         = notImplemented
@@ -192,7 +193,7 @@ instance Ord a => GraphAPI (Fold.Fold a) where
     edges         = Fold.edges
     overlays      = Fold.overlays
     connects      = Fold.connects
-    toGraph       = Graph.toGraph
+    toGraph       = ToGraph.toGraph
     foldg         = Fold.foldg
     isSubgraphOf  = Fold.isSubgraphOf
     isEmpty       = Fold.isEmpty
@@ -235,7 +236,7 @@ instance Ord a => GraphAPI (Graph.Graph a) where
     edges         = Graph.edges
     overlays      = Graph.overlays
     connects      = Graph.connects
-    toGraph       = Graph.toGraph
+    toGraph       = ToGraph.toGraph
     foldg         = Graph.foldg
     isSubgraphOf  = Graph.isSubgraphOf
     (===)         = (Graph.===)

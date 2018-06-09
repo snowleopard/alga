@@ -49,6 +49,8 @@ import Control.Applicative (Alternative, liftA2)
 import Control.Monad.Compat (MonadPlus (..), ap)
 import Data.Function
 
+import Algebra.Graph.ToGraph
+
 import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Control.Applicative        as Ap
@@ -180,9 +182,9 @@ instance Foldable Fold where
 instance Traversable Fold where
     traverse f = foldg (pure empty) (fmap vertex . f) (liftA2 overlay) (liftA2 connect)
 
-instance G.ToGraph (Fold a) where
+instance ToGraph (Fold a) where
     type ToVertex (Fold a) = a
-    toGraph g = runFold g G.empty G.vertex G.overlay G.connect
+    foldg e v o c g = runFold g e v o c
 
 -- | Convert a graph to 'AM.AdjacencyMap'.
 toAdjacencyMap :: Ord a => Fold a -> AM.AdjacencyMap a
@@ -324,23 +326,6 @@ connects :: [Fold a] -> Fold a
 connects []     = empty
 connects [x]    = x
 connects (x:xs) = x `connect` connects xs
-
--- | Generalised graph folding: recursively collapse a 'Fold' by applying
--- the provided functions to the leaves and internal nodes of the expression.
--- The order of arguments is: empty, vertex, overlay and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
---
--- @
--- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
--- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
--- foldg []    return        (++)    (++)           == 'Data.Foldable.toList'
--- foldg 0     (const 1)     (+)     (+)            == 'Data.Foldable.length'
--- foldg 1     (const 1)     (+)     (+)            == 'size'
--- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
--- @
-foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
-foldg e v o c g = runFold g e v o c
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -616,7 +601,7 @@ removeEdge s t = filterContext s (/=s) (/=t)
 -- TODO: Export
 -- | Filter vertices in a subgraph context.
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Fold a -> Fold a
-filterContext s i o g = maybe g go $ G.context (==s) (G.toGraph g)
+filterContext s i o g = maybe g go $ G.context (==s) (toGraph g)
   where
     go (G.Context is os) = overlays [ induce (/=s) g
                                     , starTranspose s (filter i is)
