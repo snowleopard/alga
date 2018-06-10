@@ -53,11 +53,7 @@ module Algebra.Graph.HigherKinded.Class (
     removeVertex, replaceVertex, mergeVertices, splitVertex, induce,
 
     -- * Graph composition
-    box,
-
-    -- * Conversion between graph data types
-    ToGraph (..)
-
+    box
   ) where
 
 import Prelude ()
@@ -631,21 +627,3 @@ box x y = msum $ xs ++ ys
   where
     xs = map (\b -> fmap (,b) x) $ toList y
     ys = map (\a -> fmap (a,) y) $ toList x
-
--- | The 'ToGraph' type class captures data types that can be converted to
--- polymorphic graph expressions. The conversion method 'toGraph' semantically
--- acts as the identity on graph data structures, but allows to convert graphs
--- between different data representations.
---
--- @
---       toGraph (g     :: 'Algebra.Graph.Graph' a  ) :: 'Algebra.Graph.Graph' a   == g
--- 'show' (toGraph (1 * 2 :: 'Algebra.Graph.Graph' Int) :: 'Algebra.Graph.Fold' Int) == "edge 1 2"
--- @
-class ToGraph t where
-    toGraph :: Graph g => t a -> g a
-
-instance ToGraph G.Graph where
-    toGraph = G.foldg empty vertex overlay connect
-
-instance ToGraph F.Fold where
-    toGraph = F.foldg empty vertex overlay connect

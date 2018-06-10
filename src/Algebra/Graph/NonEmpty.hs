@@ -57,14 +57,12 @@ import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Data.List.NonEmpty (NonEmpty (..))
 
-
-import qualified Algebra.Graph                    as G
-import qualified Algebra.Graph.HigherKinded.Class as H
-import qualified Algebra.Graph.ToGraph            as T
-import qualified Data.IntSet                      as IntSet
-import qualified Data.List.NonEmpty               as NonEmpty
-import qualified Data.Set                         as Set
-import qualified Data.Tree                        as Tree
+import qualified Algebra.Graph         as G
+import qualified Algebra.Graph.ToGraph as T
+import qualified Data.IntSet           as IntSet
+import qualified Data.List.NonEmpty    as NonEmpty
+import qualified Data.Set              as Set
+import qualified Data.Tree             as Tree
 
 {-| The 'NonEmptyGraph' data type is a deep embedding of the core graph
 construction primitives 'vertex', 'overlay' and 'connect'. As one can guess from
@@ -142,9 +140,6 @@ instance NFData a => NFData (NonEmptyGraph a) where
 instance T.ToGraph (NonEmptyGraph a) where
     type ToVertex (NonEmptyGraph a) = a
     foldg _ = foldg1
-
-instance H.ToGraph NonEmptyGraph where
-    toGraph = foldg1 H.vertex H.overlay H.connect
 
 instance Num a => Num (NonEmptyGraph a) where
     fromInteger = Vertex . fromInteger
