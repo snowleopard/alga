@@ -47,7 +47,6 @@ import Prelude.Compat
 
 import Control.Applicative (Alternative, liftA2)
 import Control.Monad.Compat (MonadPlus (..), ap)
-import Data.Foldable (foldl')
 import Data.Function
 
 import Algebra.Graph.ToGraph (ToGraph, ToVertex, toGraph)
@@ -306,7 +305,8 @@ edges es = Fold $ \e v o c -> foldr (flip o . uncurry (c `on` v)) e es
 -- @
 overlays :: [Fold a] -> Fold a
 overlays []     = empty
-overlays (x:xs) = foldl' overlay x xs
+overlays [x]    = x
+overlays (x:xs) = x `overlay` overlays xs
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -321,7 +321,8 @@ overlays (x:xs) = foldl' overlay x xs
 -- @
 connects :: [Fold a] -> Fold a
 connects []     = empty
-connects (x:xs) = foldl' connect x xs
+connects [x]    = x
+connects (x:xs) = x `connect` connects xs
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.

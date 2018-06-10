@@ -57,7 +57,7 @@ import Prelude.Compat
 import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
-import Data.Foldable (toList, foldl')
+import Data.Foldable (toList)
 import Data.Tree
 
 import Algebra.Graph.Internal
@@ -311,7 +311,8 @@ edges = overlays . map (uncurry edge)
 -- @
 overlays :: [Graph a] -> Graph a
 overlays []     = empty
-overlays (x:xs) = foldl' overlay x xs
+overlays [x]    = x
+overlays (x:xs) = x `overlay` overlays xs
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -326,7 +327,8 @@ overlays (x:xs) = foldl' overlay x xs
 -- @
 connects :: [Graph a] -> Graph a
 connects []     = empty
-connects (x:xs) = foldl' connect x xs
+connects [x]    = x
+connects (x:xs) = x `connect` connects xs
 
 -- | Construct a graph from an adjacency list.
 -- Complexity: /O((n + m))/ time, memory and size.
