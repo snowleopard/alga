@@ -11,12 +11,14 @@
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines ...
+-- This module defines the type class 'ToGraph' for capturing data types that
+-- can be converted to algebraic graphs. To make an instance of this class you
+-- need to define just a single method ('toGraph' or 'foldg'), which gives you
+-- access to many other useful methods for free. This type class is similar to
+-- the standard "Data.Foldable" defined for lists.
 --
 -----------------------------------------------------------------------------
-module Algebra.Graph.ToGraph (
-    ToGraph (..)
-  ) where
+module Algebra.Graph.ToGraph (ToGraph (..)) where
 
 import Prelude ()
 import Prelude.Compat
@@ -46,10 +48,10 @@ class ToGraph t where
     toGraph :: t -> G.Graph (ToVertex t)
     toGraph = foldg G.Empty G.Vertex G.Overlay G.Connect
 
-    -- | The method 'foldg' is used for generalised graph folding. It recursively
-    -- collapses a given data type by applying the provided graph construction
-    -- primitives. The order of arguments is: empty, vertex, overlay and connect,
-    -- and it is assumed that the functions satisfy the axioms of the algebra.
+    -- | The method 'foldg' is used for generalised graph folding. It collapses
+    -- a given value by applying the provided graph construction primitives. The
+    -- order of arguments is: empty, vertex, overlay and connect, and it is
+    -- assumed that the arguments satisfy the axioms of the graph algebra.
     --
     -- @
     -- foldg == 'G.foldg' . 'toGraph'
@@ -145,7 +147,6 @@ class ToGraph t where
     edgeList = AM.edgeList . toAdjacencyMap
 
     -- | The set of edges of a given graph.
-    -- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
     --
     -- @
     -- edgeSet == 'AM.edgeSet' . 'toAdjacencyMap'
@@ -165,13 +166,13 @@ class ToGraph t where
     -- /direct predecessors/.
     --
     -- @
-    -- preSet x == 'AM.preSet' x . 'toAdjacencyMap'
+    -- preSet x == 'AM.postSet' x . 'toAdjacencyMapTranspose'
     -- @
     preSet :: Ord (ToVertex t) => ToVertex t -> t -> Set.Set (ToVertex t)
-    preSet x = AM.preSet x . toAdjacencyMap
+    preSet x = AM.postSet x . toAdjacencyMapTranspose
 
-    -- | The /postset/ (here 'postIntSet') of a vertex is the set of its
-    -- /direct successors/. List 'preSet' but specialised for graphs with
+    -- | The /preset/ (here 'preIntSet') of an element @x@ is the set of its
+    -- /direct predecessors/. List 'preSet' but specialised for graphs with
     -- vertices of type 'Int'.
     --
     -- @
@@ -184,10 +185,10 @@ class ToGraph t where
     -- /direct successors/.
     --
     -- @
-    -- postSet x == 'AM.preSet' x . 'toAdjacencyMapTranspose'
+    -- postSet x == 'AM.postSet' x . 'toAdjacencyMap'
     -- @
     postSet :: Ord (ToVertex t) => ToVertex t -> t -> Set.Set (ToVertex t)
-    postSet x = AM.preSet x . toAdjacencyMapTranspose
+    postSet x = AM.postSet x . toAdjacencyMap
 
     -- | The /postset/ (here 'postIntSet') of a vertex is the set of its
     -- /direct successors/. List 'postSet' but specialised for graphs with

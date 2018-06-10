@@ -407,14 +407,14 @@ testToGraphDefault (Testsuite prefix (%)) = do
     test "adjacencyList              == adjacencyList . toAdjacencyMap" $ \x ->
           adjacencyList x            == (adjacencyList . toAdjacencyMap) % x
 
-    test "preSet x                   == preSet x . toAdjacencyMap" $ \x y ->
-          preSet x y                 == (preSet x . toAdjacencyMap) % y
+    test "preSet x                   == postSet x . toAdjacencyMapTranspose" $ \x y ->
+          preSet x y                 == (postSet x . toAdjacencyMapTranspose) % y
 
     test "preIntSet x                == IntSet.fromAscList . Set.toAscList . preSet x" $ \x y ->
           preIntSet x y              == (IntSet.fromAscList . Set.toAscList . preSet x) % y
 
-    test "postSet x                  == preSet x . toAdjacencyMapTranspose" $ \x y ->
-          postSet x y                == (preSet x . toAdjacencyMapTranspose) % y
+    test "postSet x                  == postSet x . toAdjacencyMap" $ \x y ->
+          postSet x y                == (postSet x . toAdjacencyMap) % y
 
     test "postIntSet x               == IntSet.fromAscList . Set.toAscList . postSet x" $ \x y ->
           postIntSet x y             == (IntSet.fromAscList . Set.toAscList . postSet x) % y
