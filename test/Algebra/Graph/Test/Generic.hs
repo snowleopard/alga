@@ -11,12 +11,12 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Generic (
     -- * Generic tests
-    Testsuite, testsuite, HTestsuite, hTestsuite, testShow, testFromAdjacencyList,
-    testFromAdjacencySets, testFromAdjacencyIntSets, testBasicPrimitives,
-    testIsSubgraphOf, testSize, testProperties, testAdjacencyList,
-    testPreSet, testPreIntSet, testPostSet, testPostIntSet, testGraphFamilies,
-    testTransformations, testDfsForest, testDfsForestFrom, testDfs, testTopSort,
-    testIsTopSort, testSplitVertex, testBind, testSimplify
+    Testsuite, testsuite, testShow, testFromAdjacencyList, testFromAdjacencySets,
+    testFromAdjacencyIntSets, testBasicPrimitives, testIsSubgraphOf, testSize,
+    testToGraph, testAdjacencyList, testPreSet, testPreIntSet, testPostSet,
+    testPostIntSet, testGraphFamilies, testTransformations, testDfsForest,
+    testDfsForestFrom, testDfs, testTopSort, testIsTopSort, testSplitVertex,
+    testBind, testSimplify
   ) where
 
 import Prelude ()
@@ -29,6 +29,7 @@ import Data.List (nub)
 import Data.Tree
 import Data.Tuple
 
+import Algebra.Graph (Graph (..))
 import Algebra.Graph.Class (Graph (..))
 import Algebra.Graph.ToGraph (ToGraph (..))
 import Algebra.Graph.Test
@@ -38,21 +39,12 @@ import qualified Data.Set    as Set
 import qualified Data.IntSet as IntSet
 
 data Testsuite where
-    Testsuite :: (Arbitrary g, Eq g, GraphAPI g, ToGraph g, ToVertex g ~ Int, Num g, Show g, Vertex g ~ Int)
+    Testsuite :: (Arbitrary g, Eq g, GraphAPI g, Num g, Show g, ToGraph g, ToVertex g ~ Int, Vertex g ~ Int)
               => String -> (forall r. (g -> r) -> g -> r) -> Testsuite
 
-testsuite :: (Arbitrary g, Eq g, GraphAPI g, ToGraph g, ToVertex g ~ Int, Num g, Show g, Vertex g ~ Int)
+testsuite :: (Arbitrary g, Eq g, GraphAPI g, Num g, Show g, ToGraph g, ToVertex g ~ Int, Vertex g ~ Int)
           => String -> g -> Testsuite
 testsuite prefix g = Testsuite prefix (\f x -> f (x `asTypeOf` g))
-
-data HTestsuite where
-    HTestsuite :: (Arbitrary g, Eq g, GraphAPI g, Num g, Show g, Vertex g ~ Int,
-                   g ~ f Int, Foldable f)
-               => String -> (forall r. (g -> r) -> g -> r) -> HTestsuite
-
-hTestsuite :: (Arbitrary g, Eq g, GraphAPI g, Num g, Show g, Vertex g ~ Int,
-               g ~ f Int, Foldable f) => String -> g -> HTestsuite
-hTestsuite prefix g = HTestsuite prefix (\f x -> f (x `asTypeOf` g))
 
 testBasicPrimitives :: Testsuite -> IO ()
 testBasicPrimitives = mconcat [ testEmpty
@@ -65,17 +57,24 @@ testBasicPrimitives = mconcat [ testEmpty
                               , testOverlays
                               , testConnects ]
 
-testProperties :: Testsuite -> IO ()
-testProperties = mconcat [ testIsEmpty
-                         , testHasVertex
-                         , testHasEdge
-                         , testVertexCount
-                         , testEdgeCount
-                         , testVertexList
-                         , testEdgeList
-                         , testVertexSet
-                         , testVertexIntSet
-                         , testEdgeSet ]
+testToGraph :: Testsuite -> IO ()
+testToGraph = mconcat [ testToGraphDefault
+                      , testFoldg
+                      , testIsEmpty
+                      , testHasVertex
+                      , testHasEdge
+                      , testVertexCount
+                      , testEdgeCount
+                      , testVertexList
+                      , testVertexSet
+                      , testVertexIntSet
+                      , testEdgeList
+                      , testEdgeSet
+                      , testAdjacencyList
+                      , testPreSet
+                      , testPreIntSet
+                      , testPostSet
+                      , testPostIntSet ]
 
 testGraphFamilies :: Testsuite -> IO ()
 testGraphFamilies = mconcat [ testPath
@@ -345,31 +344,6 @@ testFromAdjacencyIntSets (Testsuite prefix (%)) = do
     test "overlay (fromAdjacencyIntSets xs) (fromAdjacencyIntSets ys)       == fromAdjacencyIntSets (xs ++ ys)" $ \xs ys ->
           overlay (fromAdjacencyIntSets xs) % fromAdjacencyIntSets ys       == fromAdjacencyIntSets (xs ++ ys)
 
--- testToGraph :: HTestsuite -> IO ()
--- testToGraph (HTestsuite prefix (%)) = do
---     putStrLn $ "\n============ " ++ prefix ++ "toGraph ============"
---     test "\ntoGraph == foldg Empty Vertex Overlay Connect" $ \x ->
---           toGraph % x == id % foldg Empty Vertex Overlay Connect x
-
---     putStrLn $ "\n============ " ++ prefix ++ "foldg ============"
---     test "foldg empty vertex        overlay connect        == id" $ \x ->
---           foldg empty vertex        overlay connect x      == id % x
-
---     test "foldg empty vertex        overlay (flip connect) == transpose" $ \x ->
---           foldg empty vertex        overlay (flip connect)x== transpose % x
-
---     test "foldg []    return        (++)    (++)           == toList" $ \x ->
---           foldg []    return        (++)    (++) x         == toList % x
-
---     test "foldg 0     (const 1)     (+)     (+)            == length" $ \x ->
---           foldg 0     (const 1)     (+)     (+) x          == length % x
-
---     test "foldg 1     (const 1)     (+)     (+)            == size" $ \x ->
---           foldg 1     (const 1)     (+)     (+) x          == size % x
-
---     test "foldg True  (const False) (&&)    (&&)           == isEmpty" $ \x ->
---           foldg True  (const False) (&&)    (&&) x         == isEmpty % x
-
 testIsSubgraphOf :: Testsuite -> IO ()
 testIsSubgraphOf (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "isSubgraphOf ============"
@@ -387,6 +361,84 @@ testIsSubgraphOf (Testsuite prefix (%)) = do
 
     test "isSubgraphOf (path xs)     (circuit xs)  == True" $ \xs ->
           isSubgraphOf (path xs)    % circuit xs   == True
+
+testToGraphDefault :: Testsuite -> IO ()
+testToGraphDefault (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "toGraph et al. ============"
+    test "toGraph                 == foldg Empty Vertex Overlay Connect" $ \x ->
+          toGraph % x             == foldg Empty Vertex Overlay Connect x
+
+    test "foldg                   == foldg . toGraph" $ \e (apply -> v) (applyFun2 -> o) (applyFun2 -> c) x ->
+          foldg e v o c x         == (foldg (e :: Int) v o c . toGraph) % x
+
+    test "toAdjacencyMap          == foldg empty vertex overlay connect" $ \x ->
+          toAdjacencyMap x        == foldg empty vertex overlay connect % x
+
+    test "toAdjacencyMapTranspose == foldg empty vertex overlay (flip connect)" $ \x ->
+          toAdjacencyMapTranspose x == foldg empty vertex overlay (flip connect) % x
+
+    test "isEmpty                 == foldg True (const False) (&&) (&&)" $ \x ->
+          isEmpty x               == foldg True (const False) (&&) (&&) % x
+
+    test "size                    == foldg 1 (const 1) (+) (+)" $ \x ->
+          size x                  == foldg 1 (const 1) (+) (+) % x
+
+    test "hasVertex x             == foldg False (==x) (||) (||)" $ \x y ->
+          hasVertex x y           == foldg False (==x) (||) (||) % y
+
+    test "hasEdge x y             == elem (x,y) . edgeList" $ \x y z ->
+          hasEdge x y z           == (elem (x,y) . edgeList) % z
+
+    test "vertexCount             == Set.size . vertexSet" $ \x ->
+          vertexCount x           == (Set.size . vertexSet) % x
+
+    test "vertexList              == Set.toAscList . vertexSet" $ \x ->
+          vertexList x            == (Set.toAscList . vertexSet) % x
+
+    test "vertexSet               == foldg Set.empty Set.singleton Set.union Set.union" $ \x ->
+          vertexSet x             == foldg Set.empty Set.singleton Set.union Set.union % x
+
+    test "vertexIntSet            == foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union" $ \x ->
+          vertexIntSet x          == foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union % x
+
+    test "edgeCount               == length . edgeList" $ \x ->
+          edgeCount x             == (length . edgeList) % x
+
+    test "edgeList                == edgeList . toAdjacencyMap" $ \x ->
+          edgeList x              == (edgeList . toAdjacencyMap) % x
+
+    test "edgeSet                 == edgeSet . toAdjacencyMap" $ \x ->
+          edgeSet x               == (edgeSet . toAdjacencyMap) % x
+
+    test "adjacencyList           == adjacencyList . toAdjacencyMap" $ \x ->
+          adjacencyList x         == (adjacencyList . toAdjacencyMap) % x
+
+    test "preSet x                == preSet x . toAdjacencyMap" $ \x y ->
+          preSet x y              == (preSet x . toAdjacencyMap) % y
+
+    test "preIntSet x             == IntSet.fromAscList . Set.toAscList . preSet x" $ \x y ->
+          preIntSet x y           == (IntSet.fromAscList . Set.toAscList . preSet x) % y
+
+    test "postSet x               == preSet x . toAdjacencyMapTranspose" $ \x y ->
+          postSet x y             == (preSet x . toAdjacencyMapTranspose) % y
+
+    test "postIntSet x            == IntSet.fromAscList . Set.toAscList . postSet x" $ \x y ->
+          postIntSet x y          == (IntSet.fromAscList . Set.toAscList . postSet x) % y
+
+testFoldg :: Testsuite -> IO ()
+testFoldg (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "foldg ============"
+    test "foldg empty vertex        overlay connect        == id" $ \x ->
+          foldg empty vertex        overlay connect % x    == id x
+
+    test "foldg empty vertex        overlay (flip connect) == transpose" $ \x ->
+          foldg empty vertex        overlay (flip connect) % x == transpose x
+
+    test "foldg 1     (const 1)     (+)     (+)            == size" $ \x ->
+          foldg 1     (const 1)     (+)     (+) % x        == size x
+
+    test "foldg True  (const False) (&&)    (&&)           == isEmpty" $ \x ->
+          foldg True  (const False) (&&)    (&&) % x       == isEmpty x
 
 testIsEmpty :: Testsuite -> IO ()
 testIsEmpty (Testsuite prefix (%)) = do

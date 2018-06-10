@@ -29,7 +29,7 @@ module Algebra.Graph.IntAdjacencyMap (
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    adjacencyList, vertexIntSet, edgeSet, postIntSet,
+    adjacencyList, vertexIntSet, edgeSet, preIntSet, postIntSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, starTranspose, tree, forest,
@@ -273,6 +273,21 @@ edgeSet = IntMap.foldrWithKey combine Set.empty . adjacencyMap
 -- @
 adjacencyList :: IntAdjacencyMap -> [(Int, [Int])]
 adjacencyList = map (fmap IntSet.toAscList) . IntMap.toAscList . adjacencyMap
+
+-- | The /preset/ (here 'preIntSet') of an element @x@ is the set of its
+-- /direct predecessors/.
+-- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
+--
+-- @
+-- preIntSet x 'empty'      == Set.'Set.empty'
+-- preIntSet x ('vertex' x) == Set.'Set.empty'
+-- preIntSet 1 ('edge' 1 2) == Set.'Set.empty'
+-- preIntSet y ('edge' x y) == Set.'Set.fromList' [x]
+-- @
+preIntSet :: Int -> IntAdjacencyMap -> IntSet.IntSet
+preIntSet x = IntSet.fromAscList . map fst . filter p  . IntMap.toAscList . adjacencyMap
+  where
+    p (_, set) = x `IntSet.member` set
 
 -- | The /postset/ (here 'postIntSet') of a vertex is the set of its
 -- /direct successors/.

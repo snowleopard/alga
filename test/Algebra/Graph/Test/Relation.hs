@@ -48,10 +48,7 @@ testRelation = do
     testBasicPrimitives   t
     testFromAdjacencyList t
     testIsSubgraphOf      t
-    testProperties        t
-    testAdjacencyList     t
-    testPreSet            t
-    testPostSet           t
+    testToGraph           t
     testGraphFamilies     t
     testTransformations   t
 

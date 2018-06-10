@@ -21,9 +21,6 @@ import Algebra.Graph.Test.Generic
 t :: Testsuite
 t = testsuite "Graph." empty
 
--- h :: HTestsuite
--- h = hTestsuite "Graph." empty
-
 type G = Graph Int
 
 testGraph :: IO ()
@@ -34,10 +31,9 @@ testGraph = do
 
     testBasicPrimitives   t
     testFromAdjacencyList t
-    -- testToGraph         h
     testIsSubgraphOf      t
+    testToGraph           t
     testSize              t
-    testProperties        t
     testGraphFamilies     t
     testTransformations   t
 

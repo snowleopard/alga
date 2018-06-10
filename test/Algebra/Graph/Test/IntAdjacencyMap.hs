@@ -37,10 +37,7 @@ testIntAdjacencyMap = do
     testFromAdjacencyList    t
     testFromAdjacencyIntSets t
     testIsSubgraphOf         t
-    testProperties           t
-    testAdjacencyList        t
-    testPreIntSet            t
-    testPostIntSet           t
+    testToGraph              t
     testGraphFamilies        t
     testTransformations      t
     testDfsForest            t
