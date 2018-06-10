@@ -58,7 +58,7 @@ Alga can handle graphs comprising millions of vertices and billions of edges in 
 enough for many applications. We believe there is a lot of potential for improving the performance of the library, and
 this is one of our top priorities. If you come across a performance issue when using the library, please let us know.
 
-Some preliminary benchmarks can be found in [doc/benchmarks](https://github.com/snowleopard/alga/blob/master/doc/benchmarks.md).
+Some preliminary benchmarks can be found [here](https://github.com/haskell-perf/graphs).
 
 ## Blog posts
 
