@@ -5,33 +5,31 @@ import Criterion.Main
 import Data.Char
 import Data.Foldable (toList)
 
-import Algebra.Graph.Class
-import Algebra.Graph.AdjacencyMap (AdjacencyMap, adjacencyMap)
-import Algebra.Graph.Fold (Fold, box, deBruijn, gmap, vertexIntSet, vertexSet)
-import Algebra.Graph.IntAdjacencyMap (IntAdjacencyMap)
-import Algebra.Graph.Relation (Relation, relation)
+import Algebra.Graph
+import Algebra.Graph.AdjacencyMap (adjacencyMap)
+import Algebra.Graph.ToGraph (toIntAdjacencyMap)
 
 import qualified Algebra.Graph.IntAdjacencyMap as Int
 import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
 
-v :: Ord a => Fold a -> Int
+v :: Ord a => Graph a -> Int
 v = Set.size . vertexSet
 
-l :: Fold a -> Int
+l :: Graph a -> Int
 l = length . toList
 
-e :: AdjacencyMap a -> Int
-e = foldr (\s t -> Set.size s + t) 0 . adjacencyMap
+e :: Ord a => Graph a -> Int
+e = foldr (\s t -> Set.size s + t) 0 . adjacencyMap . toAdjacencyMap
 
-r :: Relation a -> Int
-r = Set.size . relation
+r :: Ord a => Graph a -> Int
+r = edgeCount
 
-vInt :: Fold Int -> Int
+vInt :: Graph Int -> Int
 vInt = IntSet.size . vertexIntSet
 
-eInt :: IntAdjacencyMap -> Int
-eInt = foldr (\s t -> IntSet.size s + t) 0 . Int.adjacencyMap
+eInt :: Graph Int -> Int
+eInt = foldr (\s t -> IntSet.size s + t) 0 . Int.adjacencyMap . toIntAdjacencyMap
 
 vDeBruijn :: Int -> Int
 vDeBruijn n = v $ deBruijn n "0123456789"
@@ -46,10 +44,10 @@ rDeBruijn :: Int -> Int
 rDeBruijn n = r $ deBruijn n "0123456789"
 
 vIntDeBruijn :: Int -> Int
-vIntDeBruijn n = v $ gmap fastRead $ deBruijn n "0123456789"
+vIntDeBruijn n = v $ fmap fastRead $ deBruijn n "0123456789"
 
 eIntDeBruin :: Int -> Int
-eIntDeBruin n = e $ gmap fastRead $ deBruijn n "0123456789"
+eIntDeBruin n = e $ fmap fastRead $ deBruijn n "0123456789"
 
 -- fastRead is ~3000x faster than read
 fastRead :: String -> Int
@@ -61,22 +59,22 @@ fastReadInts n = foldr (+) 0 $ map fastRead $ ints ++ ints
     ints = mapM (const "0123456789") [1..n]
 
 vMesh :: Int -> Int
-vMesh n = v $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
+vMesh n = v $ fmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
 lMesh :: Int -> Int
-lMesh n = l $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
+lMesh n = l $ fmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
 eMesh :: Int -> Int
-eMesh n = e $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
+eMesh n = e $ fmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
 rMesh :: Int -> Int
-rMesh n = r $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
+rMesh n = r $ fmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
 vIntMesh :: Int -> Int
-vIntMesh n = vInt $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
+vIntMesh n = vInt $ fmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
 eIntMesh :: Int -> Int
-eIntMesh n = eInt $ gmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
+eIntMesh n = eInt $ fmap (\(x, y) -> x * n + y) $ path [1..n] `box` path [1..n]
 
 vIntClique :: Int -> Int
 vIntClique n = vInt $ clique [1..n]
