@@ -64,6 +64,14 @@ class ToGraph t where
     toAdjacencyMap :: Ord (ToVertex t) => t -> AM.AdjacencyMap (ToVertex t)
     toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
 
+    -- | Convert a graph to 'IAM.IntAdjacencyMap'.
+    --
+    -- @
+    -- toIntAdjacencyMap == 'foldg' 'IAM.empty' 'IAM.vertex' 'IAM.overlay' 'IAM.connect'
+    -- @
+    toIntAdjacencyMap :: ToVertex t ~ Int => t -> IAM.IntAdjacencyMap
+    toIntAdjacencyMap = foldg IAM.empty IAM.vertex IAM.overlay IAM.connect
+
     -- | Transpose and convert a graph to 'AM.AdjacencyMap'.
     --
     -- @
@@ -71,6 +79,14 @@ class ToGraph t where
     -- @
     toAdjacencyMapTranspose :: Ord (ToVertex t) => t -> AM.AdjacencyMap (ToVertex t)
     toAdjacencyMapTranspose = foldg AM.empty AM.vertex AM.overlay (flip AM.connect)
+
+    -- | Transpose and convert a graph to 'IAM.IntAdjacencyMap'.
+    --
+    -- @
+    -- toIntAdjacencyMapTranspose == 'foldg' 'IAM.empty' 'IAM.vertex' 'IAM.overlay' (flip 'IAM.connect')
+    -- @
+    toIntAdjacencyMapTranspose :: ToVertex t ~ Int => t -> IAM.IntAdjacencyMap
+    toIntAdjacencyMapTranspose = foldg IAM.empty IAM.vertex IAM.overlay (flip IAM.connect)
 
     -- | Check if a graph is empty.
     --
