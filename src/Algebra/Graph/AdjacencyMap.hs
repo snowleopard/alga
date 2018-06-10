@@ -29,7 +29,7 @@ module Algebra.Graph.AdjacencyMap (
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    adjacencyList, vertexSet, edgeSet, postSet,
+    adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, starTranspose, tree, forest,
@@ -47,35 +47,11 @@ import Data.Tree
 
 import Algebra.Graph.AdjacencyMap.Internal
 
-import qualified Algebra.Graph.Class as C
 import qualified Data.Graph.Typed    as Typed
 import qualified Data.Graph          as KL
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
-
--- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
---
--- @
--- 'isEmpty'     empty == True
--- 'hasVertex' x empty == False
--- 'vertexCount' empty == 0
--- 'edgeCount'   empty == 0
--- @
-empty :: Ord a => AdjacencyMap a
-empty = C.empty
-
--- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
---
--- @
--- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
--- 'vertexCount' (vertex x) == 1
--- 'edgeCount'   (vertex x) == 0
--- @
-vertex :: Ord a => a -> AdjacencyMap a
-vertex = C.vertex
+import qualified Data.IntSet         as IntSet
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
@@ -88,45 +64,8 @@ vertex = C.vertex
 -- 'vertexCount' (edge 1 2) == 2
 -- @
 edge :: Ord a => a -> a -> AdjacencyMap a
-edge = C.edge
-
--- | /Overlay/ two graphs. This is a commutative, associative and idempotent
--- operation with the identity 'empty'.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (overlay x y) >= 'vertexCount' x
--- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (overlay x y) >= 'edgeCount' x
--- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
--- 'vertexCount' (overlay 1 2) == 2
--- 'edgeCount'   (overlay 1 2) == 0
--- @
-overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-overlay = C.overlay
-
--- | /Connect/ two graphs. This is an associative operation with the identity
--- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
--- number of edges in the resulting graph is quadratic with respect to the number
--- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
---
--- @
--- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (connect x y) >= 'vertexCount' x
--- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (connect x y) >= 'edgeCount' x
--- 'edgeCount'   (connect x y) >= 'edgeCount' y
--- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
--- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
--- 'vertexCount' (connect 1 2) == 2
--- 'edgeCount'   (connect 1 2) == 1
--- @
-connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-connect = C.connect
+edge x y | x == y    = AM $ Map.singleton x (Set.singleton y)
+         | otherwise = AM $ Map.fromList [(x, Set.singleton y), (y, Set.empty)]
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -165,7 +104,7 @@ edges = fromAdjacencySets . map (fmap Set.singleton)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
-overlays = C.overlays
+overlays = AM . Map.unionsWith Set.union . map adjacencyMap
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -178,7 +117,9 @@ overlays = C.overlays
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
-connects = C.connects
+connects []     = empty
+connects [x]    = x
+connects (x:xs) = x `connect` connects xs
 
 -- | Construct a graph from an adjacency list.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -295,19 +236,6 @@ vertexList = Map.keys . adjacencyMap
 edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList (AM m) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
 
--- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
---
--- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'fromAdjacencyList' . adjacencyList == id
--- @
-adjacencyList :: AdjacencyMap a -> [(a, [a])]
-adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
-
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
 --
@@ -319,6 +247,19 @@ adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
 -- @
 vertexSet :: AdjacencyMap a -> Set a
 vertexSet = Map.keysSet . adjacencyMap
+
+-- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
+-- graphs with vertices of type 'Int'.
+-- Complexity: /O(n)/ time and memory.
+--
+-- @
+-- vertexIntSet 'empty'      == IntSet.'IntSet.empty'
+-- vertexIntSet . 'vertex'   == IntSet.'IntSet.singleton'
+-- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
+-- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
+-- @
+vertexIntSet :: AdjacencyMap Int -> IntSet.IntSet
+vertexIntSet = IntSet.fromAscList . Set.toAscList . vertexSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
@@ -332,7 +273,36 @@ vertexSet = Map.keysSet . adjacencyMap
 edgeSet :: Ord a => AdjacencyMap a -> Set (a, a)
 edgeSet = Map.foldrWithKey (\v es -> Set.union (Set.mapMonotonic (v,) es)) Set.empty . adjacencyMap
 
+-- | The sorted /adjacency list/ of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- adjacencyList 'empty'               == []
+-- adjacencyList ('vertex' x)          == [(x, [])]
+-- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
+-- 'fromAdjacencyList' . adjacencyList == id
+-- @
+adjacencyList :: AdjacencyMap a -> [(a, [a])]
+adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
+
+-- | The /preset/ (here 'preSet') of an element @x@ is the set of its
+-- /direct predecessors/.
+-- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
+--
+-- @
+-- preSet x 'empty'      == Set.'Set.empty'
+-- preSet x ('vertex' x) == Set.'Set.empty'
+-- preSet 1 ('edge' 1 2) == Set.'Set.empty'
+-- preSet y ('edge' x y) == Set.'Set.fromList' [x]
+-- @
+preSet :: Ord a => a -> AdjacencyMap a -> Set.Set a
+preSet x = Set.fromAscList . map fst . filter p  . Map.toAscList . adjacencyMap
+  where
+    p (_, set) = x `Set.member` set
+
 -- | The /postset/ (here 'postSet') of a vertex is the set of its /direct successors/.
+-- Complexity: /O(log(n))/ time and /O(1)/ memory.
 --
 -- @
 -- postSet x 'empty'      == Set.'Set.empty'
@@ -353,7 +323,9 @@ postSet x = Map.findWithDefault Set.empty x . adjacencyMap
 -- path . 'reverse' == 'transpose' . path
 -- @
 path :: Ord a => [a] -> AdjacencyMap a
-path = C.path
+path xs = case xs of []     -> empty
+                     [x]    -> vertex x
+                     (_:ys) -> edges (zip xs ys)
 
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -365,7 +337,8 @@ path = C.path
 -- circuit . 'reverse' == 'transpose' . circuit
 -- @
 circuit :: Ord a => [a] -> AdjacencyMap a
-circuit = C.circuit
+circuit []     = empty
+circuit (x:xs) = path $ [x] ++ xs ++ [x]
 
 -- | The /clique/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -379,7 +352,10 @@ circuit = C.circuit
 -- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: Ord a => [a] -> AdjacencyMap a
-clique = C.clique
+clique = fromAdjacencySets . fst . go
+  where
+    go []     = ([], Set.empty)
+    go (x:xs) = let (res, set) = go xs in ((x, set) : res, Set.insert x set)
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
@@ -396,9 +372,7 @@ biclique xs ys = AM $ Map.fromSet adjacent (x `Set.union` y)
   where
     x = Set.fromList xs
     y = Set.fromList ys
-    adjacent v
-        | v `Set.member` x = y
-        | otherwise        = Set.empty
+    adjacent v = if v `Set.member` x then y else Set.empty
 
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -410,7 +384,8 @@ biclique xs ys = AM $ Map.fromSet adjacent (x `Set.union` y)
 -- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: Ord a => a -> [a] -> AdjacencyMap a
-star = C.star
+star x [] = vertex x
+star x ys = connect (vertex x) (vertices ys)
 
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -424,7 +399,8 @@ star = C.star
 -- starTranspose x ys    == 'transpose' ('star' x ys)
 -- @
 starTranspose :: Ord a => a -> [a] -> AdjacencyMap a
-starTranspose = C.starTranspose
+starTranspose x [] = vertex x
+starTranspose x ys = connect (vertices ys) (vertex x)
 
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -436,7 +412,9 @@ starTranspose = C.starTranspose
 -- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges' [(1,2), (1,3), (3,4), (3,5)]
 -- @
 tree :: Ord a => Tree a -> AdjacencyMap a
-tree = C.tree
+tree (Node x []) = vertex x
+tree (Node x f ) = star x (map rootLabel f)
+    `overlay` forest (filter (not . null . subForest) f)
 
 -- | The /forest graph/ constructed from a given 'Forest' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -448,7 +426,7 @@ tree = C.tree
 -- forest                                                     == 'overlays' . map 'tree'
 -- @
 forest :: Ord a => Forest a -> AdjacencyMap a
-forest = C.forest
+forest = overlays . map tree
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(n*log(n))/ time.
@@ -616,8 +594,7 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- fmap (flip 'isTopSort' x) (topSort x) /= Just False
 -- @
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
-topSort m =
-    if isTopSort result m then Just result else Nothing
+topSort m = if isTopSort result m then Just result else Nothing
   where
     result = Typed.topSort (Typed.fromAdjacencyMap m)
 

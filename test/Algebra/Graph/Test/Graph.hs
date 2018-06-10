@@ -21,9 +21,6 @@ import Algebra.Graph.Test.Generic
 t :: Testsuite
 t = testsuite "Graph." empty
 
-h :: HTestsuite
-h = hTestsuite "Graph." empty
-
 type G = Graph Int
 
 testGraph :: IO ()
@@ -32,13 +29,13 @@ testGraph = do
     test "Axioms of graphs"   (axioms   :: GraphTestsuite G)
     test "Theorems of graphs" (theorems :: GraphTestsuite G)
 
-    testBasicPrimitives t
-    testToGraph         h
-    testIsSubgraphOf    t
-    testSize            t
-    testProperties      t
-    testGraphFamilies   t
-    testTransformations t
+    testBasicPrimitives   t
+    testFromAdjacencyList t
+    testIsSubgraphOf      t
+    testToGraph           t
+    testSize              t
+    testGraphFamilies     t
+    testTransformations   t
 
     putStrLn "\n============ Graph.(===) ============"
     test "    x === x         == True" $ \(x :: G) ->

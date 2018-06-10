@@ -75,6 +75,7 @@ library
                         Algebra.Graph.Relation.Reflexive,
                         Algebra.Graph.Relation.Symmetric,
                         Algebra.Graph.Relation.Transitive,
+                        Algebra.Graph.ToGraph,
                         Data.Graph.Typed
     build-depends:      array       >= 0.4     && < 0.6,
                         base        >= 4.7     && < 5,
