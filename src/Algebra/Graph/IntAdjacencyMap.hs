@@ -235,19 +235,6 @@ vertexList = IntMap.keys . adjacencyMap
 edgeList :: IntAdjacencyMap -> [(Int, Int)]
 edgeList (AM m) = [ (x, y) | (x, ys) <- IntMap.toAscList m, y <- IntSet.toAscList ys ]
 
--- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
---
--- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'fromAdjacencyList' . adjacencyList == id
--- @
-adjacencyList :: IntAdjacencyMap -> [(Int, [Int])]
-adjacencyList = map (fmap IntSet.toAscList) . IntMap.toAscList . adjacencyMap
-
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
 --
@@ -274,7 +261,21 @@ edgeSet = IntMap.foldrWithKey combine Set.empty . adjacencyMap
   where
     combine u es = Set.union (Set.fromAscList [ (u, v) | v <- IntSet.toAscList es ])
 
--- | The /postset/ (here 'postIntSet') of a vertex is the set of its /direct successors/.
+-- | The sorted /adjacency list/ of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- adjacencyList 'empty'               == []
+-- adjacencyList ('vertex' x)          == [(x, [])]
+-- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
+-- 'fromAdjacencyList' . adjacencyList == id
+-- @
+adjacencyList :: IntAdjacencyMap -> [(Int, [Int])]
+adjacencyList = map (fmap IntSet.toAscList) . IntMap.toAscList . adjacencyMap
+
+-- | The /postset/ (here 'postIntSet') of a vertex is the set of its
+-- /direct successors/.
 --
 -- @
 -- postIntSet x 'empty'      == IntSet.'IntSet.empty'

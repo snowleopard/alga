@@ -29,7 +29,7 @@ module Algebra.Graph.AdjacencyMap (
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    adjacencyList, vertexSet, vertexIntSet, edgeSet, postSet,
+    adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, starTranspose, tree, forest,
@@ -236,19 +236,6 @@ vertexList = Map.keys . adjacencyMap
 edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList (AM m) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
 
--- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
---
--- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'fromAdjacencyList' . adjacencyList == id
--- @
-adjacencyList :: AdjacencyMap a -> [(a, [a])]
-adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
-
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
 --
@@ -286,7 +273,36 @@ vertexIntSet = IntSet.fromAscList . Set.toAscList . vertexSet
 edgeSet :: Ord a => AdjacencyMap a -> Set (a, a)
 edgeSet = Map.foldrWithKey (\v es -> Set.union (Set.mapMonotonic (v,) es)) Set.empty . adjacencyMap
 
+-- | The sorted /adjacency list/ of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- adjacencyList 'empty'               == []
+-- adjacencyList ('vertex' x)          == [(x, [])]
+-- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
+-- 'fromAdjacencyList' . adjacencyList == id
+-- @
+adjacencyList :: AdjacencyMap a -> [(a, [a])]
+adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
+
+-- | The /preset/ (here 'preSet') of an element @x@ is the set of its
+-- /direct predecessors/.
+-- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
+--
+-- @
+-- preSet x 'empty'      == Set.'Set.empty'
+-- preSet x ('vertex' x) == Set.'Set.empty'
+-- preSet 1 ('edge' 1 2) == Set.'Set.empty'
+-- preSet y ('edge' x y) == Set.'Set.fromList' [x]
+-- @
+preSet :: Ord a => a -> AdjacencyMap a -> Set.Set a
+preSet x = Set.fromAscList . map fst . filter p  . Map.toAscList . adjacencyMap
+  where
+    p (_, set) = x `Set.member` set
+
 -- | The /postset/ (here 'postSet') of a vertex is the set of its /direct successors/.
+-- Complexity: /O(log(n))/ time and /O(1)/ memory.
 --
 -- @
 -- postSet x 'empty'      == Set.'Set.empty'

@@ -232,23 +232,6 @@ vertexList = Set.toAscList . domain
 edgeList :: Relation a -> [(a, a)]
 edgeList = Set.toAscList . relation
 
--- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
---
--- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'fromAdjacencyList' . adjacencyList == id
--- @
-adjacencyList :: Eq a => Relation a -> [(a, [a])]
-adjacencyList r = go (Set.toAscList $ domain r) (Set.toAscList $ relation r)
-  where
-    go [] _      = []
-    go vs []     = map ((,[])) vs
-    go (x:vs) es = let (ys, zs) = span ((==x) . fst) es in (x, map snd ys) : go vs zs
-
 -- | The set of vertices of a given graph.
 -- Complexity: /O(1)/ time.
 --
@@ -285,6 +268,23 @@ vertexIntSet = IntSet.fromAscList . vertexList
 -- @
 edgeSet :: Relation a -> Set.Set (a, a)
 edgeSet = relation
+
+-- | The sorted /adjacency list/ of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- adjacencyList 'empty'               == []
+-- adjacencyList ('vertex' x)          == [(x, [])]
+-- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
+-- 'fromAdjacencyList' . adjacencyList == id
+-- @
+adjacencyList :: Eq a => Relation a -> [(a, [a])]
+adjacencyList r = go (Set.toAscList $ domain r) (Set.toAscList $ relation r)
+  where
+    go [] _      = []
+    go vs []     = map ((,[])) vs
+    go (x:vs) es = let (ys, zs) = span ((==x) . fst) es in (x, map snd ys) : go vs zs
 
 -- | The /preset/ (here 'preSet') of an element @x@ is the set of elements that are related to
 -- it on the /left/, i.e. @preSet x == { a | aRx }@. In the context of directed

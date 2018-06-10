@@ -77,6 +77,14 @@ class ToGraph t where
     toAdjacencyMap :: Ord (ToVertex t) => t -> AM.AdjacencyMap (ToVertex t)
     toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
 
+    -- | Transpose and convert a graph to 'AM.AdjacencyMap'.
+    --
+    -- @
+    -- toAdjacencyMapTranspose = foldg 'AM.empty' 'AM.vertex' 'AM.overlay' (flip 'AM.connect')
+    -- @
+    toAdjacencyMapTranspose :: Ord (ToVertex t) => t -> AM.AdjacencyMap (ToVertex t)
+    toAdjacencyMapTranspose = foldg AM.empty AM.vertex AM.overlay (flip AM.connect)
+
     -- | Check if a graph is empty.
     --
     -- @
@@ -139,8 +147,8 @@ class ToGraph t where
     vertexSet :: Ord (ToVertex t) => t -> Set.Set (ToVertex t)
     vertexSet = foldg Set.empty Set.singleton Set.union Set.union
 
-    -- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
-    -- graphs with vertices of type 'Int'.
+    -- | The set of vertices of a given graph. Like 'vertexSet' but specialised
+    -- for graphs with vertices of type 'Int'.
     --
     -- @
     -- vertexIntSet == foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
@@ -181,6 +189,44 @@ class ToGraph t where
     adjacencyList :: Ord (ToVertex t) => t -> [(ToVertex t, [ToVertex t])]
     adjacencyList = AM.adjacencyList . toAdjacencyMap
 
+    -- | The /preset/ (here 'preSet') of an element @x@ is the set of its
+    -- /direct predecessors/.
+    --
+    -- @
+    -- preSet x == 'AM.preSet' x . 'toAdjacencyMap'
+    -- @
+    preSet :: Ord (ToVertex t) => ToVertex t -> t -> Set.Set (ToVertex t)
+    preSet x = AM.preSet x . toAdjacencyMap
+
+    -- | The /postset/ (here 'postIntSet') of a vertex is the set of its
+    -- /direct successors/. List 'preSet' but specialised for graphs with
+    -- vertices of type 'Int'.
+    --
+    -- @
+    -- preIntSet x = 'IntSet.fromAscList' . 'Set.toAscList' . 'preSet' x
+    -- @
+    preIntSet :: ToVertex t ~ Int => Int -> t -> IntSet.IntSet
+    preIntSet x = IntSet.fromAscList . Set.toAscList . preSet x
+
+    -- | The /postset/ (here 'postSet') of a vertex is the set of its
+    -- /direct successors/.
+    --
+    -- @
+    -- postSet x == 'AM.preSet' x . 'toAdjacencyMapTranspose'
+    -- @
+    postSet :: Ord (ToVertex t) => ToVertex t -> t -> Set.Set (ToVertex t)
+    postSet x = AM.preSet x . toAdjacencyMapTranspose
+
+    -- | The /postset/ (here 'postIntSet') of a vertex is the set of its
+    -- /direct successors/. List 'postSet' but specialised for graphs with
+    -- vertices of type 'Int'.
+    --
+    -- @
+    -- postIntSet x = 'IntSet.fromAscList' . 'Set.toAscList' . 'postSet' x
+    -- @
+    postIntSet :: ToVertex t ~ Int => Int -> t -> IntSet.IntSet
+    postIntSet x = IntSet.fromAscList . Set.toAscList . postSet x
+
 instance ToGraph (G.Graph a) where
     type ToVertex (G.Graph a) = a
     toGraph = id
@@ -204,6 +250,8 @@ instance Ord a => ToGraph (AM.AdjacencyMap a) where
     edgeList       = AM.edgeList
     edgeSet        = AM.edgeSet
     adjacencyList  = AM.adjacencyList
+    preSet         = AM.preSet
+    postSet        = AM.postSet
 
 instance ToGraph IAM.IntAdjacencyMap where
     type ToVertex IAM.IntAdjacencyMap = Int

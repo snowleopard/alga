@@ -43,6 +43,7 @@ testAdjacencyMap = do
     testIsSubgraphOf      t
     testProperties        t
     testAdjacencyList     t
+    testPreSet            t
     testPostSet           t
     testGraphFamilies     t
     testTransformations   t

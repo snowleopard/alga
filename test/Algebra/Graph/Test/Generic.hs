@@ -14,7 +14,7 @@ module Algebra.Graph.Test.Generic (
     Testsuite, testsuite, HTestsuite, hTestsuite, testShow, testFromAdjacencyList,
     testFromAdjacencySets, testFromAdjacencyIntSets, testBasicPrimitives,
     testIsSubgraphOf, testSize, testProperties, testAdjacencyList,
-    testPreSet, testPostSet, testPostIntSet, testGraphFamilies,
+    testPreSet, testPreIntSet, testPostSet, testPostIntSet, testGraphFamilies,
     testTransformations, testDfsForest, testDfsForestFrom, testDfs, testTopSort,
     testIsTopSort, testSplitVertex, testBind, testSimplify
   ) where
@@ -30,6 +30,7 @@ import Data.Tree
 import Data.Tuple
 
 import Algebra.Graph.Class (Graph (..))
+import Algebra.Graph.ToGraph (ToGraph (..))
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API
 
@@ -37,10 +38,10 @@ import qualified Data.Set    as Set
 import qualified Data.IntSet as IntSet
 
 data Testsuite where
-    Testsuite :: (Arbitrary g, Eq g, GraphAPI g, Num g, Show g, Vertex g ~ Int)
+    Testsuite :: (Arbitrary g, Eq g, GraphAPI g, ToGraph g, ToVertex g ~ Int, Num g, Show g, Vertex g ~ Int)
               => String -> (forall r. (g -> r) -> g -> r) -> Testsuite
 
-testsuite :: (Arbitrary g, Eq g, GraphAPI g, Num g, Show g, Vertex g ~ Int)
+testsuite :: (Arbitrary g, Eq g, GraphAPI g, ToGraph g, ToVertex g ~ Int, Num g, Show g, Vertex g ~ Int)
           => String -> g -> Testsuite
 testsuite prefix g = Testsuite prefix (\f x -> f (x `asTypeOf` g))
 
@@ -607,6 +608,21 @@ testPostSet (Testsuite prefix (%)) = do
     test "postSet 2 (edge 1 2) == Set.empty" $
           postSet 2 % edge 1 2 == Set.empty
 
+testPreIntSet :: Testsuite -> IO ()
+testPreIntSet (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "preIntSet ============"
+    test "preIntSet x empty      == IntSet.empty" $ \x ->
+          preIntSet x % empty    == IntSet.empty
+
+    test "preIntSet x (vertex x) == IntSet.empty" $ \x ->
+          preIntSet x % vertex x == IntSet.empty
+
+    test "preIntSet 1 (edge 1 2) == IntSet.empty" $
+          preIntSet 1 % edge 1 2 == IntSet.empty
+
+    test "preIntSet y (edge x y) == IntSet.fromList [x]" $ \x y ->
+          preIntSet y % edge x y == IntSet.fromList [x]
+
 testPostIntSet :: Testsuite -> IO ()
 testPostIntSet (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "postIntSet ============"
@@ -616,11 +632,11 @@ testPostIntSet (Testsuite prefix (%)) = do
     test "postIntSet x (vertex x) == IntSet.empty" $ \x ->
           postIntSet x % vertex x == IntSet.empty
 
-    test "postIntSet x (edge x y) == IntSet.fromList [y]" $ \x y ->
-          postIntSet x % edge x y == IntSet.fromList [y]
-
     test "postIntSet 2 (edge 1 2) == IntSet.empty" $
           postIntSet 2 % edge 1 2 == IntSet.empty
+
+    test "postIntSet x (edge x y) == IntSet.fromList [y]" $ \x y ->
+          postIntSet x % edge x y == IntSet.fromList [y]
 
 testPath :: Testsuite -> IO ()
 testPath (Testsuite prefix (%)) = do

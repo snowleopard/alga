@@ -14,8 +14,6 @@ module Algebra.Graph.Test.API (
     GraphAPI (..)
   ) where
 
-import Data.IntSet (IntSet)
-import Data.Set (Set)
 import Data.Tree
 
 import Algebra.Graph.Class (Graph (..))
@@ -28,7 +26,6 @@ import qualified Algebra.Graph.HigherKinded.Class       as HClass
 import qualified Algebra.Graph.IntAdjacencyMap          as IntAdjacencyMap
 import qualified Algebra.Graph.IntAdjacencyMap.Internal as IntAdjacencyMap
 import qualified Algebra.Graph.Relation                 as Relation
-import qualified Algebra.Graph.ToGraph                  as ToGraph
 import qualified Data.Set                               as Set
 import qualified Data.IntSet                            as IntSet
 
@@ -49,44 +46,10 @@ class Graph g => GraphAPI g where
     fromAdjacencySets    = notImplemented
     fromAdjacencyIntSets :: [(Int, IntSet.IntSet)] -> g
     fromAdjacencyIntSets = notImplemented
-    toGraph              :: ToGraph.ToGraph g => g -> Graph.Graph (ToGraph.ToVertex g)
-    toGraph              = notImplemented
-    foldg                :: r -> (ToGraph.ToVertex g -> r) -> (r -> r -> r) -> (r -> r -> r) -> g -> r
-    foldg                = notImplemented
     isSubgraphOf         :: g -> g -> Bool
     isSubgraphOf         = notImplemented
     (===)                :: g -> g -> Bool
     (===)                = notImplemented
-    isEmpty              :: g -> Bool
-    isEmpty              = notImplemented
-    size                 :: g -> Int
-    size                 = notImplemented
-    hasVertex            :: Vertex g -> g -> Bool
-    hasVertex            = notImplemented
-    hasEdge              :: Vertex g -> Vertex g -> g -> Bool
-    hasEdge              = notImplemented
-    vertexCount          :: g -> Int
-    vertexCount          = notImplemented
-    edgeCount            :: g -> Int
-    edgeCount            = notImplemented
-    vertexList           :: g -> [Vertex g]
-    vertexList           = notImplemented
-    edgeList             :: g -> [(Vertex g, Vertex g)]
-    edgeList             = notImplemented
-    adjacencyList        :: g -> [(Vertex g, [Vertex g])]
-    adjacencyList        = notImplemented
-    vertexSet            :: g -> Set (Vertex g)
-    vertexSet            = notImplemented
-    vertexIntSet         :: Vertex g ~ Int => g -> IntSet
-    vertexIntSet         = notImplemented
-    edgeSet              :: g -> Set (Vertex g, Vertex g)
-    edgeSet              = notImplemented
-    preSet               :: Vertex g -> g -> Set (Vertex g)
-    preSet               = notImplemented
-    postSet              :: Vertex g -> g -> Set (Vertex g)
-    postSet              = notImplemented
-    postIntSet           :: Vertex g ~ Int => Int -> g -> IntSet
-    postIntSet           = notImplemented
     path                 :: [Vertex g] -> g
     path                 = notImplemented
     circuit              :: [Vertex g] -> g
@@ -154,18 +117,6 @@ instance Ord a => GraphAPI (AdjacencyMap.AdjacencyMap a) where
     fromAdjacencyList = AdjacencyMap.fromAdjacencyList
     fromAdjacencySets = AdjacencyMap.fromAdjacencySets
     isSubgraphOf      = AdjacencyMap.isSubgraphOf
-    isEmpty           = AdjacencyMap.isEmpty
-    hasVertex         = AdjacencyMap.hasVertex
-    hasEdge           = AdjacencyMap.hasEdge
-    vertexCount       = AdjacencyMap.vertexCount
-    edgeCount         = AdjacencyMap.edgeCount
-    vertexList        = AdjacencyMap.vertexList
-    edgeList          = AdjacencyMap.edgeList
-    adjacencyList     = AdjacencyMap.adjacencyList
-    vertexSet         = AdjacencyMap.vertexSet
-    vertexIntSet      = AdjacencyMap.vertexIntSet
-    edgeSet           = AdjacencyMap.edgeSet
-    postSet           = AdjacencyMap.postSet
     path              = AdjacencyMap.path
     circuit           = AdjacencyMap.circuit
     clique            = AdjacencyMap.clique
@@ -193,20 +144,7 @@ instance Ord a => GraphAPI (Fold.Fold a) where
     edges         = Fold.edges
     overlays      = Fold.overlays
     connects      = Fold.connects
-    toGraph       = ToGraph.toGraph
-    foldg         = Fold.foldg
     isSubgraphOf  = Fold.isSubgraphOf
-    isEmpty       = Fold.isEmpty
-    size          = Fold.size
-    hasVertex     = ToGraph.hasVertex
-    hasEdge       = Fold.hasEdge
-    vertexCount   = Fold.vertexCount
-    edgeCount     = Fold.edgeCount
-    vertexList    = Fold.vertexList
-    edgeList      = Fold.edgeList
-    vertexSet     = Fold.vertexSet
-    vertexIntSet  = Fold.vertexIntSet
-    edgeSet       = Fold.edgeSet
     path          = Fold.path
     circuit       = Fold.circuit
     clique        = Fold.clique
@@ -237,22 +175,8 @@ instance Ord a => GraphAPI (Graph.Graph a) where
     overlays          = Graph.overlays
     connects          = Graph.connects
     fromAdjacencyList = Graph.fromAdjacencyList
-    toGraph           = ToGraph.toGraph
-    foldg             = Graph.foldg
     isSubgraphOf      = Graph.isSubgraphOf
     (===)             = (Graph.===)
-    isEmpty           = Graph.isEmpty
-    size              = Graph.size
-    hasVertex         = Graph.hasVertex
-    hasEdge           = Graph.hasEdge
-    vertexCount       = Graph.vertexCount
-    edgeCount         = Graph.edgeCount
-    vertexList        = Graph.vertexList
-    edgeList          = Graph.edgeList
-    adjacencyList     = Graph.adjacencyList
-    vertexSet         = Graph.vertexSet
-    vertexIntSet      = Graph.vertexIntSet
-    edgeSet           = Graph.edgeSet
     path              = Graph.path
     circuit           = Graph.circuit
     clique            = Graph.clique
@@ -285,18 +209,6 @@ instance GraphAPI IntAdjacencyMap.IntAdjacencyMap where
     fromAdjacencyList    = IntAdjacencyMap.fromAdjacencyList
     fromAdjacencyIntSets = IntAdjacencyMap.fromAdjacencyIntSets
     isSubgraphOf         = IntAdjacencyMap.isSubgraphOf
-    isEmpty              = IntAdjacencyMap.isEmpty
-    hasVertex            = IntAdjacencyMap.hasVertex
-    hasEdge              = IntAdjacencyMap.hasEdge
-    vertexCount          = IntAdjacencyMap.vertexCount
-    edgeCount            = IntAdjacencyMap.edgeCount
-    vertexList           = IntAdjacencyMap.vertexList
-    edgeList             = IntAdjacencyMap.edgeList
-    postIntSet           = IntAdjacencyMap.postIntSet
-    adjacencyList        = IntAdjacencyMap.adjacencyList
-    vertexSet            = ToGraph.vertexSet
-    vertexIntSet         = IntAdjacencyMap.vertexIntSet
-    edgeSet              = IntAdjacencyMap.edgeSet
     path                 = IntAdjacencyMap.path
     circuit              = IntAdjacencyMap.circuit
     clique               = IntAdjacencyMap.clique
@@ -326,19 +238,6 @@ instance Ord a => GraphAPI (Relation.Relation a) where
     connects          = Relation.connects
     fromAdjacencyList = Relation.fromAdjacencyList
     isSubgraphOf      = Relation.isSubgraphOf
-    isEmpty           = Relation.isEmpty
-    hasVertex         = Relation.hasVertex
-    hasEdge           = Relation.hasEdge
-    vertexCount       = Relation.vertexCount
-    edgeCount         = Relation.edgeCount
-    vertexList        = Relation.vertexList
-    edgeList          = Relation.edgeList
-    adjacencyList     = Relation.adjacencyList
-    preSet            = Relation.preSet
-    postSet           = Relation.postSet
-    vertexSet         = Relation.vertexSet
-    vertexIntSet      = Relation.vertexIntSet
-    edgeSet           = Relation.edgeSet
     path              = Relation.path
     circuit           = Relation.circuit
     clique            = Relation.clique
