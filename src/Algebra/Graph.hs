@@ -310,9 +310,7 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays []     = empty
-overlays [x]    = x
-overlays (x:xs) = x `overlay` overlays xs
+overlays = foldr overlay empty
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -326,9 +324,7 @@ overlays (x:xs) = x `overlay` overlays xs
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects []     = empty
-connects [x]    = x
-connects (x:xs) = x `connect` connects xs
+connects = foldr connect empty
 
 -- | Construct a graph from an adjacency list.
 -- Complexity: /O((n + m))/ time, memory and size.
