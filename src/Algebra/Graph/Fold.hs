@@ -631,9 +631,8 @@ removeEdge s t = filterContext s (/=s) (/=t)
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Fold a -> Fold a
 filterContext s i o g = maybe g go $ G.context (==s) (toGraph g)
   where
-    go (G.Context is os) = overlays [ induce (/=s) g
-                                    , starTranspose s (filter i is)
-                                    , star          s (filter o os) ]
+    go (G.Context is os) = induce (/=s) g `overlay` starTranspose s (filter i is)
+                                          `overlay` star          s (filter o os)
 
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
