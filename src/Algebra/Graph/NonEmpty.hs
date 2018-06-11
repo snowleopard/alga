@@ -285,8 +285,7 @@ edges1 = overlays1 . fmap (uncurry edge)
 -- overlays1 (x ':|' [y]) == 'overlay' x y
 -- @
 overlays1 :: NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
-overlays1 (x :| xs) = case xs of []     -> x
-                                 (y:ys) -> overlay x (overlays1 $ y :| ys)
+overlays1 = foldr1 overlay
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -297,8 +296,7 @@ overlays1 (x :| xs) = case xs of []     -> x
 -- connects1 (x ':|' [y]) == 'connect' x y
 -- @
 connects1 :: NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
-connects1 (x :| xs) = case xs of []     -> x
-                                 (y:ys) -> connect x (connects1 $ y :| ys)
+connects1 = foldr1 connect
 
 -- | Generalised graph folding: recursively collapse a 'NonEmptyGraph' by
 -- applying the provided functions to the leaves and internal nodes of the
