@@ -464,6 +464,13 @@ hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
 -- @
 vertexCount :: Ord a => Graph a -> Int
 vertexCount = Set.size . vertexSet
+{-# INLINE[1] vertexCount #-}
+
+{-# RULES "vertexCount/Int" vertexCount = vertexIntCount #-}
+
+-- | Specialized version of 'vertexcount' for graphs with vertices of type 'Int'.
+vertexIntCount :: Graph Int -> Int
+vertexIntCount = IntSet.size . vertexIntSet
 
 -- | The number of edges in a graph.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
@@ -488,6 +495,13 @@ edgeCount = length . edgeList
 -- @
 vertexList :: Ord a => Graph a -> [a]
 vertexList = Set.toAscList . vertexSet
+{-# INLINE[1] vertexList #-}
+
+{-# RULES "vertexList/Int" vertexList = vertexIntList #-}
+
+-- | Specialized version of vertexIntList for graphs with vertices of type 'Int'.
+vertexIntList :: Graph Int -> [Int]
+vertexIntList = IntSet.toList . vertexIntSet
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
