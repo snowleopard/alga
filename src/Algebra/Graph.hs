@@ -62,11 +62,12 @@ import Data.Tree
 
 import Algebra.Graph.Internal
 
-import qualified Algebra.Graph.AdjacencyMap as AM
-import qualified Control.Applicative        as Ap
-import qualified Data.IntSet                as IntSet
-import qualified Data.Set                   as Set
-import qualified Data.Tree                  as Tree
+import qualified Algebra.Graph.AdjacencyMap    as AM
+import qualified Algebra.Graph.IntAdjacencyMap as IAM
+import qualified Control.Applicative           as Ap
+import qualified Data.IntSet                   as IntSet
+import qualified Data.Set                      as Set
+import qualified Data.Tree                     as Tree
 
 {-| The 'Graph' data type is a deep embedding of the core graph construction
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
@@ -172,8 +173,22 @@ instance Num a => Num (Graph a) where
 toAdjacencyMap :: Ord a => Graph a -> AM.AdjacencyMap a
 toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
 
+toIntAdjacencyMap :: Graph Int -> IAM.IntAdjacencyMap
+toIntAdjacencyMap = foldg IAM.empty IAM.vertex IAM.overlay IAM.connect
+
+
 instance Ord a => Eq (Graph a) where
-    x == y = toAdjacencyMap x == toAdjacencyMap y
+  (==) = eqG
+
+eqG :: Ord a => Graph a -> Graph a -> Bool
+eqG x y = toAdjacencyMap x == toAdjacencyMap y
+{-# NOINLINE [1] eqG #-}
+
+
+{-# RULES "eqGInt" eqG = eqGInt #-}
+
+eqGInt :: Graph Int -> Graph Int -> Bool
+eqGInt x y = toIntAdjacencyMap x == toIntAdjacencyMap y
 
 instance Applicative Graph where
     pure  = Vertex
