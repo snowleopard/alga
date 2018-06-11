@@ -12,7 +12,8 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.IntAdjacencyMap.Internal (
     -- * Adjacency map implementation
-    IntAdjacencyMap(..), fromAdjacencyIntSets, consistent
+    IntAdjacencyMap (..), empty, vertex, overlay, connect, fromAdjacencyIntSets,
+    consistent
   ) where
 
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)
@@ -20,8 +21,6 @@ import Data.IntSet (IntSet)
 import Data.List
 
 import Control.DeepSeq (NFData (..))
-
-import Algebra.Graph.Class
 
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.IntSet        as IntSet
@@ -89,10 +88,7 @@ will denote the number of vertices and edges in the graph, respectively.
 newtype IntAdjacencyMap = AM {
     -- | The /adjacency map/ of the graph: each vertex is associated with a set
     -- of its direct successors.
-    adjacencyMap :: IntMap IntSet}
-
-instance Eq IntAdjacencyMap where
-    x == y = adjacencyMap x == adjacencyMap y
+    adjacencyMap :: IntMap IntSet } deriving Eq
 
 instance Show IntAdjacencyMap where
     show (AM m)
@@ -109,13 +105,68 @@ instance Show IntAdjacencyMap where
         eshow xs       = "edges "    ++ show xs
         used           = IntSet.toAscList (referredToVertexSet m)
 
-instance Graph IntAdjacencyMap where
-    type Vertex IntAdjacencyMap = Int
-    empty       = AM   IntMap.empty
-    vertex x    = AM $ IntMap.singleton x IntSet.empty
-    overlay x y = AM $ IntMap.unionWith IntSet.union (adjacencyMap x) (adjacencyMap y)
-    connect x y = AM $ IntMap.unionsWith IntSet.union [ adjacencyMap x, adjacencyMap y,
-        fromSet (const . keysSet $ adjacencyMap y) (keysSet $ adjacencyMap x) ]
+-- | Construct the /empty graph/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'Algebra.Graph.IntAdjacencyMap.isEmpty'     empty == True
+-- 'Algebra.Graph.IntAdjacencyMap.hasVertex' x empty == False
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' empty == 0
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   empty == 0
+-- @
+empty :: IntAdjacencyMap
+empty = AM IntMap.empty
+
+-- | Construct the graph comprising /a single isolated vertex/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'Algebra.Graph.IntAdjacencyMap.isEmpty'     (vertex x) == False
+-- 'Algebra.Graph.IntAdjacencyMap.hasVertex' x (vertex x) == True
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (vertex x) == 1
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (vertex x) == 0
+-- @
+vertex :: Int -> IntAdjacencyMap
+vertex x = AM $ IntMap.singleton x IntSet.empty
+
+-- | /Overlay/ two graphs. This is a commutative, associative and idempotent
+-- operation with the identity 'empty'.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- 'Algebra.Graph.IntAdjacencyMap.isEmpty'     (overlay x y) == 'Algebra.Graph.IntAdjacencyMap.isEmpty'   x   && 'Algebra.Graph.IntAdjacencyMap.isEmpty'   y
+-- 'Algebra.Graph.IntAdjacencyMap.hasVertex' z (overlay x y) == 'Algebra.Graph.IntAdjacencyMap.hasVertex' z x || 'Algebra.Graph.IntAdjacencyMap.hasVertex' z y
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (overlay x y) >= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (overlay x y) <= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x + 'Algebra.Graph.IntAdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (overlay x y) >= 'Algebra.Graph.IntAdjacencyMap.edgeCount' x
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (overlay x y) <= 'Algebra.Graph.IntAdjacencyMap.edgeCount' x   + 'Algebra.Graph.IntAdjacencyMap.edgeCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (overlay 1 2) == 2
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (overlay 1 2) == 0
+-- @
+overlay :: IntAdjacencyMap -> IntAdjacencyMap -> IntAdjacencyMap
+overlay x y = AM $ IntMap.unionWith IntSet.union (adjacencyMap x) (adjacencyMap y)
+
+-- | /Connect/ two graphs. This is an associative operation with the identity
+-- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
+-- number of edges in the resulting graph is quadratic with respect to the number
+-- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
+--
+-- @
+-- 'Algebra.Graph.IntAdjacencyMap.isEmpty'     (connect x y) == 'Algebra.Graph.IntAdjacencyMap.isEmpty'   x   && 'Algebra.Graph.IntAdjacencyMap.isEmpty'   y
+-- 'Algebra.Graph.IntAdjacencyMap.hasVertex' z (connect x y) == 'Algebra.Graph.IntAdjacencyMap.hasVertex' z x || 'Algebra.Graph.IntAdjacencyMap.hasVertex' z y
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (connect x y) >= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (connect x y) <= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x + 'Algebra.Graph.IntAdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.IntAdjacencyMap.edgeCount' x
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.IntAdjacencyMap.edgeCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x * 'Algebra.Graph.IntAdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect x y) <= 'Algebra.Graph.IntAdjacencyMap.vertexCount' x * 'Algebra.Graph.IntAdjacencyMap.vertexCount' y + 'Algebra.Graph.IntAdjacencyMap.edgeCount' x + 'Algebra.Graph.IntAdjacencyMap.edgeCount' y
+-- 'Algebra.Graph.IntAdjacencyMap.vertexCount' (connect 1 2) == 2
+-- 'Algebra.Graph.IntAdjacencyMap.edgeCount'   (connect 1 2) == 1
+-- @
+connect :: IntAdjacencyMap -> IntAdjacencyMap -> IntAdjacencyMap
+connect x y = AM $ IntMap.unionsWith IntSet.union [ adjacencyMap x, adjacencyMap y,
+    fromSet (const . keysSet $ adjacencyMap y) (keysSet $ adjacencyMap x) ]
 
 instance Num IntAdjacencyMap where
     fromInteger = vertex . fromInteger
@@ -124,10 +175,6 @@ instance Num IntAdjacencyMap where
     signum      = const empty
     abs         = id
     negate      = id
-
-instance ToGraph IntAdjacencyMap where
-    type ToVertex IntAdjacencyMap = Int
-    toGraph = overlays . map (uncurry star . fmap IntSet.toList) . IntMap.toList . adjacencyMap
 
 instance NFData IntAdjacencyMap where
     rnf (AM a) = rnf a

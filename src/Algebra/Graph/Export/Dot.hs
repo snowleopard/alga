@@ -26,7 +26,7 @@ import Data.Monoid
 import Data.String hiding (unlines)
 import Prelude hiding (unlines)
 
-import Algebra.Graph.Class (ToGraph (..))
+import Algebra.Graph.ToGraph
 import Algebra.Graph.Export hiding (export)
 import qualified Algebra.Graph.Export as E
 
@@ -124,7 +124,7 @@ export Style {..} g = render $ header <> body <> "}\n"
     vDoc x    = line $ label x <+>                      attributes (vertexAttributes x)
     eDoc x y  = line $ label x <> " -> " <> label y <+> attributes (edgeAttributes x y)
 
--- A list of attributes formatted as a DOT document.
+-- | A list of attributes formatted as a DOT document.
 -- Example: @attributes ["label" := "A label", "shape" := "box"]@
 -- corresponds to document: @ [label="A label" shape="box"]@.
 attributes :: IsString s => [Attribute s] -> Doc s

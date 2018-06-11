@@ -1,8 +1,16 @@
 # Change log
 
+## 0.2.0.0
+
+* #76: Remove benchmarks.
+* #74: Drop dependency of `Algebra.Graph` on graph type classes.
+* #62: Move King-Launchbury graphs into `Data.Graph.Typed`.
+* #67, #68, #69: Various performance improvements.
+* #66, #72: Add missing `NFData` instances.
+
 ## 0.1.1.1
 
-* #59: Allow base-compat-0.10.
+* #59: Allow `base-compat-0.10`.
 
 ## 0.1.1
 
