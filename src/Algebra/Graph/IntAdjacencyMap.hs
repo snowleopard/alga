@@ -103,7 +103,7 @@ edges = fromAdjacencyIntSets . map (fmap IntSet.singleton)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [IntAdjacencyMap] -> IntAdjacencyMap
-overlays = foldr overlay empty
+overlays = AM . IntMap.unionsWith IntSet.union . map adjacencyMap
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.

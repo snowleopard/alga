@@ -100,7 +100,7 @@ edges es = Relation (Set.fromList $ uncurry (++) $ unzip es) (Set.fromList es)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: Ord a => [Relation a] -> Relation a
-overlays = foldr overlay empty
+overlays xs = Relation (Set.unions $ map domain xs) (Set.unions $ map relation xs)
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.

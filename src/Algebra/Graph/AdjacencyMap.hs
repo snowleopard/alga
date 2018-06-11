@@ -104,7 +104,7 @@ edges = fromAdjacencySets . map (fmap Set.singleton)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
-overlays = foldr overlay empty
+overlays = AM . Map.unionsWith Set.union . map adjacencyMap
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
