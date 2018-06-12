@@ -48,7 +48,7 @@ module Algebra.Graph (
     box,
 
     -- * Conversion to graphs
-    toAdjacencyMap, Context (..), context
+    toAdjacencyMap, toIntAdjacencyMap, Context (..), context
   ) where
 
 import Prelude ()

@@ -234,20 +234,21 @@ class ToGraph t where
 
 instance Ord a => ToGraph (G.Graph a) where
     type ToVertex (G.Graph a) = a
-    toGraph        = id
-    foldg          = G.foldg
-    isEmpty        = G.isEmpty
-    hasVertex      = G.hasVertex
-    hasEdge        = G.hasEdge
-    vertexCount    = G.vertexCount
-    edgeCount      = G.edgeCount
-    vertexList     = G.vertexList
-    vertexSet      = G.vertexSet
-    vertexIntSet   = G.vertexIntSet
-    edgeList       = G.edgeList
-    edgeSet        = G.edgeSet
-    adjacencyList  = G.adjacencyList
-    toAdjacencyMap = G.toAdjacencyMap
+    toGraph           = id
+    foldg             = G.foldg
+    isEmpty           = G.isEmpty
+    hasVertex         = G.hasVertex
+    hasEdge           = G.hasEdge
+    vertexCount       = G.vertexCount
+    edgeCount         = G.edgeCount
+    vertexList        = G.vertexList
+    vertexSet         = G.vertexSet
+    vertexIntSet      = G.vertexIntSet
+    edgeList          = G.edgeList
+    edgeSet           = G.edgeSet
+    adjacencyList     = G.adjacencyList
+    toAdjacencyMap    = G.toAdjacencyMap
+    toIntAdjacencyMap = G.toIntAdjacencyMap
 
 instance Ord a => ToGraph (AM.AdjacencyMap a) where
     type ToVertex (AM.AdjacencyMap a) = a
