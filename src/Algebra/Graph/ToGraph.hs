@@ -23,16 +23,19 @@ module Algebra.Graph.ToGraph (ToGraph (..)) where
 import Prelude ()
 import Prelude.Compat
 
-import qualified Algebra.Graph                          as G
-import qualified Algebra.Graph.AdjacencyMap             as AM
-import qualified Algebra.Graph.AdjacencyMap.Internal    as AM
-import qualified Algebra.Graph.IntAdjacencyMap          as IAM
-import qualified Algebra.Graph.IntAdjacencyMap.Internal as IAM
-import qualified Algebra.Graph.Relation                 as R
-import qualified Data.IntMap                            as IntMap
-import qualified Data.IntSet                            as IntSet
-import qualified Data.Map                               as Map
-import qualified Data.Set                               as Set
+import Data.IntMap (IntMap)
+import Data.IntSet (IntSet)
+import Data.Map    (Map)
+import Data.Set    (Set)
+
+import qualified Algebra.Graph                 as G
+import qualified Algebra.Graph.AdjacencyMap    as AM
+import qualified Algebra.Graph.IntAdjacencyMap as IAM
+import qualified Algebra.Graph.Relation        as R
+import qualified Data.IntMap                   as IntMap
+import qualified Data.IntSet                   as IntSet
+import qualified Data.Map                      as Map
+import qualified Data.Set                      as Set
 
 -- | The 'ToGraph' type class captures data types that can be converted to
 -- algebraic graphs.
@@ -40,7 +43,7 @@ class ToGraph t where
     {-# MINIMAL toGraph | foldg #-}
     type ToVertex t
 
-    -- | Convert a value to an algebraic graph, see "Algebra.Graph".
+    -- | Convert a value to the corresponding algebraic graph, see "Algebra.Graph".
     --
     -- @
     -- toGraph == 'foldg' 'G.Empty' 'G.Vertex' 'G.Overlay' 'G.Connect'
@@ -54,7 +57,7 @@ class ToGraph t where
     -- assumed that the arguments satisfy the axioms of the graph algebra.
     --
     -- @
-    -- foldg == 'G.foldg' . 'toGraph'
+    -- foldg == Algebra.Graph.'G.foldg' . 'toGraph'
     -- @
     foldg :: r -> (ToVertex t -> r) -> (r -> r -> r) -> (r -> r -> r) -> t -> r
     foldg e v o c = G.foldg e v o c . toGraph
@@ -105,31 +108,6 @@ class ToGraph t where
     vertexCount :: Ord (ToVertex t) => t -> Int
     vertexCount = Set.size . vertexSet
 
-    -- | The sorted list of vertices of a given graph.
-    --
-    -- @
-    -- vertexList == Set.'Set.toAscList' . 'vertexSet'
-    -- @
-    vertexList :: Ord (ToVertex t) => t -> [ToVertex t]
-    vertexList = Set.toAscList . vertexSet
-
-    -- | The set of vertices of a given graph.
-    --
-    -- @
-    -- vertexSet == 'foldg' Set.'Set.empty' Set.'Set.singleton' Set.'Set.union' Set.'Set.union'
-    -- @
-    vertexSet :: Ord (ToVertex t) => t -> Set.Set (ToVertex t)
-    vertexSet = foldg Set.empty Set.singleton Set.union Set.union
-
-    -- | The set of vertices of a given graph. Like 'vertexSet' but specialised
-    -- for graphs with vertices of type 'Int'.
-    --
-    -- @
-    -- vertexIntSet == 'foldg' IntSet.'IntSet.empty' IntSet.'IntSet.singleton' IntSet.'IntSet.union' IntSet.'IntSet.union'
-    -- @
-    vertexIntSet :: ToVertex t ~ Int => t -> IntSet.IntSet
-    vertexIntSet = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
-
     -- | The number of edges in a graph.
     --
     -- @
@@ -138,57 +116,74 @@ class ToGraph t where
     edgeCount :: Ord (ToVertex t) => t -> Int
     edgeCount = length . edgeList
 
+    -- | The sorted list of vertices of a given graph.
+    --
+    -- @
+    -- vertexList == Set.'Set.toAscList' . 'vertexSet'
+    -- @
+    vertexList :: Ord (ToVertex t) => t -> [ToVertex t]
+    vertexList = Set.toAscList . vertexSet
+
     -- | The sorted list of edges of a graph.
     --
     -- @
-    -- edgeList == 'AM.edgeList' . 'toAdjacencyMap'
+    -- edgeList == Algebra.Graph.AdjacencyMap.'AM.edgeList' . 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' 'AM.connect'
     -- @
     edgeList :: Ord (ToVertex t) => t -> [(ToVertex t, ToVertex t)]
-    edgeList = AM.edgeList . toAdjacencyMap
+    edgeList = AM.edgeList . foldg AM.empty AM.vertex AM.overlay AM.connect
 
-    -- | The set of edges of a given graph.
+    -- | The set of vertices of a graph.
     --
     -- @
-    -- edgeSet == 'AM.edgeSet' . 'toAdjacencyMap'
+    -- vertexSet == 'foldg' Set.'Set.empty' Set.'Set.singleton' Set.'Set.union' Set.'Set.union'
     -- @
-    edgeSet :: Ord (ToVertex t) => t -> Set.Set (ToVertex t, ToVertex t)
-    edgeSet = AM.edgeSet . toAdjacencyMap
+    vertexSet :: Ord (ToVertex t) => t -> Set (ToVertex t)
+    vertexSet = foldg Set.empty Set.singleton Set.union Set.union
 
-    -- | The sorted /adjacency list/ of a graph.
+    -- | The set of vertices of a graph. Like 'vertexSet' but specialised for
+    -- graphs with vertices of type 'Int'.
     --
     -- @
-    -- adjacencyList == 'AM.adjacencyList' . 'toAdjacencyMap'
+    -- vertexIntSet == 'foldg' IntSet.'IntSet.empty' IntSet.'IntSet.singleton' IntSet.'IntSet.union' IntSet.'IntSet.union'
     -- @
-    adjacencyList :: Ord (ToVertex t) => t -> [(ToVertex t, [ToVertex t])]
-    adjacencyList = AM.adjacencyList . toAdjacencyMap
+    vertexIntSet :: ToVertex t ~ Int => t -> IntSet
+    vertexIntSet = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 
-    -- | The /preset/ (here 'preSet') of an element @x@ is the set of its
+    -- | The set of edges of a graph.
+    --
+    -- @
+    -- edgeSet == Algebra.Graph.AdjacencyMap.'AM.edgeSet' . 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' 'AM.connect'
+    -- @
+    edgeSet :: Ord (ToVertex t) => t -> Set (ToVertex t, ToVertex t)
+    edgeSet = AM.edgeSet . foldg AM.empty AM.vertex AM.overlay AM.connect
+
+    -- | The /preset/ (here 'preSet') of a vertex is the set of its
     -- /direct predecessors/.
     --
     -- @
-    -- preSet x == 'AM.postSet' x . 'toAdjacencyMapTranspose'
+    -- preSet x == Algebra.Graph.AdjacencyMap.'AM.postSet' x . 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' (flip 'AM.connect')
     -- @
-    preSet :: Ord (ToVertex t) => ToVertex t -> t -> Set.Set (ToVertex t)
-    preSet x = AM.postSet x . toAdjacencyMapTranspose
+    preSet :: Ord (ToVertex t) => ToVertex t -> t -> Set (ToVertex t)
+    preSet x = AM.postSet x . foldg AM.empty AM.vertex AM.overlay (flip AM.connect)
 
-    -- | The /preset/ (here 'preIntSet') of an element @x@ is the set of its
+    -- | The /preset/ (here 'preIntSet') of a vertex is the set of its
     -- /direct predecessors/. List 'preSet' but specialised for graphs with
     -- vertices of type 'Int'.
     --
     -- @
     -- preIntSet x == IntSet.'IntSet.fromAscList' . Set.'Set.toAscList' . 'preSet' x
     -- @
-    preIntSet :: ToVertex t ~ Int => Int -> t -> IntSet.IntSet
+    preIntSet :: ToVertex t ~ Int => Int -> t -> IntSet
     preIntSet x = IntSet.fromAscList . Set.toAscList . preSet x
 
     -- | The /postset/ (here 'postSet') of a vertex is the set of its
     -- /direct successors/.
     --
     -- @
-    -- postSet x == 'AM.postSet' x . 'toAdjacencyMap'
+    -- postSet x == Algebra.Graph.AdjacencyMap.'AM.postSet' x . 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' 'AM.connect'
     -- @
-    postSet :: Ord (ToVertex t) => ToVertex t -> t -> Set.Set (ToVertex t)
-    postSet x = AM.postSet x . toAdjacencyMap
+    postSet :: Ord (ToVertex t) => ToVertex t -> t -> Set (ToVertex t)
+    postSet x = AM.postSet x . foldg AM.empty AM.vertex AM.overlay AM.connect
 
     -- | The /postset/ (here 'postIntSet') of a vertex is the set of its
     -- /direct successors/. List 'postSet' but specialised for graphs with
@@ -197,131 +192,141 @@ class ToGraph t where
     -- @
     -- postIntSet x == IntSet.'IntSet.fromAscList' . Set.'Set.toAscList' . 'postSet' x
     -- @
-    postIntSet :: ToVertex t ~ Int => Int -> t -> IntSet.IntSet
+    postIntSet :: ToVertex t ~ Int => Int -> t -> IntSet
     postIntSet x = IntSet.fromAscList . Set.toAscList . postSet x
 
-    -- | Convert a graph to 'AM.AdjacencyMap'.
+    -- | The sorted /adjacency list/ of a graph.
     --
     -- @
-    -- toAdjacencyMap == 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' 'AM.connect'
+    -- adjacencyList == Algebra.Graph.AdjacencyMap.'AM.adjacencyList' . 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' 'AM.connect'
     -- @
-    toAdjacencyMap :: Ord (ToVertex t) => t -> AM.AdjacencyMap (ToVertex t)
-    toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
+    adjacencyList :: Ord (ToVertex t) => t -> [(ToVertex t, [ToVertex t])]
+    adjacencyList = AM.adjacencyList . foldg AM.empty AM.vertex AM.overlay AM.connect
 
-    -- | Convert a graph to 'IAM.IntAdjacencyMap'.
+    -- | The /adjacency map/ of a graph: each vertex is associated with a set
+    -- of its /direct successors/.
     --
     -- @
-    -- toIntAdjacencyMap == 'foldg' 'IAM.empty' 'IAM.vertex' 'IAM.overlay' 'IAM.connect'
+    -- adjacencyMap == Algebra.Graph.AdjacencyMap.'AM.adjacencyMap' . 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' 'AM.connect'
     -- @
-    toIntAdjacencyMap :: ToVertex t ~ Int => t -> IAM.IntAdjacencyMap
-    toIntAdjacencyMap = foldg IAM.empty IAM.vertex IAM.overlay IAM.connect
+    adjacencyMap :: Ord (ToVertex t) => t -> Map (ToVertex t) (Set (ToVertex t))
+    adjacencyMap = AM.adjacencyMap . foldg AM.empty AM.vertex AM.overlay AM.connect
 
-    -- | Transpose and convert a graph to 'AM.AdjacencyMap'.
+    -- | The /adjacency map/ of a graph: each vertex is associated with a set
+    -- of its /direct successors/. List 'adjacencyMap' but specialised for
+    -- graphs with vertices of type 'Int'.
     --
     -- @
-    -- toAdjacencyMapTranspose == 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' (flip 'AM.connect')
+    -- adjacencyIntMap == Algebra.Graph.IntAdjacencyMap.'IAM.adjacencyMap' . 'foldg' 'IAM.empty' 'IAM.vertex' 'IAM.overlay' 'IAM.connect'
     -- @
-    toAdjacencyMapTranspose :: Ord (ToVertex t) => t -> AM.AdjacencyMap (ToVertex t)
-    toAdjacencyMapTranspose = foldg AM.empty AM.vertex AM.overlay (flip AM.connect)
+    adjacencyIntMap :: ToVertex t ~ Int => t -> IntMap IntSet
+    adjacencyIntMap = IAM.adjacencyMap . foldg IAM.empty IAM.vertex IAM.overlay IAM.connect
 
-    -- | Transpose and convert a graph to 'IAM.IntAdjacencyMap'.
+    -- | The transposed /adjacency map/ of a graph: each vertex is associated
+    -- with a set of its /direct predecessors/.
     --
     -- @
-    -- toIntAdjacencyMapTranspose == 'foldg' 'IAM.empty' 'IAM.vertex' 'IAM.overlay' (flip 'IAM.connect')
+    -- adjacencyMapTranspose == Algebra.Graph.AdjacencyMap.'AM.adjacencyMap' . 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' (flip 'AM.connect')
     -- @
-    toIntAdjacencyMapTranspose :: ToVertex t ~ Int => t -> IAM.IntAdjacencyMap
-    toIntAdjacencyMapTranspose = foldg IAM.empty IAM.vertex IAM.overlay (flip IAM.connect)
+    adjacencyMapTranspose :: Ord (ToVertex t) => t -> Map (ToVertex t) (Set (ToVertex t))
+    adjacencyMapTranspose = AM.adjacencyMap . foldg AM.empty AM.vertex AM.overlay (flip AM.connect)
+
+    -- | The transposed /adjacency map/ of a graph: each vertex is associated
+    -- with a set of its /direct predecessors/. List 'adjacencyMapTranspose' but
+    -- specialised for graphs with vertices of type 'Int'.
+    --
+    -- @
+    -- adjacencyIntMapTranspose == Algebra.Graph.IntAdjacencyMap.'IAM.adjacencyMap' . 'foldg' 'IAM.empty' 'IAM.vertex' 'IAM.overlay' (flip 'IAM.connect')
+    -- @
+    adjacencyIntMapTranspose :: ToVertex t ~ Int => t -> IntMap IntSet
+    adjacencyIntMapTranspose = IAM.adjacencyMap . foldg IAM.empty IAM.vertex IAM.overlay (flip IAM.connect)
 
 instance Ord a => ToGraph (G.Graph a) where
     type ToVertex (G.Graph a) = a
-    toGraph           = id
-    foldg             = G.foldg
-    isEmpty           = G.isEmpty
-    hasVertex         = G.hasVertex
-    hasEdge           = G.hasEdge
-    vertexCount       = G.vertexCount
-    edgeCount         = G.edgeCount
-    vertexList        = G.vertexList
-    vertexSet         = G.vertexSet
-    vertexIntSet      = G.vertexIntSet
-    edgeList          = G.edgeList
-    edgeSet           = G.edgeSet
-    adjacencyList     = G.adjacencyList
-    toAdjacencyMap    = G.toAdjacencyMap
-    toIntAdjacencyMap = G.toIntAdjacencyMap
+    toGraph         = id
+    foldg           = G.foldg
+    isEmpty         = G.isEmpty
+    hasVertex       = G.hasVertex
+    hasEdge         = G.hasEdge
+    vertexCount     = G.vertexCount
+    edgeCount       = G.edgeCount
+    vertexList      = G.vertexList
+    vertexSet       = G.vertexSet
+    vertexIntSet    = G.vertexIntSet
+    edgeList        = G.edgeList
+    edgeSet         = G.edgeSet
+    adjacencyList   = G.adjacencyList
+    adjacencyMap    = G.adjacencyMap
+    adjacencyIntMap = G.adjacencyIntMap
 
 instance Ord a => ToGraph (AM.AdjacencyMap a) where
     type ToVertex (AM.AdjacencyMap a) = a
-    toGraph           = G.fromAdjacencyList
-                      . map (fmap Set.toList)
-                      . Map.toList
-                      . AM.adjacencyMap
-    isEmpty           = AM.isEmpty
-    hasVertex         = AM.hasVertex
-    hasEdge           = AM.hasEdge
-    vertexCount       = AM.vertexCount
-    edgeCount         = AM.edgeCount
-    vertexList        = AM.vertexList
-    vertexSet         = AM.vertexSet
-    vertexIntSet      = AM.vertexIntSet
-    edgeList          = AM.edgeList
-    edgeSet           = AM.edgeSet
-    adjacencyList     = AM.adjacencyList
-    preSet            = AM.preSet
-    postSet           = AM.postSet
-    toAdjacencyMap    = id
-    toIntAdjacencyMap = IAM.AM
-                      . IntMap.fromAscList
-                      . map (fmap $ IntSet.fromAscList . Set.toAscList)
-                      . Map.toAscList
-                      . AM.adjacencyMap
+    toGraph         = G.fromAdjacencyList
+                    . map (fmap Set.toList)
+                    . Map.toList
+                    . AM.adjacencyMap
+    isEmpty         = AM.isEmpty
+    hasVertex       = AM.hasVertex
+    hasEdge         = AM.hasEdge
+    vertexCount     = AM.vertexCount
+    edgeCount       = AM.edgeCount
+    vertexList      = AM.vertexList
+    vertexSet       = AM.vertexSet
+    vertexIntSet    = AM.vertexIntSet
+    edgeList        = AM.edgeList
+    edgeSet         = AM.edgeSet
+    adjacencyList   = AM.adjacencyList
+    preSet          = AM.preSet
+    postSet         = AM.postSet
+    adjacencyMap    = AM.adjacencyMap
+    adjacencyIntMap = IntMap.fromAscList
+                    . map (fmap $ IntSet.fromAscList . Set.toAscList)
+                    . Map.toAscList
+                    . AM.adjacencyMap
 
 instance ToGraph IAM.IntAdjacencyMap where
     type ToVertex IAM.IntAdjacencyMap = Int
-    toGraph           = G.overlays
-                      . map (uncurry G.star . fmap IntSet.toList)
-                      . IntMap.toList
-                      . IAM.adjacencyMap
-    isEmpty           = IAM.isEmpty
-    hasVertex         = IAM.hasVertex
-    hasEdge           = IAM.hasEdge
-    vertexCount       = IAM.vertexCount
-    edgeCount         = IAM.edgeCount
-    vertexList        = IAM.vertexList
-    vertexSet         = Set.fromAscList . IntSet.toAscList . IAM.vertexIntSet
-    vertexIntSet      = IAM.vertexIntSet
-    edgeList          = IAM.edgeList
-    edgeSet           = IAM.edgeSet
-    adjacencyList     = IAM.adjacencyList
-    preIntSet         = IAM.preIntSet
-    postIntSet        = IAM.postIntSet
-    toAdjacencyMap    = AM.AM
-                      . Map.fromAscList
-                      . map (fmap $ Set.fromAscList . IntSet.toAscList)
-                      . IntMap.toAscList
-                      . IAM.adjacencyMap
-    toIntAdjacencyMap = id
+    toGraph         = G.overlays
+                    . map (uncurry G.star . fmap IntSet.toList)
+                    . IntMap.toList
+                    . IAM.adjacencyMap
+    isEmpty         = IAM.isEmpty
+    hasVertex       = IAM.hasVertex
+    hasEdge         = IAM.hasEdge
+    vertexCount     = IAM.vertexCount
+    edgeCount       = IAM.edgeCount
+    vertexList      = IAM.vertexList
+    vertexSet       = Set.fromAscList . IntSet.toAscList . IAM.vertexIntSet
+    vertexIntSet    = IAM.vertexIntSet
+    edgeList        = IAM.edgeList
+    edgeSet         = IAM.edgeSet
+    adjacencyList   = IAM.adjacencyList
+    preIntSet       = IAM.preIntSet
+    postIntSet      = IAM.postIntSet
+    adjacencyMap    = Map.fromAscList
+                    . map (fmap $ Set.fromAscList . IntSet.toAscList)
+                    . IntMap.toAscList
+                    . IAM.adjacencyMap
+    adjacencyIntMap = IAM.adjacencyMap
 
 instance Ord a => ToGraph (R.Relation a) where
     type ToVertex (R.Relation a) = a
-    toGraph r         = G.vertices (Set.toList $ R.domain   r) `G.overlay`
-                        G.edges    (Set.toList $ R.relation r)
-    isEmpty           = R.isEmpty
-    hasVertex         = R.hasVertex
-    hasEdge           = R.hasEdge
-    vertexCount       = R.vertexCount
-    edgeCount         = R.edgeCount
-    vertexList        = R.vertexList
-    vertexSet         = R.vertexSet
-    vertexIntSet      = R.vertexIntSet
-    edgeList          = R.edgeList
-    edgeSet           = R.edgeSet
-    adjacencyList     = R.adjacencyList
-    toAdjacencyMap    = AM.AM
-                      . Map.fromAscList
-                      . map (fmap Set.fromAscList)
-                      . R.adjacencyList
-    toIntAdjacencyMap = IAM.AM
-                      . IntMap.fromAscList
-                      . map (fmap IntSet.fromAscList)
-                      . R.adjacencyList
+    toGraph r       = G.vertices (Set.toList $ R.domain   r) `G.overlay`
+                      G.edges    (Set.toList $ R.relation r)
+    isEmpty         = R.isEmpty
+    hasVertex       = R.hasVertex
+    hasEdge         = R.hasEdge
+    vertexCount     = R.vertexCount
+    edgeCount       = R.edgeCount
+    vertexList      = R.vertexList
+    vertexSet       = R.vertexSet
+    vertexIntSet    = R.vertexIntSet
+    edgeList        = R.edgeList
+    edgeSet         = R.edgeSet
+    adjacencyList   = R.adjacencyList
+    adjacencyMap    = Map.fromAscList
+                    . map (fmap Set.fromAscList)
+                    . R.adjacencyList
+    adjacencyIntMap = IntMap.fromAscList
+                    . map (fmap IntSet.fromAscList)
+                    . R.adjacencyList

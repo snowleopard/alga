@@ -35,8 +35,11 @@ import Algebra.Graph.ToGraph (ToGraph (..))
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API
 
-import qualified Data.Set    as Set
-import qualified Data.IntSet as IntSet
+import qualified Algebra.Graph                 as G
+import qualified Algebra.Graph.AdjacencyMap    as AM
+import qualified Algebra.Graph.IntAdjacencyMap as IAM
+import qualified Data.Set                      as Set
+import qualified Data.IntSet                   as IntSet
 
 data Testsuite where
     Testsuite :: (Arbitrary g, Eq g, GraphAPI g, Num g, Show g, ToGraph g, ToVertex g ~ Int, Vertex g ~ Int)
@@ -365,71 +368,71 @@ testIsSubgraphOf (Testsuite prefix (%)) = do
 testToGraphDefault :: Testsuite -> IO ()
 testToGraphDefault (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "toGraph et al. ============"
-    test "toGraph                    == foldg Empty Vertex Overlay Connect" $ \x ->
-          toGraph % x                == foldg Empty Vertex Overlay Connect x
+    test "toGraph                  == foldg Empty Vertex Overlay Connect" $ \x ->
+          toGraph % x              == foldg Empty Vertex Overlay Connect x
 
-    test "foldg                      == foldg . toGraph" $ \e (apply -> v) (applyFun2 -> o) (applyFun2 -> c) x ->
-          foldg e v o c x            == (foldg (e :: Int) v o c . toGraph) % x
+    test "foldg                    == Algebra.Graph.foldg . toGraph" $ \e (apply -> v) (applyFun2 -> o) (applyFun2 -> c) x ->
+          foldg e v o c x          == (G.foldg (e :: Int) v o c . toGraph) % x
 
-    test "isEmpty                    == foldg True (const False) (&&) (&&)" $ \x ->
-          isEmpty x                  == foldg True (const False) (&&) (&&) % x
+    test "isEmpty                  == foldg True (const False) (&&) (&&)" $ \x ->
+          isEmpty x                == foldg True (const False) (&&) (&&) % x
 
-    test "size                       == foldg 1 (const 1) (+) (+)" $ \x ->
-          size x                     == foldg 1 (const 1) (+) (+) % x
+    test "size                     == foldg 1 (const 1) (+) (+)" $ \x ->
+          size x                   == foldg 1 (const 1) (+) (+) % x
 
-    test "hasVertex x                == foldg False (==x) (||) (||)" $ \x y ->
-          hasVertex x y              == foldg False (==x) (||) (||) % y
+    test "hasVertex x              == foldg False (==x) (||) (||)" $ \x y ->
+          hasVertex x y            == foldg False (==x) (||) (||) % y
 
-    test "hasEdge x y                == elem (x,y) . edgeList" $ \x y z ->
-          hasEdge x y z              == (elem (x,y) . edgeList) % z
+    test "hasEdge x y              == elem (x,y) . edgeList" $ \x y z ->
+          hasEdge x y z            == (elem (x,y) . edgeList) % z
 
-    test "vertexCount                == Set.size . vertexSet" $ \x ->
-          vertexCount x              == (Set.size . vertexSet) % x
+    test "vertexCount              == Set.size . vertexSet" $ \x ->
+          vertexCount x            == (Set.size . vertexSet) % x
 
-    test "vertexList                 == Set.toAscList . vertexSet" $ \x ->
-          vertexList x               == (Set.toAscList . vertexSet) % x
+    test "edgeCount                == length . edgeList" $ \x ->
+          edgeCount x              == (length . edgeList) % x
 
-    test "vertexSet                  == foldg Set.empty Set.singleton Set.union Set.union" $ \x ->
-          vertexSet x                == foldg Set.empty Set.singleton Set.union Set.union % x
+    test "vertexList               == Set.toAscList . vertexSet" $ \x ->
+          vertexList x             == (Set.toAscList . vertexSet) % x
 
-    test "vertexIntSet               == foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union" $ \x ->
-          vertexIntSet x             == foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union % x
+    test "edgeList                 == Algebra.Graph.AdjacencyMap.edgeList . foldg empty vertex overlay connect" $ \x ->
+          edgeList x               == (AM.edgeList . foldg empty vertex overlay connect) % x
 
-    test "edgeCount                  == length . edgeList" $ \x ->
-          edgeCount x                == (length . edgeList) % x
+    test "vertexSet                == foldg Set.empty Set.singleton Set.union Set.union" $ \x ->
+          vertexSet x              == foldg Set.empty Set.singleton Set.union Set.union % x
 
-    test "edgeList                   == edgeList . toAdjacencyMap" $ \x ->
-          edgeList x                 == (edgeList . toAdjacencyMap) % x
+    test "vertexIntSet             == foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union" $ \x ->
+          vertexIntSet x           == foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union % x
 
-    test "edgeSet                    == edgeSet . toAdjacencyMap" $ \x ->
-          edgeSet x                  == (edgeSet . toAdjacencyMap) % x
+    test "edgeSet                  == Algebra.Graph.AdjacencyMap.edgeSet . foldg empty vertex overlay connect" $ \x ->
+          edgeSet x                == (AM.edgeSet . foldg empty vertex overlay connect) % x
 
-    test "adjacencyList              == adjacencyList . toAdjacencyMap" $ \x ->
-          adjacencyList x            == (adjacencyList . toAdjacencyMap) % x
+    test "preSet x                 == Algebra.Graph.AdjacencyMap.postSet x . foldg empty vertex overlay (flip connect)" $ \x y ->
+          preSet x y               == (AM.postSet x . foldg empty vertex overlay (flip connect)) % y
 
-    test "preSet x                   == postSet x . toAdjacencyMapTranspose" $ \x y ->
-          preSet x y                 == (postSet x . toAdjacencyMapTranspose) % y
+    test "preIntSet x              == IntSet.fromAscList . Set.toAscList . preSet x" $ \x y ->
+          preIntSet x y            == (IntSet.fromAscList . Set.toAscList . preSet x) % y
 
-    test "preIntSet x                == IntSet.fromAscList . Set.toAscList . preSet x" $ \x y ->
-          preIntSet x y              == (IntSet.fromAscList . Set.toAscList . preSet x) % y
+    test "postSet x                == Algebra.Graph.AdjacencyMap.postSet x . foldg empty vertex overlay connect" $ \x y ->
+          postSet x y              == (AM.postSet x . foldg empty vertex overlay connect) % y
 
-    test "postSet x                  == postSet x . toAdjacencyMap" $ \x y ->
-          postSet x y                == (postSet x . toAdjacencyMap) % y
+    test "postIntSet x             == IntSet.fromAscList . Set.toAscList . postSet x" $ \x y ->
+          postIntSet x y           == (IntSet.fromAscList . Set.toAscList . postSet x) % y
 
-    test "postIntSet x               == IntSet.fromAscList . Set.toAscList . postSet x" $ \x y ->
-          postIntSet x y             == (IntSet.fromAscList . Set.toAscList . postSet x) % y
+    test "adjacencyList            == Algebra.Graph.AdjacencyMap.adjacencyList . foldg empty vertex overlay connect" $ \x ->
+          adjacencyList x          == (AM.adjacencyList . foldg empty vertex overlay connect) % x
 
-    test "toAdjacencyMap             == foldg empty vertex overlay connect" $ \x ->
-          toAdjacencyMap x           == foldg empty vertex overlay connect % x
+    test "adjacencyMap             == Algebra.Graph.AdjacencyMap.adjacencyMap . foldg empty vertex overlay connect" $ \x ->
+          adjacencyMap x           == (AM.adjacencyMap . foldg empty vertex overlay connect) % x
 
-    test "toAdjacencyMapTranspose    == foldg empty vertex overlay (flip connect)" $ \x ->
-          toAdjacencyMapTranspose x  == foldg empty vertex overlay (flip connect) % x
+    test "adjacencyIntMap          == Algebra.Graph.IntAdjacencyMap.adjacencyMap . foldg empty vertex overlay connect" $ \x ->
+          adjacencyIntMap  x       == (IAM.adjacencyMap . foldg empty vertex overlay connect) % x
 
-    test "toIntAdjacencyMap          == foldg empty vertex overlay connect" $ \x ->
-          toIntAdjacencyMap x        == foldg empty vertex overlay connect % x
+    test "adjacencyMapTranspose    == Algebra.Graph.AdjacencyMap.adjacencyMap . foldg empty vertex overlay (flip connect)" $ \x ->
+          adjacencyMapTranspose x  == (AM.adjacencyMap . foldg empty vertex overlay (flip connect)) % x
 
-    test "toIntAdjacencyMapTranspose == foldg empty vertex overlay (flip connect)" $ \x ->
-          toIntAdjacencyMapTranspose x == foldg empty vertex overlay (flip connect) % x
+    test "adjacencyIntMapTranspose == Algebra.Graph.IntAdjacencyMap.adjacencyMap . foldg empty vertex overlay (flip connect)" $ \x ->
+          adjacencyIntMapTranspose x == (IAM.adjacencyMap . foldg empty vertex overlay (flip connect)) % x
 
 testFoldg :: Testsuite -> IO ()
 testFoldg (Testsuite prefix (%)) = do
