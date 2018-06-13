@@ -395,6 +395,8 @@ foldg e v o c = go
 isSubgraphOf :: Ord a => Graph a -> Graph a -> Bool
 isSubgraphOf x y = overlay x y == y
 
+{-# SPECIALISE isSubgraphOf :: Graph Int -> Graph Int -> Bool #-}
+
 -- | Structural equality on graph expressions.
 -- Complexity: /O(s)/ time.
 --
@@ -413,6 +415,8 @@ Empty           === Empty           = True
 _               === _               = False
 
 infix 4 ===
+
+{-# SPECIALISE (===) :: Graph Int -> Graph Int -> Bool #-}
 
 -- | Check if a graph is empty. A convenient alias for 'null'.
 -- Complexity: /O(s)/ time.
@@ -454,6 +458,8 @@ size = foldg 1 (const 1) (+) (+)
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex x = foldg False (==x) (||) (||)
 
+{-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
+
 -- TODO: Benchmark to see if this implementation is faster than the default
 -- implementation provided by the ToGraph type class.
 -- | Check if a graph contains a given edge.
@@ -468,6 +474,8 @@ hasVertex x = foldg False (==x) (||) (||)
 -- @
 hasEdge :: Ord a => a -> a -> Graph a -> Bool
 hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
+
+{-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
@@ -499,6 +507,8 @@ vertexIntCount = IntSet.size . vertexIntSet
 -- @
 edgeCount :: Ord a => Graph a -> Int
 edgeCount = length . edgeList
+
+{-# SPECIALISE edgeCount :: Graph Int -> Int #-}
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -532,6 +542,8 @@ vertexIntList = IntSet.toList . vertexIntSet
 -- @
 edgeList :: Ord a => Graph a -> [(a, a)]
 edgeList = AM.edgeList . toAdjacencyMap
+
+{-# SPECIALISE edgeList :: Graph Int -> [(Int,Int)] #-}
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -570,6 +582,8 @@ vertexIntSet = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 edgeSet :: Ord a => Graph a -> Set.Set (a, a)
 edgeSet = AM.edgeSet . toAdjacencyMap
 
+{-# SPECIALISE edgeSet :: Graph Int -> Set.Set (Int,Int) #-}
+
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
 --
@@ -582,6 +596,8 @@ edgeSet = AM.edgeSet . toAdjacencyMap
 -- @
 adjacencyList :: Ord a => Graph a -> [(a, [a])]
 adjacencyList = AM.adjacencyList . toAdjacencyMap
+
+{-# SPECIALISE adjacencyList :: Graph Int -> [(Int,[Int])] #-}
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -767,6 +783,8 @@ deBruijn len alphabet = skeleton >>= expand
 removeVertex :: Eq a => a -> Graph a -> Graph a
 removeVertex v = induce (/= v)
 
+{-# SPECIALISE removeVertex :: Int -> Graph Int -> Graph Int #-}
+
 -- | Remove an edge from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
 --
@@ -781,6 +799,8 @@ removeVertex v = induce (/= v)
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t = filterContext s (/=s) (/=t)
 
+{-# SPECIALISE removeEdge :: Int -> Int -> Graph Int -> Graph Int #-}
+
 -- TODO: Export
 -- | Filter vertices in a subgraph context.
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
@@ -788,6 +808,8 @@ filterContext s i o g = maybe g go $ context (==s) g
   where
     go (Context is os) = induce (/=s) g `overlay` starTranspose s (filter i is)
                                         `overlay` star          s (filter o os)
+
+{-# SPECIALISE filterContext :: Int -> (Int -> Bool) -> (Int -> Bool) -> Graph Int -> Graph Int #-}
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
@@ -800,6 +822,8 @@ filterContext s i o g = maybe g go $ context (==s) g
 -- @
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
 replaceVertex u v = fmap $ \w -> if w == u then v else w
+
+{-# SPECIALISE replaceVertex :: Int -> Int -> Graph Int -> Graph Int #-}
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
@@ -827,6 +851,8 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 -- @
 splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
 splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
+
+{-# SPECIALISE splitVertex :: Int -> [Int] -> Graph Int -> Graph Int #-}
 
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
@@ -880,6 +906,8 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Co
 simplify :: Ord a => Graph a -> Graph a
 simplify = foldg Empty Vertex (simple Overlay) (simple Connect)
 
+{-# SPECIALISE simplify :: Graph Int -> Graph Int #-}
+
 simple :: Eq g => (g -> g -> g) -> g -> g -> g
 simple op x y
     | x == z    = x
@@ -887,6 +915,8 @@ simple op x y
     | otherwise = z
   where
     z = op x y
+
+{-# SPECIALISE simple :: (Int -> Int -> Int) -> Int -> Int -> Int #-}
 
 -- | Compute the /Cartesian product/ of graphs.
 -- Complexity: /O(s1 * s2)/ time, memory and size, where /s1/ and /s2/ are the
