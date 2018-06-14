@@ -1,11 +1,15 @@
 # Change log
 
-## 0.2.0.0
+## 0.2
 
+* #79: Improve the API consistency: rename `IntAdjacencyMap` to `AdjacencyIntMap`,
+       and then rename the function that extracts its adjacency map to
+       `adjacencyIntMap` to avoid the clash with `AdjacencyMap.adjacencyMap`,
+       which has incompatible type.
 * #76: Remove benchmarks.
 * #74: Drop dependency of `Algebra.Graph` on graph type classes.
 * #62: Move King-Launchbury graphs into `Data.Graph.Typed`.
-* #67, #68, #69: Various performance improvements.
+* #67, #68, #69, #77, #81: Various performance improvements.
 * #66, #72: Add missing `NFData` instances.
 
 ## 0.1.1.1
