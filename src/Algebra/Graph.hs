@@ -172,13 +172,14 @@ instance Num a => Num (Graph a) where
 instance Ord a => Eq (Graph a) where
     (==) = equals
 
--- | Compare two graphs.
-equals :: Ord a => Graph a -> Graph a -> Bool
-equals x y = adjacencyMap x == adjacencyMap y
+-- TODO: Find a more efficient equality check.
+-- | Compare two graphs by converting them to their adjacency maps.
 {-# NOINLINE [1] equals #-}
 {-# RULES "equalsInt" equals = equalsInt #-}
+equals :: Ord a => Graph a -> Graph a -> Bool
+equals x y = adjacencyMap x == adjacencyMap y
 
--- | Like 'equals' but specialised for graphs with vertices of type 'Int'.
+-- | Like @equals@ but specialised for graphs with vertices of type 'Int'.
 equalsInt :: Graph Int -> Graph Int -> Bool
 equalsInt x y = adjacencyIntMap x == adjacencyIntMap y
 
@@ -469,12 +470,12 @@ hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
 -- vertexCount ('vertex' x) == 1
 -- vertexCount            == 'length' . 'vertexList'
 -- @
-vertexCount :: Ord a => Graph a -> Int
-vertexCount = Set.size . vertexSet
 {-# INLINE[1] vertexCount #-}
 {-# RULES "vertexCount/Int" vertexCount = vertexIntCount #-}
+vertexCount :: Ord a => Graph a -> Int
+vertexCount = Set.size . vertexSet
 
--- | Specialized version of 'vertexcount' for graphs with vertices of type 'Int'.
+-- | Like 'vertexCount' but specialised for graphs with vertices of type 'Int'.
 vertexIntCount :: Graph Int -> Int
 vertexIntCount = IntSet.size . vertexIntSet
 
