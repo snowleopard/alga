@@ -150,7 +150,7 @@ instance Num a => Num (NonEmptyGraph a) where
     negate      = id
 
 instance Ord a => Eq (NonEmptyGraph a) where
-    x == y = T.toAdjacencyMap x == T.toAdjacencyMap y
+    x == y = T.adjacencyMap x == T.adjacencyMap y
 
 instance Applicative NonEmptyGraph where
     pure  = Vertex

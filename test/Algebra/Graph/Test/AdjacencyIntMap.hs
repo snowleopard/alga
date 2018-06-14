@@ -1,30 +1,30 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Test.IntAdjacencyMap
+-- Module     : Algebra.Graph.Test.AdjacencyIntMap
 -- Copyright  : (c) Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Testsuite for "Algebra.Graph.IntAdjacencyMap".
+-- Testsuite for "Algebra.Graph.AdjacencyIntMap".
 -----------------------------------------------------------------------------
-module Algebra.Graph.Test.IntAdjacencyMap (
+module Algebra.Graph.Test.AdjacencyIntMap (
     -- * Testsuite
-    testIntAdjacencyMap
+    testAdjacencyIntMap
   ) where
 
-import Algebra.Graph.IntAdjacencyMap
-import Algebra.Graph.IntAdjacencyMap.Internal
+import Algebra.Graph.AdjacencyIntMap
+import Algebra.Graph.AdjacencyIntMap.Internal
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
 t :: Testsuite
-t = testsuite "IntAdjacencyMap." empty
+t = testsuite "AdjacencyIntMap." empty
 
-testIntAdjacencyMap :: IO ()
-testIntAdjacencyMap = do
-    putStrLn "\n============ IntAdjacencyMap ============"
-    test "Axioms of graphs" (axioms :: GraphTestsuite IntAdjacencyMap)
+testAdjacencyIntMap :: IO ()
+testAdjacencyIntMap = do
+    putStrLn "\n============ AdjacencyIntMap ============"
+    test "Axioms of graphs" (axioms :: GraphTestsuite AdjacencyIntMap)
 
     test "Consistency of arbitraryAdjacencyMap" $ \m ->
         consistent m

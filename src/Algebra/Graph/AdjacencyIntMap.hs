@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.IntAdjacencyMap
+-- Module     : Algebra.Graph.AdjacencyIntMap
 -- Copyright  : (c) Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -10,15 +10,15 @@
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines the 'IntAdjacencyMap' data type, as well as associated
--- operations and algorithms. 'IntAdjacencyMap' is an instance of the 'C.Graph'
+-- This module defines the 'AdjacencyIntMap' data type, as well as associated
+-- operations and algorithms. 'AdjacencyIntMap' is an instance of the 'C.Graph'
 -- type class, which can be used for polymorphic graph construction
--- and manipulation. See "Algebra.Graph.AdjacencyMap" for graphs with
+-- and manipulation. See "Algebra.Graph.adjacencyIntMap" for graphs with
 -- non-@Int@ vertices.
 -----------------------------------------------------------------------------
-module Algebra.Graph.IntAdjacencyMap (
+module Algebra.Graph.AdjacencyIntMap (
     -- * Data structure
-    IntAdjacencyMap, adjacencyMap,
+    AdjacencyIntMap, adjacencyIntMap,
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
@@ -45,7 +45,7 @@ import Data.IntSet (IntSet)
 import Data.Set (Set)
 import Data.Tree
 
-import Algebra.Graph.IntAdjacencyMap.Internal
+import Algebra.Graph.AdjacencyIntMap.Internal
 
 import qualified Data.Graph.Typed    as Typed
 import qualified Data.IntMap.Strict  as IntMap
@@ -62,7 +62,7 @@ import qualified Data.Set            as Set
 -- 'vertexCount' (edge 1 1) == 1
 -- 'vertexCount' (edge 1 2) == 2
 -- @
-edge :: Int -> Int -> IntAdjacencyMap
+edge :: Int -> Int -> AdjacencyIntMap
 edge x y | x == y    = AM $ IntMap.singleton x (IntSet.singleton y)
          | otherwise = AM $ IntMap.fromList [(x, IntSet.singleton y), (y, IntSet.empty)]
 
@@ -77,7 +77,7 @@ edge x y | x == y    = AM $ IntMap.singleton x (IntSet.singleton y)
 -- 'vertexCount'  . vertices == 'length' . 'Data.List.nub'
 -- 'vertexIntSet' . vertices == IntSet.'IntSet.fromList'
 -- @
-vertices :: [Int] -> IntAdjacencyMap
+vertices :: [Int] -> AdjacencyIntMap
 vertices = AM . IntMap.fromList . map (\x -> (x, IntSet.empty))
 
 -- | Construct the graph from a list of edges.
@@ -89,7 +89,7 @@ vertices = AM . IntMap.fromList . map (\x -> (x, IntSet.empty))
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
-edges :: [(Int, Int)] -> IntAdjacencyMap
+edges :: [(Int, Int)] -> AdjacencyIntMap
 edges = fromAdjacencyIntSets . map (fmap IntSet.singleton)
 
 -- | Overlay a given list of graphs.
@@ -102,8 +102,8 @@ edges = fromAdjacencyIntSets . map (fmap IntSet.singleton)
 -- overlays           == 'foldr' 'overlay' 'empty'
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
-overlays :: [IntAdjacencyMap] -> IntAdjacencyMap
-overlays = AM . IntMap.unionsWith IntSet.union . map adjacencyMap
+overlays :: [AdjacencyIntMap] -> AdjacencyIntMap
+overlays = AM . IntMap.unionsWith IntSet.union . map adjacencyIntMap
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -115,7 +115,7 @@ overlays = AM . IntMap.unionsWith IntSet.union . map adjacencyMap
 -- connects           == 'foldr' 'connect' 'empty'
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
-connects :: [IntAdjacencyMap] -> IntAdjacencyMap
+connects :: [AdjacencyIntMap] -> AdjacencyIntMap
 connects  = foldr connect empty
 
 -- | Construct a graph from an adjacency list.
@@ -128,7 +128,7 @@ connects  = foldr connect empty
 -- fromAdjacencyList . 'adjacencyList'                     == id
 -- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
 -- @
-fromAdjacencyList :: [(Int, [Int])] -> IntAdjacencyMap
+fromAdjacencyList :: [(Int, [Int])] -> AdjacencyIntMap
 fromAdjacencyList = fromAdjacencyIntSets . map (fmap IntSet.fromList)
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
@@ -142,8 +142,8 @@ fromAdjacencyList = fromAdjacencyIntSets . map (fmap IntSet.fromList)
 -- isSubgraphOf ('overlay' x y) ('connect' x y) == True
 -- isSubgraphOf ('path' xs)     ('circuit' xs)  == True
 -- @
-isSubgraphOf :: IntAdjacencyMap -> IntAdjacencyMap -> Bool
-isSubgraphOf x y = IntMap.isSubmapOfBy IntSet.isSubsetOf (adjacencyMap x) (adjacencyMap y)
+isSubgraphOf :: AdjacencyIntMap -> AdjacencyIntMap -> Bool
+isSubgraphOf x y = IntMap.isSubmapOfBy IntSet.isSubsetOf (adjacencyIntMap x) (adjacencyIntMap y)
 
 -- | Check if a graph is empty.
 -- Complexity: /O(1)/ time.
@@ -155,8 +155,8 @@ isSubgraphOf x y = IntMap.isSubmapOfBy IntSet.isSubsetOf (adjacencyMap x) (adjac
 -- isEmpty ('removeVertex' x $ 'vertex' x) == True
 -- isEmpty ('removeEdge' x y $ 'edge' x y) == False
 -- @
-isEmpty :: IntAdjacencyMap -> Bool
-isEmpty = IntMap.null . adjacencyMap
+isEmpty :: AdjacencyIntMap -> Bool
+isEmpty = IntMap.null . adjacencyIntMap
 
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(log(n))/ time.
@@ -167,8 +167,8 @@ isEmpty = IntMap.null . adjacencyMap
 -- hasVertex 1 ('vertex' 2)       == False
 -- hasVertex x . 'removeVertex' x == const False
 -- @
-hasVertex :: Int -> IntAdjacencyMap -> Bool
-hasVertex x = IntMap.member x . adjacencyMap
+hasVertex :: Int -> AdjacencyIntMap -> Bool
+hasVertex x = IntMap.member x . adjacencyIntMap
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(log(n))/ time.
@@ -180,8 +180,8 @@ hasVertex x = IntMap.member x . adjacencyMap
 -- hasEdge x y . 'removeEdge' x y == const False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
-hasEdge :: Int -> Int -> IntAdjacencyMap -> Bool
-hasEdge u v a = case IntMap.lookup u (adjacencyMap a) of
+hasEdge :: Int -> Int -> AdjacencyIntMap -> Bool
+hasEdge u v a = case IntMap.lookup u (adjacencyIntMap a) of
     Nothing -> False
     Just vs -> IntSet.member v vs
 
@@ -193,8 +193,8 @@ hasEdge u v a = case IntMap.lookup u (adjacencyMap a) of
 -- vertexCount ('vertex' x) == 1
 -- vertexCount            == 'length' . 'vertexList'
 -- @
-vertexCount :: IntAdjacencyMap -> Int
-vertexCount = IntMap.size . adjacencyMap
+vertexCount :: AdjacencyIntMap -> Int
+vertexCount = IntMap.size . adjacencyIntMap
 
 -- | The number of edges in a graph.
 -- Complexity: /O(n)/ time.
@@ -205,8 +205,8 @@ vertexCount = IntMap.size . adjacencyMap
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-edgeCount :: IntAdjacencyMap -> Int
-edgeCount = IntMap.foldr (\es r -> (IntSet.size es + r)) 0 . adjacencyMap
+edgeCount :: AdjacencyIntMap -> Int
+edgeCount = IntMap.foldr (\es r -> (IntSet.size es + r)) 0 . adjacencyIntMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -216,8 +216,8 @@ edgeCount = IntMap.foldr (\es r -> (IntSet.size es + r)) 0 . adjacencyMap
 -- vertexList ('vertex' x) == [x]
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
-vertexList :: IntAdjacencyMap -> [Int]
-vertexList = IntMap.keys . adjacencyMap
+vertexList :: AdjacencyIntMap -> [Int]
+vertexList = IntMap.keys . adjacencyIntMap
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -230,7 +230,7 @@ vertexList = IntMap.keys . adjacencyMap
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
-edgeList :: IntAdjacencyMap -> [(Int, Int)]
+edgeList :: AdjacencyIntMap -> [(Int, Int)]
 edgeList (AM m) = [ (x, y) | (x, ys) <- IntMap.toAscList m, y <- IntSet.toAscList ys ]
 
 -- | The set of vertices of a given graph.
@@ -242,8 +242,8 @@ edgeList (AM m) = [ (x, y) | (x, ys) <- IntMap.toAscList m, y <- IntSet.toAscLis
 -- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
 -- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
 -- @
-vertexIntSet :: IntAdjacencyMap -> IntSet
-vertexIntSet = IntMap.keysSet . adjacencyMap
+vertexIntSet :: AdjacencyIntMap -> IntSet
+vertexIntSet = IntMap.keysSet . adjacencyIntMap
 
 -- | The set of edges of a given graph.
 -- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
@@ -254,8 +254,8 @@ vertexIntSet = IntMap.keysSet . adjacencyMap
 -- edgeSet ('edge' x y) == Set.'Set.singleton' (x,y)
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
-edgeSet :: IntAdjacencyMap -> Set (Int, Int)
-edgeSet = IntMap.foldrWithKey combine Set.empty . adjacencyMap
+edgeSet :: AdjacencyIntMap -> Set (Int, Int)
+edgeSet = IntMap.foldrWithKey combine Set.empty . adjacencyIntMap
   where
     combine u es = Set.union (Set.fromAscList [ (u, v) | v <- IntSet.toAscList es ])
 
@@ -269,8 +269,8 @@ edgeSet = IntMap.foldrWithKey combine Set.empty . adjacencyMap
 -- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
 -- 'fromAdjacencyList' . adjacencyList == id
 -- @
-adjacencyList :: IntAdjacencyMap -> [(Int, [Int])]
-adjacencyList = map (fmap IntSet.toAscList) . IntMap.toAscList . adjacencyMap
+adjacencyList :: AdjacencyIntMap -> [(Int, [Int])]
+adjacencyList = map (fmap IntSet.toAscList) . IntMap.toAscList . adjacencyIntMap
 
 -- | The /preset/ (here 'preIntSet') of an element @x@ is the set of its
 -- /direct predecessors/.
@@ -282,8 +282,8 @@ adjacencyList = map (fmap IntSet.toAscList) . IntMap.toAscList . adjacencyMap
 -- preIntSet 1 ('edge' 1 2) == Set.'Set.empty'
 -- preIntSet y ('edge' x y) == Set.'Set.fromList' [x]
 -- @
-preIntSet :: Int -> IntAdjacencyMap -> IntSet.IntSet
-preIntSet x = IntSet.fromAscList . map fst . filter p  . IntMap.toAscList . adjacencyMap
+preIntSet :: Int -> AdjacencyIntMap -> IntSet.IntSet
+preIntSet x = IntSet.fromAscList . map fst . filter p  . IntMap.toAscList . adjacencyIntMap
   where
     p (_, set) = x `IntSet.member` set
 
@@ -296,8 +296,8 @@ preIntSet x = IntSet.fromAscList . map fst . filter p  . IntMap.toAscList . adja
 -- postIntSet x ('edge' x y) == IntSet.'IntSet.fromList' [y]
 -- postIntSet 2 ('edge' 1 2) == IntSet.'IntSet.empty'
 -- @
-postIntSet :: Int -> IntAdjacencyMap -> IntSet
-postIntSet x = IntMap.findWithDefault IntSet.empty x . adjacencyMap
+postIntSet :: Int -> AdjacencyIntMap -> IntSet
+postIntSet x = IntMap.findWithDefault IntSet.empty x . adjacencyIntMap
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -308,7 +308,7 @@ postIntSet x = IntMap.findWithDefault IntSet.empty x . adjacencyMap
 -- path [x,y]     == 'edge' x y
 -- path . 'reverse' == 'transpose' . path
 -- @
-path :: [Int] -> IntAdjacencyMap
+path :: [Int] -> AdjacencyIntMap
 path xs = case xs of []     -> empty
                      [x]    -> vertex x
                      (_:ys) -> edges (zip xs ys)
@@ -322,7 +322,7 @@ path xs = case xs of []     -> empty
 -- circuit [x,y]     == 'edges' [(x,y), (y,x)]
 -- circuit . 'reverse' == 'transpose' . circuit
 -- @
-circuit :: [Int] -> IntAdjacencyMap
+circuit :: [Int] -> AdjacencyIntMap
 circuit []     = empty
 circuit (x:xs) = path $ [x] ++ xs ++ [x]
 
@@ -337,7 +337,7 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- clique (xs ++ ys) == 'connect' (clique xs) (clique ys)
 -- clique . 'reverse'  == 'transpose' . clique
 -- @
-clique :: [Int] -> IntAdjacencyMap
+clique :: [Int] -> AdjacencyIntMap
 clique = fromAdjacencyIntSets . fst . go
   where
     go []     = ([], IntSet.empty)
@@ -353,7 +353,7 @@ clique = fromAdjacencyIntSets . fst . go
 -- biclique [x1,x2] [y1,y2] == 'edges' [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
-biclique :: [Int] -> [Int] -> IntAdjacencyMap
+biclique :: [Int] -> [Int] -> AdjacencyIntMap
 biclique xs ys = AM $ IntMap.fromSet adjacent (x `IntSet.union` y)
   where
     x = IntSet.fromList xs
@@ -369,7 +369,7 @@ biclique xs ys = AM $ IntMap.fromSet adjacent (x `IntSet.union` y)
 -- star x [y,z] == 'edges' [(x,y), (x,z)]
 -- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
-star :: Int -> [Int] -> IntAdjacencyMap
+star :: Int -> [Int] -> AdjacencyIntMap
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
 
@@ -384,7 +384,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
 -- starTranspose x ys    == 'transpose' ('star' x ys)
 -- @
-starTranspose :: Int -> [Int] -> IntAdjacencyMap
+starTranspose :: Int -> [Int] -> AdjacencyIntMap
 starTranspose x [] = vertex x
 starTranspose x ys = connect (vertices ys) (vertex x)
 
@@ -397,7 +397,7 @@ starTranspose x ys = connect (vertices ys) (vertex x)
 -- tree (Node x [Node y [], Node z []])                     == 'star' x [y,z]
 -- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges' [(1,2), (1,3), (3,4), (3,5)]
 -- @
-tree :: Tree Int -> IntAdjacencyMap
+tree :: Tree Int -> AdjacencyIntMap
 tree (Node x []) = vertex x
 tree (Node x f ) = star x (map rootLabel f)
     `overlay` forest (filter (not . null . subForest) f)
@@ -411,7 +411,7 @@ tree (Node x f ) = star x (map rootLabel f)
 -- forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == 'edges' [(1,2), (1,3), (4,5)]
 -- forest                                                     == 'overlays' . map 'tree'
 -- @
-forest :: Forest Int -> IntAdjacencyMap
+forest :: Forest Int -> AdjacencyIntMap
 forest = overlays . map tree
 
 -- | Remove a vertex from a given graph.
@@ -424,8 +424,8 @@ forest = overlays . map tree
 -- removeVertex 1 ('edge' 1 2)       == 'vertex' 2
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
-removeVertex :: Int -> IntAdjacencyMap -> IntAdjacencyMap
-removeVertex x = AM . IntMap.map (IntSet.delete x) . IntMap.delete x . adjacencyMap
+removeVertex :: Int -> AdjacencyIntMap -> AdjacencyIntMap
+removeVertex x = AM . IntMap.map (IntSet.delete x) . IntMap.delete x . adjacencyIntMap
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(log(n))/ time.
@@ -437,11 +437,11 @@ removeVertex x = AM . IntMap.map (IntSet.delete x) . IntMap.delete x . adjacency
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
-removeEdge :: Int -> Int -> IntAdjacencyMap -> IntAdjacencyMap
-removeEdge x y = AM . IntMap.adjust (IntSet.delete y) x . adjacencyMap
+removeEdge :: Int -> Int -> AdjacencyIntMap -> AdjacencyIntMap
+removeEdge x y = AM . IntMap.adjust (IntSet.delete y) x . adjacencyIntMap
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
--- given 'IntAdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
+-- given 'AdjacencyIntMap'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O((n + m) * log(n))/ time.
 --
 -- @
@@ -449,7 +449,7 @@ removeEdge x y = AM . IntMap.adjust (IntSet.delete y) x . adjacencyMap
 -- replaceVertex x y ('vertex' x) == 'vertex' y
 -- replaceVertex x y            == 'mergeVertices' (== x) y
 -- @
-replaceVertex :: Int -> Int -> IntAdjacencyMap -> IntAdjacencyMap
+replaceVertex :: Int -> Int -> AdjacencyIntMap -> AdjacencyIntMap
 replaceVertex u v = gmap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
@@ -462,7 +462,7 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- mergeVertices even 1 (0 * 2)     == 1 * 1
 -- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
 -- @
-mergeVertices :: (Int -> Bool) -> Int -> IntAdjacencyMap -> IntAdjacencyMap
+mergeVertices :: (Int -> Bool) -> Int -> AdjacencyIntMap -> AdjacencyIntMap
 mergeVertices p v = gmap $ \u -> if p u then v else u
 
 -- | Transpose a given graph.
@@ -475,7 +475,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- transpose . transpose == id
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
-transpose :: IntAdjacencyMap -> IntAdjacencyMap
+transpose :: AdjacencyIntMap -> AdjacencyIntMap
 transpose (AM m) = AM $ IntMap.foldrWithKey combine vs m
   where
     combine v es = IntMap.unionWith IntSet.union (IntMap.fromSet (const $ IntSet.singleton v) es)
@@ -483,7 +483,7 @@ transpose (AM m) = AM $ IntMap.foldrWithKey combine vs m
 
 -- | Transform a graph by applying a function to each of its vertices. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
--- 'IntAdjacencyMap'.
+-- 'AdjacencyIntMap'.
 -- Complexity: /O((n + m) * log(n))/ time.
 --
 -- @
@@ -493,8 +493,8 @@ transpose (AM m) = AM $ IntMap.foldrWithKey combine vs m
 -- gmap id           == id
 -- gmap f . gmap g   == gmap (f . g)
 -- @
-gmap :: (Int -> Int) -> IntAdjacencyMap -> IntAdjacencyMap
-gmap f = AM . IntMap.map (IntSet.map f) . IntMap.mapKeysWith IntSet.union f . adjacencyMap
+gmap :: (Int -> Int) -> AdjacencyIntMap -> AdjacencyIntMap
+gmap f = AM . IntMap.map (IntSet.map f) . IntMap.mapKeysWith IntSet.union f . adjacencyIntMap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -508,8 +508,8 @@ gmap f = AM . IntMap.map (IntSet.map f) . IntMap.mapKeysWith IntSet.union f . ad
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
-induce :: (Int -> Bool) -> IntAdjacencyMap -> IntAdjacencyMap
-induce p = AM . IntMap.map (IntSet.filter p) . IntMap.filterWithKey (\k _ -> p k) . adjacencyMap
+induce :: (Int -> Bool) -> AdjacencyIntMap -> AdjacencyIntMap
+induce p = AM . IntMap.map (IntSet.filter p) . IntMap.filterWithKey (\k _ -> p k) . adjacencyIntMap
 
 -- | Compute the /depth-first search/ forest of a graph.
 --
@@ -528,8 +528,8 @@ induce p = AM . IntMap.map (IntSet.filter p) . IntMap.filterWithKey (\k _ -> p k
 --                                                 , subForest = [ Node { rootLabel = 4
 --                                                                      , subForest = [] }]}]
 -- @
-dfsForest :: IntAdjacencyMap -> Forest Int
-dfsForest = Typed.dfsForest . Typed.fromIntAdjacencyMap
+dfsForest :: AdjacencyIntMap -> Forest Int
+dfsForest = Typed.dfsForest . Typed.fromAdjacencyIntMap
 
 -- | Compute the /depth-first search/ forest of a graph, searching from each of
 -- the given vertices in order. Note that the resulting forest does not
@@ -551,8 +551,8 @@ dfsForest = Typed.dfsForest . Typed.fromIntAdjacencyMap
 --                                                 , Node { rootLabel = 4
 --                                                        , subForest = [] }]
 -- @
-dfsForestFrom :: [Int] -> IntAdjacencyMap -> Forest Int
-dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromIntAdjacencyMap
+dfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
+dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyIntMap
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a graph,
 -- when searching from each of the given vertices in order.
@@ -568,7 +568,7 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromIntAdjacencyMap
 -- dfs [1, 4] $ 3 * (1 + 4) * (1 + 5)   == [1, 5, 4]
 -- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
 -- @
-dfs :: [Int] -> IntAdjacencyMap -> [Int]
+dfs :: [Int] -> AdjacencyIntMap -> [Int]
 dfs vs = concatMap flatten . dfsForestFrom vs
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
@@ -579,10 +579,10 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- topSort (1 * 2 + 2 * 1)             == Nothing
 -- fmap (flip 'isTopSort' x) (topSort x) /= Just False
 -- @
-topSort :: IntAdjacencyMap -> Maybe [Int]
+topSort :: AdjacencyIntMap -> Maybe [Int]
 topSort m = if isTopSort result m then Just result else Nothing
   where
-    result = Typed.topSort (Typed.fromIntAdjacencyMap m)
+    result = Typed.topSort (Typed.fromAdjacencyIntMap m)
 
 -- | Check if a given list of vertices is a valid /topological sort/ of a graph.
 --
@@ -594,9 +594,9 @@ topSort m = if isTopSort result m then Just result else Nothing
 -- isTopSort [x]       ('vertex' x)      == True
 -- isTopSort [x]       ('edge' x x)      == False
 -- @
-isTopSort :: [Int] -> IntAdjacencyMap -> Bool
+isTopSort :: [Int] -> AdjacencyIntMap -> Bool
 isTopSort xs m = go IntSet.empty xs
   where
-    go seen []     = seen == IntMap.keysSet (adjacencyMap m)
+    go seen []     = seen == IntMap.keysSet (adjacencyIntMap m)
     go seen (v:vs) = let newSeen = seen `seq` IntSet.insert v seen
         in postIntSet v m `IntSet.intersection` newSeen == IntSet.empty && go newSeen vs

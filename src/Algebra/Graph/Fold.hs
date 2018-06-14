@@ -148,7 +148,7 @@ instance (Ord a, Show a) => Show (Fold a) where
     show = show . foldg AM.empty AM.vertex AM.overlay AM.connect
 
 instance Ord a => Eq (Fold a) where
-    x == y = T.toAdjacencyMap x == T.toAdjacencyMap y
+    x == y = T.adjacencyMap x == T.adjacencyMap y
 
 instance Num a => Num (Fold a) where
     fromInteger = vertex . fromInteger
