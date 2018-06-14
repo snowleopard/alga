@@ -116,9 +116,7 @@ overlays = AM . IntMap.unionsWith IntSet.union . map adjacencyIntMap
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [AdjacencyIntMap] -> AdjacencyIntMap
-connects []     = empty
-connects [x]    = x
-connects (x:xs) = x `connect` connects xs
+connects  = foldr connect empty
 
 -- | Construct a graph from an adjacency list.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.

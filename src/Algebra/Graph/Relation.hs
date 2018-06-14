@@ -113,9 +113,7 @@ overlays xs = Relation (Set.unions $ map domain xs) (Set.unions $ map relation x
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: Ord a => [Relation a] -> Relation a
-connects []     = empty
-connects [x]    = x
-connects (x:xs) = x `connect` connects xs
+connects = foldr connect empty
 
 -- | Construct a graph from an adjacency list.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.

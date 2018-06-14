@@ -304,9 +304,7 @@ edges es = Fold $ \e v o c -> foldr (flip o . uncurry (c `on` v)) e es
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Fold a] -> Fold a
-overlays []     = empty
-overlays [x]    = x
-overlays (x:xs) = x `overlay` overlays xs
+overlays = foldr overlay empty
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -320,9 +318,7 @@ overlays (x:xs) = x `overlay` overlays xs
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Fold a] -> Fold a
-connects []     = empty
-connects [x]    = x
-connects (x:xs) = x `connect` connects xs
+connects = foldr connect empty
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
