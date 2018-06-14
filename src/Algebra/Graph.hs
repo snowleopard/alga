@@ -385,6 +385,7 @@ foldg e v o c = go
 -- isSubgraphOf ('overlay' x y) ('connect' x y) == True
 -- isSubgraphOf ('path' xs)     ('circuit' xs)  == True
 -- @
+{-# SPECIALISE isSubgraphOf :: Graph Int -> Graph Int -> Bool #-}
 isSubgraphOf :: Ord a => Graph a -> Graph a -> Bool
 isSubgraphOf x y = overlay x y == y
 
@@ -398,6 +399,7 @@ isSubgraphOf x y = overlay x y == y
 -- 1 + 2 === 2 + 1     == False
 -- x + y === x * y     == False
 -- @
+{-# SPECIALISE (===) :: Graph Int -> Graph Int -> Bool #-}
 (===) :: Eq a => Graph a -> Graph a -> Bool
 Empty           === Empty           = True
 (Vertex  x1   ) === (Vertex  x2   ) = x1 ==  x2
@@ -444,6 +446,7 @@ size = foldg 1 (const 1) (+) (+)
 -- hasVertex 1 ('vertex' 2)       == False
 -- hasVertex x . 'removeVertex' x == const False
 -- @
+{-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex x = foldg False (==x) (||) (||)
 
@@ -459,6 +462,7 @@ hasVertex x = foldg False (==x) (||) (||)
 -- hasEdge x y . 'removeEdge' x y == const False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
+{-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 hasEdge :: Ord a => a -> a -> Graph a -> Bool
 hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
 
@@ -489,6 +493,7 @@ vertexIntCount = IntSet.size . vertexIntSet
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
+{-# SPECIALISE edgeCount :: Graph Int -> Int #-}
 edgeCount :: Ord a => Graph a -> Int
 edgeCount = length . edgeList
 
@@ -521,6 +526,7 @@ vertexIntList = IntSet.toList . vertexIntSet
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
+{-# SPECIALISE edgeList :: Graph Int -> [(Int,Int)] #-}
 edgeList :: Ord a => Graph a -> [(a, a)]
 edgeList = AM.edgeList . fromGraphAM
 
@@ -558,6 +564,7 @@ vertexIntSet = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 -- edgeSet ('edge' x y) == Set.'Set.singleton' (x,y)
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
+{-# SPECIALISE edgeSet :: Graph Int -> Set.Set (Int,Int) #-}
 edgeSet :: Ord a => Graph a -> Set.Set (a, a)
 edgeSet = AM.edgeSet . fromGraphAM
 
@@ -571,6 +578,7 @@ edgeSet = AM.edgeSet . fromGraphAM
 -- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
 -- 'fromAdjacencyList' . adjacencyList == id
 -- @
+{-# SPECIALISE adjacencyList :: Graph Int -> [(Int,[Int])] #-}
 adjacencyList :: Ord a => Graph a -> [(a, [a])]
 adjacencyList = AM.adjacencyList . fromGraphAM
 
@@ -774,6 +782,7 @@ deBruijn len alphabet = skeleton >>= expand
 -- removeVertex 1 ('edge' 1 2)       == 'vertex' 2
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
+{-# SPECIALISE removeVertex :: Int -> Graph Int -> Graph Int #-}
 removeVertex :: Eq a => a -> Graph a -> Graph a
 removeVertex v = induce (/= v)
 
@@ -788,11 +797,14 @@ removeVertex v = induce (/= v)
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- 'size' (removeEdge x y z)         <= 3 * 'size' z
 -- @
+{-# SPECIALISE removeEdge :: Int -> Int -> Graph Int -> Graph Int #-}
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t = filterContext s (/=s) (/=t)
 
+
 -- TODO: Export
 -- | Filter vertices in a subgraph context.
+{-# SPECIALISE filterContext :: Int -> (Int -> Bool) -> (Int -> Bool) -> Graph Int -> Graph Int #-}
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
 filterContext s i o g = maybe g go $ context (==s) g
   where
@@ -808,8 +820,10 @@ filterContext s i o g = maybe g go $ context (==s) g
 -- replaceVertex x y ('vertex' x) == 'vertex' y
 -- replaceVertex x y            == 'mergeVertices' (== x) y
 -- @
+{-# SPECIALISE replaceVertex :: Int -> Int -> Graph Int -> Graph Int #-}
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
 replaceVertex u v = fmap $ \w -> if w == u then v else w
+
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
@@ -835,8 +849,10 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 -- splitVertex x [y]                 == 'replaceVertex' x y
 -- splitVertex 1 [0,1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)
 -- @
+{-# SPECIALISE splitVertex :: Int -> [Int] -> Graph Int -> Graph Int #-}
 splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
 splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
+
 
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
@@ -887,9 +903,11 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Co
 -- simplify (1 + 2 + 1) '===' 1 + 2
 -- simplify (1 * 1 * 1) '===' 1 * 1
 -- @
+{-# SPECIALISE simplify :: Graph Int -> Graph Int #-}
 simplify :: Ord a => Graph a -> Graph a
 simplify = foldg Empty Vertex (simple Overlay) (simple Connect)
 
+{-# SPECIALISE simple :: (Int -> Int -> Int) -> Int -> Int -> Int #-}
 simple :: Eq g => (g -> g -> g) -> g -> g -> g
 simple op x y
     | x == z    = x
