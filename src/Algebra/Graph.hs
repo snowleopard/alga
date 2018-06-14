@@ -68,7 +68,7 @@ import Data.Map    (Map)
 import Data.Set    (Set)
 
 import qualified Algebra.Graph.AdjacencyMap    as AM
-import qualified Algebra.Graph.IntAdjacencyMap as IAM
+import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Control.Applicative           as Ap
 import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
@@ -590,7 +590,7 @@ fromGraphAM = foldg AM.empty AM.vertex AM.overlay AM.connect
 
 -- | Like 'adjacencyMap' but specialised for graphs with vertices of type 'Int'.
 adjacencyIntMap :: Graph Int -> IntMap IntSet
-adjacencyIntMap = IAM.adjacencyMap . foldg IAM.empty IAM.vertex IAM.overlay IAM.connect
+adjacencyIntMap = AIM.adjacencyIntMap . foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the

@@ -37,7 +37,7 @@ import Algebra.Graph.Test.API
 
 import qualified Algebra.Graph                 as G
 import qualified Algebra.Graph.AdjacencyMap    as AM
-import qualified Algebra.Graph.IntAdjacencyMap as IAM
+import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Data.Set                      as Set
 import qualified Data.IntSet                   as IntSet
 
@@ -425,14 +425,14 @@ testToGraphDefault (Testsuite prefix (%)) = do
     test "adjacencyMap             == Algebra.Graph.AdjacencyMap.adjacencyMap . foldg empty vertex overlay connect" $ \x ->
           adjacencyMap x           == (AM.adjacencyMap . foldg empty vertex overlay connect) % x
 
-    test "adjacencyIntMap          == Algebra.Graph.IntAdjacencyMap.adjacencyMap . foldg empty vertex overlay connect" $ \x ->
-          adjacencyIntMap  x       == (IAM.adjacencyMap . foldg empty vertex overlay connect) % x
+    test "adjacencyIntMap          == Algebra.Graph.AdjacencyIntMap.adjacencyIntMap . foldg empty vertex overlay connect" $ \x ->
+          adjacencyIntMap  x       == (AIM.adjacencyIntMap . foldg empty vertex overlay connect) % x
 
     test "adjacencyMapTranspose    == Algebra.Graph.AdjacencyMap.adjacencyMap . foldg empty vertex overlay (flip connect)" $ \x ->
           adjacencyMapTranspose x  == (AM.adjacencyMap . foldg empty vertex overlay (flip connect)) % x
 
-    test "adjacencyIntMapTranspose == Algebra.Graph.IntAdjacencyMap.adjacencyMap . foldg empty vertex overlay (flip connect)" $ \x ->
-          adjacencyIntMapTranspose x == (IAM.adjacencyMap . foldg empty vertex overlay (flip connect)) % x
+    test "adjacencyIntMapTranspose == Algebra.Graph.AdjacencyIntMap.adjacencyIntMap . foldg empty vertex overlay (flip connect)" $ \x ->
+          adjacencyIntMapTranspose x == (AIM.adjacencyIntMap . foldg empty vertex overlay (flip connect)) % x
 
 testFoldg :: Testsuite -> IO ()
 testFoldg (Testsuite prefix (%)) = do
