@@ -15,13 +15,12 @@
 -- and __MAY BE REMOVED WITHOUT NOTICE__ at any point!
 -----------------------------------------------------------------------------
 module Data.Graph.Typed (
-  GraphKL(..),
-  fromAdjacencyMap, fromIntAdjacencyMap,
+  GraphKL(..), fromAdjacencyMap, fromAdjacencyIntMap,
   dfsForest, dfsForestFrom, dfs, topSort
   ) where
 
-import Algebra.Graph.AdjacencyMap.Internal as AM (AdjacencyMap(..))
-import Algebra.Graph.IntAdjacencyMap.Internal as IAM (IntAdjacencyMap(..))
+import Algebra.Graph.AdjacencyMap.Internal    as AM  (AdjacencyMap    (..))
+import Algebra.Graph.AdjacencyIntMap.Internal as AIM (AdjacencyIntMap (..))
 
 import Data.Tree
 import Data.Maybe
@@ -62,18 +61,18 @@ fromAdjacencyMap (AM.AM m) = GraphKL
   where
     (g, r, t) = KL.graphFromEdges [ ((), v, Set.toAscList us) | (v, us) <- Map.toAscList m ]
 
--- | Build 'GraphKL' from an 'IntAdjacencyMap'.
--- If @fromIntAdjacencyMap g == h@ then the following holds:
+-- | Build 'GraphKL' from an 'AdjacencyIntMap'.
+-- If @fromAdjacencyIntMap g == h@ then the following holds:
 --
 -- @
--- map ('fromVertexKL' h) ('Data.Graph.vertices' $ 'toGraphKL' h)                               == 'Data.IntSet.toAscList' ('Algebra.Graph.IntAdjacencyMap.vertexIntSet' g)
--- map (\\(x, y) -> ('fromVertexKL' h x, 'fromVertexKL' h y)) ('Data.Graph.edges' $ 'toGraphKL' h) == 'Algebra.Graph.IntAdjacencyMap.edgeList' g
+-- map ('fromVertexKL' h) ('Data.Graph.vertices' $ 'toGraphKL' h)                               == 'Data.IntSet.toAscList' ('Algebra.Graph.AdjacencyIntMap.vertexIntSet' g)
+-- map (\\(x, y) -> ('fromVertexKL' h x, 'fromVertexKL' h y)) ('Data.Graph.edges' $ 'toGraphKL' h) == 'Algebra.Graph.AdjacencyIntMap.edgeList' g
 --
--- 'toGraphKL' (fromIntAdjacencyMap (1 * 2 + 3 * 1)) == 'array' (0,2) [(0,[1]),(1,[]),(2,[0])]
--- 'toGraphKL' (fromIntAdjacencyMap (1 * 2 + 2 * 1)) == 'array' (0,1) [(0,[1]),(1,[0])]
+-- 'toGraphKL' (fromAdjacencyIntMap (1 * 2 + 3 * 1)) == 'array' (0,2) [(0,[1]),(1,[]),(2,[0])]
+-- 'toGraphKL' (fromAdjacencyIntMap (1 * 2 + 2 * 1)) == 'array' (0,1) [(0,[1]),(1,[0])]
 -- @
-fromIntAdjacencyMap :: IntAdjacencyMap -> GraphKL Int
-fromIntAdjacencyMap (IAM.AM m) = GraphKL
+fromAdjacencyIntMap :: AdjacencyIntMap -> GraphKL Int
+fromAdjacencyIntMap (AIM.AM m) = GraphKL
     { toGraphKL    = g
     , fromVertexKL = \u -> case r u of (_, v, _) -> v
     , toVertexKL   = t }
@@ -88,7 +87,7 @@ fromIntAdjacencyMap (IAM.AM m) = GraphKL
 -- (%) :: (GraphKL Int -> a) -> AM.AdjacencyMap Int -> a
 -- a % g = a $ fromAdjacencyMap g
 -- @
--- for greater clarity. (One could use an IntAdjacencyMap just as well)
+-- for greater clarity. (One could use an AdjacencyIntMap just as well)
 --
 -- @
 -- 'forest' (dfsForest % 'edge' 1 1)           == 'vertex' 1

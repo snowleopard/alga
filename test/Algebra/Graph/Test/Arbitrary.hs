@@ -11,7 +11,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Arbitrary (
     -- * Generators of arbitrary graph instances
-    arbitraryGraph, arbitraryRelation, arbitraryAdjacencyMap, arbitraryIntAdjacencyMap
+    arbitraryGraph, arbitraryRelation, arbitraryAdjacencyMap, arbitraryAdjacencyIntMap
   ) where
 
 import Prelude ()
@@ -25,13 +25,13 @@ import Algebra.Graph
 import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.Export
 import Algebra.Graph.Fold (Fold)
-import Algebra.Graph.IntAdjacencyMap.Internal
+import Algebra.Graph.AdjacencyIntMap.Internal
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived
 
 import qualified Algebra.Graph.AdjacencyMap    as AdjacencyMap
 import qualified Algebra.Graph.Class           as C
-import qualified Algebra.Graph.IntAdjacencyMap as IntAdjacencyMap
+import qualified Algebra.Graph.AdjacencyIntMap as AdjacencyIntMap
 import qualified Algebra.Graph.NonEmpty        as NE
 import qualified Algebra.Graph.Relation        as Relation
 
@@ -85,10 +85,10 @@ arbitraryRelation = Relation.fromAdjacencyList <$> arbitrary
 arbitraryAdjacencyMap :: (Arbitrary a, Ord a) => Gen (AdjacencyMap a)
 arbitraryAdjacencyMap = AdjacencyMap.fromAdjacencyList <$> arbitrary
 
--- | Generate an arbitrary 'IntAdjacencyMap'. It is guaranteed that the
+-- | Generate an arbitrary 'AdjacencyIntMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
-arbitraryIntAdjacencyMap :: Gen IntAdjacencyMap
-arbitraryIntAdjacencyMap = IntAdjacencyMap.fromAdjacencyList <$> arbitrary
+arbitraryAdjacencyIntMap :: Gen AdjacencyIntMap
+arbitraryAdjacencyIntMap = AdjacencyIntMap.fromAdjacencyList <$> arbitrary
 
 -- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
@@ -109,8 +109,8 @@ instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
 instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
     arbitrary = arbitraryAdjacencyMap
 
-instance Arbitrary IntAdjacencyMap where
-    arbitrary = arbitraryIntAdjacencyMap
+instance Arbitrary AdjacencyIntMap where
+    arbitrary = arbitraryAdjacencyIntMap
 
 instance Arbitrary a => Arbitrary (Fold a) where
     arbitrary = arbitraryGraph

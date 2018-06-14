@@ -23,8 +23,8 @@ import qualified Algebra.Graph.AdjacencyMap             as AdjacencyMap
 import qualified Algebra.Graph.AdjacencyMap.Internal    as AdjacencyMap
 import qualified Algebra.Graph.Fold                     as Fold
 import qualified Algebra.Graph.HigherKinded.Class       as HClass
-import qualified Algebra.Graph.IntAdjacencyMap          as IntAdjacencyMap
-import qualified Algebra.Graph.IntAdjacencyMap.Internal as IntAdjacencyMap
+import qualified Algebra.Graph.AdjacencyIntMap          as AdjacencyIntMap
+import qualified Algebra.Graph.AdjacencyIntMap.Internal as AdjacencyIntMap
 import qualified Algebra.Graph.Relation                 as Relation
 import qualified Data.Set                               as Set
 import qualified Data.IntSet                            as IntSet
@@ -200,35 +200,35 @@ instance Ord a => GraphAPI (Graph.Graph a) where
     simplify          = Graph.simplify
     box               = Graph.box
 
-instance GraphAPI IntAdjacencyMap.IntAdjacencyMap where
-    edge                 = IntAdjacencyMap.edge
-    vertices             = IntAdjacencyMap.vertices
-    edges                = IntAdjacencyMap.edges
-    overlays             = IntAdjacencyMap.overlays
-    connects             = IntAdjacencyMap.connects
-    fromAdjacencyList    = IntAdjacencyMap.fromAdjacencyList
-    fromAdjacencyIntSets = IntAdjacencyMap.fromAdjacencyIntSets
-    isSubgraphOf         = IntAdjacencyMap.isSubgraphOf
-    path                 = IntAdjacencyMap.path
-    circuit              = IntAdjacencyMap.circuit
-    clique               = IntAdjacencyMap.clique
-    biclique             = IntAdjacencyMap.biclique
-    star                 = IntAdjacencyMap.star
-    starTranspose        = IntAdjacencyMap.starTranspose
-    tree                 = IntAdjacencyMap.tree
-    forest               = IntAdjacencyMap.forest
-    removeVertex         = IntAdjacencyMap.removeVertex
-    removeEdge           = IntAdjacencyMap.removeEdge
-    replaceVertex        = IntAdjacencyMap.replaceVertex
-    mergeVertices        = IntAdjacencyMap.mergeVertices
-    transpose            = IntAdjacencyMap.transpose
-    gmap                 = IntAdjacencyMap.gmap
-    induce               = IntAdjacencyMap.induce
-    dfsForest            = IntAdjacencyMap.dfsForest
-    dfsForestFrom        = IntAdjacencyMap.dfsForestFrom
-    dfs                  = IntAdjacencyMap.dfs
-    topSort              = IntAdjacencyMap.topSort
-    isTopSort            = IntAdjacencyMap.isTopSort
+instance GraphAPI AdjacencyIntMap.AdjacencyIntMap where
+    edge                 = AdjacencyIntMap.edge
+    vertices             = AdjacencyIntMap.vertices
+    edges                = AdjacencyIntMap.edges
+    overlays             = AdjacencyIntMap.overlays
+    connects             = AdjacencyIntMap.connects
+    fromAdjacencyList    = AdjacencyIntMap.fromAdjacencyList
+    fromAdjacencyIntSets = AdjacencyIntMap.fromAdjacencyIntSets
+    isSubgraphOf         = AdjacencyIntMap.isSubgraphOf
+    path                 = AdjacencyIntMap.path
+    circuit              = AdjacencyIntMap.circuit
+    clique               = AdjacencyIntMap.clique
+    biclique             = AdjacencyIntMap.biclique
+    star                 = AdjacencyIntMap.star
+    starTranspose        = AdjacencyIntMap.starTranspose
+    tree                 = AdjacencyIntMap.tree
+    forest               = AdjacencyIntMap.forest
+    removeVertex         = AdjacencyIntMap.removeVertex
+    removeEdge           = AdjacencyIntMap.removeEdge
+    replaceVertex        = AdjacencyIntMap.replaceVertex
+    mergeVertices        = AdjacencyIntMap.mergeVertices
+    transpose            = AdjacencyIntMap.transpose
+    gmap                 = AdjacencyIntMap.gmap
+    induce               = AdjacencyIntMap.induce
+    dfsForest            = AdjacencyIntMap.dfsForest
+    dfsForestFrom        = AdjacencyIntMap.dfsForestFrom
+    dfs                  = AdjacencyIntMap.dfs
+    topSort              = AdjacencyIntMap.topSort
+    isTopSort            = AdjacencyIntMap.isTopSort
 
 instance Ord a => GraphAPI (Relation.Relation a) where
     edge              = Relation.edge
