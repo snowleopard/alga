@@ -114,7 +114,7 @@ script:
 
   # Benchmark
   - cd $TRAVIS_BUILD_DIR
-  - if [ $DOBENCH ]; then ./compare.sh Cabal ./ Ascii $(if [ $TRAVIS_PULL_REQUEST = "false" ]; then "HEAD^1" else "HEAD" ); fi;
+  - if [ $DOBENCH ]; then ./compare.sh Cabal ./ Ascii $(if [ $TRAVIS_PULL_REQUEST = "false" ]; then "HEAD^1"; else "HEAD";fi; ); fi;
 
 # REGENDATA ["--osx=8.2.2","algebraic-graphs.cabal","-o",".travis.yml"]
 # EOF
