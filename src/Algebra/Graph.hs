@@ -476,7 +476,7 @@ hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
 {-# SPECIALISE hasLoop :: Int -> Graph Int -> Bool #-}
 hasLoop :: Eq a => a -> Graph a -> Bool
 hasLoop l = hasLoop' . induce (==l)
-  where -- hasLoop' is working because induce is removing empty leaves.
+  where -- hasLoop' is working because Algebra.Graph.induce is removing empty leaves.
     hasLoop' (Overlay x y) = hasLoop' x || hasLoop' y
     hasLoop' Connect{} = True
     hasLoop' _ = False

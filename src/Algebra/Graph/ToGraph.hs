@@ -103,7 +103,7 @@ class ToGraph t where
     -- | Check if a graph contains a given lopp.
     --
     -- @
-    -- hasEdge x == hasEdge x x'
+    -- hasEdge x == hasEdge x x
     -- @
     hasLoop :: Eq (ToVertex t) => ToVertex t -> t -> Bool
     hasLoop x = hasEdge x x

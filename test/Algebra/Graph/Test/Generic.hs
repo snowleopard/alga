@@ -524,7 +524,7 @@ testHasEdge (Testsuite prefix (%)) = do
 
 testHasLoop :: Testsuite -> IO ()
 testHasLoop (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "hasEdge ============"
+    putStrLn $ "\n============ " ++ prefix ++ "hasLoop ============"
     test "hasLoop x empty            == False" $ \x ->
           hasLoop x % empty          == False
 
