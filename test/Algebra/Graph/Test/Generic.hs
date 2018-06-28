@@ -66,6 +66,7 @@ testToGraph = mconcat [ testToGraphDefault
                       , testIsEmpty
                       , testHasVertex
                       , testHasEdge
+                      , testHasLoop
                       , testVertexCount
                       , testEdgeCount
                       , testVertexList
