@@ -33,8 +33,8 @@ module Algebra.Graph (
     isSubgraphOf, (===),
 
     -- * Graph properties
-    isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
+    isEmpty, size, hasVertex, hasEdge, hasLoop, vertexCount, edgeCount,
+    vertexList, edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, starTranspose, tree, forest, mesh,
@@ -461,6 +461,25 @@ hasVertex x = foldg False (==x) (||) (||)
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 hasEdge :: Ord a => a -> a -> Graph a -> Bool
 hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
+
+-- | Check if a graph contains a given loop.
+-- Complexity: /O(s)/ time.
+--
+-- @
+-- hasLoop x 'empty'            == False
+-- hasLoop x ('vertex' z)       == False
+-- hasLoop x ('edge' x x)       == True
+-- hasLoop x                    == hasEdge x x
+-- hasLoop x . 'removeEdge' x x == const False
+-- hasEdge x                    == 'elem' (x,x) . 'edgeList'
+-- @
+{-# SPECIALISE hasLoop :: Int -> Graph Int -> Bool #-}
+hasLoop :: Eq a => a -> Graph a -> Bool
+hasLoop l = hasLoop' . induce (==l)
+  where -- hasLoop' is working because induce is removing empty leaves.
+    hasLoop' (Overlay x y) = hasLoop' x || hasLoop' y
+    hasLoop' Connect{} = True
+    hasLoop' _ = False
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.

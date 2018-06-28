@@ -100,6 +100,14 @@ class ToGraph t where
         o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
         c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
 
+    -- | Check if a graph contains a given lopp.
+    --
+    -- @
+    -- hasEdge x == hasEdge x x'
+    -- @
+    hasLoop :: Eq (ToVertex t) => ToVertex t -> t -> Bool
+    hasLoop x = hasEdge x x
+
     -- | The number of vertices in a graph.
     --
     -- @

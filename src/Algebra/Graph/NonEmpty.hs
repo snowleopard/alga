@@ -32,8 +32,8 @@ module Algebra.Graph.NonEmpty (
     isSubgraphOf, (===),
 
     -- * Graph properties
-    size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList1, edgeList,
-    vertexSet, vertexIntSet, edgeSet,
+    size, hasVertex, hasEdge, hasLoop, vertexCount, edgeCount, vertexList1,
+    edgeList, vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
     path1, circuit1, clique1, biclique1, star, starTranspose, tree, mesh1, torus1,
@@ -377,8 +377,26 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- hasEdge x y . 'removeEdge' x y == const False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
-hasEdge :: Ord a => a -> a -> NonEmptyGraph a -> Bool
+hasEdge :: Eq a => a -> a -> NonEmptyGraph a -> Bool
 hasEdge = T.hasEdge
+
+-- | Check if a graph contains a given loop.
+-- Complexity: /O(s)/ time.
+--
+-- @
+-- hasLoop x 'empty'            == False
+-- hasLoop x ('vertex' z)       == False
+-- hasLoop x ('edge' x x)       == True
+-- hasLoop x                    == hasEdge x x
+-- hasLoop x . 'removeEdge' x x == const False
+-- hasEdge x                    == 'elem' (x,x) . 'edgeList'
+-- @
+hasLoop :: Eq a => a -> NonEmptyGraph a -> Bool
+hasLoop l = maybe False hasLoop' . induce1 (==l)
+  where -- hasLoop' is working because induce is removing empty leaves.
+    hasLoop' (Overlay x y) = hasLoop' x || hasLoop' y
+    hasLoop' Connect{} = True
+    hasLoop' _ = False
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
@@ -681,7 +699,14 @@ transpose = foldg1 vertex overlay (flip connect)
 -- induce1 p '>=>' induce1 q == induce1 (\\x -> p x && q x)
 -- @
 induce1 :: (a -> Bool) -> NonEmptyGraph a -> Maybe (NonEmptyGraph a)
-induce1 p = toNonEmptyGraph . G.induce p . T.toGraph
+induce1 p = foldg1
+  (\x -> if p x then Just (Vertex x) else Nothing)
+  (k Overlay)
+  (k Connect)
+  where
+    k _ Nothing a = a
+    k _ a Nothing = a
+    k f (Just a) (Just b) = Just $ f a b
 
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given expression according to the laws of the algebra.

@@ -522,6 +522,25 @@ testHasEdge (Testsuite prefix (%)) = do
         (u, v) <- elements ((x, y) : edgeList z)
         return $ hasEdge u v z == elem (u, v) (edgeList % z)
 
+testHasLoop :: Testsuite -> IO ()
+testHasLoop (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "hasEdge ============"
+    test "hasLoop x empty            == False" $ \x ->
+          hasLoop x % empty          == False
+
+    test "hasLoop x (vertex z)       == False" $ \x z ->
+          hasLoop x % vertex z       == False
+
+    test "hasLoop x (edge x x)       == True" $ \x ->
+          hasLoop x % edge x x       == True
+
+    test "hasLoop x . removeEdge x x == const False" $ \x z ->
+         (hasLoop x . removeEdge x x) z == const False % z
+
+    test "hasLoop x                  == elem (x,x) . edgeList" $ \x z -> do
+        (u, _) <- elements ((x, x) : edgeList z)
+        return $ hasLoop u z == elem (u, u) (edgeList % z)
+
 testVertexCount :: Testsuite -> IO ()
 testVertexCount (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "vertexCount ============"
