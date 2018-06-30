@@ -386,7 +386,7 @@ hasEdge = T.hasEdge
 -- @
 -- hasSelfLoop x ('vertex' y)       == False
 -- hasSelfLoop x ('edge' x y)       == True
--- hasSelfLoop x                    == hasEdge x x
+-- hasSelfLoop x                  == hasEdge x x
 -- hasSelfLoop x . 'removeEdge' x x == const False
 -- @
 hasSelfLoop :: Eq a => a -> NonEmptyGraph a -> Bool

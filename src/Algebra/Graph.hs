@@ -469,9 +469,9 @@ hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
 -- hasSelfLoop x 'empty'            == False
 -- hasSelfLoop x ('vertex' z)       == False
 -- hasSelfLoop x ('edge' x x)       == True
--- hasSelfLoop x                    == hasEdge x x
+-- hasSelfLoop x                  == hasEdge x x
 -- hasSelfLoop x . 'removeEdge' x x == const False
--- hasSelfLoop x                    == 'elem' (x,x) . 'edgeList'
+-- hasSelfLoop x                  == 'elem' (x,x) . 'edgeList'
 -- @
 {-# SPECIALISE hasSelfLoop :: Int -> Graph Int -> Bool #-}
 hasSelfLoop :: Eq a => a -> Graph a -> Bool

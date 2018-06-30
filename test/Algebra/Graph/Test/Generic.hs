@@ -66,7 +66,7 @@ testToGraph = mconcat [ testToGraphDefault
                       , testIsEmpty
                       , testHasVertex
                       , testHasEdge
-                      , testHasLoop
+                      , testHasSelfLoop
                       , testVertexCount
                       , testEdgeCount
                       , testVertexList
@@ -523,8 +523,8 @@ testHasEdge (Testsuite prefix (%)) = do
         (u, v) <- elements ((x, y) : edgeList z)
         return $ hasEdge u v z == elem (u, v) (edgeList % z)
 
-testHasLoop :: Testsuite -> IO ()
-testHasLoop (Testsuite prefix (%)) = do
+testHasSelfLoop :: Testsuite -> IO ()
+testHasSelfLoop (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "hasSelfLoop ============"
     test "hasSelfLoop x empty            == False" $ \x ->
           hasSelfLoop x % empty          == False
@@ -538,9 +538,8 @@ testHasLoop (Testsuite prefix (%)) = do
     test "hasSelfLoop x . removeEdge x x == const False" $ \x y ->
          (hasSelfLoop x . removeEdge x x) y == const False % y
 
-    test "hasSelfLoop x                  == elem (x,x) . edgeList" $ \x y -> do
-        (u, _) <- elements ((x, x) : edgeList y)
-        return $ hasSelfLoop u y == elem (u, u) (edgeList % y)
+    test "hasSelfLoop x                  == hasEdge x x" $ \x y ->
+         hasSelfLoop x % y               == hasEdge x x % y
 
 testVertexCount :: Testsuite -> IO ()
 testVertexCount (Testsuite prefix (%)) = do
