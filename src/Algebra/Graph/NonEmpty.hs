@@ -384,16 +384,14 @@ hasEdge = T.hasEdge
 -- Complexity: /O(s)/ time.
 --
 -- @
--- hasLoop x 'empty'            == False
--- hasLoop x ('vertex' z)       == False
--- hasLoop x ('edge' x x)       == True
+-- hasLoop x ('vertex' y)       == False
+-- hasLoop x ('edge' x y)       == True
 -- hasLoop x                    == hasEdge x x
 -- hasLoop x . 'removeEdge' x x == const False
--- hasEdge x                    == 'elem' (x,x) . 'edgeList'
 -- @
 hasLoop :: Eq a => a -> NonEmptyGraph a -> Bool
 hasLoop l = maybe False hasLoop' . induce1 (==l)
-  where -- hasLoop' is working because induce is removing empty leaves.
+  where
     hasLoop' (Overlay x y) = hasLoop' x || hasLoop' y
     hasLoop' Connect{} = True
     hasLoop' _ = False

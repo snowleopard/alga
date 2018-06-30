@@ -471,7 +471,7 @@ hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
 -- hasLoop x ('edge' x x)       == True
 -- hasLoop x                    == hasEdge x x
 -- hasLoop x . 'removeEdge' x x == const False
--- hasEdge x                    == 'elem' (x,x) . 'edgeList'
+-- hasLoop x                    == 'elem' (x,x) . 'edgeList'
 -- @
 {-# SPECIALISE hasLoop :: Int -> Graph Int -> Bool #-}
 hasLoop :: Eq a => a -> Graph a -> Bool

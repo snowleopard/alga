@@ -529,18 +529,18 @@ testHasLoop (Testsuite prefix (%)) = do
     test "hasLoop x empty            == False" $ \x ->
           hasLoop x % empty          == False
 
-    test "hasLoop x (vertex z)       == False" $ \x z ->
-          hasLoop x % vertex z       == False
+    test "hasLoop x (vertex y)       == False" $ \x y ->
+          hasLoop x % vertex y       == False
 
     test "hasLoop x (edge x x)       == True" $ \x ->
           hasLoop x % edge x x       == True
 
-    test "hasLoop x . removeEdge x x == const False" $ \x z ->
-         (hasLoop x . removeEdge x x) z == const False % z
+    test "hasLoop x . removeEdge x x == const False" $ \x y ->
+         (hasLoop x . removeEdge x x) y == const False % y
 
-    test "hasLoop x                  == elem (x,x) . edgeList" $ \x z -> do
-        (u, _) <- elements ((x, x) : edgeList z)
-        return $ hasLoop u z == elem (u, u) (edgeList % z)
+    test "hasLoop x                  == elem (x,x) . edgeList" $ \x y -> do
+        (u, _) <- elements ((x, x) : edgeList y)
+        return $ hasLoop u y == elem (u, u) (edgeList % y)
 
 testVertexCount :: Testsuite -> IO ()
 testVertexCount (Testsuite prefix (%)) = do
