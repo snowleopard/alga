@@ -1,5 +1,9 @@
 # Change log
 
+## 0.2.1
+
+* #86: Add `hasSelfLoop` into the API.
+
 ## 0.2
 
 * #79: Improve the API consistency: rename `IntAdjacencyMap` to `AdjacencyIntMap`,
