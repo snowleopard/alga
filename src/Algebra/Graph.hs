@@ -33,7 +33,7 @@ module Algebra.Graph (
     isSubgraphOf, (===),
 
     -- * Graph properties
-    isEmpty, size, hasVertex, hasEdge, hasLoop, vertexCount, edgeCount,
+    isEmpty, size, hasVertex, hasEdge, hasSelfLoop, vertexCount, edgeCount,
     vertexList, edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
@@ -466,20 +466,20 @@ hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
 -- Complexity: /O(s)/ time.
 --
 -- @
--- hasLoop x 'empty'            == False
--- hasLoop x ('vertex' z)       == False
--- hasLoop x ('edge' x x)       == True
--- hasLoop x                    == hasEdge x x
--- hasLoop x . 'removeEdge' x x == const False
--- hasLoop x                    == 'elem' (x,x) . 'edgeList'
+-- hasSelfLoop x 'empty'            == False
+-- hasSelfLoop x ('vertex' z)       == False
+-- hasSelfLoop x ('edge' x x)       == True
+-- hasSelfLoop x                    == hasEdge x x
+-- hasSelfLoop x . 'removeEdge' x x == const False
+-- hasSelfLoop x                    == 'elem' (x,x) . 'edgeList'
 -- @
-{-# SPECIALISE hasLoop :: Int -> Graph Int -> Bool #-}
-hasLoop :: Eq a => a -> Graph a -> Bool
-hasLoop l = hasLoop' . induce (==l)
-  where -- hasLoop' is working because Algebra.Graph.induce is removing empty leaves.
-    hasLoop' (Overlay x y) = hasLoop' x || hasLoop' y
-    hasLoop' Connect{} = True
-    hasLoop' _ = False
+{-# SPECIALISE hasSelfLoop :: Int -> Graph Int -> Bool #-}
+hasSelfLoop :: Eq a => a -> Graph a -> Bool
+hasSelfLoop l = hasSelfLoop' . induce (==l)
+  where -- hasSelfLoop' is working because Algebra.Graph.induce is removing empty leaves.
+    hasSelfLoop' (Overlay x y) = hasSelfLoop' x || hasSelfLoop' y
+    hasSelfLoop' Connect{} = True
+    hasSelfLoop' _ = False
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.

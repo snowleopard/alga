@@ -32,7 +32,7 @@ module Algebra.Graph.NonEmpty (
     isSubgraphOf, (===),
 
     -- * Graph properties
-    size, hasVertex, hasEdge, hasLoop, vertexCount, edgeCount, vertexList1,
+    size, hasVertex, hasEdge, hasSelfLoop, vertexCount, edgeCount, vertexList1,
     edgeList, vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
@@ -384,17 +384,17 @@ hasEdge = T.hasEdge
 -- Complexity: /O(s)/ time.
 --
 -- @
--- hasLoop x ('vertex' y)       == False
--- hasLoop x ('edge' x y)       == True
--- hasLoop x                    == hasEdge x x
--- hasLoop x . 'removeEdge' x x == const False
+-- hasSelfLoop x ('vertex' y)       == False
+-- hasSelfLoop x ('edge' x y)       == True
+-- hasSelfLoop x                    == hasEdge x x
+-- hasSelfLoop x . 'removeEdge' x x == const False
 -- @
-hasLoop :: Eq a => a -> NonEmptyGraph a -> Bool
-hasLoop l = maybe False hasLoop' . induce1 (==l)
+hasSelfLoop :: Eq a => a -> NonEmptyGraph a -> Bool
+hasSelfLoop l = maybe False hasSelfLoop' . induce1 (==l)
   where
-    hasLoop' (Overlay x y) = hasLoop' x || hasLoop' y
-    hasLoop' Connect{} = True
-    hasLoop' _ = False
+    hasSelfLoop' (Overlay x y) = hasSelfLoop' x || hasSelfLoop' y
+    hasSelfLoop' Connect{} = True
+    hasSelfLoop' _ = False
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.

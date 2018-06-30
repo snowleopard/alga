@@ -525,22 +525,22 @@ testHasEdge (Testsuite prefix (%)) = do
 
 testHasLoop :: Testsuite -> IO ()
 testHasLoop (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "hasLoop ============"
-    test "hasLoop x empty            == False" $ \x ->
-          hasLoop x % empty          == False
+    putStrLn $ "\n============ " ++ prefix ++ "hasSelfLoop ============"
+    test "hasSelfLoop x empty            == False" $ \x ->
+          hasSelfLoop x % empty          == False
 
-    test "hasLoop x (vertex y)       == False" $ \x y ->
-          hasLoop x % vertex y       == False
+    test "hasSelfLoop x (vertex y)       == False" $ \x y ->
+          hasSelfLoop x % vertex y       == False
 
-    test "hasLoop x (edge x x)       == True" $ \x ->
-          hasLoop x % edge x x       == True
+    test "hasSelfLoop x (edge x x)       == True" $ \x ->
+          hasSelfLoop x % edge x x       == True
 
-    test "hasLoop x . removeEdge x x == const False" $ \x y ->
-         (hasLoop x . removeEdge x x) y == const False % y
+    test "hasSelfLoop x . removeEdge x x == const False" $ \x y ->
+         (hasSelfLoop x . removeEdge x x) y == const False % y
 
-    test "hasLoop x                  == elem (x,x) . edgeList" $ \x y -> do
+    test "hasSelfLoop x                  == elem (x,x) . edgeList" $ \x y -> do
         (u, _) <- elements ((x, x) : edgeList y)
-        return $ hasLoop u y == elem (u, u) (edgeList % y)
+        return $ hasSelfLoop u y == elem (u, u) (edgeList % y)
 
 testVertexCount :: Testsuite -> IO ()
 testVertexCount (Testsuite prefix (%)) = do
