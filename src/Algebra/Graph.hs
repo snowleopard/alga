@@ -459,8 +459,23 @@ hasVertex x = foldg False (==x) (||) (||)
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
-hasEdge :: Ord a => a -> a -> Graph a -> Bool
-hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
+hasEdge :: Eq a => a -> a -> Graph a -> Bool
+hasEdge s t = hasEdge' . induce'
+   where
+     hasEdge' g = case foldg e v o c g of (_, _, r) -> r
+       where
+         e                             = (False   , False   , False                 )
+         v x                           = (x       , not x   , False                 )
+         o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
+         c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
+     induce' = foldg Empty
+                    (\x -> if x == s then Vertex True else if x == t then Vertex False else Empty)
+                    (k Overlay)
+                    (k Connect)
+       where
+         k _ x     Empty = x -- Constant folding to get rid of Empty leaves
+         k _ Empty y     = y
+         k f x     y     = f x y
 
 -- | Check if a graph contains a given loop.
 -- Complexity: /O(s)/ time.
