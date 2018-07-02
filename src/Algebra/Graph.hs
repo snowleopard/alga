@@ -446,8 +446,6 @@ size = foldg 1 (const 1) (+) (+)
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex x = foldg False (==x) (||) (||)
 
--- TODO: Benchmark to see if this implementation is faster than the default
--- implementation provided by the ToGraph type class.
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
 --
