@@ -465,11 +465,14 @@ hasEdge s t = hasEdge' . induce'
      hasEdge' g = case foldg e v o c g of (_, _, r) -> r
        where
          e                             = (False   , False   , False                 )
-         v x                           = (x       , not x   , False                 )
+         v (x,y)                       = (x       , y       , False                 )
          o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
          c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
      induce' = foldg Empty
-                    (\x -> if x == s then Vertex True else if x == t then Vertex False else Empty)
+                    (\x -> let !l = x == s
+                               !r = x == t
+                            in if l || r then Vertex (l,r) else Empty
+                      )
                     (k Overlay)
                     (k Connect)
        where
