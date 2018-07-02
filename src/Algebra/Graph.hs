@@ -467,8 +467,8 @@ hasEdge s t = hasEdge' . induce'
          o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
          c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
      induce' = foldg Empty
-                    (\x -> let !l = x == s
-                               !r = x == t
+                    (\x -> let l = x == s
+                               r = x == t
                             in if l || r then Vertex (l,r) else Empty
                       )
                     (k Overlay)
