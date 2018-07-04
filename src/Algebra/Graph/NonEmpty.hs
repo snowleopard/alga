@@ -378,7 +378,13 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> NonEmptyGraph a -> Bool
-hasEdge s t = maybe False hasEdge' . induce'
+hasEdge s t =
+  if s == t -- We test if we search for a loop
+     then hasSelfLoop s
+     else maybe False hasEdge' . induce' -- if not, we convert the supplied @Graph a@ to a @Graph Bool@
+                                         -- where @s@ is @Vertex True@, @v@ is @Vertex False@ and other
+                                         -- vertices are removed.
+                                         -- Then we check if there is an edge from @True@ to @False@
    where
      hasEdge' g = case foldg1 v o c g of (_, _, r) -> r
        where
