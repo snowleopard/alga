@@ -93,7 +93,7 @@ install:
   - rm -rf .ghc.environment.* "."/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
     # Added by hand. If we required benchmarks, then we will download the right script.
-  - if [ $DOBENCH -ne 0 ]; then curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o $TRAVIS_BUILD_DIR/compare.sh; chmod +x compare.sh; fi;
+  - if [ ! $DOBENCH ]; then curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o $TRAVIS_BUILD_DIR/compare.sh; chmod +x compare.sh; fi;
 
 # Here starts the actual work to be performed for the package under test;
 # any command which exits with a non-zero exit code causes the build to fail.
@@ -125,7 +125,7 @@ script:
   # Added by hand. If we required benchmarks, then we will run them using the downloaded script.
   # If the benchmarked commit is not a Pull Request, then use HEAD^1 else use HEAD.
   - cd $TRAVIS_BUILD_DIR
-  - if [ $DOBENCH -ne 0]; then ./compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ); $(if [ $DOBENCH -eq 2 ]; then echo "True"; else echo ""; fi;) fi;
+  - if [ $DOBENCH != 0 ]; then ./compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ) $(if [ $DOBENCH = 2 ]; then echo "True"; else echo ""; fi;); fi;
 
 # REGENDATA ["--osx=8.2.2","algebraic-graphs.cabal","-o",".travis.yml"]
 # EOF
