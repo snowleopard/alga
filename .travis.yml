@@ -121,11 +121,10 @@ script:
   - rm -rf ./dist-newstyle
   - if $HADDOCK; then cabal new-haddock -w ${HC} ${TEST} ${BENCH} all; else echo "Skipping haddock generation";fi
 
-after_script:
   # Added by hand. If we required benchmarks, then we will run them using the downloaded script.
   # If the benchmarked commit is not a Pull Request, then use HEAD^1 else use HEAD.
   - cd $TRAVIS_BUILD_DIR
-  - if [ "$DOBENCH" = "1" -o "$DOBENCH" = "2" ]; then ./compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ) $(if [ $DOBENCH = 2 ]; then echo "True"; else echo ""; fi;); fi;
+  - if [ "$DOBENCH" = "1" -o "$DOBENCH" = "2" ]; then timeout 45m ./compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ) $(if [ $DOBENCH = 2 ]; then echo "True"; else echo ""; fi;); fi;
 
 # REGENDATA ["--osx=8.2.2","algebraic-graphs.cabal","-o",".travis.yml"]
 # EOF
