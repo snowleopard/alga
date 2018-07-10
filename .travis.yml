@@ -121,6 +121,7 @@ script:
   - rm -rf ./dist-newstyle
   - if $HADDOCK; then cabal new-haddock -w ${HC} ${TEST} ${BENCH} all; else echo "Skipping haddock generation";fi
 
+after_script:
   # Added by hand. If we required benchmarks, then we will run them using the downloaded script.
   # If the benchmarked commit is not a Pull Request, then use HEAD^1 else use HEAD.
   - cd $TRAVIS_BUILD_DIR
