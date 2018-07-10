@@ -53,10 +53,10 @@ matrix:
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
     - compiler: "ghc-8.4.1"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
-      env: TEST=--disable-tests DOBENCH="1"
+      env: TEST=--disable-tests HADDOCK=false DOBENCH="1"
     - compiler: "ghc-8.4.1"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
-      env: TEST=--disable-tests DOBENCH="2"
+      env: TEST=--disable-tests HADDOCK=false DOBENCH="2"
 
 before_install:
   - HC=${CC}
