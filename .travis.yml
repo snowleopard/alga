@@ -53,10 +53,10 @@ matrix:
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
     - compiler: "ghc-8.4.1"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
-      env: TEST=--disable-tests HADDOCK=false DOBENCH="1"
+      env: DOBENCH="Graph" TEST=--disable-tests HADDOCK=false
     - compiler: "ghc-8.4.1"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
-      env: TEST=--disable-tests HADDOCK=false DOBENCH="2"
+      env: DOBENCH="Graph.NonEmpty" TEST=--disable-tests HADDOCK=false
 
 before_install:
   - HC=${CC}
@@ -92,7 +92,7 @@ install:
   - rm -rf .ghc.environment.* "."/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
     # Added by hand. If we required benchmarks, then we will download the right script.
-  - if [ "$DOBENCH" = "1" -o "$DOBENCH" = "2" ]; then curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o $TRAVIS_BUILD_DIR/compare.sh; chmod +x compare.sh; fi;
+  - if [ "$DOBENCH" != "" ]; then curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o $TRAVIS_BUILD_DIR/compare.sh; chmod +x compare.sh; fi;
 
 # Here starts the actual work to be performed for the package under test;
 # any command which exits with a non-zero exit code causes the build to fail.
@@ -124,7 +124,7 @@ script:
   # Added by hand. If we required benchmarks, then we will run them using the downloaded script.
   # If the benchmarked commit is not a Pull Request, then use HEAD^1 else use HEAD.
   - cd $TRAVIS_BUILD_DIR
-  - if [ "$DOBENCH" = "1" -o "$DOBENCH" = "2" ]; then timeout 40m ./compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ) $(if [ $DOBENCH = 2 ]; then echo "True"; else echo ""; fi;); fi;
+  - if [ "$DOBENCH" != "" ]; then timeout 40m ./compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ) $(if [ "$DOBENCH" = "Graph.NonEmpty" ]; then echo "True"; else echo ""; fi;); fi;
 
 # REGENDATA ["--osx=8.2.2","algebraic-graphs.cabal","-o",".travis.yml"]
 # EOF
