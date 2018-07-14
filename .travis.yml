@@ -90,7 +90,7 @@ install:
       (cd "." && autoreconf -i);
     fi
   - rm -f cabal.project.freeze
-  - if [ "$DOBENCH" = "" ]; then
+  - if [ "$DOBENCH" = "" ]; then # Added by hand, will not build anything if we are runnning bench, else download the script
       cabal new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all ;
       cabal new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all ;
     else curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o $TRAVIS_BUILD_DIR/compare.sh; chmod +x compare.sh ;
