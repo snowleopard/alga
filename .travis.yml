@@ -90,14 +90,14 @@ install:
       (cd "." && autoreconf -i);
     fi
   - rm -f cabal.project.freeze
-  - if [ "$DOBENCH" = "" ]; then # Added by hand, will not build anything if we are runnning bench, else download the script
+  # Added by hand, will not build anything if we are runnning bench, else download the script
+  - if [ "$DOBENCH" = "" ]; then
       cabal new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all ;
       cabal new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all ;
     else curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o $TRAVIS_BUILD_DIR/compare.sh; chmod +x compare.sh ;
     fi
   - rm -rf .ghc.environment.* "."/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
-    # Added by hand. If we required benchmarks, then we will download the right script.
 
 # Here starts the actual work to be performed for the package under test;
 # any command which exits with a non-zero exit code causes the build to fail.
