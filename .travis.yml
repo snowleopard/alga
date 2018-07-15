@@ -43,6 +43,9 @@ matrix:
     - compiler: "ghc-8.2.2"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.2.2], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.4.1"
+    # env: TEST=--disable-tests BENCH=--disable-benchmarks
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
     - compiler: "ghc-8.2.2"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.2.2], sources: [hvr-ghc]}}
@@ -51,15 +54,12 @@ matrix:
 # Added by hand
     - compiler: "ghc-8.4.1"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
-    - compiler: "ghc-8.4.1"
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
       env: DOBENCH="Graph"
       script: timeout 40m ./compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; );
     - compiler: "ghc-8.4.1"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
       env: DOBENCH="Graph.NonEmpty"
       script: timeout 40m ./compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ); "True"
-
 
 before_install:
   - HC=${CC}
