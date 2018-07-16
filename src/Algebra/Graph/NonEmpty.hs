@@ -466,7 +466,7 @@ vertexIntCount = IntSet.size . vertexIntSet
 -- @
 {-# SPECIALISE edgeCount :: NonEmptyGraph Int -> Int #-}
 edgeCount :: Ord a => NonEmptyGraph a -> Int
-edgeCount = T.edgeCount
+edgeCount = length . edgeList
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
