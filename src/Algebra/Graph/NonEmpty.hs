@@ -504,8 +504,6 @@ edgeList = AM.edgeList . foldg1 AM.vertex AM.overlay AM.connect
 edgeIntList :: NonEmptyGraph Int -> [(Int,Int)]
 edgeIntList = AIM.edgeList . foldg1 AIM.vertex AIM.overlay AIM.connect
 
--- TODO Apply the optimization
-
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
 --
