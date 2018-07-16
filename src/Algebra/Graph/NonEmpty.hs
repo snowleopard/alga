@@ -274,7 +274,7 @@ connect = Connect
 -- 'vertexSet'   . vertices1 == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
 -- @
 vertices1 :: NonEmpty a -> NonEmptyGraph a
-vertices1 = overlays1 . fmap vertex
+vertices1 (x :| xs) = foldr (Overlay . vertex) (vertex x) xs
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -285,7 +285,9 @@ vertices1 = overlays1 . fmap vertex
 -- 'edgeCount' . edges1   == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
 -- @
 edges1 :: NonEmpty (a, a) -> NonEmptyGraph a
-edges1 = overlays1 . fmap (uncurry edge)
+edges1 (x :| xs) = foldr (Overlay . edgeTuple) (edgeTuple x) xs
+  where
+    edgeTuple = uncurry edge
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -393,7 +395,29 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> NonEmptyGraph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> NonEmptyGraph a -> Bool
-hasEdge = T.hasEdge
+hasEdge s t =
+  if s == t -- We test if we search for a loop
+     then hasSelfLoop s
+     else maybe False hasEdge' . induce' -- if not, we convert the supplied @Graph a@ to a @Graph Bool@
+                                         -- where @s@ is @Vertex True@, @v@ is @Vertex False@ and other
+                                         -- vertices are removed.
+                                         -- Then we check if there is an edge from @True@ to @False@
+   where
+     hasEdge' g = case foldg1 v o c g of (_, _, r) -> r
+       where
+         v x                           = (x       , not x   , False                 )
+         o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
+         c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
+     induce' = foldg1 (\x -> if x == s then Just (Vertex True)
+                                      else if x == t
+                                              then Just (Vertex False)
+                                              else Nothing)
+                     (k Overlay)
+                     (k Connect)
+       where
+         k _ x     Nothing     = x -- Constant folding to get rid of Empty leaves
+         k _ Nothing y         = y
+         k f (Just x) (Just y) = Just $ f x y
 
 -- | Check if a graph contains a given loop.
 -- Complexity: /O(s)/ time.
@@ -420,9 +444,14 @@ hasSelfLoop l = maybe False hasSelfLoop' . induce1 (==l)
 -- vertexCount x          >= 1
 -- vertexCount            == 'length' . 'vertexList1'
 -- @
-{-# SPECIALISE vertexCount :: NonEmptyGraph Int -> Int #-}
+{-# RULES "vertexCount/Int" vertexCount = vertexIntCount #-}
+{-# INLINE[1] vertexCount #-}
 vertexCount :: Ord a => NonEmptyGraph a -> Int
 vertexCount = T.vertexCount
+
+-- | Like 'vertexCount' but specialised for NonEmptyGraph with vertices of type 'Int'.
+vertexIntCount :: NonEmptyGraph Int -> Int
+vertexIntCount = IntSet.size . vertexIntSet
 
 -- | The number of edges in a graph.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
@@ -444,9 +473,14 @@ edgeCount = T.edgeCount
 -- vertexList1 ('vertex' x)  == x ':|' []
 -- vertexList1 . 'vertices1' == 'Data.List.NonEmpty.nub' . 'Data.List.NonEmpty.sort'
 -- @
-{-# SPECIALISE vertexList1 :: NonEmptyGraph Int -> NonEmpty Int #-}
+{-# RULES "vertexList1/Int" vertexList1 = vertexIntList1 #-}
+{-# INLINE[1] vertexList1 #-}
 vertexList1 :: Ord a => NonEmptyGraph a -> NonEmpty a
-vertexList1 = NonEmpty.fromList . T.vertexList
+vertexList1 = NonEmpty.fromList . Set.toAscList . vertexSet
+
+-- | Like 'vertexList1' but specialised for NonEmptyGraph with vertices of type 'Int'.
+vertexIntList1 :: NonEmptyGraph Int -> NonEmpty Int
+vertexIntList1 = NonEmpty.fromList . IntSet.toAscList . vertexIntSet
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
@@ -459,9 +493,14 @@ vertexList1 = NonEmpty.fromList . T.vertexList
 -- edgeList . 'edges1'       == 'Data.List.nub' . 'Data.List.sort' . 'Data.List.NonEmpty.toList'
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
-{-# SPECIALISE edgeList :: NonEmptyGraph Int -> [(Int,Int)] #-}
+{-# RULES "edgeList/Int" edgeList = edgeIntList #-}
+{-# INLINE[1] edgeList #-}
 edgeList :: Ord a => NonEmptyGraph a -> [(a, a)]
-edgeList = T.edgeList
+edgeList = AM.edgeList . foldg1 AM.vertex AM.overlay AM.connect
+
+-- | Like 'edgeList' but specialised for NonEmptyGraph with vertices of type 'Int'.
+edgeIntList :: NonEmptyGraph Int -> [(Int,Int)]
+edgeIntList = AIM.edgeList . foldg1 AIM.vertex AIM.overlay AIM.connect
 
 -- TODO Apply the optimization
 
