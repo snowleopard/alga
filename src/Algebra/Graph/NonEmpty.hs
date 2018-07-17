@@ -287,9 +287,7 @@ vertices1 (x :| xs) = foldr (Overlay . vertex) (vertex x) xs
 -- 'edgeCount' . edges1   == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
 -- @
 edges1 :: NonEmpty (a, a) -> NonEmptyGraph a
-edges1 (x :| xs) = foldr (Overlay . edgeTuple) (edgeTuple x) xs
-  where
-    edgeTuple = uncurry edge
+edges1 (x :| xs) = foldr (Overlay . uncurry edge) (uncurry edge x) xs
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
