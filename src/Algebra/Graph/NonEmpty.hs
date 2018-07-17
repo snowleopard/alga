@@ -496,7 +496,7 @@ vertexIntList1 = NonEmpty.fromList . IntSet.toAscList . vertexIntSet
 {-# RULES "edgeList/Int" edgeList = edgeIntList #-}
 {-# INLINE[1] edgeList #-}
 edgeList :: Ord a => NonEmptyGraph a -> [(a, a)]
-edgeList = AM.edgeList . foldg1 AM.vertex AM.overlay AM.connect
+edgeList = T.edgeList
 
 -- | Like 'edgeList' but specialised for NonEmptyGraph with vertices of type 'Int'.
 edgeIntList :: NonEmptyGraph Int -> [(Int,Int)]
