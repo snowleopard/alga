@@ -18,6 +18,9 @@ module Algebra.Graph.Relation.InternalDerived (
     PreorderRelation (..)
   ) where
 
+
+import Control.DeepSeq (NFData (..))
+
 import Algebra.Graph.Class
 import Algebra.Graph.Relation (Relation, reflexiveClosure, symmetricClosure,
                                transitiveClosure, preorderClosure)
@@ -48,6 +51,9 @@ instance Ord a => Graph (ReflexiveRelation a) where
     vertex      = ReflexiveRelation . vertex
     overlay x y = ReflexiveRelation $ fromReflexive x `overlay` fromReflexive y
     connect x y = ReflexiveRelation $ fromReflexive x `connect` fromReflexive y
+
+instance NFData a => NFData (ReflexiveRelation a) where
+    rnf = rnf . fromReflexive
 
 instance Ord a => Reflexive (ReflexiveRelation a)
 
@@ -80,6 +86,9 @@ instance Ord a => Graph (SymmetricRelation a) where
     vertex      = SymmetricRelation . vertex
     overlay x y = SymmetricRelation $ fromSymmetric x `overlay` fromSymmetric y
     connect x y = SymmetricRelation $ fromSymmetric x `connect` fromSymmetric y
+
+instance NFData a => NFData (SymmetricRelation a) where
+    rnf = rnf . fromSymmetric
 
 instance Ord a => Undirected (SymmetricRelation a)
 
@@ -115,6 +124,9 @@ instance Ord a => Graph (TransitiveRelation a) where
     vertex      = TransitiveRelation . vertex
     overlay x y = TransitiveRelation $ fromTransitive x `overlay` fromTransitive y
     connect x y = TransitiveRelation $ fromTransitive x `connect` fromTransitive y
+
+instance NFData a => NFData (TransitiveRelation a) where
+    rnf = rnf . fromTransitive
 
 instance Ord a => Transitive (TransitiveRelation a)
 
@@ -155,6 +167,9 @@ instance Ord a => Graph (PreorderRelation a) where
     vertex      = PreorderRelation . vertex
     overlay x y = PreorderRelation $ fromPreorder x `overlay` fromPreorder y
     connect x y = PreorderRelation $ fromPreorder x `connect` fromPreorder y
+
+instance NFData a => NFData (PreorderRelation a) where
+    rnf = rnf . fromPreorder
 
 instance Ord a => Reflexive  (PreorderRelation a)
 instance Ord a => Transitive (PreorderRelation a)
