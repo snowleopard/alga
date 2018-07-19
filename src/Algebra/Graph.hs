@@ -57,6 +57,7 @@ import Prelude.Compat
 import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
+import Data.Bits
 import Data.Foldable (toList)
 import Data.Tree
 
@@ -458,27 +459,13 @@ hasVertex x = foldg False (==x) (||) (||)
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t = if s == t -- We test if we search for a loop
-                 then hasSelfLoop s
-                 else hasEdge' . induce' -- if not, we convert the supplied @Graph a@ to a @Graph Bool@
-                                         -- where @s@ is @Vertex True@, @v@ is @Vertex False@ and other
-                                         -- vertices are removed.
-                                         -- Then we check if there is an edge from @True@ to @False@
-    where
-     hasEdge' g = case foldg e v o c g of (_, _, r) -> r
-       where
-         e                             = (False   , False   , False                 )
-         v x                           = (x       , not x   , False                 )
-         o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
-         c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
-     induce' = foldg Empty
-                    (\x -> if x == s then Vertex True else if x == t then Vertex False else Empty)
-                    (k Overlay)
-                    (k Connect)
-       where
-         k _ x     Empty = x -- Constant folding to get rid of Empty leaves
-         k _ Empty y     = y
-         k f x     y     = f x y
+hasEdge s t g | s == t    = hasSelfLoop s g -- TODO: Is this really faster?
+              | otherwise = testBit (foldg (0 :: Int) v (.|.) c g) 2
+  where
+    v x | x == s    = 1
+        | x == t    = 2
+        | otherwise = 0
+    c x y = x .|. y .|. shift x 2 .&. shift y 1 -- TODO: Explain
 
 -- | Check if a graph contains a given loop.
 -- Complexity: /O(s)/ time.
