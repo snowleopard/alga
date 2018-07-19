@@ -465,7 +465,7 @@ hasEdge s t g | s == t    = hasSelfLoop s g -- TODO: Is this really faster?
     v x | x == s    = 1
         | x == t    = 2
         | otherwise = 0
-    c x y = x .|. y .|. shift x 2 .&. shift y 1 -- TODO: Explain
+    c x y = x .|. y .|. unsafeShiftL x 2 .&. unsafeShiftL y 1 -- TODO: Explain
 
 -- | Check if a graph contains a given loop.
 -- Complexity: /O(s)/ time.
