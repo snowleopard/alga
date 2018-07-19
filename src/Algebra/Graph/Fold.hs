@@ -49,6 +49,8 @@ import Control.Applicative (Alternative, liftA2)
 import Control.Monad.Compat (MonadPlus (..), ap)
 import Data.Function
 
+import Control.DeepSeq (NFData (..))
+
 import Algebra.Graph.ToGraph (ToGraph, ToVertex, toGraph)
 
 import qualified Algebra.Graph              as G
@@ -149,6 +151,9 @@ instance (Ord a, Show a) => Show (Fold a) where
 
 instance Ord a => Eq (Fold a) where
     x == y = T.adjacencyMap x == T.adjacencyMap y
+
+instance NFData a => NFData (Fold a) where
+    rnf = foldg () rnf seq seq
 
 instance Num a => Num (Fold a) where
     fromInteger = vertex . fromInteger
