@@ -47,7 +47,6 @@ import Prelude.Compat
 
 import Control.Applicative (Alternative, liftA2)
 import Control.Monad.Compat (MonadPlus (..), ap)
-import Data.Bits
 import Data.Function
 
 import Control.DeepSeq (NFData (..))
@@ -192,8 +191,6 @@ instance Traversable Fold where
 instance ToGraph (Fold a) where
     type ToVertex (Fold a) = a
     foldg = foldg
-    hasEdge = hasEdge
-    hasSelfLoop = hasSelfLoop
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -411,15 +408,7 @@ hasVertex = T.hasVertex
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Fold a -> Bool
-hasEdge s t g | s == t    = testBit (foldg (0 :: Int) v1 (.|.) c1 g) 1
-              | otherwise = testBit (foldg (0 :: Int) v2 (.|.) c2 g) 2
-  where -- TODO: Explain
-    v1 x   = if x == s then 1 else 0
-    c1 x y = x .|. y .|. unsafeShiftL (x .&. y) 1
-    v2 x | x == s    = 1
-         | x == t    = 2
-         | otherwise = 0
-    c2 x y = x .|. y .|. unsafeShiftL x 2 .&. unsafeShiftL y 1
+hasEdge = T.hasEdge
 
 -- | Check if a graph contains a given loop.
 -- Complexity: /O(s)/ time.
@@ -433,7 +422,7 @@ hasEdge s t g | s == t    = testBit (foldg (0 :: Int) v1 (.|.) c1 g) 1
 -- hasSelfLoop x                  == 'elem' (x,x) . 'edgeList'
 -- @
 hasSelfLoop :: Eq a => a -> Fold a -> Bool
-hasSelfLoop s = hasEdge s s
+hasSelfLoop = T.hasSelfLoop
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.

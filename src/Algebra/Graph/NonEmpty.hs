@@ -55,7 +55,6 @@ import Data.Semigroup
 
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
-import Data.Bits
 import Data.List.NonEmpty (NonEmpty (..))
 
 import qualified Algebra.Graph                 as G
@@ -142,8 +141,6 @@ instance NFData a => NFData (NonEmptyGraph a) where
 instance T.ToGraph (NonEmptyGraph a) where
     type ToVertex (NonEmptyGraph a) = a
     foldg _     = foldg1
-    hasEdge     = hasEdge
-    hasSelfLoop = hasSelfLoop
 
 instance Num a => Num (NonEmptyGraph a) where
     fromInteger = Vertex . fromInteger
@@ -397,15 +394,7 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> NonEmptyGraph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> NonEmptyGraph a -> Bool
-hasEdge s t g | s == t    = testBit (foldg1 v1 (.|.) c1 g) 1
-              | otherwise = testBit (foldg1 v2 (.|.) c2 g) 2
-  where -- TODO: Explain
-    v1 x   = if x == s then 1 else 0 :: Int
-    c1 x y = x .|. y .|. unsafeShiftL (x .&. y) 1
-    v2 x | x == s    = 1
-         | x == t    = 2
-         | otherwise = 0 :: Int
-    c2 x y = x .|. y .|. unsafeShiftL x 2 .&. unsafeShiftL y 1
+hasEdge = T.hasEdge
 
 -- | Check if a graph contains a given loop.
 -- Complexity: /O(s)/ time.
