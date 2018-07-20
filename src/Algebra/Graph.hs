@@ -480,11 +480,10 @@ hasEdge s t g | s == t    = hasSelfLoop s g -- TODO: Is this really faster?
 -- @
 {-# SPECIALISE hasSelfLoop :: Int -> Graph Int -> Bool #-}
 hasSelfLoop :: Eq a => a -> Graph a -> Bool
-hasSelfLoop l = hasSelfLoop' . induce (==l)
-  where -- hasSelfLoop' is working because Algebra.Graph.induce is removing empty leaves.
-    hasSelfLoop' (Overlay x y) = hasSelfLoop' x || hasSelfLoop' y
-    hasSelfLoop' Connect{} = True
-    hasSelfLoop' _ = False
+hasSelfLoop s g = testBit (foldg (0 :: Int) v (.|.) c g) 1
+  where
+    v x = if x == s then 1 else 0
+    c x y = x .|. y .|. unsafeShiftL (x .&. y) 1 -- TODO: Explain
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
