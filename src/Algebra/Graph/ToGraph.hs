@@ -94,15 +94,10 @@ class ToGraph t where
     -- hasEdge x y == 'elem' (x,y) . 'edgeList'
     -- @
     hasEdge :: Eq (ToVertex t) => ToVertex t -> ToVertex t -> t -> Bool
-    hasEdge s t g | s == t    = testBit (foldg (0 :: Int) v1 (.|.) c1 g) 1
-                  | otherwise = testBit (foldg (0 :: Int) v2 (.|.) c2 g) 2
+    hasEdge s t g = testBit (foldg (0 :: Int) v (.|.) c g) 2
       where -- TODO: Explain
-        v1 x   = if x == s then 1 else 0
-        c1 x y = x .|. y .|. unsafeShiftL (x .&. y) 1
-        v2 x | x == s    = 1
-             | x == t    = 2
-             | otherwise = 0
-        c2 x y = x .|. y .|. unsafeShiftL x 2 .&. unsafeShiftL y 1
+        v x   = (if x == s then 1 else 0) .|. (if x == t then 2 else 0)
+        c x y = x .|. y .|. unsafeShiftL x 2 .&. unsafeShiftL y 1
 
     -- | Check if a graph contains a given lopp.
     --
