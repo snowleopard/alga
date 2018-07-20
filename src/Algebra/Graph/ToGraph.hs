@@ -96,7 +96,8 @@ class ToGraph t where
     hasEdge :: Eq (ToVertex t) => ToVertex t -> ToVertex t -> t -> Bool
     hasEdge s t g = testBit (foldg (0 :: Int) v (.|.) c g) 2
       where -- TODO: Explain
-        v x   = (if x == s then 1 else 0) .|. (if x == t then 2 else 0)
+        v x | x == s    = if x == t then 3 else 1
+            | otherwise = if x == t then 2 else 0
         c x y = x .|. y .|. unsafeShiftL x 2 .&. unsafeShiftL y 1
 
     -- | Check if a graph contains a given lopp.
