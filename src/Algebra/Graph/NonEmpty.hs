@@ -55,6 +55,7 @@ import Data.Semigroup
 
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
+import Data.Bits
 import Data.List.NonEmpty (NonEmpty (..))
 
 import qualified Algebra.Graph                 as G
@@ -396,29 +397,13 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> NonEmptyGraph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> NonEmptyGraph a -> Bool
-hasEdge s t =
-  if s == t -- We test if we search for a loop
-     then hasSelfLoop s
-     else maybe False hasEdge' . induce' -- if not, we convert the supplied @Graph a@ to a @Graph Bool@
-                                         -- where @s@ is @Vertex True@, @v@ is @Vertex False@ and other
-                                         -- vertices are removed.
-                                         -- Then we check if there is an edge from @True@ to @False@
-   where
-     hasEdge' g = case foldg1 v o c g of (_, _, r) -> r
-       where
-         v x                           = (x       , not x   , False                 )
-         o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
-         c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
-     induce' = foldg1 (\x -> if x == s then Just (Vertex True)
-                                      else if x == t
-                                              then Just (Vertex False)
-                                              else Nothing)
-                     (k Overlay)
-                     (k Connect)
-       where
-         k _ x     Nothing     = x -- Constant folding to get rid of Empty leaves
-         k _ Nothing y         = y
-         k f (Just x) (Just y) = Just $ f x y
+hasEdge s t g | s == t    = hasSelfLoop s g -- TODO: Is this really faster?
+              | otherwise = testBit (foldg1 v (.|.) c g) 2
+  where
+    v x | x == s    = 1
+        | x == t    = 2
+        | otherwise = 0 :: Int
+    c x y = x .|. y .|. unsafeShiftL x 2 .&. unsafeShiftL y 1 -- TODO: Explain
 
 -- | Check if a graph contains a given loop.
 -- Complexity: /O(s)/ time.
@@ -431,11 +416,10 @@ hasEdge s t =
 -- @
 {-# SPECIALISE hasSelfLoop :: Int -> NonEmptyGraph Int -> Bool #-}
 hasSelfLoop :: Eq a => a -> NonEmptyGraph a -> Bool
-hasSelfLoop l = maybe False hasSelfLoop' . induce1 (==l)
+hasSelfLoop s g = testBit (foldg1 v (.|.) c g) 1
   where
-    hasSelfLoop' (Overlay x y) = hasSelfLoop' x || hasSelfLoop' y
-    hasSelfLoop' Connect{} = True
-    hasSelfLoop' _ = False
+    v x = if x == s then 1 else 0 :: Int
+    c x y = x .|. y .|. unsafeShiftL (x .&. y) 1 -- TODO: Explain
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
