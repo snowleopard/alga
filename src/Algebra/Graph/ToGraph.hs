@@ -94,7 +94,7 @@ class ToGraph t where
     -- hasEdge x y == 'elem' (x,y) . 'edgeList'
     -- @
     hasEdge :: Eq (ToVertex t) => ToVertex t -> ToVertex t -> t -> Bool
-    hasEdge s t g = testBit (foldg (0 :: Int) v (.|.) c g) 2
+    hasEdge s t g = vs `seq` testBit (foldg (0 :: Int) v (.|.) c g) 2
       where -- TODO: Explain
         vs = if s == t then 3 else 1
         v x | x == s    = vs

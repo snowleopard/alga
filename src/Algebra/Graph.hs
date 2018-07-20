@@ -459,7 +459,7 @@ hasVertex x = foldg False (==x) (||) (||)
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = testBit (foldg (0 :: Int) v (.|.) c g) 2
+hasEdge s t g = vs `seq` testBit (foldg (0 :: Int) v (.|.) c g) 2
   where -- TODO: Explain
     vs = if s == t then 3 else 1
     v x | x == s    = vs
