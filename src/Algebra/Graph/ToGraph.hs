@@ -23,6 +23,7 @@ module Algebra.Graph.ToGraph (ToGraph (..)) where
 import Prelude ()
 import Prelude.Compat
 
+import Data.Bits
 import Data.IntMap (IntMap)
 import Data.IntSet (IntSet)
 import Data.Map    (Map)
@@ -93,12 +94,15 @@ class ToGraph t where
     -- hasEdge x y == 'elem' (x,y) . 'edgeList'
     -- @
     hasEdge :: Eq (ToVertex t) => ToVertex t -> ToVertex t -> t -> Bool
-    hasEdge s t g = case foldg e v o c g of (_, _, r) -> r
-      where
-        e                             = (False   , False   , False                 )
-        v x                           = (x == s  , x == t  , False                 )
-        o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
-        c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
+    hasEdge s t g | s == t    = testBit (foldg (0 :: Int) v1 (.|.) c1 g) 1
+                  | otherwise = testBit (foldg (0 :: Int) v2 (.|.) c2 g) 2
+      where -- TODO: Explain
+        v1 x   = if x == s then 1 else 0
+        c1 x y = x .|. y .|. unsafeShiftL (x .&. y) 1
+        v2 x | x == s    = 1
+             | x == t    = 2
+             | otherwise = 0
+        c2 x y = x .|. y .|. unsafeShiftL x 2 .&. unsafeShiftL y 1
 
     -- | Check if a graph contains a given lopp.
     --

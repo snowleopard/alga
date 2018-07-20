@@ -397,13 +397,15 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> NonEmptyGraph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> NonEmptyGraph a -> Bool
-hasEdge s t g | s == t    = hasSelfLoop s g -- TODO: Is this really faster?
-              | otherwise = testBit (foldg1 v (.|.) c g) 2
-  where
-    v x | x == s    = 1
-        | x == t    = 2
-        | otherwise = 0 :: Int
-    c x y = x .|. y .|. unsafeShiftL x 2 .&. unsafeShiftL y 1 -- TODO: Explain
+hasEdge s t g | s == t    = testBit (foldg1 v1 (.|.) c1 g) 1
+              | otherwise = testBit (foldg1 v2 (.|.) c2 g) 2
+  where -- TODO: Explain
+    v1 x   = if x == s then 1 else 0 :: Int
+    c1 x y = x .|. y .|. unsafeShiftL (x .&. y) 1
+    v2 x | x == s    = 1
+         | x == t    = 2
+         | otherwise = 0 :: Int
+    c2 x y = x .|. y .|. unsafeShiftL x 2 .&. unsafeShiftL y 1
 
 -- | Check if a graph contains a given loop.
 -- Complexity: /O(s)/ time.
@@ -416,10 +418,7 @@ hasEdge s t g | s == t    = hasSelfLoop s g -- TODO: Is this really faster?
 -- @
 {-# SPECIALISE hasSelfLoop :: Int -> NonEmptyGraph Int -> Bool #-}
 hasSelfLoop :: Eq a => a -> NonEmptyGraph a -> Bool
-hasSelfLoop s g = testBit (foldg1 v (.|.) c g) 1
-  where
-    v x = if x == s then 1 else 0 :: Int
-    c x y = x .|. y .|. unsafeShiftL (x .&. y) 1 -- TODO: Explain
+hasSelfLoop s = hasEdge s s
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
