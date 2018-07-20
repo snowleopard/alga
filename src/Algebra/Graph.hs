@@ -461,8 +461,10 @@ hasVertex x = foldg False (==x) (||) (||)
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
 hasEdge s t g = testBit (foldg (0 :: Int) v (.|.) c g) 2
   where -- TODO: Explain
-    v x | x == s    = if x == t then 3 else 1
-        | otherwise = if x == t then 2 else 0
+    vs = if s == t then 3 else 1
+    v x | x == s    = vs
+        | x == t    = 2
+        | otherwise = 0
     c x y = x .|. y .|. unsafeShiftL x 2 .&. unsafeShiftL y 1
 
 -- | Check if a graph contains a given loop.
