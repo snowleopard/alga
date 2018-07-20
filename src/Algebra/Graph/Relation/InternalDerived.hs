@@ -18,6 +18,9 @@ module Algebra.Graph.Relation.InternalDerived (
     PreorderRelation (..)
   ) where
 
+
+import Control.DeepSeq (NFData (..))
+
 import Algebra.Graph.Class
 import Algebra.Graph.Relation (Relation, reflexiveClosure, symmetricClosure,
                                transitiveClosure, preorderClosure)
@@ -34,7 +37,7 @@ The 'Show' instance produces reflexively closed expressions:
 show (1 * 2 :: ReflexiveRelation Int) == "edges [(1,1),(1,2),(2,2)]"@
 -}
 newtype ReflexiveRelation a = ReflexiveRelation { fromReflexive :: Relation a }
-    deriving Num
+    deriving (Num, NFData)
 
 instance Ord a => Eq (ReflexiveRelation a) where
     x == y = reflexiveClosure (fromReflexive x) == reflexiveClosure (fromReflexive y)
@@ -65,7 +68,7 @@ The 'Show' instance produces symmetrically closed expressions:
 show (1 * 2 :: SymmetricRelation Int) == "edges [(1,2),(2,1)]"@
 -}
 newtype SymmetricRelation a = SymmetricRelation { fromSymmetric :: Relation a }
-    deriving Num
+    deriving (Num, NFData)
 
 instance Ord a => Eq (SymmetricRelation a) where
     x == y = symmetricClosure (fromSymmetric x) == symmetricClosure (fromSymmetric y)
@@ -100,7 +103,7 @@ The 'Show' instance produces transitively closed expressions:
 show (1 * 2 + 2 * 3 :: TransitiveRelation Int) == "edges [(1,2),(1,3),(2,3)]"@
 -}
 newtype TransitiveRelation a = TransitiveRelation { fromTransitive :: Relation a }
-    deriving Num
+    deriving (Num, NFData)
 
 instance Ord a => Eq (TransitiveRelation a) where
     x == y = transitiveClosure (fromTransitive x) == transitiveClosure (fromTransitive y)
@@ -140,7 +143,7 @@ show (1 * 2         :: PreorderRelation Int) == "edges [(1,1),(1,2),(2,2)]"
 show (1 * 2 + 2 * 3 :: PreorderRelation Int) == "edges [(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)]"@
 -}
 newtype PreorderRelation a = PreorderRelation { fromPreorder :: Relation a }
-    deriving Num
+    deriving (Num, NFData)
 
 instance (Ord a, Show a) => Show (PreorderRelation a) where
     show = show . preorderClosure . fromPreorder
