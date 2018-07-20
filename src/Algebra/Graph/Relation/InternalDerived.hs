@@ -37,7 +37,7 @@ The 'Show' instance produces reflexively closed expressions:
 show (1 * 2 :: ReflexiveRelation Int) == "edges [(1,1),(1,2),(2,2)]"@
 -}
 newtype ReflexiveRelation a = ReflexiveRelation { fromReflexive :: Relation a }
-    deriving Num
+    deriving (Num, NFData)
 
 instance Ord a => Eq (ReflexiveRelation a) where
     x == y = reflexiveClosure (fromReflexive x) == reflexiveClosure (fromReflexive y)
@@ -51,9 +51,6 @@ instance Ord a => Graph (ReflexiveRelation a) where
     vertex      = ReflexiveRelation . vertex
     overlay x y = ReflexiveRelation $ fromReflexive x `overlay` fromReflexive y
     connect x y = ReflexiveRelation $ fromReflexive x `connect` fromReflexive y
-
-instance NFData a => NFData (ReflexiveRelation a) where
-    rnf = rnf . fromReflexive
 
 instance Ord a => Reflexive (ReflexiveRelation a)
 
@@ -71,7 +68,7 @@ The 'Show' instance produces symmetrically closed expressions:
 show (1 * 2 :: SymmetricRelation Int) == "edges [(1,2),(2,1)]"@
 -}
 newtype SymmetricRelation a = SymmetricRelation { fromSymmetric :: Relation a }
-    deriving Num
+    deriving (Num, NFData)
 
 instance Ord a => Eq (SymmetricRelation a) where
     x == y = symmetricClosure (fromSymmetric x) == symmetricClosure (fromSymmetric y)
@@ -86,9 +83,6 @@ instance Ord a => Graph (SymmetricRelation a) where
     vertex      = SymmetricRelation . vertex
     overlay x y = SymmetricRelation $ fromSymmetric x `overlay` fromSymmetric y
     connect x y = SymmetricRelation $ fromSymmetric x `connect` fromSymmetric y
-
-instance NFData a => NFData (SymmetricRelation a) where
-    rnf = rnf . fromSymmetric
 
 instance Ord a => Undirected (SymmetricRelation a)
 
@@ -109,7 +103,7 @@ The 'Show' instance produces transitively closed expressions:
 show (1 * 2 + 2 * 3 :: TransitiveRelation Int) == "edges [(1,2),(1,3),(2,3)]"@
 -}
 newtype TransitiveRelation a = TransitiveRelation { fromTransitive :: Relation a }
-    deriving Num
+    deriving (Num, NFData)
 
 instance Ord a => Eq (TransitiveRelation a) where
     x == y = transitiveClosure (fromTransitive x) == transitiveClosure (fromTransitive y)
@@ -124,9 +118,6 @@ instance Ord a => Graph (TransitiveRelation a) where
     vertex      = TransitiveRelation . vertex
     overlay x y = TransitiveRelation $ fromTransitive x `overlay` fromTransitive y
     connect x y = TransitiveRelation $ fromTransitive x `connect` fromTransitive y
-
-instance NFData a => NFData (TransitiveRelation a) where
-    rnf = rnf . fromTransitive
 
 instance Ord a => Transitive (TransitiveRelation a)
 
@@ -152,7 +143,7 @@ show (1 * 2         :: PreorderRelation Int) == "edges [(1,1),(1,2),(2,2)]"
 show (1 * 2 + 2 * 3 :: PreorderRelation Int) == "edges [(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)]"@
 -}
 newtype PreorderRelation a = PreorderRelation { fromPreorder :: Relation a }
-    deriving Num
+    deriving (Num, NFData)
 
 instance (Ord a, Show a) => Show (PreorderRelation a) where
     show = show . preorderClosure . fromPreorder
@@ -167,9 +158,6 @@ instance Ord a => Graph (PreorderRelation a) where
     vertex      = PreorderRelation . vertex
     overlay x y = PreorderRelation $ fromPreorder x `overlay` fromPreorder y
     connect x y = PreorderRelation $ fromPreorder x `connect` fromPreorder y
-
-instance NFData a => NFData (PreorderRelation a) where
-    rnf = rnf . fromPreorder
 
 instance Ord a => Reflexive  (PreorderRelation a)
 instance Ord a => Transitive (PreorderRelation a)
