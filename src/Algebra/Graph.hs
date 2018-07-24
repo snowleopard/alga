@@ -57,7 +57,6 @@ import Prelude.Compat
 import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
-import Data.Bits
 import Data.Foldable (toList)
 import Data.Tree
 
@@ -459,15 +458,22 @@ hasVertex x = foldg False (==x) (||) (||)
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g | s == t    = testBit (foldg (0 :: Int) v1 (.|.) c1 g) 1
-              | otherwise = testBit (foldg (0 :: Int) v2 (.|.) c2 g) 2
-  where -- TODO: Explain
-    v1 x   = if x == s then 1 else 0
-    c1 x y = x .|. y .|. unsafeShiftL (x .&. y) 1
-    v2 x | x == s    = 1
-         | x == t    = 2
-         | otherwise = 0
-    c2 x y = x .|. y .|. unsafeShiftL x 2 .&. unsafeShiftL y 1
+hasEdge s t g = hit g == Edge
+  where
+    hit Empty         = Miss
+    hit (Vertex x   ) = if x == s then Tail else Miss
+    hit (Overlay x y) = case hit x of
+        Miss -> hit y
+        Tail -> max Tail (hit y)
+        Edge -> Edge
+    hit (Connect x y) = case hit x of
+        Miss -> hit y
+        Tail -> if hasVertex t y then Edge else Tail
+        Edge -> Edge
+
+-- An auxiliary data type for 'hasEdge': when searching for an edge, we can hit
+-- its 'Tail', i.e. the source vertex, the whole 'Edge', or 'Miss' it entirely.
+data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
 -- | Check if a graph contains a given loop.
 -- Complexity: /O(s)/ time.
