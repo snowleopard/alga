@@ -471,10 +471,6 @@ hasEdge s t g = hit g == Edge
         Tail -> if hasVertex t y then Edge else Tail
         Edge -> Edge
 
--- An auxiliary data type for 'hasEdge': when searching for an edge, we can hit
--- its 'Tail', i.e. the source vertex, the whole 'Edge', or 'Miss' it entirely.
-data Hit = Miss | Tail | Edge deriving (Eq, Ord)
-
 -- | Check if a graph contains a given loop.
 -- Complexity: /O(s)/ time.
 --

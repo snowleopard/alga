@@ -57,6 +57,8 @@ import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Data.List.NonEmpty (NonEmpty (..))
 
+import Algebra.Graph.Internal
+
 import qualified Algebra.Graph                 as G
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Algebra.Graph.ToGraph         as T
@@ -394,7 +396,17 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> NonEmptyGraph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> NonEmptyGraph a -> Bool
-hasEdge = T.hasEdge
+hasEdge s t g = hit g == Edge
+  where
+    hit (Vertex x   ) = if x == s then Tail else Miss
+    hit (Overlay x y) = case hit x of
+        Miss -> hit y
+        Tail -> max Tail (hit y)
+        Edge -> Edge
+    hit (Connect x y) = case hit x of
+        Miss -> hit y
+        Tail -> if hasVertex t y then Edge else Tail
+        Edge -> Edge
 
 -- | Check if a graph contains a given loop.
 -- Complexity: /O(s)/ time.
