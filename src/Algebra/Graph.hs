@@ -797,7 +797,10 @@ mesh xs ys = overlays $ xgs ++ ygs
 --                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus :: [a] -> [b] -> Graph (a, b)
-torus xs ys = circuit xs `box` circuit ys
+torus xs ys = overlays $ xgs ++ ygs
+  where
+    xgs = map (\b -> circuit $ map (,b) xs) ys
+    ygs = map (\a -> circuit $ map (a,) ys) xs
 
 -- | Construct a /De Bruijn graph/ of a given non-negative dimension using symbols
 -- from a given alphabet.
