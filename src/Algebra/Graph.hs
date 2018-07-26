@@ -779,7 +779,10 @@ forest = overlays . map tree
 --                           , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\')), ((3,\'a\'),(3,\'b\')) ]
 -- @
 mesh :: [a] -> [b] -> Graph (a, b)
-mesh xs ys = path xs `box` path ys
+mesh xs ys = overlays $ xgs ++ ygs
+  where
+    xgs = map (\b -> path $ map (,b) xs) ys
+    ygs = map (\a -> path $ map (a,) ys) xs
 
 -- | Construct a /torus graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
