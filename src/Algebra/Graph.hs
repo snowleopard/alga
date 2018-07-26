@@ -779,10 +779,25 @@ forest = overlays . map tree
 --                           , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\')), ((3,\'a\'),(3,\'b\')) ]
 -- @
 mesh :: [a] -> [b] -> Graph (a, b)
-mesh xs ys = overlays $ xgs ++ ygs
+mesh xs ys = overlays $ map mkAngle [ (x, y) | x <- [0..lx] , y <- [0..ly] ]
   where
-    xgs = map (\b -> path $ map (,b) xs) ys
-    ygs = map (\a -> path $ map (a,) ys) xs
+    mkAngle (x,y) =
+      let left =
+            if x /= lx
+               then Just $ vertex (xs !! (x+1), ys !! y)
+               else Nothing
+          up   =
+            if y /= ly
+               then Just $ vertex (xs !! x, ys !! (y+1))
+               else Nothing
+          modif (Just x) Nothing  = Just x
+          modif Nothing (Just y)  = Just y
+          modif (Just x) (Just y) = Just $ overlay x y
+          modif Nothing Nothing   = Nothing
+          curr = vertex (xs !! x, ys !! y)
+       in maybe curr (connect curr) $ modif up left
+    lx = length xs - 1
+    ly = length ys - 1
 
 -- | Construct a /torus graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
