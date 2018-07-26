@@ -32,8 +32,8 @@ module Algebra.Graph.Fold (
     isSubgraphOf,
 
     -- * Graph properties
-    isEmpty, size, hasVertex, hasEdge, hasSelfLoop, vertexCount, edgeCount,
-    vertexList, edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
+    isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
+    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, starTranspose,
@@ -409,20 +409,6 @@ hasVertex = T.hasVertex
 -- @
 hasEdge :: Eq a => a -> a -> Fold a -> Bool
 hasEdge = T.hasEdge
-
--- | Check if a graph contains a given loop.
--- Complexity: /O(s)/ time.
---
--- @
--- hasSelfLoop x 'empty'            == False
--- hasSelfLoop x ('vertex' z)       == False
--- hasSelfLoop x ('edge' x x)       == True
--- hasSelfLoop x                  == 'hasEdge' x x
--- hasSelfLoop x . 'removeEdge' x x == const False
--- hasSelfLoop x                  == 'elem' (x,x) . 'edgeList'
--- @
-hasSelfLoop :: Eq a => a -> Fold a -> Bool
-hasSelfLoop = T.hasSelfLoop
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.

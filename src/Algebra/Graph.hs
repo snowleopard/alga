@@ -33,8 +33,8 @@ module Algebra.Graph (
     isSubgraphOf, (===),
 
     -- * Graph properties
-    isEmpty, size, hasVertex, hasEdge, hasSelfLoop, vertexCount, edgeCount,
-    vertexList, edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
+    isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
+    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, starTranspose, tree, forest, mesh,
@@ -470,21 +470,6 @@ hasEdge s t g = hit g == Edge
         Miss -> hit y
         Tail -> if hasVertex t y then Edge else Tail
         Edge -> Edge
-
--- | Check if a graph contains a given loop.
--- Complexity: /O(s)/ time.
---
--- @
--- hasSelfLoop x 'empty'            == False
--- hasSelfLoop x ('vertex' z)       == False
--- hasSelfLoop x ('edge' x x)       == True
--- hasSelfLoop x                  == 'hasEdge' x x
--- hasSelfLoop x . 'removeEdge' x x == const False
--- hasSelfLoop x                  == 'elem' (x,x) . 'edgeList'
--- @
-{-# SPECIALISE hasSelfLoop :: Int -> Graph Int -> Bool #-}
-hasSelfLoop :: Eq a => a -> Graph a -> Bool
-hasSelfLoop s = hasEdge s s
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.

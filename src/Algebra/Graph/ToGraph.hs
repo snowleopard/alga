@@ -95,14 +95,6 @@ class ToGraph t where
     hasEdge :: Eq (ToVertex t) => ToVertex t -> ToVertex t -> t -> Bool
     hasEdge s t = G.hasEdge s t . toGraph
 
-    -- | Check if a graph contains a given lopp.
-    --
-    -- @
-    -- hasSelfLoop x == 'hasEdge' x x
-    -- @
-    hasSelfLoop :: Eq (ToVertex t) => ToVertex t -> t -> Bool
-    hasSelfLoop x = hasEdge x x
-
     -- | The number of vertices in a graph.
     --
     -- @

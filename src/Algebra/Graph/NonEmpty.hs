@@ -32,8 +32,8 @@ module Algebra.Graph.NonEmpty (
     isSubgraphOf, (===),
 
     -- * Graph properties
-    size, hasVertex, hasEdge, hasSelfLoop, vertexCount, edgeCount, vertexList1,
-    edgeList, vertexSet, vertexIntSet, edgeSet,
+    size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList1, edgeList,
+    vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
     path1, circuit1, clique1, biclique1, star, starTranspose, tree, mesh1, torus1,
@@ -385,6 +385,7 @@ size = foldg1 (const 1) (+) (+)
 hasVertex :: Eq a => a -> NonEmptyGraph a -> Bool
 hasVertex v = foldg1 (==v) (||) (||)
 
+-- TODO: Reduce code duplication with 'Algebra.Graph.hasEdge'.
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
 --
@@ -407,19 +408,6 @@ hasEdge s t g = hit g == Edge
         Miss -> hit y
         Tail -> if hasVertex t y then Edge else Tail
         Edge -> Edge
-
--- | Check if a graph contains a given loop.
--- Complexity: /O(s)/ time.
---
--- @
--- hasSelfLoop x ('vertex' y)       == False
--- hasSelfLoop x ('edge' x y)       == True
--- hasSelfLoop x                  == 'hasEdge' x x
--- hasSelfLoop x . 'removeEdge' x x == const False
--- @
-{-# SPECIALISE hasSelfLoop :: Int -> NonEmptyGraph Int -> Bool #-}
-hasSelfLoop :: Eq a => a -> NonEmptyGraph a -> Bool
-hasSelfLoop s = hasEdge s s
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
