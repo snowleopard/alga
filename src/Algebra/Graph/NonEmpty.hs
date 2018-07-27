@@ -143,6 +143,7 @@ instance NFData a => NFData (NonEmptyGraph a) where
 instance T.ToGraph (NonEmptyGraph a) where
     type ToVertex (NonEmptyGraph a) = a
     foldg _ = foldg1
+    hasEdge = hasEdge
 
 instance Num a => Num (NonEmptyGraph a) where
     fromInteger = Vertex . fromInteger
