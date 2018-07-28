@@ -93,20 +93,7 @@ class ToGraph t where
     -- hasEdge x y == 'elem' (x,y) . 'edgeList'
     -- @
     hasEdge :: Eq (ToVertex t) => ToVertex t -> ToVertex t -> t -> Bool
-    hasEdge s t g = case foldg e v o c g of (_, _, r) -> r
-      where
-        e                             = (False   , False   , False                 )
-        v x                           = (x == s  , x == t  , False                 )
-        o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
-        c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
-
-    -- | Check if a graph contains a given lopp.
-    --
-    -- @
-    -- hasSelfLoop x == 'hasEdge' x x
-    -- @
-    hasSelfLoop :: Eq (ToVertex t) => ToVertex t -> t -> Bool
-    hasSelfLoop x = hasEdge x x
+    hasEdge s t = G.hasEdge s t . toGraph
 
     -- | The number of vertices in a graph.
     --

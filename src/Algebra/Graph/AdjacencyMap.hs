@@ -28,8 +28,8 @@ module Algebra.Graph.AdjacencyMap (
     isSubgraphOf,
 
     -- * Graph properties
-    isEmpty, hasVertex, hasEdge, hasSelfLoop, vertexCount, edgeCount, vertexList,
-    edgeList, adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
+    isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
+    adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, starTranspose, tree, forest,
@@ -185,20 +185,6 @@ hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
 hasEdge u v a = case Map.lookup u (adjacencyMap a) of
     Nothing -> False
     Just vs -> Set.member v vs
-
--- | Check if a graph contains a given loop.
--- Complexity: /O(s)/ time.
---
--- @
--- hasSelfLoop x 'empty'            == False
--- hasSelfLoop x ('vertex' z)       == False
--- hasSelfLoop x ('edge' x x)       == True
--- hasSelfLoop x                  == 'hasEdge' x x
--- hasSelfLoop x . 'removeEdge' x x == const False
--- hasSelfLoop x                  == 'elem' (x,x) . 'edgeList'
--- @
-hasSelfLoop :: Ord a => a -> AdjacencyMap a -> Bool
-hasSelfLoop x = hasEdge x x
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.

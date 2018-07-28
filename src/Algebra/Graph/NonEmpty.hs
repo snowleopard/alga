@@ -32,8 +32,8 @@ module Algebra.Graph.NonEmpty (
     isSubgraphOf, (===),
 
     -- * Graph properties
-    size, hasVertex, hasEdge, hasSelfLoop, vertexCount, edgeCount, vertexList1,
-    edgeList, vertexSet, vertexIntSet, edgeSet,
+    size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList1, edgeList,
+    vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
     path1, circuit1, clique1, biclique1, star, starTranspose, tree, mesh1, torus1,
@@ -56,6 +56,8 @@ import Data.Semigroup
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Data.List.NonEmpty (NonEmpty (..))
+
+import Algebra.Graph.Internal
 
 import qualified Algebra.Graph                 as G
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
@@ -140,9 +142,8 @@ instance NFData a => NFData (NonEmptyGraph a) where
 
 instance T.ToGraph (NonEmptyGraph a) where
     type ToVertex (NonEmptyGraph a) = a
-    foldg _     = foldg1
-    hasEdge     = hasEdge
-    hasSelfLoop = hasSelfLoop
+    foldg _ = foldg1
+    hasEdge = hasEdge
 
 instance Num a => Num (NonEmptyGraph a) where
     fromInteger = Vertex . fromInteger
@@ -385,6 +386,7 @@ size = foldg1 (const 1) (+) (+)
 hasVertex :: Eq a => a -> NonEmptyGraph a -> Bool
 hasVertex v = foldg1 (==v) (||) (||)
 
+-- TODO: Reduce code duplication with 'Algebra.Graph.hasEdge'.
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
 --
@@ -396,46 +398,17 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> NonEmptyGraph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> NonEmptyGraph a -> Bool
-hasEdge s t =
-  if s == t -- We test if we search for a loop
-     then hasSelfLoop s
-     else maybe False hasEdge' . induce' -- if not, we convert the supplied @Graph a@ to a @Graph Bool@
-                                         -- where @s@ is @Vertex True@, @v@ is @Vertex False@ and other
-                                         -- vertices are removed.
-                                         -- Then we check if there is an edge from @True@ to @False@
-   where
-     hasEdge' g = case foldg1 v o c g of (_, _, r) -> r
-       where
-         v x                           = (x       , not x   , False                 )
-         o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
-         c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
-     induce' = foldg1 (\x -> if x == s then Just (Vertex True)
-                                      else if x == t
-                                              then Just (Vertex False)
-                                              else Nothing)
-                     (k Overlay)
-                     (k Connect)
-       where
-         k _ x     Nothing     = x -- Constant folding to get rid of Empty leaves
-         k _ Nothing y         = y
-         k f (Just x) (Just y) = Just $ f x y
-
--- | Check if a graph contains a given loop.
--- Complexity: /O(s)/ time.
---
--- @
--- hasSelfLoop x ('vertex' y)       == False
--- hasSelfLoop x ('edge' x y)       == True
--- hasSelfLoop x                  == 'hasEdge' x x
--- hasSelfLoop x . 'removeEdge' x x == const False
--- @
-{-# SPECIALISE hasSelfLoop :: Int -> NonEmptyGraph Int -> Bool #-}
-hasSelfLoop :: Eq a => a -> NonEmptyGraph a -> Bool
-hasSelfLoop l = maybe False hasSelfLoop' . induce1 (==l)
+hasEdge s t g = hit g == Edge
   where
-    hasSelfLoop' (Overlay x y) = hasSelfLoop' x || hasSelfLoop' y
-    hasSelfLoop' Connect{} = True
-    hasSelfLoop' _ = False
+    hit (Vertex x   ) = if x == s then Tail else Miss
+    hit (Overlay x y) = case hit x of
+        Miss -> hit y
+        Tail -> max Tail (hit y)
+        Edge -> Edge
+    hit (Connect x y) = case hit x of
+        Miss -> hit y
+        Tail -> if hasVertex t y then Edge else Tail
+        Edge -> Edge
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.

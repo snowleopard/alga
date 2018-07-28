@@ -33,8 +33,8 @@ module Algebra.Graph (
     isSubgraphOf, (===),
 
     -- * Graph properties
-    isEmpty, size, hasVertex, hasEdge, hasSelfLoop, vertexCount, edgeCount,
-    vertexList, edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
+    isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
+    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, starTranspose, tree, forest, mesh,
@@ -458,46 +458,18 @@ hasVertex x = foldg False (==x) (||) (||)
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t = if s == t -- We test if we search for a loop
-                 then hasSelfLoop s
-                 else hasEdge' . induce' -- if not, we convert the supplied @Graph a@ to a @Graph Bool@
-                                         -- where @s@ is @Vertex True@, @v@ is @Vertex False@ and other
-                                         -- vertices are removed.
-                                         -- Then we check if there is an edge from @True@ to @False@
-    where
-     hasEdge' g = case foldg e v o c g of (_, _, r) -> r
-       where
-         e                             = (False   , False   , False                 )
-         v x                           = (x       , not x   , False                 )
-         o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
-         c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
-     induce' = foldg Empty
-                    (\x -> if x == s then Vertex True else if x == t then Vertex False else Empty)
-                    (k Overlay)
-                    (k Connect)
-       where
-         k _ x     Empty = x -- Constant folding to get rid of Empty leaves
-         k _ Empty y     = y
-         k f x     y     = f x y
-
--- | Check if a graph contains a given loop.
--- Complexity: /O(s)/ time.
---
--- @
--- hasSelfLoop x 'empty'            == False
--- hasSelfLoop x ('vertex' z)       == False
--- hasSelfLoop x ('edge' x x)       == True
--- hasSelfLoop x                  == 'hasEdge' x x
--- hasSelfLoop x . 'removeEdge' x x == const False
--- hasSelfLoop x                  == 'elem' (x,x) . 'edgeList'
--- @
-{-# SPECIALISE hasSelfLoop :: Int -> Graph Int -> Bool #-}
-hasSelfLoop :: Eq a => a -> Graph a -> Bool
-hasSelfLoop l = hasSelfLoop' . induce (==l)
-  where -- hasSelfLoop' is working because Algebra.Graph.induce is removing empty leaves.
-    hasSelfLoop' (Overlay x y) = hasSelfLoop' x || hasSelfLoop' y
-    hasSelfLoop' Connect{} = True
-    hasSelfLoop' _ = False
+hasEdge s t g = hit g == Edge
+  where
+    hit Empty         = Miss
+    hit (Vertex x   ) = if x == s then Tail else Miss
+    hit (Overlay x y) = case hit x of
+        Miss -> hit y
+        Tail -> max Tail (hit y)
+        Edge -> Edge
+    hit (Connect x y) = case hit x of
+        Miss -> hit y
+        Tail -> if hasVertex t y then Edge else Tail
+        Edge -> Edge
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
