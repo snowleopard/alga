@@ -812,21 +812,15 @@ mesh xs ys = overlays $ map mkAngle [ (x, y) | x <- [0..lx] , y <- [0..ly] ]
 --                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus :: [a] -> [b] -> Graph (a, b)
-torus xs ys = overlays $ map mkAngle [ (x, y) | x <- [0..lx] , y <- [0..ly] ]
+torus xs ys = overlays $ map mkAngle [ (x, y) | x <- [0..(lx-1)] , y <- [0..(ly-1)] ]
   where
     mkAngle (x,y) =
-      let left =
-            if x /= lx
-               then vertex (xs !! (x+1), ys !! y)
-               else vertex (xs !! 0, ys !! y)
-          up   =
-            if y /= ly
-               then vertex (xs !! x, ys !! (y+1))
-               else vertex (xs !! x, ys !! 0)
+      let left = vertex (xs !! ((x + 1) `mod` lx), ys !! y)
+          up   = vertex (xs !! x, ys !! ((y + 1) `mod` ly))
           curr = vertex (xs !! x, ys !! y)
        in connect curr $ overlay up left
-    lx = length xs - 1
-    ly = length ys - 1
+    lx = length xs
+    ly = length ys
 
 -- | Construct a /De Bruijn graph/ of a given non-negative dimension using symbols
 -- from a given alphabet.
