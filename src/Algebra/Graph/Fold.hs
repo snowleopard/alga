@@ -502,11 +502,11 @@ edgeSet = T.edgeSet
 -- graph can be quadratic with respect to the expression size /s/.
 --
 -- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'stars' . adjacencyList == id
+-- adjacencyList 'empty'          == []
+-- adjacencyList ('vertex' x)     == [(x, [])]
+-- adjacencyList ('edge' 1 2)     == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
+-- 'stars' . adjacencyList        == id
 -- @
 adjacencyList :: Ord a => Fold a -> [(a, [a])]
 adjacencyList = T.adjacencyList

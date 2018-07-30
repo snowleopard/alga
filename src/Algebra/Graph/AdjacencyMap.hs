@@ -261,11 +261,11 @@ edgeSet = Map.foldrWithKey (\v es -> Set.union (Set.mapMonotonic (v,) es)) Set.e
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
 --
 -- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'stars' . adjacencyList == id
+-- adjacencyList 'empty'          == []
+-- adjacencyList ('vertex' x)     == [(x, [])]
+-- adjacencyList ('edge' 1 2)     == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
+-- 'stars' . adjacencyList        == id
 -- @
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
 adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap

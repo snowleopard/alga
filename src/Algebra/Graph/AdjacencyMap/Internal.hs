@@ -207,7 +207,6 @@ fromAdjacencySets ss = AM $ Map.unionWith Set.union vs es
 -- consistent ('Algebra.Graph.AdjacencyMap.connect' x y) == True
 -- consistent ('Algebra.Graph.AdjacencyMap.edge' x y)    == True
 -- consistent ('Algebra.Graph.AdjacencyMap.edges' xs)    == True
--- consistent ('Algebra.Graph.AdjacencyMap.graph' xs ys) == True
 -- consistent ('Algebra.Graph.AdjacencyMap.stars' xs)    == True
 -- @
 consistent :: Ord a => AdjacencyMap a -> Bool

@@ -194,7 +194,6 @@ instance (Ord a, Num a) => Num (Relation a) where
 -- consistent ('Algebra.Graph.Relation.connect' x y) == True
 -- consistent ('Algebra.Graph.Relation.edge' x y)    == True
 -- consistent ('Algebra.Graph.Relation.edges' xs)    == True
--- consistent ('Algebra.Graph.Relation.graph' xs ys) == True
 -- consistent ('Algebra.Graph.Relation.stars' xs)    == True
 -- @
 consistent :: Ord a => Relation a -> Bool

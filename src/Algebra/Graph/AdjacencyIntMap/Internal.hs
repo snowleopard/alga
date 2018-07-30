@@ -207,7 +207,6 @@ fromAdjacencyIntSets ss = AM $ IntMap.unionWith IntSet.union vs es
 -- consistent ('Algebra.Graph.AdjacencyIntMap.connect' x y) == True
 -- consistent ('Algebra.Graph.AdjacencyIntMap.edge' x y)    == True
 -- consistent ('Algebra.Graph.AdjacencyIntMap.edges' xs)    == True
--- consistent ('Algebra.Graph.AdjacencyIntMap.graph' xs ys) == True
 -- consistent ('Algebra.Graph.AdjacencyIntMap.stars' xs)    == True
 -- @
 consistent :: AdjacencyIntMap -> Bool
