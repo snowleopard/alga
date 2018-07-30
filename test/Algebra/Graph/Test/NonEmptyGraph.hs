@@ -440,6 +440,25 @@ testGraphNonEmpty = do
     test "star x [y,z] == edges1 ((x,y) :| [(x,z)])" $ \(x :: Int) y z ->
           star x [y,z] == edges1 ((x,y) :| [(x,z)])
 
+    putStrLn $ "\n============ Graph.NonEmpty.stars1 ============"
+    test "stars1 ((x, [])  :| [])         == vertex x" $ \(x :: Int) ->
+          stars1 ((x, [])  :| [])         == vertex x
+
+    test "stars1 ((x, [y]) :| [])         == edge x y" $ \(x :: Int) y ->
+          stars1 ((x, [y]) :| [])         == edge x y
+
+    test "stars1 ((x, ys)  :| [])         == star x ys" $ \(x :: Int) ys ->
+          stars1 ((x, ys)  :| [])         == star x ys
+
+    test "stars1                          == overlays1 . fmap (uncurry star)" $ \(xs' :: NonEmptyList (Int, [Int])) ->
+      let xs = NonEmpty.fromList (getNonEmpty xs')
+      in  stars1 xs                       == overlays1 (fmap (uncurry star) xs)
+
+    test "overlay (stars1 xs) (stars1 ys) == stars1 (xs <> ys)" $ \(xs' :: NonEmptyList (Int, [Int])) (ys' :: NonEmptyList (Int, [Int])) ->
+      let xs = NonEmpty.fromList (getNonEmpty xs')
+          ys = NonEmpty.fromList (getNonEmpty ys')
+      in  overlay (stars1 xs) (stars1 ys) == stars1 (xs <> ys)
+
     putStrLn $ "\n============ Graph.NonEmpty.starTranspose ============"
     test "starTranspose x []    == vertex x" $ \(x :: Int) ->
           starTranspose x []    == vertex x

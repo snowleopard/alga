@@ -11,7 +11,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Generic (
     -- * Generic tests
-    Testsuite, testsuite, testShow, testFromAdjacencyList, testFromAdjacencySets,
+    Testsuite, testsuite, testShow, testFromAdjacencySets,
     testFromAdjacencyIntSets, testBasicPrimitives, testIsSubgraphOf, testSize,
     testToGraph, testAdjacencyList, testPreSet, testPreIntSet, testPostSet,
     testPostIntSet, testGraphFamilies, testTransformations, testDfsForest,
@@ -85,6 +85,7 @@ testGraphFamilies = mconcat [ testPath
                             , testClique
                             , testBiclique
                             , testStar
+                            , testStars
                             , testStarTranspose
                             , testTree
                             , testForest ]
@@ -293,23 +294,29 @@ testConnects (Testsuite prefix (%)) = do
     test "isEmpty . connects == all isEmpty" $ mapSize (min 10) $ \xs ->
           isEmpty % connects xs == all isEmpty xs
 
-testFromAdjacencyList :: Testsuite -> IO ()
-testFromAdjacencyList (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "fromAdjacencyList ============"
-    test "fromAdjacencyList []                                  == empty" $
-          fromAdjacencyList []                                  == id % empty
+testStars :: Testsuite -> IO ()
+testStars (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "stars ============"
+    test "stars []                      == empty" $
+          stars []                      == id % empty
 
-    test "fromAdjacencyList [(x, [])]                           == vertex x" $ \x ->
-          fromAdjacencyList [(x, [])]                           == id % vertex x
+    test "stars [(x, [])]               == vertex x" $ \x ->
+          stars [(x, [])]               == id % vertex x
 
-    test "fromAdjacencyList [(x, [y])]                          == edge x y" $ \x y ->
-          fromAdjacencyList [(x, [y])]                          == id % edge x y
+    test "stars [(x, [y])]              == edge x y" $ \x y ->
+          stars [(x, [y])]              == id % edge x y
 
-    test "fromAdjacencyList . adjacencyList                     == id" $ \x ->
-         (fromAdjacencyList . adjacencyList) % x                == x
+    test "stars [(x, ys)]               == star x ys" $ \x ys ->
+          stars [(x, ys)]               == id % star x ys
 
-    test "overlay (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)" $ \xs ys ->
-          overlay (fromAdjacencyList xs) % fromAdjacencyList ys == fromAdjacencyList (xs ++ ys)
+    test "stars                         == overlays . map (uncurry star)" $ \xs ->
+          stars xs                      == id % overlays (map (uncurry star) xs)
+
+    test "stars . adjacencyList         == id" $ \x ->
+         (stars . adjacencyList) x      == id % x
+
+    test "overlay (stars xs) (stars ys) == stars (xs ++ ys)" $ \xs ys ->
+          overlay (stars xs) % stars ys == stars (xs ++ ys)
 
 testFromAdjacencySets :: Testsuite -> IO ()
 testFromAdjacencySets (Testsuite prefix (%)) = do
