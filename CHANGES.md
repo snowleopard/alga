@@ -2,6 +2,7 @@
 
 ## 0.2
 
+* #100: Rename `fromAdjacencyList` to `stars`.
 * #79: Improve the API consistency: rename `IntAdjacencyMap` to `AdjacencyIntMap`,
        and then rename the function that extracts its adjacency map to
        `adjacencyIntMap` to avoid the clash with `AdjacencyMap.adjacencyMap`,
