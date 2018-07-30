@@ -256,7 +256,7 @@ instance Ord a => ToGraph (G.Graph a) where
 
 instance Ord a => ToGraph (AM.AdjacencyMap a) where
     type ToVertex (AM.AdjacencyMap a) = a
-    toGraph         = G.fromAdjacencyList
+    toGraph         = G.stars
                     . map (fmap Set.toList)
                     . Map.toList
                     . AM.adjacencyMap

@@ -36,7 +36,7 @@ module Algebra.Graph.Fold (
     edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, starTranspose,
+    path, circuit, clique, biclique, star, stars, starTranspose,
 
     -- * Graph transformation
     removeVertex, removeEdge, transpose, induce, simplify,
@@ -502,11 +502,11 @@ edgeSet = T.edgeSet
 -- graph can be quadratic with respect to the expression size /s/.
 --
 -- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'fromAdjacencyList' . adjacencyList == id
+-- adjacencyList 'empty'          == []
+-- adjacencyList ('vertex' x)     == [(x, [])]
+-- adjacencyList ('edge' 1 2)     == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
+-- 'stars' . adjacencyList        == id
 -- @
 adjacencyList :: Ord a => Fold a -> [(a, [a])]
 adjacencyList = T.adjacencyList
@@ -584,6 +584,23 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 star :: a -> [a] -> Fold a
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
+
+-- | The /stars/ formed by overlaying a list of 'star's. An inverse of
+-- 'adjacencyList'.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the total size of the
+-- input.
+--
+-- @
+-- stars []                      == 'empty'
+-- stars [(x, [])]               == 'vertex' x
+-- stars [(x, [y])]              == 'edge' x y
+-- stars [(x, ys)]               == 'star' x ys
+-- stars                         == 'overlays' . map (uncurry 'star')
+-- stars . 'adjacencyList'         == id
+-- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
+-- @
+stars :: [(a, [a])] -> Fold a
+stars = overlays . map (uncurry star)
 
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the

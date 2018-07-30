@@ -36,7 +36,8 @@ module Algebra.Graph.NonEmpty (
     vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
-    path1, circuit1, clique1, biclique1, star, starTranspose, tree, mesh1, torus1,
+    path1, circuit1, clique1, biclique1, star, stars1, starTranspose, tree,
+    mesh1, torus1,
 
     -- * Graph transformation
     removeVertex1, removeEdge, replaceVertex, mergeVertices, splitVertex1,
@@ -572,6 +573,20 @@ biclique1 xs ys = connect (vertices1 xs) (vertices1 ys)
 star :: a -> [a] -> NonEmptyGraph a
 star x []     = vertex x
 star x (y:ys) = connect (vertex x) (vertices1 $ y :| ys)
+
+-- | The /stars/ formed by overlaying a non-empty list of 'star's.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the total size of the
+-- input.
+--
+-- @
+-- stars1 ((x, [])  ':|' [])         == 'vertex' x
+-- stars1 ((x, [y]) ':|' [])         == 'edge' x y
+-- stars1 ((x, ys)  ':|' [])         == 'star' x ys
+-- stars1                          == 'overlays1' . fmap (uncurry 'star')
+-- 'overlay' (stars1 xs) (stars1 ys) == stars1 (xs <> ys)
+-- @
+stars1 :: NonEmpty (a, [a]) -> NonEmptyGraph a
+stars1 = overlays1 . fmap (uncurry star)
 
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the

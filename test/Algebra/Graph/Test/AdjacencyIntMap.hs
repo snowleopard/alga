@@ -29,12 +29,8 @@ testAdjacencyIntMap = do
     test "Consistency of arbitraryAdjacencyMap" $ \m ->
         consistent m
 
-    test "Consistency of fromAdjacencyList" $ \xs ->
-        consistent (fromAdjacencyList xs)
-
     testShow                 t
     testBasicPrimitives      t
-    testFromAdjacencyList    t
     testFromAdjacencyIntSets t
     testIsSubgraphOf         t
     testToGraph              t

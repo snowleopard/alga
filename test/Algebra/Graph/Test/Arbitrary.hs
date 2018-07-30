@@ -78,17 +78,17 @@ instance Arbitrary a => Arbitrary (NE.NonEmptyGraph a) where
 
 -- | Generate an arbitrary 'Relation'.
 arbitraryRelation :: (Arbitrary a, Ord a) => Gen (Relation a)
-arbitraryRelation = Relation.fromAdjacencyList <$> arbitrary
+arbitraryRelation = Relation.stars <$> arbitrary
 
 -- | Generate an arbitrary 'AdjacencyMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
 arbitraryAdjacencyMap :: (Arbitrary a, Ord a) => Gen (AdjacencyMap a)
-arbitraryAdjacencyMap = AdjacencyMap.fromAdjacencyList <$> arbitrary
+arbitraryAdjacencyMap = AdjacencyMap.stars <$> arbitrary
 
 -- | Generate an arbitrary 'AdjacencyIntMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
 arbitraryAdjacencyIntMap :: Gen AdjacencyIntMap
-arbitraryAdjacencyIntMap = AdjacencyIntMap.fromAdjacencyList <$> arbitrary
+arbitraryAdjacencyIntMap = AdjacencyIntMap.stars <$> arbitrary
 
 -- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
