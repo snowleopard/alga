@@ -343,19 +343,7 @@ overlays (x:xs) = foldr overlay x xs
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects [] = empty
-connects (x:xs) = foldr connect x xs
-{-# INLINE [0] connects #-}
-
--- This allow the fusion between the foldr of 'connects' and a possible composed
--- 'map' (which does not happen due to the pattern-match against the empty list.
-{-# RULES
-"connects/map" forall f xs.
-                 connects (map f xs) =
-                   case xs of
-                     [] -> empty
-                     (x:xs) -> foldr (connect . f) (f x) xs
- #-}
+connects = foldr connect empty
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
