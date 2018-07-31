@@ -321,8 +321,8 @@ overlays [] = empty
 overlays (x:xs) = foldr overlay x xs
 {-# INLINE [0] overlays #-}
 
--- This allow the fusion between the foldr of 'overlays' and a possible composed
--- 'map' (which does not happen due to the pattern-match against the empty list.
+-- This allows the fusion between the 'foldr' of 'overlays' and a possible composed
+-- 'map' (which does not happen alone due to the pattern-match to detect the empty list).
 {-# RULES
 "overlays/map" forall f xs.
                  overlays (map f xs) =
