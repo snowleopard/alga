@@ -2,6 +2,7 @@
 
 ## 0.2
 
+* #102: Switch the master branch to GHC 8.4.3. Add a CI instance for GHC 8.6.1.
 * #101: Drop `-O2` from the `ghc-options` section of the Cabal file.
 * #100: Rename `fromAdjacencyList` to `stars`.
 * #79: Improve the API consistency: rename `IntAdjacencyMap` to `AdjacencyIntMap`,
