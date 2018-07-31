@@ -317,7 +317,19 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays = foldr overlay empty
+overlays [] = empty
+overlays (x:xs) = foldr overlay x xs
+{-# INLINE [0] overlays #-}
+
+-- This allow the fusion between the foldr of 'overlays' and a possible composed
+-- 'map' (which does not happen due to the pattern-match against the empty list.
+{-# RULES
+"overlays/map" forall f xs.
+                 overlays (map f xs) =
+                   case xs of
+                     [] -> empty
+                     (x:xs) -> foldr (overlay . f) (f x) xs
+ #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -331,7 +343,19 @@ overlays = foldr overlay empty
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects = foldr connect empty
+connects [] = empty
+connects (x:xs) = foldr connect x xs
+{-# INLINE [0] connects #-}
+
+-- This allow the fusion between the foldr of 'connects' and a possible composed
+-- 'map' (which does not happen due to the pattern-match against the empty list.
+{-# RULES
+"connects/map" forall f xs.
+                 connects (map f xs) =
+                   case xs of
+                     [] -> empty
+                     (x:xs) -> foldr (connect . f) (f x) xs
+ #-}
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
