@@ -52,12 +52,12 @@ matrix:
       os: osx
 
 ##### Performance regression suite, added manually #####
-    - compiler: "ghc-8.4.1"
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.4.3"
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.3], sources: [hvr-ghc]}}
       env: DOBENCH="Graph"
       script: timeout 40m ./compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; );
-    - compiler: "ghc-8.4.1"
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.1], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.4.3"
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.4.3], sources: [hvr-ghc]}}
       env: DOBENCH="Graph.NonEmpty"
       script: timeout 40m ./compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ) "True" ;
 ##### Performance regression suite, added manually #####
