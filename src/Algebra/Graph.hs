@@ -754,23 +754,13 @@ forest = overlays . map tree
 --                           , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\')), ((3,\'a\'),(3,\'b\')) ]
 -- @
 mesh :: [a] -> [b] -> Graph (a, b)
-mesh xs ys = overlays $ map mkAngle [ (x, y) | x <- [0..lx] , y <- [0..ly] ]
+mesh xs ys = stars $ map mkAngle [ (x, y) | x <- [0..lx] , y <- [0..ly] ]
   where
     mkAngle (x,y) =
-      let left =
-            if x /= lx
-               then Just $ vertex (xs !! (x+1), ys !! y)
-               else Nothing
-          up   =
-            if y /= ly
-               then Just $ vertex (xs !! x, ys !! (y+1))
-               else Nothing
-          modif (Just x) Nothing  = Just x
-          modif Nothing (Just y)  = Just y
-          modif (Just x) (Just y) = Just $ overlay x y
-          modif Nothing Nothing   = Nothing
-          curr = vertex (xs !! x, ys !! y)
-       in maybe curr (connect curr) $ modif up left
+      let left = [(xs !! (x+1), ys !! y) | x /= lx]
+          up   = [(xs !! x, ys !! (y+1)) | y /= ly]
+          curr = (xs !! x, ys !! y)
+       in (curr, up ++ left)
     lx = length xs - 1
     ly = length ys - 1
 
@@ -787,13 +777,13 @@ mesh xs ys = overlays $ map mkAngle [ (x, y) | x <- [0..lx] , y <- [0..ly] ]
 --                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus :: [a] -> [b] -> Graph (a, b)
-torus xs ys = overlays $ map mkAngle [ (x, y) | x <- [0..(lx-1)] , y <- [0..(ly-1)] ]
+torus xs ys = stars $ map mkAngle [ (x, y) | x <- [0..(lx-1)] , y <- [0..(ly-1)] ]
   where
     mkAngle (x,y) =
-      let left = vertex (xs !! ((x + 1) `mod` lx), ys !! y)
-          up   = vertex (xs !! x, ys !! ((y + 1) `mod` ly))
-          curr = vertex (xs !! x, ys !! y)
-       in connect curr $ overlay up left
+      let left = (xs !! ((x + 1) `mod` lx), ys !! y)
+          up   = (xs !! x, ys !! ((y + 1) `mod` ly))
+          curr = (xs !! x, ys !! y)
+       in (curr, [up,left])
     lx = length xs
     ly = length ys
 
