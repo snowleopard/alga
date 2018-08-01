@@ -236,7 +236,7 @@ vertex = Vertex
 -- 'vertexCount' (edge 1 2) == 2
 -- @
 edge :: a -> a -> Graph a
-edge x y = connect (vertex x) (vertex y)
+edge = curry edge'
 
 edge' :: (a,a) -> Graph a
 edge' (x,y) = connect (vertex x) (vertex y)
