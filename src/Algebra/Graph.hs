@@ -108,7 +108,6 @@ The 'Eq' instance is currently implemented using the 'AM.AdjacencyMap' as the
 
 The following useful theorems can be proved from the above set of axioms.
 
-
     * 'overlay' has 'empty' as the identity and is idempotent:
 
         >   x + empty == x
@@ -322,30 +321,17 @@ edges = overlays . map edge'
 -- @
 overlays :: [Graph a] -> Graph a
 overlays [] = empty
-overlays (x:xs) = foldr1' overlay x xs
+overlays (x:xs) = foldr1f overlay id x xs
 {-# INLINE [0] overlays #-}
 
-foldr1' :: (a -> a -> a) -> a -> [a] -> a
-foldr1' k = go
-  where
-    go y ys = case ys of
-                   [] -> y
-                   (x:xs) -> y `k` go x xs
-
 {-# RULES
-"overlays/map" forall f xs.
-                 overlays (map f xs) =
-                   case xs of
-                     [] -> empty
-                     (y:ys) -> foldr1f overlay f y ys
+"overlays/map"
+  forall f xs.
+    overlays (map f xs) =
+      case xs of
+        [] -> empty
+        (y:ys) -> foldr1f overlay f y ys
  #-}
-
-foldr1f :: (a -> a -> a) -> (b -> a) -> b -> [b] -> a
-foldr1f k f = go
-  where
-    go y ys = case ys of
-                   [] -> f y
-                   (x:xs) -> f y `k` go x xs
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -359,7 +345,18 @@ foldr1f k f = go
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects = foldr connect empty
+connects [] = empty
+connects (x:xs) = foldr1f connect id x xs
+{-# INLINE [0] connects #-}
+
+{-# RULES
+"connects/map"
+  forall f xs.
+    connects (map f xs) =
+      case xs of
+        [] -> empty
+        (y:ys) -> foldr1f connect f y ys
+ #-}
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
