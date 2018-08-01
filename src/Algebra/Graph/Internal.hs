@@ -23,7 +23,7 @@ module Algebra.Graph.Internal (
     Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, Hit (..),
 
     -- Special fold
-    foldr1f
+    foldr1f, foldr1fId
   ) where
 
 import Prelude ()
@@ -118,3 +118,6 @@ foldr1f k f = go
       case ys of
         []     -> f y
         (x:xs) -> f y `k` go x xs
+
+foldr1fId :: (a -> a -> a) -> a -> [a] -> a
+foldr1fId k = foldr1f k id

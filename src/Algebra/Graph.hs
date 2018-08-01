@@ -321,7 +321,7 @@ edges = overlays . map edge'
 -- @
 overlays :: [Graph a] -> Graph a
 overlays [] = empty
-overlays (x:xs) = foldr1f overlay id x xs
+overlays (x:xs) = foldr1fId overlay x xs
 {-# INLINE [0] overlays #-}
 
 {-# RULES
@@ -346,7 +346,7 @@ overlays (x:xs) = foldr1f overlay id x xs
 -- @
 connects :: [Graph a] -> Graph a
 connects [] = empty
-connects (x:xs) = foldr1f connect id x xs
+connects (x:xs) = foldr1fId connect x xs
 {-# INLINE [0] connects #-}
 
 {-# RULES
