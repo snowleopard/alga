@@ -34,6 +34,8 @@ import Data.Semigroup
 
 import qualified GHC.Exts as Exts
 
+import Data.List.NonEmpty (NonEmpty (..))
+
 -- | An abstract list data type with /O(1)/ time concatenation (the current
 -- implementation uses difference lists). Here @a@ is the type of list elements.
 -- 'List' @a@ is a 'Monoid': 'mempty' corresponds to the empty list and two lists
@@ -111,13 +113,13 @@ connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
 -- its 'Tail', i.e. the source vertex, the whole 'Edge', or 'Miss' it entirely.
 data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
-foldr1f :: (a -> a -> a) -> (b -> a) -> b -> [b] -> a
+foldr1f :: (a -> a -> a) -> (b -> a) -> NonEmpty b -> a
 foldr1f k f = go
   where
-    go y ys =
+    go (y :| ys) =
       case ys of
         []     -> f y
-        (x:xs) -> f y `k` go x xs
+        (x:xs) -> f y `k` go (x :| xs)
 
-foldr1fId :: (a -> a -> a) -> a -> [a] -> a
+foldr1fId :: (a -> a -> a) -> NonEmpty a -> a
 foldr1fId k = foldr1f k id

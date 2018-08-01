@@ -73,6 +73,8 @@ import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
 import qualified Data.Tree                     as Tree
 
+import Data.List.NonEmpty (nonEmpty)
+
 {-| The 'Graph' data type is a deep embedding of the core graph construction
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
 instance as a convenient notation for working with graphs:
@@ -236,10 +238,7 @@ vertex = Vertex
 -- 'vertexCount' (edge 1 2) == 2
 -- @
 edge :: a -> a -> Graph a
-edge = curry edge'
-
-edge' :: (a,a) -> Graph a
-edge' (x,y) = connect (vertex x) (vertex y)
+edge x y = connect (vertex x) (vertex y)
 
 -- | /Overlay/ two graphs. An alias for the constructor 'Overlay'. This is a
 -- commutative, associative and idempotent operation with the identity 'empty'.
@@ -306,7 +305,7 @@ vertices = overlays . map vertex
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- @
 edges :: [(a, a)] -> Graph a
-edges = overlays . map edge'
+edges = overlays . map (uncurry edge)
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -320,17 +319,14 @@ edges = overlays . map edge'
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays [] = empty
-overlays (x:xs) = foldr1fId overlay x xs
+overlays = maybe empty (foldr1fId overlay) . nonEmpty
 {-# INLINE [0] overlays #-}
 
 {-# RULES
 "overlays/map"
   forall f xs.
     overlays (map f xs) =
-      case xs of
-        [] -> empty
-        (y:ys) -> foldr1f overlay f y ys
+      maybe empty (foldr1f overlay f) (nonEmpty xs)
  #-}
 
 -- | Connect a given list of graphs.
@@ -345,17 +341,14 @@ overlays (x:xs) = foldr1fId overlay x xs
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects [] = empty
-connects (x:xs) = foldr1fId connect x xs
+connects = maybe empty (foldr1fId connect) . nonEmpty
 {-# INLINE [0] connects #-}
 
 {-# RULES
-"connects/map"
+"connect/map"
   forall f xs.
     connects (map f xs) =
-      case xs of
-        [] -> empty
-        (y:ys) -> foldr1f connect f y ys
+      maybe empty (foldr1f connect f) (nonEmpty xs)
  #-}
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
