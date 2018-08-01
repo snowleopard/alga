@@ -33,12 +33,8 @@ testAdjacencyMap = do
     test "Consistency of arbitraryAdjacencyMap" $ \(m :: AI) ->
         consistent m
 
-    test "Consistency of fromAdjacencyList" $ \xs ->
-        consistent (fromAdjacencyList xs :: AI)
-
     testShow              t
     testBasicPrimitives   t
-    testFromAdjacencyList t
     testFromAdjacencySets t
     testIsSubgraphOf      t
     testToGraph           t

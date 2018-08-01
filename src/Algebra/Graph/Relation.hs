@@ -20,17 +20,16 @@ module Algebra.Graph.Relation (
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
-    fromAdjacencyList,
 
     -- * Relations on graphs
     isSubgraphOf,
 
     -- * Graph properties
-    isEmpty, hasVertex, hasEdge, hasSelfLoop, vertexCount, edgeCount, vertexList,
-    edgeList, adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
+    isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
+    adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, starTranspose, tree, forest,
+    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
@@ -115,21 +114,6 @@ overlays xs = Relation (Set.unions $ map domain xs) (Set.unions $ map relation x
 connects :: Ord a => [Relation a] -> Relation a
 connects = foldr connect empty
 
--- | Construct a graph from an adjacency list.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- fromAdjacencyList []                                  == 'empty'
--- fromAdjacencyList [(x, [])]                           == 'vertex' x
--- fromAdjacencyList [(x, [y])]                          == 'edge' x y
--- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
--- @
-fromAdjacencyList :: Ord a => [(a, [a])] -> Relation a
-fromAdjacencyList as = Relation (Set.fromList vs) (Set.fromList es)
-  where
-    vs = concatMap (uncurry (:)) as
-    es = [ (x, y) | (x, ys) <- as, y <- ys ]
-
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
 -- Complexity: /O((n + m) * log(n))/ time.
@@ -181,20 +165,6 @@ hasVertex x = Set.member x . domain
 -- @
 hasEdge :: Ord a => a -> a -> Relation a -> Bool
 hasEdge x y = Set.member (x, y) . relation
-
--- | Check if a graph contains a given loop.
--- Complexity: /O(s)/ time.
---
--- @
--- hasSelfLoop x 'empty'            == False
--- hasSelfLoop x ('vertex' z)       == False
--- hasSelfLoop x ('edge' x x)       == True
--- hasSelfLoop x                  == 'hasEdge' x x
--- hasSelfLoop x . 'removeEdge' x x == const False
--- hasSelfLoop x                  == 'elem' (x,x) . 'edgeList'
--- @
-hasSelfLoop :: Ord a => a -> Relation a -> Bool
-hasSelfLoop x = hasEdge x x
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
@@ -285,11 +255,11 @@ edgeSet = relation
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
 --
 -- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'fromAdjacencyList' . adjacencyList == id
+-- adjacencyList 'empty'          == []
+-- adjacencyList ('vertex' x)     == [(x, [])]
+-- adjacencyList ('edge' 1 2)     == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
+-- 'stars' . adjacencyList        == id
 -- @
 adjacencyList :: Eq a => Relation a -> [(a, [a])]
 adjacencyList r = go (Set.toAscList $ domain r) (Set.toAscList $ relation r)
@@ -388,6 +358,7 @@ biclique xs ys = Relation (x `Set.union` y) (x `setProduct` y)
     x = Set.fromList xs
     y = Set.fromList ys
 
+-- TODO: Optimise.
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
@@ -400,6 +371,26 @@ biclique xs ys = Relation (x `Set.union` y) (x `setProduct` y)
 star :: Ord a => a -> [a] -> Relation a
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
+
+-- | The /stars/ formed by overlaying a list of 'star's. An inverse of
+-- 'adjacencyList'.
+-- Complexity: /O(L * log(n))/ time, memory and size, where /L/ is the total
+-- size of the input.
+--
+-- @
+-- stars []                      == 'empty'
+-- stars [(x, [])]               == 'vertex' x
+-- stars [(x, [y])]              == 'edge' x y
+-- stars [(x, ys)]               == 'star' x ys
+-- stars                         == 'overlays' . map (uncurry 'star')
+-- stars . 'adjacencyList'         == id
+-- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
+-- @
+stars :: Ord a => [(a, [a])] -> Relation a
+stars as = Relation (Set.fromList vs) (Set.fromList es)
+  where
+    vs = concatMap (uncurry (:)) as
+    es = [ (x, y) | (x, ys) <- as, y <- ys ]
 
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the

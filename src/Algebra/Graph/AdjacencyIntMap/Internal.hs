@@ -201,14 +201,13 @@ fromAdjacencyIntSets ss = AM $ IntMap.unionWith IntSet.union vs es
 -- /Note: this function is for internal use only/.
 --
 -- @
--- consistent 'Algebra.Graph.AdjacencyIntMap.empty'                  == True
--- consistent ('Algebra.Graph.AdjacencyIntMap.vertex' x)             == True
--- consistent ('Algebra.Graph.AdjacencyIntMap.overlay' x y)          == True
--- consistent ('Algebra.Graph.AdjacencyIntMap.connect' x y)          == True
--- consistent ('Algebra.Graph.AdjacencyIntMap.edge' x y)             == True
--- consistent ('Algebra.Graph.AdjacencyIntMap.edges' xs)             == True
--- consistent ('Algebra.Graph.AdjacencyIntMap.graph' xs ys)          == True
--- consistent ('Algebra.Graph.AdjacencyIntMap.fromAdjacencyList' xs) == True
+-- consistent 'Algebra.Graph.AdjacencyIntMap.empty'         == True
+-- consistent ('Algebra.Graph.AdjacencyIntMap.vertex' x)    == True
+-- consistent ('Algebra.Graph.AdjacencyIntMap.overlay' x y) == True
+-- consistent ('Algebra.Graph.AdjacencyIntMap.connect' x y) == True
+-- consistent ('Algebra.Graph.AdjacencyIntMap.edge' x y)    == True
+-- consistent ('Algebra.Graph.AdjacencyIntMap.edges' xs)    == True
+-- consistent ('Algebra.Graph.AdjacencyIntMap.stars' xs)    == True
 -- @
 consistent :: AdjacencyIntMap -> Bool
 consistent (AM m) = referredToVertexSet m `IntSet.isSubsetOf` keysSet m

@@ -22,17 +22,16 @@ module Algebra.Graph.AdjacencyIntMap (
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
-    fromAdjacencyList,
 
     -- * Relations on graphs
     isSubgraphOf,
 
     -- * Graph properties
-    isEmpty, hasVertex, hasEdge, hasSelfLoop, vertexCount, edgeCount, vertexList,
-    edgeList, adjacencyList, vertexIntSet, edgeSet, preIntSet, postIntSet,
+    isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
+    adjacencyList, vertexIntSet, edgeSet, preIntSet, postIntSet,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, starTranspose, tree, forest,
+    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
@@ -118,19 +117,6 @@ overlays = AM . IntMap.unionsWith IntSet.union . map adjacencyIntMap
 connects :: [AdjacencyIntMap] -> AdjacencyIntMap
 connects  = foldr connect empty
 
--- | Construct a graph from an adjacency list.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- fromAdjacencyList []                                  == 'empty'
--- fromAdjacencyList [(x, [])]                           == 'vertex' x
--- fromAdjacencyList [(x, [y])]                          == 'edge' x y
--- fromAdjacencyList . 'adjacencyList'                     == id
--- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
--- @
-fromAdjacencyList :: [(Int, [Int])] -> AdjacencyIntMap
-fromAdjacencyList = fromAdjacencyIntSets . map (fmap IntSet.fromList)
-
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
 -- Complexity: /O((n + m) * log(n))/ time.
@@ -184,20 +170,6 @@ hasEdge :: Int -> Int -> AdjacencyIntMap -> Bool
 hasEdge u v a = case IntMap.lookup u (adjacencyIntMap a) of
     Nothing -> False
     Just vs -> IntSet.member v vs
-
--- | Check if a graph contains a given loop.
--- Complexity: /O(s)/ time.
---
--- @
--- hasSelfLoop x 'empty'            == False
--- hasSelfLoop x ('vertex' z)       == False
--- hasSelfLoop x ('edge' x x)       == True
--- hasSelfLoop x                  == 'hasEdge' x x
--- hasSelfLoop x . 'removeEdge' x x == const False
--- hasSelfLoop x                  == 'elem' (x,x) . 'edgeList'
--- @
-hasSelfLoop :: Int -> AdjacencyIntMap -> Bool
-hasSelfLoop x = hasEdge x x
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
@@ -277,11 +249,11 @@ edgeSet = IntMap.foldrWithKey combine Set.empty . adjacencyIntMap
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
 --
 -- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'fromAdjacencyList' . adjacencyList == id
+-- adjacencyList 'empty'          == []
+-- adjacencyList ('vertex' x)     == [(x, [])]
+-- adjacencyList ('edge' 1 2)     == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
+-- 'stars' . adjacencyList        == id
 -- @
 adjacencyList :: AdjacencyIntMap -> [(Int, [Int])]
 adjacencyList = map (fmap IntSet.toAscList) . IntMap.toAscList . adjacencyIntMap
@@ -374,6 +346,7 @@ biclique xs ys = AM $ IntMap.fromSet adjacent (x `IntSet.union` y)
     y = IntSet.fromList ys
     adjacent v = if v `IntSet.member` x then y else IntSet.empty
 
+-- TODO: Optimise.
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
@@ -386,6 +359,23 @@ biclique xs ys = AM $ IntMap.fromSet adjacent (x `IntSet.union` y)
 star :: Int -> [Int] -> AdjacencyIntMap
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
+
+-- | The /stars/ formed by overlaying a list of 'star's. An inverse of
+-- 'adjacencyList'.
+-- Complexity: /O(L * log(n))/ time, memory and size, where /L/ is the total
+-- size of the input.
+--
+-- @
+-- stars []                      == 'empty'
+-- stars [(x, [])]               == 'vertex' x
+-- stars [(x, [y])]              == 'edge' x y
+-- stars [(x, ys)]               == 'star' x ys
+-- stars                         == 'overlays' . map (uncurry 'star')
+-- stars . 'adjacencyList'         == id
+-- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
+-- @
+stars :: [(Int, [Int])] -> AdjacencyIntMap
+stars = fromAdjacencyIntSets . map (fmap IntSet.fromList)
 
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the

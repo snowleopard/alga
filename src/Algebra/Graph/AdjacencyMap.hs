@@ -22,17 +22,16 @@ module Algebra.Graph.AdjacencyMap (
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
-    fromAdjacencyList,
 
     -- * Relations on graphs
     isSubgraphOf,
 
     -- * Graph properties
-    isEmpty, hasVertex, hasEdge, hasSelfLoop, vertexCount, edgeCount, vertexList,
-    edgeList, adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
+    isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
+    adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, starTranspose, tree, forest,
+    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
@@ -119,19 +118,6 @@ overlays = AM . Map.unionsWith Set.union . map adjacencyMap
 connects :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
 connects = foldr connect empty
 
--- | Construct a graph from an adjacency list.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- fromAdjacencyList []                                  == 'empty'
--- fromAdjacencyList [(x, [])]                           == 'vertex' x
--- fromAdjacencyList [(x, [y])]                          == 'edge' x y
--- fromAdjacencyList . 'adjacencyList'                     == id
--- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
--- @
-fromAdjacencyList :: Ord a => [(a, [a])] -> AdjacencyMap a
-fromAdjacencyList = fromAdjacencySets . map (fmap Set.fromList)
-
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
 -- Complexity: /O((n + m) * log(n))/ time.
@@ -185,20 +171,6 @@ hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
 hasEdge u v a = case Map.lookup u (adjacencyMap a) of
     Nothing -> False
     Just vs -> Set.member v vs
-
--- | Check if a graph contains a given loop.
--- Complexity: /O(s)/ time.
---
--- @
--- hasSelfLoop x 'empty'            == False
--- hasSelfLoop x ('vertex' z)       == False
--- hasSelfLoop x ('edge' x x)       == True
--- hasSelfLoop x                  == 'hasEdge' x x
--- hasSelfLoop x . 'removeEdge' x x == const False
--- hasSelfLoop x                  == 'elem' (x,x) . 'edgeList'
--- @
-hasSelfLoop :: Ord a => a -> AdjacencyMap a -> Bool
-hasSelfLoop x = hasEdge x x
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
@@ -289,11 +261,11 @@ edgeSet = Map.foldrWithKey (\v es -> Set.union (Set.mapMonotonic (v,) es)) Set.e
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
 --
 -- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'fromAdjacencyList' . adjacencyList == id
+-- adjacencyList 'empty'          == []
+-- adjacencyList ('vertex' x)     == [(x, [])]
+-- adjacencyList ('edge' 1 2)     == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
+-- 'stars' . adjacencyList        == id
 -- @
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
 adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
@@ -386,6 +358,7 @@ biclique xs ys = AM $ Map.fromSet adjacent (x `Set.union` y)
     y = Set.fromList ys
     adjacent v = if v `Set.member` x then y else Set.empty
 
+-- TODO: Optimise.
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
@@ -398,6 +371,23 @@ biclique xs ys = AM $ Map.fromSet adjacent (x `Set.union` y)
 star :: Ord a => a -> [a] -> AdjacencyMap a
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
+
+-- | The /stars/ formed by overlaying a list of 'star's. An inverse of
+-- 'adjacencyList'.
+-- Complexity: /O(L * log(n))/ time, memory and size, where /L/ is the total
+-- size of the input.
+--
+-- @
+-- stars []                      == 'empty'
+-- stars [(x, [])]               == 'vertex' x
+-- stars [(x, [y])]              == 'edge' x y
+-- stars [(x, ys)]               == 'star' x ys
+-- stars                         == 'overlays' . map (uncurry 'star')
+-- stars . 'adjacencyList'         == id
+-- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
+-- @
+stars :: Ord a => [(a, [a])] -> AdjacencyMap a
+stars = fromAdjacencySets . map (fmap Set.fromList)
 
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the

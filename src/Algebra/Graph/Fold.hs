@@ -32,11 +32,11 @@ module Algebra.Graph.Fold (
     isSubgraphOf,
 
     -- * Graph properties
-    isEmpty, size, hasVertex, hasEdge, hasSelfLoop, vertexCount, edgeCount,
-    vertexList, edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
+    isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
+    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, starTranspose,
+    path, circuit, clique, biclique, star, stars, starTranspose,
 
     -- * Graph transformation
     removeVertex, removeEdge, transpose, induce, simplify,
@@ -191,8 +191,6 @@ instance Traversable Fold where
 instance ToGraph (Fold a) where
     type ToVertex (Fold a) = a
     foldg = foldg
-    hasEdge = hasEdge
-    hasSelfLoop = hasSelfLoop
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -410,56 +408,7 @@ hasVertex = T.hasVertex
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Fold a -> Bool
-hasEdge s t = if s == t -- We test if we search for a loop
-                 then hasSelfLoop s
-                 else maybe False hasEdge' . induce' -- if not, we convert the supplied @Graph a@ to a @Graph Bool@
-                                                     -- where @s@ is @Vertex True@, @v@ is @Vertex False@ and other
-                                                     -- vertices are removed.
-                                                     -- Then we check if there is an edge from @True@ to @False@
-    where
-     hasEdge' g = case foldg e v o c g of (_, _, r) -> r
-       where
-         e                             = (False   , False   , False                 )
-         v x                           = (x       , not x   , False                 )
-         o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
-         c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
-     induce' = foldg Nothing
-                    (\x -> if x == s then Just (vertex True) else if x == t then Just (vertex False) else Nothing)
-                    (k overlay)
-                    (k connect)
-       where
-         k _ x        Nothing  = x -- Constant folding to get rid of Empty leaves
-         k _ Nothing  y        = y
-         k f (Just x) (Just y) = Just $ f x y
-
--- | Check if a graph contains a given loop.
--- Complexity: /O(s)/ time.
---
--- @
--- hasSelfLoop x 'empty'            == False
--- hasSelfLoop x ('vertex' z)       == False
--- hasSelfLoop x ('edge' x x)       == True
--- hasSelfLoop x                  == 'hasEdge' x x
--- hasSelfLoop x . 'removeEdge' x x == const False
--- hasSelfLoop x                  == 'elem' (x,x) . 'edgeList'
--- @
-hasSelfLoop :: Eq a => a -> Fold a -> Bool
-hasSelfLoop t = maybe False hasEdge' . induce'
-   where
-     hasEdge' g = case foldg e v o c g of (_, _, r) -> r
-       where
-         e                             = (False   , False   , False                 )
-         v x                           = (x       , x       , False                 )
-         o (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt,             xst || yst)
-         c (xs, xt, xst) (ys, yt, yst) = (xs || ys, xt || yt, xs && yt || xst || yst)
-     induce' = foldg Nothing
-                     (\x -> if x==t then Just (vertex True) else Nothing)
-                     (k overlay)
-                     (k connect)
-       where
-         k _ x     Nothing     = x -- Constant folding to get rid of Empty leaves
-         k _ Nothing y         = y
-         k f (Just x) (Just y) = Just $ f x y
+hasEdge = T.hasEdge
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
@@ -553,11 +502,11 @@ edgeSet = T.edgeSet
 -- graph can be quadratic with respect to the expression size /s/.
 --
 -- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'fromAdjacencyList' . adjacencyList == id
+-- adjacencyList 'empty'          == []
+-- adjacencyList ('vertex' x)     == [(x, [])]
+-- adjacencyList ('edge' 1 2)     == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
+-- 'stars' . adjacencyList        == id
 -- @
 adjacencyList :: Ord a => Fold a -> [(a, [a])]
 adjacencyList = T.adjacencyList
@@ -635,6 +584,23 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 star :: a -> [a] -> Fold a
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
+
+-- | The /stars/ formed by overlaying a list of 'star's. An inverse of
+-- 'adjacencyList'.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the total size of the
+-- input.
+--
+-- @
+-- stars []                      == 'empty'
+-- stars [(x, [])]               == 'vertex' x
+-- stars [(x, [y])]              == 'edge' x y
+-- stars [(x, ys)]               == 'star' x ys
+-- stars                         == 'overlays' . map (uncurry 'star')
+-- stars . 'adjacencyList'         == id
+-- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
+-- @
+stars :: [(a, [a])] -> Fold a
+stars = overlays . map (uncurry star)
 
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the

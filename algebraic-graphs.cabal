@@ -14,7 +14,8 @@ tested-with:   GHC==7.8.4,
                GHC==7.10.3,
                GHC==8.0.2,
                GHC==8.2.2,
-               GHC==8.4.1
+               GHC==8.4.3,
+               GHC==8.6.1
 stability:     experimental
 description:
     <https://github.com/snowleopard/alga Alga> is a library for algebraic construction and
@@ -124,16 +125,15 @@ test-suite test-alga
     build-depends:      algebraic-graphs,
                         array        >= 0.4     && < 0.6,
                         base         >= 4.7     && < 5,
-                        base-compat  >= 0.9.1   && < 0.10,
+                        base-compat  >= 0.9.1   && < 0.11,
                         base-orphans >= 0.5.4   && < 0.8,
                         containers   >= 0.5.5.1 && < 0.8,
-                        extra        >= 1.5,
+                        extra        >= 1.5     && < 2,
                         QuickCheck   >= 2.9     && < 2.12
     if !impl(ghc >= 8.0)
         build-depends:  semigroups   >= 0.18.3  && < 0.18.4
     default-language:   Haskell2010
-    GHC-options:        -O2
-                        -Wall
+    GHC-options:        -Wall
                         -fno-warn-name-shadowing
     if impl(ghc >= 8.0)
         GHC-options:    -Wcompat

@@ -201,14 +201,13 @@ fromAdjacencySets ss = AM $ Map.unionWith Set.union vs es
 -- /Note: this function is for internal use only/.
 --
 -- @
--- consistent 'Algebra.Graph.AdjacencyMap.empty'                  == True
--- consistent ('Algebra.Graph.AdjacencyMap.vertex' x)             == True
--- consistent ('Algebra.Graph.AdjacencyMap.overlay' x y)          == True
--- consistent ('Algebra.Graph.AdjacencyMap.connect' x y)          == True
--- consistent ('Algebra.Graph.AdjacencyMap.edge' x y)             == True
--- consistent ('Algebra.Graph.AdjacencyMap.edges' xs)             == True
--- consistent ('Algebra.Graph.AdjacencyMap.graph' xs ys)          == True
--- consistent ('Algebra.Graph.AdjacencyMap.fromAdjacencyList' xs) == True
+-- consistent 'Algebra.Graph.AdjacencyMap.empty'         == True
+-- consistent ('Algebra.Graph.AdjacencyMap.vertex' x)    == True
+-- consistent ('Algebra.Graph.AdjacencyMap.overlay' x y) == True
+-- consistent ('Algebra.Graph.AdjacencyMap.connect' x y) == True
+-- consistent ('Algebra.Graph.AdjacencyMap.edge' x y)    == True
+-- consistent ('Algebra.Graph.AdjacencyMap.edges' xs)    == True
+-- consistent ('Algebra.Graph.AdjacencyMap.stars' xs)    == True
 -- @
 consistent :: Ord a => AdjacencyMap a -> Bool
 consistent (AM m) = referredToVertexSet m `Set.isSubsetOf` keysSet m
