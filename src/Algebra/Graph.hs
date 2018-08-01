@@ -73,6 +73,9 @@ import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
 import qualified Data.Tree                     as Tree
 
+
+import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
+
 {-| The 'Graph' data type is a deep embedding of the core graph construction
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
 instance as a convenient notation for working with graphs:
@@ -107,6 +110,7 @@ The 'Eq' instance is currently implemented using the 'AM.AdjacencyMap' as the
         > x * y * z == x * y + x * z + y * z
 
 The following useful theorems can be proved from the above set of axioms.
+
 
     * 'overlay' has 'empty' as the identity and is idempotent:
 
@@ -318,18 +322,30 @@ edges = overlays . map (uncurry edge)
 -- @
 overlays :: [Graph a] -> Graph a
 overlays [] = empty
-overlays (x:xs) = foldr overlay x xs
+overlays (x:xs) = foldr1' overlay x xs
 {-# INLINE [0] overlays #-}
 
--- This allows the fusion between the 'foldr' of 'overlays' and a possible composed
--- 'map' (which does not happen alone due to the pattern-match to detect the empty list).
+foldr1' :: (a -> a -> a) -> a -> [a] -> a
+foldr1' k = go
+  where
+    go y ys = case ys of
+                   [] -> y
+                   (x:xs) -> y `k` go x xs
+
 {-# RULES
 "overlays/map" forall f xs.
                  overlays (map f xs) =
                    case xs of
                      [] -> empty
-                     (x:xs) -> foldr (overlay . f) (f x) xs
+                     (y:ys) -> foldr1f overlay f y ys
  #-}
+
+foldr1f :: (a -> a -> a) -> (b -> a) -> b -> [b] -> a
+foldr1f k f = go
+  where
+    go y ys = case ys of
+                   [] -> f y
+                   (x:xs) -> f y `k` go x xs
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
