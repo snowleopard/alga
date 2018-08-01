@@ -73,9 +73,6 @@ import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
 import qualified Data.Tree                     as Tree
 
-
-import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
-
 {-| The 'Graph' data type is a deep embedding of the core graph construction
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
 instance as a convenient notation for working with graphs:
@@ -242,6 +239,9 @@ vertex = Vertex
 edge :: a -> a -> Graph a
 edge x y = connect (vertex x) (vertex y)
 
+edge' :: (a,a) -> Graph a
+edge' (x,y) = connect (vertex x) (vertex y)
+
 -- | /Overlay/ two graphs. An alias for the constructor 'Overlay'. This is a
 -- commutative, associative and idempotent operation with the identity 'empty'.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
@@ -307,7 +307,7 @@ vertices = overlays . map vertex
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- @
 edges :: [(a, a)] -> Graph a
-edges = overlays . map (uncurry edge)
+edges = overlays . map edge'
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
