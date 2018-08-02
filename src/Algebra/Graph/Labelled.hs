@@ -17,7 +17,7 @@
 module Algebra.Graph.Labelled (
     -- * Algebraic data type for edge-labeleld graphs
     Dioid (..), Graph (..), UnlabelledGraph, overlay, connect, lconnect,
-    (*<), (>*),
+    (-<), (>-),
 
     -- * Distances
     Distance (..),
@@ -73,18 +73,18 @@ connect = LConnect one
 lconnect :: e -> Graph e a -> Graph e a -> Graph e a
 lconnect = LConnect
 
--- Convenient ternary-ish operator x *<e>* y, for example:
+-- Convenient ternary-ish operator x -<e>- y, for example:
 -- x = Vertex "x"
 -- y = Vertex "y"
--- z = x *<1>* y
-(*<) :: Graph e a -> e -> (Graph e a, e)
-g *< e = (g, e)
+-- z = x -<1>- y
+(-<) :: Graph e a -> e -> (Graph e a, e)
+g -< e = (g, e)
 
-(>*) :: (Graph e a, e) -> Graph e a -> Graph e a
-(g, e) >* h = LConnect e g h
+(>-) :: (Graph e a, e) -> Graph e a -> Graph e a
+(g, e) >- h = LConnect e g h
 
-infixl 5 *<
-infixl 5 >*
+infixl 5 -<
+infixl 5 >-
 
 -- TODO: Prove the C.Graph laws
 instance Dioid e => C.Graph (Graph e a) where
