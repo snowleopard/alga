@@ -305,7 +305,11 @@ vertices = overlays . map vertex
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- @
 edges :: [(a, a)] -> Graph a
-edges = overlays . map (uncurry edge)
+edges = overlays . map edge'
+
+edge' :: (a,a) -> Graph a
+edge' = uncurry edge
+{-# INLINE edge' #-}
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -319,15 +323,7 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays = maybe empty (foldr1fId overlay) . nonEmpty
-{-# INLINE [0] overlays #-}
-
-{-# RULES
-"overlays/map"
-  forall f xs.
-    overlays (map f xs) =
-      maybe empty (foldr1f overlay f) (nonEmpty xs)
- #-}
+overlays = concatg overlay
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -341,15 +337,21 @@ overlays = maybe empty (foldr1fId overlay) . nonEmpty
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects = maybe empty (foldr1fId connect) . nonEmpty
-{-# INLINE [0] connects #-}
+connects = concatg connect
+
+concatg :: (Graph a -> Graph a -> Graph a) -> [Graph a] -> Graph a
+concatg combine = maybe empty (foldr1fId combine) . nonEmpty
+{-# INLINE [0] concatg #-}
 
 {-# RULES
-"connect/map"
-  forall f xs.
-    connects (map f xs) =
-      maybe empty (foldr1f connect f) (nonEmpty xs)
- #-}
+ "concatg/map"
+  forall c f xs.
+    concatg c (map f xs) = concatgMap c f xs
+  #-}
+
+-- | Utilitary function for rewrite rules of 'overlays' and 'connects'
+concatgMap :: (Graph a -> Graph a -> Graph a) -> (b -> Graph a) -> [b] -> Graph a
+concatgMap combine f = maybe empty (foldr1f combine f) . nonEmpty
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
