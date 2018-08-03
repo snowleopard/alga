@@ -87,7 +87,14 @@ will denote the number of vertices and edges in the graph, respectively.
 -}
 newtype AdjacencyIntMap = AM {
     -- | The /adjacency map/ of the graph: each vertex is associated with a set
-    -- of its direct successors.
+    -- of its direct successors. Complexity: /O(1)/ time and memory.
+    --
+    -- @
+    -- adjacencyIntMap 'empty'      == IntMap.'IntMap.empty'
+    -- adjacencyIntMap ('vertex' x) == IntMap.'IntMap.singleton' x IntSet.'IntSet.empty'
+    -- adjacencyIntMap ('Algebra.Graph.AdjacencyIntMap.edge' 1 1) == IntMap.'IntMap.singleton' 1 (IntSet.'IntSet.singleton' 1)
+    -- adjacencyIntMap ('Algebra.Graph.AdjacencyIntMap.edge' 1 2) == IntMap.'IntMap.fromList' [(1,IntSet.'IntSet.singleton' 2), (2,IntSet.'IntSet.empty')]
+    -- @
     adjacencyIntMap :: IntMap IntSet } deriving Eq
 
 instance Show AdjacencyIntMap where

@@ -85,7 +85,7 @@ vertices = AM . Map.fromList . map (\x -> (x, Set.empty))
 --
 -- @
 -- edges []          == 'empty'
--- edges [(x, y)]    == 'edge' x y
+-- edges [(x,y)]     == 'edge' x y
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
