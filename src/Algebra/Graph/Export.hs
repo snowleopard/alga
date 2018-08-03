@@ -32,9 +32,8 @@ import Data.Foldable (fold)
 import Data.Semigroup
 import Data.String hiding (unlines)
 
-import Algebra.Graph.ToGraph (ToGraph, ToVertex, adjacencyMap)
+import Algebra.Graph.ToGraph (ToGraph, ToVertex, toAdjacencyMap)
 import Algebra.Graph.AdjacencyMap (vertexList, edgeList)
-import Algebra.Graph.AdjacencyMap.Internal (AdjacencyMap (AM))
 import Algebra.Graph.Internal
 
 -- | An abstract document data type with /O(1)/ time concatenation (the current
@@ -160,8 +159,8 @@ unlines (x:xs) = x <> "\n" <> unlines xs
 -- 2 -> 4
 -- @
 export :: (Ord a, ToGraph g, ToVertex g ~ a) => (a -> Doc s) -> (a -> a -> Doc s) -> g -> Doc s
-export vs es g = vDoc <> eDoc
+export v e g = vDoc <> eDoc
   where
-    vDoc   = mconcat $ map  vs          (vertexList adjMap)
-    eDoc   = mconcat $ map (uncurry es) (edgeList   adjMap)
-    adjMap = AM $ adjacencyMap g
+    vDoc   = mconcat $ map  v          (vertexList adjMap)
+    eDoc   = mconcat $ map (uncurry e) (edgeList   adjMap)
+    adjMap = toAdjacencyMap g

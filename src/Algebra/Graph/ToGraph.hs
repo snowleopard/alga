@@ -244,40 +244,6 @@ class ToGraph t where
     adjacencyIntMapTranspose :: ToVertex t ~ Int => t -> IntMap IntSet
     adjacencyIntMapTranspose = AIM.adjacencyIntMap . foldg AIM.empty AIM.vertex AIM.overlay (flip AIM.connect)
 
--- | Convert a value to the corresponding 'AM.AdjacencyMap'.
---
--- @
--- toAdjacencyMap == 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' 'AM.connect'
--- @
-toAdjacencyMap :: (ToGraph g, Ord (ToVertex g)) => g -> AM.AdjacencyMap (ToVertex g)
-toAdjacencyMap = AM.AM . adjacencyMap
-
--- | Convert a value to the corresponding 'AM.AdjacencyMap' and transpose the
--- result.
---
--- @
--- toAdjacencyMapTranspose == 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' (flip 'AM.connect')
--- @
-toAdjacencyMapTranspose :: (ToGraph g, Ord (ToVertex g)) => g -> AM.AdjacencyMap (ToVertex g)
-toAdjacencyMapTranspose = AM.AM . adjacencyMapTranspose
-
--- | Convert a value to the corresponding 'AIM.AdjacencyIntMap'.
---
--- @
--- toAdjacencyIntMap == 'foldg' 'AIM.empty' 'AIM.vertex' 'AIM.overlay' 'AIM.connect'
--- @
-toAdjacencyIntMap :: (ToGraph g, ToVertex g ~ Int) => g -> AIM.AdjacencyIntMap
-toAdjacencyIntMap = AIM.AM . adjacencyIntMap
-
--- | Convert a value to the corresponding 'AIM.AdjacencyIntMap' and transpose
--- the result.
---
--- @
--- toAdjacencyIntMapTranspose == 'foldg' 'AIM.empty' 'AIM.vertex' 'AIM.overlay' (flip 'AIM.connect')
--- @
-toAdjacencyIntMapTranspose :: (ToGraph g, ToVertex g ~ Int) => g -> AIM.AdjacencyIntMap
-toAdjacencyIntMapTranspose = AIM.AM . adjacencyIntMapTranspose
-
 instance Ord a => ToGraph (G.Graph a) where
     type ToVertex (G.Graph a) = a
     toGraph         = id
@@ -367,3 +333,42 @@ instance Ord a => ToGraph (R.Relation a) where
     adjacencyIntMap = IntMap.fromAscList
                     . map (fmap IntSet.fromAscList)
                     . R.adjacencyList
+
+-- | Convert a value to the corresponding 'AM.AdjacencyMap'. The time and memory
+-- complexity coincides with that of 'adjacencyMap'.
+--
+-- @
+-- toAdjacencyMap == 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' 'AM.connect'
+-- @
+toAdjacencyMap :: (ToGraph g, Ord (ToVertex g)) => g -> AM.AdjacencyMap (ToVertex g)
+toAdjacencyMap = AM.AM . adjacencyMap
+
+-- | Convert a value to the corresponding 'AM.AdjacencyMap' and transpose the
+-- result. The time and memory complexity coincides with that of
+-- 'adjacencyMapTranspose'.
+--
+-- @
+-- toAdjacencyMapTranspose == 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' (flip 'AM.connect')
+-- @
+toAdjacencyMapTranspose :: (ToGraph g, Ord (ToVertex g)) => g -> AM.AdjacencyMap (ToVertex g)
+toAdjacencyMapTranspose = AM.AM . adjacencyMapTranspose
+
+-- | Convert a value to the corresponding 'AIM.AdjacencyIntMap'. The time and
+-- memory complexity coincides with that of 'adjacencyIntMap'.
+--
+-- @
+-- toAdjacencyIntMap == 'foldg' 'AIM.empty' 'AIM.vertex' 'AIM.overlay' 'AIM.connect'
+-- @
+toAdjacencyIntMap :: (ToGraph g, ToVertex g ~ Int) => g -> AIM.AdjacencyIntMap
+toAdjacencyIntMap = AIM.AM . adjacencyIntMap
+
+-- | Convert a value to the corresponding 'AIM.AdjacencyIntMap' and transpose
+-- the result. The time and memory complexity coincides with that of
+-- 'adjacencyIntMapTranspose'.
+--
+-- @
+-- toAdjacencyIntMapTranspose == 'foldg' 'AIM.empty' 'AIM.vertex' 'AIM.overlay' (flip 'AIM.connect')
+-- @
+toAdjacencyIntMapTranspose :: (ToGraph g, ToVertex g ~ Int) => g -> AIM.AdjacencyIntMap
+toAdjacencyIntMapTranspose = AIM.AM . adjacencyIntMapTranspose
+

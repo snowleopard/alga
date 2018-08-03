@@ -46,11 +46,11 @@ import Data.Tree
 
 import Algebra.Graph.AdjacencyMap.Internal
 
-import qualified Data.Graph.Typed    as Typed
-import qualified Data.Graph          as KL
-import qualified Data.Map.Strict     as Map
-import qualified Data.Set            as Set
-import qualified Data.IntSet         as IntSet
+import qualified Data.Graph.Typed as Typed
+import qualified Data.Graph       as KL
+import qualified Data.Map.Strict  as Map
+import qualified Data.Set         as Set
+import qualified Data.IntSet      as IntSet
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
