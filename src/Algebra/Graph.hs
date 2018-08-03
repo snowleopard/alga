@@ -741,6 +741,12 @@ tree (Node x f ) = star x (map rootLabel f)
 forest :: Tree.Forest a -> Graph a
 forest = overlays . map tree
 
+pairs :: [a] -> [(a, a)]
+pairs [] = []
+pairs lst = take (length lst) $ zip as (tail as)
+  where
+    as = cycle lst
+
 -- | Construct a /mesh graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
 -- lengths of the given lists.
@@ -754,15 +760,17 @@ forest = overlays . map tree
 --                           , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\')), ((3,\'a\'),(3,\'b\')) ]
 -- @
 mesh :: [a] -> [b] -> Graph (a, b)
-mesh xs ys = stars $ map mkAngle [ (x, y) | x <- [0..lx] , y <- [0..ly] ]
+mesh []  _   = empty
+mesh _   []  = empty
+mesh [x] [y] = vertex (x, y)
+mesh xs  ys  = stars $  [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ipxs, (b1, b2) <- ipys ]
+                     ++ [ ((lx,y1), [(lx,y2)]) | (y1,y2) <- ipys]
+                     ++ [ ((x1,ly), [(x2,ly)]) | (x1,x2) <- ipxs]
   where
-    mkAngle (x,y) =
-      let left = [(xs !! (x+1), ys !! y) | x /= lx]
-          up   = [(xs !! x, ys !! (y+1)) | y /= ly]
-          curr = (xs !! x, ys !! y)
-       in (curr, up ++ left)
-    lx = length xs - 1
-    ly = length ys - 1
+    lx = last xs
+    ly = last ys
+    ipxs = init (pairs xs)
+    ipys = init (pairs ys)
 
 -- | Construct a /torus graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -777,15 +785,7 @@ mesh xs ys = stars $ map mkAngle [ (x, y) | x <- [0..lx] , y <- [0..ly] ]
 --                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus :: [a] -> [b] -> Graph (a, b)
-torus xs ys = stars $ map mkAngle [ (x, y) | x <- [0..(lx-1)] , y <- [0..(ly-1)] ]
-  where
-    mkAngle (x,y) =
-      let left = (xs !! ((x + 1) `mod` lx), ys !! y)
-          up   = (xs !! x, ys !! ((y + 1) `mod` ly))
-          curr = (xs !! x, ys !! y)
-       in (curr, [up,left])
-    lx = length xs
-    ly = length ys
+torus xs ys = stars [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- pairs xs, (b1, b2) <- pairs ys ]
 
 -- | Construct a /De Bruijn graph/ of a given non-negative dimension using symbols
 -- from a given alphabet.
