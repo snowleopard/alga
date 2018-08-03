@@ -743,9 +743,7 @@ forest = overlays . map tree
 
 pairs :: [a] -> [(a, a)]
 pairs [] = []
-pairs lst = take (length lst) $ zip as (tail as)
-  where
-    as = cycle lst
+pairs as@(x:xs) = zip as (xs ++ [x])
 
 -- | Construct a /mesh graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
