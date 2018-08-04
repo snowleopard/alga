@@ -121,7 +121,6 @@ foldr1f k f = go
       case ys of
         []     -> f y
         (x:xs) -> f y `k` go (x :| xs)
-{-# INLINE foldr1f #-}
 
 foldr1fId :: (a -> a -> a) -> NonEmpty a -> a
 foldr1fId k = foldr1f k id
