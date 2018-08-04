@@ -23,7 +23,7 @@ module Algebra.Graph.Internal (
     Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, Hit (..),
 
     -- Special fold
-    foldr1f
+    sconcatf
   ) where
 
 import Prelude ()
@@ -114,9 +114,9 @@ connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
 data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
 -- | Function allowing fusion between 'sconcat' and a composed 'map'
-foldr1f :: Semigroup a => (b -> a) -> NonEmpty b -> a
-foldr1f f (a :| as) = go a as
+sconcatf :: Semigroup a => (b -> a) -> NonEmpty b -> a
+sconcatf f (a :| as) = go a as
   where
     go b (c:cs) = f b <> go c cs
     go b []     = f b
-{-# INLINABLE foldr1f #-}
+{-# INLINABLE sconcatf #-}

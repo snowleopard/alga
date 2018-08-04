@@ -359,13 +359,13 @@ connects = getConnecting . maybe mempty (sconcat . coerce) . nonEmpty
 {-# INLINE [0] connects #-}
 
 {-# RULES
- "overlays/map" forall f xs. overlays (map f xs) = getOverlaying (concatgMap (coerce . f) xs);
- "connects/map" forall f xs. connects (map f xs) = getConnecting (concatgMap (coerce . f) xs)
+ "overlays/map" forall f xs. overlays (map f xs) = getOverlaying (sconcatMap (coerce . f) xs);
+ "connects/map" forall f xs. connects (map f xs) = getConnecting (sconcatMap (coerce . f) xs)
   #-}
 
 -- | Utilitary function for rewrite rules of 'overlays' and 'connects'
-concatgMap :: Monoid m => (b -> m) -> [b] -> m
-concatgMap f = maybe mempty (foldr1f f) . nonEmpty
+sconcatMap :: Monoid m => (b -> m) -> [b] -> m
+sconcatMap f = maybe mempty (sconcatf f) . nonEmpty
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
