@@ -113,6 +113,7 @@ connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
 -- its 'Tail', i.e. the source vertex, the whole 'Edge', or 'Miss' it entirely.
 data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
+-- | Function allowing fusion between 'foldr1' and a composed 'map'
 foldr1f :: (a -> a -> a) -> (b -> a) -> NonEmpty b -> a
 foldr1f k f = go
   where
