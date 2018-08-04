@@ -23,7 +23,7 @@ module Algebra.Graph.Internal (
     Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, Hit (..),
 
     -- Special fold
-    foldr1f, foldr1fId
+    foldr1f
   ) where
 
 import Prelude ()
@@ -113,14 +113,10 @@ connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
 -- its 'Tail', i.e. the source vertex, the whole 'Edge', or 'Miss' it entirely.
 data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
--- | Function allowing fusion between 'foldr1' and a composed 'map'
-foldr1f :: (a -> a -> a) -> (b -> a) -> NonEmpty b -> a
-foldr1f k f = go
+-- | Function allowing fusion between 'sconcat' and a composed 'map'
+foldr1f :: Semigroup a => (b -> a) -> NonEmpty b -> a
+foldr1f f (a :| as) = go a as
   where
-    go (y :| ys) =
-      case ys of
-        []     -> f y
-        (x:xs) -> f y `k` go (x :| xs)
-
-foldr1fId :: (a -> a -> a) -> NonEmpty a -> a
-foldr1fId k = foldr1f k id
+    go b (c:cs) = f b <> go c cs
+    go b []     = f b
+{-# INLINABLE foldr1f #-}
