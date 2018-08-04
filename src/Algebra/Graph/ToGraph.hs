@@ -93,10 +93,10 @@ class ToGraph t where
     -- | Check if a graph contains a given edge.
     --
     -- @
-    -- hasEdge x y == 'elem' (x,y) . 'edgeList'
+    -- hasEdge x y == Algebra.Graph.'G.hasEdge' x y . 'toGraph'
     -- @
     hasEdge :: Eq (ToVertex t) => ToVertex t -> ToVertex t -> t -> Bool
-    hasEdge s t = G.hasEdge s t . toGraph
+    hasEdge x y = G.hasEdge x y . toGraph
 
     -- | The number of vertices in a graph.
     --
@@ -109,10 +109,10 @@ class ToGraph t where
     -- | The number of edges in a graph.
     --
     -- @
-    -- edgeCount == 'length' . 'edgeList'
+    -- edgeCount == Set.'Set.size' . 'edgeSet'
     -- @
     edgeCount :: Ord (ToVertex t) => t -> Int
-    edgeCount = length . edgeList
+    edgeCount = Set.size . edgeSet
 
     -- | The sorted list of vertices of a given graph.
     --
@@ -125,10 +125,10 @@ class ToGraph t where
     -- | The sorted list of edges of a graph.
     --
     -- @
-    -- edgeList == 'AM.edgeList' . 'toAdjacencyMap'
+    -- edgeList == Set.'Set.toAscList' . 'edgeSet'
     -- @
     edgeList :: Ord (ToVertex t) => t -> [(ToVertex t, ToVertex t)]
-    edgeList = AM.edgeList . toAdjacencyMap
+    edgeList = Set.toAscList . edgeSet
 
     -- | The set of vertices of a graph.
     --
