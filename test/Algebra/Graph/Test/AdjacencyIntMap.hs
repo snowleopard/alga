@@ -40,4 +40,4 @@ testAdjacencyIntMap = do
     testDfsForestFrom        t
     testDfs                  t
     testTopSort              t
-    testIsTopSort            t
+    testIsTopSortOf          t

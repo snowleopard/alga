@@ -94,16 +94,6 @@ class Graph g => GraphAPI g where
     simplify             = notImplemented
     box                  :: forall a b f. (Vertex (f a) ~ a, Vertex (f b) ~ b, Vertex (f (a, b)) ~ (a, b), g ~ f (a, b)) => f a -> f b -> f (a, b)
     box                  = notImplemented
-    dfsForest            :: g -> Forest (Vertex g)
-    dfsForest            = notImplemented
-    dfsForestFrom        :: [Vertex g] -> g -> Forest (Vertex g)
-    dfsForestFrom        = notImplemented
-    dfs                  :: [Vertex g] -> g -> [Vertex g]
-    dfs                  = notImplemented
-    topSort              :: g -> Maybe [Vertex g]
-    topSort              = notImplemented
-    isTopSort            :: [Vertex g] -> g -> Bool
-    isTopSort            = notImplemented
 
 notImplemented :: a
 notImplemented = error "Not implemented"
@@ -132,11 +122,6 @@ instance Ord a => GraphAPI (AdjacencyMap.AdjacencyMap a) where
     transpose         = AdjacencyMap.transpose
     gmap              = AdjacencyMap.gmap
     induce            = AdjacencyMap.induce
-    dfsForest         = AdjacencyMap.dfsForest
-    dfsForestFrom     = AdjacencyMap.dfsForestFrom
-    dfs               = AdjacencyMap.dfs
-    topSort           = AdjacencyMap.topSort
-    isTopSort         = AdjacencyMap.isTopSort
 
 instance Ord a => GraphAPI (Fold.Fold a) where
     edge          = Fold.edge
@@ -225,11 +210,6 @@ instance GraphAPI AdjacencyIntMap.AdjacencyIntMap where
     transpose            = AdjacencyIntMap.transpose
     gmap                 = AdjacencyIntMap.gmap
     induce               = AdjacencyIntMap.induce
-    dfsForest            = AdjacencyIntMap.dfsForest
-    dfsForestFrom        = AdjacencyIntMap.dfsForestFrom
-    dfs                  = AdjacencyIntMap.dfs
-    topSort              = AdjacencyIntMap.topSort
-    isTopSort            = AdjacencyIntMap.isTopSort
 
 instance Ord a => GraphAPI (Relation.Relation a) where
     edge          = Relation.edge

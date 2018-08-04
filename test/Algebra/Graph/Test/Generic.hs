@@ -15,8 +15,8 @@ module Algebra.Graph.Test.Generic (
     testFromAdjacencyIntSets, testBasicPrimitives, testIsSubgraphOf, testSize,
     testToGraph, testAdjacencyList, testPreSet, testPreIntSet, testPostSet,
     testPostIntSet, testGraphFamilies, testTransformations, testDfsForest,
-    testDfsForestFrom, testDfs, testTopSort, testIsTopSort, testSplitVertex,
-    testBind, testSimplify
+    testDfsForestFrom, testDfs, testTopSort, testIsTopSortOf, testIsAcyclic,
+    testSplitVertex, testBind, testSimplify
   ) where
 
 import Prelude ()
@@ -26,6 +26,7 @@ import Control.Monad (when)
 import Data.Orphans ()
 
 import Data.List (nub)
+import Data.Maybe
 import Data.Tree
 import Data.Tuple
 
@@ -1099,32 +1100,47 @@ testDfs (Testsuite prefix (%)) = do
 testTopSort :: Testsuite -> IO ()
 testTopSort (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "topSort ============"
-    test "topSort (1 * 2 + 3 * 1)             == Just [3,1,2]" $
-          topSort % (1 * 2 + 3 * 1)           == Just [3,1,2]
+    test "topSort (1 * 2 + 3 * 1)               == Just [3,1,2]" $
+          topSort % (1 * 2 + 3 * 1)             == Just [3,1,2]
 
-    test "topSort (1 * 2 + 2 * 1)             == Nothing" $
-          topSort % (1 * 2 + 2 * 1)           == Nothing
+    test "topSort (1 * 2 + 2 * 1)               == Nothing" $
+          topSort % (1 * 2 + 2 * 1)             == Nothing
 
-    test "fmap (flip isTopSort x) (topSort x) /= Just False" $ \x ->
-          fmap (flip isTopSort x) (topSort % x) /= Just False
+    test "fmap (flip isTopSortOf x) (topSort x) /= Just False" $ \x ->
+          fmap (flip isTopSortOf x) (topSort % x) /= Just False
 
-testIsTopSort :: Testsuite -> IO ()
-testIsTopSort (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "isTopSort ============"
-    test "isTopSort [3, 1, 2] (1 * 2 + 3 * 1) == True" $
-          isTopSort [3, 1, 2] % (1 * 2 + 3 * 1) == True
+testIsTopSortOf :: Testsuite -> IO ()
+testIsTopSortOf (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "isTopSortOf ============"
+    test "isTopSortOf [3, 1, 2] (1 * 2 + 3 * 1) == True" $
+          isTopSortOf [3, 1, 2] % (1 * 2 + 3 * 1) == True
 
-    test "isTopSort [1, 2, 3] (1 * 2 + 3 * 1) == False" $
-          isTopSort [1, 2, 3] % (1 * 2 + 3 * 1) == False
+    test "isTopSortOf [1, 2, 3] (1 * 2 + 3 * 1) == False" $
+          isTopSortOf [1, 2, 3] % (1 * 2 + 3 * 1) == False
 
-    test "isTopSort []        (1 * 2 + 3 * 1) == False" $
-          isTopSort []      % (1 * 2 + 3 * 1) == False
+    test "isTopSortOf []        (1 * 2 + 3 * 1) == False" $
+          isTopSortOf []      % (1 * 2 + 3 * 1) == False
 
-    test "isTopSort []        empty           == True" $
-          isTopSort []      % empty           == True
+    test "isTopSortOf []        empty           == True" $
+          isTopSortOf []      % empty           == True
 
-    test "isTopSort [x]       (vertex x)      == True" $ \x ->
-          isTopSort [x]      % vertex x       == True
+    test "isTopSortOf [x]       (vertex x)      == True" $ \x ->
+          isTopSortOf [x]      % vertex x       == True
 
-    test "isTopSort [x]       (edge x x)      == False" $ \x ->
-          isTopSort [x]      % edge x x       == False
+    test "isTopSortOf [x]       (edge x x)      == False" $ \x ->
+          isTopSortOf [x]      % edge x x       == False
+
+testIsAcyclic :: Testsuite -> IO ()
+testIsAcyclic (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "testIsAcyclic ============"
+    test "isAcyclic (1 * 2 + 3 * 1) == True" $
+          isAcyclic % (1 * 2 + 3 * 1) == True
+
+    test "isAcyclic (1 * 2 + 2 * 1) == False" $
+          isAcyclic % (1 * 2 + 2 * 1) == False
+
+    test "isAcyclic . circuit       == null" $ \xs ->
+          isAcyclic % circuit xs    == null xs
+
+    test "isAcyclic                 == isJust . topSort" $ \x ->
+          isAcyclic % x             == isJust (topSort x)

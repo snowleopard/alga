@@ -37,10 +37,11 @@ module Algebra.Graph.AdjacencyMap (
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
 
     -- * Algorithms
-    dfsForest, dfsForestFrom, dfs, topSort, isTopSort, scc
+    dfsForest, dfsForestFrom, dfs, topSort, isTopSortOf, isAcyclic, scc
   ) where
 
 import Data.Foldable (toList)
+import Data.Maybe
 import Data.Set (Set)
 import Data.Tree
 
@@ -270,8 +271,7 @@ edgeSet = Map.foldrWithKey (\v es -> Set.union (Set.mapMonotonic (v,) es)) Set.e
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
 adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
 
--- | The /preset/ (here 'preSet') of an element @x@ is the set of its
--- /direct predecessors/.
+-- | The /preset/ of an element @x@ is the set of its /direct predecessors/.
 -- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
 --
 -- @
@@ -285,7 +285,7 @@ preSet x = Set.fromAscList . map fst . filter p  . Map.toAscList . adjacencyMap
   where
     p (_, set) = x `Set.member` set
 
--- | The /postset/ (here 'postSet') of a vertex is the set of its /direct successors/.
+-- | The /postset/ of a vertex is the set of its /direct successors/.
 -- Complexity: /O(log(n))/ time and /O(1)/ memory.
 --
 -- @
@@ -591,31 +591,43 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- is cyclic.
 --
 -- @
--- topSort (1 * 2 + 3 * 1)             == Just [3,1,2]
--- topSort (1 * 2 + 2 * 1)             == Nothing
--- fmap (flip 'isTopSort' x) (topSort x) /= Just False
+-- topSort (1 * 2 + 3 * 1)               == Just [3,1,2]
+-- topSort (1 * 2 + 2 * 1)               == Nothing
+-- fmap (flip 'isTopSortOf' x) (topSort x) /= Just False
+-- 'isJust' . topSort                      == 'isAcyclic'
 -- @
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
-topSort m = if isTopSort result m then Just result else Nothing
+topSort m = if isTopSortOf result m then Just result else Nothing
   where
     result = Typed.topSort (Typed.fromAdjacencyMap m)
 
 -- | Check if a given list of vertices is a valid /topological sort/ of a graph.
 --
 -- @
--- isTopSort [3, 1, 2] (1 * 2 + 3 * 1) == True
--- isTopSort [1, 2, 3] (1 * 2 + 3 * 1) == False
--- isTopSort []        (1 * 2 + 3 * 1) == False
--- isTopSort []        'empty'           == True
--- isTopSort [x]       ('vertex' x)      == True
--- isTopSort [x]       ('edge' x x)      == False
+-- isTopSortOf [3, 1, 2] (1 * 2 + 3 * 1) == True
+-- isTopSortOf [1, 2, 3] (1 * 2 + 3 * 1) == False
+-- isTopSortOf []        (1 * 2 + 3 * 1) == False
+-- isTopSortOf []        'empty'           == True
+-- isTopSortOf [x]       ('vertex' x)      == True
+-- isTopSortOf [x]       ('edge' x x)      == False
 -- @
-isTopSort :: Ord a => [a] -> AdjacencyMap a -> Bool
-isTopSort xs m = go Set.empty xs
+isTopSortOf :: Ord a => [a] -> AdjacencyMap a -> Bool
+isTopSortOf xs m = go Set.empty xs
   where
     go seen []     = seen == Map.keysSet (adjacencyMap m)
     go seen (v:vs) = let newSeen = seen `seq` Set.insert v seen
         in postSet v m `Set.intersection` newSeen == Set.empty && go newSeen vs
+
+-- | Check if a given graph is /acyclic/.
+--
+-- @
+-- isAcyclic (1 * 2 + 3 * 1) == True
+-- isAcyclic (1 * 2 + 2 * 1) == False
+-- isAcyclic . 'circuit'       == 'null'
+-- isAcyclic                 == 'isJust' . 'topSort'
+-- @
+isAcyclic :: Ord a => AdjacencyMap a -> Bool
+isAcyclic = isJust . topSort
 
 -- | Compute the /condensation/ of a graph, where each vertex corresponds to a
 -- /strongly-connected component/ of the original graph.

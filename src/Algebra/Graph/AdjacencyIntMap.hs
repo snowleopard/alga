@@ -258,7 +258,7 @@ edgeSet = IntMap.foldrWithKey combine Set.empty . adjacencyIntMap
 adjacencyList :: AdjacencyIntMap -> [(Int, [Int])]
 adjacencyList = map (fmap IntSet.toAscList) . IntMap.toAscList . adjacencyIntMap
 
--- | The /preset/ (here 'preIntSet') of an element @x@ is the set of its
+-- | The /preset/ (here @preIntSet@) of an element @x@ is the set of its
 -- /direct predecessors/.
 -- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
 --
@@ -273,7 +273,7 @@ preIntSet x = IntSet.fromAscList . map fst . filter p  . IntMap.toAscList . adja
   where
     p (_, set) = x `IntSet.member` set
 
--- | The /postset/ (here 'postIntSet') of a vertex is the set of its
+-- | The /postset/ (here @postIntSet@) of a vertex is the set of its
 -- /direct successors/.
 --
 -- @

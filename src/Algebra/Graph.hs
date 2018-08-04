@@ -33,7 +33,8 @@ module Algebra.Graph (
 
     -- * Graph properties
     isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
+    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList, adjacencyMap,
+    adjacencyIntMap,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
@@ -46,8 +47,8 @@ module Algebra.Graph (
     -- * Graph composition
     box,
 
-    -- * Conversion to graphs
-    adjacencyMap, adjacencyIntMap, Context (..), context
+    -- * Context
+    Context (..), context
   ) where
 
 import Prelude ()

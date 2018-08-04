@@ -44,7 +44,8 @@ testAdjacencyMap = do
     testDfsForestFrom     t
     testDfs               t
     testTopSort           t
-    testIsTopSort         t
+    testIsTopSortOf       t
+    testIsAcyclic         t
 
     putStrLn "\n============ AdjacencyMap.scc ============"
     test "scc empty               == empty" $
