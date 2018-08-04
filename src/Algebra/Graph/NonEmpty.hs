@@ -164,7 +164,7 @@ instance Ord a => Eq (NonEmptyGraph a) where
 equals :: Ord a => NonEmptyGraph a -> NonEmptyGraph a -> Bool
 equals x y = T.adjacencyMap x == T.adjacencyMap y
 
--- | Like 'equals' but specialised for graphs with vertices of type 'Int'.
+-- | Like @equals@ but specialised for graphs with vertices of type 'Int'.
 equalsInt :: NonEmptyGraph Int -> NonEmptyGraph Int -> Bool
 equalsInt x y = T.adjacencyIntMap x == T.adjacencyIntMap y
 

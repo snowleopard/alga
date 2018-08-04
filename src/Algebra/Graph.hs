@@ -566,7 +566,7 @@ edgeSet = AM.edgeSet . fromGraphAM
 {-# INLINE[1] edgeSet #-}
 {-# RULES "edgeSet/Int" edgeSet = edgeIntSet #-}
 
--- | Like 'edgeIntSet' but specialised for graphs with vertices of type 'Int'.
+-- | Like 'edgeSet' but specialised for graphs with vertices of type 'Int'.
 edgeIntSet :: Graph Int -> Set.Set (Int,Int)
 edgeIntSet = AIM.edgeSet . fromGraphAIM
 
@@ -603,7 +603,7 @@ fromGraphAM = foldg AM.empty AM.vertex AM.overlay AM.connect
 adjacencyIntMap :: Graph Int -> IntMap IntSet
 adjacencyIntMap = AIM.adjacencyIntMap . fromGraphAIM
 
--- | Like 'fromGraphAM' but specialised for graphs with vertices of type 'Int'.
+-- | Like @fromGraphAM@ but specialised for graphs with vertices of type 'Int'.
 fromGraphAIM :: Graph Int -> AIM.AdjacencyIntMap
 fromGraphAIM = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 
