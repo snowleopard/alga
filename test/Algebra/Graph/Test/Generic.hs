@@ -15,8 +15,8 @@ module Algebra.Graph.Test.Generic (
     testFromAdjacencyIntSets, testBasicPrimitives, testIsSubgraphOf, testSize,
     testToGraph, testAdjacencyList, testPreSet, testPreIntSet, testPostSet,
     testPostIntSet, testGraphFamilies, testTransformations, testDfsForest,
-    testDfsForestFrom, testDfs, testTopSort, testIsTopSortOf, testIsAcyclic,
-    testSplitVertex, testBind, testSimplify
+    testDfsForestFrom, testDfs, testReachable, testTopSort, testIsTopSortOf,
+    testIsAcyclic, testSplitVertex, testBind, testSimplify
   ) where
 
 import Prelude ()
@@ -450,6 +450,9 @@ testToGraphDefault (Testsuite prefix (%)) = do
 
     test "dfs vs                     == Algebra.Graph.AdjacencyMap.dfs vs . toAdjacencyMap" $ \vs x ->
           dfs vs x                   == (AM.dfs vs . toAdjacencyMap) % x
+
+    test "reachable x                == Algebra.Graph.AdjacencyMap.reachable x . toAdjacencyMap" $ \x y ->
+          reachable x y              == (AM.reachable x . toAdjacencyMap) % y
 
     test "topSort                    == Algebra.Graph.AdjacencyMap.topSort . toAdjacencyMap" $ \x ->
           topSort x                  == (AM.topSort . toAdjacencyMap) % x
@@ -1126,6 +1129,36 @@ testDfs (Testsuite prefix (%)) = do
 
     test "isSubgraphOf (vertices $ dfs vs x) x == True" $ \vs x ->
           isSubgraphOf (vertices $ dfs vs x) % x == True
+
+testReachable :: Testsuite -> IO ()
+testReachable (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "dfs ============"
+    test "reachable x $ empty                       == []" $ \x ->
+          reachable x % empty                       == []
+
+    test "reachable 1 $ vertex 1                    == [1]" $
+          reachable 1 % vertex 1                    == [1]
+
+    test "reachable 1 $ vertex 2                    == []" $
+          reachable 1 % vertex 2                    == []
+
+    test "reachable 1 $ edge 1 1                    == [1]" $
+          reachable 1 % edge 1 1                    == [1]
+
+    test "reachable 1 $ edge 1 2                    == [1,2]" $
+          reachable 1 % edge 1 2                    == [1,2]
+
+    test "reachable 4 $ path    [1..8]              == [4..8]" $
+          reachable 4 % path    [1..8]              == [4..8]
+
+    test "reachable 4 $ circuit [1..8]              == [4..8] ++ [1..3]" $
+          reachable 4 % circuit [1..8]              == [4..8] ++ [1..3]
+
+    test "reachable 8 $ clique  [8,7..1]            == [8] ++ [1..7]" $
+          reachable 8 % clique  [8,7..1]            == [8] ++ [1..7]
+
+    test "isSubgraphOf (vertices $ reachable x y) y == True" $ \x y ->
+          isSubgraphOf (vertices $ reachable x y) % y == True
 
 testTopSort :: Testsuite -> IO ()
 testTopSort (Testsuite prefix (%)) = do

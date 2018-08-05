@@ -264,6 +264,16 @@ class ToGraph t where
     dfs :: Ord (ToVertex t) => [ToVertex t] -> t -> [ToVertex t]
     dfs vs = AM.dfs vs . toAdjacencyMap
 
+    -- | Compute the list of vertices that are /reachable/ from a given source
+    -- vertex in a graph. The vertices in the resulting list appear in the
+    -- /depth-first order/.
+    --
+    -- @
+    -- reachable x == Algebra.Graph.AdjacencyMap.'AM.reachable' x . toAdjacencyMap
+    -- @
+    reachable :: Ord (ToVertex t) => ToVertex t -> t -> [ToVertex t]
+    reachable x = AM.reachable x . toAdjacencyMap
+
     -- | Compute the /topological sort/ of a graph or return @Nothing@ if the
     -- graph is cyclic.
     --

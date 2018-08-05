@@ -34,10 +34,12 @@ module Algebra.Graph.AdjacencyMap (
     path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
+    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
+    induce,
 
     -- * Algorithms
-    dfsForest, dfsForestFrom, dfs, topSort, isTopSortOf, isAcyclic, scc
+    dfsForest, dfsForestFrom, dfs, reachable, topSort, isTopSortOf, isAcyclic,
+    scc
   ) where
 
 import Data.Foldable (toList)
@@ -570,8 +572,8 @@ dfsForest g = dfsForestFrom (vertexList g) g
 dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
 dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
 
--- | Compute the list of vertices visited by the /depth-first search/ in a graph,
--- when searching from each of the given vertices in order.
+-- | Compute the list of vertices visited by the /depth-first search/ in a
+-- graph, when searching from each of the given vertices in order.
 --
 -- @
 -- dfs [1]    $ 'edge' 1 1                == [1]
@@ -586,6 +588,24 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
 -- @
 dfs :: Ord a => [a] -> AdjacencyMap a -> [a]
 dfs vs = concatMap flatten . dfsForestFrom vs
+
+-- | Compute the list of vertices that are /reachable/ from a given source
+-- vertex in a graph. The vertices in the resulting list appear in the
+-- /depth-first order/.
+--
+-- @
+-- reachable x $ 'empty'                       == []
+-- reachable 1 $ 'vertex' 1                    == [1]
+-- reachable 1 $ 'vertex' 2                    == []
+-- reachable 1 $ 'edge' 1 1                    == [1]
+-- reachable 1 $ 'edge' 1 2                    == [1,2]
+-- reachable 4 $ 'path'    [1..8]              == [4..8]
+-- reachable 4 $ 'circuit' [1..8]              == [4..8] ++ [1..3]
+-- reachable 8 $ 'clique'  [8,7..1]            == [8] ++ [1..7]
+-- 'isSubgraphOf' ('vertices' $ reachable x y) y == True
+-- @
+reachable :: Ord a => a -> AdjacencyMap a -> [a]
+reachable x = dfs [x]
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.

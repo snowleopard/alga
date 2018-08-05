@@ -43,6 +43,7 @@ testAdjacencyMap = do
     testDfsForest         t
     testDfsForestFrom     t
     testDfs               t
+    testReachable         t
     testTopSort           t
     testIsTopSortOf       t
     testIsAcyclic         t
