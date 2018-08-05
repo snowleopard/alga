@@ -115,12 +115,11 @@ data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
 -- | Function allowing fusion between 'foldr1' and a composed 'map'
 foldr1f :: (a -> a -> a) -> (b -> a) -> NonEmpty b -> a
-foldr1f k f = go
+foldr1f k f (a :| as) = go a as
   where
-    go (y :| ys) =
-      case ys of
-        []     -> f y
-        (x:xs) -> f y `k` go (x :| xs)
+    go b (c:cs) = f b `k` go c cs
+    go b []     = f b
 
+-- | It is 'sconcat'
 foldr1fId :: (a -> a -> a) -> NonEmpty a -> a
 foldr1fId k = foldr1f k id
