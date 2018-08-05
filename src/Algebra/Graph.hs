@@ -57,7 +57,7 @@ import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Data.Foldable (toList)
-import Data.Semigroup (Semigroup (..), stimesIdempotentMonoid, stimesMonoid)
+import Data.Semigroup (Semigroup (..), stimesIdempotent)
 import Data.Tree
 
 import Algebra.Graph.Internal
@@ -206,8 +206,8 @@ newtype Overlaying a = Overlaying {getOverlaying :: Graph a}
     deriving (Foldable, Functor, Show, Traversable)
 
 instance Semigroup (Overlaying a) where
-    (<>) = coerce (overlay :: Graph a -> Graph a -> Graph a)
-    stimes = stimesIdempotentMonoid
+    (Overlaying a) <> (Overlaying b) = Overlaying $ Overlay a b
+    stimes = stimesIdempotent
 
 instance Monoid (Overlaying a) where
     mempty = Overlaying empty
@@ -216,8 +216,7 @@ newtype Connecting a = Connecting {getConnecting :: Graph a}
     deriving (Foldable, Functor, Show, Traversable)
 
 instance Semigroup (Connecting a) where
-    (<>) = coerce (connect :: Graph a -> Graph a -> Graph a)
-    stimes = stimesMonoid
+    (Connecting a) <> (Connecting b) = Connecting $ Connect a b
 
 instance Monoid (Connecting a) where
     mempty = Connecting empty
@@ -341,7 +340,7 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays = getOverlaying . sconcatM . coerce
+overlays = getOverlaying . maybe mempty (sconcat . coerce) . nonEmpty
 {-# INLINE [0] overlays #-}
 
 -- | Connect a given list of graphs.
@@ -356,16 +355,13 @@ overlays = getOverlaying . sconcatM . coerce
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects = getConnecting . sconcatM . coerce
+connects = getConnecting . maybe mempty (sconcat . coerce) . nonEmpty
 {-# INLINE [0] connects #-}
 
 {-# RULES
  "overlays/map" forall f xs. overlays (map f xs) = getOverlaying (sconcatMap (coerce . f) xs);
  "connects/map" forall f xs. connects (map f xs) = getConnecting (sconcatMap (coerce . f) xs)
   #-}
-
-sconcatM :: Monoid m => [m] -> m
-sconcatM = maybe mempty sconcat . nonEmpty
 
 -- | Utilitary function for rewrite rules of 'overlays' and 'connects'
 sconcatMap :: Monoid m => (b -> m) -> [b] -> m
