@@ -112,7 +112,7 @@ class ToGraph t where
     -- edgeCount == Set.'Set.size' . 'edgeSet'
     -- @
     edgeCount :: Ord (ToVertex t) => t -> Int
-    edgeCount = Set.size . edgeSet
+    edgeCount = AM.edgeCount . toAdjacencyMap
 
     -- | The sorted list of vertices of a given graph.
     --
@@ -128,7 +128,7 @@ class ToGraph t where
     -- edgeList == Set.'Set.toAscList' . 'edgeSet'
     -- @
     edgeList :: Ord (ToVertex t) => t -> [(ToVertex t, ToVertex t)]
-    edgeList = Set.toAscList . edgeSet
+    edgeList = AM.edgeList . toAdjacencyMap
 
     -- | The set of vertices of a graph.
     --
@@ -336,21 +336,9 @@ class ToGraph t where
 
 instance Ord a => ToGraph (G.Graph a) where
     type ToVertex (G.Graph a) = a
-    toGraph         = id
-    foldg           = G.foldg
-    isEmpty         = G.isEmpty
-    hasVertex       = G.hasVertex
-    hasEdge         = G.hasEdge
-    vertexCount     = G.vertexCount
-    edgeCount       = G.edgeCount
-    vertexList      = G.vertexList
-    vertexSet       = G.vertexSet
-    vertexIntSet    = G.vertexIntSet
-    edgeList        = G.edgeList
-    edgeSet         = G.edgeSet
-    adjacencyList   = G.adjacencyList
-    adjacencyMap    = G.adjacencyMap
-    adjacencyIntMap = G.adjacencyIntMap
+    toGraph = id
+    foldg   = G.foldg
+    hasEdge = G.hasEdge
 
 instance Ord a => ToGraph (AM.AdjacencyMap a) where
     type ToVertex (AM.AdjacencyMap a) = a

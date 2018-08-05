@@ -437,9 +437,14 @@ vertexIntCount = IntSet.size . vertexIntSet
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-{-# SPECIALISE edgeCount :: NonEmptyGraph Int -> Int #-}
+{-# INLINE[1] edgeCount #-}
+{-# RULES "edgeCount/Int" edgeCount = edgeCountInt #-}
 edgeCount :: Ord a => NonEmptyGraph a -> Int
-edgeCount = length . edgeList
+edgeCount = T.edgeCount
+
+-- | Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
+edgeCountInt :: NonEmptyGraph Int -> Int
+edgeCountInt = AIM.edgeCount . T.toAdjacencyIntMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -475,7 +480,7 @@ edgeList = T.edgeList
 
 -- | Like 'edgeList' but specialised for NonEmptyGraph with vertices of type 'Int'.
 edgeIntList :: NonEmptyGraph Int -> [(Int,Int)]
-edgeIntList = AIM.edgeList . foldg1 AIM.vertex AIM.overlay AIM.connect
+edgeIntList = AIM.edgeList . T.toAdjacencyIntMap
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.

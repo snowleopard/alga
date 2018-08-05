@@ -485,9 +485,14 @@ vertexIntCount = IntSet.size . vertexIntSet
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-{-# SPECIALISE edgeCount :: Graph Int -> Int #-}
+{-# INLINE[1] edgeCount #-}
+{-# RULES "edgeCount/Int" edgeCount = edgeCountInt #-}
 edgeCount :: Ord a => Graph a -> Int
-edgeCount = length . edgeList
+edgeCount = AM.edgeCount . fromGraphAM
+
+-- | Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
+edgeCountInt :: Graph Int -> Int
+edgeCountInt = AIM.edgeCount . fromGraphAIM
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -497,10 +502,10 @@ edgeCount = length . edgeList
 -- vertexList ('vertex' x) == [x]
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
-vertexList :: Ord a => Graph a -> [a]
-vertexList = Set.toAscList . vertexSet
 {-# INLINE[1] vertexList #-}
 {-# RULES "vertexList/Int" vertexList = vertexIntList #-}
+vertexList :: Ord a => Graph a -> [a]
+vertexList = Set.toAscList . vertexSet
 
 -- | Like 'vertexList' but specialised for graphs with vertices of type 'Int'.
 vertexIntList :: Graph Int -> [Int]
@@ -518,10 +523,10 @@ vertexIntList = IntSet.toList . vertexIntSet
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
-edgeList :: Ord a => Graph a -> [(a, a)]
-edgeList = AM.edgeList . fromGraphAM
 {-# INLINE[1] edgeList #-}
 {-# RULES "edgeList/Int" edgeList = edgeIntList #-}
+edgeList :: Ord a => Graph a -> [(a, a)]
+edgeList = AM.edgeList . fromGraphAM
 
 -- | Like 'edgeList' but specialised for graphs with vertices of type 'Int'.
 edgeIntList :: Graph Int -> [(Int,Int)]

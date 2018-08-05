@@ -44,6 +44,7 @@ module Algebra.Graph.AdjacencyMap (
 
 import Data.Foldable (toList)
 import Data.Maybe
+import Data.Monoid
 import Data.Set (Set)
 import Data.Tree
 
@@ -196,7 +197,7 @@ vertexCount = Map.size . adjacencyMap
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: AdjacencyMap a -> Int
-edgeCount = Map.foldr (\es r -> (Set.size es + r)) 0 . adjacencyMap
+edgeCount = getSum . foldMap (Sum . Set.size) . adjacencyMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.

@@ -42,6 +42,7 @@ module Algebra.Graph.AdjacencyIntMap (
   ) where
 
 import Data.IntSet (IntSet)
+import Data.Monoid
 import Data.Set (Set)
 import Data.Tree
 
@@ -193,7 +194,7 @@ vertexCount = IntMap.size . adjacencyIntMap
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: AdjacencyIntMap -> Int
-edgeCount = IntMap.foldr (\es r -> (IntSet.size es + r)) 0 . adjacencyIntMap
+edgeCount = getSum . foldMap (Sum . IntSet.size) . adjacencyIntMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
