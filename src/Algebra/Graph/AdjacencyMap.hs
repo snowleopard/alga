@@ -13,7 +13,7 @@
 -- This module defines the 'AdjacencyMap' data type, as well as associated
 -- operations and algorithms. 'AdjacencyMap' is an instance of the 'C.Graph' type
 -- class, which can be used for polymorphic graph construction and manipulation.
--- "Algebra.Graph.IntAdjacencyMap" defines adjacency maps specialised to graphs
+-- "Algebra.Graph.AdjacencyIntMap" defines adjacency maps specialised to graphs
 -- with @Int@ vertices.
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap (
