@@ -57,7 +57,6 @@ import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Data.Foldable (toList)
-import Data.Semigroup (Semigroup (..), stimesIdempotent)
 import Data.Tree
 
 import Algebra.Graph.Internal
@@ -75,7 +74,6 @@ import qualified Data.Set                      as Set
 import qualified Data.Tree                     as Tree
 
 import Data.List.NonEmpty (nonEmpty)
-import Data.Coerce
 
 {-| The 'Graph' data type is a deep embedding of the core graph construction
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
@@ -202,25 +200,6 @@ instance MonadPlus Graph where
     mzero = Empty
     mplus = Overlay
 
-newtype Overlaying a = Overlaying {getOverlaying :: Graph a}
-    deriving (Foldable, Functor, Show, Traversable)
-
-instance Semigroup (Overlaying a) where
-    (Overlaying a) <> (Overlaying b) = Overlaying $ Overlay a b
-    stimes = stimesIdempotent
-
-instance Monoid (Overlaying a) where
-    mempty = Overlaying empty
-
-newtype Connecting a = Connecting {getConnecting :: Graph a}
-    deriving (Foldable, Functor, Show, Traversable)
-
-instance Semigroup (Connecting a) where
-    (Connecting a) <> (Connecting b) = Connecting $ Connect a b
-
-instance Monoid (Connecting a) where
-    mempty = Connecting empty
-
 -- | Construct the /empty graph/. An alias for the constructor 'Empty'.
 -- Complexity: /O(1)/ time, memory and size.
 --
@@ -340,8 +319,7 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays = getOverlaying . maybe mempty (sconcat . coerce) . nonEmpty
-{-# INLINE [0] overlays #-}
+overlays = concatg overlay
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -355,17 +333,21 @@ overlays = getOverlaying . maybe mempty (sconcat . coerce) . nonEmpty
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects = getConnecting . maybe mempty (sconcat . coerce) . nonEmpty
-{-# INLINE [0] connects #-}
+connects = concatg connect
+
+concatg :: (Graph a -> Graph a -> Graph a) -> [Graph a] -> Graph a
+concatg combine = maybe empty (foldr1fId combine) . nonEmpty
+{-# INLINE [0] concatg #-}
 
 {-# RULES
- "overlays/map" forall f xs. overlays (map f xs) = getOverlaying (concatgMap (coerce . f) xs);
- "connects/map" forall f xs. connects (map f xs) = getConnecting (concatgMap (coerce . f) xs)
+ "concatg/map"
+  forall c f xs.
+    concatg c (map f xs) = concatgMap c f xs
   #-}
 
 -- | Utilitary function for rewrite rules of 'overlays' and 'connects'
-concatgMap :: Monoid m => (b -> m) -> [b] -> m
-concatgMap f = maybe mempty (foldr1f f) . nonEmpty
+concatgMap :: (Graph a -> Graph a -> Graph a) -> (b -> Graph a) -> [b] -> Graph a
+concatgMap combine f = maybe empty (foldr1f combine f) . nonEmpty
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
