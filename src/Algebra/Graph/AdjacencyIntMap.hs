@@ -13,7 +13,7 @@
 -- This module defines the 'AdjacencyIntMap' data type, as well as associated
 -- operations and algorithms. 'AdjacencyIntMap' is an instance of the 'C.Graph'
 -- type class, which can be used for polymorphic graph construction
--- and manipulation. See "Algebra.Graph.adjacencyIntMap" for graphs with
+-- and manipulation. See "Algebra.Graph.AdjacencyMap" for graphs with
 -- non-@Int@ vertices.
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyIntMap (
