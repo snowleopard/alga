@@ -466,7 +466,7 @@ hasEdge s t g = hit g == Edge
 -- vertexCount ('vertex' x) == 1
 -- vertexCount            == 'length' . 'vertexList'
 -- @
-{-# INLINE[1] vertexCount #-}
+{-# INLINE [1] vertexCount #-}
 {-# RULES "vertexCount/Int" vertexCount = vertexIntCount #-}
 vertexCount :: Ord a => Graph a -> Int
 vertexCount = Set.size . vertexSet
@@ -485,7 +485,7 @@ vertexIntCount = IntSet.size . vertexIntSet
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-{-# INLINE[1] edgeCount #-}
+{-# INLINE [1] edgeCount #-}
 {-# RULES "edgeCount/Int" edgeCount = edgeCountInt #-}
 edgeCount :: Ord a => Graph a -> Int
 edgeCount = AM.edgeCount . toAdjacencyMap
@@ -502,7 +502,7 @@ edgeCountInt = AIM.edgeCount . toAdjacencyIntMap
 -- vertexList ('vertex' x) == [x]
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
-{-# INLINE[1] vertexList #-}
+{-# INLINE [1] vertexList #-}
 {-# RULES "vertexList/Int" vertexList = vertexIntList #-}
 vertexList :: Ord a => Graph a -> [a]
 vertexList = Set.toAscList . vertexSet
@@ -523,7 +523,7 @@ vertexIntList = IntSet.toList . vertexIntSet
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
-{-# INLINE[1] edgeList #-}
+{-# INLINE [1] edgeList #-}
 {-# RULES "edgeList/Int" edgeList = edgeIntList #-}
 edgeList :: Ord a => Graph a -> [(a, a)]
 edgeList = AM.edgeList . toAdjacencyMap
@@ -568,7 +568,7 @@ vertexIntSet = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 -- @
 edgeSet :: Ord a => Graph a -> Set.Set (a, a)
 edgeSet = AM.edgeSet . toAdjacencyMap
-{-# INLINE[1] edgeSet #-}
+{-# INLINE [1] edgeSet #-}
 {-# RULES "edgeSet/Int" edgeSet = edgeIntSet #-}
 
 -- | Like 'edgeSet' but specialised for graphs with vertices of type 'Int'.
