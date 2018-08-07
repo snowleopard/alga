@@ -42,7 +42,7 @@ module Algebra.Graph.AdjacencyMap (
     scc
   ) where
 
-import Data.Foldable (toList)
+import Data.Foldable (foldMap, toList)
 import Data.Maybe
 import Data.Monoid
 import Data.Set (Set)
@@ -259,7 +259,7 @@ vertexIntSet = IntSet.fromAscList . Set.toAscList . vertexSet
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
 edgeSet :: Ord a => AdjacencyMap a -> Set (a, a)
-edgeSet = Map.foldrWithKey (\v es -> Set.union (Set.mapMonotonic (v,) es)) Set.empty . adjacencyMap
+edgeSet = Set.fromAscList . edgeList
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.

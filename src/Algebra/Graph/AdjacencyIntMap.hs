@@ -41,6 +41,7 @@ module Algebra.Graph.AdjacencyIntMap (
     dfsForest, dfsForestFrom, dfs, reachable, topSort, isTopSort
   ) where
 
+import Data.Foldable (foldMap)
 import Data.IntSet (IntSet)
 import Data.Monoid
 import Data.Set (Set)
@@ -48,10 +49,10 @@ import Data.Tree
 
 import Algebra.Graph.AdjacencyIntMap.Internal
 
-import qualified Data.Graph.Typed    as Typed
-import qualified Data.IntMap.Strict  as IntMap
-import qualified Data.IntSet         as IntSet
-import qualified Data.Set            as Set
+import qualified Data.Graph.Typed   as Typed
+import qualified Data.IntMap.Strict as IntMap
+import qualified Data.IntSet        as IntSet
+import qualified Data.Set           as Set
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
@@ -243,9 +244,7 @@ vertexIntSet = IntMap.keysSet . adjacencyIntMap
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
 edgeSet :: AdjacencyIntMap -> Set (Int, Int)
-edgeSet = IntMap.foldrWithKey combine Set.empty . adjacencyIntMap
-  where
-    combine u es = Set.union (Set.fromAscList [ (u, v) | v <- IntSet.toAscList es ])
+edgeSet = Set.fromAscList . edgeList
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
