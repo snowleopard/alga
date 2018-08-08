@@ -110,6 +110,7 @@ connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
 -- its 'Tail', i.e. the source vertex, the whole 'Edge', or 'Miss' it entirely.
 data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
+-- | A safe version of 'foldr1'
 foldr1Safe :: (a -> a -> a) -> [a] -> Maybe a
 foldr1Safe f = foldr mf Nothing
   where
