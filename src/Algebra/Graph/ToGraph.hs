@@ -371,8 +371,8 @@ instance Ord a => ToGraph (AM.AdjacencyMap a) where
 
 instance ToGraph AIM.AdjacencyIntMap where
     type ToVertex AIM.AdjacencyIntMap = Int
-    toGraph                    = G.overlays
-                               . map (uncurry G.star . fmap IntSet.toList)
+    toGraph                    = G.stars
+                               . map (fmap IntSet.toList)
                                . IntMap.toList
                                . AIM.adjacencyIntMap
     isEmpty                    = AIM.isEmpty
