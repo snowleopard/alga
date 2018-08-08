@@ -57,6 +57,7 @@ import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Data.Foldable (toList)
+import Data.Maybe (fromMaybe)
 import Data.Tree
 
 import Algebra.Graph.Internal
@@ -336,18 +337,11 @@ connects :: [Graph a] -> Graph a
 connects = concatg connect
 
 concatg :: (Graph a -> Graph a -> Graph a) -> [Graph a] -> Graph a
-concatg combine = maybe empty (foldr1fId combine) . nonEmpty
-{-# INLINE [0] concatg #-}
-
-{-# RULES
- "concatg/map"
-  forall c f xs.
-    concatg c (map f xs) = concatgMap c f xs
-  #-}
-
--- | Utilitary function for rewrite rules of 'overlays' and 'connects'
-concatgMap :: (Graph a -> Graph a -> Graph a) -> (b -> Graph a) -> [b] -> Graph a
-concatgMap combine f = maybe empty (foldr1f combine f) . nonEmpty
+concatg f = fromMaybe empty . foldr mf Nothing
+  where
+    mf x m = Just (case m of
+                        Nothing -> x
+                        Just y  -> f x y)
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
