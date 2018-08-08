@@ -22,8 +22,7 @@ module Algebra.Graph.Internal (
     -- * Data structures for graph traversal
     Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, Hit (..),
 
-    -- Special fold
-    foldr1f, foldr1fId
+    foldr1Safe
   ) where
 
 import Prelude ()
@@ -33,8 +32,6 @@ import Data.Foldable
 import Data.Semigroup
 
 import qualified GHC.Exts as Exts
-
-import Data.List.NonEmpty (NonEmpty (..))
 
 -- | An abstract list data type with /O(1)/ time concatenation (the current
 -- implementation uses difference lists). Here @a@ is the type of list elements.
@@ -113,13 +110,10 @@ connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
 -- its 'Tail', i.e. the source vertex, the whole 'Edge', or 'Miss' it entirely.
 data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
--- | Function allowing fusion between 'foldr1' and a composed 'map'
-foldr1f :: (a -> a -> a) -> (b -> a) -> NonEmpty b -> a
-foldr1f k f (a :| as) = go a as
+foldr1Safe :: (a -> a -> a) -> [a] -> Maybe a
+foldr1Safe f = foldr mf Nothing
   where
-    go b (c:cs) = f b `k` go c cs
-    go b []     = f b
-
--- | It is 'sconcat'
-foldr1fId :: (a -> a -> a) -> NonEmpty a -> a
-foldr1fId k = foldr1f k id
+    mf x m = Just (case m of
+                        Nothing -> x
+                        Just y  -> f x y)
+{-# INLINE foldr1Safe #-}

@@ -279,7 +279,7 @@ connect = Connect
 -- 'vertexSet'   . vertices1 == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
 -- @
 vertices1 :: NonEmpty a -> NonEmptyGraph a
-vertices1 (x :| xs) = foldr (Overlay . vertex) (vertex x) xs
+vertices1 = overlays1 . fmap vertex
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -290,7 +290,7 @@ vertices1 (x :| xs) = foldr (Overlay . vertex) (vertex x) xs
 -- 'edgeCount' . edges1   == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
 -- @
 edges1 :: NonEmpty (a, a) -> NonEmptyGraph a
-edges1 (x :| xs) = foldr (Overlay . uncurry edge) (uncurry edge x) xs
+edges1  = overlays1 . fmap (uncurry edge)
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -301,7 +301,7 @@ edges1 (x :| xs) = foldr (Overlay . uncurry edge) (uncurry edge x) xs
 -- overlays1 (x ':|' [y]) == 'overlay' x y
 -- @
 overlays1 :: NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
-overlays1 = foldr1 overlay
+overlays1 (x :| xs) = maybe x (overlay x) $ foldr1Safe overlay xs
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -312,7 +312,7 @@ overlays1 = foldr1 overlay
 -- connects1 (x ':|' [y]) == 'connect' x y
 -- @
 connects1 :: NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
-connects1 = foldr1 connect
+connects1 (x :| xs) = maybe x (connect x) $ foldr1Safe connect xs
 
 -- | Generalised graph folding: recursively collapse a 'NonEmptyGraph' by
 -- applying the provided functions to the leaves and internal nodes of the

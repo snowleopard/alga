@@ -337,11 +337,7 @@ connects :: [Graph a] -> Graph a
 connects = concatg connect
 
 concatg :: (Graph a -> Graph a -> Graph a) -> [Graph a] -> Graph a
-concatg f = fromMaybe empty . foldr mf Nothing
-  where
-    mf x m = Just (case m of
-                        Nothing -> x
-                        Just y  -> f x y)
+concatg f = fromMaybe empty . foldr1Safe f
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
