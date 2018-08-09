@@ -164,7 +164,7 @@ instance Ord a => Eq (NonEmptyGraph a) where
 equals :: Ord a => NonEmptyGraph a -> NonEmptyGraph a -> Bool
 equals x y = T.adjacencyMap x == T.adjacencyMap y
 
--- | Like 'equals' but specialised for graphs with vertices of type 'Int'.
+-- | Like @equals@ but specialised for graphs with vertices of type 'Int'.
 equalsInt :: NonEmptyGraph Int -> NonEmptyGraph Int -> Bool
 equalsInt x y = T.adjacencyIntMap x == T.adjacencyIntMap y
 
@@ -420,7 +420,7 @@ hasEdge s t g = hit g == Edge
 -- vertexCount            == 'length' . 'vertexList1'
 -- @
 {-# RULES "vertexCount/Int" vertexCount = vertexIntCount #-}
-{-# INLINE[1] vertexCount #-}
+{-# INLINE [1] vertexCount #-}
 vertexCount :: Ord a => NonEmptyGraph a -> Int
 vertexCount = T.vertexCount
 
@@ -437,9 +437,14 @@ vertexIntCount = IntSet.size . vertexIntSet
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-{-# SPECIALISE edgeCount :: NonEmptyGraph Int -> Int #-}
+{-# INLINE [1] edgeCount #-}
+{-# RULES "edgeCount/Int" edgeCount = edgeCountInt #-}
 edgeCount :: Ord a => NonEmptyGraph a -> Int
-edgeCount = length . edgeList
+edgeCount = T.edgeCount
+
+-- | Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
+edgeCountInt :: NonEmptyGraph Int -> Int
+edgeCountInt = AIM.edgeCount . T.toAdjacencyIntMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -449,7 +454,7 @@ edgeCount = length . edgeList
 -- vertexList1 . 'vertices1' == 'Data.List.NonEmpty.nub' . 'Data.List.NonEmpty.sort'
 -- @
 {-# RULES "vertexList1/Int" vertexList1 = vertexIntList1 #-}
-{-# INLINE[1] vertexList1 #-}
+{-# INLINE [1] vertexList1 #-}
 vertexList1 :: Ord a => NonEmptyGraph a -> NonEmpty a
 vertexList1 = NonEmpty.fromList . Set.toAscList . vertexSet
 
@@ -469,13 +474,13 @@ vertexIntList1 = NonEmpty.fromList . IntSet.toAscList . vertexIntSet
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 {-# RULES "edgeList/Int" edgeList = edgeIntList #-}
-{-# INLINE[1] edgeList #-}
+{-# INLINE [1] edgeList #-}
 edgeList :: Ord a => NonEmptyGraph a -> [(a, a)]
 edgeList = T.edgeList
 
 -- | Like 'edgeList' but specialised for NonEmptyGraph with vertices of type 'Int'.
 edgeIntList :: NonEmptyGraph Int -> [(Int,Int)]
-edgeIntList = AIM.edgeList . foldg1 AIM.vertex AIM.overlay AIM.connect
+edgeIntList = AIM.edgeList . T.toAdjacencyIntMap
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.

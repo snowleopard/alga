@@ -13,7 +13,7 @@
 -- This module defines the 'AdjacencyMap' data type, as well as associated
 -- operations and algorithms. 'AdjacencyMap' is an instance of the 'C.Graph' type
 -- class, which can be used for polymorphic graph construction and manipulation.
--- "Algebra.Graph.IntAdjacencyMap" defines adjacency maps specialised to graphs
+-- "Algebra.Graph.AdjacencyIntMap" defines adjacency maps specialised to graphs
 -- with @Int@ vertices.
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap (
@@ -34,23 +34,27 @@ module Algebra.Graph.AdjacencyMap (
     path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
+    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
+    induce,
 
     -- * Algorithms
-    dfsForest, dfsForestFrom, dfs, topSort, isTopSort, scc
+    dfsForest, dfsForestFrom, dfs, reachable, topSort, isTopSortOf, isAcyclic,
+    scc
   ) where
 
-import Data.Foldable (toList)
+import Data.Foldable (foldMap, toList)
+import Data.Maybe
+import Data.Monoid
 import Data.Set (Set)
 import Data.Tree
 
 import Algebra.Graph.AdjacencyMap.Internal
 
-import qualified Data.Graph.Typed    as Typed
-import qualified Data.Graph          as KL
-import qualified Data.Map.Strict     as Map
-import qualified Data.Set            as Set
-import qualified Data.IntSet         as IntSet
+import qualified Data.Graph.Typed as Typed
+import qualified Data.Graph       as KL
+import qualified Data.Map.Strict  as Map
+import qualified Data.Set         as Set
+import qualified Data.IntSet      as IntSet
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
@@ -85,7 +89,7 @@ vertices = AM . Map.fromList . map (\x -> (x, Set.empty))
 --
 -- @
 -- edges []          == 'empty'
--- edges [(x, y)]    == 'edge' x y
+-- edges [(x,y)]     == 'edge' x y
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
@@ -193,7 +197,7 @@ vertexCount = Map.size . adjacencyMap
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: AdjacencyMap a -> Int
-edgeCount = Map.foldr (\es r -> (Set.size es + r)) 0 . adjacencyMap
+edgeCount = getSum . foldMap (Sum . Set.size) . adjacencyMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -255,7 +259,7 @@ vertexIntSet = IntSet.fromAscList . Set.toAscList . vertexSet
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
 edgeSet :: Ord a => AdjacencyMap a -> Set (a, a)
-edgeSet = Map.foldrWithKey (\v es -> Set.union (Set.mapMonotonic (v,) es)) Set.empty . adjacencyMap
+edgeSet = Set.fromAscList . edgeList
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -270,8 +274,7 @@ edgeSet = Map.foldrWithKey (\v es -> Set.union (Set.mapMonotonic (v,) es)) Set.e
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
 adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
 
--- | The /preset/ (here 'preSet') of an element @x@ is the set of its
--- /direct predecessors/.
+-- | The /preset/ of an element @x@ is the set of its /direct predecessors/.
 -- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
 --
 -- @
@@ -285,7 +288,7 @@ preSet x = Set.fromAscList . map fst . filter p  . Map.toAscList . adjacencyMap
   where
     p (_, set) = x `Set.member` set
 
--- | The /postset/ (here 'postSet') of a vertex is the set of its /direct successors/.
+-- | The /postset/ of a vertex is the set of its /direct successors/.
 -- Complexity: /O(log(n))/ time and /O(1)/ memory.
 --
 -- @
@@ -570,8 +573,8 @@ dfsForest g = dfsForestFrom (vertexList g) g
 dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
 dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
 
--- | Compute the list of vertices visited by the /depth-first search/ in a graph,
--- when searching from each of the given vertices in order.
+-- | Compute the list of vertices visited by the /depth-first search/ in a
+-- graph, when searching from each of the given vertices in order.
 --
 -- @
 -- dfs [1]    $ 'edge' 1 1                == [1]
@@ -587,35 +590,65 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
 dfs :: Ord a => [a] -> AdjacencyMap a -> [a]
 dfs vs = concatMap flatten . dfsForestFrom vs
 
+-- | Compute the list of vertices that are /reachable/ from a given source
+-- vertex in a graph. The vertices in the resulting list appear in the
+-- /depth-first order/.
+--
+-- @
+-- reachable x $ 'empty'                       == []
+-- reachable 1 $ 'vertex' 1                    == [1]
+-- reachable 1 $ 'vertex' 2                    == []
+-- reachable 1 $ 'edge' 1 1                    == [1]
+-- reachable 1 $ 'edge' 1 2                    == [1,2]
+-- reachable 4 $ 'path'    [1..8]              == [4..8]
+-- reachable 4 $ 'circuit' [1..8]              == [4..8] ++ [1..3]
+-- reachable 8 $ 'clique'  [8,7..1]            == [8] ++ [1..7]
+-- 'isSubgraphOf' ('vertices' $ reachable x y) y == True
+-- @
+reachable :: Ord a => a -> AdjacencyMap a -> [a]
+reachable x = dfs [x]
+
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.
 --
 -- @
--- topSort (1 * 2 + 3 * 1)             == Just [3,1,2]
--- topSort (1 * 2 + 2 * 1)             == Nothing
--- fmap (flip 'isTopSort' x) (topSort x) /= Just False
+-- topSort (1 * 2 + 3 * 1)               == Just [3,1,2]
+-- topSort (1 * 2 + 2 * 1)               == Nothing
+-- fmap (flip 'isTopSortOf' x) (topSort x) /= Just False
+-- 'isJust' . topSort                      == 'isAcyclic'
 -- @
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
-topSort m = if isTopSort result m then Just result else Nothing
+topSort m = if isTopSortOf result m then Just result else Nothing
   where
     result = Typed.topSort (Typed.fromAdjacencyMap m)
 
 -- | Check if a given list of vertices is a valid /topological sort/ of a graph.
 --
 -- @
--- isTopSort [3, 1, 2] (1 * 2 + 3 * 1) == True
--- isTopSort [1, 2, 3] (1 * 2 + 3 * 1) == False
--- isTopSort []        (1 * 2 + 3 * 1) == False
--- isTopSort []        'empty'           == True
--- isTopSort [x]       ('vertex' x)      == True
--- isTopSort [x]       ('edge' x x)      == False
+-- isTopSortOf [3, 1, 2] (1 * 2 + 3 * 1) == True
+-- isTopSortOf [1, 2, 3] (1 * 2 + 3 * 1) == False
+-- isTopSortOf []        (1 * 2 + 3 * 1) == False
+-- isTopSortOf []        'empty'           == True
+-- isTopSortOf [x]       ('vertex' x)      == True
+-- isTopSortOf [x]       ('edge' x x)      == False
 -- @
-isTopSort :: Ord a => [a] -> AdjacencyMap a -> Bool
-isTopSort xs m = go Set.empty xs
+isTopSortOf :: Ord a => [a] -> AdjacencyMap a -> Bool
+isTopSortOf xs m = go Set.empty xs
   where
     go seen []     = seen == Map.keysSet (adjacencyMap m)
     go seen (v:vs) = let newSeen = seen `seq` Set.insert v seen
         in postSet v m `Set.intersection` newSeen == Set.empty && go newSeen vs
+
+-- | Check if a given graph is /acyclic/.
+--
+-- @
+-- isAcyclic (1 * 2 + 3 * 1) == True
+-- isAcyclic (1 * 2 + 2 * 1) == False
+-- isAcyclic . 'circuit'       == 'null'
+-- isAcyclic                 == 'isJust' . 'topSort'
+-- @
+isAcyclic :: Ord a => AdjacencyMap a -> Bool
+isAcyclic = isJust . topSort
 
 -- | Compute the /condensation/ of a graph, where each vertex corresponds to a
 -- /strongly-connected component/ of the original graph.

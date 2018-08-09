@@ -13,7 +13,7 @@
 -- This module defines the 'AdjacencyIntMap' data type, as well as associated
 -- operations and algorithms. 'AdjacencyIntMap' is an instance of the 'C.Graph'
 -- type class, which can be used for polymorphic graph construction
--- and manipulation. See "Algebra.Graph.adjacencyIntMap" for graphs with
+-- and manipulation. See "Algebra.Graph.AdjacencyMap" for graphs with
 -- non-@Int@ vertices.
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyIntMap (
@@ -34,22 +34,25 @@ module Algebra.Graph.AdjacencyIntMap (
     path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
+    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
+    induce,
 
     -- * Algorithms
-    dfsForest, dfsForestFrom, dfs, topSort, isTopSort
+    dfsForest, dfsForestFrom, dfs, reachable, topSort, isTopSort
   ) where
 
+import Data.Foldable (foldMap)
 import Data.IntSet (IntSet)
+import Data.Monoid
 import Data.Set (Set)
 import Data.Tree
 
 import Algebra.Graph.AdjacencyIntMap.Internal
 
-import qualified Data.Graph.Typed    as Typed
-import qualified Data.IntMap.Strict  as IntMap
-import qualified Data.IntSet         as IntSet
-import qualified Data.Set            as Set
+import qualified Data.Graph.Typed   as Typed
+import qualified Data.IntMap.Strict as IntMap
+import qualified Data.IntSet        as IntSet
+import qualified Data.Set           as Set
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
@@ -84,7 +87,7 @@ vertices = AM . IntMap.fromList . map (\x -> (x, IntSet.empty))
 --
 -- @
 -- edges []          == 'empty'
--- edges [(x, y)]    == 'edge' x y
+-- edges [(x,y)]     == 'edge' x y
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
@@ -192,7 +195,7 @@ vertexCount = IntMap.size . adjacencyIntMap
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: AdjacencyIntMap -> Int
-edgeCount = IntMap.foldr (\es r -> (IntSet.size es + r)) 0 . adjacencyIntMap
+edgeCount = getSum . foldMap (Sum . IntSet.size) . adjacencyIntMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -241,9 +244,7 @@ vertexIntSet = IntMap.keysSet . adjacencyIntMap
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
 edgeSet :: AdjacencyIntMap -> Set (Int, Int)
-edgeSet = IntMap.foldrWithKey combine Set.empty . adjacencyIntMap
-  where
-    combine u es = Set.union (Set.fromAscList [ (u, v) | v <- IntSet.toAscList es ])
+edgeSet = Set.fromAscList . edgeList
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -258,7 +259,7 @@ edgeSet = IntMap.foldrWithKey combine Set.empty . adjacencyIntMap
 adjacencyList :: AdjacencyIntMap -> [(Int, [Int])]
 adjacencyList = map (fmap IntSet.toAscList) . IntMap.toAscList . adjacencyIntMap
 
--- | The /preset/ (here 'preIntSet') of an element @x@ is the set of its
+-- | The /preset/ (here @preIntSet@) of an element @x@ is the set of its
 -- /direct predecessors/.
 -- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
 --
@@ -273,7 +274,7 @@ preIntSet x = IntSet.fromAscList . map fst . filter p  . IntMap.toAscList . adja
   where
     p (_, set) = x `IntSet.member` set
 
--- | The /postset/ (here 'postIntSet') of a vertex is the set of its
+-- | The /postset/ (here @postIntSet@) of a vertex is the set of its
 -- /direct successors/.
 --
 -- @
@@ -574,6 +575,24 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyIntMap
 -- @
 dfs :: [Int] -> AdjacencyIntMap -> [Int]
 dfs vs = concatMap flatten . dfsForestFrom vs
+
+-- | Compute the list of vertices that are /reachable/ from a given source
+-- vertex in a graph. The vertices in the resulting list appear in the
+-- /depth-first order/.
+--
+-- @
+-- reachable x $ 'empty'                       == []
+-- reachable 1 $ 'vertex' 1                    == [1]
+-- reachable 1 $ 'vertex' 2                    == []
+-- reachable 1 $ 'edge' 1 1                    == [1]
+-- reachable 1 $ 'edge' 1 2                    == [1,2]
+-- reachable 4 $ 'path'    [1..8]              == [4..8]
+-- reachable 4 $ 'circuit' [1..8]              == [4..8] ++ [1..3]
+-- reachable 8 $ 'clique'  [8,7..1]            == [8] ++ [1..7]
+-- 'isSubgraphOf' ('vertices' $ reachable x y) y == True
+-- @
+reachable :: Int -> AdjacencyIntMap -> [Int]
+reachable x = dfs [x]
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.
