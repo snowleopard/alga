@@ -20,7 +20,9 @@ module Algebra.Graph.Internal (
     List (..),
 
     -- * Data structures for graph traversal
-    Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, Hit (..)
+    Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, Hit (..),
+
+    foldr1Safe
   ) where
 
 import Prelude ()
@@ -107,3 +109,12 @@ connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
 -- | An auxiliary data type for 'hasEdge': when searching for an edge, we can hit
 -- its 'Tail', i.e. the source vertex, the whole 'Edge', or 'Miss' it entirely.
 data Hit = Miss | Tail | Edge deriving (Eq, Ord)
+
+-- | A safe version of 'foldr1'
+foldr1Safe :: (a -> a -> a) -> [a] -> Maybe a
+foldr1Safe f = foldr mf Nothing
+  where
+    mf x m = Just (case m of
+                        Nothing -> x
+                        Just y  -> f x y)
+{-# INLINE foldr1Safe #-}

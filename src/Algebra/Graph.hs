@@ -58,6 +58,7 @@ import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Data.Foldable (toList)
+import Data.Maybe (fromMaybe)
 import Data.Tree
 
 import Algebra.Graph.Internal
@@ -318,7 +319,7 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays = foldr overlay empty
+overlays = concatg overlay
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -332,7 +333,11 @@ overlays = foldr overlay empty
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects = foldr connect empty
+connects = concatg connect
+
+-- | Auxiliary function, similar to 'mconcat'.
+concatg :: (Graph a -> Graph a -> Graph a) -> [Graph a] -> Graph a
+concatg combine = fromMaybe empty . foldr1Safe combine
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
