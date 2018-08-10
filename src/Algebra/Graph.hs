@@ -334,8 +334,9 @@ overlays = concatg overlay
 connects :: [Graph a] -> Graph a
 connects = concatg connect
 
+-- | Auxiliary function, similar to 'mconcat'.
 concatg :: (Graph a -> Graph a -> Graph a) -> [Graph a] -> Graph a
-concatg f = fromMaybe empty . foldr1Safe f
+concatg combine = fromMaybe empty . foldr1Safe combine
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
