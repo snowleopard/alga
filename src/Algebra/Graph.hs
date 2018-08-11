@@ -280,6 +280,7 @@ overlay = Overlay
 -- @
 connect :: Graph a -> Graph a -> Graph a
 connect = Connect
+{-# INLINE [1] connect #-}
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -320,6 +321,7 @@ edges = overlays . map (uncurry edge)
 -- @
 overlays :: [Graph a] -> Graph a
 overlays = concatg overlay
+{-# INLINE [2] overlays #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -689,6 +691,7 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 star :: a -> [a] -> Graph a
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
+{-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
 -- 'adjacencyList'.
@@ -706,6 +709,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- @
 stars :: [(a, [a])] -> Graph a
 stars = overlays . map (uncurry star)
+{-# INLINE stars #-}
 
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -885,7 +889,6 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
 splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 
-
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
 --
@@ -899,6 +902,12 @@ splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 -- @
 transpose :: Graph a -> Graph a
 transpose = foldg Empty Vertex Overlay (flip Connect)
+{-# NOINLINE [1] transpose #-}
+
+{-# RULES
+"transpose/overlays" forall xs. transpose (overlays xs) = overlays (map transpose xs)
+"transpose/connect"  forall g1 g2. transpose (connect g1 g2) = connect g2 g1
+ #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
