@@ -4,7 +4,8 @@ synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
 author:        Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard
-maintainer:    Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard
+maintainer:    Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard,
+               Alexandre Moine <alexandre@moine.me>, github: @nobrakal
 copyright:     Andrey Mokhov, 2016-2018
 homepage:      https://github.com/snowleopard/alga
 category:      Algebra, Algorithms, Data Structures, Graphs
