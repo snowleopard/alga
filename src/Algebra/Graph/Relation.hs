@@ -268,7 +268,7 @@ adjacencyList r = go (Set.toAscList $ domain r) (Set.toAscList $ relation r)
     go vs []     = map ((,[])) vs
     go (x:vs) es = let (ys, zs) = span ((==x) . fst) es in (x, map snd ys) : go vs zs
 
--- | The /preset/ (here 'preSet') of an element @x@ is the set of elements that are related to
+-- | The /preset/ of an element @x@ is the set of elements that are related to
 -- it on the /left/, i.e. @preSet x == { a | aRx }@. In the context of directed
 -- graphs, this corresponds to the set of /direct predecessors/ of vertex @x@.
 -- Complexity: /O(n + m)/ time and /O(n)/ memory.
@@ -282,7 +282,7 @@ adjacencyList r = go (Set.toAscList $ domain r) (Set.toAscList $ relation r)
 preSet :: Ord a => a -> Relation a -> Set.Set a
 preSet x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
 
--- | The /postset/ (here 'postSet') of an element @x@ is the set of elements that are related to
+-- | The /postset/ of an element @x@ is the set of elements that are related to
 -- it on the /right/, i.e. @postSet x == { a | xRa }@. In the context of directed
 -- graphs, this corresponds to the set of /direct successors/ of vertex @x@.
 -- Complexity: /O(n + m)/ time and /O(n)/ memory.

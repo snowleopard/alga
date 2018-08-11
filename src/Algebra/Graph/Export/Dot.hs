@@ -26,7 +26,7 @@ import Data.Monoid
 import Data.String hiding (unlines)
 import Prelude hiding (unlines)
 
-import Algebra.Graph.ToGraph
+import Algebra.Graph.ToGraph (ToGraph (..))
 import Algebra.Graph.Export hiding (export)
 import qualified Algebra.Graph.Export as E
 

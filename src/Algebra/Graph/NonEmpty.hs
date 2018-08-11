@@ -164,7 +164,7 @@ instance Ord a => Eq (NonEmptyGraph a) where
 equals :: Ord a => NonEmptyGraph a -> NonEmptyGraph a -> Bool
 equals x y = T.adjacencyMap x == T.adjacencyMap y
 
--- | Like 'equals' but specialised for graphs with vertices of type 'Int'.
+-- | Like @equals@ but specialised for graphs with vertices of type 'Int'.
 equalsInt :: NonEmptyGraph Int -> NonEmptyGraph Int -> Bool
 equalsInt x y = T.adjacencyIntMap x == T.adjacencyIntMap y
 
@@ -279,7 +279,7 @@ connect = Connect
 -- 'vertexSet'   . vertices1 == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
 -- @
 vertices1 :: NonEmpty a -> NonEmptyGraph a
-vertices1 (x :| xs) = foldr (Overlay . vertex) (vertex x) xs
+vertices1 = overlays1 . fmap vertex
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -290,7 +290,7 @@ vertices1 (x :| xs) = foldr (Overlay . vertex) (vertex x) xs
 -- 'edgeCount' . edges1   == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
 -- @
 edges1 :: NonEmpty (a, a) -> NonEmptyGraph a
-edges1 (x :| xs) = foldr (Overlay . uncurry edge) (uncurry edge x) xs
+edges1  = overlays1 . fmap (uncurry edge)
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -301,7 +301,7 @@ edges1 (x :| xs) = foldr (Overlay . uncurry edge) (uncurry edge x) xs
 -- overlays1 (x ':|' [y]) == 'overlay' x y
 -- @
 overlays1 :: NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
-overlays1 = foldr1 overlay
+overlays1 = concatg1 overlay
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -312,7 +312,11 @@ overlays1 = foldr1 overlay
 -- connects1 (x ':|' [y]) == 'connect' x y
 -- @
 connects1 :: NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
-connects1 = foldr1 connect
+connects1 = concatg1 connect
+
+-- | Auxiliary function, similar to 'sconcat'.
+concatg1 :: (NonEmptyGraph a -> NonEmptyGraph a -> NonEmptyGraph a) -> NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
+concatg1 combine (x :| xs) = maybe x (combine x) $ foldr1Safe combine xs
 
 -- | Generalised graph folding: recursively collapse a 'NonEmptyGraph' by
 -- applying the provided functions to the leaves and internal nodes of the
@@ -420,7 +424,7 @@ hasEdge s t g = hit g == Edge
 -- vertexCount            == 'length' . 'vertexList1'
 -- @
 {-# RULES "vertexCount/Int" vertexCount = vertexIntCount #-}
-{-# INLINE[1] vertexCount #-}
+{-# INLINE [1] vertexCount #-}
 vertexCount :: Ord a => NonEmptyGraph a -> Int
 vertexCount = T.vertexCount
 
@@ -437,9 +441,14 @@ vertexIntCount = IntSet.size . vertexIntSet
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-{-# SPECIALISE edgeCount :: NonEmptyGraph Int -> Int #-}
+{-# INLINE [1] edgeCount #-}
+{-# RULES "edgeCount/Int" edgeCount = edgeCountInt #-}
 edgeCount :: Ord a => NonEmptyGraph a -> Int
-edgeCount = length . edgeList
+edgeCount = T.edgeCount
+
+-- | Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
+edgeCountInt :: NonEmptyGraph Int -> Int
+edgeCountInt = AIM.edgeCount . T.toAdjacencyIntMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -449,7 +458,7 @@ edgeCount = length . edgeList
 -- vertexList1 . 'vertices1' == 'Data.List.NonEmpty.nub' . 'Data.List.NonEmpty.sort'
 -- @
 {-# RULES "vertexList1/Int" vertexList1 = vertexIntList1 #-}
-{-# INLINE[1] vertexList1 #-}
+{-# INLINE [1] vertexList1 #-}
 vertexList1 :: Ord a => NonEmptyGraph a -> NonEmpty a
 vertexList1 = NonEmpty.fromList . Set.toAscList . vertexSet
 
@@ -469,13 +478,13 @@ vertexIntList1 = NonEmpty.fromList . IntSet.toAscList . vertexIntSet
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 {-# RULES "edgeList/Int" edgeList = edgeIntList #-}
-{-# INLINE[1] edgeList #-}
+{-# INLINE [1] edgeList #-}
 edgeList :: Ord a => NonEmptyGraph a -> [(a, a)]
 edgeList = T.edgeList
 
 -- | Like 'edgeList' but specialised for NonEmptyGraph with vertices of type 'Int'.
 edgeIntList :: NonEmptyGraph Int -> [(Int,Int)]
-edgeIntList = AIM.edgeList . foldg1 AIM.vertex AIM.overlay AIM.connect
+edgeIntList = AIM.edgeList . T.toAdjacencyIntMap
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.

@@ -15,8 +15,8 @@ module Algebra.Graph.Test.Generic (
     testFromAdjacencyIntSets, testBasicPrimitives, testIsSubgraphOf, testSize,
     testToGraph, testAdjacencyList, testPreSet, testPreIntSet, testPostSet,
     testPostIntSet, testGraphFamilies, testTransformations, testDfsForest,
-    testDfsForestFrom, testDfs, testTopSort, testIsTopSort, testSplitVertex,
-    testBind, testSimplify
+    testDfsForestFrom, testDfs, testReachable, testTopSort, testIsTopSortOf,
+    testIsAcyclic, testSplitVertex, testBind, testSimplify
   ) where
 
 import Prelude ()
@@ -26,6 +26,7 @@ import Control.Monad (when)
 import Data.Orphans ()
 
 import Data.List (nub)
+import Data.Maybe
 import Data.Tree
 import Data.Tuple
 
@@ -375,71 +376,104 @@ testIsSubgraphOf (Testsuite prefix (%)) = do
 testToGraphDefault :: Testsuite -> IO ()
 testToGraphDefault (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "toGraph et al. ============"
-    test "toGraph                  == foldg Empty Vertex Overlay Connect" $ \x ->
-          toGraph % x              == foldg Empty Vertex Overlay Connect x
+    test "toGraph                    == foldg Empty Vertex Overlay Connect" $ \x ->
+          toGraph % x                == foldg Empty Vertex Overlay Connect x
 
-    test "foldg                    == Algebra.Graph.foldg . toGraph" $ \e (apply -> v) (applyFun2 -> o) (applyFun2 -> c) x ->
-          foldg e v o c x          == (G.foldg (e :: Int) v o c . toGraph) % x
+    test "foldg                      == Algebra.Graph.foldg . toGraph" $ \e (apply -> v) (applyFun2 -> o) (applyFun2 -> c) x ->
+          foldg e v o c x            == (G.foldg (e :: Int) v o c . toGraph) % x
 
-    test "isEmpty                  == foldg True (const False) (&&) (&&)" $ \x ->
-          isEmpty x                == foldg True (const False) (&&) (&&) % x
+    test "isEmpty                    == foldg True (const False) (&&) (&&)" $ \x ->
+          isEmpty x                  == foldg True (const False) (&&) (&&) % x
 
-    test "size                     == foldg 1 (const 1) (+) (+)" $ \x ->
-          size x                   == foldg 1 (const 1) (+) (+) % x
+    test "size                       == foldg 1 (const 1) (+) (+)" $ \x ->
+          size x                     == foldg 1 (const 1) (+) (+) % x
 
-    test "hasVertex x              == foldg False (==x) (||) (||)" $ \x y ->
-          hasVertex x y            == foldg False (==x) (||) (||) % y
+    test "hasVertex x                == foldg False (==x) (||) (||)" $ \x y ->
+          hasVertex x y              == foldg False (==x) (||) (||) % y
 
-    test "hasEdge x y              == elem (x,y) . edgeList" $ \x y z ->
-          hasEdge x y z            == (elem (x,y) . edgeList) % z
+    test "hasEdge x y                == Algebra.Graph.hasEdge x y . toGraph" $ \x y z ->
+          hasEdge x y z              == (G.hasEdge x y . toGraph) % z
 
-    test "vertexCount              == Set.size . vertexSet" $ \x ->
-          vertexCount x            == (Set.size . vertexSet) % x
+    test "vertexCount                == Set.size . vertexSet" $ \x ->
+          vertexCount x              == (Set.size . vertexSet) % x
 
-    test "edgeCount                == length . edgeList" $ \x ->
-          edgeCount x              == (length . edgeList) % x
+    test "edgeCount                  == Set.size . edgeSet" $ \x ->
+          edgeCount x                == (Set.size . edgeSet) % x
 
-    test "vertexList               == Set.toAscList . vertexSet" $ \x ->
-          vertexList x             == (Set.toAscList . vertexSet) % x
+    test "vertexList                 == Set.toAscList . vertexSet" $ \x ->
+          vertexList x               == (Set.toAscList . vertexSet) % x
 
-    test "edgeList                 == Algebra.Graph.AdjacencyMap.edgeList . foldg empty vertex overlay connect" $ \x ->
-          edgeList x               == (AM.edgeList . foldg empty vertex overlay connect) % x
+    test "edgeList                   == Set.toAscList . edgeSet" $ \x ->
+          edgeList x                 == (Set.toAscList . edgeSet) % x
 
-    test "vertexSet                == foldg Set.empty Set.singleton Set.union Set.union" $ \x ->
-          vertexSet x              == foldg Set.empty Set.singleton Set.union Set.union % x
+    test "vertexSet                  == foldg Set.empty Set.singleton Set.union Set.union" $ \x ->
+          vertexSet x                == foldg Set.empty Set.singleton Set.union Set.union % x
 
-    test "vertexIntSet             == foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union" $ \x ->
-          vertexIntSet x           == foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union % x
+    test "vertexIntSet               == foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union" $ \x ->
+          vertexIntSet x             == foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union % x
 
-    test "edgeSet                  == Algebra.Graph.AdjacencyMap.edgeSet . foldg empty vertex overlay connect" $ \x ->
-          edgeSet x                == (AM.edgeSet . foldg empty vertex overlay connect) % x
+    test "edgeSet                    == Algebra.Graph.AdjacencyMap.edgeSet . foldg empty vertex overlay connect" $ \x ->
+          edgeSet x                  == (AM.edgeSet . foldg empty vertex overlay connect) % x
 
-    test "preSet x                 == Algebra.Graph.AdjacencyMap.postSet x . foldg empty vertex overlay (flip connect)" $ \x y ->
-          preSet x y               == (AM.postSet x . foldg empty vertex overlay (flip connect)) % y
+    test "preSet x                   == Algebra.Graph.AdjacencyMap.preSet x . toAdjacencyMap" $ \x y ->
+          preSet x y                 == (AM.preSet x . toAdjacencyMap) % y
 
-    test "preIntSet x              == IntSet.fromAscList . Set.toAscList . preSet x" $ \x y ->
-          preIntSet x y            == (IntSet.fromAscList . Set.toAscList . preSet x) % y
+    test "preIntSet x                == Algebra.Graph.AdjacencyIntMap.preIntSet x . toAdjacencyIntMap" $ \x y ->
+          preIntSet x y              == (AIM.preIntSet x . toAdjacencyIntMap) % y
 
-    test "postSet x                == Algebra.Graph.AdjacencyMap.postSet x . foldg empty vertex overlay connect" $ \x y ->
-          postSet x y              == (AM.postSet x . foldg empty vertex overlay connect) % y
+    test "postSet x                  == Algebra.Graph.AdjacencyMap.postSet x . toAdjacencyMap" $ \x y ->
+          postSet x y                == (AM.postSet x . toAdjacencyMap) % y
 
-    test "postIntSet x             == IntSet.fromAscList . Set.toAscList . postSet x" $ \x y ->
-          postIntSet x y           == (IntSet.fromAscList . Set.toAscList . postSet x) % y
+    test "postIntSet x               == Algebra.Graph.AdjacencyIntMap.postIntSet x . toAdjacencyIntMap" $ \x y ->
+          postIntSet x y             == (AIM.postIntSet x . toAdjacencyIntMap) % y
 
-    test "adjacencyList            == Algebra.Graph.AdjacencyMap.adjacencyList . foldg empty vertex overlay connect" $ \x ->
-          adjacencyList x          == (AM.adjacencyList . foldg empty vertex overlay connect) % x
+    test "adjacencyList              == Algebra.Graph.AdjacencyMap.adjacencyList . toAdjacencyMap" $ \x ->
+          adjacencyList x            == (AM.adjacencyList . toAdjacencyMap) % x
 
-    test "adjacencyMap             == Algebra.Graph.AdjacencyMap.adjacencyMap . foldg empty vertex overlay connect" $ \x ->
-          adjacencyMap x           == (AM.adjacencyMap . foldg empty vertex overlay connect) % x
+    test "adjacencyMap               == Algebra.Graph.AdjacencyMap.adjacencyMap . toAdjacencyMap" $ \x ->
+          adjacencyMap x             == (AM.adjacencyMap . toAdjacencyMap) % x
 
-    test "adjacencyIntMap          == Algebra.Graph.AdjacencyIntMap.adjacencyIntMap . foldg empty vertex overlay connect" $ \x ->
-          adjacencyIntMap  x       == (AIM.adjacencyIntMap . foldg empty vertex overlay connect) % x
+    test "adjacencyIntMap            == Algebra.Graph.AdjacencyIntMap.adjacencyIntMap . toAdjacencyIntMap" $ \x ->
+          adjacencyIntMap x          == (AIM.adjacencyIntMap . toAdjacencyIntMap) % x
 
-    test "adjacencyMapTranspose    == Algebra.Graph.AdjacencyMap.adjacencyMap . foldg empty vertex overlay (flip connect)" $ \x ->
-          adjacencyMapTranspose x  == (AM.adjacencyMap . foldg empty vertex overlay (flip connect)) % x
+    test "adjacencyMapTranspose      == Algebra.Graph.AdjacencyMap.adjacencyMap . toAdjacencyMapTranspose" $ \x ->
+          adjacencyMapTranspose x    == (AM.adjacencyMap . toAdjacencyMapTranspose) % x
 
-    test "adjacencyIntMapTranspose == Algebra.Graph.AdjacencyIntMap.adjacencyIntMap . foldg empty vertex overlay (flip connect)" $ \x ->
-          adjacencyIntMapTranspose x == (AIM.adjacencyIntMap . foldg empty vertex overlay (flip connect)) % x
+    test "adjacencyIntMapTranspose   == Algebra.Graph.AdjacencyIntMap.adjacencyIntMap . toAdjacencyIntMapTranspose" $ \x ->
+          adjacencyIntMapTranspose x == (AIM.adjacencyIntMap . toAdjacencyIntMapTranspose) % x
+
+    test "dfsForest                  == Algebra.Graph.AdjacencyMap.dfsForest . toAdjacencyMap" $ \x ->
+          dfsForest x                == (AM.dfsForest . toAdjacencyMap) % x
+
+    test "dfsForestFrom vs           == Algebra.Graph.AdjacencyMap.dfsForestFrom vs . toAdjacencyMap" $ \vs x ->
+          dfsForestFrom vs x         == (AM.dfsForestFrom vs . toAdjacencyMap) % x
+
+    test "dfs vs                     == Algebra.Graph.AdjacencyMap.dfs vs . toAdjacencyMap" $ \vs x ->
+          dfs vs x                   == (AM.dfs vs . toAdjacencyMap) % x
+
+    test "reachable x                == Algebra.Graph.AdjacencyMap.reachable x . toAdjacencyMap" $ \x y ->
+          reachable x y              == (AM.reachable x . toAdjacencyMap) % y
+
+    test "topSort                    == Algebra.Graph.AdjacencyMap.topSort . toAdjacencyMap" $ \x ->
+          topSort x                  == (AM.topSort . toAdjacencyMap) % x
+
+    test "isAcyclic                  == Algebra.Graph.AdjacencyMap.isAcyclic . toAdjacencyMap" $ \x ->
+          isAcyclic x                == (AM.isAcyclic . toAdjacencyMap) % x
+
+    test "isTopSortOf vs             == Algebra.Graph.AdjacencyMap.isTopSortOf vs . toAdjacencyMap" $ \vs x ->
+          isTopSortOf vs x           == (AM.isTopSortOf vs . toAdjacencyMap) % x
+
+    test "toAdjacencyMap             == foldg empty vertex overlay connect" $ \x ->
+          toAdjacencyMap x           == foldg AM.empty AM.vertex AM.overlay AM.connect % x
+
+    test "toAdjacencyMapTranspose    == foldg empty vertex overlay (flip connect)" $ \x ->
+          toAdjacencyMapTranspose x  == foldg AM.empty AM.vertex AM.overlay (flip AM.connect) % x
+
+    test "toAdjacencyIntMap          == foldg empty vertex overlay connect" $ \x ->
+          toAdjacencyIntMap x        == foldg AIM.empty AIM.vertex AIM.overlay AIM.connect % x
+
+    test "toAdjacencyIntMapTranspose == foldg empty vertex overlay (flip connect)" $ \x ->
+          toAdjacencyIntMapTranspose x == foldg AIM.empty AIM.vertex AIM.overlay (flip AIM.connect) % x
 
 testFoldg :: Testsuite -> IO ()
 testFoldg (Testsuite prefix (%)) = do
@@ -1096,35 +1130,80 @@ testDfs (Testsuite prefix (%)) = do
     test "isSubgraphOf (vertices $ dfs vs x) x == True" $ \vs x ->
           isSubgraphOf (vertices $ dfs vs x) % x == True
 
+testReachable :: Testsuite -> IO ()
+testReachable (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "dfs ============"
+    test "reachable x $ empty                       == []" $ \x ->
+          reachable x % empty                       == []
+
+    test "reachable 1 $ vertex 1                    == [1]" $
+          reachable 1 % vertex 1                    == [1]
+
+    test "reachable 1 $ vertex 2                    == []" $
+          reachable 1 % vertex 2                    == []
+
+    test "reachable 1 $ edge 1 1                    == [1]" $
+          reachable 1 % edge 1 1                    == [1]
+
+    test "reachable 1 $ edge 1 2                    == [1,2]" $
+          reachable 1 % edge 1 2                    == [1,2]
+
+    test "reachable 4 $ path    [1..8]              == [4..8]" $
+          reachable 4 % path    [1..8]              == [4..8]
+
+    test "reachable 4 $ circuit [1..8]              == [4..8] ++ [1..3]" $
+          reachable 4 % circuit [1..8]              == [4..8] ++ [1..3]
+
+    test "reachable 8 $ clique  [8,7..1]            == [8] ++ [1..7]" $
+          reachable 8 % clique  [8,7..1]            == [8] ++ [1..7]
+
+    test "isSubgraphOf (vertices $ reachable x y) y == True" $ \x y ->
+          isSubgraphOf (vertices $ reachable x y) % y == True
+
 testTopSort :: Testsuite -> IO ()
 testTopSort (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "topSort ============"
-    test "topSort (1 * 2 + 3 * 1)             == Just [3,1,2]" $
-          topSort % (1 * 2 + 3 * 1)           == Just [3,1,2]
+    test "topSort (1 * 2 + 3 * 1)               == Just [3,1,2]" $
+          topSort % (1 * 2 + 3 * 1)             == Just [3,1,2]
 
-    test "topSort (1 * 2 + 2 * 1)             == Nothing" $
-          topSort % (1 * 2 + 2 * 1)           == Nothing
+    test "topSort (1 * 2 + 2 * 1)               == Nothing" $
+          topSort % (1 * 2 + 2 * 1)             == Nothing
 
-    test "fmap (flip isTopSort x) (topSort x) /= Just False" $ \x ->
-          fmap (flip isTopSort x) (topSort % x) /= Just False
+    test "fmap (flip isTopSortOf x) (topSort x) /= Just False" $ \x ->
+          fmap (flip isTopSortOf x) (topSort % x) /= Just False
 
-testIsTopSort :: Testsuite -> IO ()
-testIsTopSort (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "isTopSort ============"
-    test "isTopSort [3, 1, 2] (1 * 2 + 3 * 1) == True" $
-          isTopSort [3, 1, 2] % (1 * 2 + 3 * 1) == True
+testIsTopSortOf :: Testsuite -> IO ()
+testIsTopSortOf (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "isTopSortOf ============"
+    test "isTopSortOf [3, 1, 2] (1 * 2 + 3 * 1) == True" $
+          isTopSortOf [3, 1, 2] % (1 * 2 + 3 * 1) == True
 
-    test "isTopSort [1, 2, 3] (1 * 2 + 3 * 1) == False" $
-          isTopSort [1, 2, 3] % (1 * 2 + 3 * 1) == False
+    test "isTopSortOf [1, 2, 3] (1 * 2 + 3 * 1) == False" $
+          isTopSortOf [1, 2, 3] % (1 * 2 + 3 * 1) == False
 
-    test "isTopSort []        (1 * 2 + 3 * 1) == False" $
-          isTopSort []      % (1 * 2 + 3 * 1) == False
+    test "isTopSortOf []        (1 * 2 + 3 * 1) == False" $
+          isTopSortOf []      % (1 * 2 + 3 * 1) == False
 
-    test "isTopSort []        empty           == True" $
-          isTopSort []      % empty           == True
+    test "isTopSortOf []        empty           == True" $
+          isTopSortOf []      % empty           == True
 
-    test "isTopSort [x]       (vertex x)      == True" $ \x ->
-          isTopSort [x]      % vertex x       == True
+    test "isTopSortOf [x]       (vertex x)      == True" $ \x ->
+          isTopSortOf [x]      % vertex x       == True
 
-    test "isTopSort [x]       (edge x x)      == False" $ \x ->
-          isTopSort [x]      % edge x x       == False
+    test "isTopSortOf [x]       (edge x x)      == False" $ \x ->
+          isTopSortOf [x]      % edge x x       == False
+
+testIsAcyclic :: Testsuite -> IO ()
+testIsAcyclic (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "testIsAcyclic ============"
+    test "isAcyclic (1 * 2 + 3 * 1) == True" $
+          isAcyclic % (1 * 2 + 3 * 1) == True
+
+    test "isAcyclic (1 * 2 + 2 * 1) == False" $
+          isAcyclic % (1 * 2 + 2 * 1) == False
+
+    test "isAcyclic . circuit       == null" $ \xs ->
+          isAcyclic % circuit xs    == null xs
+
+    test "isAcyclic                 == isJust . topSort" $ \x ->
+          isAcyclic % x             == isJust (topSort x)

@@ -33,7 +33,8 @@ module Algebra.Graph (
 
     -- * Graph properties
     isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
+    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList, adjacencyMap,
+    adjacencyIntMap,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
@@ -46,8 +47,8 @@ module Algebra.Graph (
     -- * Graph composition
     box,
 
-    -- * Conversion to graphs
-    adjacencyMap, adjacencyIntMap, Context (..), context
+    -- * Context
+    Context (..), context
   ) where
 
 import Prelude ()
@@ -57,6 +58,7 @@ import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Data.Foldable (toList)
+import Data.Maybe (fromMaybe)
 import Data.Tree
 
 import Algebra.Graph.Internal
@@ -317,7 +319,7 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays = foldr overlay empty
+overlays = concatg overlay
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -331,7 +333,11 @@ overlays = foldr overlay empty
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects = foldr connect empty
+connects = concatg connect
+
+-- | Auxiliary function, similar to 'mconcat'.
+concatg :: (Graph a -> Graph a -> Graph a) -> [Graph a] -> Graph a
+concatg combine = fromMaybe empty . foldr1Safe combine
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
@@ -465,7 +471,7 @@ hasEdge s t g = hit g == Edge
 -- vertexCount ('vertex' x) == 1
 -- vertexCount            == 'length' . 'vertexList'
 -- @
-{-# INLINE[1] vertexCount #-}
+{-# INLINE [1] vertexCount #-}
 {-# RULES "vertexCount/Int" vertexCount = vertexIntCount #-}
 vertexCount :: Ord a => Graph a -> Int
 vertexCount = Set.size . vertexSet
@@ -484,9 +490,14 @@ vertexIntCount = IntSet.size . vertexIntSet
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-{-# SPECIALISE edgeCount :: Graph Int -> Int #-}
+{-# INLINE [1] edgeCount #-}
+{-# RULES "edgeCount/Int" edgeCount = edgeCountInt #-}
 edgeCount :: Ord a => Graph a -> Int
-edgeCount = length . edgeList
+edgeCount = AM.edgeCount . toAdjacencyMap
+
+-- | Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
+edgeCountInt :: Graph Int -> Int
+edgeCountInt = AIM.edgeCount . toAdjacencyIntMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -496,10 +507,10 @@ edgeCount = length . edgeList
 -- vertexList ('vertex' x) == [x]
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
+{-# INLINE [1] vertexList #-}
+{-# RULES "vertexList/Int" vertexList = vertexIntList #-}
 vertexList :: Ord a => Graph a -> [a]
 vertexList = Set.toAscList . vertexSet
-{-# INLINE[1] vertexList #-}
-{-# RULES "vertexList/Int" vertexList = vertexIntList #-}
 
 -- | Like 'vertexList' but specialised for graphs with vertices of type 'Int'.
 vertexIntList :: Graph Int -> [Int]
@@ -517,14 +528,14 @@ vertexIntList = IntSet.toList . vertexIntSet
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
-edgeList :: Ord a => Graph a -> [(a, a)]
-edgeList = AM.edgeList . fromGraphAM
-{-# INLINE[1] edgeList #-}
+{-# INLINE [1] edgeList #-}
 {-# RULES "edgeList/Int" edgeList = edgeIntList #-}
+edgeList :: Ord a => Graph a -> [(a, a)]
+edgeList = AM.edgeList . toAdjacencyMap
 
 -- | Like 'edgeList' but specialised for graphs with vertices of type 'Int'.
-edgeIntList :: Graph Int -> [(Int,Int)]
-edgeIntList = AIM.edgeList . fromGraphAIM
+edgeIntList :: Graph Int -> [(Int, Int)]
+edgeIntList = AIM.edgeList . toAdjacencyIntMap
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -561,13 +572,13 @@ vertexIntSet = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
 edgeSet :: Ord a => Graph a -> Set.Set (a, a)
-edgeSet = AM.edgeSet . fromGraphAM
-{-# INLINE[1] edgeSet #-}
+edgeSet = AM.edgeSet . toAdjacencyMap
+{-# INLINE [1] edgeSet #-}
 {-# RULES "edgeSet/Int" edgeSet = edgeIntSet #-}
 
--- | Like 'edgeIntSet' but specialised for graphs with vertices of type 'Int'.
+-- | Like 'edgeSet' but specialised for graphs with vertices of type 'Int'.
 edgeIntSet :: Graph Int -> Set.Set (Int,Int)
-edgeIntSet = AIM.edgeSet . fromGraphAIM
+edgeIntSet = AIM.edgeSet . toAdjacencyIntMap
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -579,32 +590,31 @@ edgeIntSet = AIM.edgeSet . fromGraphAIM
 -- adjacencyList ('star' 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
 -- 'stars' . adjacencyList        == id
 -- @
-{-# SPECIALISE adjacencyList :: Graph Int -> [(Int,[Int])] #-}
+{-# SPECIALISE adjacencyList :: Graph Int -> [(Int, [Int])] #-}
 adjacencyList :: Ord a => Graph a -> [(a, [a])]
-adjacencyList = AM.adjacencyList . fromGraphAM
+adjacencyList = AM.adjacencyList . toAdjacencyMap
 
 -- | The /adjacency map/ of a graph: each vertex is associated with a set of its
 -- direct successors.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
 -- graph can be quadratic with respect to the expression size /s/.
 adjacencyMap :: Ord a => Graph a -> Map a (Set a)
-adjacencyMap = AM.adjacencyMap . fromGraphAM
+adjacencyMap = AM.adjacencyMap . toAdjacencyMap
 
 -- TODO: This is a very inefficient implementation. Find a way to construct an
 -- adjacency map directly, without building intermediate representations for all
 -- subgraphs.
--- TODO: This should go to FromGraph type class.
 -- | Convert a graph to 'AM.AdjacencyMap'.
-fromGraphAM :: Ord a => Graph a -> AM.AdjacencyMap a
-fromGraphAM = foldg AM.empty AM.vertex AM.overlay AM.connect
+toAdjacencyMap :: Ord a => Graph a -> AM.AdjacencyMap a
+toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
 
 -- | Like 'adjacencyMap' but specialised for graphs with vertices of type 'Int'.
 adjacencyIntMap :: Graph Int -> IntMap IntSet
-adjacencyIntMap = AIM.adjacencyIntMap . fromGraphAIM
+adjacencyIntMap = AIM.adjacencyIntMap . toAdjacencyIntMap
 
--- | Like 'fromGraphAM' but specialised for graphs with vertices of type 'Int'.
-fromGraphAIM :: Graph Int -> AIM.AdjacencyIntMap
-fromGraphAIM = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
+-- | Like @toAdjacencyMap@ but specialised for graphs with vertices of type 'Int'.
+toAdjacencyIntMap :: Graph Int -> AIM.AdjacencyIntMap
+toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
