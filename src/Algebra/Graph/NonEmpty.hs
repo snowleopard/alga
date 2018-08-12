@@ -203,6 +203,7 @@ toNonEmptyGraph = G.foldg Nothing (Just . Vertex) (go Overlay) (go Connect)
 -- @
 vertex :: a -> NonEmptyGraph a
 vertex = Vertex
+{-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -233,6 +234,7 @@ edge u v = connect (vertex u) (vertex v)
 -- @
 overlay :: NonEmptyGraph a -> NonEmptyGraph a -> NonEmptyGraph a
 overlay = Overlay
+{-# INLINE overlay #-}
 
 -- | Overlay a possibly empty graph with a non-empty graph. If the first
 -- argument is 'G.empty', the function returns the second argument; otherwise
@@ -267,6 +269,7 @@ overlay1 = maybe id overlay . toNonEmptyGraph
 -- @
 connect :: NonEmptyGraph a -> NonEmptyGraph a -> NonEmptyGraph a
 connect = Connect
+{-# INLINE connect #-}
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -302,6 +305,7 @@ edges1  = overlays1 . fmap (uncurry edge)
 -- @
 overlays1 :: NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
 overlays1 = concatg1 overlay
+{-# INLINE [2] overlays1 #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -313,6 +317,7 @@ overlays1 = concatg1 overlay
 -- @
 connects1 :: NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
 connects1 = concatg1 connect
+{-# INLINE [2] connects1 #-}
 
 -- | Auxiliary function, similar to 'sconcat'.
 concatg1 :: (NonEmptyGraph a -> NonEmptyGraph a -> NonEmptyGraph a) -> NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
@@ -743,6 +748,16 @@ splitVertex1 v us g = g >>= \w -> if w == v then vertices1 us else vertex w
 -- @
 transpose :: NonEmptyGraph a -> NonEmptyGraph a
 transpose = foldg1 vertex overlay (flip connect)
+{-# NOINLINE [1] transpose #-}
+
+{-# RULES
+"transpose/Vertex"   forall x. transpose (Vertex x) = Vertex x
+"transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay g1 g2
+"transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect g2 g1
+
+"transpose/overlays1" forall xs. transpose (overlays1 xs) = overlays1 (fmap transpose xs)
+"transpose/connects1" forall xs. transpose (connects1 xs) = connects1 (NonEmpty.reverse (fmap transpose xs))
+ #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate. Returns @Nothing@ if the

@@ -8,6 +8,8 @@ import Algebra.Graph.Test.NonEmptyGraph
 import Algebra.Graph.Test.Relation
 import Data.Graph.Test.Typed
 
+import Rewrite
+
 main :: IO ()
 main = do
     testAdjacencyMap
