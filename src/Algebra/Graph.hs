@@ -212,6 +212,7 @@ instance MonadPlus Graph where
 -- @
 empty :: Graph a
 empty = Empty
+{-# INLINE empty #-}
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
@@ -226,6 +227,7 @@ empty = Empty
 -- @
 vertex :: a -> Graph a
 vertex = Vertex
+{-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -257,6 +259,7 @@ edge x y = connect (vertex x) (vertex y)
 -- @
 overlay :: Graph a -> Graph a -> Graph a
 overlay = Overlay
+{-# INLINE overlay #-}
 
 -- | /Connect/ two graphs. An alias for the constructor 'Connect'. This is an
 -- associative operation with the identity 'empty', which distributes over
@@ -280,7 +283,7 @@ overlay = Overlay
 -- @
 connect :: Graph a -> Graph a -> Graph a
 connect = Connect
-{-# INLINE [1] connect #-}
+{-# INLINE connect #-}
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -336,6 +339,7 @@ overlays = concatg overlay
 -- @
 connects :: [Graph a] -> Graph a
 connects = concatg connect
+{-# INLINE [2] connects #-}
 
 -- | Auxiliary function, similar to 'mconcat'.
 concatg :: (Graph a -> Graph a -> Graph a) -> [Graph a] -> Graph a
@@ -905,8 +909,13 @@ transpose = foldg Empty Vertex Overlay (flip Connect)
 {-# NOINLINE [1] transpose #-}
 
 {-# RULES
+"transpose/Empty"    transpose Empty = Empty
+"transpose/Vertex"   forall x. transpose (Vertex x) = Vertex x
+"transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay g1 g2
+"transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect g2 g1
+
 "transpose/overlays" forall xs. transpose (overlays xs) = overlays (map transpose xs)
-"transpose/connect"  forall g1 g2. transpose (connect g1 g2) = connect g2 g1
+"transpose/connects" forall xs. transpose (connects xs) = connects (reverse (map transpose xs))
  #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
