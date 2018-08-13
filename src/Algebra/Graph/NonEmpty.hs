@@ -751,12 +751,12 @@ transpose = foldg1 vertex overlay (flip connect)
 {-# NOINLINE [1] transpose #-}
 
 {-# RULES
-"transpose/Vertex"   forall x. transpose (Vertex x) = Vertex x
-"transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay g1 g2
-"transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect g2 g1
+"NonEmpty.transpose/Vertex"   forall x. transpose (Vertex x) = Vertex x
+"NonEmpty.transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay g1 g2
+"NonEmpty.transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect g2 g1
 
-"transpose/overlays1" forall xs. transpose (overlays1 xs) = overlays1 (fmap transpose xs)
-"transpose/connects1" forall xs. transpose (connects1 xs) = connects1 (NonEmpty.reverse (fmap transpose xs))
+"NonEmpty.transpose/overlays1" forall xs. transpose (overlays1 xs) = overlays1 (fmap transpose xs)
+"NonEmpty.transpose/connects1" forall xs. transpose (connects1 xs) = connects1 (NonEmpty.reverse (fmap transpose xs))
  #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
