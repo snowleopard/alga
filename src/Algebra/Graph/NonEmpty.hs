@@ -654,6 +654,7 @@ mesh1 xs ys = path1 xs `box` path1 ys
 torus1 :: NonEmpty a -> NonEmpty b -> NonEmptyGraph (a, b)
 torus1 xs ys = stars1 $ fmap (\((a1,a2),(b1,b2)) -> ((a1, b1), [(a1, b2), (a2, b1)])) $ liftM2 (,) (pairs1 xs) (pairs1 ys)
 
+-- | Auxiliary function for 'mesh1' and 'torus1'
 pairs1 :: NonEmpty a -> NonEmpty (a, a)
 pairs1 as@(x:|xs) = NonEmpty.zip as $ maybe (x :| []) (\(y :| ys) -> y :| (ys ++ [x])) $ NonEmpty.nonEmpty xs
 

@@ -751,10 +751,6 @@ tree (Node x f ) = star x (map rootLabel f)
 forest :: Tree.Forest a -> Graph a
 forest = overlays . map tree
 
-pairs :: [a] -> [(a, a)]
-pairs [] = []
-pairs as@(x:xs) = zip as (xs ++ [x])
-
 -- | Construct a /mesh graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
 -- lengths of the given lists.
@@ -794,6 +790,11 @@ mesh xs  ys  = stars $  [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ipxs, (
 -- @
 torus :: [a] -> [b] -> Graph (a, b)
 torus xs ys = stars [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- pairs xs, (b1, b2) <- pairs ys ]
+
+-- | Auxiliary function for 'mesh' and 'torus'
+pairs :: [a] -> [(a, a)]
+pairs [] = []
+pairs as@(x:xs) = zip as (xs ++ [x])
 
 -- | Construct a /De Bruijn graph/ of a given non-negative dimension using symbols
 -- from a given alphabet.
