@@ -33,6 +33,10 @@ import GHC.Exts
 import qualified Algebra.Graph.Class as C
 import qualified Data.Set as Set
 
+class Semilattice a where
+    zero  :: a
+    (|+|) :: a -> a -> a
+
 -- This class has usual semiring laws:
 --
 --            x |+| y == x |+| y
@@ -49,10 +53,8 @@ import qualified Data.Set as Set
 --    x |*| (y |+| z) == x |*| y |+| x |*| z
 --    (x |+| y) |*| z == x |*| z |+| y |*| z
 --
-class Dioid a where
-    zero  :: a
+class Semilattice a => Dioid a where
     one   :: a
-    (|+|) :: a -> a -> a
     (|*|) :: a -> a -> a
 
 infixl 6 |+|
@@ -61,17 +63,17 @@ infixl 7 |*|
 -- Type variable e stands for edge labels
 data Graph e a = Empty
                | Vertex a
-               | LConnect e (Graph e a) (Graph e a)
+               | Connect e (Graph e a) (Graph e a)
                deriving (Foldable, Functor, Show, Traversable)
 
-overlay :: Dioid e => Graph e a -> Graph e a -> Graph e a
-overlay = LConnect zero
+overlay :: Semilattice e => Graph e a -> Graph e a -> Graph e a
+overlay = Connect zero
 
 connect :: Dioid e => Graph e a -> Graph e a -> Graph e a
-connect = LConnect one
+connect = Connect one
 
 lconnect :: e -> Graph e a -> Graph e a -> Graph e a
-lconnect = LConnect
+lconnect = Connect
 
 -- Convenient ternary-ish operator x -<e>- y, for example:
 -- x = Vertex "x"
@@ -81,7 +83,7 @@ lconnect = LConnect
 g -< e = (g, e)
 
 (>-) :: (Graph e a, e) -> Graph e a -> Graph e a
-(g, e) >- h = LConnect e g h
+(g, e) >- h = Connect e g h
 
 infixl 5 -<
 infixl 5 >-
@@ -94,18 +96,20 @@ instance Dioid e => C.Graph (Graph e a) where
     overlay = overlay
     connect = connect
 
-edgeLabel :: (Eq a, Dioid e) => a -> a -> Graph e a -> e
-edgeLabel _ _ Empty            = zero
-edgeLabel _ _ (Vertex _)       = zero
-edgeLabel x y (LConnect e g h) = edgeLabel x y g |+| edgeLabel x y h |+| new
+edgeLabel :: (Eq a, Semilattice e) => a -> a -> Graph e a -> e
+edgeLabel _ _ Empty           = zero
+edgeLabel _ _ (Vertex _)      = zero
+edgeLabel x y (Connect e g h) = edgeLabel x y g |+| edgeLabel x y h |+| new
   where
     new | x `elem` g && y `elem` h = e
         | otherwise                = zero
 
-instance Dioid Bool where
+instance Semilattice Bool where
     zero  = False
-    one   = True
     (|+|) = (||)
+
+instance Dioid Bool where
+    one   = True
     (|*|) = (&&)
 
 -- TODO: Prove that this is identical to Algebra.Graph
@@ -131,25 +135,29 @@ instance (Ord a, Num a) => Num (Distance a) where
 
     abs = id
 
-instance (Num a, Ord a) => Dioid (Distance a) where
+instance Ord a => Semilattice (Distance a) where
     zero = Infinite
-    one  = Finite 0
 
     Infinite |+| x = x
     x |+| Infinite = x
     Finite x |+| Finite y = Finite (min x y)
 
+instance (Num a, Ord a) => Dioid (Distance a) where
+    one  = Finite 0
+
     Infinite |*| _ = Infinite
     _ |*| Infinite = Infinite
     Finite x |*| Finite y = Finite (x + y)
 
-instance (Num a, Ord a) => Dioid (Maybe a) where
+instance Ord a => Semilattice (Maybe a) where
     zero = Nothing
-    one  = Just 0
 
     Nothing |+| x = x
     x |+| Nothing = x
     Just x |+| Just y = Just (min x y)
+
+instance (Num a, Ord a) => Dioid (Maybe a) where
+    one  = Just 0
 
     Nothing |*| _ = Nothing
     _ |*| Nothing = Nothing
@@ -164,13 +172,15 @@ instance (Bounded a, Enum a, Ord a) => IsList (Set a) where
     toList (Set s)  = Set.toList s
     toList Universe = [minBound..maxBound]
 
-instance Ord a => Dioid (Set a) where
+instance Ord a => Semilattice (Set a) where
     zero = Set Set.empty
-    one  = Universe
 
     Universe |+| _  = Universe
     _ |+| Universe  = Universe
     Set x |+| Set y = Set (Set.union x y)
+
+instance Ord a => Dioid (Set a) where
+    one  = Universe
 
     Universe |*| x  = x
     x |*| Universe  = x
