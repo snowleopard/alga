@@ -28,7 +28,7 @@ module Algebra.Graph.Labelled (
 
 import Prelude ()
 import Prelude.Compat
-import GHC.Exts
+import Data.Set (Set)
 
 import qualified Algebra.Graph.Class as C
 import qualified Data.Set as Set
@@ -62,7 +62,7 @@ class Semilattice a => Dioid a where
 infixl 6 \/
 infixl 7 /\
 
--- Type variable e stands for edge labels
+-- Type variable @e@ stands for edge labels.
 data Graph e a = Empty
                | Vertex a
                | Connect e (Graph e a) (Graph e a)
@@ -90,7 +90,6 @@ g -< e = (g, e)
 infixl 5 -<
 infixl 5 >-
 
--- TODO: Prove the C.Graph laws
 instance Dioid e => C.Graph (Graph e a) where
     type Vertex (Graph e a) = a
     empty   = Empty
@@ -107,14 +106,13 @@ edgeLabel x y (Connect e g h) = edgeLabel x y g \/ edgeLabel x y h \/ new
         | otherwise                = zero
 
 instance Semilattice Bool where
-    zero  = False
+    zero = False
     (\/) = (||)
 
 instance Dioid Bool where
-    one   = True
+    one  = True
     (/\) = (&&)
 
--- TODO: Prove that this is identical to Algebra.Graph
 type UnlabelledGraph a = Graph Bool a
 
 data Distance a = Finite a | Infinite deriving (Eq, Ord, Show)
@@ -151,39 +149,6 @@ instance (Num a, Ord a) => Dioid (Distance a) where
     _ /\ Infinite = Infinite
     Finite x /\ Finite y = Finite (x + y)
 
-instance Ord a => Semilattice (Maybe a) where
-    zero = Nothing
-
-    Nothing \/ x = x
-    x \/ Nothing = x
-    Just x \/ Just y = Just (min x y)
-
-instance (Num a, Ord a) => Dioid (Maybe a) where
-    one  = Just 0
-
-    Nothing /\ _ = Nothing
-    _ /\ Nothing = Nothing
-    Just x /\ Just y = Just (x + y)
-
-data Set a = Set (Set.Set a) | Universe
-
-instance (Bounded a, Enum a, Ord a) => IsList (Set a) where
-    type Item (Set a) = a
-    fromList = Set . Set.fromList
-
-    toList (Set s)  = Set.toList s
-    toList Universe = [minBound..maxBound]
-
 instance Ord a => Semilattice (Set a) where
-    zero = Set Set.empty
-
-    Universe \/ _  = Universe
-    _ \/ Universe  = Universe
-    Set x \/ Set y = Set (Set.union x y)
-
-instance Ord a => Dioid (Set a) where
-    one  = Universe
-
-    Universe /\ x  = x
-    x /\ Universe  = x
-    Set x /\ Set y = Set (Set.intersection x y)
+    zero = Set.empty
+    (\/) = Set.union
