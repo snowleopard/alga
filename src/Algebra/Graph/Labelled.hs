@@ -33,32 +33,34 @@ import GHC.Exts
 import qualified Algebra.Graph.Class as C
 import qualified Data.Set as Set
 
+-- | A bounded join semilattice, satisfying the following laws:
+--
+--   Commutativity:         x \/ y == y \/ x
+--   Associativity:  x \/ (y \/ z) == (x \/ y) \/ z
+--   Identity:           x \/ zero == x
+--   Idempotence:           x \/ x == x
+--
 class Semilattice a where
-    zero  :: a
-    (|+|) :: a -> a -> a
+    zero :: a
+    (\/) :: a -> a -> a
 
--- This class has usual semiring laws:
+-- | Dioid is an idempotent semiring:
 --
---            x |+| y == x |+| y
---    x |+| (y |+| z) == (x |+| y) |+| z
---         x |+| zero == x
---            x |+| x == x
+--     Associativity:  x /\ (y /\ z) == (x /\ y) /\ z
+--     Identity:            x /\ one == x
+--                          one /\ x == x
+--     Annihilating zero:  x /\ zero == zero
+--                         zero /\ x == zero
 --
---    x |*| (y |*| z) == (x |*| y) |*| z
---         x |*| zero == zero
---         zero |*| x == zero
---          x |*| one == x
---          one |*| x == x
---
---    x |*| (y |+| z) == x |*| y |+| x |*| z
---    (x |+| y) |*| z == x |*| z |+| y |*| z
+--     Distributivity: x /\ (y \/ z) == x /\ y \/ x /\ z
+--                     (x \/ y) /\ z == x /\ z \/ y /\ z
 --
 class Semilattice a => Dioid a where
-    one   :: a
-    (|*|) :: a -> a -> a
+    one  :: a
+    (/\) :: a -> a -> a
 
-infixl 6 |+|
-infixl 7 |*|
+infixl 6 \/
+infixl 7 /\
 
 -- Type variable e stands for edge labels
 data Graph e a = Empty
@@ -99,18 +101,18 @@ instance Dioid e => C.Graph (Graph e a) where
 edgeLabel :: (Eq a, Semilattice e) => a -> a -> Graph e a -> e
 edgeLabel _ _ Empty           = zero
 edgeLabel _ _ (Vertex _)      = zero
-edgeLabel x y (Connect e g h) = edgeLabel x y g |+| edgeLabel x y h |+| new
+edgeLabel x y (Connect e g h) = edgeLabel x y g \/ edgeLabel x y h \/ new
   where
     new | x `elem` g && y `elem` h = e
         | otherwise                = zero
 
 instance Semilattice Bool where
     zero  = False
-    (|+|) = (||)
+    (\/) = (||)
 
 instance Dioid Bool where
     one   = True
-    (|*|) = (&&)
+    (/\) = (&&)
 
 -- TODO: Prove that this is identical to Algebra.Graph
 type UnlabelledGraph a = Graph Bool a
@@ -138,30 +140,30 @@ instance (Ord a, Num a) => Num (Distance a) where
 instance Ord a => Semilattice (Distance a) where
     zero = Infinite
 
-    Infinite |+| x = x
-    x |+| Infinite = x
-    Finite x |+| Finite y = Finite (min x y)
+    Infinite \/ x = x
+    x \/ Infinite = x
+    Finite x \/ Finite y = Finite (min x y)
 
 instance (Num a, Ord a) => Dioid (Distance a) where
     one  = Finite 0
 
-    Infinite |*| _ = Infinite
-    _ |*| Infinite = Infinite
-    Finite x |*| Finite y = Finite (x + y)
+    Infinite /\ _ = Infinite
+    _ /\ Infinite = Infinite
+    Finite x /\ Finite y = Finite (x + y)
 
 instance Ord a => Semilattice (Maybe a) where
     zero = Nothing
 
-    Nothing |+| x = x
-    x |+| Nothing = x
-    Just x |+| Just y = Just (min x y)
+    Nothing \/ x = x
+    x \/ Nothing = x
+    Just x \/ Just y = Just (min x y)
 
 instance (Num a, Ord a) => Dioid (Maybe a) where
     one  = Just 0
 
-    Nothing |*| _ = Nothing
-    _ |*| Nothing = Nothing
-    Just x |*| Just y = Just (x + y)
+    Nothing /\ _ = Nothing
+    _ /\ Nothing = Nothing
+    Just x /\ Just y = Just (x + y)
 
 data Set a = Set (Set.Set a) | Universe
 
@@ -175,13 +177,13 @@ instance (Bounded a, Enum a, Ord a) => IsList (Set a) where
 instance Ord a => Semilattice (Set a) where
     zero = Set Set.empty
 
-    Universe |+| _  = Universe
-    _ |+| Universe  = Universe
-    Set x |+| Set y = Set (Set.union x y)
+    Universe \/ _  = Universe
+    _ \/ Universe  = Universe
+    Set x \/ Set y = Set (Set.union x y)
 
 instance Ord a => Dioid (Set a) where
     one  = Universe
 
-    Universe |*| x  = x
-    x |*| Universe  = x
-    Set x |*| Set y = Set (Set.intersection x y)
+    Universe /\ x  = x
+    x /\ Universe  = x
+    Set x /\ Set y = Set (Set.intersection x y)
