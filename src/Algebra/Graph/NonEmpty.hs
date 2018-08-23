@@ -637,7 +637,27 @@ tree (Tree.Node x f) = overlays1 $ star x (map Tree.rootLabel f) :| map tree f
 --                                                     , ((3,\'a\'),(3,\'b\')) ])
 -- @
 mesh1 :: NonEmpty a -> NonEmpty b -> NonEmptyGraph (a, b)
-mesh1 xs ys = path1 xs `box` path1 ys
+mesh1 xx@(x:|xs) yy@(y:|ys) =
+  case NonEmpty.nonEmpty ipxs of
+    Nothing ->
+      case NonEmpty.nonEmpty ipys of
+        Nothing    -> vertex (x,y)
+        Just ipys' ->
+          stars1 $ fmap (\(y1,y2) -> ((x,y1), [(x,y2)]) ) ipys'
+    Just ipxs' ->
+      case NonEmpty.nonEmpty ipys of
+        Nothing ->
+          stars1 $ fmap (\(x1,x2) -> ((x1,y), [(x2,y)]) ) ipxs'
+        Just ipys' ->
+          stars1 $
+            appendNonEmpty (fmap (\((a1,a2),(b1,b2)) -> ((a1, b1), [(a1, b2), (a2, b1)])) $ liftM2 (,) ipxs' ipys') $
+              [ ((lx,y1), [(lx,y2)]) | (y1,y2) <- ipys]
+           ++ [ ((x1,ly), [(x2,ly)]) | (x1,x2) <- ipxs]
+  where
+    lx = last xs
+    ly = last ys
+    ipxs = NonEmpty.init (pairs1 xx)
+    ipys = NonEmpty.init (pairs1 yy)
 
 -- | Construct a /torus graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -656,7 +676,11 @@ torus1 xs ys = stars1 $ fmap (\((a1,a2),(b1,b2)) -> ((a1, b1), [(a1, b2), (a2, b
 
 -- | Auxiliary function for 'mesh1' and 'torus1'
 pairs1 :: NonEmpty a -> NonEmpty (a, a)
-pairs1 as@(x:|xs) = NonEmpty.zip as $ maybe (x :| []) (\(y :| ys) -> y :| (ys ++ [x])) $ NonEmpty.nonEmpty xs
+pairs1 as@(x:|xs) = NonEmpty.zip as $ maybe (x :| []) (`appendNonEmpty` [x]) $ NonEmpty.nonEmpty xs
+
+-- | Append a list to a non-empty one
+appendNonEmpty :: NonEmpty a -> [a] -> NonEmpty a
+appendNonEmpty (w:|ws) zs = w :| (ws++zs)
 
 -- | Remove a vertex from a given graph. Returns @Nothing@ if the resulting
 -- graph is empty.
