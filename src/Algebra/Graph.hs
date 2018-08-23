@@ -629,8 +629,7 @@ toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 path :: [a] -> Graph a
 path xs = case xs of []     -> empty
                      [x]    -> vertex x
-                     (y:l@(yy:ys)) ->
-                       foldr (overlay . uncurry edge) (edge y yy) $ zip l ys
+                     (_:ys) -> edges (zip xs ys)
 
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
