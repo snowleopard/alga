@@ -763,7 +763,17 @@ forest = overlays . map tree
 --                           , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\')), ((3,\'a\'),(3,\'b\')) ]
 -- @
 mesh :: [a] -> [b] -> Graph (a, b)
-mesh xs ys = path xs `box` path ys
+mesh []  _   = empty
+mesh _   []  = empty
+mesh [x] [y] = vertex (x, y)
+mesh xs  ys  = stars $  [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ipxs, (b1, b2) <- ipys ]
+                     ++ [ ((lx,y1), [(lx,y2)]) | (y1,y2) <- ipys]
+                     ++ [ ((x1,ly), [(x2,ly)]) | (x1,x2) <- ipxs]
+  where
+    lx = last xs
+    ly = last ys
+    ipxs = init (pairs xs)
+    ipys = init (pairs ys)
 
 -- | Construct a /torus graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -778,7 +788,12 @@ mesh xs ys = path xs `box` path ys
 --                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus :: [a] -> [b] -> Graph (a, b)
-torus xs ys = circuit xs `box` circuit ys
+torus xs ys = stars [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- pairs xs, (b1, b2) <- pairs ys ]
+
+-- | Auxiliary function for 'mesh' and 'torus'
+pairs :: [a] -> [(a, a)]
+pairs [] = []
+pairs as@(x:xs) = zip as (xs ++ [x])
 
 -- | Construct a /De Bruijn graph/ of a given non-negative dimension using symbols
 -- from a given alphabet.

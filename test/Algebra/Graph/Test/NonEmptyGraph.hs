@@ -500,6 +500,11 @@ testGraphNonEmpty = do
                                                                       , ((2,'a'),(3,'a')), ((2,'b'),(3,'b'))
                                                                       , ((3,'a'),(3 :: Int,'b')) ])
 
+    test "size (mesh xs ys)               == max 1 (3 * length xs * length ys - length xs - length ys -1)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
+        let xs = NonEmpty.fromList (getNonEmpty xs')
+            ys = NonEmpty.fromList (getNonEmpty ys')
+         in size (mesh1 xs ys) == max 1 (3 * length xs * length ys - length xs - length ys -1)
+
     putStrLn $ "\n============ Graph.NonEmpty.torus1 ============"
     test "torus1 (x :| [])  (y :| [])    == edge (x, y) (x, y)" $ \(x :: Int) (y :: Int) ->
           torus1 (x :| [])  (y :| [])    == edge (x, y) (x, y)
@@ -514,6 +519,11 @@ testGraphNonEmpty = do
                                                    , ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
                                                    , ((2,'a'),(1,'a')), ((2,'a'),(2,'b'))
                                                    , ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ])
+
+    test "size (torus1 xs ys)            == max 1 (3 * length xs * length ys)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
+        let xs = NonEmpty.fromList (getNonEmpty xs')
+            ys = NonEmpty.fromList (getNonEmpty ys')
+        in size (torus1 xs ys) == max 1 (3 * length xs * length ys)
 
     putStrLn $ "\n============ Graph.NonEmpty.removeVertex1 ============"
     test "removeVertex1 x (vertex x)          == Nothing" $ \(x :: Int) ->

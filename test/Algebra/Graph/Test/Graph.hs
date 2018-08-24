@@ -53,38 +53,44 @@ testGraph = do
          (x + y === x * y)    == False
 
     putStrLn "\n============ Graph.mesh ============"
-    test "mesh xs     []   == empty" $ \xs ->
-          mesh xs     []   == (empty :: Graph (Int, Int))
+    test "mesh xs     []    == empty" $ \xs ->
+          mesh xs     []    == (empty :: Graph (Int, Int))
 
-    test "mesh []     ys   == empty" $ \ys ->
-          mesh []     ys   == (empty :: Graph (Int, Int))
+    test "mesh []     ys    == empty" $ \ys ->
+          mesh []     ys    == (empty :: Graph (Int, Int))
 
-    test "mesh [x]    [y]  == vertex (x, y)" $ \(x :: Int) (y :: Int) ->
-          mesh [x]    [y]  == vertex (x, y)
+    test "mesh [x]    [y]   == vertex (x, y)" $ \(x :: Int) (y :: Int) ->
+          mesh [x]    [y]   == vertex (x, y)
 
-    test "mesh xs     ys   == box (path xs) (path ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
-          mesh xs     ys   == box (path xs) (path ys)
+    test "mesh xs     ys    == box (path xs) (path ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
+          mesh xs     ys    == box (path xs) (path ys)
 
-    test "mesh [1..3] \"ab\" == <correct result>" $
-          mesh [1..3]  "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
+    test "mesh [1..3] \"ab\"  == <correct result>" $
+          mesh [1..3]  "ab"   == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
                                     , ((2,'a'),(3,'a')), ((2,'b'),(3,'b')), ((3,'a'),(3 :: Int,'b')) ]
+    test "size (mesh xs ys) == max 1 (3 * length xs * length ys - length xs - length ys -1)" $ \(xs :: [Int]) (ys :: [Int]) ->
+          size (mesh xs ys) == max 1 (3 * length xs * length ys - length xs - length ys -1)
 
     putStrLn "\n============ Graph.torus ============"
-    test "torus xs    []   == empty" $ \xs ->
-          torus xs    []   == (empty :: Graph (Int, Int))
+    test "torus xs     []    == empty" $ \xs ->
+          torus xs     []    == (empty :: Graph (Int, Int))
 
-    test "torus []    ys   == empty" $ \ys ->
-          torus []    ys   == (empty :: Graph (Int, Int))
+    test "torus []     ys    == empty" $ \ys ->
+          torus []     ys    == (empty :: Graph (Int, Int))
 
-    test "torus [x]   [y]  == edge (x, y) (x, y)" $ \(x :: Int) (y :: Int) ->
-          torus [x]   [y]  == edge (x, y) (x, y)
+    test "torus [x]    [y]   == edge (x, y) (x, y)" $ \(x :: Int) (y :: Int) ->
+          torus [x]    [y]   == edge (x, y) (x, y)
 
-    test "torus xs    ys   == box (circuit xs) (circuit ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
-          torus xs    ys   == box (circuit xs) (circuit ys)
+    test "torus xs     ys    == box (circuit xs) (circuit ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
+          torus xs     ys    == box (circuit xs) (circuit ys)
 
-    test "torus [1,2] \"ab\" == <correct result>" $
-          torus [1,2]  "ab"  == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
+    test "torus [1,2]  \"ab\"  == <correct result>" $
+          torus [1,2]   "ab"   == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
                                       , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ]
+
+    test "size (torus xs ys) == max 1 (3 * length xs * length ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
+          size (torus xs ys) == max 1 (3 * length xs * length ys)
+
 
     putStrLn "\n============ Graph.deBruijn ============"
     test "          deBruijn 0 xs               == edge [] []" $ \(xs :: [Int]) ->
