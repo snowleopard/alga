@@ -68,8 +68,8 @@ testGraph = do
     test "mesh [1..3] \"ab\"  == <correct result>" $
           mesh [1..3]  "ab"   == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
                                     , ((2,'a'),(3,'a')), ((2,'b'),(3,'b')), ((3,'a'),(3 :: Int,'b')) ]
-    test "size (mesh xs ys) <= max 1 (3*(length xs - 1)*(length ys - 1) + 2*(length xs + length ys - 2))" $ \(xs :: [Int]) (ys :: [Int]) ->
-          size (mesh xs ys) <= max 1 (3*(length xs - 1)*(length ys - 1) + 2*(length xs + length ys - 2))
+    test "size (mesh xs ys) == max 1 (3*(length xs - 1)*(length ys - 1) + 2*(length xs + length ys - 2))" $ \(xs :: [Int]) (ys :: [Int]) ->
+          size (mesh xs ys) == max 1 (3*(length xs - 1)*(length ys - 1) + 2*(length xs + length ys - 2))
 
     putStrLn "\n============ Graph.torus ============"
     test "torus xs     []    == empty" $ \xs ->
@@ -88,8 +88,8 @@ testGraph = do
           torus [1,2]   "ab"   == edges [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a')), ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
                                       , ((2,'a'),(1,'a')), ((2,'a'),(2,'b')), ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ]
 
-    test "size (torus xs ys) <= max 1 (3 * (length xs) * (length ys))" $ \(xs :: [Int]) (ys :: [Int]) ->
-          size (torus xs ys) <= max 1 (3 * length xs * length ys)
+    test "size (torus xs ys) == max 1 (3 * (length xs) * (length ys))" $ \(xs :: [Int]) (ys :: [Int]) ->
+          size (torus xs ys) == max 1 (3 * length xs * length ys)
 
 
     putStrLn "\n============ Graph.deBruijn ============"
