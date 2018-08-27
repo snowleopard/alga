@@ -21,6 +21,7 @@ module Algebra.Graph.Labelled (
 
     -- * Distances
     Distance (..),
+    Set(..),
 
     -- * Operations
     edgeLabel

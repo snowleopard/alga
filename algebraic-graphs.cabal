@@ -68,6 +68,8 @@ library
                         Algebra.Graph.IntAdjacencyMap.Internal,
                         Algebra.Graph.Internal,
                         Algebra.Graph.Labelled,
+                        Algebra.Graph.LabelledAdjacencyMap,
+                        Algebra.Graph.LabelledAdjacencyMap.Internal,
                         Algebra.Graph.NonEmpty,
                         Algebra.Graph.Relation,
                         Algebra.Graph.Relation.Internal,
@@ -117,6 +119,7 @@ test-suite test-alga
                         Algebra.Graph.Test.Graph,
                         Algebra.Graph.Test.IntAdjacencyMap,
                         Algebra.Graph.Test.Internal,
+                        Algebra.Graph.Test.LabelledAdjacencyMap,
                         Algebra.Graph.Test.NonEmptyGraph,
                         Algebra.Graph.Test.Relation
     build-depends:      algebraic-graphs,

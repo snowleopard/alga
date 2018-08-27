@@ -19,8 +19,10 @@ import Data.Set (Set)
 import Data.Tree
 
 import Algebra.Graph.Class hiding (toGraph)
+import Algebra.Graph.Labelled (Dioid(..))
 
 import qualified Algebra.Graph.AdjacencyMap    as AdjacencyMap
+import qualified Algebra.Graph.LabelledAdjacencyMap    as LabelledAdjacencyMap
 import qualified Algebra.Graph.Class           as Class
 import qualified Algebra.Graph.Fold            as Fold
 import qualified Algebra.Graph                 as Graph
@@ -343,3 +345,44 @@ instance Ord a => GraphAPI (Relation.Relation a) where
     transpose         = Relation.transpose
     gmap              = Relation.gmap
     induce            = Relation.induce
+
+instance (Ord a, Dioid e) => GraphAPI (LabelledAdjacencyMap.LabelledAdjacencyMap a e) where
+    -- edge              = LabelledAdjacencyMap.edge
+    -- vertices          = LabelledAdjacencyMap.vertices
+    -- edges             = LabelledAdjacencyMap.edges
+    -- overlays          = LabelledAdjacencyMap.overlays
+    -- connects          = LabelledAdjacencyMap.connects
+    -- fromAdjacencyList = LabelledAdjacencyMap.fromAdjacencyList
+    -- isSubgraphOf      = LabelledAdjacencyMap.isSubgraphOf
+    -- isEmpty           = LabelledAdjacencyMap.isEmpty
+    -- hasVertex         = LabelledAdjacencyMap.hasVertex
+    -- hasEdge           = LabelledAdjacencyMap.hasEdge
+    -- vertexCount       = LabelledAdjacencyMap.vertexCount
+    -- edgeCount         = LabelledAdjacencyMap.edgeCount
+    -- vertexList        = LabelledAdjacencyMap.vertexList
+    -- edgeList          = LabelledAdjacencyMap.edgeList
+    -- adjacencyList     = LabelledAdjacencyMap.adjacencyList
+    -- vertexSet         = LabelledAdjacencyMap.vertexSet
+    -- vertexIntSet      = IntSet.fromAscList . Set.toAscList . LabelledAdjacencyMap.vertexSet
+    -- edgeSet           = LabelledAdjacencyMap.edgeSet
+    -- postSet           = LabelledAdjacencyMap.postSet
+    -- path              = LabelledAdjacencyMap.path
+    -- circuit           = LabelledAdjacencyMap.circuit
+    -- clique            = LabelledAdjacencyMap.clique
+    -- biclique          = LabelledAdjacencyMap.biclique
+    -- star              = LabelledAdjacencyMap.star
+    -- starTranspose     = LabelledAdjacencyMap.starTranspose
+    -- tree              = LabelledAdjacencyMap.tree
+    -- forest            = LabelledAdjacencyMap.forest
+    -- removeVertex      = LabelledAdjacencyMap.removeVertex
+    -- removeEdge        = LabelledAdjacencyMap.removeEdge
+    -- replaceVertex     = LabelledAdjacencyMap.replaceVertex
+    -- mergeVertices     = LabelledAdjacencyMap.mergeVertices
+    -- transpose         = LabelledAdjacencyMap.transpose
+    -- gmap              = LabelledAdjacencyMap.gmap
+    -- induce            = LabelledAdjacencyMap.induce
+    -- dfsForest         = LabelledAdjacencyMap.dfsForest
+    -- dfsForestFrom     = LabelledAdjacencyMap.dfsForestFrom
+    -- dfs               = LabelledAdjacencyMap.dfs
+    -- topSort           = LabelledAdjacencyMap.topSort
+    -- isTopSort         = LabelledAdjacencyMap.isTopSort
