@@ -20,17 +20,16 @@ module Algebra.Graph.Relation (
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
-    fromAdjacencyList,
 
     -- * Relations on graphs
     isSubgraphOf,
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    vertexSet, vertexIntSet, edgeSet, preSet, postSet,
+    adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, starTranspose, tree, forest,
+    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
@@ -42,38 +41,14 @@ module Algebra.Graph.Relation (
 import Prelude ()
 import Prelude.Compat
 
+import Data.Tree
 import Data.Tuple
 
 import Algebra.Graph.Relation.Internal
 
-import qualified Algebra.Graph.Class as C
-import qualified Data.IntSet         as IntSet
-import qualified Data.Set            as Set
-import qualified Data.Tree           as Tree
-
--- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
---
--- @
--- 'isEmpty'     empty == True
--- 'hasVertex' x empty == False
--- 'vertexCount' empty == 0
--- 'edgeCount'   empty == 0
--- @
-empty :: Ord a => Relation a
-empty = C.empty
-
--- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
---
--- @
--- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
--- 'vertexCount' (vertex x) == 1
--- 'edgeCount'   (vertex x) == 0
--- @
-vertex :: Ord a => a -> Relation a
-vertex = C.vertex
+import qualified Data.IntSet as IntSet
+import qualified Data.Set    as Set
+import qualified Data.Tree   as Tree
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -86,45 +61,7 @@ vertex = C.vertex
 -- 'vertexCount' (edge 1 2) == 2
 -- @
 edge :: Ord a => a -> a -> Relation a
-edge = C.edge
-
--- | /Overlay/ two graphs. This is a commutative, associative and idempotent
--- operation with the identity 'empty'.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (overlay x y) >= 'vertexCount' x
--- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (overlay x y) >= 'edgeCount' x
--- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
--- 'vertexCount' (overlay 1 2) == 2
--- 'edgeCount'   (overlay 1 2) == 0
--- @
-overlay :: Ord a => Relation a -> Relation a -> Relation a
-overlay = C.overlay
-
--- | /Connect/ two graphs. This is an associative operation with the identity
--- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
--- number of edges in the resulting graph is quadratic with respect to the number
--- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
---
--- @
--- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (connect x y) >= 'vertexCount' x
--- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (connect x y) >= 'edgeCount' x
--- 'edgeCount'   (connect x y) >= 'edgeCount' y
--- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
--- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
--- 'vertexCount' (connect 1 2) == 2
--- 'edgeCount'   (connect 1 2) == 1
--- @
-connect :: Ord a => Relation a -> Relation a -> Relation a
-connect = C.connect
+edge x y = Relation (Set.fromList [x, y]) (Set.singleton (x, y))
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -162,7 +99,7 @@ edges es = Relation (Set.fromList $ uncurry (++) $ unzip es) (Set.fromList es)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: Ord a => [Relation a] -> Relation a
-overlays = C.overlays
+overlays xs = Relation (Set.unions $ map domain xs) (Set.unions $ map relation xs)
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -175,22 +112,7 @@ overlays = C.overlays
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: Ord a => [Relation a] -> Relation a
-connects = C.connects
-
--- | Construct a graph from an adjacency list.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- fromAdjacencyList []                                  == 'empty'
--- fromAdjacencyList [(x, [])]                           == 'vertex' x
--- fromAdjacencyList [(x, [y])]                          == 'edge' x y
--- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
--- @
-fromAdjacencyList :: Ord a => [(a, [a])] -> Relation a
-fromAdjacencyList as = Relation (Set.fromList vs) (Set.fromList es)
-  where
-    vs = concatMap (uncurry (:)) as
-    es = [ (x, y) | (x, ys) <- as, y <- ys ]
+connects = foldr connect empty
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -329,7 +251,24 @@ vertexIntSet = IntSet.fromAscList . vertexList
 edgeSet :: Relation a -> Set.Set (a, a)
 edgeSet = relation
 
--- | The /preset/ (here 'preSet') of an element @x@ is the set of elements that are related to
+-- | The sorted /adjacency list/ of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- adjacencyList 'empty'          == []
+-- adjacencyList ('vertex' x)     == [(x, [])]
+-- adjacencyList ('edge' 1 2)     == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
+-- 'stars' . adjacencyList        == id
+-- @
+adjacencyList :: Eq a => Relation a -> [(a, [a])]
+adjacencyList r = go (Set.toAscList $ domain r) (Set.toAscList $ relation r)
+  where
+    go [] _      = []
+    go vs []     = map ((,[])) vs
+    go (x:vs) es = let (ys, zs) = span ((==x) . fst) es in (x, map snd ys) : go vs zs
+
+-- | The /preset/ of an element @x@ is the set of elements that are related to
 -- it on the /left/, i.e. @preSet x == { a | aRx }@. In the context of directed
 -- graphs, this corresponds to the set of /direct predecessors/ of vertex @x@.
 -- Complexity: /O(n + m)/ time and /O(n)/ memory.
@@ -343,7 +282,7 @@ edgeSet = relation
 preSet :: Ord a => a -> Relation a -> Set.Set a
 preSet x = Set.mapMonotonic fst . Set.filter ((== x) . snd) . relation
 
--- | The /postset/ (here 'postSet') of an element @x@ is the set of elements that are related to
+-- | The /postset/ of an element @x@ is the set of elements that are related to
 -- it on the /right/, i.e. @postSet x == { a | xRa }@. In the context of directed
 -- graphs, this corresponds to the set of /direct successors/ of vertex @x@.
 -- Complexity: /O(n + m)/ time and /O(n)/ memory.
@@ -367,7 +306,9 @@ postSet x = Set.mapMonotonic snd . Set.filter ((== x) . fst) . relation
 -- path . 'reverse' == 'transpose' . path
 -- @
 path :: Ord a => [a] -> Relation a
-path = C.path
+path xs = case xs of []     -> empty
+                     [x]    -> vertex x
+                     (_:ys) -> edges (zip xs ys)
 
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -379,7 +320,8 @@ path = C.path
 -- circuit . 'reverse' == 'transpose' . circuit
 -- @
 circuit :: Ord a => [a] -> Relation a
-circuit = C.circuit
+circuit []     = empty
+circuit (x:xs) = path $ [x] ++ xs ++ [x]
 
 -- | The /clique/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -393,7 +335,12 @@ circuit = C.circuit
 -- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: Ord a => [a] -> Relation a
-clique = C.clique
+clique xs = Relation (Set.fromList xs) (fst $ go xs)
+  where
+    go []     = (Set.empty, Set.empty)
+    go (x:xs) = (Set.union res (Set.map (x,) set), Set.insert x set)
+      where
+        (res, set) = go xs
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
@@ -411,6 +358,7 @@ biclique xs ys = Relation (x `Set.union` y) (x `setProduct` y)
     x = Set.fromList xs
     y = Set.fromList ys
 
+-- TODO: Optimise.
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
@@ -421,7 +369,28 @@ biclique xs ys = Relation (x `Set.union` y) (x `setProduct` y)
 -- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: Ord a => a -> [a] -> Relation a
-star = C.star
+star x [] = vertex x
+star x ys = connect (vertex x) (vertices ys)
+
+-- | The /stars/ formed by overlaying a list of 'star's. An inverse of
+-- 'adjacencyList'.
+-- Complexity: /O(L * log(n))/ time, memory and size, where /L/ is the total
+-- size of the input.
+--
+-- @
+-- stars []                      == 'empty'
+-- stars [(x, [])]               == 'vertex' x
+-- stars [(x, [y])]              == 'edge' x y
+-- stars [(x, ys)]               == 'star' x ys
+-- stars                         == 'overlays' . map (uncurry 'star')
+-- stars . 'adjacencyList'         == id
+-- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
+-- @
+stars :: Ord a => [(a, [a])] -> Relation a
+stars as = Relation (Set.fromList vs) (Set.fromList es)
+  where
+    vs = concatMap (uncurry (:)) as
+    es = [ (x, y) | (x, ys) <- as, y <- ys ]
 
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -435,7 +404,8 @@ star = C.star
 -- starTranspose x ys    == 'transpose' ('star' x ys)
 -- @
 starTranspose :: Ord a => a -> [a] -> Relation a
-starTranspose = C.starTranspose
+starTranspose x [] = vertex x
+starTranspose x ys = connect (vertices ys) (vertex x)
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -447,7 +417,9 @@ starTranspose = C.starTranspose
 -- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges' [(1,2), (1,3), (3,4), (3,5)]
 -- @
 tree :: Ord a => Tree.Tree a -> Relation a
-tree = C.tree
+tree (Node x []) = vertex x
+tree (Node x f ) = star x (map rootLabel f)
+    `overlay` forest (filter (not . null . subForest) f)
 
 -- | The /forest graph/ constructed from a given 'Tree.Forest' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -459,7 +431,7 @@ tree = C.tree
 -- forest                                                     == 'overlays' . map 'tree'
 -- @
 forest :: Ord a => Tree.Forest a -> Relation a
-forest = C.forest
+forest = overlays. map tree
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(n + m)/ time.

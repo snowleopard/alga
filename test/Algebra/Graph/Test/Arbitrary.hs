@@ -11,7 +11,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Arbitrary (
     -- * Generators of arbitrary graph instances
-    arbitraryGraph, arbitraryRelation, arbitraryAdjacencyMap, arbitraryIntAdjacencyMap
+    arbitraryGraph, arbitraryRelation, arbitraryAdjacencyMap, arbitraryAdjacencyIntMap
   ) where
 
 import Prelude ()
@@ -27,14 +27,14 @@ import Algebra.Graph.LabelledAdjacencyMap.Internal
 import Algebra.Graph.Export
 import Algebra.Graph.Fold (Fold)
 import Algebra.Graph.Labelled (Dioid)
-import Algebra.Graph.IntAdjacencyMap.Internal
+import Algebra.Graph.AdjacencyIntMap.Internal
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived
 
 import qualified Algebra.Graph.AdjacencyMap    as AdjacencyMap
 import qualified Algebra.Graph.LabelledAdjacencyMap    as LabelledAdjacencyMap
 import qualified Algebra.Graph.Class           as C
-import qualified Algebra.Graph.IntAdjacencyMap as IntAdjacencyMap
+import qualified Algebra.Graph.AdjacencyIntMap as AdjacencyIntMap
 import qualified Algebra.Graph.NonEmpty        as NE
 import qualified Algebra.Graph.Relation        as Relation
 
@@ -81,22 +81,22 @@ instance Arbitrary a => Arbitrary (NE.NonEmptyGraph a) where
 
 -- | Generate an arbitrary 'Relation'.
 arbitraryRelation :: (Arbitrary a, Ord a) => Gen (Relation a)
-arbitraryRelation = Relation.fromAdjacencyList <$> arbitrary
+arbitraryRelation = Relation.stars <$> arbitrary
 
 -- | Generate an arbitrary 'AdjacencyMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
 arbitraryAdjacencyMap :: (Arbitrary a, Ord a) => Gen (AdjacencyMap a)
-arbitraryAdjacencyMap = AdjacencyMap.fromAdjacencyList <$> arbitrary
+arbitraryAdjacencyMap = AdjacencyMap.stars <$> arbitrary
 
 -- | Generate an arbitrary 'LabelledAdjacencyMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
 arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Dioid e) => Gen (LabelledAdjacencyMap a e)
 arbitraryLabelledAdjacencyMap = LabelledAdjacencyMap.fromAdjacencyList <$> arbitrary
 
--- | Generate an arbitrary 'IntAdjacencyMap'. It is guaranteed that the
+-- | Generate an arbitrary 'AdjacencyIntMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
-arbitraryIntAdjacencyMap :: Gen IntAdjacencyMap
-arbitraryIntAdjacencyMap = IntAdjacencyMap.fromAdjacencyList <$> arbitrary
+arbitraryAdjacencyIntMap :: Gen AdjacencyIntMap
+arbitraryAdjacencyIntMap = AdjacencyIntMap.stars <$> arbitrary
 
 -- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
@@ -120,8 +120,8 @@ instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
 instance (Arbitrary a, Ord a, Dioid e) => Arbitrary (LabelledAdjacencyMap a e) where
     arbitrary = arbitraryLabelledAdjacencyMap
 
-instance Arbitrary IntAdjacencyMap where
-    arbitrary = arbitraryIntAdjacencyMap
+instance Arbitrary AdjacencyIntMap where
+    arbitrary = arbitraryAdjacencyIntMap
 
 instance Arbitrary a => Arbitrary (Fold a) where
     arbitrary = arbitraryGraph

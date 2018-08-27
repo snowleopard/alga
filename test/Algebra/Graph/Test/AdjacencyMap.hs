@@ -18,7 +18,6 @@ import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
-import qualified Data.Graph as KL
 import qualified Data.Set   as Set
 
 t :: Testsuite
@@ -34,23 +33,20 @@ testAdjacencyMap = do
     test "Consistency of arbitraryAdjacencyMap" $ \(m :: AI) ->
         consistent m
 
-    test "Consistency of fromAdjacencyList" $ \xs ->
-        consistent (fromAdjacencyList xs :: AI)
-
     testShow              t
     testBasicPrimitives   t
-    testFromAdjacencyList t
+    testFromAdjacencySets t
     testIsSubgraphOf      t
-    testProperties        t
-    testAdjacencyList     t
-    testPostSet           t
+    testToGraph           t
     testGraphFamilies     t
     testTransformations   t
     testDfsForest         t
     testDfsForestFrom     t
     testDfs               t
+    testReachable         t
     testTopSort           t
-    testIsTopSort         t
+    testIsTopSortOf       t
+    testIsAcyclic         t
 
     putStrLn "\n============ AdjacencyMap.scc ============"
     test "scc empty               == empty" $
@@ -70,12 +66,3 @@ testAdjacencyMap = do
                                            , (Set.fromList [1,4], Set.fromList [5]  )
                                            , (Set.fromList [3]  , Set.fromList [1,4])
                                            , (Set.fromList [3]  , Set.fromList [5 :: Int])]
-
-    putStrLn "\n============ AdjacencyMap.Internal.GraphKL ============"
-    test "map (fromVertexKL h) (vertices $ toGraphKL h) == vertexList g"
-      $ \(g :: AI) -> let h = mkGraphKL (adjacencyMap g) in
-          map (fromVertexKL h) (KL.vertices $ toGraphKL h) == vertexList g
-
-    test "map (\\(x, y) -> (fromVertexKL h x, fromVertexKL h y)) (edges $ toGraphKL h) == edgeList g"
-      $ \(g :: AI) -> let h = mkGraphKL (adjacencyMap g) in
-          map ( \(x, y) -> (fromVertexKL h x, fromVertexKL h y)) (KL.edges $ toGraphKL h) == edgeList g

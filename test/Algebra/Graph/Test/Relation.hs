@@ -41,19 +41,12 @@ testRelation = do
     test "Consistency of arbitraryRelation" $ \(m :: RI) ->
         consistent m
 
-    test "Consistency of fromAdjacencyList" $ \xs ->
-        consistent (fromAdjacencyList xs :: RI)
-
-    testShow              t
-    testBasicPrimitives   t
-    testFromAdjacencyList t
-    testIsSubgraphOf      t
-    testProperties        t
-    testAdjacencyList     t
-    testPreSet            t
-    testPostSet           t
-    testGraphFamilies     t
-    testTransformations   t
+    testShow            t
+    testBasicPrimitives t
+    testIsSubgraphOf    t
+    testToGraph         t
+    testGraphFamilies   t
+    testTransformations t
 
     putStrLn "\n============ Relation.compose ============"
     test "compose empty            x                == empty" $ \(x :: RI) ->

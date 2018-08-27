@@ -20,7 +20,9 @@ module Algebra.Graph.Internal (
     List (..),
 
     -- * Data structures for graph traversal
-    Focus, focus, Context (..), context
+    Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, Hit (..),
+
+    foldr1Safe
   ) where
 
 import Prelude ()
@@ -28,8 +30,6 @@ import Prelude.Compat
 
 import Data.Foldable
 import Data.Semigroup
-
-import Algebra.Graph.Class (ToGraph(..))
 
 import qualified GHC.Exts as Exts
 
@@ -77,6 +77,15 @@ instance Monad List where
     return  = pure
     x >>= f = Exts.fromList (toList x >>= toList . f)
 
+-- | The /focus/ of a graph expression is a flattened represenentation of the
+-- subgraph under focus, its context, as well as the list of all encountered
+-- vertices. See 'Algebra.Graph.removeEdge' for a use-case example.
+data Focus a = Focus
+    { ok :: Bool     -- ^ True if focus on the specified subgraph is obtained.
+    , is :: List a   -- ^ Inputs into the focused subgraph.
+    , os :: List a   -- ^ Outputs out of the focused subgraph.
+    , vs :: List a } -- ^ All vertices (leaves) of the graph expression.
+
 -- | Focus on the empty graph.
 emptyFocus :: Focus a
 emptyFocus = Focus False mempty mempty mempty
@@ -97,27 +106,15 @@ connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
     xs = if ok y then vs x else is x
     ys = if ok x then vs y else os y
 
--- | The context of a subgraph comprises the input and output vertices outside
--- the subgraph that are connected to the vertices inside the subgraph.
-data Context a = Context { inputs :: [a], outputs :: [a] }
+-- | An auxiliary data type for 'hasEdge': when searching for an edge, we can hit
+-- its 'Tail', i.e. the source vertex, the whole 'Edge', or 'Miss' it entirely.
+data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
--- | Extract the context from a graph 'Focus'. Returns @Nothing@ if the focus
--- could not be obtained.
-context :: ToGraph g => (ToVertex g -> Bool) -> g -> Maybe (Context (ToVertex g))
-context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
-            | otherwise = Nothing
+-- | A safe version of 'foldr1'
+foldr1Safe :: (a -> a -> a) -> [a] -> Maybe a
+foldr1Safe f = foldr mf Nothing
   where
-    f = focus p g
-
--- | The /focus/ of a graph expression is a flattened represenentation of the
--- subgraph under focus, its context, as well as the list of all encountered
--- vertices. See 'Algebra.Graph.removeEdge' for a use-case example.
-data Focus a = Focus
-    { ok :: Bool     -- ^ True if focus on the specified subgraph is obtained.
-    , is :: List a   -- ^ Inputs into the focused subgraph.
-    , os :: List a   -- ^ Outputs out of the focused subgraph.
-    , vs :: List a } -- ^ All vertices (leaves) of the graph expression.
-
--- | 'Focus' on a specified subgraph.
-focus :: ToGraph g => (ToVertex g -> Bool) -> g -> Focus (ToVertex g)
-focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
+    mf x m = Just (case m of
+                        Nothing -> x
+                        Just y  -> f x y)
+{-# INLINE foldr1Safe #-}

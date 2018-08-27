@@ -3,8 +3,11 @@
 [![Hackage version](https://img.shields.io/hackage/v/algebraic-graphs.svg?label=Hackage)](https://hackage.haskell.org/package/algebraic-graphs) [![Linux & OS X status](https://img.shields.io/travis/snowleopard/alga/master.svg?label=Linux%20%26%20OS%20X)](https://travis-ci.org/snowleopard/alga) [![Windows status](https://img.shields.io/appveyor/ci/snowleopard/alga/master.svg?label=Windows)](https://ci.appveyor.com/project/snowleopard/alga)
 
 **Alga** is a library for algebraic construction and manipulation of graphs in Haskell. See
-[this paper](https://github.com/snowleopard/alga-paper) for the motivation behind the library, the underlying
-theory and implementation details.
+[this Haskell Symposium paper](https://github.com/snowleopard/alga-paper) and the
+corresponding [talk](https://www.youtube.com/watch?v=EdQGLewU-8k) for the motivation
+behind the library, the underlying theory and implementation details. There is also a
+[Haskell eXchange talk](https://skillsmatter.com/skillscasts/10635-algebraic-graphs), 
+and a [tutorial](https://nobrakal.github.io/alga-tutorial) by Alexandre Moine.
 
 ## Main idea
 
@@ -57,7 +60,7 @@ Alga can handle graphs comprising millions of vertices and billions of edges in 
 enough for many applications. We believe there is a lot of potential for improving the performance of the library, and
 this is one of our top priorities. If you come across a performance issue when using the library, please let us know.
 
-Some preliminary benchmarks can be found in [doc/benchmarks](https://github.com/snowleopard/alga/blob/master/doc/benchmarks.md).
+Some preliminary benchmarks can be found [here](https://github.com/haskell-perf/graphs).
 
 ## Blog posts
 

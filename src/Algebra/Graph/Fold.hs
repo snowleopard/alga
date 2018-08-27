@@ -29,39 +29,36 @@ module Algebra.Graph.Fold (
     foldg,
 
     -- * Relations on graphs
-    C.isSubgraphOf,
+    isSubgraphOf,
 
     -- * Graph properties
     isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, vertexIntSet, edgeSet,
+    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
-    C.path, C.circuit, C.clique, C.biclique, C.star, C.starTranspose, C.tree,
-    C.forest, mesh, torus, deBruijn,
+    path, circuit, clique, biclique, star, stars, starTranspose,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
-    transpose, gmap, bind, induce, simplify,
-
-    -- * Graph composition
-    box
+    removeVertex, removeEdge, transpose, induce, simplify,
   ) where
 
 import Prelude ()
 import Prelude.Compat
 
-import Control.Applicative hiding (empty)
+import Control.Applicative (Alternative, liftA2)
 import Control.Monad.Compat (MonadPlus (..), ap)
-import Data.Foldable
+import Data.Function
 
-import Algebra.Graph.Internal
+import Control.DeepSeq (NFData (..))
 
-import qualified Algebra.Graph.AdjacencyMap       as AM
-import qualified Algebra.Graph.Class              as C
-import qualified Algebra.Graph.HigherKinded.Class as H
-import qualified Algebra.Graph.Relation           as R
-import qualified Data.IntSet                      as IntSet
-import qualified Data.Set                         as Set
+import Algebra.Graph.ToGraph (ToGraph, ToVertex, toGraph)
+
+import qualified Algebra.Graph              as G
+import qualified Algebra.Graph.AdjacencyMap as AM
+import qualified Algebra.Graph.ToGraph      as T
+import qualified Control.Applicative        as Ap
+import qualified Data.IntSet                as IntSet
+import qualified Data.Set                   as Set
 
 {-| The 'Fold' data type is the Boehm-Berarducci encoding of the core graph
 construction primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a
@@ -150,17 +147,13 @@ representations based on adjacency maps.
 newtype Fold a = Fold { runFold :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b }
 
 instance (Ord a, Show a) => Show (Fold a) where
-    show f = show (C.toGraph f :: AM.AdjacencyMap a)
+    show = show . foldg AM.empty AM.vertex AM.overlay AM.connect
 
 instance Ord a => Eq (Fold a) where
-    x == y = C.toGraph x == (C.toGraph y :: AM.AdjacencyMap a)
+    x == y = T.adjacencyMap x == T.adjacencyMap y
 
-instance C.Graph (Fold a) where
-    type Vertex (Fold a) = a
-    empty       = Fold $ \e _ _ _ -> e
-    vertex x    = Fold $ \_ v _ _ -> v x
-    overlay x y = Fold $ \e v o c -> runFold x e v o c `o` runFold y e v o c
-    connect x y = Fold $ \e v o c -> runFold x e v o c `c` runFold y e v o c
+instance NFData a => NFData (Fold a) where
+    rnf = foldg () rnf seq seq
 
 instance Num a => Num (Fold a) where
     fromInteger = vertex . fromInteger
@@ -171,7 +164,7 @@ instance Num a => Num (Fold a) where
     negate      = id
 
 instance Functor Fold where
-    fmap = gmap
+    fmap f = foldg empty (vertex . f) overlay connect
 
 instance Applicative Fold where
     pure  = vertex
@@ -187,10 +180,7 @@ instance MonadPlus Fold where
 
 instance Monad Fold where
     return = vertex
-    (>>=)  = bind
-
-instance H.Graph Fold where
-    connect = connect
+    g >>=f = foldg empty f overlay connect g
 
 instance Foldable Fold where
     foldMap f = foldg mempty f mappend mappend
@@ -198,12 +188,9 @@ instance Foldable Fold where
 instance Traversable Fold where
     traverse f = foldg (pure empty) (fmap vertex . f) (liftA2 overlay) (liftA2 connect)
 
-instance C.ToGraph (Fold a) where
+instance ToGraph (Fold a) where
     type ToVertex (Fold a) = a
-    foldg e v o c g = runFold g e v o c
-
-instance H.ToGraph Fold where
-    toGraph = foldg H.empty H.vertex H.overlay H.connect
+    foldg = foldg
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -215,8 +202,8 @@ instance H.ToGraph Fold where
 -- 'edgeCount'   empty == 0
 -- 'size'        empty == 1
 -- @
-empty :: C.Graph g => g
-empty = C.empty
+empty :: Fold a
+empty = Fold $ \e _ _ _ -> e
 
 -- | Construct the graph comprising /a single isolated vertex/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -228,8 +215,8 @@ empty = C.empty
 -- 'edgeCount'   (vertex x) == 0
 -- 'size'        (vertex x) == 1
 -- @
-vertex :: C.Graph g => C.Vertex g -> g
-vertex = C.vertex
+vertex :: a -> Fold a
+vertex x = Fold $ \_ v _ _ -> v x
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -241,8 +228,8 @@ vertex = C.vertex
 -- 'vertexCount' (edge 1 1) == 1
 -- 'vertexCount' (edge 1 2) == 2
 -- @
-edge :: C.Graph g => C.Vertex g -> C.Vertex g -> g
-edge = C.edge
+edge :: a -> a -> Fold a
+edge x y = Fold $ \_ v _ c -> v x `c` v y
 
 -- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
@@ -259,8 +246,8 @@ edge = C.edge
 -- 'vertexCount' (overlay 1 2) == 2
 -- 'edgeCount'   (overlay 1 2) == 0
 -- @
-overlay :: C.Graph g => g -> g -> g
-overlay = C.overlay
+overlay :: Fold a -> Fold a -> Fold a
+overlay x y = Fold $ \e v o c -> runFold x e v o c `o` runFold y e v o c
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
 -- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
@@ -281,8 +268,8 @@ overlay = C.overlay
 -- 'vertexCount' (connect 1 2) == 2
 -- 'edgeCount'   (connect 1 2) == 1
 -- @
-connect :: C.Graph g => g -> g -> g
-connect = C.connect
+connect :: Fold a -> Fold a -> Fold a
+connect x y = Fold $ \e v o c -> runFold x e v o c `c` runFold y e v o c
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -295,8 +282,8 @@ connect = C.connect
 -- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
-vertices :: C.Graph g => [C.Vertex g] -> g
-vertices = C.vertices
+vertices :: [a] -> Fold a
+vertices = overlays . map vertex
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -307,8 +294,8 @@ vertices = C.vertices
 -- edges [(x,y)]     == 'edge' x y
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- @
-edges :: C.Graph g => [(C.Vertex g, C.Vertex g)] -> g
-edges = C.edges
+edges :: [(a, a)] -> Fold a
+edges es = Fold $ \e v o c -> foldr (flip o . uncurry (c `on` v)) e es
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -321,8 +308,8 @@ edges = C.edges
 -- overlays           == 'foldr' 'overlay' 'empty'
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
-overlays :: C.Graph g => [g] -> g
-overlays = C.overlays
+overlays :: [Fold a] -> Fold a
+overlays = foldr overlay empty
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -335,10 +322,10 @@ overlays = C.overlays
 -- connects           == 'foldr' 'connect' 'empty'
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
-connects :: C.Graph g => [g] -> g
-connects = C.connects
+connects :: [Fold a] -> Fold a
+connects = foldr connect empty
 
--- | Generalised graph folding: recursively collapse a 'Fold' by applying
+-- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
 -- The order of arguments is: empty, vertex, overlay and connect.
 -- Complexity: /O(s)/ applications of given functions. As an example, the
@@ -353,7 +340,22 @@ connects = C.connects
 -- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
-foldg = C.foldg
+foldg e v o c g = runFold g e v o c
+
+-- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
+-- first graph is a /subgraph/ of the second.
+-- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
+-- graph can be quadratic with respect to the expression size /s/.
+--
+-- @
+-- isSubgraphOf 'empty'         x             == True
+-- isSubgraphOf ('vertex' x)    'empty'         == False
+-- isSubgraphOf x             ('overlay' x y) == True
+-- isSubgraphOf ('overlay' x y) ('connect' x y) == True
+-- isSubgraphOf ('path' xs)     ('circuit' xs)  == True
+-- @
+isSubgraphOf :: Ord a => Fold a -> Fold a -> Bool
+isSubgraphOf x y = overlay x y == y
 
 -- | Check if a graph is empty. A convenient alias for 'null'.
 -- Complexity: /O(s)/ time.
@@ -366,7 +368,7 @@ foldg = C.foldg
 -- isEmpty ('removeEdge' x y $ 'edge' x y) == False
 -- @
 isEmpty :: Fold a -> Bool
-isEmpty = H.isEmpty
+isEmpty = T.isEmpty
 
 -- | The /size/ of a graph, i.e. the number of leaves of the expression
 -- including 'empty' leaves.
@@ -381,7 +383,7 @@ isEmpty = H.isEmpty
 -- size x             >= 'vertexCount' x
 -- @
 size :: Fold a -> Int
-size = foldg 1 (const 1) (+) (+)
+size = T.size
 
 -- | Check if a graph contains a given vertex. A convenient alias for `elem`.
 -- Complexity: /O(s)/ time.
@@ -393,7 +395,7 @@ size = foldg 1 (const 1) (+) (+)
 -- hasVertex x . 'removeVertex' x == const False
 -- @
 hasVertex :: Eq a => a -> Fold a -> Bool
-hasVertex = H.hasVertex
+hasVertex = T.hasVertex
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
@@ -405,8 +407,8 @@ hasVertex = H.hasVertex
 -- hasEdge x y . 'removeEdge' x y == const False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
-hasEdge :: Ord a => a -> a -> Fold a -> Bool
-hasEdge = H.hasEdge
+hasEdge :: Eq a => a -> a -> Fold a -> Bool
+hasEdge = T.hasEdge
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
@@ -417,7 +419,7 @@ hasEdge = H.hasEdge
 -- vertexCount            == 'length' . 'vertexList'
 -- @
 vertexCount :: Ord a => Fold a -> Int
-vertexCount = length . vertexList
+vertexCount = T.vertexCount
 
 -- | The number of edges in a graph.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
@@ -430,7 +432,7 @@ vertexCount = length . vertexList
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: Ord a => Fold a -> Int
-edgeCount = length . edgeList
+edgeCount = T.edgeCount
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -441,7 +443,7 @@ edgeCount = length . edgeList
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
 vertexList :: Ord a => Fold a -> [a]
-vertexList = Set.toAscList . vertexSet
+vertexList = T.vertexList
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
@@ -456,7 +458,7 @@ vertexList = Set.toAscList . vertexSet
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: Ord a => Fold a -> [(a, a)]
-edgeList = AM.edgeList . C.toGraph
+edgeList = T.edgeList
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -468,7 +470,7 @@ edgeList = AM.edgeList . C.toGraph
 -- vertexSet . 'clique'   == Set.'Set.fromList'
 -- @
 vertexSet :: Ord a => Fold a -> Set.Set a
-vertexSet = H.vertexSet
+vertexSet = T.vertexSet
 
 -- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
 -- graphs with vertices of type 'Int'.
@@ -481,7 +483,7 @@ vertexSet = H.vertexSet
 -- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
 -- @
 vertexIntSet :: Fold Int -> IntSet.IntSet
-vertexIntSet = H.vertexIntSet
+vertexIntSet = T.vertexIntSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
@@ -493,61 +495,127 @@ vertexIntSet = H.vertexIntSet
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
 edgeSet :: Ord a => Fold a -> Set.Set (a, a)
-edgeSet = R.edgeSet . C.toGraph
+edgeSet = T.edgeSet
 
--- | Construct a /mesh graph/ from two lists of vertices.
--- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
+-- | The sorted /adjacency list/ of a graph.
+-- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
+-- graph can be quadratic with respect to the expression size /s/.
+--
+-- @
+-- adjacencyList 'empty'          == []
+-- adjacencyList ('vertex' x)     == [(x, [])]
+-- adjacencyList ('edge' 1 2)     == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
+-- 'stars' . adjacencyList        == id
+-- @
+adjacencyList :: Ord a => Fold a -> [(a, [a])]
+adjacencyList = T.adjacencyList
+
+-- | The /path/ on a list of vertices.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- path []        == 'empty'
+-- path [x]       == 'vertex' x
+-- path [x,y]     == 'edge' x y
+-- path . 'reverse' == 'transpose' . path
+-- @
+path :: [a] -> Fold a
+path xs = case xs of []     -> empty
+                     [x]    -> vertex x
+                     (_:ys) -> edges (zip xs ys)
+
+-- | The /circuit/ on a list of vertices.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- circuit []        == 'empty'
+-- circuit [x]       == 'edge' x x
+-- circuit [x,y]     == 'edges' [(x,y), (y,x)]
+-- circuit . 'reverse' == 'transpose' . circuit
+-- @
+circuit :: [a] -> Fold a
+circuit []     = empty
+circuit (x:xs) = path $ [x] ++ xs ++ [x]
+
+-- | The /clique/ on a list of vertices.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- clique []         == 'empty'
+-- clique [x]        == 'vertex' x
+-- clique [x,y]      == 'edge' x y
+-- clique [x,y,z]    == 'edges' [(x,y), (x,z), (y,z)]
+-- clique (xs ++ ys) == 'connect' (clique xs) (clique ys)
+-- clique . 'reverse'  == 'transpose' . clique
+-- @
+clique :: [a] -> Fold a
+clique = connects . map vertex
+
+-- | The /biclique/ on two lists of vertices.
+-- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
 -- lengths of the given lists.
 --
 -- @
--- mesh xs     []   == 'empty'
--- mesh []     ys   == 'empty'
--- mesh [x]    [y]  == 'vertex' (x, y)
--- mesh xs     ys   == 'box' ('path' xs) ('path' ys)
--- mesh [1..3] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(2,\'b\')), ((2,\'a\'),(2,\'b\'))
---                           , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\')), ((3,\'a\'),(3,\'b\')) ]
+-- biclique []      []      == 'empty'
+-- biclique [x]     []      == 'vertex' x
+-- biclique []      [y]     == 'vertex' y
+-- biclique [x1,x2] [y1,y2] == 'edges' [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
+-- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
-mesh :: (C.Graph g, C.Vertex g ~ (a, b)) => [a] -> [b] -> g
-mesh xs ys = C.path xs `box` C.path ys
+biclique :: [a] -> [a] -> Fold a
+biclique xs [] = vertices xs
+biclique [] ys = vertices ys
+biclique xs ys = connect (vertices xs) (vertices ys)
 
--- | Construct a /torus graph/ from two lists of vertices.
--- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
--- lengths of the given lists.
+-- | The /star/ formed by a centre vertex connected to a list of leaves.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
 --
 -- @
--- torus xs    []   == 'empty'
--- torus []    ys   == 'empty'
--- torus [x]   [y]  == 'edge' (x, y) (x, y)
--- torus xs    ys   == 'box' ('circuit' xs) ('circuit' ys)
--- torus [1,2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
---                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
+-- star x []    == 'vertex' x
+-- star x [y]   == 'edge' x y
+-- star x [y,z] == 'edges' [(x,y), (x,z)]
+-- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
-torus :: (C.Graph g, C.Vertex g ~ (a, b)) => [a] -> [b] -> g
-torus xs ys = C.circuit xs `box` C.circuit ys
+star :: a -> [a] -> Fold a
+star x [] = vertex x
+star x ys = connect (vertex x) (vertices ys)
 
--- | Construct a /De Bruijn graph/ of a given non-negative dimension using symbols
--- from a given alphabet.
--- Complexity: /O(A^(D + 1))/ time, memory and size, where /A/ is the size of the
--- alphabet and /D/ is the dimension of the graph.
+-- | The /stars/ formed by overlaying a list of 'star's. An inverse of
+-- 'adjacencyList'.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the total size of the
+-- input.
 --
 -- @
---           deBruijn 0 xs               == 'edge' [] []
--- n > 0 ==> deBruijn n []               == 'empty'
---           deBruijn 1 [0,1]            == 'edges' [ ([0],[0]), ([0],[1]), ([1],[0]), ([1],[1]) ]
---           deBruijn 2 "0"              == 'edge' "00" "00"
---           deBruijn 2 "01"             == 'edges' [ ("00","00"), ("00","01"), ("01","10"), ("01","11")
---                                                , ("10","00"), ("10","01"), ("11","10"), ("11","11") ]
---           'transpose'   (deBruijn n xs) == 'gmap' 'reverse' $ deBruijn n xs
---           'vertexCount' (deBruijn n xs) == ('length' $ 'Data.List.nub' xs)^n
--- n > 0 ==> 'edgeCount'   (deBruijn n xs) == ('length' $ 'Data.List.nub' xs)^(n + 1)
+-- stars []                      == 'empty'
+-- stars [(x, [])]               == 'vertex' x
+-- stars [(x, [y])]              == 'edge' x y
+-- stars [(x, ys)]               == 'star' x ys
+-- stars                         == 'overlays' . map (uncurry 'star')
+-- stars . 'adjacencyList'         == id
+-- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
-deBruijn :: (C.Graph g, C.Vertex g ~ [a]) => Int -> [a] -> g
-deBruijn 0   _        = edge [] []
-deBruijn len alphabet = bind skeleton expand
-  where
-    overlaps = mapM (const alphabet) [2..len]
-    skeleton = C.edges    [        (Left s, Right s)   | s <- overlaps ]
-    expand v = C.vertices [ either ([a] ++) (++ [a]) v | a <- alphabet ]
+stars :: [(a, [a])] -> Fold a
+stars = overlays . map (uncurry star)
+
+-- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- starTranspose x []    == 'vertex' x
+-- starTranspose x [y]   == 'edge' y x
+-- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
+-- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
+-- starTranspose x ys    == 'transpose' ('star' x ys)
+-- @
+starTranspose :: a -> [a] -> Fold a
+starTranspose x [] = vertex x
+starTranspose x ys = connect (vertices ys) (vertex x)
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
@@ -559,7 +627,7 @@ deBruijn len alphabet = bind skeleton expand
 -- removeVertex 1 ('edge' 1 2)       == 'vertex' 2
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
-removeVertex :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> Fold (C.Vertex g) -> g
+removeVertex :: Eq a => a -> Fold a -> Fold a
 removeVertex v = induce (/= v)
 
 -- | Remove an edge from a given graph.
@@ -573,57 +641,16 @@ removeVertex v = induce (/= v)
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- 'size' (removeEdge x y z)         <= 3 * 'size' z
 -- @
-removeEdge :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
+removeEdge :: Eq a => a -> a -> Fold a -> Fold a
 removeEdge s t = filterContext s (/=s) (/=t)
 
 -- TODO: Export
 -- | Filter vertices in a subgraph context.
-filterContext :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> (C.Vertex g -> Bool)
-              -> (C.Vertex g -> Bool) -> Fold (C.Vertex g) -> g
-filterContext s i o g = maybe (C.toGraph g) go $ context (==s) g
+filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Fold a -> Fold a
+filterContext s i o g = maybe g go $ G.context (==s) (toGraph g)
   where
-    go (Context is os) = overlays [ induce (/=s) g
-                                  , C.starTranspose s (filter i is)
-                                  , C.star          s (filter o os) ]
-
--- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
--- given graph expression. If @y@ already exists, @x@ and @y@ will be merged.
--- Complexity: /O(s)/ time, memory and size.
---
--- @
--- replaceVertex x x            == id
--- replaceVertex x y ('vertex' x) == 'vertex' y
--- replaceVertex x y            == 'mergeVertices' (== x) y
--- @
-replaceVertex :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> C.Vertex g -> Fold (C.Vertex g) -> g
-replaceVertex u v = gmap $ \w -> if w == u then v else w
-
--- | Merge vertices satisfying a given predicate into a given vertex.
--- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
---
--- @
--- mergeVertices (const False) x    == id
--- mergeVertices (== x) y           == 'replaceVertex' x y
--- mergeVertices even 1 (0 * 2)     == 1 * 1
--- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
--- @
-mergeVertices :: C.Graph g => (C.Vertex g -> Bool) -> C.Vertex g -> Fold (C.Vertex g) -> g
-mergeVertices p v = gmap $ \u -> if p u then v else u
-
--- | Split a vertex into a list of vertices with the same connectivity.
--- Complexity: /O(s + k * L)/ time, memory and size, where /k/ is the number of
--- occurrences of the vertex in the expression and /L/ is the length of the
--- given list.
---
--- @
--- splitVertex x []                  == 'removeVertex' x
--- splitVertex x [x]                 == id
--- splitVertex x [y]                 == 'replaceVertex' x y
--- splitVertex 1 [0,1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)
--- @
-splitVertex :: (Eq (C.Vertex g), C.Graph g) => C.Vertex g -> [C.Vertex g] -> Fold (C.Vertex g) -> g
-splitVertex v vs g = bind g $ \u -> if u == v then C.vertices vs else C.vertex u
+    go (G.Context is os) = induce (/=s) g `overlay` starTranspose s (filter i is)
+                                          `overlay` star          s (filter o os)
 
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
@@ -636,37 +663,8 @@ splitVertex v vs g = bind g $ \u -> if u == v then C.vertices vs else C.vertex u
 -- transpose ('box' x y)   == 'box' (transpose x) (transpose y)
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
-transpose :: C.Graph g => Fold (C.Vertex g) -> g
-transpose = foldg C.empty C.vertex C.overlay (flip C.connect)
-
--- | Transform a given graph by applying a function to each of its vertices.
--- This is similar to 'fmap' but can be used with non-fully-parametric graphs.
---
--- @
--- gmap f 'empty'      == 'empty'
--- gmap f ('vertex' x) == 'vertex' (f x)
--- gmap f ('edge' x y) == 'edge' (f x) (f y)
--- gmap id           == id
--- gmap f . gmap g   == gmap (f . g)
--- @
-gmap :: C.Graph g => (a -> C.Vertex g) -> Fold a -> g
-gmap f = foldg C.empty (C.vertex . f) C.overlay C.connect
-
--- | Transform a given graph by substituting each of its vertices with a subgraph.
--- This is similar to Monad's bind '>>=' but can be used with non-fully-parametric
--- graphs.
---
--- @
--- bind 'empty' f         == 'empty'
--- bind ('vertex' x) f    == f x
--- bind ('edge' x y) f    == 'connect' (f x) (f y)
--- bind ('vertices' xs) f == 'overlays' ('map' f xs)
--- bind x (const 'empty') == 'empty'
--- bind x 'vertex'        == x
--- bind (bind x f) g    == bind x (\\y -> bind (f y) g)
--- @
-bind :: C.Graph g => Fold a -> (a -> g) -> g
-bind g f = foldg C.empty f C.overlay C.connect g
+transpose :: Fold a -> Fold a
+transpose = foldg empty vertex overlay (flip connect)
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -680,8 +678,8 @@ bind g f = foldg C.empty f C.overlay C.connect g
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
-induce :: C.Graph g => (C.Vertex g -> Bool) -> Fold (C.Vertex g) -> g
-induce p = C.toGraph . foldg empty (\x -> if p x then vertex x else empty) (k overlay) (k connect)
+induce :: (a -> Bool) -> Fold a -> Fold a
+induce p = foldg empty (\x -> if p x then vertex x else empty) (k overlay) (k connect)
   where
     k f x y | isEmpty x = y -- Constant folding to get rid of Empty leaves
             | isEmpty y = x
@@ -704,8 +702,8 @@ induce p = C.toGraph . foldg empty (\x -> if p x then vertex x else empty) (k ov
 -- simplify (1 + 2 + 1) ~> 1 + 2
 -- simplify (1 * 1 * 1) ~> 1 * 1
 -- @
-simplify :: (Eq g, C.Graph g) => Fold (C.Vertex g) -> g
-simplify = foldg C.empty C.vertex (simple C.overlay) (simple C.connect)
+simplify :: Ord a => Fold a -> Fold a
+simplify = foldg empty vertex (simple overlay) (simple connect)
 
 simple :: Eq g => (g -> g -> g) -> g -> g -> g
 simple op x y
@@ -714,34 +712,3 @@ simple op x y
     | otherwise = z
   where
     z = op x y
-
--- | Compute the /Cartesian product/ of graphs.
--- Complexity: /O(s1 * s2)/ time, memory and size, where /s1/ and /s2/ are the
--- sizes of the given graphs.
---
--- @
--- box ('path' [0,1]) ('path' "ab") == 'edges' [ ((0,\'a\'), (0,\'b\'))
---                                       , ((0,\'a\'), (1,\'a\'))
---                                       , ((0,\'b\'), (1,\'b\'))
---                                       , ((1,\'a\'), (1,\'b\')) ]
--- @
--- Up to an isomorphism between the resulting vertex types, this operation
--- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
--- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@.
---
--- @
--- box x y               ~~ box y x
--- box x (box y z)       ~~ box (box x y) z
--- box x ('overlay' y z)   == 'overlay' (box x y) (box x z)
--- box x ('vertex' ())     ~~ x
--- box x 'empty'           ~~ 'empty'
--- 'transpose'   (box x y) == box ('transpose' x) ('transpose' y)
--- 'vertexCount' (box x y) == 'vertexCount' x * 'vertexCount' y
--- 'edgeCount'   (box x y) <= 'vertexCount' x * 'edgeCount' y + 'edgeCount' x * 'vertexCount' y
--- @
-box :: (C.Graph g, C.Vertex g ~ (a, b)) => Fold a -> Fold b -> g
-box x y = C.overlays $ xs ++ ys
-  where
-    xs = map (\b -> gmap (,b) x) $ toList y
-    ys = map (\a -> gmap (a,) y) $ toList x

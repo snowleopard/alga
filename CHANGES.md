@@ -1,8 +1,26 @@
 # Change log
 
+## 0.2
+
+* #106: Extend `ToGraph` with algorithms based on adjacency maps.
+* #106: Add `isAcyclic` and `reachable`.
+* #106: Rename `isTopSort` to `isTopSortOf`.
+* #102: Switch the master branch to GHC 8.4.3. Add a CI instance for GHC 8.6.1.
+* #101: Drop `-O2` from the `ghc-options` section of the Cabal file.
+* #100: Rename `fromAdjacencyList` to `stars`.
+* #79: Improve the API consistency: rename `IntAdjacencyMap` to `AdjacencyIntMap`,
+       and then rename the function that extracts its adjacency map to
+       `adjacencyIntMap` to avoid the clash with `AdjacencyMap.adjacencyMap`,
+       which has incompatible type.
+* #76: Remove benchmarks.
+* #74: Drop dependency of `Algebra.Graph` on graph type classes.
+* #62: Move King-Launchbury graphs into `Data.Graph.Typed`.
+* #67, #68, #69, #77, #81, #97: Various performance improvements.
+* #66, #72: Add missing `NFData` instances.
+
 ## 0.1.1.1
 
-* #59: Allow base-compat-0.10.
+* #59: Allow `base-compat-0.10`.
 
 ## 0.1.1
 

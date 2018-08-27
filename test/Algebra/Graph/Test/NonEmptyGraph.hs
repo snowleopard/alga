@@ -29,12 +29,12 @@ import Data.Tuple
 
 import Algebra.Graph.NonEmpty
 import Algebra.Graph.Test hiding (axioms, theorems)
+import Algebra.Graph.ToGraph (toGraph)
 
-import qualified Algebra.Graph       as G
-import qualified Algebra.Graph.Class as C
-import qualified Data.List.NonEmpty  as NonEmpty
-import qualified Data.Set            as Set
-import qualified Data.IntSet         as IntSet
+import qualified Algebra.Graph      as G
+import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Set           as Set
+import qualified Data.IntSet        as IntSet
 
 type G = NonEmptyGraph Int
 
@@ -99,7 +99,7 @@ testGraphNonEmpty = do
           toNonEmptyGraph (G.empty :: G.Graph Int) == Nothing
 
     test "toNonEmptyGraph (toGraph x) == Just (x :: NonEmptyGraph a)" $ \x ->
-          toNonEmptyGraph (C.toGraph x) == Just (x :: NonEmptyGraph Int)
+          toNonEmptyGraph (toGraph x) == Just (x :: NonEmptyGraph Int)
 
     putStrLn $ "\n============ Graph.NonEmpty.vertex ============"
     test "hasVertex x (vertex x) == True" $ \(x :: Int) ->
@@ -440,6 +440,25 @@ testGraphNonEmpty = do
     test "star x [y,z] == edges1 ((x,y) :| [(x,z)])" $ \(x :: Int) y z ->
           star x [y,z] == edges1 ((x,y) :| [(x,z)])
 
+    putStrLn $ "\n============ Graph.NonEmpty.stars1 ============"
+    test "stars1 ((x, [])  :| [])         == vertex x" $ \(x :: Int) ->
+          stars1 ((x, [])  :| [])         == vertex x
+
+    test "stars1 ((x, [y]) :| [])         == edge x y" $ \(x :: Int) y ->
+          stars1 ((x, [y]) :| [])         == edge x y
+
+    test "stars1 ((x, ys)  :| [])         == star x ys" $ \(x :: Int) ys ->
+          stars1 ((x, ys)  :| [])         == star x ys
+
+    test "stars1                          == overlays1 . fmap (uncurry star)" $ \(xs' :: NonEmptyList (Int, [Int])) ->
+      let xs = NonEmpty.fromList (getNonEmpty xs')
+      in  stars1 xs                       == overlays1 (fmap (uncurry star) xs)
+
+    test "overlay (stars1 xs) (stars1 ys) == stars1 (xs <> ys)" $ \(xs' :: NonEmptyList (Int, [Int])) (ys' :: NonEmptyList (Int, [Int])) ->
+      let xs = NonEmpty.fromList (getNonEmpty xs')
+          ys = NonEmpty.fromList (getNonEmpty ys')
+      in  overlay (stars1 xs) (stars1 ys) == stars1 (xs <> ys)
+
     putStrLn $ "\n============ Graph.NonEmpty.starTranspose ============"
     test "starTranspose x []    == vertex x" $ \(x :: Int) ->
           starTranspose x []    == vertex x
@@ -481,6 +500,11 @@ testGraphNonEmpty = do
                                                                       , ((2,'a'),(3,'a')), ((2,'b'),(3,'b'))
                                                                       , ((3,'a'),(3 :: Int,'b')) ])
 
+    test "size (mesh xs ys)               == max 1 (3 * length xs * length ys - length xs - length ys -1)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
+        let xs = NonEmpty.fromList (getNonEmpty xs')
+            ys = NonEmpty.fromList (getNonEmpty ys')
+         in size (mesh1 xs ys) == max 1 (3 * length xs * length ys - length xs - length ys -1)
+
     putStrLn $ "\n============ Graph.NonEmpty.torus1 ============"
     test "torus1 (x :| [])  (y :| [])    == edge (x, y) (x, y)" $ \(x :: Int) (y :: Int) ->
           torus1 (x :| [])  (y :| [])    == edge (x, y) (x, y)
@@ -495,6 +519,11 @@ testGraphNonEmpty = do
                                                    , ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
                                                    , ((2,'a'),(1,'a')), ((2,'a'),(2,'b'))
                                                    , ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ])
+
+    test "size (torus1 xs ys)            == max 1 (3 * length xs * length ys)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
+        let xs = NonEmpty.fromList (getNonEmpty xs')
+            ys = NonEmpty.fromList (getNonEmpty ys')
+        in size (torus1 xs ys) == max 1 (3 * length xs * length ys)
 
     putStrLn $ "\n============ Graph.NonEmpty.removeVertex1 ============"
     test "removeVertex1 x (vertex x)          == Nothing" $ \(x :: Int) ->

@@ -13,7 +13,7 @@
 -- This module defines the 'AdjacencyMap' data type, as well as associated
 -- operations and algorithms. 'AdjacencyMap' is an instance of the 'C.Graph' type
 -- class, which can be used for polymorphic graph construction and manipulation.
--- "Algebra.Graph.IntAdjacencyMap" defines adjacency maps specialised to graphs
+-- "Algebra.Graph.AdjacencyIntMap" defines adjacency maps specialised to graphs
 -- with @Int@ vertices.
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap (
@@ -22,60 +22,39 @@ module Algebra.Graph.AdjacencyMap (
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
-    fromAdjacencyList,
 
     -- * Relations on graphs
     isSubgraphOf,
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    adjacencyList, vertexSet, edgeSet, postSet,
+    adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, starTranspose, tree, forest,
+    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
+    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
+    induce,
 
     -- * Algorithms
-    dfsForest, dfsForestFrom, dfs, topSort, isTopSort, scc
+    dfsForest, dfsForestFrom, dfs, reachable, topSort, isTopSortOf, isAcyclic,
+    scc
   ) where
 
-import Data.Foldable (toList)
+import Data.Foldable (foldMap, toList)
 import Data.Maybe
+import Data.Monoid
 import Data.Set (Set)
 import Data.Tree
 
 import Algebra.Graph.AdjacencyMap.Internal
 
-import qualified Algebra.Graph.Class as C
-import qualified Data.Graph          as KL
-import qualified Data.Map.Strict     as Map
-import qualified Data.Set            as Set
-
--- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
---
--- @
--- 'isEmpty'     empty == True
--- 'hasVertex' x empty == False
--- 'vertexCount' empty == 0
--- 'edgeCount'   empty == 0
--- @
-empty :: Ord a => AdjacencyMap a
-empty = C.empty
-
--- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
---
--- @
--- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
--- 'vertexCount' (vertex x) == 1
--- 'edgeCount'   (vertex x) == 0
--- @
-vertex :: Ord a => a -> AdjacencyMap a
-vertex = C.vertex
+import qualified Data.Graph.Typed as Typed
+import qualified Data.Graph       as KL
+import qualified Data.Map.Strict  as Map
+import qualified Data.Set         as Set
+import qualified Data.IntSet      as IntSet
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
@@ -88,45 +67,8 @@ vertex = C.vertex
 -- 'vertexCount' (edge 1 2) == 2
 -- @
 edge :: Ord a => a -> a -> AdjacencyMap a
-edge = C.edge
-
--- | /Overlay/ two graphs. This is a commutative, associative and idempotent
--- operation with the identity 'empty'.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (overlay x y) >= 'vertexCount' x
--- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (overlay x y) >= 'edgeCount' x
--- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
--- 'vertexCount' (overlay 1 2) == 2
--- 'edgeCount'   (overlay 1 2) == 0
--- @
-overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-overlay = C.overlay
-
--- | /Connect/ two graphs. This is an associative operation with the identity
--- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
--- number of edges in the resulting graph is quadratic with respect to the number
--- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
---
--- @
--- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
--- 'vertexCount' (connect x y) >= 'vertexCount' x
--- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (connect x y) >= 'edgeCount' x
--- 'edgeCount'   (connect x y) >= 'edgeCount' y
--- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
--- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
--- 'vertexCount' (connect 1 2) == 2
--- 'edgeCount'   (connect 1 2) == 1
--- @
-connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-connect = C.connect
+edge x y | x == y    = AM $ Map.singleton x (Set.singleton y)
+         | otherwise = AM $ Map.fromList [(x, Set.singleton y), (y, Set.empty)]
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -140,19 +82,19 @@ connect = C.connect
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: Ord a => [a] -> AdjacencyMap a
-vertices = mkAM . Map.fromList . map (\x -> (x, Set.empty))
+vertices = AM . Map.fromList . map (\x -> (x, Set.empty))
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
 -- edges []          == 'empty'
--- edges [(x, y)]    == 'edge' x y
+-- edges [(x,y)]     == 'edge' x y
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
 edges :: Ord a => [(a, a)] -> AdjacencyMap a
-edges = fromAdjacencyList . map (fmap return)
+edges = fromAdjacencySets . map (fmap Set.singleton)
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -165,7 +107,7 @@ edges = fromAdjacencyList . map (fmap return)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
-overlays = C.overlays
+overlays = AM . Map.unionsWith Set.union . map adjacencyMap
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -178,24 +120,7 @@ overlays = C.overlays
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
-connects = C.connects
-
--- | Construct a graph from an adjacency list.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- fromAdjacencyList []                                  == 'empty'
--- fromAdjacencyList [(x, [])]                           == 'vertex' x
--- fromAdjacencyList [(x, [y])]                          == 'edge' x y
--- fromAdjacencyList . 'adjacencyList'                     == id
--- 'overlay' (fromAdjacencyList xs) (fromAdjacencyList ys) == fromAdjacencyList (xs ++ ys)
--- @
-fromAdjacencyList :: Ord a => [(a, [a])] -> AdjacencyMap a
-fromAdjacencyList as = mkAM $ Map.unionWith Set.union vs es
-  where
-    ss = map (fmap Set.fromList) as
-    vs = Map.fromSet (const Set.empty) . Set.unions $ map snd ss
-    es = Map.fromListWith Set.union ss
+connects = foldr connect empty
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -272,7 +197,7 @@ vertexCount = Map.size . adjacencyMap
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: AdjacencyMap a -> Int
-edgeCount = Map.foldr (\es r -> (Set.size es + r)) 0 . adjacencyMap
+edgeCount = getSum . foldMap (Sum . Set.size) . adjacencyMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -297,20 +222,7 @@ vertexList = Map.keys . adjacencyMap
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
-edgeList (AM m _) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
-
--- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
---
--- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'fromAdjacencyList' . adjacencyList == id
--- @
-adjacencyList :: AdjacencyMap a -> [(a, [a])]
-adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
+edgeList (AM m) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -324,6 +236,19 @@ adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
 vertexSet :: AdjacencyMap a -> Set a
 vertexSet = Map.keysSet . adjacencyMap
 
+-- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
+-- graphs with vertices of type 'Int'.
+-- Complexity: /O(n)/ time and memory.
+--
+-- @
+-- vertexIntSet 'empty'      == IntSet.'IntSet.empty'
+-- vertexIntSet . 'vertex'   == IntSet.'IntSet.singleton'
+-- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
+-- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
+-- @
+vertexIntSet :: AdjacencyMap Int -> IntSet.IntSet
+vertexIntSet = IntSet.fromAscList . Set.toAscList . vertexSet
+
 -- | The set of edges of a given graph.
 -- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
 --
@@ -334,9 +259,37 @@ vertexSet = Map.keysSet . adjacencyMap
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
 edgeSet :: Ord a => AdjacencyMap a -> Set (a, a)
-edgeSet = Map.foldrWithKey (\v es -> Set.union (Set.mapMonotonic (v,) es)) Set.empty . adjacencyMap
+edgeSet = Set.fromAscList . edgeList
 
--- | The /postset/ (here 'postSet') of a vertex is the set of its /direct successors/.
+-- | The sorted /adjacency list/ of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- adjacencyList 'empty'          == []
+-- adjacencyList ('vertex' x)     == [(x, [])]
+-- adjacencyList ('edge' 1 2)     == [(1, [2]), (2, [])]
+-- adjacencyList ('star' 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
+-- 'stars' . adjacencyList        == id
+-- @
+adjacencyList :: AdjacencyMap a -> [(a, [a])]
+adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
+
+-- | The /preset/ of an element @x@ is the set of its /direct predecessors/.
+-- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
+--
+-- @
+-- preSet x 'empty'      == Set.'Set.empty'
+-- preSet x ('vertex' x) == Set.'Set.empty'
+-- preSet 1 ('edge' 1 2) == Set.'Set.empty'
+-- preSet y ('edge' x y) == Set.'Set.fromList' [x]
+-- @
+preSet :: Ord a => a -> AdjacencyMap a -> Set.Set a
+preSet x = Set.fromAscList . map fst . filter p  . Map.toAscList . adjacencyMap
+  where
+    p (_, set) = x `Set.member` set
+
+-- | The /postset/ of a vertex is the set of its /direct successors/.
+-- Complexity: /O(log(n))/ time and /O(1)/ memory.
 --
 -- @
 -- postSet x 'empty'      == Set.'Set.empty'
@@ -357,7 +310,9 @@ postSet x = Map.findWithDefault Set.empty x . adjacencyMap
 -- path . 'reverse' == 'transpose' . path
 -- @
 path :: Ord a => [a] -> AdjacencyMap a
-path = C.path
+path xs = case xs of []     -> empty
+                     [x]    -> vertex x
+                     (_:ys) -> edges (zip xs ys)
 
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -369,7 +324,8 @@ path = C.path
 -- circuit . 'reverse' == 'transpose' . circuit
 -- @
 circuit :: Ord a => [a] -> AdjacencyMap a
-circuit = C.circuit
+circuit []     = empty
+circuit (x:xs) = path $ [x] ++ xs ++ [x]
 
 -- | The /clique/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -383,7 +339,10 @@ circuit = C.circuit
 -- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: Ord a => [a] -> AdjacencyMap a
-clique = C.clique
+clique = fromAdjacencySets . fst . go
+  where
+    go []     = ([], Set.empty)
+    go (x:xs) = let (res, set) = go xs in ((x, set) : res, Set.insert x set)
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
@@ -396,14 +355,13 @@ clique = C.clique
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: Ord a => [a] -> [a] -> AdjacencyMap a
-biclique xs ys = mkAM $ Map.fromSet adjacent (x `Set.union` y)
+biclique xs ys = AM $ Map.fromSet adjacent (x `Set.union` y)
   where
     x = Set.fromList xs
     y = Set.fromList ys
-    adjacent v
-        | v `Set.member` x = y
-        | otherwise        = Set.empty
+    adjacent v = if v `Set.member` x then y else Set.empty
 
+-- TODO: Optimise.
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
@@ -414,7 +372,25 @@ biclique xs ys = mkAM $ Map.fromSet adjacent (x `Set.union` y)
 -- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: Ord a => a -> [a] -> AdjacencyMap a
-star = C.star
+star x [] = vertex x
+star x ys = connect (vertex x) (vertices ys)
+
+-- | The /stars/ formed by overlaying a list of 'star's. An inverse of
+-- 'adjacencyList'.
+-- Complexity: /O(L * log(n))/ time, memory and size, where /L/ is the total
+-- size of the input.
+--
+-- @
+-- stars []                      == 'empty'
+-- stars [(x, [])]               == 'vertex' x
+-- stars [(x, [y])]              == 'edge' x y
+-- stars [(x, ys)]               == 'star' x ys
+-- stars                         == 'overlays' . map (uncurry 'star')
+-- stars . 'adjacencyList'         == id
+-- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
+-- @
+stars :: Ord a => [(a, [a])] -> AdjacencyMap a
+stars = fromAdjacencySets . map (fmap Set.fromList)
 
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -428,7 +404,8 @@ star = C.star
 -- starTranspose x ys    == 'transpose' ('star' x ys)
 -- @
 starTranspose :: Ord a => a -> [a] -> AdjacencyMap a
-starTranspose = C.starTranspose
+starTranspose x [] = vertex x
+starTranspose x ys = connect (vertices ys) (vertex x)
 
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -440,7 +417,9 @@ starTranspose = C.starTranspose
 -- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges' [(1,2), (1,3), (3,4), (3,5)]
 -- @
 tree :: Ord a => Tree a -> AdjacencyMap a
-tree = C.tree
+tree (Node x []) = vertex x
+tree (Node x f ) = star x (map rootLabel f)
+    `overlay` forest (filter (not . null . subForest) f)
 
 -- | The /forest graph/ constructed from a given 'Forest' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -452,7 +431,7 @@ tree = C.tree
 -- forest                                                     == 'overlays' . map 'tree'
 -- @
 forest :: Ord a => Forest a -> AdjacencyMap a
-forest = C.forest
+forest = overlays . map tree
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(n*log(n))/ time.
@@ -465,7 +444,7 @@ forest = C.forest
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Ord a => a -> AdjacencyMap a -> AdjacencyMap a
-removeVertex x = mkAM . Map.map (Set.delete x) . Map.delete x . adjacencyMap
+removeVertex x = AM . Map.map (Set.delete x) . Map.delete x . adjacencyMap
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(log(n))/ time.
@@ -478,7 +457,7 @@ removeVertex x = mkAM . Map.map (Set.delete x) . Map.delete x . adjacencyMap
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
-removeEdge x y = mkAM . Map.adjust (Set.delete y) x . adjacencyMap
+removeEdge x y = AM . Map.adjust (Set.delete y) x . adjacencyMap
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
@@ -516,7 +495,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
-transpose (AM m _) = mkAM $ Map.foldrWithKey combine vs m
+transpose (AM m) = AM $ Map.foldrWithKey combine vs m
   where
     combine v es = Map.unionWith Set.union (Map.fromSet (const $ Set.singleton v) es)
     vs           = Map.fromSet (const Set.empty) (Map.keysSet m)
@@ -534,7 +513,7 @@ transpose (AM m _) = mkAM $ Map.foldrWithKey combine vs m
 -- gmap f . gmap g   == gmap (f . g)
 -- @
 gmap :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap a -> AdjacencyMap b
-gmap f = mkAM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
+gmap f = AM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -548,8 +527,8 @@ gmap f = mkAM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
-induce :: Ord a => (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
-induce p = mkAM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjacencyMap
+induce :: (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
+induce p = AM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjacencyMap
 
 -- | Compute the /depth-first search/ forest of a graph.
 --
@@ -568,8 +547,8 @@ induce p = mkAM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adj
 --                                                 , subForest = [ Node { rootLabel = 4
 --                                                                      , subForest = [] }]}]
 -- @
-dfsForest :: AdjacencyMap a -> Forest a
-dfsForest (AM _ (GraphKL g r _)) = fmap (fmap r) (KL.dff g)
+dfsForest :: Ord a => AdjacencyMap a -> Forest a
+dfsForest g = dfsForestFrom (vertexList g) g
 
 -- | Compute the /depth-first search/ forest of a graph, searching from each of
 -- the given vertices in order. Note that the resulting forest does not
@@ -591,11 +570,11 @@ dfsForest (AM _ (GraphKL g r _)) = fmap (fmap r) (KL.dff g)
 --                                                 , Node { rootLabel = 4
 --                                                        , subForest = [] }]
 -- @
-dfsForestFrom :: [a] -> AdjacencyMap a -> Forest a
-dfsForestFrom vs (AM _ (GraphKL g r t)) = fmap (fmap r) (KL.dfs g (mapMaybe t vs))
+dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
+dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
 
--- | Compute the list of vertices visited by the /depth-first search/ in a graph,
--- when searching from each of the given vertices in order.
+-- | Compute the list of vertices visited by the /depth-first search/ in a
+-- graph, when searching from each of the given vertices in order.
 --
 -- @
 -- dfs [1]    $ 'edge' 1 1                == [1]
@@ -608,39 +587,68 @@ dfsForestFrom vs (AM _ (GraphKL g r t)) = fmap (fmap r) (KL.dfs g (mapMaybe t vs
 -- dfs [1, 4] $ 3 * (1 + 4) * (1 + 5)   == [1, 5, 4]
 -- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
 -- @
-dfs :: [a] -> AdjacencyMap a -> [a]
+dfs :: Ord a => [a] -> AdjacencyMap a -> [a]
 dfs vs = concatMap flatten . dfsForestFrom vs
+
+-- | Compute the list of vertices that are /reachable/ from a given source
+-- vertex in a graph. The vertices in the resulting list appear in the
+-- /depth-first order/.
+--
+-- @
+-- reachable x $ 'empty'                       == []
+-- reachable 1 $ 'vertex' 1                    == [1]
+-- reachable 1 $ 'vertex' 2                    == []
+-- reachable 1 $ 'edge' 1 1                    == [1]
+-- reachable 1 $ 'edge' 1 2                    == [1,2]
+-- reachable 4 $ 'path'    [1..8]              == [4..8]
+-- reachable 4 $ 'circuit' [1..8]              == [4..8] ++ [1..3]
+-- reachable 8 $ 'clique'  [8,7..1]            == [8] ++ [1..7]
+-- 'isSubgraphOf' ('vertices' $ reachable x y) y == True
+-- @
+reachable :: Ord a => a -> AdjacencyMap a -> [a]
+reachable x = dfs [x]
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.
 --
 -- @
--- topSort (1 * 2 + 3 * 1)             == Just [3,1,2]
--- topSort (1 * 2 + 2 * 1)             == Nothing
--- fmap (flip 'isTopSort' x) (topSort x) /= Just False
+-- topSort (1 * 2 + 3 * 1)               == Just [3,1,2]
+-- topSort (1 * 2 + 2 * 1)               == Nothing
+-- fmap (flip 'isTopSortOf' x) (topSort x) /= Just False
+-- 'isJust' . topSort                      == 'isAcyclic'
 -- @
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
-topSort m@(AM _ (GraphKL g r _)) =
-    if isTopSort result m then Just result else Nothing
+topSort m = if isTopSortOf result m then Just result else Nothing
   where
-    result = map r (KL.topSort g)
+    result = Typed.topSort (Typed.fromAdjacencyMap m)
 
 -- | Check if a given list of vertices is a valid /topological sort/ of a graph.
 --
 -- @
--- isTopSort [3, 1, 2] (1 * 2 + 3 * 1) == True
--- isTopSort [1, 2, 3] (1 * 2 + 3 * 1) == False
--- isTopSort []        (1 * 2 + 3 * 1) == False
--- isTopSort []        'empty'           == True
--- isTopSort [x]       ('vertex' x)      == True
--- isTopSort [x]       ('edge' x x)      == False
+-- isTopSortOf [3, 1, 2] (1 * 2 + 3 * 1) == True
+-- isTopSortOf [1, 2, 3] (1 * 2 + 3 * 1) == False
+-- isTopSortOf []        (1 * 2 + 3 * 1) == False
+-- isTopSortOf []        'empty'           == True
+-- isTopSortOf [x]       ('vertex' x)      == True
+-- isTopSortOf [x]       ('edge' x x)      == False
 -- @
-isTopSort :: Ord a => [a] -> AdjacencyMap a -> Bool
-isTopSort xs m = go Set.empty xs
+isTopSortOf :: Ord a => [a] -> AdjacencyMap a -> Bool
+isTopSortOf xs m = go Set.empty xs
   where
     go seen []     = seen == Map.keysSet (adjacencyMap m)
     go seen (v:vs) = let newSeen = seen `seq` Set.insert v seen
         in postSet v m `Set.intersection` newSeen == Set.empty && go newSeen vs
+
+-- | Check if a given graph is /acyclic/.
+--
+-- @
+-- isAcyclic (1 * 2 + 3 * 1) == True
+-- isAcyclic (1 * 2 + 2 * 1) == False
+-- isAcyclic . 'circuit'       == 'null'
+-- isAcyclic                 == 'isJust' . 'topSort'
+-- @
+isAcyclic :: Ord a => AdjacencyMap a -> Bool
+isAcyclic = isJust . topSort
 
 -- | Compute the /condensation/ of a graph, where each vertex corresponds to a
 -- /strongly-connected component/ of the original graph.
@@ -656,8 +664,8 @@ isTopSort xs m = go Set.empty xs
 --                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [5]  )]
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (Set a)
-scc m@(AM _ (GraphKL g r _)) =
-    gmap (\v -> Map.findWithDefault Set.empty v components) m
+scc m = gmap (\v -> Map.findWithDefault Set.empty v components) m
   where
+    (Typed.GraphKL g r _) = Typed.fromAdjacencyMap m
     components = Map.fromList $ concatMap (expand . fmap r . toList) (KL.scc g)
     expand xs  = let s = Set.fromList xs in map (\x -> (x, s)) xs
