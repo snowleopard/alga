@@ -283,6 +283,7 @@ connect = Connect
 -- @
 vertices1 :: NonEmpty a -> NonEmptyGraph a
 vertices1 = overlays1 . fmap vertex
+{-# NOINLINE [1] vertices1 #-}
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -587,6 +588,7 @@ biclique1 xs ys = connect (vertices1 xs) (vertices1 ys)
 star :: a -> [a] -> NonEmptyGraph a
 star x []     = vertex x
 star x (y:ys) = connect (vertex x) (vertices1 $ y :| ys)
+{-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a non-empty list of 'star's.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the total size of the
@@ -601,6 +603,7 @@ star x (y:ys) = connect (vertex x) (vertices1 $ y :| ys)
 -- @
 stars1 :: NonEmpty (a, [a]) -> NonEmptyGraph a
 stars1 = overlays1 . fmap (uncurry star)
+{-# INLINE stars1 #-}
 
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -752,9 +755,10 @@ transpose = foldg1 vertex overlay (flip connect)
 
 {-# RULES
 "transpose/Vertex"   forall x. transpose (Vertex x) = Vertex x
-"transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay g1 g2
-"transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect g2 g1
+"transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay (transpose g1) (transpose g2)
+"transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect (transpose g2) (transpose g1)
 
+"transpose/vertices1" forall xs. transpose (vertices1 xs) = vertices1 xs
 "transpose/overlays1" forall xs. transpose (overlays1 xs) = overlays1 (fmap transpose xs)
 "transpose/connects1" forall xs. transpose (connects1 xs) = connects1 (NonEmpty.reverse (fmap transpose xs))
  #-}
