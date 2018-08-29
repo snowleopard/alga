@@ -11,7 +11,6 @@ testRewrite l = listDirectory prefix >>= mapM_ (runTest l) . filter (\x -> "sh."
 
 runTest :: [String] -> FilePath -> IO ()
 runTest l f = do
-  putStrLn $ "\nTESTFILE: " ++ f ++ "\n"
   (_, Just hout, _, p) <-
     createProcess_ f (proc "ghc" $ l ++ ["-O","-ddump-rule-firings","-fforce-recomp","-no-keep-hi-files","-no-keep-o-files",f']){ std_out = CreatePipe }
   _ <- waitForProcess p
@@ -22,7 +21,9 @@ runTest l f = do
   when isOutProduced $ removeFile out
 
   required <- takeWhile (not . isPrefixOf "-}") . tail . lines <$> readFile f'
-  forM_ (map (\x -> (any (isPrefixOf x . drop (length prefixRule)) lst,x)) required) $ \(b,n) ->
+  let was = map (\x -> (any (isPrefixOf x . drop (length prefixRule)) lst,x)) required
+  putStrLn $ "\nTESTFILE: " ++ f ++ "\n"
+  forM_ was $ \(b,n) ->
     if b
        then putStrLn $ unwords ["  Rule",n,"fired correctly"]
        else error $ unlines
