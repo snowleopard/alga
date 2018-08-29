@@ -37,8 +37,8 @@ module Algebra.Graph (
     adjacencyIntMap,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
-    mesh, torus, deBruijn,
+    path, circuit, clique, biclique, star, stars, tree, forest, mesh, torus,
+    deBruijn,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
@@ -716,21 +716,6 @@ stars :: [(a, [a])] -> Graph a
 stars = overlays . map (uncurry star)
 {-# INLINE stars #-}
 
--- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- starTranspose x []    == 'vertex' x
--- starTranspose x [y]   == 'edge' y x
--- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
--- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
--- starTranspose x ys    == 'transpose' ('star' x ys)
--- @
-starTranspose :: a -> [a] -> Graph a
-starTranspose x [] = vertex x
-starTranspose x ys = connect (vertices ys) (vertex x)
-
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
 -- given tree (i.e. the number of vertices in the tree).
@@ -849,7 +834,7 @@ removeEdge s t = filterContext s (/=s) (/=t)
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
 filterContext s i o g = maybe g go $ context (==s) g
   where
-    go (Context is os) = induce (/=s) g `overlay` starTranspose s (filter i is)
+    go (Context is os) = induce (/=s) g `overlay` transpose (star s (filter i is))
                                         `overlay` star          s (filter o os)
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a

@@ -36,7 +36,7 @@ module Algebra.Graph.Fold (
     edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, stars, starTranspose,
+    path, circuit, clique, biclique, star, stars,
 
     -- * Graph transformation
     removeVertex, removeEdge, transpose, induce, simplify,

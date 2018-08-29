@@ -36,8 +36,7 @@ module Algebra.Graph.NonEmpty (
     vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
-    path1, circuit1, clique1, biclique1, star, stars1, starTranspose, tree,
-    mesh1, torus1,
+    path1, circuit1, clique1, biclique1, star, stars1, tree, mesh1, torus1,
 
     -- * Graph transformation
     removeVertex1, removeEdge, replaceVertex, mergeVertices, splitVertex1,
@@ -605,20 +604,6 @@ stars1 :: NonEmpty (a, [a]) -> NonEmptyGraph a
 stars1 = overlays1 . fmap (uncurry star)
 {-# INLINE stars1 #-}
 
--- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- starTranspose x []    == 'vertex' x
--- starTranspose x [y]   == 'edge' y x
--- starTranspose x [y,z] == 'edges1' ((y,x) ':|' [(z,x)])
--- starTranspose x ys    == 'transpose' ('star' x ys)
--- @
-starTranspose :: a -> [a] -> NonEmptyGraph a
-starTranspose x []     = vertex x
-starTranspose x (y:ys) = connect (vertices1 $ y :| ys) (vertex x)
-
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
 -- given tree (i.e. the number of vertices in the tree).
@@ -696,8 +681,8 @@ removeEdge s t = filterContext s (/=s) (/=t)
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> NonEmptyGraph a -> NonEmptyGraph a
 filterContext s i o g = maybe g go $ G.context (==s) (T.toGraph g)
   where
-    go (G.Context is os) = G.induce (/=s) (T.toGraph g)  `overlay1`
-                           starTranspose s (filter i is) `overlay` star s (filter o os)
+    go (G.Context is os) = G.induce (/=s) (T.toGraph g)     `overlay1`
+                           transpose (star s (filter i is)) `overlay` star s (filter o os)
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'NonEmptyGraph'. If @y@ already exists, @x@ and @y@ will be merged.
