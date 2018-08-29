@@ -8,13 +8,10 @@ import Algebra.Graph.Test.NonEmptyGraph
 import Algebra.Graph.Test.Relation
 import Data.Graph.Test.Typed
 
-import Rewrite.Rewrite
-import System.Environment (getArgs)
+import Rewrite
 
 main :: IO ()
 main = do
-    getArgs >>= testRewrite
-
     testAdjacencyMap
     testExport
     testFold
