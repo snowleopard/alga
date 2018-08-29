@@ -4,7 +4,7 @@ import System.Process
 import System.Directory
 import Data.List
 import System.IO (hIsEOF, hGetLine, Handle)
-import Control.Monad (mapM_, forM_, when)
+import Control.Monad (mapM_)
 
 testRewrite :: [String] -> IO ()
 testRewrite l = listDirectory prefix >>= mapM_ (runTest l) . filter (\x -> "sh." `isPrefixOf` reverse x)
@@ -12,26 +12,20 @@ testRewrite l = listDirectory prefix >>= mapM_ (runTest l) . filter (\x -> "sh."
 runTest :: [String] -> FilePath -> IO ()
 runTest l f = do
   (_, Just hout, _, p) <-
-    createProcess_ f (proc "ghc" $ l ++ ["-O","-ddump-rule-firings","-fforce-recomp","-no-keep-hi-files","-no-keep-o-files",f']){ std_out = CreatePipe }
+    createProcess_ f (proc "ghc" $ l ++ ["-O","-ddump-rule-firings","-fforce-recomp",f']){ std_out = CreatePipe }
   _ <- waitForProcess p
   lst <- hGetLines hout
-
-  let out = take (length f' - 3) f'
-  isOutProduced <- doesPathExist out
-  when isOutProduced $ removeFile out
-
   required <- takeWhile (not . isPrefixOf "-}") . tail . lines <$> readFile f'
-  let was = map (\x -> (any (isPrefixOf x . drop (length prefixRule)) lst,x)) required
-  putStrLn $ "\nTESTFILE: " ++ f ++ "\n"
-  forM_ was $ \(b,n) ->
-    if b
-       then putStrLn $ unwords ["  Rule",n,"fired correctly"]
-       else error $ unlines
-        [ ""
-        , "Error"
-        , "  The rule: "++ n
-        , "did not fire"
-        ]
+  let was = map (\x -> any (isPrefixOf x . drop (length prefixRule)) lst) required
+  case elemIndex False was of
+    Nothing -> return ()
+    Just b  -> error $ unlines
+      [ ""
+      , "Error"
+      , "  TestFile: "++ f
+      , "  The rule: "++ (required !! b)
+      , "not fired"
+      ]
   where
     f' = "./test/Rewrite/Test/" ++ f
 
