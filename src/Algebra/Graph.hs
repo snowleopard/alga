@@ -298,6 +298,7 @@ connect = Connect
 -- @
 vertices :: [a] -> Graph a
 vertices = overlays . map vertex
+{-# NOINLINE [1] vertices #-}
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -911,9 +912,10 @@ transpose = foldg Empty Vertex Overlay (flip Connect)
 {-# RULES
 "transpose/Empty"    transpose Empty = Empty
 "transpose/Vertex"   forall x. transpose (Vertex x) = Vertex x
-"transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay g1 g2
-"transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect g2 g1
+"transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay (transpose g1) (transpose g2)
+"transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect (transpose g2) (transpose g1)
 
+"transpose/vertices" forall xs. transpose (vertices xs) = vertices xs
 "transpose/overlays" forall xs. transpose (overlays xs) = overlays (map transpose xs)
 "transpose/connects" forall xs. transpose (connects xs) = connects (reverse (map transpose xs))
  #-}
