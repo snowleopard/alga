@@ -563,6 +563,7 @@ circuit1 (x :| xs) = path1 (x :| xs ++ [x])
 -- @
 clique1 :: NonEmpty a -> NonEmptyGraph a
 clique1 = connects1 . fmap vertex
+{-# NOINLINE [1] clique1 #-}
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -771,9 +772,11 @@ transpose = foldg1 vertex overlay (flip connect)
 "transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay (transpose g1) (transpose g2)
 "transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect (transpose g2) (transpose g1)
 
-"transpose/vertices1" forall xs. transpose (vertices1 xs) = vertices1 xs
 "transpose/overlays1" forall xs. transpose (overlays1 xs) = overlays1 (fmap transpose xs)
 "transpose/connects1" forall xs. transpose (connects1 xs) = connects1 (NonEmpty.reverse (fmap transpose xs))
+
+"transpose/vertices1" forall xs. transpose (vertices1 xs) = vertices1 xs
+"transpose/clique1"   forall xs. transpose (clique1 xs) = clique1 (NonEmpty.reverse xs)
  #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
