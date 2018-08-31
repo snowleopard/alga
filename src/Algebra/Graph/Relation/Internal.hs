@@ -12,7 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.Internal (
     -- * Binary relation implementation
-    Relation (..), empty, vertex, overlay, connect, setProduct, consistent,
+    Relation (..), empty, vertex, overlay, connect, consistent,
     referredToVertexSet
   ) where
 
@@ -164,14 +164,10 @@ overlay x y = Relation (domain x `union` domain y) (relation x `union` relation 
 -- @
 connect :: Ord a => Relation a -> Relation a -> Relation a
 connect x y = Relation (domain x `union` domain y)
-    (relation x `union` relation y `union` (domain x `setProduct` domain y))
+    (relation x `union` relation y `union` (domain x `Set.cartesianProduct` domain y))
 
 instance NFData a => NFData (Relation a) where
     rnf (Relation d r) = rnf d `seq` rnf r `seq` ()
-
--- | Compute the Cartesian product of two sets. /Note: this function is for internal use only/.
-setProduct :: Set a -> Set b -> Set (a, b)
-setProduct x y = Set.fromDistinctAscList [ (a, b) | a <- Set.toAscList x, b <- Set.toAscList y ]
 
 instance (Ord a, Num a) => Num (Relation a) where
     fromInteger = vertex . fromInteger

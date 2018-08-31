@@ -353,7 +353,7 @@ clique xs = Relation (Set.fromList xs) (fst $ go xs)
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: Ord a => [a] -> [a] -> Relation a
-biclique xs ys = Relation (x `Set.union` y) (x `setProduct` y)
+biclique xs ys = Relation (x `Set.union` y) (x `Set.cartesianProduct` y)
   where
     x = Set.fromList xs
     y = Set.fromList ys
@@ -549,7 +549,7 @@ compose :: Ord a => Relation a -> Relation a -> Relation a
 compose x y = Relation (referredToVertexSet r) r
   where
     d = domain x `Set.union` domain y
-    r = Set.unions [ preSet z y `setProduct` postSet z x | z <- Set.toAscList d ]
+    r = Set.unions [ preSet z y `Set.cartesianProduct` postSet z x | z <- Set.toAscList d ]
 
 -- | Compute the /reflexive closure/ of a 'Relation'.
 -- Complexity: /O(n * log(m))/ time.
