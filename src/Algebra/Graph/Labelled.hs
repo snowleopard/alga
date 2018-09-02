@@ -31,7 +31,7 @@ import Prelude ()
 import Prelude.Compat
 import GHC.Exts
 
-import qualified Algebra.Graph.Class as C
+
 import qualified Data.Set as Set
 
 -- This class has usual semiring laws:
@@ -88,12 +88,13 @@ infixl 5 -<
 infixl 5 >-
 
 -- TODO: Prove the C.Graph laws
-instance Dioid e => C.Graph (Graph e a) where
-    type Vertex (Graph e a) = a
-    empty   = Empty
-    vertex  = Vertex
-    overlay = overlay
-    connect = connect
+-- TODO: Graph.Class formas a cycle
+-- instance Dioid e => C.Graph (Graph e a) where
+--     type Vertex (Graph e a) = a
+--     empty   = Empty
+--     vertex  = Vertex
+--     overlay = overlay
+--     connect = connect
 
 edgeLabel :: (Eq a, Dioid e) => a -> a -> Graph e a -> e
 edgeLabel _ _ Empty            = zero

@@ -9,27 +9,35 @@
 --
 -- Graph manipulation API used for generic testing.
 -----------------------------------------------------------------------------
-module Algebra.Graph.Test.API (
+module Algebra.Graph.Test.API
+        (
     -- * Graph manipulation API
-    GraphAPI (..)
-  ) where
+          GraphAPI(..)
+        )
+where
 
-import Data.Tree
+import           Data.Tree
 
-import Algebra.Graph.Class (Graph (..))
-import Algebra.Graph.Labelled (Dioid(..))
+import           Algebra.Graph.Class            ( Graph(..) )
+import           Algebra.Graph.Labelled         ( Dioid(..) )
 
-import qualified Algebra.Graph.LabelledAdjacencyMap    as LabelledAdjacencyMap
-import qualified Algebra.Graph                          as Graph
-import qualified Algebra.Graph.AdjacencyMap             as AdjacencyMap
-import qualified Algebra.Graph.AdjacencyMap.Internal    as AdjacencyMap
-import qualified Algebra.Graph.Fold                     as Fold
-import qualified Algebra.Graph.HigherKinded.Class       as HClass
-import qualified Algebra.Graph.AdjacencyIntMap          as AdjacencyIntMap
-import qualified Algebra.Graph.AdjacencyIntMap.Internal as AdjacencyIntMap
-import qualified Algebra.Graph.Relation                 as Relation
-import qualified Data.Set                               as Set
-import qualified Data.IntSet                            as IntSet
+import qualified Algebra.Graph.LabelledAdjacencyMap
+                                               as LabelledAdjacencyMap
+import qualified Algebra.Graph.LabelledAdjacencyMap.Internal
+                                               as LabelledAdjacencyMap
+import qualified Algebra.Graph                 as Graph
+import qualified Algebra.Graph.AdjacencyMap    as AdjacencyMap
+import qualified Algebra.Graph.AdjacencyMap.Internal
+                                               as AdjacencyMap
+import qualified Algebra.Graph.Fold            as Fold
+import qualified Algebra.Graph.HigherKinded.Class
+                                               as HClass
+import qualified Algebra.Graph.AdjacencyIntMap as AdjacencyIntMap
+import qualified Algebra.Graph.AdjacencyIntMap.Internal
+                                               as AdjacencyIntMap
+import qualified Algebra.Graph.Relation        as Relation
+import qualified Data.Set                      as Set
+import qualified Data.IntSet                   as IntSet
 
 class Graph g => GraphAPI g where
     edge                 :: Vertex g -> Vertex g -> g
@@ -219,21 +227,21 @@ instance Ord a => GraphAPI (Relation.Relation a) where
     edges             = Relation.edges
     overlays          = Relation.overlays
     connects          = Relation.connects
-    fromAdjacencyList = Relation.fromAdjacencyList
+    -- fromAdjacencyList = Relation.fromAdjacencyList
     isSubgraphOf      = Relation.isSubgraphOf
-    isEmpty           = Relation.isEmpty
-    hasVertex         = Relation.hasVertex
-    hasEdge           = Relation.hasEdge
-    vertexCount       = Relation.vertexCount
-    edgeCount         = Relation.edgeCount
-    vertexList        = Relation.vertexList
-    edgeList          = Relation.edgeList
-    preSet            = Relation.preSet
-    postSet           = Relation.postSet
-    adjacencyList     = AdjacencyMap.adjacencyList . Class.toGraph
-    vertexSet         = Relation.vertexSet
-    vertexIntSet      = IntSet.fromAscList . Set.toAscList . Relation.vertexSet
-    edgeSet           = Relation.edgeSet
+    -- isEmpty           = Relation.isEmpty
+    -- hasVertex         = Relation.hasVertex
+    -- hasEdge           = Relation.hasEdge
+    -- vertexCount       = Relation.vertexCount
+    -- edgeCount         = Relation.edgeCount
+    -- vertexList        = Relation.vertexList
+    -- edgeList          = Relation.edgeList
+    -- preSet            = Relation.preSet
+    -- postSet           = Relation.postSet
+    -- adjacencyList     = AdjacencyMap.adjacencyList . Class.toGraph
+    -- vertexSet         = Relation.vertexSet
+    -- vertexIntSet      = IntSet.fromAscList . Set.toAscList . Relation.vertexSet
+    -- edgeSet           = Relation.edgeSet
     path              = Relation.path
     circuit           = Relation.circuit
     clique            = Relation.clique
@@ -250,43 +258,27 @@ instance Ord a => GraphAPI (Relation.Relation a) where
     gmap              = Relation.gmap
     induce            = Relation.induce
 
-instance (Ord a, Dioid e) => GraphAPI (LabelledAdjacencyMap.LabelledAdjacencyMap a e) where
-    -- edge              = LabelledAdjacencyMap.edge
-    -- vertices          = LabelledAdjacencyMap.vertices
-    -- edges             = LabelledAdjacencyMap.edges
-    -- overlays          = LabelledAdjacencyMap.overlays
-    -- connects          = LabelledAdjacencyMap.connects
-    -- fromAdjacencyList = LabelledAdjacencyMap.fromAdjacencyList
-    -- isSubgraphOf      = LabelledAdjacencyMap.isSubgraphOf
-    -- isEmpty           = LabelledAdjacencyMap.isEmpty
-    -- hasVertex         = LabelledAdjacencyMap.hasVertex
-    -- hasEdge           = LabelledAdjacencyMap.hasEdge
-    -- vertexCount       = LabelledAdjacencyMap.vertexCount
-    -- edgeCount         = LabelledAdjacencyMap.edgeCount
-    -- vertexList        = LabelledAdjacencyMap.vertexList
-    -- edgeList          = LabelledAdjacencyMap.edgeList
-    -- adjacencyList     = LabelledAdjacencyMap.adjacencyList
-    -- vertexSet         = LabelledAdjacencyMap.vertexSet
-    -- vertexIntSet      = IntSet.fromAscList . Set.toAscList . LabelledAdjacencyMap.vertexSet
-    -- edgeSet           = LabelledAdjacencyMap.edgeSet
-    -- postSet           = LabelledAdjacencyMap.postSet
-    -- path              = LabelledAdjacencyMap.path
-    -- circuit           = LabelledAdjacencyMap.circuit
-    -- clique            = LabelledAdjacencyMap.clique
-    -- biclique          = LabelledAdjacencyMap.biclique
-    -- star              = LabelledAdjacencyMap.star
-    -- starTranspose     = LabelledAdjacencyMap.starTranspose
-    -- tree              = LabelledAdjacencyMap.tree
-    -- forest            = LabelledAdjacencyMap.forest
-    -- removeVertex      = LabelledAdjacencyMap.removeVertex
-    -- removeEdge        = LabelledAdjacencyMap.removeEdge
-    -- replaceVertex     = LabelledAdjacencyMap.replaceVertex
-    -- mergeVertices     = LabelledAdjacencyMap.mergeVertices
-    -- transpose         = LabelledAdjacencyMap.transpose
-    -- gmap              = LabelledAdjacencyMap.gmap
-    -- induce            = LabelledAdjacencyMap.induce
-    -- dfsForest         = LabelledAdjacencyMap.dfsForest
-    -- dfsForestFrom     = LabelledAdjacencyMap.dfsForestFrom
-    -- dfs               = LabelledAdjacencyMap.dfs
-    -- topSort           = LabelledAdjacencyMap.topSort
-    -- isTopSort         = LabelledAdjacencyMap.isTopSort
+instance (Ord a, Dioid e, Eq e) => GraphAPI (LabelledAdjacencyMap.LabelledAdjacencyMap a e) where
+    edge              = LabelledAdjacencyMap.edge
+    vertices          = LabelledAdjacencyMap.vertices
+    edges             = LabelledAdjacencyMap.edges
+    overlays          = LabelledAdjacencyMap.overlays
+    connects          = LabelledAdjacencyMap.connects
+    fromAdjacencySets = LabelledAdjacencyMap.fromAdjacencySets
+    isSubgraphOf      = LabelledAdjacencyMap.isSubgraphOf
+    path              = LabelledAdjacencyMap.path
+    circuit           = LabelledAdjacencyMap.circuit
+    clique            = LabelledAdjacencyMap.clique
+    biclique          = LabelledAdjacencyMap.biclique
+    star              = LabelledAdjacencyMap.star
+    stars             = LabelledAdjacencyMap.stars
+    starTranspose     = LabelledAdjacencyMap.starTranspose
+    tree              = LabelledAdjacencyMap.tree
+    forest            = LabelledAdjacencyMap.forest
+    removeVertex      = LabelledAdjacencyMap.removeVertex
+    removeEdge        = LabelledAdjacencyMap.removeEdge
+    replaceVertex     = LabelledAdjacencyMap.replaceVertex
+    mergeVertices     = LabelledAdjacencyMap.mergeVertices
+    transpose         = LabelledAdjacencyMap.transpose
+    gmap              = LabelledAdjacencyMap.gmap
+    induce            = LabelledAdjacencyMap.induce

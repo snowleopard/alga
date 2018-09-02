@@ -35,22 +35,22 @@ testLabelledAdjacencyMap = do
         consistent m
 
     test "Consistency of fromAdjacencyList" $ \xs ->
-        consistent (fromAdjacencyList xs :: LAI)
+        consistent (fromAdjacencySets xs :: LAI)
 
     testShow              t
     testBasicPrimitives   t
-    testFromAdjacencyList t
+    testFromAdjacencySets t
     testIsSubgraphOf      t
-    testProperties        t
-    testAdjacencyList     t
-    testPostSet           t
+    testToGraph           t
     testGraphFamilies     t
     testTransformations   t
     testDfsForest         t
     testDfsForestFrom     t
     testDfs               t
+    testReachable         t
     testTopSort           t
-    testIsTopSort         t
+    testIsTopSortOf       t
+    testIsAcyclic         t
 
     putStrLn "\n============ LabelledAdjacencyMap.scc ============"
     test "scc empty               == empty" $
@@ -71,11 +71,4 @@ testLabelledAdjacencyMap = do
                                            , (Set.fromList [3]  , Set.fromList [1,4])
                                            , (Set.fromList [3]  , Set.fromList [5 :: Int])]
 
-    putStrLn "\n============ LabelledAdjacencyMap.Internal.GraphKL ============"
-    test "map (fromVertexKL h) (vertices $ toGraphKL h) == vertexList g"
-      $ \(g :: LAI) -> let h = mkGraphKL (labelledAdjacencyMap g) in
-          map (fromVertexKL h) (KL.vertices $ toGraphKL h) == vertexList g
 
-    test "map (\\(x, y) -> (fromVertexKL h x, fromVertexKL h y)) (edges $ toGraphKL h) == edgeList g"
-      $ \(g :: LAI) -> let h = mkGraphKL (labelledAdjacencyMap g) in
-          map ( \(x, y) -> (fromVertexKL h x, fromVertexKL h y)) (KL.edges $ toGraphKL h) == edgeList g

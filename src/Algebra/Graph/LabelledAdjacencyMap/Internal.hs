@@ -14,16 +14,15 @@ module Algebra.Graph.LabelledAdjacencyMap.Internal
         (
     -- * Adjacency map implementation
           LabelledAdjacencyMap(..)
-        , mkLAM
         , consistent
         , edgeLabel
+        , empty
+        , connect
+        , overlay
+        , vertex
         , (-<)
         , (>-)
-
-
-    -- * Interoperability with King-Launchbury graphs
-        , GraphKL(..)
-        , mkGraphKL
+        , fromAdjacencySets
         )
 where
 
@@ -34,38 +33,26 @@ import           Data.Map.Strict                ( Map
                                                 )
 import           Data.Set                       ( Set )
 import Data.Maybe (fromMaybe)
-import           Algebra.Graph.Class           as C
 import           Algebra.Graph.Labelled         ( Dioid(..)
                                                 , (|+|)
                                                 , (|*|)
                                                 )
-
-import qualified Data.Graph                    as KL
+import Control.DeepSeq (NFData (..))
 import qualified Data.Map.Strict               as Map
 import qualified Data.Set                      as Set
 
-data LabelledAdjacencyMap a e = LAM {
+newtype LabelledAdjacencyMap a e = LAM {
     -- | The /adjacency map/ of the graph: each vertex is associated with a set
     -- of its direct successors.
-    labelledAdjacencyMap :: !(Map a (Map a e)),
-    -- | Cached King-Launchbury representation.
-    -- /Note: this field is for internal use only/.
-    graphKL :: GraphKL a }
+    labelledAdjacencyMap :: Map a (Map a e) } deriving Eq
 
 lAdjacencyMap :: LabelledAdjacencyMap a e -> Map a (Map a e)
 lAdjacencyMap = labelledAdjacencyMap
 
--- | Construct an 'LabelledAdjacencyMap' from a map of successor sets and (lazily)
--- compute the corresponding King-Launchbury representation.
--- /Note: this function is for internal use only/.
-mkLAM :: (Ord a) => Map a (Map a e) -> LabelledAdjacencyMap a e
-mkLAM m = LAM m (mkGraphKL m)
 
-instance (Eq a, Eq e) => Eq (LabelledAdjacencyMap a e) where
-    x == y = lAdjacencyMap x == lAdjacencyMap y
 
 instance (Ord a, Show a, Ord e, Show e, Dioid e) => Show (LabelledAdjacencyMap a e) where
-    show (LAM m _)
+    show (LAM m)
         | null vs    = "empty"
         | null es    = vshow vs
         | vs == used = eshow es
@@ -79,14 +66,27 @@ instance (Ord a, Show a, Ord e, Show e, Dioid e) => Show (LabelledAdjacencyMap a
         eshow xs       = "edges "    ++ show xs
         used           = Set.toAscList (referredToVertexSet m)
 
-instance (Ord a, Dioid e) => C.Graph (LabelledAdjacencyMap a e) where
-  type Vertex (LabelledAdjacencyMap a e) = a
-  empty = mkLAM Map.empty
-  vertex x = mkLAM $ Map.singleton x Map.empty
-  overlay x y =
-    mkLAM $
-    Map.unionWith (Map.unionWith (|+|)) (lAdjacencyMap x) (lAdjacencyMap y)
-  connect = lconnect one
+
+empty :: LabelledAdjacencyMap a e
+empty = LAM Map.empty
+
+vertex :: a -> LabelledAdjacencyMap a e
+vertex x = LAM $ Map.singleton x Map.empty
+
+overlay ::
+     (Ord a, Dioid e)
+  => LabelledAdjacencyMap a e
+  -> LabelledAdjacencyMap a e
+  -> LabelledAdjacencyMap a e
+overlay x y =
+  LAM $
+  Map.unionWith (Map.unionWith (|+|)) (lAdjacencyMap x) (lAdjacencyMap y)
+
+connect  :: (Ord a, Dioid e)
+        => LabelledAdjacencyMap a e
+        -> LabelledAdjacencyMap a e
+        -> LabelledAdjacencyMap a e
+connect = lconnect one
 
 lconnect
         :: (Ord a, Dioid e)
@@ -95,7 +95,7 @@ lconnect
         -> LabelledAdjacencyMap a e
         -> LabelledAdjacencyMap a e
 lconnect e x y =
-  mkLAM $
+  LAM $
   Map.unionsWith
     (Map.unionWith (|*|))
     [ lAdjacencyMap x
@@ -104,6 +104,7 @@ lconnect e x y =
     ]
   where
     cset = fromSet (const e) (keysSet $ lAdjacencyMap y)
+    
 (-<)
         :: LabelledAdjacencyMap a e
         -> e
@@ -124,7 +125,6 @@ edgeLabel :: (Ord a, Dioid e) => a -> a -> LabelledAdjacencyMap a e -> e
 edgeLabel x y g =
   fromMaybe zero (Map.lookup y =<< Map.lookup x (lAdjacencyMap g))
 
-
 instance (Ord a, Num a, Dioid e) => Num (LabelledAdjacencyMap a e) where
   fromInteger = vertex . fromInteger
   (+) = overlay
@@ -133,12 +133,30 @@ instance (Ord a, Num a, Dioid e) => Num (LabelledAdjacencyMap a e) where
   abs = id
   negate = id
 
-instance ToGraph (LabelledAdjacencyMap a e) where
-  type ToVertex (LabelledAdjacencyMap a e) = a
-  toGraph =
-    overlays .
-    map (uncurry star . fmap (fmap fst . Map.toList)) .
-    Map.toList . lAdjacencyMap
+instance (NFData a, NFData e) => NFData (LabelledAdjacencyMap a e) where
+    rnf (LAM a) = rnf a
+
+-- | Construct a graph from a list of adjacency sets.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- fromAdjacencySets []                                        == 'Algebra.Graph.LabelledAdjacencyMap.empty'
+-- fromAdjacencySets [(x, Set.'Set.empty')]                          == 'Algebra.Graph.LabelledAdjacencyMap.vertex' x
+-- fromAdjacencySets [(x, Set.'Set.singleton' y)]                    == 'Algebra.Graph.LabelledAdjacencyMap.edge' x y
+-- fromAdjacencySets . map (fmap Set.'Set.fromList') . 'Algebra.Graph.LabelledAdjacencyMap.adjacencyList' == id
+-- 'Algebra.Graph.LabelledAdjacencyMap.overlay' (fromAdjacencySets xs) (fromAdjacencySets ys)       == fromAdjacencySets (xs ++ ys)
+-- @
+fromAdjacencySets :: (Ord a, Dioid e) => [(a, Set a)] -> LabelledAdjacencyMap a e
+fromAdjacencySets ss = LAM $ Map.unionWith (Map.unionWith (|+|)) vs es
+  where
+    vs = Map.fromSet (const Map.empty) . Set.unions $ map snd ss
+    es =
+      Map.fromListWith
+        (Map.unionWith (|+|))
+        (fmap (\(a, s) -> (a, set2map s)) ss)
+    set2map = Map.fromSet (const one)
+
+
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices. It should be impossible to create an
 -- inconsistent adjacency map, and we use this function in testing.
@@ -155,7 +173,7 @@ instance ToGraph (LabelledAdjacencyMap a e) where
 -- consistent ('Algebra.Graph.LabelledAdjacencyMap.fromAdjacencyList' xs) == True
 -- @
 consistent :: (Ord a) => LabelledAdjacencyMap a e -> Bool
-consistent (LAM m _) = referredToVertexSet m `Set.isSubsetOf` keysSet m
+consistent (LAM m) = referredToVertexSet m `Set.isSubsetOf` keysSet m
 
 -- The set of vertices that are referred to by the edges
 referredToVertexSet :: (Ord a) => Map a (Map a e) -> Set a
@@ -167,38 +185,3 @@ internalEdgeList m = do
         (x, ys) <- Map.toAscList m
         (y, _ ) <- Map.toAscList ys
         return (x, y)
-
-
--- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
--- the "Data.Graph" module of the @containers@ library.
--- /Note: this data structure is for internal use only/.
---
--- If @mkGraphKL (adjacencyMap g) == h@ then the following holds:
---
--- @
--- map ('fromVertexKL' h) ('Data.Graph.vertices' $ 'toGraphKL' h)                               == 'Algebra.Graph.LabelledAdjacencyMap.vertexList' g
--- map (\\(x, y) -> ('fromVertexKL' h x, 'fromVertexKL' h y)) ('Data.Graph.edges' $ 'toGraphKL' h) == 'Algebra.Graph.LabelledAdjacencyMap.edgeList' g
--- @
-data GraphKL a = GraphKL {
-    -- | Array-based graph representation (King and Launchbury, 1995).
-    toGraphKL :: KL.Graph,
-    -- | A mapping of "Data.Graph.Vertex" to vertices of type @a@.
-    fromVertexKL :: KL.Vertex -> a,
-    -- | A mapping from vertices of type @a@ to "Data.Graph.Vertex".
-    -- Returns 'Nothing' if the argument is not in the graph.
-    toVertexKL :: a -> Maybe KL.Vertex }
-
--- | Build 'GraphKL' from a map of successor sets.
--- /Note: this function is for internal use only/.
-mkGraphKL :: Ord a => Map a (Map a e) -> GraphKL a
-mkGraphKL m = GraphKL
-        { toGraphKL    = g
-        , fromVertexKL = \u -> case r u of
-                (_, v, _) -> v
-        , toVertexKL   = t
-        }
-    where
-        (g, r, t) = KL.graphFromEdges
-                [ ((), v, Set.toAscList (Map.keysSet us))
-                | (v, us) <- Map.toAscList m
-                ]
