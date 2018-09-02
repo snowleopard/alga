@@ -920,7 +920,7 @@ transpose = foldg Empty Vertex Overlay (flip Connect)
 "transpose/connects" forall xs. transpose (connects xs) = connects (reverse (map transpose xs))
 
 "transpose/vertices" forall xs. transpose (vertices xs) = vertices xs
-"transpose/clique"   forall xs. transpose (clique xs) = clique (reverse xs)
+"transpose/clique"   forall xs. transpose (clique xs)   = clique (reverse xs)
  #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
