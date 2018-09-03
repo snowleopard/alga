@@ -16,12 +16,11 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled (
     -- * Algebraic data type for edge-labeleld graphs
-    Dioid (..), Graph (..), UnlabelledGraph, overlay, connect, lconnect,
-    (-<), (>-),
+    Dioid (..), Graph (..), UnlabelledGraph, empty, vertex, edge, overlay,
+    connect, connectBy, (-<), (>-),
 
     -- * Distances
     Distance (..),
-    Set(..),
 
     -- * Operations
     edgeLabel
@@ -29,10 +28,39 @@ module Algebra.Graph.Labelled (
 
 import Prelude ()
 import Prelude.Compat
-import GHC.Exts
+import Data.Set (Set)
 
 import qualified Algebra.Graph.Class as C
 import qualified Data.Set as Set
+
+-- | A bounded join semilattice, satisfying the following laws:
+--
+-- * Commutativity:         x \/ y == y \/ x
+-- * Associativity:  x \/ (y \/ z) == (x \/ y) \/ z
+-- * Identity:           x \/ zero == x
+-- * Idempotence:           x \/ x == x
+--
+class Semilattice a where
+    zero :: a
+    (\/) :: a -> a -> a
+
+-- | Dioid is an idempotent semiring:
+--
+-- *   Associativity:  x /\ (y /\ z) == (x /\ y) /\ z
+-- *   Identity:            x /\ one == x
+--                          one /\ x == x
+-- *   Annihilating zero:  x /\ zero == zero
+--                         zero /\ x == zero
+--
+-- *   Distributivity: x /\ (y \/ z) == x /\ y \/ x /\ z
+--                     (x \/ y) /\ z == x /\ z \/ y /\ z
+--
+class Semilattice a => Dioid a where
+    one  :: a
+    (/\) :: a -> a -> a
+
+infixl 6 \/
+infixl 7 /\
 
 -- This class has usual semiring laws:
 --
@@ -109,13 +137,14 @@ edgeLabel x y (LConnect e g h) = edgeLabel x y g |+| edgeLabel x y h |+| new
     new | x `elem` g && y `elem` h = e
         | otherwise                = zero
 
-instance Dioid Bool where
-    zero  = False
-    one   = True
-    (|+|) = (||)
-    (|*|) = (&&)
+instance Semilattice Bool where
+    zero = False
+    (\/) = (||)
 
--- TODO: Prove that this is identical to Algebra.Graph
+instance Dioid Bool where
+    one  = True
+    (/\) = (&&)
+
 type UnlabelledGraph a = Graph Bool a
 
 data Distance a = Finite a | Infinite deriving (Eq, Ord, Show)
@@ -138,47 +167,20 @@ instance (Ord a, Num a) => Num (Distance a) where
 
     abs = id
 
-instance (Num a, Ord a) => Dioid (Distance a) where
+instance Ord a => Semilattice (Distance a) where
     zero = Infinite
+
+    Infinite \/ x = x
+    x \/ Infinite = x
+    Finite x \/ Finite y = Finite (min x y)
+
+instance (Num a, Ord a) => Dioid (Distance a) where
     one  = Finite 0
 
-    Infinite |+| x = x
-    x |+| Infinite = x
-    Finite x |+| Finite y = Finite (min x y)
+    Infinite /\ _ = Infinite
+    _ /\ Infinite = Infinite
+    Finite x /\ Finite y = Finite (x + y)
 
-    Infinite |*| _ = Infinite
-    _ |*| Infinite = Infinite
-    Finite x |*| Finite y = Finite (x + y)
-
-instance (Num a, Ord a) => Dioid (Maybe a) where
-    zero = Nothing
-    one  = Just 0
-
-    Nothing |+| x = x
-    x |+| Nothing = x
-    Just x |+| Just y = Just (min x y)
-
-    Nothing |*| _ = Nothing
-    _ |*| Nothing = Nothing
-    Just x |*| Just y = Just (x + y)
-
-data Set a = Set (Set.Set a) | Universe
-
-instance (Bounded a, Enum a, Ord a) => IsList (Set a) where
-    type Item (Set a) = a
-    fromList = Set . Set.fromList
-
-    toList (Set s)  = Set.toList s
-    toList Universe = [minBound..maxBound]
-
-instance Ord a => Dioid (Set a) where
-    zero = Set Set.empty
-    one  = Universe
-
-    Universe |+| _  = Universe
-    _ |+| Universe  = Universe
-    Set x |+| Set y = Set (Set.union x y)
-
-    Universe |*| x  = x
-    x |*| Universe  = x
-    Set x |*| Set y = Set (Set.intersection x y)
+instance Ord a => Semilattice (Set a) where
+    zero = Set.empty
+    (\/) = Set.union
