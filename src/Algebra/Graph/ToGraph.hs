@@ -44,7 +44,7 @@ import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Internal
                                                as AIM
 import qualified Algebra.Graph.Relation        as R
-import           Algebra.Graph.Labelled         ( Dioid )
+import           Algebra.Graph.Label         ( Dioid )
 import qualified Data.IntMap                   as IntMap
 import qualified Data.IntSet                   as IntSet
 import qualified Data.Map                      as Map
