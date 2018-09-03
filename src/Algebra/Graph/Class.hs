@@ -55,7 +55,7 @@ import Data.Tree
 import qualified Algebra.Graph                 as G
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.LabelledAdjacencyMap    as LAM
-import Algebra.Graph.Labelled (Dioid)
+import Algebra.Graph.Label (Dioid)
 import qualified Algebra.Graph.Fold            as F
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Algebra.Graph.Relation        as R

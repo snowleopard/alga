@@ -19,7 +19,7 @@ where
 import           Data.Tree
 
 import           Algebra.Graph.Class            ( Graph(..) )
-import           Algebra.Graph.Labelled         ( Dioid(..) )
+import           Algebra.Graph.Label         ( Dioid(..) )
 
 import qualified Algebra.Graph.LabelledAdjacencyMap
                                                as LabelledAdjacencyMap

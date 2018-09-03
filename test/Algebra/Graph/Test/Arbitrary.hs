@@ -26,7 +26,7 @@ import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.LabelledAdjacencyMap.Internal
 import Algebra.Graph.Export
 import Algebra.Graph.Fold (Fold)
-import Algebra.Graph.Labelled (Dioid)
+import Algebra.Graph.Label (Dioid)
 import Algebra.Graph.AdjacencyIntMap.Internal
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived

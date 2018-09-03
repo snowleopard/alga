@@ -91,7 +91,7 @@ import           Data.Foldable                  ( toList )
 import           Data.Maybe
 import           Data.Set                       ( Set )
 import           Data.Tree
-import           Algebra.Graph.Labelled         ( Dioid(..)
+import           Algebra.Graph.Label         ( Dioid(..)
                                                 , zero
                                                 )
 
@@ -156,7 +156,7 @@ overlays
         :: (Ord a, Dioid e)
         => [LabelledAdjacencyMap a e]
         -> LabelledAdjacencyMap a e
-overlays = LAM . Map.unionsWith (Map.unionWith (|+|)) . map labelledAdjacencyMap
+overlays = LAM . Map.unionsWith (Map.unionWith (/\)) . map labelledAdjacencyMap
 
 
 -- | Connect a given list of graphs.
@@ -588,7 +588,7 @@ transpose (LAM m) = LAM $ Map.foldrWithKey combine vs m
                 -> Map.Map a (Map.Map a e)
                 -> Map.Map a (Map.Map a e)
         combine v es = Map.unionWith
-                (Map.unionWith (|+|))
+                (Map.unionWith (/\))
                 (Map.fromSet (const $ Map.singleton v zero) (Map.keysSet es))
         vs = Map.fromSet (const Map.empty) (Map.keysSet m)
 

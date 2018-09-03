@@ -32,12 +32,13 @@ import           Data.Map.Strict                ( Map
                                                 , fromSet
                                                 )
 import           Data.Set                       ( Set )
-import Data.Maybe (fromMaybe)
-import           Algebra.Graph.Labelled         ( Dioid(..)
-                                                , (|+|)
-                                                , (|*|)
+import           Data.Maybe                     ( fromMaybe )
+import           Algebra.Graph.Label        ( Dioid(..)
+                                                , (\/)
+                                                , (/\)
+                                                , zero
                                                 )
-import Control.DeepSeq (NFData (..))
+import           Control.DeepSeq                ( NFData(..) )
 import qualified Data.Map.Strict               as Map
 import qualified Data.Set                      as Set
 
@@ -73,16 +74,17 @@ empty = LAM Map.empty
 vertex :: a -> LabelledAdjacencyMap a e
 vertex x = LAM $ Map.singleton x Map.empty
 
-overlay ::
-     (Ord a, Dioid e)
-  => LabelledAdjacencyMap a e
-  -> LabelledAdjacencyMap a e
-  -> LabelledAdjacencyMap a e
-overlay x y =
-  LAM $
-  Map.unionWith (Map.unionWith (|+|)) (lAdjacencyMap x) (lAdjacencyMap y)
+overlay
+        :: (Ord a, Dioid e)
+        => LabelledAdjacencyMap a e
+        -> LabelledAdjacencyMap a e
+        -> LabelledAdjacencyMap a e
+overlay x y = LAM $ Map.unionWith (Map.unionWith (\/))
+                                  (lAdjacencyMap x)
+                                  (lAdjacencyMap y)
 
-connect  :: (Ord a, Dioid e)
+connect
+        :: (Ord a, Dioid e)
         => LabelledAdjacencyMap a e
         -> LabelledAdjacencyMap a e
         -> LabelledAdjacencyMap a e
@@ -94,21 +96,15 @@ lconnect
         -> LabelledAdjacencyMap a e
         -> LabelledAdjacencyMap a e
         -> LabelledAdjacencyMap a e
-lconnect e x y =
-  LAM $
-  Map.unionsWith
-    (Map.unionWith (|*|))
-    [ lAdjacencyMap x
-    , lAdjacencyMap y
-    , Map.fromSet (const cset) (keysSet $ lAdjacencyMap x)
-    ]
-  where
-    cset = fromSet (const e) (keysSet $ lAdjacencyMap y)
-    
-(-<)
-        :: LabelledAdjacencyMap a e
-        -> e
-        -> (LabelledAdjacencyMap a e, e)
+lconnect e x y = LAM $ Map.unionsWith
+        (Map.unionWith (/\))
+        [ lAdjacencyMap x
+        , lAdjacencyMap y
+        , Map.fromSet (const cset) (keysSet $ lAdjacencyMap x)
+        ]
+        where cset = fromSet (const e) (keysSet $ lAdjacencyMap y)
+
+(-<) :: LabelledAdjacencyMap a e -> e -> (LabelledAdjacencyMap a e, e)
 g -< e = (g, e)
 
 (>-)
@@ -123,7 +119,7 @@ infixl 5 >-
 
 edgeLabel :: (Ord a, Dioid e) => a -> a -> LabelledAdjacencyMap a e -> e
 edgeLabel x y g =
-  fromMaybe zero (Map.lookup y =<< Map.lookup x (lAdjacencyMap g))
+        fromMaybe zero (Map.lookup y =<< Map.lookup x (lAdjacencyMap g))
 
 instance (Ord a, Num a, Dioid e) => Num (LabelledAdjacencyMap a e) where
   fromInteger = vertex . fromInteger
@@ -146,15 +142,14 @@ instance (NFData a, NFData e) => NFData (LabelledAdjacencyMap a e) where
 -- fromAdjacencySets . map (fmap Set.'Set.fromList') . 'Algebra.Graph.LabelledAdjacencyMap.adjacencyList' == id
 -- 'Algebra.Graph.LabelledAdjacencyMap.overlay' (fromAdjacencySets xs) (fromAdjacencySets ys)       == fromAdjacencySets (xs ++ ys)
 -- @
-fromAdjacencySets :: (Ord a, Dioid e) => [(a, Set a)] -> LabelledAdjacencyMap a e
-fromAdjacencySets ss = LAM $ Map.unionWith (Map.unionWith (|+|)) vs es
-  where
-    vs = Map.fromSet (const Map.empty) . Set.unions $ map snd ss
-    es =
-      Map.fromListWith
-        (Map.unionWith (|+|))
-        (fmap (\(a, s) -> (a, set2map s)) ss)
-    set2map = Map.fromSet (const one)
+fromAdjacencySets
+        :: (Ord a, Dioid e) => [(a, Set a)] -> LabelledAdjacencyMap a e
+fromAdjacencySets ss = LAM $ Map.unionWith (Map.unionWith (\/)) vs es
+    where
+        vs = Map.fromSet (const Map.empty) . Set.unions $ map snd ss
+        es = Map.fromListWith (Map.unionWith (\/))
+                              (fmap (\(a, s) -> (a, set2map s)) ss)
+        set2map = Map.fromSet (const one)
 
 
 -- | Check if the internal graph representation is consistent, i.e. that all
