@@ -91,7 +91,7 @@ arbitraryAdjacencyMap = AdjacencyMap.stars <$> arbitrary
 -- | Generate an arbitrary 'LabelledAdjacencyMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
 arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Dioid e) => Gen (LabelledAdjacencyMap a e)
-arbitraryLabelledAdjacencyMap = LabelledAdjacencyMap.stars <$> arbitrary
+arbitraryLabelledAdjacencyMap = LabelledAdjacencyMap.fromAdjacencyList <$> arbitrary
 
 -- | Generate an arbitrary 'AdjacencyIntMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.

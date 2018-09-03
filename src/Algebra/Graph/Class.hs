@@ -54,8 +54,6 @@ import Data.Tree
 
 import qualified Algebra.Graph                 as G
 import qualified Algebra.Graph.AdjacencyMap    as AM
-import qualified Algebra.Graph.LabelledAdjacencyMap    as LAM
-import Algebra.Graph.Labelled (Dioid)
 import qualified Algebra.Graph.Fold            as F
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Algebra.Graph.Relation        as R
@@ -147,13 +145,6 @@ instance Graph AIM.AdjacencyIntMap where
     overlay = AIM.overlay
     connect = AIM.connect
 
-instance (Ord a, Dioid e) => Graph (LAM.LabelledAdjacencyMap a e) where
-    type Vertex (LAM.LabelledAdjacencyMap a e) = a
-    empty   = LAM.empty
-    vertex  = LAM.vertex
-    overlay = LAM.overlay
-    connect = LAM.connect
-    
 instance Ord a => Graph (R.Relation a) where
     type Vertex (R.Relation a) = a
     empty   = R.empty

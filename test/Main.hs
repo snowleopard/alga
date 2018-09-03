@@ -11,6 +11,7 @@ import Data.Graph.Test.Typed
 
 main :: IO ()
 main = do
+    testLabelledAdjacencyMap
     testAdjacencyMap
     testExport
     testFold
@@ -18,6 +19,5 @@ main = do
     testGraphNonEmpty
     testAdjacencyIntMap
     testInternal
-    testLabelledAdjacencyMap
     testRelation
     testTyped
