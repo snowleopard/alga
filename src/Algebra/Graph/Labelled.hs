@@ -36,19 +36,25 @@ import qualified Data.Set as Set
 
 -- This class has usual semiring laws:
 --
---            x |+| y == x |+| y
---    x |+| (y |+| z) == (x |+| y) |+| z
---         x |+| zero == x
---            x |+| x == x
+--   Commutativity:         x \/ y == y \/ x
+--   Associativity:  x \/ (y \/ z) == (x \/ y) \/ z
+--   Identity:           x \/ zero == x
+--   Idempotence:           x \/ x == x
 --
---    x |*| (y |*| z) == (x |*| y) |*| z
---         x |*| zero == zero
---         zero |*| x == zero
---          x |*| one == x
---          one |*| x == x
+class Semilattice a where
+    zero :: a
+    (\/) :: a -> a -> a
+
+-- | Dioid is an idempotent semiring:
 --
---    x |*| (y |+| z) == x |*| y |+| x |*| z
---    (x |+| y) |*| z == x |*| z |+| y |*| z
+--     Associativity:  x /\ (y /\ z) == (x /\ y) /\ z
+--     Identity:            x /\ one == x
+--                          one /\ x == x
+--     Annihilating zero:  x /\ zero == zero
+--                         zero /\ x == zero
+--
+--     Distributivity: x /\ (y \/ z) == x /\ y \/ x /\ z
+--                     (x \/ y) /\ z == x /\ z \/ y /\ z
 --
 class Dioid a where
     zero  :: a
@@ -59,20 +65,20 @@ class Dioid a where
 infixl 6 |+|
 infixl 7 |*|
 
--- Type variable e stands for edge labels
+-- Type variable @e@ stands for edge labels.
 data Graph e a = Empty
                | Vertex a
                | LConnect e (Graph e a) (Graph e a)
                deriving (Foldable, Functor, Show, Traversable)
 
-overlay :: Dioid e => Graph e a -> Graph e a -> Graph e a
-overlay = LConnect zero
+overlay :: Semilattice e => Graph e a -> Graph e a -> Graph e a
+overlay = Connect zero
 
 connect :: Dioid e => Graph e a -> Graph e a -> Graph e a
 connect = LConnect one
 
 lconnect :: e -> Graph e a -> Graph e a -> Graph e a
-lconnect = LConnect
+lconnect = Connect
 
 -- Convenient ternary-ish operator x -<e>- y, for example:
 -- x = Vertex "x"
