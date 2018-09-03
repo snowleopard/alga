@@ -16,8 +16,8 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled (
     -- * Algebraic data type for edge-labeleld graphs
-    Dioid (..), Graph (..), UnlabelledGraph, empty, vertex, edge, overlay,
-    connect, connectBy, (-<), (>-),
+    Dioid (..), Graph (..), UnlabelledGraph, overlay, connect, lconnect,
+    (-<), (>-),
 
     -- * Distances
     Distance (..),
@@ -34,35 +34,6 @@ import qualified Algebra.Graph.Class as C
 import qualified Data.Set as Set
 
 -- | A bounded join semilattice, satisfying the following laws:
---
--- * Commutativity:         x \/ y == y \/ x
--- * Associativity:  x \/ (y \/ z) == (x \/ y) \/ z
--- * Identity:           x \/ zero == x
--- * Idempotence:           x \/ x == x
---
-class Semilattice a where
-    zero :: a
-    (\/) :: a -> a -> a
-
--- | Dioid is an idempotent semiring:
---
--- *   Associativity:  x /\ (y /\ z) == (x /\ y) /\ z
--- *   Identity:            x /\ one == x
---                          one /\ x == x
--- *   Annihilating zero:  x /\ zero == zero
---                         zero /\ x == zero
---
--- *   Distributivity: x /\ (y \/ z) == x /\ y \/ x /\ z
---                     (x \/ y) /\ z == x /\ z \/ y /\ z
---
-class Semilattice a => Dioid a where
-    one  :: a
-    (/\) :: a -> a -> a
-
-infixl 6 \/
-infixl 7 /\
-
--- This class has usual semiring laws:
 --
 --   Commutativity:         x \/ y == y \/ x
 --   Associativity:  x \/ (y \/ z) == (x \/ y) \/ z
@@ -84,19 +55,17 @@ class Semilattice a where
 --     Distributivity: x /\ (y \/ z) == x /\ y \/ x /\ z
 --                     (x \/ y) /\ z == x /\ z \/ y /\ z
 --
-class Dioid a where
-    zero  :: a
-    one   :: a
-    (|+|) :: a -> a -> a
-    (|*|) :: a -> a -> a
+class Semilattice a => Dioid a where
+    one  :: a
+    (/\) :: a -> a -> a
 
-infixl 6 |+|
-infixl 7 |*|
+infixl 6 \/
+infixl 7 /\
 
 -- Type variable @e@ stands for edge labels.
 data Graph e a = Empty
                | Vertex a
-               | LConnect e (Graph e a) (Graph e a)
+               | Connect e (Graph e a) (Graph e a)
                deriving (Foldable, Functor, Show, Traversable)
 
 overlay :: Semilattice e => Graph e a -> Graph e a -> Graph e a
