@@ -67,6 +67,7 @@ library
                         Algebra.Graph.IntAdjacencyMap,
                         Algebra.Graph.IntAdjacencyMap.Internal,
                         Algebra.Graph.Internal,
+                        Algebra.Graph.Label,
                         Algebra.Graph.Labelled,
                         Algebra.Graph.NonEmpty,
                         Algebra.Graph.Relation,
