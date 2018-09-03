@@ -16,8 +16,8 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled (
     -- * Algebraic data type for edge-labeleld graphs
-    Dioid (..), Graph (..), UnlabelledGraph, overlay, connect, lconnect,
-    (-<), (>-),
+    Dioid (..), Graph (..), UnlabelledGraph, empty, vertex, edge, overlay,
+    connect, connectBy, (-<), (>-),
 
     -- * Distances
     Distance (..),
@@ -35,10 +35,10 @@ import qualified Data.Set as Set
 
 -- | A bounded join semilattice, satisfying the following laws:
 --
---   Commutativity:         x \/ y == y \/ x
---   Associativity:  x \/ (y \/ z) == (x \/ y) \/ z
---   Identity:           x \/ zero == x
---   Idempotence:           x \/ x == x
+-- * Commutativity:         x \/ y == y \/ x
+-- * Associativity:  x \/ (y \/ z) == (x \/ y) \/ z
+-- * Identity:           x \/ zero == x
+-- * Idempotence:           x \/ x == x
 --
 class Semilattice a where
     zero :: a
@@ -46,13 +46,13 @@ class Semilattice a where
 
 -- | Dioid is an idempotent semiring:
 --
---     Associativity:  x /\ (y /\ z) == (x /\ y) /\ z
---     Identity:            x /\ one == x
+-- *   Associativity:  x /\ (y /\ z) == (x /\ y) /\ z
+-- *   Identity:            x /\ one == x
 --                          one /\ x == x
---     Annihilating zero:  x /\ zero == zero
+-- *   Annihilating zero:  x /\ zero == zero
 --                         zero /\ x == zero
 --
---     Distributivity: x /\ (y \/ z) == x /\ y \/ x /\ z
+-- *   Distributivity: x /\ (y \/ z) == x /\ y \/ x /\ z
 --                     (x \/ y) /\ z == x /\ z \/ y /\ z
 --
 class Semilattice a => Dioid a where
@@ -62,11 +62,26 @@ class Semilattice a => Dioid a where
 infixl 6 \/
 infixl 7 /\
 
--- Type variable @e@ stands for edge labels.
+-- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
 data Graph e a = Empty
                | Vertex a
                | Connect e (Graph e a) (Graph e a)
                deriving (Foldable, Functor, Show, Traversable)
+
+-- | Construct the /empty graph/. An alias for the constructor 'Empty'.
+-- Complexity: /O(1)/ time, memory and size.
+empty :: Graph e a
+empty = Empty
+
+-- | Construct the graph comprising /a single isolated vertex/. An alias for the
+-- constructor 'Vertex'.
+vertex :: a -> Graph e a
+vertex = Vertex
+
+-- | Construct the graph comprising /a single edge/.
+-- Complexity: /O(1)/ time, memory and size.
+edge :: Dioid e => a -> a -> Graph e a
+edge = C.edge
 
 overlay :: Semilattice e => Graph e a -> Graph e a -> Graph e a
 overlay = Connect zero
@@ -74,10 +89,10 @@ overlay = Connect zero
 connect :: Dioid e => Graph e a -> Graph e a -> Graph e a
 connect = Connect one
 
-lconnect :: e -> Graph e a -> Graph e a -> Graph e a
-lconnect = Connect
+connectBy :: e -> Graph e a -> Graph e a -> Graph e a
+connectBy = Connect
 
--- Convenient ternary-ish operator x -<e>- y, for example:
+-- | A convenient ternary-ish operator x -<e>- y, for example:
 -- x = Vertex "x"
 -- y = Vertex "y"
 -- z = x -<1>- y
