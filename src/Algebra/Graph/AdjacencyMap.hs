@@ -38,8 +38,8 @@ module Algebra.Graph.AdjacencyMap (
     induce,
 
     -- * Algorithms
-    dfsForest, dfsForestFrom, dfs, reachable, topSort, isTopSortOf, isAcyclic,
-    scc
+    dfsForest, isDfsForestOf, dfsForestFrom, dfs, reachable, topSort,
+    isTopSortOf, isAcyclic, scc
   ) where
 
 import Data.Foldable (foldMap, toList)
@@ -530,13 +530,16 @@ gmap f = AM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 induce :: (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
 induce p = AM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjacencyMap
 
--- | Compute the /depth-first search/ forest of a graph.
+-- | Compute the /depth-first search/ forest of a graph that corresponds to
+-- searching from each of the graph vertices in the 'Ord' @a@ order.
 --
 -- @
+-- dfsForest 'empty'                       == []
 -- 'forest' (dfsForest $ 'edge' 1 1)         == 'vertex' 1
 -- 'forest' (dfsForest $ 'edge' 1 2)         == 'edge' 1 2
 -- 'forest' (dfsForest $ 'edge' 2 1)         == 'vertices' [1, 2]
 -- 'isSubgraphOf' ('forest' $ dfsForest x) x == True
+-- 'isDfsForestOf' (dfsForest x) x         == True
 -- dfsForest . 'forest' . dfsForest        == dfsForest
 -- dfsForest ('vertices' vs)               == map (\\v -> Node v []) ('Data.List.nub' $ 'Data.List.sort' vs)
 -- 'dfsForestFrom' ('vertexList' x) x        == dfsForest x
@@ -550,25 +553,64 @@ induce p = AM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjac
 dfsForest :: Ord a => AdjacencyMap a -> Forest a
 dfsForest g = dfsForestFrom (vertexList g) g
 
+-- | Check if a given forest is a valid /depth-first search/ forest of a graph.
+--
+-- @
+-- isDfsForestOf []                              'empty'             == True
+-- isDfsForestOf []                              ('vertex' x)        == False
+-- isDfsForestOf [Node 1 []]                     ('vertex' 1)        == True
+-- isDfsForestOf [Node 1 []]                     ('vertex' 2)        == False
+-- isDfsForestOf [Node 1 [], Node 1 []]          ('vertex' 1)        == False
+-- isDfsForestOf [Node 1 []]                     ('edge' 1 1)        == True
+-- isDfsForestOf [Node 1 []]                     ('edge' 1 2)        == False
+-- isDfsForestOf [Node 1 [], Node 2 []]          ('edge' 1 2)        == False
+-- isDfsForestOf [Node 2 [], Node 1 []]          ('edge' 1 2)        == True
+-- isDfsForestOf [Node 1 [Node 2 []]]            ('edge' 1 2)        == True
+-- isDfsForestOf [Node 1 [], Node 2 []]          ('vertices' [1, 2]) == True
+-- isDfsForestOf [Node 2 [], Node 1 []]          ('vertices' [1, 2]) == True
+-- isDfsForestOf [Node 1 [Node 2 []]]            ('vertices' [1, 2]) == False
+-- isDfsForestOf [Node 1 [Node 2 [Node 3 []]]]   ('path' [1, 2, 3])  == True
+-- isDfsForestOf [Node 1 [Node 3 [Node 2 []]]]   ('path' [1, 2, 3])  == False
+-- isDfsForestOf [Node 3 [], Node 1 [Node 2 []]] ('path' [1, 2, 3])  == True
+-- isDfsForestOf [Node 2 [Node 3 []], Node 1 []] ('path' [1, 2, 3])  == True
+-- isDfsForestOf [Node 1 [], Node 2 [Node 3 []]] ('path' [1, 2, 3])  == False
+-- @
+isDfsForestOf :: Ord a => Forest a -> AdjacencyMap a -> Bool
+isDfsForestOf f am = go Set.empty f
+  where
+    go seen []     = Set.size seen == vertexCount am
+    go seen (t:ts) = hasVertex root am
+                  && root     `Set.notMember` seen
+                  && covered `Set.isSubsetOf` children
+                  && missing  `Set.isSubsetOf` seen
+                  && go (Set.insert root seen) (subForest t ++ ts)
+      where
+        root     = rootLabel t
+        children = postSet root am
+        covered  = Set.fromList $ map rootLabel $ subForest t
+        missing  = children `Set.difference` covered
+
 -- | Compute the /depth-first search/ forest of a graph, searching from each of
 -- the given vertices in order. Note that the resulting forest does not
 -- necessarily span the whole graph, as some vertices may be unreachable.
 --
 -- @
--- 'forest' (dfsForestFrom [1]    $ 'edge' 1 1)     == 'vertex' 1
--- 'forest' (dfsForestFrom [1]    $ 'edge' 1 2)     == 'edge' 1 2
--- 'forest' (dfsForestFrom [2]    $ 'edge' 1 2)     == 'vertex' 2
--- 'forest' (dfsForestFrom [3]    $ 'edge' 1 2)     == 'empty'
--- 'forest' (dfsForestFrom [2, 1] $ 'edge' 1 2)     == 'vertices' [1, 2]
--- 'isSubgraphOf' ('forest' $ dfsForestFrom vs x) x == True
--- dfsForestFrom ('vertexList' x) x               == 'dfsForest' x
--- dfsForestFrom vs             ('vertices' vs)   == map (\\v -> Node v []) ('Data.List.nub' vs)
--- dfsForestFrom []             x               == []
--- dfsForestFrom [1, 4] $ 3 * (1 + 4) * (1 + 5) == [ Node { rootLabel = 1
---                                                        , subForest = [ Node { rootLabel = 5
---                                                                             , subForest = [] }
---                                                 , Node { rootLabel = 4
---                                                        , subForest = [] }]
+-- dfsForestFrom vs 'empty'                         == []
+-- 'forest' (dfsForestFrom [1]    $ 'edge' 1 1)       == 'vertex' 1
+-- 'forest' (dfsForestFrom [1]    $ 'edge' 1 2)       == 'edge' 1 2
+-- 'forest' (dfsForestFrom [2]    $ 'edge' 1 2)       == 'vertex' 2
+-- 'forest' (dfsForestFrom [3]    $ 'edge' 1 2)       == 'empty'
+-- 'forest' (dfsForestFrom [2, 1] $ 'edge' 1 2)       == 'vertices' [1, 2]
+-- 'isSubgraphOf' ('forest' $ dfsForestFrom vs x) x   == True
+-- 'isDfsForestOf' (dfsForestFrom $ 'vertexList' x) x == True
+-- dfsForestFrom ('vertexList' x) x                 == 'dfsForest' x
+-- dfsForestFrom vs             ('vertices' vs)     == map (\\v -> Node v []) ('Data.List.nub' vs)
+-- dfsForestFrom []             x                 == []
+-- dfsForestFrom [1, 4] $ 3 * (1 + 4) * (1 + 5)   == [ Node { rootLabel = 1
+--                                                          , subForest = [ Node { rootLabel = 5
+--                                                                               , subForest = [] }
+--                                                   , Node { rootLabel = 4
+--                                                          , subForest = [] }]
 -- @
 dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
 dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
@@ -577,6 +619,7 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
 -- graph, when searching from each of the given vertices in order.
 --
 -- @
+-- dfs vs     $ 'empty'                   == []
 -- dfs [1]    $ 'edge' 1 1                == [1]
 -- dfs [1]    $ 'edge' 1 2                == [1, 2]
 -- dfs [2]    $ 'edge' 1 2                == [2]
@@ -586,6 +629,7 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
 -- dfs []     $ x                       == []
 -- dfs [1, 4] $ 3 * (1 + 4) * (1 + 5)   == [1, 5, 4]
 -- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
+-- 'isDfsForestOf' (dfs $ 'vertexList' x) x == True
 -- @
 dfs :: Ord a => [a] -> AdjacencyMap a -> [a]
 dfs vs = concatMap flatten . dfsForestFrom vs
