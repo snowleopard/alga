@@ -245,6 +245,15 @@ class ToGraph t where
     dfsForest :: Ord (ToVertex t) => t -> Forest (ToVertex t)
     dfsForest = AM.dfsForest . toAdjacencyMap
 
+    -- | Check if a given forest is a valid /depth-first search/ forest of a
+    -- graph.
+    --
+    -- @
+    -- isDfsForestOf f == Algebra.Graph.AdjacencyMap.'AM.isDfsForestOf' f . toAdjacencyMap
+    -- @
+    isDfsForestOf :: Ord (ToVertex t) => Forest (ToVertex t) -> t -> Bool
+    isDfsForestOf f = AM.isDfsForestOf f . toAdjacencyMap
+
     -- | Compute the /depth-first search/ forest of a graph, searching from each
     -- of the given vertices in order. Note that the resulting forest does not
     -- necessarily span the whole graph, as some vertices may be unreachable.
