@@ -557,7 +557,7 @@ dfsForest g = dfsForestFrom (vertexList g) g
 --
 -- @
 -- isDfsForestOf []                              'empty'             == True
--- isDfsForestOf []                              ('vertex' x)        == False
+-- isDfsForestOf []                              ('vertex' 1)        == False
 -- isDfsForestOf [Node 1 []]                     ('vertex' 1)        == True
 -- isDfsForestOf [Node 1 []]                     ('vertex' 2)        == False
 -- isDfsForestOf [Node 1 [], Node 1 []]          ('vertex' 1)        == False
@@ -580,11 +580,12 @@ isDfsForestOf f am = go Set.empty f
   where
     go seen []     = Set.size seen == vertexCount am
     go seen (t:ts) = hasVertex root am
-                  && root     `Set.notMember` seen
+                  && root    `Set.notMember`  seen
                   && covered `Set.isSubsetOf` children
-                  && missing  `Set.isSubsetOf` seen
-                  && go (Set.insert root seen) (subForest t ++ ts)
+                  && missing `Set.isSubsetOf` newSeen
+                  && go newSeen (subForest t ++ ts)
       where
+        newSeen  = Set.insert root seen
         root     = rootLabel t
         children = postSet root am
         covered  = Set.fromList $ map rootLabel $ subForest t

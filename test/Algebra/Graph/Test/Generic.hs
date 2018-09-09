@@ -15,8 +15,8 @@ module Algebra.Graph.Test.Generic (
     testFromAdjacencyIntSets, testBasicPrimitives, testIsSubgraphOf, testSize,
     testToGraph, testAdjacencyList, testPreSet, testPreIntSet, testPostSet,
     testPostIntSet, testGraphFamilies, testTransformations, testDfsForest,
-    testDfsForestFrom, testDfs, testReachable, testTopSort, testIsTopSortOf,
-    testIsAcyclic, testSplitVertex, testBind, testSimplify
+    testIsDfsForestOf, testDfsForestFrom, testDfs, testReachable, testTopSort,
+    testIsTopSortOf, testIsAcyclic, testSplitVertex, testBind, testSimplify
   ) where
 
 import Prelude ()
@@ -1062,6 +1062,63 @@ testDfsForest (Testsuite prefix (%)) = do
                                                    , Node { rootLabel = 3
                                                    , subForest = [ Node { rootLabel = 4
                                                                         , subForest = [] }]}]
+
+testIsDfsForestOf :: Testsuite -> IO ()
+testIsDfsForestOf (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "isDfsForestOf ============"
+    test "isDfsForestOf []                              empty             == True" $
+          isDfsForestOf [] %                            empty             == True
+
+    test "isDfsForestOf []                              (vertex 1)        == False" $
+          isDfsForestOf [] %                            (vertex 1)        == False
+
+    test "isDfsForestOf [Node 1 []]                     (vertex 1)        == True" $
+          isDfsForestOf [Node 1 []] %                   (vertex 1)        == True
+
+    test "isDfsForestOf [Node 1 []]                     (vertex 2)        == False" $
+          isDfsForestOf [Node 1 []] %                   (vertex 2)        == False
+
+    test "isDfsForestOf [Node 1 [], Node 1 []]          (vertex 1)        == False" $
+          isDfsForestOf [Node 1 [], Node 1 []] %        (vertex 1)        == False
+
+    test "isDfsForestOf [Node 1 []]                     (edge 1 1)        == True" $
+          isDfsForestOf [Node 1 []] %                   (edge 1 1)        == True
+
+    test "isDfsForestOf [Node 1 []]                     (edge 1 2)        == False" $
+          isDfsForestOf [Node 1 []] %                   (edge 1 2)        == False
+
+    test "isDfsForestOf [Node 1 [], Node 2 []]          (edge 1 2)        == False" $
+          isDfsForestOf [Node 1 [], Node 2 []] %        (edge 1 2)        == False
+
+    test "isDfsForestOf [Node 2 [], Node 1 []]          (edge 1 2)        == True" $
+          isDfsForestOf [Node 2 [], Node 1 []] %        (edge 1 2)        == True
+
+    test "isDfsForestOf [Node 1 [Node 2 []]]            (edge 1 2)        == True" $
+          isDfsForestOf [Node 1 [Node 2 []]] %          (edge 1 2)        == True
+
+    test "isDfsForestOf [Node 1 [], Node 2 []]          (vertices [1, 2]) == True" $
+          isDfsForestOf [Node 1 [], Node 2 []] %        (vertices [1, 2]) == True
+
+    test "isDfsForestOf [Node 2 [], Node 1 []]          (vertices [1, 2]) == True" $
+          isDfsForestOf [Node 2 [], Node 1 []] %        (vertices [1, 2]) == True
+
+    test "isDfsForestOf [Node 1 [Node 2 []]]            (vertices [1, 2]) == False" $
+          isDfsForestOf [Node 1 [Node 2 []]] %          (vertices [1, 2]) == False
+
+    test "isDfsForestOf [Node 1 [Node 2 [Node 3 []]]]   (path [1, 2, 3])  == True" $
+          isDfsForestOf [Node 1 [Node 2 [Node 3 []]]] % (path [1, 2, 3])  == True
+
+    test "isDfsForestOf [Node 1 [Node 3 [Node 2 []]]]   (path [1, 2, 3])  == False" $
+          isDfsForestOf [Node 1 [Node 3 [Node 2 []]]] % (path [1, 2, 3])  == False
+
+    test "isDfsForestOf [Node 3 [], Node 1 [Node 2 []]] (path [1, 2, 3])  == True" $
+          isDfsForestOf [Node 3 [], Node 1 [Node 2 []]] % (path [1, 2, 3])  == True
+
+    test "isDfsForestOf [Node 2 [Node 3 []], Node 1 []] (path [1, 2, 3])  == True" $
+          isDfsForestOf [Node 2 [Node 3 []], Node 1 []] % (path [1, 2, 3])  == True
+
+    test "isDfsForestOf [Node 1 [], Node 2 [Node 3 []]] (path [1, 2, 3])  == False" $
+          isDfsForestOf [Node 1 [], Node 2 [Node 3 []]] % (path [1, 2, 3])  == False
 
 testDfsForestFrom :: Testsuite -> IO ()
 testDfsForestFrom (Testsuite prefix (%)) = do
