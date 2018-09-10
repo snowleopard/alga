@@ -237,7 +237,8 @@ class ToGraph t where
     adjacencyIntMapTranspose :: ToVertex t ~ Int => t -> IntMap IntSet
     adjacencyIntMapTranspose = AIM.adjacencyIntMap . toAdjacencyIntMapTranspose
 
-    -- | Compute the /depth-first search/ forest of a graph.
+    -- | Compute the /depth-first search/ forest of a graph that corresponds to
+    -- searching from each of the graph vertices in the 'Ord' @a@ order.
     --
     -- @
     -- dfsForest == Algebra.Graph.AdjacencyMap.'AM.dfsForest' . toAdjacencyMap

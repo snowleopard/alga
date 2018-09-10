@@ -521,7 +521,8 @@ gmap f = AM . IntMap.map (IntSet.map f) . IntMap.mapKeysWith IntSet.union f . ad
 induce :: (Int -> Bool) -> AdjacencyIntMap -> AdjacencyIntMap
 induce p = AM . IntMap.map (IntSet.filter p) . IntMap.filterWithKey (\k _ -> p k) . adjacencyIntMap
 
--- | Compute the /depth-first search/ forest of a graph.
+-- | Compute the /depth-first search/ forest of a graph that corresponds to
+-- searching from each of the graph vertices in the 'Ord' @a@ order.
 --
 -- @
 -- dfsForest 'empty'                       == []

@@ -14,9 +14,9 @@ module Algebra.Graph.Test.Generic (
     Testsuite, testsuite, testShow, testFromAdjacencySets,
     testFromAdjacencyIntSets, testBasicPrimitives, testIsSubgraphOf, testSize,
     testToGraph, testAdjacencyList, testPreSet, testPreIntSet, testPostSet,
-    testPostIntSet, testGraphFamilies, testTransformations, testDfsForest,
-    testIsDfsForestOf, testDfsForestFrom, testDfs, testReachable, testTopSort,
-    testIsTopSortOf, testIsAcyclic, testSplitVertex, testBind, testSimplify
+    testPostIntSet, testGraphFamilies, testTransformations, testSplitVertex,
+    testBind, testSimplify, testDfsForest, testDfsForestFrom, testDfs,
+    testReachable, testTopSort, testIsAcyclic, testIsDfsForestOf, testIsTopSortOf
   ) where
 
 import Prelude ()
@@ -474,6 +474,12 @@ testToGraphDefault (Testsuite prefix (%)) = do
 
     test "toAdjacencyIntMapTranspose == foldg empty vertex overlay (flip connect)" $ \x ->
           toAdjacencyIntMapTranspose x == foldg AIM.empty AIM.vertex AIM.overlay (flip AIM.connect) % x
+
+    test "isDfsForestOf f            == Algebra.Graph.AdjacencyMap.isDfsForestOf f . toAdjacencyMap" $ \f x ->
+          isDfsForestOf f x          == (AM.isDfsForestOf f . toAdjacencyMap) % x
+
+    test "isTopSortOf vs             == Algebra.Graph.AdjacencyMap.isTopSortOf vs . toAdjacencyMap" $ \vs x ->
+          isTopSortOf vs x           == (AM.isTopSortOf vs . toAdjacencyMap) % x
 
 testFoldg :: Testsuite -> IO ()
 testFoldg (Testsuite prefix (%)) = do
