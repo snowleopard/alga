@@ -681,8 +681,10 @@ isTopSortOf :: Ord a => [a] -> AdjacencyMap a -> Bool
 isTopSortOf xs m = go Set.empty xs
   where
     go seen []     = seen == Map.keysSet (adjacencyMap m)
-    go seen (v:vs) = let newSeen = seen `seq` Set.insert v seen
-        in postSet v m `Set.intersection` newSeen == Set.empty && go newSeen vs
+    go seen (v:vs) = postSet v m `Set.intersection` newSeen == Set.empty
+                  && go newSeen vs
+      where
+        newSeen = Set.insert v seen
 
 -- | Check if a given graph is /acyclic/.
 --

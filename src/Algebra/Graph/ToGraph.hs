@@ -292,14 +292,6 @@ class ToGraph t where
     topSort :: Ord (ToVertex t) => t -> Maybe [ToVertex t]
     topSort = AM.topSort . toAdjacencyMap
 
-    -- | Check if a given graph is /acyclic/.
-    --
-    -- @
-    -- isAcyclic == Algebra.Graph.AdjacencyMap.'AM.isAcyclic' . toAdjacencyMap
-    -- @
-    isAcyclic :: Ord (ToVertex t) => t -> Bool
-    isAcyclic = AM.isAcyclic . toAdjacencyMap
-
     -- | Check if a given list of vertices is a valid /topological sort/ of a
     -- graph.
     --
@@ -308,6 +300,14 @@ class ToGraph t where
     -- @
     isTopSortOf :: Ord (ToVertex t) => [ToVertex t] -> t -> Bool
     isTopSortOf vs = AM.isTopSortOf vs . toAdjacencyMap
+
+    -- | Check if a given graph is /acyclic/.
+    --
+    -- @
+    -- isAcyclic == Algebra.Graph.AdjacencyMap.'AM.isAcyclic' . toAdjacencyMap
+    -- @
+    isAcyclic :: Ord (ToVertex t) => t -> Bool
+    isAcyclic = AM.isAcyclic . toAdjacencyMap
 
     -- | Convert a value to the corresponding 'AM.AdjacencyMap'.
     --
@@ -373,6 +373,14 @@ instance Ord a => ToGraph (AM.AdjacencyMap a) where
                                . map (fmap $ IntSet.fromAscList . Set.toAscList)
                                . Map.toAscList
                                . AM.adjacencyMap
+    dfsForest                  = AM.dfsForest
+    isDfsForestOf              = AM.isDfsForestOf
+    dfsForestFrom              = AM.dfsForestFrom
+    dfs                        = AM.dfs
+    reachable                  = AM.reachable
+    topSort                    = AM.topSort
+    isTopSortOf                = AM.isTopSortOf
+    isAcyclic                  = AM.isAcyclic
     toAdjacencyMap             = id
     toAdjacencyIntMap          = AIM.AM . adjacencyIntMap
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
@@ -401,6 +409,14 @@ instance ToGraph AIM.AdjacencyIntMap where
                                . map (fmap $ Set.fromAscList . IntSet.toAscList)
                                . IntMap.toAscList
                                . AIM.adjacencyIntMap
+    dfsForest                  = AIM.dfsForest
+    isDfsForestOf              = AIM.isDfsForestOf
+    dfsForestFrom              = AIM.dfsForestFrom
+    dfs                        = AIM.dfs
+    reachable                  = AIM.reachable
+    topSort                    = AIM.topSort
+    isTopSortOf                = AIM.isTopSortOf
+    isAcyclic                  = AIM.isAcyclic
     adjacencyIntMap            = AIM.adjacencyIntMap
     toAdjacencyMap             = AM.AM . adjacencyMap
     toAdjacencyIntMap          = id
