@@ -45,8 +45,9 @@ testAdjacencyMap = do
     testDfs               t
     testReachable         t
     testTopSort           t
-    testIsTopSortOf       t
     testIsAcyclic         t
+    testIsDfsForestOf     t
+    testIsTopSortOf       t
 
     putStrLn "\n============ AdjacencyMap.scc ============"
     test "scc empty               == empty" $

@@ -14,9 +14,9 @@ module Algebra.Graph.Test.Generic (
     Testsuite, testsuite, testShow, testFromAdjacencySets,
     testFromAdjacencyIntSets, testBasicPrimitives, testIsSubgraphOf, testSize,
     testToGraph, testAdjacencyList, testPreSet, testPreIntSet, testPostSet,
-    testPostIntSet, testGraphFamilies, testTransformations, testDfsForest,
-    testDfsForestFrom, testDfs, testReachable, testTopSort, testIsTopSortOf,
-    testIsAcyclic, testSplitVertex, testBind, testSimplify
+    testPostIntSet, testGraphFamilies, testTransformations, testSplitVertex,
+    testBind, testSimplify, testDfsForest, testDfsForestFrom, testDfs,
+    testReachable, testTopSort, testIsAcyclic, testIsDfsForestOf, testIsTopSortOf
   ) where
 
 import Prelude ()
@@ -474,6 +474,12 @@ testToGraphDefault (Testsuite prefix (%)) = do
 
     test "toAdjacencyIntMapTranspose == foldg empty vertex overlay (flip connect)" $ \x ->
           toAdjacencyIntMapTranspose x == foldg AIM.empty AIM.vertex AIM.overlay (flip AIM.connect) % x
+
+    test "isDfsForestOf f            == Algebra.Graph.AdjacencyMap.isDfsForestOf f . toAdjacencyMap" $ \f x ->
+          isDfsForestOf f x          == (AM.isDfsForestOf f . toAdjacencyMap) % x
+
+    test "isTopSortOf vs             == Algebra.Graph.AdjacencyMap.isTopSortOf vs . toAdjacencyMap" $ \vs x ->
+          isTopSortOf vs x           == (AM.isTopSortOf vs . toAdjacencyMap) % x
 
 testFoldg :: Testsuite -> IO ()
 testFoldg (Testsuite prefix (%)) = do
@@ -1037,17 +1043,23 @@ testSimplify (Testsuite prefix (%)) = do
 testDfsForest :: Testsuite -> IO ()
 testDfsForest (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "dfsForest ============"
+    test "dfsForest empty                       == []" $
+          dfsForest % empty                     == []
+
     test "forest (dfsForest $ edge 1 1)         == vertex 1" $
           forest (dfsForest % edge 1 1)         == id % vertex 1
 
     test "forest (dfsForest $ edge 1 2)         == edge 1 2" $
           forest (dfsForest % edge 1 2)         == id % edge 1 2
 
-    test "forest (dfsForest $ edge 2 1)         == vertices [1, 2]" $
-          forest (dfsForest % edge 2 1)         == id % vertices [1, 2]
+    test "forest (dfsForest $ edge 2 1)         == vertices [1,2]" $
+          forest (dfsForest % edge 2 1)         == id % vertices [1,2]
 
     test "isSubgraphOf (forest $ dfsForest x) x == True" $ \x ->
           isSubgraphOf (forest $ dfsForest x) % x == True
+
+    test "isDfsForestOf (dfsForest x) x         == True" $ \x ->
+          isDfsForestOf (dfsForest x) % x       == True
 
     test "dfsForest . forest . dfsForest        == dfsForest" $ \x ->
           dfsForest % forest (dfsForest x)      == dfsForest % x
@@ -1066,66 +1078,75 @@ testDfsForest (Testsuite prefix (%)) = do
 testDfsForestFrom :: Testsuite -> IO ()
 testDfsForestFrom (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "dfsForestFrom ============"
-    test "forest (dfsForestFrom [1]    $ edge 1 1)     == vertex 1" $
-          forest (dfsForestFrom [1]    % edge 1 1)     == id % vertex 1
+    test "dfsForestFrom vs empty                           == []" $ \vs ->
+          dfsForestFrom vs % empty                         == []
 
-    test "forest (dfsForestFrom [1]    $ edge 1 2)     == edge 1 2" $
-          forest (dfsForestFrom [1]    % edge 1 2)     == id % edge 1 2
+    test "forest (dfsForestFrom [1]   $ edge 1 1)          == vertex 1" $
+          forest (dfsForestFrom [1]   % edge 1 1)          == id % vertex 1
 
-    test "forest (dfsForestFrom [2]    $ edge 1 2)     == vertex 2" $
-          forest (dfsForestFrom [2]    % edge 1 2)     == id % vertex 2
+    test "forest (dfsForestFrom [1]   $ edge 1 2)          == edge 1 2" $
+          forest (dfsForestFrom [1]   % edge 1 2)          == id % edge 1 2
 
-    test "forest (dfsForestFrom [3]    $ edge 1 2)     == empty" $
-          forest (dfsForestFrom [3]    % edge 1 2)     == id % empty
+    test "forest (dfsForestFrom [2]   $ edge 1 2)          == vertex 2" $
+          forest (dfsForestFrom [2]   % edge 1 2)          == id % vertex 2
 
-    test "forest (dfsForestFrom [2, 1] $ edge 1 2)     == vertices [1, 2]" $
-          forest (dfsForestFrom [2, 1] % edge 1 2)     == id % vertices [1, 2]
+    test "forest (dfsForestFrom [3]   $ edge 1 2)          == empty" $
+          forest (dfsForestFrom [3]   % edge 1 2)          == id % empty
 
-    test "isSubgraphOf (forest $ dfsForestFrom vs x) x == True" $ \vs x ->
-          isSubgraphOf (forest $ dfsForestFrom vs x) % x == True
+    test "forest (dfsForestFrom [2,1] $ edge 1 2)          == vertices [1,2]" $
+          forest (dfsForestFrom [2,1] % edge 1 2)          == id % vertices [1,2]
 
-    test "dfsForestFrom (vertexList x) x               == dfsForest x" $ \x ->
-          dfsForestFrom (vertexList x) % x             == dfsForest % x
+    test "isSubgraphOf (forest $ dfsForestFrom vs x) x     == True" $ \vs x ->
+          isSubgraphOf (forest $ dfsForestFrom vs x) % x   == True
 
-    test "dfsForestFrom vs             (vertices vs)   == map (\\v -> Node v []) (nub vs)" $ \vs ->
-          dfsForestFrom vs           %  vertices vs    == map (\v -> Node v []) (nub vs)
+    test "isDfsForestOf (dfsForestFrom (vertexList x) x) x == True" $ \x ->
+          isDfsForestOf (dfsForestFrom (vertexList x) x) % x == True
 
-    test "dfsForestFrom []             x               == []" $ \x ->
-          dfsForestFrom []           % x               == []
+    test "dfsForestFrom (vertexList x) x                   == dfsForest x" $ \x ->
+          dfsForestFrom (vertexList x) % x                 == dfsForest % x
 
-    test "dfsForestFrom [1, 4] $ 3 * (1 + 4) * (1 + 5) == <correct result>" $
-          dfsForestFrom [1, 4] % (3 * (1 + 4) * (1 + 5)) == [ Node { rootLabel = 1
-                                                                   , subForest = [ Node { rootLabel = 5
-                                                                                        , subForest = [] }]}
-                                                            , Node { rootLabel = 4
-                                                                   , subForest = [] }]
+    test "dfsForestFrom vs             (vertices vs)       == map (\\v -> Node v []) (nub vs)" $ \vs ->
+          dfsForestFrom vs           %  vertices vs        == map (\v -> Node v []) (nub vs)
+
+    test "dfsForestFrom []             x                   == []" $ \x ->
+          dfsForestFrom []           % x                   == []
+
+    test "dfsForestFrom [1,4] $ 3 * (1 + 4) * (1 + 5)      == <correct result>" $
+          dfsForestFrom [1,4] % (3 * (1 + 4) * (1 + 5))    == [ Node { rootLabel = 1
+                                                                     , subForest = [ Node { rootLabel = 5
+                                                                                          , subForest = [] }]}
+                                                              , Node { rootLabel = 4
+                                                                     , subForest = [] }]
 
 testDfs :: Testsuite -> IO ()
 testDfs (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "dfs ============"
-    test "dfs [1]    $ edge 1 1                == [1]" $
-          dfs [1]    % edge 1 1                == [1]
+    test "dfs vs    $ empty                    == []" $ \vs ->
+          dfs vs    % empty                    == []
 
-    test "dfs [1]    $ edge 1 2                == [1, 2]" $
-          dfs [1]    % edge 1 2                == [1, 2]
+    test "dfs [1]   $ edge 1 1                 == [1]" $
+          dfs [1]   % edge 1 1                 == [1]
 
-    test "dfs [2]    $ edge 1 2                == [2]" $
-          dfs [2]    % edge 1 2                == [2]
+    test "dfs [1]   $ edge 1 2                 == [1,2]" $
+          dfs [1]   % edge 1 2                 == [1,2]
 
-    test "dfs [3]    $ edge 1 2                == []" $
-          dfs [3]    % edge 1 2                == []
+    test "dfs [2]   $ edge 1 2                 == [2]" $
+          dfs [2]   % edge 1 2                 == [2]
 
-    test "dfs [1, 2] $ edge 1 2                == [1, 2]" $
-          dfs [1, 2] % edge 1 2                == [1, 2]
+    test "dfs [3]   $ edge 1 2                 == []" $
+          dfs [3]   % edge 1 2                 == []
 
-    test "dfs [2, 1] $ edge 1 2                == [2, 1]" $
-          dfs [2, 1] % edge 1 2                == [2, 1]
+    test "dfs [1,2] $ edge 1 2                 == [1,2]" $
+          dfs [1,2] % edge 1 2                 == [1,2]
 
-    test "dfs []     $ x                       == []" $ \x ->
-          dfs []     % x                       == []
+    test "dfs [2,1] $ edge 1 2                 == [2,1]" $
+          dfs [2,1] % edge 1 2                 == [2,1]
 
-    test "dfs [1, 4] $ 3 * (1 + 4) * (1 + 5)   == [1, 5, 4]" $
-          dfs [1, 4] % (3 * (1 + 4) * (1 + 5))   == [1, 5, 4]
+    test "dfs []    $ x                        == []" $ \x ->
+          dfs []    % x                        == []
+
+    test "dfs [1,4] $ 3 * (1 + 4) * (1 + 5)    == [1,5,4]" $
+          dfs [1,4] % (3 * (1 + 4) * (1 + 5))  == [1,5,4]
 
     test "isSubgraphOf (vertices $ dfs vs x) x == True" $ \vs x ->
           isSubgraphOf (vertices $ dfs vs x) % x == True
@@ -1172,27 +1193,6 @@ testTopSort (Testsuite prefix (%)) = do
     test "fmap (flip isTopSortOf x) (topSort x) /= Just False" $ \x ->
           fmap (flip isTopSortOf x) (topSort % x) /= Just False
 
-testIsTopSortOf :: Testsuite -> IO ()
-testIsTopSortOf (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "isTopSortOf ============"
-    test "isTopSortOf [3, 1, 2] (1 * 2 + 3 * 1) == True" $
-          isTopSortOf [3, 1, 2] % (1 * 2 + 3 * 1) == True
-
-    test "isTopSortOf [1, 2, 3] (1 * 2 + 3 * 1) == False" $
-          isTopSortOf [1, 2, 3] % (1 * 2 + 3 * 1) == False
-
-    test "isTopSortOf []        (1 * 2 + 3 * 1) == False" $
-          isTopSortOf []      % (1 * 2 + 3 * 1) == False
-
-    test "isTopSortOf []        empty           == True" $
-          isTopSortOf []      % empty           == True
-
-    test "isTopSortOf [x]       (vertex x)      == True" $ \x ->
-          isTopSortOf [x]      % vertex x       == True
-
-    test "isTopSortOf [x]       (edge x x)      == False" $ \x ->
-          isTopSortOf [x]      % edge x x       == False
-
 testIsAcyclic :: Testsuite -> IO ()
 testIsAcyclic (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "testIsAcyclic ============"
@@ -1207,3 +1207,81 @@ testIsAcyclic (Testsuite prefix (%)) = do
 
     test "isAcyclic                 == isJust . topSort" $ \x ->
           isAcyclic % x             == isJust (topSort x)
+
+testIsDfsForestOf :: Testsuite -> IO ()
+testIsDfsForestOf (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "isDfsForestOf ============"
+    test "isDfsForestOf []                              empty            == True" $
+          isDfsForestOf [] %                            empty            == True
+
+    test "isDfsForestOf []                              (vertex 1)       == False" $
+          isDfsForestOf [] %                            (vertex 1)       == False
+
+    test "isDfsForestOf [Node 1 []]                     (vertex 1)       == True" $
+          isDfsForestOf [Node 1 []] %                   (vertex 1)       == True
+
+    test "isDfsForestOf [Node 1 []]                     (vertex 2)       == False" $
+          isDfsForestOf [Node 1 []] %                   (vertex 2)       == False
+
+    test "isDfsForestOf [Node 1 [], Node 1 []]          (vertex 1)       == False" $
+          isDfsForestOf [Node 1 [], Node 1 []] %        (vertex 1)       == False
+
+    test "isDfsForestOf [Node 1 []]                     (edge 1 1)       == True" $
+          isDfsForestOf [Node 1 []] %                   (edge 1 1)       == True
+
+    test "isDfsForestOf [Node 1 []]                     (edge 1 2)       == False" $
+          isDfsForestOf [Node 1 []] %                   (edge 1 2)       == False
+
+    test "isDfsForestOf [Node 1 [], Node 2 []]          (edge 1 2)       == False" $
+          isDfsForestOf [Node 1 [], Node 2 []] %        (edge 1 2)       == False
+
+    test "isDfsForestOf [Node 2 [], Node 1 []]          (edge 1 2)       == True" $
+          isDfsForestOf [Node 2 [], Node 1 []] %        (edge 1 2)       == True
+
+    test "isDfsForestOf [Node 1 [Node 2 []]]            (edge 1 2)       == True" $
+          isDfsForestOf [Node 1 [Node 2 []]] %          (edge 1 2)       == True
+
+    test "isDfsForestOf [Node 1 [], Node 2 []]          (vertices [1,2]) == True" $
+          isDfsForestOf [Node 1 [], Node 2 []] %        (vertices [1,2]) == True
+
+    test "isDfsForestOf [Node 2 [], Node 1 []]          (vertices [1,2]) == True" $
+          isDfsForestOf [Node 2 [], Node 1 []] %        (vertices [1,2]) == True
+
+    test "isDfsForestOf [Node 1 [Node 2 []]]            (vertices [1,2]) == False" $
+          isDfsForestOf [Node 1 [Node 2 []]] %          (vertices [1,2]) == False
+
+    test "isDfsForestOf [Node 1 [Node 2 [Node 3 []]]]   (path [1,2,3])   == True" $
+          isDfsForestOf [Node 1 [Node 2 [Node 3 []]]] % (path [1,2,3])   == True
+
+    test "isDfsForestOf [Node 1 [Node 3 [Node 2 []]]]   (path [1,2,3])   == False" $
+          isDfsForestOf [Node 1 [Node 3 [Node 2 []]]] % (path [1,2,3])   == False
+
+    test "isDfsForestOf [Node 3 [], Node 1 [Node 2 []]] (path [1,2,3])   == True" $
+          isDfsForestOf [Node 3 [], Node 1 [Node 2 []]] % (path [1,2,3]) == True
+
+    test "isDfsForestOf [Node 2 [Node 3 []], Node 1 []] (path [1,2,3])   == True" $
+          isDfsForestOf [Node 2 [Node 3 []], Node 1 []] % (path [1,2,3]) == True
+
+    test "isDfsForestOf [Node 1 [], Node 2 [Node 3 []]] (path [1,2,3])   == False" $
+          isDfsForestOf [Node 1 [], Node 2 [Node 3 []]] % (path [1,2,3]) == False
+
+testIsTopSortOf :: Testsuite -> IO ()
+testIsTopSortOf (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "isTopSortOf ============"
+    test "isTopSortOf [3,1,2] (1 * 2 + 3 * 1) == True" $
+          isTopSortOf [3,1,2] % (1 * 2 + 3 * 1) == True
+
+    test "isTopSortOf [1,2,3] (1 * 2 + 3 * 1) == False" $
+          isTopSortOf [1,2,3] % (1 * 2 + 3 * 1) == False
+
+    test "isTopSortOf []      (1 * 2 + 3 * 1) == False" $
+          isTopSortOf []    % (1 * 2 + 3 * 1) == False
+
+    test "isTopSortOf []      empty           == True" $
+          isTopSortOf []    % empty           == True
+
+    test "isTopSortOf [x]     (vertex x)      == True" $ \x ->
+          isTopSortOf [x]    % vertex x       == True
+
+    test "isTopSortOf [x]     (edge x x)      == False" $ \x ->
+          isTopSortOf [x]    % edge x x       == False

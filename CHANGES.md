@@ -2,6 +2,8 @@
 
 ## 0.2
 
+* #115: Add `isDfsForestOf`.
+* #114: Add a basic implementation of edge-labelled graphs.
 * #106: Extend `ToGraph` with algorithms based on adjacency maps.
 * #106: Add `isAcyclic` and `reachable`.
 * #106: Rename `isTopSort` to `isTopSortOf`.
@@ -12,11 +14,12 @@
        and then rename the function that extracts its adjacency map to
        `adjacencyIntMap` to avoid the clash with `AdjacencyMap.adjacencyMap`,
        which has incompatible type.
+* #82, #92: Add performance regression suite.
 * #76: Remove benchmarks.
 * #74: Drop dependency of `Algebra.Graph` on graph type classes.
 * #62: Move King-Launchbury graphs into `Data.Graph.Typed`.
-* #67, #68, #69, #77, #81, #97: Various performance improvements.
-* #66, #72: Add missing `NFData` instances.
+* #67, #68, #69, #77, #81, #93, #94, #97, #103, #110: Various performance improvements.
+* #66, #72, #96, #98: Add missing `NFData` instances.
 
 ## 0.1.1.1
 

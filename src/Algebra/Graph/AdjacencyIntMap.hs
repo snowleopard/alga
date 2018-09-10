@@ -38,11 +38,16 @@ module Algebra.Graph.AdjacencyIntMap (
     induce,
 
     -- * Algorithms
-    dfsForest, dfsForestFrom, dfs, reachable, topSort, isTopSort
+    dfsForest, dfsForestFrom, dfs, reachable, topSort, isAcyclic,
+
+    -- * Correctness properties
+    isDfsForestOf, isTopSortOf
   ) where
 
+import Control.Monad
 import Data.Foldable (foldMap)
 import Data.IntSet (IntSet)
+import Data.Maybe
 import Data.Monoid
 import Data.Set (Set)
 import Data.Tree
@@ -516,13 +521,16 @@ gmap f = AM . IntMap.map (IntSet.map f) . IntMap.mapKeysWith IntSet.union f . ad
 induce :: (Int -> Bool) -> AdjacencyIntMap -> AdjacencyIntMap
 induce p = AM . IntMap.map (IntSet.filter p) . IntMap.filterWithKey (\k _ -> p k) . adjacencyIntMap
 
--- | Compute the /depth-first search/ forest of a graph.
+-- | Compute the /depth-first search/ forest of a graph that corresponds to
+-- searching from each of the graph vertices in the 'Ord' @a@ order.
 --
 -- @
+-- dfsForest 'empty'                       == []
 -- 'forest' (dfsForest $ 'edge' 1 1)         == 'vertex' 1
 -- 'forest' (dfsForest $ 'edge' 1 2)         == 'edge' 1 2
--- 'forest' (dfsForest $ 'edge' 2 1)         == 'vertices' [1, 2]
+-- 'forest' (dfsForest $ 'edge' 2 1)         == 'vertices' [1,2]
 -- 'isSubgraphOf' ('forest' $ dfsForest x) x == True
+-- 'isDfsForestOf' (dfsForest x) x         == True
 -- dfsForest . 'forest' . dfsForest        == dfsForest
 -- dfsForest ('vertices' vs)               == map (\\v -> Node v []) ('Data.List.nub' $ 'Data.List.sort' vs)
 -- 'dfsForestFrom' ('vertexList' x) x        == dfsForest x
@@ -541,20 +549,22 @@ dfsForest = Typed.dfsForest . Typed.fromAdjacencyIntMap
 -- necessarily span the whole graph, as some vertices may be unreachable.
 --
 -- @
--- 'forest' (dfsForestFrom [1]    $ 'edge' 1 1)     == 'vertex' 1
--- 'forest' (dfsForestFrom [1]    $ 'edge' 1 2)     == 'edge' 1 2
--- 'forest' (dfsForestFrom [2]    $ 'edge' 1 2)     == 'vertex' 2
--- 'forest' (dfsForestFrom [3]    $ 'edge' 1 2)     == 'empty'
--- 'forest' (dfsForestFrom [2, 1] $ 'edge' 1 2)     == 'vertices' [1, 2]
--- 'isSubgraphOf' ('forest' $ dfsForestFrom vs x) x == True
--- dfsForestFrom ('vertexList' x) x               == 'dfsForest' x
--- dfsForestFrom vs             ('vertices' vs)   == map (\\v -> Node v []) ('Data.List.nub' vs)
--- dfsForestFrom []             x               == []
--- dfsForestFrom [1, 4] $ 3 * (1 + 4) * (1 + 5) == [ Node { rootLabel = 1
---                                                        , subForest = [ Node { rootLabel = 5
---                                                                             , subForest = [] }
---                                                 , Node { rootLabel = 4
---                                                        , subForest = [] }]
+-- dfsForestFrom vs 'empty'                           == []
+-- 'forest' (dfsForestFrom [1]   $ 'edge' 1 1)          == 'vertex' 1
+-- 'forest' (dfsForestFrom [1]   $ 'edge' 1 2)          == 'edge' 1 2
+-- 'forest' (dfsForestFrom [2]   $ 'edge' 1 2)          == 'vertex' 2
+-- 'forest' (dfsForestFrom [3]   $ 'edge' 1 2)          == 'empty'
+-- 'forest' (dfsForestFrom [2,1] $ 'edge' 1 2)          == 'vertices' [1,2]
+-- 'isSubgraphOf' ('forest' $ dfsForestFrom vs x) x     == True
+-- 'isDfsForestOf' (dfsForestFrom ('vertexList' x) x) x == True
+-- dfsForestFrom ('vertexList' x) x                   == 'dfsForest' x
+-- dfsForestFrom vs             ('vertices' vs)       == map (\\v -> Node v []) ('Data.List.nub' vs)
+-- dfsForestFrom []             x                   == []
+-- dfsForestFrom [1,4] $ 3 * (1 + 4) * (1 + 5)      == [ Node { rootLabel = 1
+--                                                            , subForest = [ Node { rootLabel = 5
+--                                                                                 , subForest = [] }
+--                                                     , Node { rootLabel = 4
+--                                                            , subForest = [] }]
 -- @
 dfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
 dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyIntMap
@@ -563,14 +573,15 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyIntMap
 -- when searching from each of the given vertices in order.
 --
 -- @
--- dfs [1]    $ 'edge' 1 1                == [1]
--- dfs [1]    $ 'edge' 1 2                == [1, 2]
--- dfs [2]    $ 'edge' 1 2                == [2]
--- dfs [3]    $ 'edge' 1 2                == []
--- dfs [1, 2] $ 'edge' 1 2                == [1, 2]
--- dfs [2, 1] $ 'edge' 1 2                == [2, 1]
--- dfs []     $ x                       == []
--- dfs [1, 4] $ 3 * (1 + 4) * (1 + 5)   == [1, 5, 4]
+-- dfs vs    $ 'empty'                    == []
+-- dfs [1]   $ 'edge' 1 1                 == [1]
+-- dfs [1]   $ 'edge' 1 2                 == [1,2]
+-- dfs [2]   $ 'edge' 1 2                 == [2]
+-- dfs [3]   $ 'edge' 1 2                 == []
+-- dfs [1,2] $ 'edge' 1 2                 == [1,2]
+-- dfs [2,1] $ 'edge' 1 2                 == [2,1]
+-- dfs []    $ x                        == []
+-- dfs [1,4] $ 3 * (1 + 4) * (1 + 5)    == [1,5,4]
 -- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
 -- @
 dfs :: [Int] -> AdjacencyIntMap -> [Int]
@@ -598,28 +609,80 @@ reachable x = dfs [x]
 -- is cyclic.
 --
 -- @
--- topSort (1 * 2 + 3 * 1)             == Just [3,1,2]
--- topSort (1 * 2 + 2 * 1)             == Nothing
--- fmap (flip 'isTopSort' x) (topSort x) /= Just False
+-- topSort (1 * 2 + 3 * 1)               == Just [3,1,2]
+-- topSort (1 * 2 + 2 * 1)               == Nothing
+-- fmap (flip 'isTopSortOf' x) (topSort x) /= Just False
+-- 'isJust' . topSort                      == 'isAcyclic'
 -- @
 topSort :: AdjacencyIntMap -> Maybe [Int]
-topSort m = if isTopSort result m then Just result else Nothing
+topSort m = if isTopSortOf result m then Just result else Nothing
   where
     result = Typed.topSort (Typed.fromAdjacencyIntMap m)
 
--- | Check if a given list of vertices is a valid /topological sort/ of a graph.
+-- | Check if a given graph is /acyclic/.
 --
 -- @
--- isTopSort [3, 1, 2] (1 * 2 + 3 * 1) == True
--- isTopSort [1, 2, 3] (1 * 2 + 3 * 1) == False
--- isTopSort []        (1 * 2 + 3 * 1) == False
--- isTopSort []        'empty'           == True
--- isTopSort [x]       ('vertex' x)      == True
--- isTopSort [x]       ('edge' x x)      == False
+-- isAcyclic (1 * 2 + 3 * 1) == True
+-- isAcyclic (1 * 2 + 2 * 1) == False
+-- isAcyclic . 'circuit'       == 'null'
+-- isAcyclic                 == 'isJust' . 'topSort'
 -- @
-isTopSort :: [Int] -> AdjacencyIntMap -> Bool
-isTopSort xs m = go IntSet.empty xs
+isAcyclic :: AdjacencyIntMap -> Bool
+isAcyclic = isJust . topSort
+
+-- | Check if a given forest is a correct /depth-first search/ forest of a graph.
+-- The implementation is based on the paper "Depth-First Search and Strong
+-- Connectivity in Coq" by François Pottier.
+--
+-- @
+-- isDfsForestOf []                              'empty'            == True
+-- isDfsForestOf []                              ('vertex' 1)       == False
+-- isDfsForestOf [Node 1 []]                     ('vertex' 1)       == True
+-- isDfsForestOf [Node 1 []]                     ('vertex' 2)       == False
+-- isDfsForestOf [Node 1 [], Node 1 []]          ('vertex' 1)       == False
+-- isDfsForestOf [Node 1 []]                     ('edge' 1 1)       == True
+-- isDfsForestOf [Node 1 []]                     ('edge' 1 2)       == False
+-- isDfsForestOf [Node 1 [], Node 2 []]          ('edge' 1 2)       == False
+-- isDfsForestOf [Node 2 [], Node 1 []]          ('edge' 1 2)       == True
+-- isDfsForestOf [Node 1 [Node 2 []]]            ('edge' 1 2)       == True
+-- isDfsForestOf [Node 1 [], Node 2 []]          ('vertices' [1,2]) == True
+-- isDfsForestOf [Node 2 [], Node 1 []]          ('vertices' [1,2]) == True
+-- isDfsForestOf [Node 1 [Node 2 []]]            ('vertices' [1,2]) == False
+-- isDfsForestOf [Node 1 [Node 2 [Node 3 []]]]   ('path' [1,2,3])   == True
+-- isDfsForestOf [Node 1 [Node 3 [Node 2 []]]]   ('path' [1,2,3])   == False
+-- isDfsForestOf [Node 3 [], Node 1 [Node 2 []]] ('path' [1,2,3])   == True
+-- isDfsForestOf [Node 2 [Node 3 []], Node 1 []] ('path' [1,2,3])   == True
+-- isDfsForestOf [Node 1 [], Node 2 [Node 3 []]] ('path' [1,2,3])   == False
+-- @
+isDfsForestOf :: Forest Int -> AdjacencyIntMap -> Bool
+isDfsForestOf f am = case go IntSet.empty f of
+    Just seen -> seen == vertexIntSet am
+    Nothing   -> False
+  where
+    go seen []     = Just seen
+    go seen (t:ts) = do
+        let root = rootLabel t
+        guard $ root `IntSet.notMember` seen
+        guard $ and [ hasEdge root (rootLabel subTree) am | subTree <- subForest t ]
+        newSeen <- go (IntSet.insert root seen) (subForest t)
+        guard $ postIntSet root am `IntSet.isSubsetOf` newSeen
+        go newSeen ts
+
+-- | Check if a given list of vertices is a correct /topological sort/ of a graph.
+--
+-- @
+-- isTopSortOf [3,1,2] (1 * 2 + 3 * 1) == True
+-- isTopSortOf [1,2,3] (1 * 2 + 3 * 1) == False
+-- isTopSortOf []      (1 * 2 + 3 * 1) == False
+-- isTopSortOf []      'empty'           == True
+-- isTopSortOf [x]     ('vertex' x)      == True
+-- isTopSortOf [x]     ('edge' x x)      == False
+-- @
+isTopSortOf :: [Int] -> AdjacencyIntMap -> Bool
+isTopSortOf xs m = go IntSet.empty xs
   where
     go seen []     = seen == IntMap.keysSet (adjacencyIntMap m)
-    go seen (v:vs) = let newSeen = seen `seq` IntSet.insert v seen
-        in postIntSet v m `IntSet.intersection` newSeen == IntSet.empty && go newSeen vs
+    go seen (v:vs) = postIntSet v m `IntSet.intersection` newSeen == IntSet.empty
+                  && go newSeen vs
+      where
+        newSeen = IntSet.insert v seen
