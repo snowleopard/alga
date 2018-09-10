@@ -123,6 +123,7 @@ instance Show AdjacencyIntMap where
 -- @
 empty :: AdjacencyIntMap
 empty = AM IntMap.empty
+{-# NOINLINE [1] empty #-}
 
 -- | Construct the graph comprising /a single isolated vertex/.
 -- Complexity: /O(1)/ time and memory.
@@ -135,6 +136,7 @@ empty = AM IntMap.empty
 -- @
 vertex :: Int -> AdjacencyIntMap
 vertex x = AM $ IntMap.singleton x IntSet.empty
+{-# NOINLINE [1] vertex #-}
 
 -- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
@@ -152,6 +154,7 @@ vertex x = AM $ IntMap.singleton x IntSet.empty
 -- @
 overlay :: AdjacencyIntMap -> AdjacencyIntMap -> AdjacencyIntMap
 overlay x y = AM $ IntMap.unionWith IntSet.union (adjacencyIntMap x) (adjacencyIntMap y)
+{-# NOINLINE [1] overlay #-}
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
 -- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
@@ -174,6 +177,7 @@ overlay x y = AM $ IntMap.unionWith IntSet.union (adjacencyIntMap x) (adjacencyI
 connect :: AdjacencyIntMap -> AdjacencyIntMap -> AdjacencyIntMap
 connect x y = AM $ IntMap.unionsWith IntSet.union [ adjacencyIntMap x, adjacencyIntMap y,
     fromSet (const . keysSet $ adjacencyIntMap y) (keysSet $ adjacencyIntMap x) ]
+{-# NOINLINE [1] connect #-}
 
 instance Num AdjacencyIntMap where
     fromInteger = vertex . fromInteger
