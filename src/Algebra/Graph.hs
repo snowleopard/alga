@@ -42,7 +42,7 @@ module Algebra.Graph (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
-    transpose, induce, simplify,
+    transpose, induce, simplify, sparsify,
 
     -- * Graph composition
     box,
@@ -57,6 +57,7 @@ import Prelude.Compat
 import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
+import Control.Monad.Trans.State
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Tree
@@ -1017,3 +1018,25 @@ context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
             | otherwise = Nothing
   where
     f = focus p g
+
+-- | Sparsify a graph by inserting intermediate 'Left' vertices between the
+-- original 'Right' vertices in such a way that the resulting graph is sparse
+-- but preserves all paths.
+--
+-- (Empty      ) s t  --->  s * t
+-- (Vertex x   ) s t  --->  s * x * t
+-- (Overlay x y) s t  --->  s `x` t + s `y` t
+-- (Connect x y) s t  --->  s `x` m + m `y` t
+--
+--
+sparsify :: Graph a -> Graph (Either Int a)
+sparsify graph = res
+  where
+    (res, last) = runState (foldg e v o c graph 0 last) 1
+    e     s t = return $ path   [Left s,          Left t]
+    v x   s t = return $ clique [Left s, Right x, Left t]
+    o x y s t = overlay <$> s `x` t <*> s `y` t
+    c x y s t = do
+        m <- get
+        put (m + 1)
+        overlay <$> s `x` m <*> m `y` t
