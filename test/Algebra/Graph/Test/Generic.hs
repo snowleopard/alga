@@ -1037,14 +1037,17 @@ testSimplify (Testsuite prefix (%)) = do
 testDfsForest :: Testsuite -> IO ()
 testDfsForest (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "dfsForest ============"
+    test "dfsForest empty                       == []" $
+          dfsForest % empty                     == []
+
     test "forest (dfsForest $ edge 1 1)         == vertex 1" $
           forest (dfsForest % edge 1 1)         == id % vertex 1
 
     test "forest (dfsForest $ edge 1 2)         == edge 1 2" $
           forest (dfsForest % edge 1 2)         == id % edge 1 2
 
-    test "forest (dfsForest $ edge 2 1)         == vertices [1, 2]" $
-          forest (dfsForest % edge 2 1)         == id % vertices [1, 2]
+    test "forest (dfsForest $ edge 2 1)         == vertices [1,2]" $
+          forest (dfsForest % edge 2 1)         == id % vertices [1,2]
 
     test "isSubgraphOf (forest $ dfsForest x) x == True" $ \x ->
           isSubgraphOf (forest $ dfsForest x) % x == True
@@ -1069,6 +1072,9 @@ testDfsForest (Testsuite prefix (%)) = do
 testDfsForestFrom :: Testsuite -> IO ()
 testDfsForestFrom (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "dfsForestFrom ============"
+    test "dfsForestFrom vs empty                           == []" $ \vs ->
+          dfsForestFrom vs % empty                         == []
+
     test "forest (dfsForestFrom [1]    $ edge 1 1)         == vertex 1" $
           forest (dfsForestFrom [1]    % edge 1 1)         == id % vertex 1
 
@@ -1081,8 +1087,8 @@ testDfsForestFrom (Testsuite prefix (%)) = do
     test "forest (dfsForestFrom [3]    $ edge 1 2)         == empty" $
           forest (dfsForestFrom [3]    % edge 1 2)         == id % empty
 
-    test "forest (dfsForestFrom [2, 1] $ edge 1 2)         == vertices [1, 2]" $
-          forest (dfsForestFrom [2, 1] % edge 1 2)         == id % vertices [1, 2]
+    test "forest (dfsForestFrom [2,1] $ edge 1 2)          == vertices [1,2]" $
+          forest (dfsForestFrom [2,1] % edge 1 2)          == id % vertices [1,2]
 
     test "isSubgraphOf (forest $ dfsForestFrom vs x) x     == True" $ \vs x ->
           isSubgraphOf (forest $ dfsForestFrom vs x) % x   == True
@@ -1099,8 +1105,8 @@ testDfsForestFrom (Testsuite prefix (%)) = do
     test "dfsForestFrom []             x                   == []" $ \x ->
           dfsForestFrom []           % x                   == []
 
-    test "dfsForestFrom [1, 4] $ 3 * (1 + 4) * (1 + 5)     == <correct result>" $
-          dfsForestFrom [1, 4] % (3 * (1 + 4) * (1 + 5))   == [ Node { rootLabel = 1
+    test "dfsForestFrom [1,4] $ 3 * (1 + 4) * (1 + 5)      == <correct result>" $
+          dfsForestFrom [1,4] % (3 * (1 + 4) * (1 + 5))    == [ Node { rootLabel = 1
                                                                      , subForest = [ Node { rootLabel = 5
                                                                                           , subForest = [] }]}
                                                               , Node { rootLabel = 4
@@ -1109,6 +1115,9 @@ testDfsForestFrom (Testsuite prefix (%)) = do
 testDfs :: Testsuite -> IO ()
 testDfs (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "dfs ============"
+    test "dfs vs    $ empty                    == []" $ \vs ->
+          dfs vs    % empty                    == []
+
     test "dfs [1]   $ edge 1 1                 == [1]" $
           dfs [1]   % edge 1 1                 == [1]
 
