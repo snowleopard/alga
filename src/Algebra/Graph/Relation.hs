@@ -29,7 +29,7 @@ module Algebra.Graph.Relation (
     adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
+    path, circuit, clique, biclique, star, stars, tree, forest,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
@@ -391,21 +391,6 @@ stars as = Relation (Set.fromList vs) (Set.fromList es)
   where
     vs = concatMap (uncurry (:)) as
     es = [ (x, y) | (x, ys) <- as, y <- ys ]
-
--- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- starTranspose x []    == 'vertex' x
--- starTranspose x [y]   == 'edge' y x
--- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
--- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
--- starTranspose x ys    == 'transpose' ('star' x ys)
--- @
-starTranspose :: Ord a => a -> [a] -> Relation a
-starTranspose x [] = vertex x
-starTranspose x ys = connect (vertices ys) (vertex x)
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.

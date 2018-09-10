@@ -31,7 +31,7 @@ module Algebra.Graph.AdjacencyMap (
     adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
+    path, circuit, clique, biclique, star, stars, tree, forest,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
@@ -86,6 +86,7 @@ edge x y | x == y    = AM $ Map.singleton x (Set.singleton y)
 -- @
 vertices :: Ord a => [a] -> AdjacencyMap a
 vertices = AM . Map.fromList . map (\x -> (x, Set.empty))
+{-# NOINLINE [1] vertices #-}
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -111,6 +112,7 @@ edges = fromAdjacencySets . map (fmap Set.singleton)
 -- @
 overlays :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
 overlays = AM . Map.unionsWith Set.union . map adjacencyMap
+{-# NOINLINE overlays #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -124,6 +126,7 @@ overlays = AM . Map.unionsWith Set.union . map adjacencyMap
 -- @
 connects :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
 connects = foldr connect empty
+{-# NOINLINE connects #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -346,6 +349,7 @@ clique = fromAdjacencySets . fst . go
   where
     go []     = ([], Set.empty)
     go (x:xs) = let (res, set) = go xs in ((x, set) : res, Set.insert x set)
+{-# NOINLINE [1] clique #-}
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
@@ -377,6 +381,7 @@ biclique xs ys = AM $ Map.fromSet adjacent (x `Set.union` y)
 star :: Ord a => a -> [a] -> AdjacencyMap a
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
+{-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
 -- 'adjacencyList'.
@@ -394,21 +399,6 @@ star x ys = connect (vertex x) (vertices ys)
 -- @
 stars :: Ord a => [(a, [a])] -> AdjacencyMap a
 stars = fromAdjacencySets . map (fmap Set.fromList)
-
--- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- starTranspose x []    == 'vertex' x
--- starTranspose x [y]   == 'edge' y x
--- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
--- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
--- starTranspose x ys    == 'transpose' ('star' x ys)
--- @
-starTranspose :: Ord a => a -> [a] -> AdjacencyMap a
-starTranspose x [] = vertex x
-starTranspose x ys = connect (vertices ys) (vertex x)
 
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -502,6 +492,20 @@ transpose (AM m) = AM $ Map.foldrWithKey combine vs m
   where
     combine v es = Map.unionWith Set.union (Map.fromSet (const $ Set.singleton v) es)
     vs           = Map.fromSet (const Set.empty) (Map.keysSet m)
+{-# NOINLINE [1] transpose #-}
+
+{-# RULES
+"transpose/empty"    transpose empty = empty
+"transpose/vertex"   forall x. transpose (vertex x) = vertex x
+"transpose/overlay"  forall g1 g2. transpose (overlay g1 g2) = overlay (transpose g1) (transpose g2)
+"transpose/connect"  forall g1 g2. transpose (connect g1 g2) = connect (transpose g2) (transpose g1)
+
+"transpose/overlays" forall xs. transpose (overlays xs) = overlays (map transpose xs)
+"transpose/connects" forall xs. transpose (connects xs) = connects (reverse (map transpose xs))
+
+"transpose/vertices" forall xs. transpose (vertices xs) = vertices xs
+"transpose/clique"   forall xs. transpose (clique xs)   = clique (reverse xs)
+ #-}
 
 -- | Transform a graph by applying a function to each of its vertices. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric

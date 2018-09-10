@@ -31,7 +31,7 @@ module Algebra.Graph.AdjacencyIntMap (
     adjacencyList, vertexIntSet, edgeSet, preIntSet, postIntSet,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
+    path, circuit, clique, biclique, star, stars, tree, forest,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
@@ -86,6 +86,7 @@ edge x y | x == y    = AM $ IntMap.singleton x (IntSet.singleton y)
 -- @
 vertices :: [Int] -> AdjacencyIntMap
 vertices = AM . IntMap.fromList . map (\x -> (x, IntSet.empty))
+{-# NOINLINE [1] vertices #-}
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -111,6 +112,7 @@ edges = fromAdjacencyIntSets . map (fmap IntSet.singleton)
 -- @
 overlays :: [AdjacencyIntMap] -> AdjacencyIntMap
 overlays = AM . IntMap.unionsWith IntSet.union . map adjacencyIntMap
+{-# NOINLINE [1] overlays #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -124,6 +126,7 @@ overlays = AM . IntMap.unionsWith IntSet.union . map adjacencyIntMap
 -- @
 connects :: [AdjacencyIntMap] -> AdjacencyIntMap
 connects  = foldr connect empty
+{-# NOINLINE [1] connects #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -334,6 +337,7 @@ clique = fromAdjacencyIntSets . fst . go
   where
     go []     = ([], IntSet.empty)
     go (x:xs) = let (res, set) = go xs in ((x, set) : res, IntSet.insert x set)
+{-# NOINLINE [1] clique #-}
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
@@ -365,6 +369,7 @@ biclique xs ys = AM $ IntMap.fromSet adjacent (x `IntSet.union` y)
 star :: Int -> [Int] -> AdjacencyIntMap
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
+{-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
 -- 'adjacencyList'.
@@ -382,21 +387,6 @@ star x ys = connect (vertex x) (vertices ys)
 -- @
 stars :: [(Int, [Int])] -> AdjacencyIntMap
 stars = fromAdjacencyIntSets . map (fmap IntSet.fromList)
-
--- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- starTranspose x []    == 'vertex' x
--- starTranspose x [y]   == 'edge' y x
--- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
--- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
--- starTranspose x ys    == 'transpose' ('star' x ys)
--- @
-starTranspose :: Int -> [Int] -> AdjacencyIntMap
-starTranspose x [] = vertex x
-starTranspose x ys = connect (vertices ys) (vertex x)
 
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -490,6 +480,20 @@ transpose (AM m) = AM $ IntMap.foldrWithKey combine vs m
   where
     combine v es = IntMap.unionWith IntSet.union (IntMap.fromSet (const $ IntSet.singleton v) es)
     vs           = IntMap.fromSet (const IntSet.empty) (IntMap.keysSet m)
+{-# NOINLINE [1] transpose #-}
+
+{-# RULES
+"transpose/empty"    transpose empty = empty
+"transpose/vertex"   forall x. transpose (vertex x) = vertex x
+"transpose/overlay"  forall g1 g2. transpose (overlay g1 g2) = overlay (transpose g1) (transpose g2)
+"transpose/connect"  forall g1 g2. transpose (connect g1 g2) = connect (transpose g2) (transpose g1)
+
+"transpose/overlays" forall xs. transpose (overlays xs) = overlays (map transpose xs)
+"transpose/connects" forall xs. transpose (connects xs) = connects (reverse (map transpose xs))
+
+"transpose/vertices" forall xs. transpose (vertices xs) = vertices xs
+"transpose/clique"   forall xs. transpose (clique xs)   = clique (reverse xs)
+ #-}
 
 -- | Transform a graph by applying a function to each of its vertices. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric

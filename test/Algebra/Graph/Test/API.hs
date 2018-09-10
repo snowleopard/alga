@@ -60,8 +60,6 @@ class Graph g => GraphAPI g where
     star                 = notImplemented
     stars                :: [(Vertex g, [Vertex g])] -> g
     stars                = notImplemented
-    starTranspose        :: Vertex g -> [Vertex g] -> g
-    starTranspose        = notImplemented
     tree                 :: Tree (Vertex g) -> g
     tree                 = notImplemented
     forest               :: Forest (Vertex g) -> g
@@ -112,7 +110,6 @@ instance Ord a => GraphAPI (AdjacencyMap.AdjacencyMap a) where
     biclique          = AdjacencyMap.biclique
     star              = AdjacencyMap.star
     stars             = AdjacencyMap.stars
-    starTranspose     = AdjacencyMap.starTranspose
     tree              = AdjacencyMap.tree
     forest            = AdjacencyMap.forest
     removeVertex      = AdjacencyMap.removeVertex
@@ -136,7 +133,6 @@ instance Ord a => GraphAPI (Fold.Fold a) where
     biclique      = Fold.biclique
     star          = Fold.star
     stars         = Fold.stars
-    starTranspose = Fold.starTranspose
     tree          = HClass.tree
     forest        = HClass.forest
     mesh          = HClass.mesh
@@ -168,7 +164,6 @@ instance Ord a => GraphAPI (Graph.Graph a) where
     biclique      = Graph.biclique
     star          = Graph.star
     stars         = Graph.stars
-    starTranspose = Graph.starTranspose
     tree          = Graph.tree
     forest        = Graph.forest
     mesh          = Graph.mesh
@@ -200,7 +195,6 @@ instance GraphAPI AdjacencyIntMap.AdjacencyIntMap where
     biclique             = AdjacencyIntMap.biclique
     star                 = AdjacencyIntMap.star
     stars                = AdjacencyIntMap.stars
-    starTranspose        = AdjacencyIntMap.starTranspose
     tree                 = AdjacencyIntMap.tree
     forest               = AdjacencyIntMap.forest
     removeVertex         = AdjacencyIntMap.removeVertex
@@ -224,7 +218,6 @@ instance Ord a => GraphAPI (Relation.Relation a) where
     biclique      = Relation.biclique
     star          = Relation.star
     stars         = Relation.stars
-    starTranspose = Relation.starTranspose
     tree          = Relation.tree
     forest        = Relation.forest
     removeVertex  = Relation.removeVertex

@@ -36,7 +36,7 @@ module Algebra.Graph.Fold (
     edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, stars, starTranspose,
+    path, circuit, clique, biclique, star, stars,
 
     -- * Graph transformation
     removeVertex, removeEdge, transpose, induce, simplify,
@@ -204,6 +204,7 @@ instance ToGraph (Fold a) where
 -- @
 empty :: Fold a
 empty = Fold $ \e _ _ _ -> e
+{-# NOINLINE [1] empty #-}
 
 -- | Construct the graph comprising /a single isolated vertex/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -217,6 +218,7 @@ empty = Fold $ \e _ _ _ -> e
 -- @
 vertex :: a -> Fold a
 vertex x = Fold $ \_ v _ _ -> v x
+{-# NOINLINE [1] vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -248,6 +250,7 @@ edge x y = Fold $ \_ v _ c -> v x `c` v y
 -- @
 overlay :: Fold a -> Fold a -> Fold a
 overlay x y = Fold $ \e v o c -> runFold x e v o c `o` runFold y e v o c
+{-# NOINLINE [1] overlay #-}
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
 -- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
@@ -270,6 +273,7 @@ overlay x y = Fold $ \e v o c -> runFold x e v o c `o` runFold y e v o c
 -- @
 connect :: Fold a -> Fold a -> Fold a
 connect x y = Fold $ \e v o c -> runFold x e v o c `c` runFold y e v o c
+{-# NOINLINE [1] connect #-}
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -284,6 +288,7 @@ connect x y = Fold $ \e v o c -> runFold x e v o c `c` runFold y e v o c
 -- @
 vertices :: [a] -> Fold a
 vertices = overlays . map vertex
+{-# NOINLINE [1] vertices #-}
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -310,6 +315,7 @@ edges es = Fold $ \e v o c -> foldr (flip o . uncurry (c `on` v)) e es
 -- @
 overlays :: [Fold a] -> Fold a
 overlays = foldr overlay empty
+{-# INLINE [2] overlays #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -324,6 +330,7 @@ overlays = foldr overlay empty
 -- @
 connects :: [Fold a] -> Fold a
 connects = foldr connect empty
+{-# INLINE [2] connects #-}
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
@@ -554,6 +561,7 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- @
 clique :: [a] -> Fold a
 clique = connects . map vertex
+{-# NOINLINE [1] clique #-}
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -584,6 +592,7 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 star :: a -> [a] -> Fold a
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
+{-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
 -- 'adjacencyList'.
@@ -601,21 +610,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- @
 stars :: [(a, [a])] -> Fold a
 stars = overlays . map (uncurry star)
-
--- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- starTranspose x []    == 'vertex' x
--- starTranspose x [y]   == 'edge' y x
--- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
--- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
--- starTranspose x ys    == 'transpose' ('star' x ys)
--- @
-starTranspose :: a -> [a] -> Fold a
-starTranspose x [] = vertex x
-starTranspose x ys = connect (vertices ys) (vertex x)
+{-# INLINE stars #-}
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
@@ -649,8 +644,8 @@ removeEdge s t = filterContext s (/=s) (/=t)
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Fold a -> Fold a
 filterContext s i o g = maybe g go $ G.context (==s) (toGraph g)
   where
-    go (G.Context is os) = induce (/=s) g `overlay` starTranspose s (filter i is)
-                                          `overlay` star          s (filter o os)
+    go (G.Context is os) = induce (/=s) g `overlay` transpose (star s (filter i is))
+                                          `overlay` star      s (filter o os)
 
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
@@ -665,6 +660,20 @@ filterContext s i o g = maybe g go $ G.context (==s) (toGraph g)
 -- @
 transpose :: Fold a -> Fold a
 transpose = foldg empty vertex overlay (flip connect)
+{-# NOINLINE [1] transpose #-}
+
+{-# RULES
+"transpose/empty"    transpose empty = empty
+"transpose/vertex"   forall x. transpose (vertex x) = vertex x
+"transpose/overlay"  forall g1 g2. transpose (overlay g1 g2) = overlay (transpose g1) (transpose g2)
+"transpose/connect"  forall g1 g2. transpose (connect g1 g2) = connect (transpose g2) (transpose g1)
+
+"transpose/overlays" forall xs. transpose (overlays xs) = overlays (map transpose xs)
+"transpose/connects" forall xs. transpose (connects xs) = connects (reverse (map transpose xs))
+
+"transpose/vertices" forall xs. transpose (vertices xs) = vertices xs
+"transpose/clique"   forall xs. transpose (clique xs)   = clique (reverse xs)
+ #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.

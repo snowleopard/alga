@@ -37,8 +37,8 @@ module Algebra.Graph (
     adjacencyIntMap,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
-    mesh, torus, deBruijn,
+    path, circuit, clique, biclique, star, stars, tree, forest, mesh, torus,
+    deBruijn,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
@@ -212,6 +212,7 @@ instance MonadPlus Graph where
 -- @
 empty :: Graph a
 empty = Empty
+{-# INLINE empty #-}
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
@@ -226,6 +227,7 @@ empty = Empty
 -- @
 vertex :: a -> Graph a
 vertex = Vertex
+{-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -257,6 +259,7 @@ edge x y = connect (vertex x) (vertex y)
 -- @
 overlay :: Graph a -> Graph a -> Graph a
 overlay = Overlay
+{-# INLINE overlay #-}
 
 -- | /Connect/ two graphs. An alias for the constructor 'Connect'. This is an
 -- associative operation with the identity 'empty', which distributes over
@@ -280,6 +283,7 @@ overlay = Overlay
 -- @
 connect :: Graph a -> Graph a -> Graph a
 connect = Connect
+{-# INLINE connect #-}
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -294,6 +298,7 @@ connect = Connect
 -- @
 vertices :: [a] -> Graph a
 vertices = overlays . map vertex
+{-# NOINLINE [1] vertices #-}
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -320,6 +325,7 @@ edges = overlays . map (uncurry edge)
 -- @
 overlays :: [Graph a] -> Graph a
 overlays = concatg overlay
+{-# INLINE [2] overlays #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -334,6 +340,7 @@ overlays = concatg overlay
 -- @
 connects :: [Graph a] -> Graph a
 connects = concatg connect
+{-# INLINE [2] connects #-}
 
 -- | Auxiliary function, similar to 'mconcat'.
 concatg :: (Graph a -> Graph a -> Graph a) -> [Graph a] -> Graph a
@@ -659,6 +666,7 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- @
 clique :: [a] -> Graph a
 clique = connects . map vertex
+{-# NOINLINE [1] clique #-}
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -689,6 +697,7 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 star :: a -> [a] -> Graph a
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
+{-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
 -- 'adjacencyList'.
@@ -706,21 +715,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- @
 stars :: [(a, [a])] -> Graph a
 stars = overlays . map (uncurry star)
-
--- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- starTranspose x []    == 'vertex' x
--- starTranspose x [y]   == 'edge' y x
--- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
--- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
--- starTranspose x ys    == 'transpose' ('star' x ys)
--- @
-starTranspose :: a -> [a] -> Graph a
-starTranspose x [] = vertex x
-starTranspose x ys = connect (vertices ys) (vertex x)
+{-# INLINE stars #-}
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
@@ -855,7 +850,7 @@ removeEdge s t = filterContext s (/=s) (/=t)
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
 filterContext s i o g = maybe g go $ context (==s) g
   where
-    go (Context is os) = induce (/=s) g `overlay` starTranspose s (filter i is)
+    go (Context is os) = induce (/=s) g `overlay` transpose (star s (filter i is))
                                         `overlay` star          s (filter o os)
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
@@ -900,7 +895,6 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
 splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 
-
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
 --
@@ -914,6 +908,20 @@ splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 -- @
 transpose :: Graph a -> Graph a
 transpose = foldg Empty Vertex Overlay (flip Connect)
+{-# NOINLINE [1] transpose #-}
+
+{-# RULES
+"transpose/Empty"    transpose Empty = Empty
+"transpose/Vertex"   forall x. transpose (Vertex x) = Vertex x
+"transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay (transpose g1) (transpose g2)
+"transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect (transpose g2) (transpose g1)
+
+"transpose/overlays" forall xs. transpose (overlays xs) = overlays (map transpose xs)
+"transpose/connects" forall xs. transpose (connects xs) = connects (reverse (map transpose xs))
+
+"transpose/vertices" forall xs. transpose (vertices xs) = vertices xs
+"transpose/clique"   forall xs. transpose (clique xs)   = clique (reverse xs)
+ #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.

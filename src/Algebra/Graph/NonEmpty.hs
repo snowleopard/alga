@@ -36,8 +36,7 @@ module Algebra.Graph.NonEmpty (
     vertexSet, vertexIntSet, edgeSet,
 
     -- * Standard families of graphs
-    path1, circuit1, clique1, biclique1, star, stars1, starTranspose, tree,
-    mesh1, torus1,
+    path1, circuit1, clique1, biclique1, star, stars1, tree, mesh1, torus1,
 
     -- * Graph transformation
     removeVertex1, removeEdge, replaceVertex, mergeVertices, splitVertex1,
@@ -203,6 +202,7 @@ toNonEmptyGraph = G.foldg Nothing (Just . Vertex) (go Overlay) (go Connect)
 -- @
 vertex :: a -> NonEmptyGraph a
 vertex = Vertex
+{-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -233,6 +233,7 @@ edge u v = connect (vertex u) (vertex v)
 -- @
 overlay :: NonEmptyGraph a -> NonEmptyGraph a -> NonEmptyGraph a
 overlay = Overlay
+{-# INLINE overlay #-}
 
 -- | Overlay a possibly empty graph with a non-empty graph. If the first
 -- argument is 'G.empty', the function returns the second argument; otherwise
@@ -267,6 +268,7 @@ overlay1 = maybe id overlay . toNonEmptyGraph
 -- @
 connect :: NonEmptyGraph a -> NonEmptyGraph a -> NonEmptyGraph a
 connect = Connect
+{-# INLINE connect #-}
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -280,6 +282,7 @@ connect = Connect
 -- @
 vertices1 :: NonEmpty a -> NonEmptyGraph a
 vertices1 = overlays1 . fmap vertex
+{-# NOINLINE [1] vertices1 #-}
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -302,6 +305,7 @@ edges1  = overlays1 . fmap (uncurry edge)
 -- @
 overlays1 :: NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
 overlays1 = concatg1 overlay
+{-# INLINE [2] overlays1 #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -313,6 +317,7 @@ overlays1 = concatg1 overlay
 -- @
 connects1 :: NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
 connects1 = concatg1 connect
+{-# INLINE [2] connects1 #-}
 
 -- | Auxiliary function, similar to 'sconcat'.
 concatg1 :: (NonEmptyGraph a -> NonEmptyGraph a -> NonEmptyGraph a) -> NonEmpty (NonEmptyGraph a) -> NonEmptyGraph a
@@ -558,6 +563,7 @@ circuit1 (x :| xs) = path1 (x :| xs ++ [x])
 -- @
 clique1 :: NonEmpty a -> NonEmptyGraph a
 clique1 = connects1 . fmap vertex
+{-# NOINLINE [1] clique1 #-}
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -582,6 +588,7 @@ biclique1 xs ys = connect (vertices1 xs) (vertices1 ys)
 star :: a -> [a] -> NonEmptyGraph a
 star x []     = vertex x
 star x (y:ys) = connect (vertex x) (vertices1 $ y :| ys)
+{-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a non-empty list of 'star's.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the total size of the
@@ -596,20 +603,7 @@ star x (y:ys) = connect (vertex x) (vertices1 $ y :| ys)
 -- @
 stars1 :: NonEmpty (a, [a]) -> NonEmptyGraph a
 stars1 = overlays1 . fmap (uncurry star)
-
--- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- starTranspose x []    == 'vertex' x
--- starTranspose x [y]   == 'edge' y x
--- starTranspose x [y,z] == 'edges1' ((y,x) ':|' [(z,x)])
--- starTranspose x ys    == 'transpose' ('star' x ys)
--- @
-starTranspose :: a -> [a] -> NonEmptyGraph a
-starTranspose x []     = vertex x
-starTranspose x (y:ys) = connect (vertices1 $ y :| ys) (vertex x)
+{-# INLINE stars1 #-}
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
@@ -716,8 +710,8 @@ removeEdge s t = filterContext s (/=s) (/=t)
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> NonEmptyGraph a -> NonEmptyGraph a
 filterContext s i o g = maybe g go $ G.context (==s) (T.toGraph g)
   where
-    go (G.Context is os) = G.induce (/=s) (T.toGraph g)  `overlay1`
-                           starTranspose s (filter i is) `overlay` star s (filter o os)
+    go (G.Context is os) = G.induce (/=s) (T.toGraph g)     `overlay1`
+                           transpose (star s (filter i is)) `overlay` star s (filter o os)
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'NonEmptyGraph'. If @y@ already exists, @x@ and @y@ will be merged.
@@ -771,6 +765,19 @@ splitVertex1 v us g = g >>= \w -> if w == v then vertices1 us else vertex w
 -- @
 transpose :: NonEmptyGraph a -> NonEmptyGraph a
 transpose = foldg1 vertex overlay (flip connect)
+{-# NOINLINE [1] transpose #-}
+
+{-# RULES
+"transpose/Vertex"   forall x. transpose (Vertex x) = Vertex x
+"transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay (transpose g1) (transpose g2)
+"transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect (transpose g2) (transpose g1)
+
+"transpose/overlays1" forall xs. transpose (overlays1 xs) = overlays1 (fmap transpose xs)
+"transpose/connects1" forall xs. transpose (connects1 xs) = connects1 (NonEmpty.reverse (fmap transpose xs))
+
+"transpose/vertices1" forall xs. transpose (vertices1 xs) = vertices1 xs
+"transpose/clique1"   forall xs. transpose (clique1 xs) = clique1 (NonEmpty.reverse xs)
+ #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate. Returns @Nothing@ if the
