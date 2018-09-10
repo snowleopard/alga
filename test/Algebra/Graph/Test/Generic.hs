@@ -1081,17 +1081,17 @@ testDfsForestFrom (Testsuite prefix (%)) = do
     test "dfsForestFrom vs empty                           == []" $ \vs ->
           dfsForestFrom vs % empty                         == []
 
-    test "forest (dfsForestFrom [1]    $ edge 1 1)         == vertex 1" $
-          forest (dfsForestFrom [1]    % edge 1 1)         == id % vertex 1
+    test "forest (dfsForestFrom [1]   $ edge 1 1)          == vertex 1" $
+          forest (dfsForestFrom [1]   % edge 1 1)          == id % vertex 1
 
-    test "forest (dfsForestFrom [1]    $ edge 1 2)         == edge 1 2" $
-          forest (dfsForestFrom [1]    % edge 1 2)         == id % edge 1 2
+    test "forest (dfsForestFrom [1]   $ edge 1 2)          == edge 1 2" $
+          forest (dfsForestFrom [1]   % edge 1 2)          == id % edge 1 2
 
-    test "forest (dfsForestFrom [2]    $ edge 1 2)         == vertex 2" $
-          forest (dfsForestFrom [2]    % edge 1 2)         == id % vertex 2
+    test "forest (dfsForestFrom [2]   $ edge 1 2)          == vertex 2" $
+          forest (dfsForestFrom [2]   % edge 1 2)          == id % vertex 2
 
-    test "forest (dfsForestFrom [3]    $ edge 1 2)         == empty" $
-          forest (dfsForestFrom [3]    % edge 1 2)         == id % empty
+    test "forest (dfsForestFrom [3]   $ edge 1 2)          == empty" $
+          forest (dfsForestFrom [3]   % edge 1 2)          == id % empty
 
     test "forest (dfsForestFrom [2,1] $ edge 1 2)          == vertices [1,2]" $
           forest (dfsForestFrom [2,1] % edge 1 2)          == id % vertices [1,2]
