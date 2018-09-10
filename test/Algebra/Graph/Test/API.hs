@@ -60,8 +60,6 @@ class Graph g => GraphAPI g where
     star                 = notImplemented
     stars                :: [(Vertex g, [Vertex g])] -> g
     stars                = notImplemented
-    starTranspose        :: Vertex g -> [Vertex g] -> g
-    starTranspose        = notImplemented
     tree                 :: Tree (Vertex g) -> g
     tree                 = notImplemented
     forest               :: Forest (Vertex g) -> g
