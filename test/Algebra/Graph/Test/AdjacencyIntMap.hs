@@ -37,9 +37,9 @@ testAdjacencyIntMap = do
     testGraphFamilies        t
     testTransformations      t
     testDfsForest            t
-    testIsDfsForestOf        t
     testDfsForestFrom        t
     testDfs                  t
     testReachable            t
     testTopSort              t
+    testIsDfsForestOf        t
     testIsTopSortOf          t
