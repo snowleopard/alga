@@ -5,6 +5,7 @@
 * #117: Add `sparsify`.
 * #115: Add `isDfsForestOf`.
 * #114: Add a basic implementation of edge-labelled graphs.
+* #107: Drop `starTranspose`.
 * #106: Extend `ToGraph` with algorithms based on adjacency maps.
 * #106: Add `isAcyclic` and `reachable`.
 * #106: Rename `isTopSort` to `isTopSortOf`.
