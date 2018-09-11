@@ -494,8 +494,8 @@ testGraphNonEmpty = do
          in size (mesh1 xs ys) == max 1 (3 * length xs * length ys - length xs - length ys -1)
 
     putStrLn $ "\n============ Graph.NonEmpty.torus1 ============"
-    test "torus1 (x :| [])  (y :| [])    == edge (x, y) (x, y)" $ \(x :: Int) (y :: Int) ->
-          torus1 (x :| [])  (y :| [])    == edge (x, y) (x, y)
+    test "torus1 (x :| [])  (y :| [])    == edge (x,y) (x,y)" $ \(x :: Int) (y :: Int) ->
+          torus1 (x :| [])  (y :| [])    == edge (x,y) (x,y)
 
     test "torus1 xs         ys           == box (circuit1 xs) (circuit1 ys)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')

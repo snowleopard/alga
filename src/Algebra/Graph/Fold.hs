@@ -629,7 +629,7 @@ removeVertex v = induce (/= v)
 -- Complexity: /O(s)/ time, memory and size.
 --
 -- @
--- removeEdge x y ('edge' x y)       == 'vertices' [x, y]
+-- removeEdge x y ('edge' x y)       == 'vertices' [x,y]
 -- removeEdge x y . removeEdge x y == removeEdge x y
 -- removeEdge x y . 'removeVertex' x == 'removeVertex' x
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2

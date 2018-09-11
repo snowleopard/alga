@@ -81,8 +81,8 @@ testGraph = do
     test "torus []     ys    == empty" $ \ys ->
           torus []     ys    == (empty :: Graph (Int, Int))
 
-    test "torus [x]    [y]   == edge (x, y) (x, y)" $ \(x :: Int) (y :: Int) ->
-          torus [x]    [y]   == edge (x, y) (x, y)
+    test "torus [x]    [y]   == edge (x,y) (x,y)" $ \(x :: Int) (y :: Int) ->
+          torus [x]    [y]   == edge (x,y) (x,y)
 
     test "torus xs     ys    == box (circuit xs) (circuit ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
           torus xs     ys    == box (circuit xs) (circuit ys)
