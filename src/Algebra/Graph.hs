@@ -42,7 +42,7 @@ module Algebra.Graph (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
-    transpose, induce, simplify,
+    transpose, induce, simplify, sparsify,
 
     -- * Graph composition
     box,
@@ -57,6 +57,7 @@ import Prelude.Compat
 import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
+import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Tree
@@ -1017,3 +1018,30 @@ context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
             | otherwise = Nothing
   where
     f = focus p g
+
+-- | /Sparsify/ a graph by adding intermediate 'Left' @Int@ vertices between the
+-- original vertices (wrapping the latter in 'Right') such that the resulting
+-- graph is /sparse/, i.e. contains only O(s) edges, but preserves the
+-- reachability relation between the original vertices. Sparsification is useful
+-- when working with dense graphs, as it can reduce the number of edges from
+-- O(n^2) down to O(n) by replacing cliques, bicliques and similar densely
+-- connected structures by sparse subgraphs built out of intermediate vertices.
+-- Complexity: O(s) time, memory and size.
+--
+-- @
+-- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x       == 'Data.List.sort' . 'Data.Either.rights' . 'Algebra.Graph.ToGraph.reachable' ('Data.Either.Right' x) . sparsify
+-- 'vertexCount' (sparsify x) <= 'vertexCount' x + 'size' x + 1
+-- 'edgeCount'   (sparsify x) <= 3 * 'size' x
+-- 'size'        (sparsify x) <= 3 * 'size' x
+-- @
+sparsify :: Graph a -> Graph (Either Int a)
+sparsify graph = res
+  where
+    (res, end) = runState (foldg e v o c graph 0 end) 1
+    e     s t  = return $ path   [Left s,          Left t]
+    v x   s t  = return $ clique [Left s, Right x, Left t]
+    o x y s t  = overlay <$> s `x` t <*> s `y` t
+    c x y s t  = do
+        m <- get
+        put (m + 1)
+        overlay <$> s `x` m <*> m `y` t

@@ -40,7 +40,7 @@ module Algebra.Graph.NonEmpty (
 
     -- * Graph transformation
     removeVertex1, removeEdge, replaceVertex, mergeVertices, splitVertex1,
-    transpose, induce1, simplify,
+    transpose, induce1, simplify, sparsify,
 
     -- * Graph composition
     box
@@ -55,6 +55,7 @@ import Data.Semigroup
 
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
+import Control.Monad.State (runState, get, put)
 import Data.List.NonEmpty (NonEmpty (..))
 
 import Algebra.Graph.Internal
@@ -858,6 +859,32 @@ box x y = overlays1 xs `overlay` overlays1 ys
   where
     xs = fmap (\b -> fmap (,b) x) $ toNonEmpty y
     ys = fmap (\a -> fmap (a,) y) $ toNonEmpty x
+
+-- | /Sparsify/ a graph by adding intermediate 'Left' @Int@ vertices between the
+-- original vertices (wrapping the latter in 'Right') such that the resulting
+-- graph is /sparse/, i.e. contains only O(s) edges, but preserves the
+-- reachability relation between the original vertices. Sparsification is useful
+-- when working with dense graphs, as it can reduce the number of edges from
+-- O(n^2) down to O(n) by replacing cliques, bicliques and similar densely
+-- connected structures by sparse subgraphs built out of intermediate vertices.
+-- Complexity: O(s) time, memory and size.
+--
+-- @
+-- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x       == 'Data.List.sort' . 'Data.Either.rights' . 'Algebra.Graph.ToGraph.reachable' ('Data.Either.Right' x) . sparsify
+-- 'vertexCount' (sparsify x) <= 'vertexCount' x + 'size' x + 1
+-- 'edgeCount'   (sparsify x) <= 3 * 'size' x
+-- 'size'        (sparsify x) <= 3 * 'size' x
+-- @
+sparsify :: NonEmptyGraph a -> NonEmptyGraph (Either Int a)
+sparsify graph = res
+  where
+    (res, end) = runState (foldg1 v o c graph 0 end) 1
+    v x   s t  = return $ clique1 (Left s :| [Right x, Left t])
+    o x y s t  = overlay <$> s `x` t <*> s `y` t
+    c x y s t  = do
+        m <- get
+        put (m + 1)
+        overlay <$> s `x` m <*> m `y` t
 
 -- Shall we export this? I suggest to wait for Foldable1 type class instead.
 toNonEmpty :: NonEmptyGraph a -> NonEmpty a

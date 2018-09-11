@@ -22,6 +22,7 @@ import Data.Semigroup
 #endif
 
 import Control.Monad
+import Data.Either
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe
 import Data.Tree
@@ -29,7 +30,7 @@ import Data.Tuple
 
 import Algebra.Graph.NonEmpty
 import Algebra.Graph.Test hiding (axioms, theorems)
-import Algebra.Graph.ToGraph (toGraph)
+import Algebra.Graph.ToGraph (reachable, toGraph)
 
 import qualified Algebra.Graph      as G
 import qualified Data.List.NonEmpty as NonEmpty
@@ -649,3 +650,16 @@ testGraphNonEmpty = do
 
     test "edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
           edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
+
+    putStrLn "\n============ Graph.NonEmpty.sparsify ============"
+    test "sort . reachable x       == sort . rights . reachable (Right x) . sparsify" $ \x (y :: G) ->
+         (sort . reachable x) y    == (sort . rights . reachable (Right x) . sparsify) y
+
+    test "vertexCount (sparsify x) <= vertexCount x + size x + 1" $ \(x :: G) ->
+          vertexCount (sparsify x) <= vertexCount x + size x + 1
+
+    test "edgeCount   (sparsify x) <= 3 * size x" $ \(x :: G) ->
+          edgeCount   (sparsify x) <= 3 * size x
+
+    test "size        (sparsify x) <= 3 * size x" $ \(x :: G) ->
+          size        (sparsify x) <= 3 * size x
