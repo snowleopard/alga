@@ -14,7 +14,10 @@ module Algebra.Graph.Test.Graph (
     testGraph
   ) where
 
+import Data.Either
+
 import Algebra.Graph
+import Algebra.Graph.ToGraph (reachable)
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
@@ -149,3 +152,7 @@ testGraph = do
 
     test "edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
           edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
+
+    putStrLn "\n============ Graph.sparsify ============"
+    test "sort . reachable x == sort . rights . reachable (Right x) . sparsify" $ \x (y :: G) ->
+         (sort . reachable x) y == (sort . rights . reachable (Right x) . sparsify) y
