@@ -130,7 +130,7 @@ test-suite test-alga
                         array        >= 0.4     && < 0.6,
                         base         >= 4.7     && < 5,
                         base-compat  >= 0.9.1   && < 0.11,
-                        base-orphans >= 0.5.4   && < 0.8,
+                        base-orphans >= 0.5.4   && < 0.9,
                         containers   >= 0.5.5.1 && < 0.8,
                         extra        >= 1.5     && < 2,
                         QuickCheck   >= 2.9     && < 2.12
