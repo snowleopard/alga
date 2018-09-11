@@ -42,7 +42,7 @@ module Algebra.Graph (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
-    transpose, induce, simplify, sparsify, unsparsify,
+    transpose, induce, simplify, sparsify,
 
     -- * Graph composition
     box,
@@ -1019,16 +1019,18 @@ context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
   where
     f = focus p g
 
--- | Sparsify a graph by inserting intermediate 'Left' vertices between the
--- original 'Right' vertices in such a way that the resulting graph is sparse
--- but preserves all paths.
+-- | /Sparsify/ a graph by adding intermediate 'Left' @Int@ vertices between the
+-- original vertices (wrapping the latter in 'Right') such that the resulting
+-- graph is /sparse/, i.e. contains only O(s) edges, but preserves the
+-- reachability relation between the original vertices.
+-- Complexity: O(s) time, memory and size.
 --
--- (Empty      ) s t  --->  s * t
--- (Vertex x   ) s t  --->  s * x * t
--- (Overlay x y) s t  --->  s `x` t + s `y` t
--- (Connect x y) s t  --->  s `x` m + m `y` t
---
---
+-- @
+-- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x       == 'Data.List.sort' . 'Data.Either.rights' . 'Algebra.Graph.ToGraph.reachable' (Right x) . sparsify
+-- 'vertexCount' (sparsify x) <= 'vertexCount' x + 'size' x + 1
+-- 'edgeCount'   (sparsify x) <= 3 * 'size' x
+-- 'size'        (sparsify x) <= 3 * 'size' x
+-- @
 sparsify :: Graph a -> Graph (Either Int a)
 sparsify graph = res
   where
@@ -1040,9 +1042,3 @@ sparsify graph = res
         m <- get
         put (m + 1)
         overlay <$> s `x` m <*> m `y` t
-
-unsparsify :: Forest (Either Int a) -> Forest a
-unsparsify [] = []
-unsparsify (t:ts) = case t of
-    Node (Left  _) f -> unsparsify (f ++ ts)
-    Node (Right x) f -> Node x (unsparsify f) : unsparsify ts
