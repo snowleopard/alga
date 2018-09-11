@@ -42,7 +42,7 @@ module Algebra.Graph (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
-    transpose, induce, simplify, sparsify,
+    transpose, induce, simplify, sparsify, unsparsify,
 
     -- * Graph composition
     box,
@@ -57,7 +57,7 @@ import Prelude.Compat
 import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
-import Control.Monad.State
+import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Tree
@@ -1032,11 +1032,17 @@ context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
 sparsify :: Graph a -> Graph (Either Int a)
 sparsify graph = res
   where
-    (res, last) = runState (foldg e v o c graph 0 last) 1
-    e     s t = return $ path   [Left s,          Left t]
-    v x   s t = return $ clique [Left s, Right x, Left t]
-    o x y s t = overlay <$> s `x` t <*> s `y` t
-    c x y s t = do
+    (res, end) = runState (foldg e v o c graph 0 end) 1
+    e     s t  = return $ path   [Left s,          Left t]
+    v x   s t  = return $ clique [Left s, Right x, Left t]
+    o x y s t  = overlay <$> s `x` t <*> s `y` t
+    c x y s t  = do
         m <- get
         put (m + 1)
         overlay <$> s `x` m <*> m `y` t
+
+unsparsify :: Forest (Either Int a) -> Forest a
+unsparsify [] = []
+unsparsify (t:ts) = case t of
+    Node (Left  _) f -> unsparsify (f ++ ts)
+    Node (Right x) f -> Node x (unsparsify f) : unsparsify ts
