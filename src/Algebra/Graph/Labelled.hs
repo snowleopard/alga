@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, TypeFamilies #-}
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled
@@ -11,8 +11,8 @@
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines edge-labelled graphs.
---
+-- This module provides a minimal and experimental implementation of algebraic
+-- graphs with edge labels. The API will be expanded in the next release.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled (
     -- * Algebraic data type for edge-labeleld graphs
@@ -30,10 +30,16 @@ import Algebra.Graph.Label
 import qualified Algebra.Graph.Class as C
 
 -- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
+-- For example, @Graph Bool a@ is isomorphic to unlabelled graphs defined in
+-- the top-level module "Algebra.Graph.Graph", where @False@ and @True@ denote
+-- the lack of and the existence of an unlabelled edge, respectively.
 data Graph e a = Empty
                | Vertex a
                | Connect e (Graph e a) (Graph e a)
                deriving (Foldable, Functor, Show, Traversable)
+
+-- | A type synonym for unlabelled graphs.
+type UnlabelledGraph a = Graph Bool a
 
 -- | Construct the /empty graph/. An alias for the constructor 'Empty'.
 -- Complexity: /O(1)/ time, memory and size.
@@ -42,30 +48,57 @@ empty = Empty
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
+-- Complexity: /O(1)/ time, memory and size.
 vertex :: a -> Graph e a
 vertex = Vertex
 
--- | Construct the graph comprising /a single edge/.
+-- | Construct the graph comprising /a single edge/ with the label 'one'.
 -- Complexity: /O(1)/ time, memory and size.
 edge :: Dioid e => a -> a -> Graph e a
 edge = C.edge
 
+-- | /Overlay/ two graphs. An alias for 'Connect' 'zero'. This is a commutative,
+-- associative and idempotent operation with the identity 'empty'.
+-- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
 overlay :: Semilattice e => Graph e a -> Graph e a -> Graph e a
 overlay = Connect zero
 
+-- | /Connect/ two graphs. An alias for 'Connect' 'one'. This is an associative
+-- operation with the identity 'empty', which distributes over 'overlay' and
+-- obeys the decomposition axiom. See the full list of laws in "Algebra.Graph".
+-- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
+-- of edges in the resulting graph is quadratic with respect to the number of
+-- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
 connect :: Dioid e => Graph e a -> Graph e a -> Graph e a
 connect = Connect one
 
+-- | /Connect/ two graphs with edges labelled by a given label. An alias for
+-- 'Connect'.
+-- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
+-- of edges in the resulting graph is quadratic with respect to the number of
+-- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
 connectBy :: e -> Graph e a -> Graph e a -> Graph e a
 connectBy = Connect
 
--- | A convenient ternary-ish operator x -<e>- y, for example:
--- x = Vertex "x"
--- y = Vertex "y"
--- z = x -<1>- y
+-- | The left-hand part of a convenient ternary-ish operator @x -\<e\>- y@ for
+-- connecting graphs with labelled edges. For example:
+--
+-- @
+-- x = 'vertex' "x"
+-- y = 'vertex' "y"
+-- z = x -\<2\>- y
+-- @
 (-<) :: Graph e a -> e -> (Graph e a, e)
 g -< e = (g, e)
 
+-- | The right-hand part of a convenient ternary-ish operator @x -\<e\>- y@ for
+-- connecting graphs with labelled edges. For example:
+--
+-- @
+-- x = 'vertex' "x"
+-- y = 'vertex' "y"
+-- z = x -\<2\>- y
+-- @
 (>-) :: (Graph e a, e) -> Graph e a -> Graph e a
 (g, e) >- h = Connect e g h
 
@@ -79,6 +112,7 @@ instance Dioid e => C.Graph (Graph e a) where
     overlay = overlay
     connect = connect
 
+-- | Extract the label of a specified edge from a graph.
 edgeLabel :: (Eq a, Semilattice e) => a -> a -> Graph e a -> e
 edgeLabel _ _ Empty           = zero
 edgeLabel _ _ (Vertex _)      = zero
@@ -86,5 +120,3 @@ edgeLabel x y (Connect e g h) = edgeLabel x y g \/ edgeLabel x y h \/ new
   where
     new | x `elem` g && y `elem` h = e
         | otherwise                = zero
-
-type UnlabelledGraph a = Graph Bool a

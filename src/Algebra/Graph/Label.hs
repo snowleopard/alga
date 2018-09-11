@@ -28,27 +28,49 @@ import Data.Set (Set)
 
 import qualified Data.Set as Set
 
--- | A bounded join semilattice, satisfying the following laws:
---
--- * Commutativity:         x \/ y == y \/ x
--- * Associativity:  x \/ (y \/ z) == (x \/ y) \/ z
--- * Identity:           x \/ zero == x
--- * Idempotence:           x \/ x == x
+{-| A /bounded join semilattice/, satisfying the following laws:
+
+    * Commutativity:
+
+        > x \/ y == y \/ x
+
+    * Associativity:
+
+        > x \/ (y \/ z) == (x \/ y) \/ z
+
+    * Identity:
+
+        > x \/ zero == x
+
+    * Idempotence:
+
+        > x \/ x == x
+-}
 class Semilattice a where
     zero :: a
     (\/) :: a -> a -> a
 
--- | Dioid is an idempotent semiring:
---
--- *   Associativity:  x /\ (y /\ z) == (x /\ y) /\ z
--- *   Identity:            x /\ one == x
---                          one /\ x == x
--- *   Annihilating zero:  x /\ zero == zero
---                         zero /\ x == zero
---
--- *   Distributivity: x /\ (y \/ z) == x /\ y \/ x /\ z
---                     (x \/ y) /\ z == x /\ z \/ y /\ z
---
+{-| A /dioid/ is an /idempotent semiring/, i.e. it satisfies the following laws:
+
+    * Associativity:
+
+        > x /\ (y /\ z) == (x /\ y) /\ z
+
+    * Identity:
+
+        > x /\ one == x
+        > one /\ x == x
+
+    * Annihilating zero:
+
+        > x /\ zero == zero
+        > zero /\ x == zero
+
+    * Distributivity:
+
+        > x /\ (y \/ z) == x /\ y \/ x /\ z
+        > (x \/ y) /\ z == x /\ z \/ y /\ z
+-}
 class Semilattice a => Dioid a where
     one  :: a
     (/\) :: a -> a -> a
