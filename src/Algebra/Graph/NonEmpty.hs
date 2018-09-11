@@ -659,7 +659,7 @@ mesh1 xx@(x:|xs) yy@(y:|ys) =
 -- lengths of the given lists.
 --
 -- @
--- torus1 (x ':|' [])  (y ':|' [])    == 'edge' (x, y) (x, y)
+-- torus1 (x ':|' [])  (y ':|' [])    == 'edge' (x,y) (x,y)
 -- torus1 xs         ys           == 'box' ('circuit1' xs) ('circuit1' ys)
 -- torus1 (1 ':|' [2]) (\'a\' ':|' "b") == 'edges1' ('Data.List.NonEmpty.fromList' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\'))
 --                                                    , ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))

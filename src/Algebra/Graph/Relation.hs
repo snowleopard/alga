@@ -437,7 +437,7 @@ removeVertex x (Relation d r) = Relation (Set.delete x d) (Set.filter notx r)
 -- Complexity: /O(log(m))/ time.
 --
 -- @
--- removeEdge x y ('AdjacencyMap.edge' x y)       == 'vertices' [x, y]
+-- removeEdge x y ('AdjacencyMap.edge' x y)       == 'vertices' [x,y]
 -- removeEdge x y . removeEdge x y == removeEdge x y
 -- removeEdge x y . 'removeVertex' x == 'removeVertex' x
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2

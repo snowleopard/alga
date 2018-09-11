@@ -871,8 +871,8 @@ testRemoveVertex (Testsuite prefix (%)) = do
 testRemoveEdge :: Testsuite -> IO ()
 testRemoveEdge (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "removeEdge ============"
-    test "removeEdge x y (edge x y)       == vertices [x, y]" $ \x y ->
-          removeEdge x y % edge x y       == vertices [x, y]
+    test "removeEdge x y (edge x y)       == vertices [x,y]" $ \x y ->
+          removeEdge x y % edge x y       == vertices [x,y]
 
     test "removeEdge x y . removeEdge x y == removeEdge x y" $ \x y z ->
          (removeEdge x y . removeEdge x y) z == removeEdge x y % z

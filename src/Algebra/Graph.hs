@@ -778,7 +778,7 @@ mesh xs  ys  = stars $  [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ipxs, (
 -- @
 -- torus xs    []   == 'empty'
 -- torus []    ys   == 'empty'
--- torus [x]   [y]  == 'edge' (x, y) (x, y)
+-- torus [x]   [y]  == 'edge' (x,y) (x,y)
 -- torus xs    ys   == 'box' ('circuit' xs) ('circuit' ys)
 -- torus [1,2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
 --                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
@@ -833,7 +833,7 @@ removeVertex v = induce (/= v)
 -- Complexity: /O(s)/ time, memory and size.
 --
 -- @
--- removeEdge x y ('edge' x y)       == 'vertices' [x, y]
+-- removeEdge x y ('edge' x y)       == 'vertices' [x,y]
 -- removeEdge x y . removeEdge x y == removeEdge x y
 -- removeEdge x y . 'removeVertex' x == 'removeVertex' x
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
