@@ -57,7 +57,7 @@ import Prelude.Compat
 import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
-import Control.Monad.Trans.State
+import Control.Monad.State
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Tree
