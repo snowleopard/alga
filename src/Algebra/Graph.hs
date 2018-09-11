@@ -1026,7 +1026,7 @@ context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
 -- Complexity: O(s) time, memory and size.
 --
 -- @
--- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x       == 'Data.List.sort' . 'Data.Either.rights' . 'Algebra.Graph.ToGraph.reachable' (Right x) . sparsify
+-- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x       == 'Data.List.sort' . 'Data.Either.rights' . 'Algebra.Graph.ToGraph.reachable' (Data.Either.Right x) . sparsify
 -- 'vertexCount' (sparsify x) <= 'vertexCount' x + 'size' x + 1
 -- 'edgeCount'   (sparsify x) <= 3 * 'size' x
 -- 'size'        (sparsify x) <= 3 * 'size' x

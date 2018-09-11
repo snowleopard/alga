@@ -17,9 +17,9 @@ module Algebra.Graph.Test.Graph (
 import Data.Either
 
 import Algebra.Graph
-import Algebra.Graph.ToGraph (reachable)
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
+import Algebra.Graph.ToGraph (reachable)
 
 t :: Testsuite
 t = testsuite "Graph." empty
