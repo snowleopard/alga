@@ -122,9 +122,7 @@ if @g@ is a 'NonEmptyGraph' then /n/, /m/ and /s/ can be computed as follows:
 m == 'edgeCount' g
 s == 'size' g@
 
-The 'size' of any graph is positive and coincides with the result of 'length'
-method of the 'Foldable' type class. We define 'size' only for the consistency
-with the API of other graph representations, such as "Algebra.Graph".
+Note that 'size' count all leaves of the expression.
 
 Converting a 'NonEmptyGraph' to the corresponding 'AM.AdjacencyMap' takes
 /O(s + m * log(m))/ time and /O(s + m)/ memory. This is also the complexity of
@@ -886,6 +884,5 @@ sparsify graph = res
         put (m + 1)
         overlay <$> s `x` m <*> m `y` t
 
--- Shall we export this? I suggest to wait for Foldable1 type class instead.
 toNonEmpty :: NonEmptyGraph a -> NonEmpty a
 toNonEmpty = foldg1 (:| []) (<>) (<>)
