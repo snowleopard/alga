@@ -132,19 +132,7 @@ be computed as follows:
 m == 'edgeCount' g
 s == 'size' g@
 
-Note that 'size' is slightly different from the 'length' method of the
-'Foldable' type class, as the latter does not count 'empty' leaves of the
-expression:
-
-@'length' 'empty'           == 0
-'size'   'empty'           == 1
-'length' ('vertex' x)      == 1
-'size'   ('vertex' x)      == 1
-'length' ('empty' + 'empty') == 0
-'size'   ('empty' + 'empty') == 2@
-
-The 'size' of any graph is positive, and the difference @('size' g - 'length' g)@
-corresponds to the number of occurrences of 'empty' in an expression @g@.
+Note that 'size' count all leaves of the expression.
 
 Converting a 'Graph' to the corresponding 'AM.AdjacencyMap' takes /O(s + m * log(m))/
 time and /O(s + m)/ memory. This is also the complexity of the graph equality test,
@@ -356,10 +344,9 @@ concatg combine = fromMaybe empty . foldr1Safe combine
 -- @
 -- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
 -- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
--- foldg []    return        (++)    (++)           == 'Data.Foldable.toList'
--- foldg 0     (const 1)     (+)     (+)            == 'Data.Foldable.length'
 -- foldg 1     (const 1)     (+)     (+)            == 'size'
 -- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
+-- foldg False ((==) v)      (||)    (||)           == 'hasVertex v'
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
