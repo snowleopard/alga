@@ -112,6 +112,18 @@ instance Dioid e => C.Graph (Graph e a) where
     overlay = overlay
     connect = connect
 
+-- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
+-- the provided functions to the leaves and internal nodes of the expression,
+-- without any distinction between @overlay@ and @connect@
+-- The order of arguments is: empty, vertex, overlay and connect.
+-- Complexity: /O(s)/ applications of given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+--
+-- @
+-- foldgUnDiff 1     (const 1)     (+)  == 'size'
+-- foldgUnDiff True  (const False) (&&) == 'isEmpty'
+-- foldgUnDiff False ((==) v)      (||) == 'hasVertex v'
+-- @
 foldgUnDiff :: b -> (a -> b) -> (b -> b -> b) ->  Graph e a -> b
 foldgUnDiff e v o = go
   where
