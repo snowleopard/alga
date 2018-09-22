@@ -182,12 +182,6 @@ instance Monad Fold where
     return = vertex
     g >>=f = foldg empty f overlay connect g
 
-instance Foldable Fold where
-    foldMap f = foldg mempty f mappend mappend
-
-instance Traversable Fold where
-    traverse f = foldg (pure empty) (fmap vertex . f) (liftA2 overlay) (liftA2 connect)
-
 instance ToGraph (Fold a) where
     type ToVertex (Fold a) = a
     foldg = foldg

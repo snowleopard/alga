@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE DeriveFunctor #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
@@ -155,7 +155,7 @@ data Graph a = Empty
              | Vertex a
              | Overlay (Graph a) (Graph a)
              | Connect (Graph a) (Graph a)
-             deriving (Foldable, Functor, Show, Traversable)
+             deriving (Functor, Show)
 
 instance NFData a => NFData (Graph a) where
     rnf Empty         = ()
@@ -844,7 +844,6 @@ removeVertex v = induce (/= v)
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t = filterContext s (/=s) (/=t)
 
-
 -- TODO: Export
 -- | Filter vertices in a subgraph context.
 {-# SPECIALISE filterContext :: Int -> (Int -> Bool) -> (Int -> Bool) -> Graph Int -> Graph Int #-}
@@ -1000,8 +999,9 @@ simple op x y
 box :: Graph a -> Graph b -> Graph (a, b)
 box x y = overlays $ xs ++ ys
   where
-    xs = map (\b -> fmap (,b) x) $ toList y
-    ys = map (\a -> fmap (a,) y) $ toList x
+    xs = map (\b -> fmap (,b) x) $ toListGr y
+    ys = map (\a -> fmap (a,) y) $ toListGr x
+    toListGr = foldg [] pure (++) (++)
 
 -- | 'Focus' on a specified subgraph.
 focus :: (a -> Bool) -> Graph a -> Focus a

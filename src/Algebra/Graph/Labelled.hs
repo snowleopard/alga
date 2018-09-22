@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE DeriveFunctor #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled
@@ -36,7 +36,7 @@ import qualified Algebra.Graph.Class as C
 data Graph e a = Empty
                | Vertex a
                | Connect e (Graph e a) (Graph e a)
-               deriving (Foldable, Functor, Show, Traversable)
+               deriving (Functor, Show)
 
 -- | A type synonym for unlabelled graphs.
 type UnlabelledGraph a = Graph Bool a
@@ -112,11 +112,29 @@ instance Dioid e => C.Graph (Graph e a) where
     overlay = overlay
     connect = connect
 
+foldgUnDiff :: b -> (a -> b) -> (b -> b -> b) ->  Graph e a -> b
+foldgUnDiff e v o = go
+  where
+    go Empty = e
+    go (Vertex a) = v a
+    go (Connect _ g h) = o (go g) (go h)
+
+-- | Check if a graph contains a given vertex. A convenient alias for `elem`.
+-- Complexity: /O(s)/ time.
+--
+-- @
+-- hasVertex x 'empty'            == False
+-- hasVertex x ('vertex' x)       == True
+-- hasVertex 1 ('vertex' 2)       == False
+-- @
+hasVertex :: Eq a => a -> Graph e a -> Bool
+hasVertex v = foldgUnDiff False ((==) v) (||)
+
 -- | Extract the label of a specified edge from a graph.
 edgeLabel :: (Eq a, Semilattice e) => a -> a -> Graph e a -> e
 edgeLabel _ _ Empty           = zero
 edgeLabel _ _ (Vertex _)      = zero
 edgeLabel x y (Connect e g h) = edgeLabel x y g \/ edgeLabel x y h \/ new
   where
-    new | x `elem` g && y `elem` h = e
+    new | x `hasVertex` g && y `hasVertex` h = e
         | otherwise                = zero

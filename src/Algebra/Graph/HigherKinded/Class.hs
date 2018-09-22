@@ -43,17 +43,14 @@ module Algebra.Graph.HigherKinded.Class (
     isSubgraphOf,
 
     -- * Graph properties
-    isEmpty, hasVertex, hasEdge, vertexCount, vertexList, vertexSet, vertexIntSet,
+    hasEdge,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, starTranspose, tree, forest, mesh,
-    torus, deBruijn,
+    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
+    mesh, torus, deBruijn,
 
     -- * Graph transformation
-    removeVertex, replaceVertex, mergeVertices, splitVertex, induce,
-
-    -- * Graph composition
-    box
+    removeVertex, replaceVertex, mergeVertices, splitVertex, induce
   ) where
 
 import Prelude ()
@@ -128,7 +125,7 @@ denote the number of vertices in the graph, /m/ will denote the number of
 edges in the graph, and /s/ will denote the /size/ of the corresponding
 'Graph' expression.
 -}
-class (Traversable g,
+class (
 #if !MIN_VERSION_base(4,8,0)
   Alternative g,
 #endif
@@ -282,30 +279,6 @@ connects (x:xs) = x `connect` connects xs
 isSubgraphOf :: (Graph g, Eq (g a)) => g a -> g a -> Bool
 isSubgraphOf x y = overlay x y == y
 
--- | Check if a graph is empty. A convenient alias for 'null'.
--- Complexity: /O(s)/ time.
---
--- @
--- isEmpty 'empty'                       == True
--- isEmpty ('overlay' 'empty' 'empty')       == True
--- isEmpty ('vertex' x)                  == False
--- isEmpty ('removeVertex' x $ 'vertex' x) == True
--- @
-isEmpty :: Graph g => g a -> Bool
-isEmpty = null
-
--- | Check if a graph contains a given vertex. A convenient alias for `elem`.
--- Complexity: /O(s)/ time.
---
--- @
--- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
--- hasVertex x . 'removeVertex' x == const False
--- @
-hasVertex :: (Eq a, Graph g) => a -> g a -> Bool
-hasVertex = elem
-
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
 --
@@ -317,53 +290,6 @@ hasVertex = elem
 -- @
 hasEdge :: (Eq (g a), Graph g, Ord a) => a -> a -> g a -> Bool
 hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
-
--- | The number of vertices in a graph.
--- Complexity: /O(s * log(n))/ time.
---
--- @
--- vertexCount 'empty'      == 0
--- vertexCount ('vertex' x) == 1
--- vertexCount            == 'length' . 'vertexList'
--- @
-vertexCount :: (Ord a, Graph g) => g a -> Int
-vertexCount = length . vertexList
-
--- | The sorted list of vertices of a given graph.
--- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
---
--- @
--- vertexList 'empty'      == []
--- vertexList ('vertex' x) == [x]
--- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
--- @
-vertexList :: (Ord a, Graph g) => g a -> [a]
-vertexList = Set.toAscList . vertexSet
-
--- | The set of vertices of a given graph.
--- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
---
--- @
--- vertexSet 'empty'      == Set.'Set.empty'
--- vertexSet . 'vertex'   == Set.'Set.singleton'
--- vertexSet . 'vertices' == Set.'Set.fromList'
--- vertexSet . 'clique'   == Set.'Set.fromList'
--- @
-vertexSet :: (Ord a, Graph g) => g a -> Set.Set a
-vertexSet = foldr Set.insert Set.empty
-
--- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
--- graphs with vertices of type 'Int'.
--- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
---
--- @
--- vertexIntSet 'empty'      == IntSet.'IntSet.empty'
--- vertexIntSet . 'vertex'   == IntSet.'IntSet.singleton'
--- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
--- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
--- @
-vertexIntSet :: Graph g => g Int -> IntSet.IntSet
-vertexIntSet = foldr IntSet.insert IntSet.empty
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -436,6 +362,23 @@ star :: Graph g => a -> [a] -> g a
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
 
+-- | The /stars/ formed by overlaying a list of 'star's. An inverse of
+-- 'adjacencyList'.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the total size of the
+-- input.
+--
+-- @
+-- stars []                      == 'empty'
+-- stars [(x, [])]               == 'vertex' x
+-- stars [(x, [y])]              == 'edge' x y
+-- stars [(x, ys)]               == 'star' x ys
+-- stars                         == 'overlays' . map (uncurry 'star')
+-- stars . 'adjacencyList'         == id
+-- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
+-- @
+stars :: Graph g => [(a, [a])] -> g a
+stars = overlays . map (uncurry star)
+
 -- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
@@ -492,7 +435,17 @@ forest = overlays . map tree
 --                           , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\')), ((3,\'a\'),(3,\'b\')) ]
 -- @
 mesh :: Graph g => [a] -> [b] -> g (a, b)
-mesh xs ys = path xs `box` path ys
+mesh []  _   = empty
+mesh _   []  = empty
+mesh [x] [y] = vertex (x, y)
+mesh xs  ys  = stars $  [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ipxs, (b1, b2) <- ipys ]
+                     ++ [ ((lx,y1), [(lx,y2)]) | (y1,y2) <- ipys]
+                     ++ [ ((x1,ly), [(x2,ly)]) | (x1,x2) <- ipxs]
+  where
+    lx = last xs
+    ly = last ys
+    ipxs = init (pairs xs)
+    ipys = init (pairs ys)
 
 -- | Construct a /torus graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -507,7 +460,12 @@ mesh xs ys = path xs `box` path ys
 --                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus :: Graph g => [a] -> [b] -> g (a, b)
-torus xs ys = circuit xs `box` circuit ys
+torus xs ys = stars [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- pairs xs, (b1, b2) <- pairs ys ]
+
+-- | Auxiliary function for 'mesh' and 'torus'
+pairs :: [a] -> [(a, a)]
+pairs [] = []
+pairs as@(x:xs) = zip as (xs ++ [x])
 
 -- | Construct a /De Bruijn graph/ of a given non-negative dimension using symbols
 -- from a given alphabet.
@@ -599,33 +557,3 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 -- @
 splitVertex :: (Eq a, Graph g) => a -> [a] -> g a -> g a
 splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
-
--- | Compute the /Cartesian product/ of graphs.
--- Complexity: /O(s1 * s2)/ time, memory and size, where /s1/ and /s2/ are the
--- sizes of the given graphs.
---
--- @
--- box ('path' [0,1]) ('path' "ab") == 'edges' [ ((0,\'a\'), (0,\'b\'))
---                                       , ((0,\'a\'), (1,\'a\'))
---                                       , ((0,\'b\'), (1,\'b\'))
---                                       , ((1,\'a\'), (1,\'b\')) ]
--- @
--- Up to an isomorphism between the resulting vertex types, this operation
--- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
--- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@.
---
--- @
--- box x y               ~~ box y x
--- box x (box y z)       ~~ box (box x y) z
--- box x ('overlay' y z)   == 'overlay' (box x y) (box x z)
--- box x ('vertex' ())     ~~ x
--- box x 'empty'           ~~ 'empty'
--- 'vertexCount' (box x y) == 'vertexCount' x * 'vertexCount' y
--- 'edgeCount'   (box x y) <= 'vertexCount' x * 'edgeCount' y + 'edgeCount' x * 'vertexCount' y
--- @
-box :: Graph g => g a -> g b -> g (a, b)
-box x y = msum $ xs ++ ys
-  where
-    xs = map (\b -> fmap (,b) x) $ toList y
-    ys = map (\a -> fmap (a,) y) $ toList x

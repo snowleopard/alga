@@ -148,7 +148,6 @@ instance Ord a => GraphAPI (Fold.Fold a) where
     induce        = Fold.induce
     bind          = (>>=)
     simplify      = Fold.simplify
-    box           = HClass.box
 
 instance Ord a => GraphAPI (Graph.Graph a) where
     edge          = Graph.edge

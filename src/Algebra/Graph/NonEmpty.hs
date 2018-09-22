@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE CPP, DeriveFunctor #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.NonEmpty
@@ -134,7 +134,7 @@ expressions to canonical representations based on adjacency maps.
 data NonEmptyGraph a = Vertex a
                      | Overlay (NonEmptyGraph a) (NonEmptyGraph a)
                      | Connect (NonEmptyGraph a) (NonEmptyGraph a)
-                     deriving (Foldable, Functor, Show, Traversable)
+                     deriving (Functor, Show)
 
 instance NFData a => NFData (NonEmptyGraph a) where
     rnf (Vertex  x  ) = rnf x
