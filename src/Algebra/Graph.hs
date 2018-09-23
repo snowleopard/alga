@@ -986,9 +986,10 @@ simple op x y
 box :: Graph a -> Graph b -> Graph (a, b)
 box x y = overlays $ xs ++ ys
   where
-    xs = map (\b -> fmap (,b) x) $ toListGr y
-    ys = map (\a -> fmap (a,) y) $ toListGr x
-    toListGr = foldg [] pure (++) (++)
+    xs = map (\b -> fmap (,b) x) $ toList $ toListGr y
+    ys = map (\a -> fmap (a,) y) $ toList $ toListGr x
+    toListGr :: Graph a -> List a
+    toListGr = foldg mempty pure (<>) (<>)
 
 -- | 'Focus' on a specified subgraph.
 focus :: (a -> Bool) -> Graph a -> Focus a
