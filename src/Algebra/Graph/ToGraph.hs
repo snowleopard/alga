@@ -24,7 +24,7 @@
 -- foldMap f = foldg mempty f (<>) (<>)
 -- @
 --
--- This allow to define a valable "Data.Foldable" instance but it leads to some
+-- This allow to define a valid "Data.Foldable" instance but it leads to some
 -- problems because this instance can show the internal structure of a graph.
 -- For example:
 --
