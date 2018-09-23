@@ -17,6 +17,26 @@
 -- access to many other useful methods for free. This type class is similar to
 -- the standard "Data.Foldable" defined for lists.
 --
+-- It is in fact so similar to "Data.Foldable" that one can define 'foldMap' using
+-- 'foldg':
+--
+-- @
+-- foldMap f = foldg mempty f (<>) (<>)
+-- @
+--
+-- This allow to define a valable "Data.Foldable" instance but it leads to some
+-- problems because this instance can show the internal structure of a graph.
+-- For example:
+--
+-- @
+-- toList (overlay (vertex 0) (vertex 0)) \/= toList (vertex 0)
+-- @
+--
+-- BUT
+--
+-- @
+-- overlay (vertex 0) (vertex 0) == vertex 0
+-- @
 -----------------------------------------------------------------------------
 module Algebra.Graph.ToGraph (ToGraph (..)) where
 
