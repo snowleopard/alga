@@ -45,7 +45,7 @@ module Algebra.Graph.Fold (
 import Prelude ()
 import Prelude.Compat
 
-import Control.Applicative (Alternative, liftA2)
+import Control.Applicative (Alternative)
 import Control.Monad.Compat (MonadPlus (..), ap)
 import Data.Function
 
