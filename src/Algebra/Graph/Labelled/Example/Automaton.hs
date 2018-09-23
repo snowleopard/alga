@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedLists, FlexibleInstances, TypeSynonymInstances #-}
+{-# LANGUAGE OverloadedLists #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled.Example.Automaton
@@ -35,6 +35,7 @@ data State = Choice   -- ^ Choosing what to order
            | Complete -- ^ The order is complete
            deriving (Bounded, Enum, Eq, Ord, Show)
 
+-- TODO: Add an illustration.
 -- | An example automaton for ordering coffee or tea.
 --
 -- @
@@ -52,7 +53,15 @@ order = edges [ (Choice , [Coffee, Tea], Payment )
 -- | The map of 'State' reachability.
 --
 -- @
--- reachability = Map.fromList $ map (\s -> (s, 'reachable' s order)) ['Choice' ..]
+-- reachability = Map.'Map.fromList' $ map (\s -> (s, 'reachable' s 'order')) ['Choice' ..]
+-- @
+--
+-- Or, when evaluated:
+--
+-- @
+-- reachability = Map.'Map.fromList' [ ('Choice'  , ['Choice'  , 'Payment', 'Complete'])
+--                             , ('Payment' , ['Payment' , 'Choice' , 'Complete'])
+--                             , ('Complete', ['Complete'                   ]) ]
 -- @
 reachability :: Map State [State]
 reachability = Map.fromList $ map (\s -> (s, reachable s order)) [Choice ..]
