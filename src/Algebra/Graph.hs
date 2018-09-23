@@ -346,7 +346,7 @@ concatg combine = fromMaybe empty . foldr1Safe combine
 -- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
 -- foldg 1     (const 1)     (+)     (+)            == 'size'
 -- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
--- foldg False ((==) v)      (||)    (||)           == 'hasVertex v'
+-- foldg False ((==) x)      (||)    (||)           == 'hasVertex x'
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
