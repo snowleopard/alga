@@ -27,10 +27,10 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import GHC.Exts
 
-instance IsList (Set a) where
+instance Ord a => IsList (Set a) where
     type Item (Set a) = a
     fromList = Set.fromList
-    toList = Set.toList
+    toList   = Set.toList
 #endif
 
 -- | The alphabet of actions for ordering coffee or tea.
