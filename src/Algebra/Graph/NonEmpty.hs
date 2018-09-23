@@ -122,7 +122,14 @@ if @g@ is a 'NonEmptyGraph' then /n/, /m/ and /s/ can be computed as follows:
 m == 'edgeCount' g
 s == 'size' g@
 
-Note that 'size' count all leaves of the expression.
+Note that 'size' counts all leaves of the expression:
+
+@'vertexCount' 'empty'           == 0
+'size'        'empty'           == 1
+'vertexCount' ('vertex' x)      == 1
+'size'        ('vertex' x)      == 1
+'vertexCount' ('empty' + 'empty') == 0
+'size'        ('empty' + 'empty') == 2@
 
 Converting a 'NonEmptyGraph' to the corresponding 'AM.AdjacencyMap' takes
 /O(s + m * log(m))/ time and /O(s + m)/ memory. This is also the complexity of
