@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled
@@ -36,7 +36,7 @@ import qualified Algebra.Graph.Class as C
 data Graph e a = Empty
                | Vertex a
                | Connect e (Graph e a) (Graph e a)
-               deriving (Functor, Show)
+               deriving (Foldable, Functor, Show, Traversable)
 
 -- | A type synonym for unlabelled graphs.
 type UnlabelledGraph a = Graph Bool a
@@ -112,41 +112,11 @@ instance Dioid e => C.Graph (Graph e a) where
     overlay = overlay
     connect = connect
 
--- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
--- the provided functions to the leaves and internal nodes of the expression,
--- without any distinction between @overlay@ and @connect@
--- The order of arguments is: empty, vertex, overlay and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
---
--- @
--- foldgUnDiff 1     (const 1)     (+)  == 'size'
--- foldgUnDiff True  (const False) (&&) == 'isEmpty'
--- foldgUnDiff False ((==) v)      (||) == 'hasVertex v'
--- @
-foldgUnDiff :: b -> (a -> b) -> (b -> b -> b) ->  Graph e a -> b
-foldgUnDiff e v o = go
-  where
-    go Empty = e
-    go (Vertex a) = v a
-    go (Connect _ g h) = o (go g) (go h)
-
--- | Check if a graph contains a given vertex. A convenient alias for `elem`.
--- Complexity: /O(s)/ time.
---
--- @
--- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
--- @
-hasVertex :: Eq a => a -> Graph e a -> Bool
-hasVertex v = foldgUnDiff False ((==) v) (||)
-
 -- | Extract the label of a specified edge from a graph.
 edgeLabel :: (Eq a, Semilattice e) => a -> a -> Graph e a -> e
 edgeLabel _ _ Empty           = zero
 edgeLabel _ _ (Vertex _)      = zero
 edgeLabel x y (Connect e g h) = edgeLabel x y g \/ edgeLabel x y h \/ new
   where
-    new | x `hasVertex` g && y `hasVertex` h = e
+    new | x `elem` g && y `elem` h = e
         | otherwise                = zero
