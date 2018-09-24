@@ -52,7 +52,7 @@ module Algebra.Graph (
   ) where
 
 import Prelude ()
-import Prelude.Compat
+import Prelude.Compat hiding ((<>))
 
 import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
