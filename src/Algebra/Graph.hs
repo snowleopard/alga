@@ -59,6 +59,7 @@ import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
+import Data.Monoid ((<>))
 import Data.Maybe (fromMaybe)
 import Data.Tree
 
