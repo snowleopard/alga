@@ -23,7 +23,7 @@ import Test.QuickCheck
 
 import Algebra.Graph
 import Algebra.Graph.AdjacencyMap.Internal
-import Algebra.Graph.LabelledAdjacencyMap.Internal
+import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal as LabelledAdjacencyMap
 import Algebra.Graph.Export
 import Algebra.Graph.Fold (Fold)
 import Algebra.Graph.Label (Dioid)
@@ -32,7 +32,7 @@ import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived
 
 import qualified Algebra.Graph.AdjacencyMap    as AdjacencyMap
-import qualified Algebra.Graph.LabelledAdjacencyMap    as LabelledAdjacencyMap
+import qualified Algebra.Graph.Labelled.AdjacencyMap    as LabelledAdjacencyMap
 import qualified Algebra.Graph.Class           as C
 import qualified Algebra.Graph.AdjacencyIntMap as AdjacencyIntMap
 import qualified Algebra.Graph.NonEmpty        as NE
@@ -90,7 +90,7 @@ arbitraryAdjacencyMap = AdjacencyMap.stars <$> arbitrary
 
 -- | Generate an arbitrary 'LabelledAdjacencyMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
-arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Dioid e) => Gen (LabelledAdjacencyMap a e)
+arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Dioid e) => Gen (LabelledAdjacencyMap.AdjacencyMap a e)
 arbitraryLabelledAdjacencyMap = LabelledAdjacencyMap.stars <$> arbitrary
 
 -- | Generate an arbitrary 'AdjacencyIntMap'. It is guaranteed that the
@@ -117,7 +117,7 @@ instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
 instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
     arbitrary = arbitraryAdjacencyMap
 
-instance (Arbitrary a, Ord a, Dioid e) => Arbitrary (LabelledAdjacencyMap a e) where
+instance (Arbitrary a, Ord a, Dioid e) => Arbitrary (LabelledAdjacencyMap.AdjacencyMap a e) where
     arbitrary = arbitraryLabelledAdjacencyMap
 
 instance Arbitrary AdjacencyIntMap where

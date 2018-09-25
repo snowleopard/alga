@@ -8,13 +8,13 @@
 --
 -- Testsuite for "Algebra.Graph.AdjacencyMap".
 -----------------------------------------------------------------------------
-module Algebra.Graph.Test.LabelledAdjacencyMap (
+module Algebra.Graph.Test.Labelled.AdjacencyMap (
     -- * Testsuite
     testLabelledAdjacencyMap
   ) where
 
-import Algebra.Graph.LabelledAdjacencyMap
-import Algebra.Graph.LabelledAdjacencyMap.Internal
+import Algebra.Graph.Labelled.AdjacencyMap
+import Algebra.Graph.Labelled.AdjacencyMap.Internal
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
@@ -22,13 +22,13 @@ import qualified Data.Graph as KL
 import qualified Data.Set   as Set
 
 t :: Testsuite
-t = testsuite "LabelledAdjacencyMap." (empty :: LabelledAdjacencyMap Int Bool)
+t = testsuite "Labelled.AdjacencyMap." (empty :: AdjacencyMap Int Bool)
 
-type LAI = LabelledAdjacencyMap Int Bool
+type LAI = AdjacencyMap Int Bool
 
 testLabelledAdjacencyMap :: IO ()
 testLabelledAdjacencyMap = do
-    putStrLn "\n============ LabelledAdjacencyMap ============"
+    putStrLn "\n============ Labelled.AdjacencyMap ============"
     test "Axioms of graphs" (axioms :: GraphTestsuite LAI)
 
     test "Consistency of arbitraryLabelledAdjacencyMap" $ \(m :: LAI) ->
@@ -52,7 +52,7 @@ testLabelledAdjacencyMap = do
     testIsTopSortOf       t
     testIsAcyclic         t
 
-    putStrLn "\n============ LabelledAdjacencyMap.scc ============"
+    putStrLn "\n============ AdjacencyMap.scc ============"
     test "scc empty               == empty" $
           scc(empty :: LAI)        == empty
 

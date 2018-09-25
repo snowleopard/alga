@@ -36,9 +36,9 @@ import qualified Algebra.Graph                 as G
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyMap.Internal
                                                as AM
-import qualified Algebra.Graph.LabelledAdjacencyMap
+import qualified Algebra.Graph.Labelled.AdjacencyMap
                                                as LAM
-import qualified Algebra.Graph.LabelledAdjacencyMap.Internal
+import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal
                                                as LAM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Internal
@@ -255,7 +255,7 @@ class ToGraph t where
     -- adjacencyIntMapTranspose == Algebra.Graph.AdjacencyIntMap.'Algebra.Graph.AdjacencyIntMap.adjacencyIntMap' . 'toAdjacencyIntMapTranspose'
     -- @
     labelledAdjacencyMapTranspose :: (Ord (ToVertex t), Dioid e) => t -> Map (ToVertex t) (Map (ToVertex t) e)
-    labelledAdjacencyMapTranspose = LAM.labelledAdjacencyMap . toLabelledAdjacencyMapTranspose
+    labelledAdjacencyMapTranspose = LAM.adjacencyMap . toLabelledAdjacencyMapTranspose
 
     -- | Compute the /depth-first search/ forest of a graph.
     --
@@ -328,12 +328,12 @@ class ToGraph t where
     toAdjacencyMap :: Ord (ToVertex t) => t -> AM.AdjacencyMap (ToVertex t)
     toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
 
-    -- | Convert a value to the corresponding 'LAM.LabelledAdjacencyMap'.
+    -- | Convert a value to the corresponding 'LAM.AdjacencyMap'.
     --
     -- @
     -- toAdjacencyMap == 'foldg' 'LAM.empty' 'LAM.vertex' 'LAM.overlay' 'LAM.connect'
     -- @
-    toLabelledAdjacencyMap :: (Ord (ToVertex t), Dioid e )=> t -> LAM.LabelledAdjacencyMap (ToVertex t) e
+    toLabelledAdjacencyMap :: (Ord (ToVertex t), Dioid e )=> t -> LAM.AdjacencyMap (ToVertex t) e
     toLabelledAdjacencyMap = foldg LAM.empty LAM.vertex LAM.overlay LAM.connect
 
     -- | Convert a value to the corresponding 'AM.AdjacencyMap' and transpose the
@@ -351,7 +351,7 @@ class ToGraph t where
     -- @
     -- toAdjacencyMapTranspose == 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' (flip 'AM.connect')
     -- @
-    toLabelledAdjacencyMapTranspose :: (Ord (ToVertex t), Dioid e )=> t -> LAM.LabelledAdjacencyMap (ToVertex t) e
+    toLabelledAdjacencyMapTranspose :: (Ord (ToVertex t), Dioid e )=> t -> LAM.AdjacencyMap (ToVertex t) e
     toLabelledAdjacencyMapTranspose = foldg LAM.empty LAM.vertex LAM.overlay (flip LAM.connect)
     
     -- | Convert a value to the corresponding 'AIM.AdjacencyIntMap'.
@@ -463,12 +463,12 @@ instance Ord a => ToGraph (R.Relation a) where
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
 
 
-instance (Ord a, Dioid e) => ToGraph (LAM.LabelledAdjacencyMap a e) where
-    type ToVertex (LAM.LabelledAdjacencyMap a e) = a
+instance (Ord a, Dioid e) => ToGraph (LAM.AdjacencyMap a e) where
+    type ToVertex (LAM.AdjacencyMap a e) = a
     toGraph                    = G.stars
                                . map (fmap (fmap fst . Map.toList))
                                . Map.toList
-                               . LAM.labelledAdjacencyMap
+                               . LAM.adjacencyMap
     isEmpty                    = LAM.isEmpty
     hasVertex                  = LAM.hasVertex
     hasEdge                    = LAM.hasEdge
@@ -486,7 +486,7 @@ instance (Ord a, Dioid e) => ToGraph (LAM.LabelledAdjacencyMap a e) where
     -- adjacencyIntMap            = IntMap.fromAscList
     --                            . map (fmap $ IntSet.fromAscList . Set.toAscList)
     --                            . Map.toAscList
-    --                            . LAM.labelledAdjacencyMap
+    --                            . LAM.adjacencyMap
     toAdjacencyMap             = toAdjacencyMap
     toAdjacencyIntMap          = AIM.AM . adjacencyIntMap
     toAdjacencyMapTranspose    = toAdjacencyMap . LAM.transpose 

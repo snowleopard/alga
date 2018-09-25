@@ -22,7 +22,7 @@ module Data.Graph.Typed (
 import Algebra.Graph.AdjacencyMap.Internal    as AM  (AdjacencyMap    (..))
 import Algebra.Graph.AdjacencyIntMap.Internal as AIM (AdjacencyIntMap (..))
 
-import Algebra.Graph.LabelledAdjacencyMap.Internal    as LAM  (LabelledAdjacencyMap    (..))
+import Algebra.Graph.Labelled.AdjacencyMap.Internal    as LAM  (AdjacencyMap    (..))
 
 import Data.Tree
 import Data.Maybe
@@ -55,7 +55,7 @@ data GraphKL a = GraphKL {
 -- 'toGraphKL' (fromAdjacencyMap (1 * 2 + 3 * 1)) == 'array' (0,2) [(0,[1]),(1,[]),(2,[0])]
 -- 'toGraphKL' (fromAdjacencyMap (1 * 2 + 2 * 1)) == 'array' (0,1) [(0,[1]),(1,[0])]
 -- @
-fromAdjacencyMap :: Ord a => AdjacencyMap a -> GraphKL a
+fromAdjacencyMap :: Ord a => AM.AdjacencyMap a -> GraphKL a
 fromAdjacencyMap (AM.AM m) = GraphKL
     { toGraphKL    = g
     , fromVertexKL = \u -> case r u of (_, v, _) -> v
@@ -91,7 +91,7 @@ fromAdjacencyIntMap (AIM.AM m) = GraphKL
 -- 'toGraphKL' (fromLabelledAdjacencyMap (1 * 2 + 3 * 1)) == 'array' (0,2) [(0,[1]),(1,[]),(2,[0])]
 -- 'toGraphKL' (fromLabelledAdjacencyMap (1 * 2 + 2 * 1)) == 'array' (0,1) [(0,[1]),(1,[0])]
 -- @
-fromLabelledAdjacencyMap :: Ord a => LAM.LabelledAdjacencyMap a e -> GraphKL a
+fromLabelledAdjacencyMap :: Ord a => LAM.AdjacencyMap a e -> GraphKL a
 fromLabelledAdjacencyMap (LAM.LAM m) =GraphKL
         { toGraphKL    = g
         , fromVertexKL = \u -> case r u of

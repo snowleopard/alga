@@ -21,9 +21,9 @@ import           Data.Tree
 import           Algebra.Graph.Class            ( Graph(..) )
 import           Algebra.Graph.Label         ( Dioid(..) )
 
-import qualified Algebra.Graph.LabelledAdjacencyMap
+import qualified Algebra.Graph.Labelled.AdjacencyMap
                                                as LabelledAdjacencyMap
-import qualified Algebra.Graph.LabelledAdjacencyMap.Internal
+import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal
                                                as LabelledAdjacencyMap
 import qualified Algebra.Graph                 as Graph
 import qualified Algebra.Graph.AdjacencyMap    as AdjacencyMap
@@ -258,7 +258,7 @@ instance Ord a => GraphAPI (Relation.Relation a) where
     gmap              = Relation.gmap
     induce            = Relation.induce
 
-instance (Ord a, Dioid e, Eq e) => GraphAPI (LabelledAdjacencyMap.LabelledAdjacencyMap a e) where
+instance (Ord a, Dioid e, Eq e) => GraphAPI (LabelledAdjacencyMap.AdjacencyMap a e) where
     edge              = LabelledAdjacencyMap.edge
     vertices          = LabelledAdjacencyMap.vertices
     edges             = LabelledAdjacencyMap.edges
