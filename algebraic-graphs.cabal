@@ -71,6 +71,7 @@ library
                         Algebra.Graph.Internal,
                         Algebra.Graph.Label,
                         Algebra.Graph.Labelled,
+                        Algebra.Graph.Labelled.Example.Automaton,
                         Algebra.Graph.NonEmpty,
                         Algebra.Graph.Relation,
                         Algebra.Graph.Relation.Internal,

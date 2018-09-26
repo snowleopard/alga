@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE DeriveFunctor #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled
@@ -16,18 +16,23 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled (
     -- * Algebraic data type for edge-labeleld graphs
-    Graph (..), UnlabelledGraph, empty, vertex, edge, overlay, connect,
-    connectBy, (-<), (>-),
+    Graph (..), empty, vertex, edge, overlay, connect, connectBy, edges,
+    overlays, (-<), (>-),
 
     -- * Operations
-    edgeLabel
+    edgeLabel,
+
+    -- * Types of edge-labelled graphs
+    UnlabelledGraph, Automaton, Network
   ) where
 
 import Prelude ()
 import Prelude.Compat
+import Data.Set (Set)
 
 import Algebra.Graph.Label
 import qualified Algebra.Graph.Class as C
+import qualified Algebra.Graph.ToGraph as U
 
 -- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
 -- For example, @Graph Bool a@ is isomorphic to unlabelled graphs defined in
@@ -36,10 +41,25 @@ import qualified Algebra.Graph.Class as C
 data Graph e a = Empty
                | Vertex a
                | Connect e (Graph e a) (Graph e a)
-               deriving (Foldable, Functor, Show, Traversable)
+               deriving (Functor, Show)
 
--- | A type synonym for unlabelled graphs.
-type UnlabelledGraph a = Graph Bool a
+instance Dioid e => C.Graph (Graph e a) where
+    type Vertex (Graph e a) = a
+    empty   = Empty
+    vertex  = Vertex
+    overlay = overlay
+    connect = connect
+
+instance (Eq e, Semilattice e) => U.ToGraph (Graph e a) where
+    type ToVertex (Graph e a) = a
+    foldg e v o c = foldgl e v (\x -> if x == zero then o else c)
+
+foldgl :: b -> (a -> b) -> (e -> b -> b -> b) -> Graph e a -> b
+foldgl e v c = go
+  where
+    go Empty           = e
+    go (Vertex    x  ) = v x
+    go (Connect e x y) = c e (go x) (go y)
 
 -- | Construct the /empty graph/. An alias for the constructor 'Empty'.
 -- Complexity: /O(1)/ time, memory and size.
@@ -52,16 +72,28 @@ empty = Empty
 vertex :: a -> Graph e a
 vertex = Vertex
 
--- | Construct the graph comprising /a single edge/ with the label 'one'.
+-- | Construct the graph comprising /a single labelled edge/.
 -- Complexity: /O(1)/ time, memory and size.
-edge :: Dioid e => a -> a -> Graph e a
-edge = C.edge
+edge :: a -> e -> a -> Graph e a
+edge x e y = connectBy e (vertex x) (vertex y)
+
+-- | Construct the graph from a list of labelled edges.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+edges :: Semilattice e => [(a, e, a)] -> Graph e a
+edges = overlays . map (\(x, e, y) -> edge x e y)
 
 -- | /Overlay/ two graphs. An alias for 'Connect' 'zero'. This is a commutative,
 -- associative and idempotent operation with the identity 'empty'.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
 overlay :: Semilattice e => Graph e a -> Graph e a -> Graph e a
 overlay = Connect zero
+
+-- | Overlay a given list of graphs.
+-- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
+-- of the given list, and /S/ is the sum of sizes of the graphs in the list.
+overlays :: Semilattice e => [Graph e a] -> Graph e a
+overlays = foldr overlay empty
 
 -- | /Connect/ two graphs. An alias for 'Connect' 'one'. This is an associative
 -- operation with the identity 'empty', which distributes over 'overlay' and
@@ -105,18 +137,20 @@ g -< e = (g, e)
 infixl 5 -<
 infixl 5 >-
 
-instance Dioid e => C.Graph (Graph e a) where
-    type Vertex (Graph e a) = a
-    empty   = Empty
-    vertex  = Vertex
-    overlay = overlay
-    connect = connect
-
 -- | Extract the label of a specified edge from a graph.
 edgeLabel :: (Eq a, Semilattice e) => a -> a -> Graph e a -> e
-edgeLabel _ _ Empty           = zero
-edgeLabel _ _ (Vertex _)      = zero
-edgeLabel x y (Connect e g h) = edgeLabel x y g \/ edgeLabel x y h \/ new
+edgeLabel s t g = let (res, _, _) = foldgl e v c g in res
   where
-    new | x `elem` g && y `elem` h = e
-        | otherwise                = zero
+    e                                         = (zero         , False   , False   )
+    v x                                       = (zero         , x == s  , x == t  )
+    c l (l1, s1, t1) (l2, s2, t2) | s1 && t2  = (l1 \/ l2 \/ l, s1 || s2, t1 || t2)
+                                  | otherwise = (l1 \/ l2     , s1 || s2, t1 || t2)
+
+-- | A type synonym for /unlabelled graphs/.
+type UnlabelledGraph a = Graph Bool a
+
+-- | A type synonym for /automata/ or /labelled transition systems/.
+type Automaton a s = Graph (Set a) s
+
+-- | A /network/ is a graph whose edges are labelled with distances.
+type Network e a = Graph (Distance e) a
