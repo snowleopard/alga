@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
@@ -48,7 +48,9 @@ module Algebra.Graph (
     box,
 
     -- * Context
-    Context (..), context
+    Context (..), context,
+
+    buildG, mapG
   ) where
 
 import Prelude ()
@@ -368,6 +370,7 @@ foldg e v o c = go
     go (Vertex  x  ) = v x
     go (Overlay x y) = o (go x) (go y)
     go (Connect x y) = c (go x) (go y)
+{-# INLINE [1] foldg #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -942,6 +945,7 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Co
     k _ x     Empty = x -- Constant folding to get rid of Empty leaves
     k _ Empty y     = y
     k f x     y     = f x y
+{-# NOINLINE [1] induce #-}
 
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given expression according to the laws of the algebra.
@@ -1045,3 +1049,24 @@ sparsify graph = res
         m <- get
         put (m + 1)
         overlay <$> s `x` m <*> m `y` t
+
+-- | 'fmap' on which we can apply rewrite rules
+mapG :: (a -> b) -> Graph a -> Graph b
+mapG = fmap
+{-# NOINLINE [0] mapG #-}
+
+buildG :: forall a. (forall b. b->(a->b)->(b->b->b)->(b->b->b)->b) -> Graph a
+buildG g = g Empty Vertex Overlay Connect
+{-# INLINE [1] buildG #-}
+
+{-# RULES
+-- Merge a foldg followed by a buildG
+"foldg/buildG" forall e v o c (g::forall b. b->(a->b)->(b->b->b)->(b->b->b)->b).
+                              foldg e v o c (buildG g) = g e v o c
+
+-- Transform a mapG into its build equivalent
+"mapG" [~1]    forall f g.    mapG f g = buildG (\e v o c -> foldg e (v . f) o c g)
+
+-- Transform a induce into its build equivalent
+"induce" [~1] forall p g.     induce p g = buildG (\e v o c -> foldg e (\x -> if p x then e else v x) o c g)
+ #-}
