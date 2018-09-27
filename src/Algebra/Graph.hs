@@ -1068,5 +1068,5 @@ buildG g = g Empty Vertex Overlay Connect
 "mapG" [~1]    forall f g.    mapG f g = buildG (\e v o c -> foldg e (v . f) o c g)
 
 -- Transform a induce into its build equivalent
-"induce" [~1] forall p g.     induce p g = buildG (\e v o c -> foldg e (\x -> if p x then e else v x) o c g)
+"induce" [~1] forall p g.     induce p g = buildG (\e v o c -> foldg e (\x -> if p x then v x else e) o c g)
  #-}
