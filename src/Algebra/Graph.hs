@@ -868,7 +868,7 @@ filterContext s i o g = maybe g go $ context (==s) g
 -- @
 {-# SPECIALISE replaceVertex :: Int -> Int -> Graph Int -> Graph Int #-}
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
-replaceVertex u v = fmap $ \w -> if w == u then v else w
+replaceVertex u v = mapG $ \w -> if w == u then v else w
 
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
@@ -882,7 +882,7 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 -- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
 -- @
 mergeVertices :: (a -> Bool) -> a -> Graph a -> Graph a
-mergeVertices p v = fmap $ \w -> if p w then v else w
+mergeVertices p v = mapG $ \w -> if p w then v else w
 
 -- | Split a vertex into a list of vertices with the same connectivity.
 -- Complexity: /O(s + k * L)/ time, memory and size, where /k/ is the number of
