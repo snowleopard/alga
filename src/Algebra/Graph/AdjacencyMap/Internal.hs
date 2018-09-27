@@ -123,6 +123,7 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
 -- @
 empty :: AdjacencyMap a
 empty = AM Map.empty
+{-# NOINLINE [1] empty #-}
 
 -- | Construct the graph comprising /a single isolated vertex/.
 -- Complexity: /O(1)/ time and memory.
@@ -135,6 +136,7 @@ empty = AM Map.empty
 -- @
 vertex :: a -> AdjacencyMap a
 vertex x = AM $ Map.singleton x Set.empty
+{-# NOINLINE [1] vertex #-}
 
 -- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
@@ -152,6 +154,7 @@ vertex x = AM $ Map.singleton x Set.empty
 -- @
 overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
 overlay x y = AM $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
+{-# NOINLINE [1] overlay #-}
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
 -- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
@@ -174,6 +177,7 @@ overlay x y = AM $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
 connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
 connect x y = AM $ Map.unionsWith Set.union [ adjacencyMap x, adjacencyMap y,
     fromSet (const . keysSet $ adjacencyMap y) (keysSet $ adjacencyMap x) ]
+{-# NOINLINE [1] connect #-}
 
 instance (Ord a, Num a) => Num (AdjacencyMap a) where
     fromInteger = vertex . fromInteger

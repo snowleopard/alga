@@ -69,3 +69,8 @@ The development of the library has been documented in the series of blog posts:
 * A few different flavours of the algebra: https://blogs.ncl.ac.uk/andreymokhov/graphs-a-la-carte/
 * Graphs in disguise or How to plan you holiday using Haskell: https://blogs.ncl.ac.uk/andreymokhov/graphs-in-disguise/
 * Old graphs from new types: https://blogs.ncl.ac.uk/andreymokhov/old-graphs-from-new-types/
+
+## Algebraic graphs in other languages
+
+See draft implementations in [Agda](http://github.com/algebraic-graphs/agda)
+and [Scala](http://github.com/algebraic-graphs/scala).

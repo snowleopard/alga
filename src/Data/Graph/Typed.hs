@@ -12,15 +12,18 @@
 --
 -- This module provides primitives for interoperability between this library and
 -- the "Data.Graph" module of the containers library. It is for internal use only
--- and __MAY BE REMOVED WITHOUT NOTICE__ at any point!
+-- and may be removed without notice at any point.
 -----------------------------------------------------------------------------
 module Data.Graph.Typed (
-  GraphKL(..), fromAdjacencyMap, fromAdjacencyIntMap, fromLabelledAdjacencyMap,
-  dfsForest, dfsForestFrom, dfs, topSort
+    -- * Data type and construction
+    GraphKL(..), fromAdjacencyMap, fromAdjacencyIntMap,
+
+    -- * Basic algorithms
+    dfsForest, dfsForestFrom, dfs, topSort
   ) where
 
-import Algebra.Graph.AdjacencyMap.Internal    as AM  (AdjacencyMap    (..))
-import Algebra.Graph.AdjacencyIntMap.Internal as AIM (AdjacencyIntMap (..))
+import Algebra.Graph.AdjacencyMap.Internal    as AM
+import Algebra.Graph.AdjacencyIntMap.Internal as AIM
 
 import Algebra.Graph.Labelled.AdjacencyMap.Internal    as LAM  (AdjacencyMap    (..))
 
@@ -51,9 +54,8 @@ data GraphKL a = GraphKL {
 -- @
 -- map ('fromVertexKL' h) ('Data.Graph.vertices' $ 'toGraphKL' h)                               == 'Algebra.Graph.AdjacencyMap.vertexList' g
 -- map (\\(x, y) -> ('fromVertexKL' h x, 'fromVertexKL' h y)) ('Data.Graph.edges' $ 'toGraphKL' h) == 'Algebra.Graph.AdjacencyMap.edgeList' g
---
--- 'toGraphKL' (fromAdjacencyMap (1 * 2 + 3 * 1)) == 'array' (0,2) [(0,[1]),(1,[]),(2,[0])]
--- 'toGraphKL' (fromAdjacencyMap (1 * 2 + 2 * 1)) == 'array' (0,1) [(0,[1]),(1,[0])]
+-- 'toGraphKL' (fromAdjacencyMap (1 * 2 + 3 * 1))                                == 'array' (0,2) [(0,[1]), (1,[]), (2,[0])]
+-- 'toGraphKL' (fromAdjacencyMap (1 * 2 + 2 * 1))                                == 'array' (0,1) [(0,[1]), (1,[0])]
 -- @
 fromAdjacencyMap :: Ord a => AM.AdjacencyMap a -> GraphKL a
 fromAdjacencyMap (AM.AM m) = GraphKL
@@ -69,9 +71,8 @@ fromAdjacencyMap (AM.AM m) = GraphKL
 -- @
 -- map ('fromVertexKL' h) ('Data.Graph.vertices' $ 'toGraphKL' h)                               == 'Data.IntSet.toAscList' ('Algebra.Graph.AdjacencyIntMap.vertexIntSet' g)
 -- map (\\(x, y) -> ('fromVertexKL' h x, 'fromVertexKL' h y)) ('Data.Graph.edges' $ 'toGraphKL' h) == 'Algebra.Graph.AdjacencyIntMap.edgeList' g
---
--- 'toGraphKL' (fromAdjacencyIntMap (1 * 2 + 3 * 1)) == 'array' (0,2) [(0,[1]),(1,[]),(2,[0])]
--- 'toGraphKL' (fromAdjacencyIntMap (1 * 2 + 2 * 1)) == 'array' (0,1) [(0,[1]),(1,[0])]
+-- 'toGraphKL' (fromAdjacencyIntMap (1 * 2 + 3 * 1))                             == 'array' (0,2) [(0,[1]), (1,[]), (2,[0])]
+-- 'toGraphKL' (fromAdjacencyIntMap (1 * 2 + 2 * 1))                             == 'array' (0,1) [(0,[1]), (1,[0])]
 -- @
 fromAdjacencyIntMap :: AdjacencyIntMap -> GraphKL Int
 fromAdjacencyIntMap (AIM.AM m) = GraphKL
@@ -115,13 +116,13 @@ fromLabelledAdjacencyMap (LAM.LAM m) =GraphKL
 -- for greater clarity. (One could use an AdjacencyIntMap just as well)
 --
 -- @
--- 'forest' (dfsForest % 'edge' 1 1)           == 'vertex' 1
--- 'forest' (dfsForest % 'edge' 1 2)           == 'edge' 1 2
--- 'forest' (dfsForest % 'edge' 2 1)           == 'vertices' [1, 2]
--- 'isSubgraphOf' ('forest' $ dfsForest % x) x == True
--- dfsForest % 'forest' (dfsForest % x)      == dfsForest % x
--- dfsForest % 'vertices' vs                 == map (\\v -> Node v []) ('Data.List.nub' $ 'Data.List.sort' vs)
--- 'dfsForestFrom' ('vertexList' x) % x        == dfsForest % x
+-- 'Algebra.Graph.AdjacencyMap.forest' (dfsForest % 'Algebra.Graph.AdjacencyMap.edge' 1 1)           == 'AM.vertex' 1
+-- 'Algebra.Graph.AdjacencyMap.forest' (dfsForest % 'Algebra.Graph.AdjacencyMap.edge' 1 2)           == 'Algebra.Graph.AdjacencyMap.edge' 1 2
+-- 'Algebra.Graph.AdjacencyMap.forest' (dfsForest % 'Algebra.Graph.AdjacencyMap.edge' 2 1)           == 'AM.vertices' [1, 2]
+-- 'AM.isSubgraphOf' ('Algebra.Graph.AdjacencyMap.forest' $ dfsForest % x) x == True
+-- dfsForest % 'Algebra.Graph.AdjacencyMap.forest' (dfsForest % x)      == dfsForest % x
+-- dfsForest % 'AM.vertices' vs                 == map (\\v -> Node v []) ('Data.List.nub' $ 'Data.List.sort' vs)
+-- 'Algebra.Graph.AdjacencyMap.dfsForestFrom' ('Algebra.Graph.AdjacencyMap.vertexList' x) % x        == dfsForest % x
 -- dfsForest % (3 * (1 + 4) * (1 + 5))     == [ Node { rootLabel = 1
 --                                                   , subForest = [ Node { rootLabel = 5
 --                                                                        , subForest = [] }]}
@@ -137,14 +138,14 @@ dfsForest (GraphKL g r _) = fmap (fmap r) (KL.dff g)
 -- necessarily span the whole graph, as some vertices may be unreachable.
 --
 -- @
--- 'forest' (dfsForestFrom [1]    % 'edge' 1 1)       == 'vertex' 1
--- 'forest' (dfsForestFrom [1]    % 'edge' 1 2)       == 'edge' 1 2
--- 'forest' (dfsForestFrom [2]    % 'edge' 1 2)       == 'vertex' 2
--- 'forest' (dfsForestFrom [3]    % 'edge' 1 2)       == 'empty'
--- 'forest' (dfsForestFrom [2, 1] % 'edge' 1 2)       == 'vertices' [1, 2]
--- 'isSubgraphOf' ('forest' $ dfsForestFrom vs % x) x == True
--- dfsForestFrom ('vertexList' x) % x               == 'dfsForest' % x
--- dfsForestFrom vs               % 'vertices' vs   == map (\\v -> Node v []) ('Data.List.nub' vs)
+-- 'Algebra.Graph.AdjacencyMap.forest' (dfsForestFrom [1]    % 'Algebra.Graph.AdjacencyMap.edge' 1 1)       == 'AM.vertex' 1
+-- 'Algebra.Graph.AdjacencyMap.forest' (dfsForestFrom [1]    % 'Algebra.Graph.AdjacencyMap.edge' 1 2)       == 'Algebra.Graph.AdjacencyMap.edge' 1 2
+-- 'Algebra.Graph.AdjacencyMap.forest' (dfsForestFrom [2]    % 'Algebra.Graph.AdjacencyMap.edge' 1 2)       == 'AM.vertex' 2
+-- 'Algebra.Graph.AdjacencyMap.forest' (dfsForestFrom [3]    % 'Algebra.Graph.AdjacencyMap.edge' 1 2)       == 'AM.empty'
+-- 'Algebra.Graph.AdjacencyMap.forest' (dfsForestFrom [2, 1] % 'Algebra.Graph.AdjacencyMap.edge' 1 2)       == 'Algebra.Graph.AdjacencyMap.vertices' [1, 2]
+-- 'Algebra.Graph.AdjacencyMap.isSubgraphOf' ('Algebra.Graph.AdjacencyMap.forest' $ dfsForestFrom vs % x) x == True
+-- dfsForestFrom ('Algebra.Graph.AdjacencyMap.vertexList' x) % x               == 'dfsForest' % x
+-- dfsForestFrom vs               % 'Algebra.Graph.AdjacencyMap.vertices' vs   == map (\\v -> Node v []) ('Data.List.nub' vs)
 -- dfsForestFrom []               % x             == []
 -- dfsForestFrom [1, 4] % (3 * (1 + 4) * (1 + 5)) == [ Node { rootLabel = 1
 --                                                          , subForest = [ Node { rootLabel = 5
@@ -159,15 +160,15 @@ dfsForestFrom vs (GraphKL g r t) = fmap (fmap r) (KL.dfs g (mapMaybe t vs))
 -- when searching from each of the given vertices in order.
 --
 -- @
--- dfs [1]    % 'edge' 1 1                == [1]
--- dfs [1]    % 'edge' 1 2                == [1, 2]
--- dfs [2]    % 'edge' 1 2                == [2]
--- dfs [3]    % 'edge' 1 2                == []
--- dfs [1, 2] % 'edge' 1 2                == [1, 2]
--- dfs [2, 1] % 'edge' 1 2                == [2, 1]
--- dfs []     % x                       == []
--- dfs [1, 4] % (3 * (1 + 4) * (1 + 5)) == [1, 5, 4]
--- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
+-- dfs [1]   % 'Algebra.Graph.AdjacencyMap.edge' 1 1                 == [1]
+-- dfs [1]   % 'Algebra.Graph.AdjacencyMap.edge' 1 2                 == [1,2]
+-- dfs [2]   % 'Algebra.Graph.AdjacencyMap.edge' 1 2                 == [2]
+-- dfs [3]   % 'Algebra.Graph.AdjacencyMap.edge' 1 2                 == []
+-- dfs [1,2] % 'Algebra.Graph.AdjacencyMap.edge' 1 2                 == [1,2]
+-- dfs [2,1] % 'Algebra.Graph.AdjacencyMap.edge' 1 2                 == [2,1]
+-- dfs []    % x                        == []
+-- dfs [1,4] % (3 * (1 + 4) * (1 + 5))  == [1, 5, 4]
+-- 'Algebra.Graph.AdjacencyMap.isSubgraphOf' ('Algebra.Graph.AdjacencyMap.vertices' $ dfs vs x) x == True
 -- @
 dfs :: [a] -> GraphKL a -> [a]
 dfs vs = concatMap flatten . dfsForestFrom vs

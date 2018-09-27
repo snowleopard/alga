@@ -247,17 +247,8 @@ class ToGraph t where
     adjacencyIntMapTranspose :: ToVertex t ~ Int => t -> IntMap IntSet
     adjacencyIntMapTranspose = AIM.adjacencyIntMap . toAdjacencyIntMapTranspose
 
-    -- | The transposed /labelled adjacency map/ of a graph: each vertex is associated
-    -- with a set of its /direct predecessors/. Like 'adjacencyMapTranspose' but
-    -- specialised for graphs with labelled edges.
-    --
-    -- @
-    -- adjacencyIntMapTranspose == Algebra.Graph.AdjacencyIntMap.'Algebra.Graph.AdjacencyIntMap.adjacencyIntMap' . 'toAdjacencyIntMapTranspose'
-    -- @
-    labelledAdjacencyMapTranspose :: (Ord (ToVertex t), Dioid e) => t -> Map (ToVertex t) (Map (ToVertex t) e)
-    labelledAdjacencyMapTranspose = LAM.adjacencyMap . toLabelledAdjacencyMapTranspose
-
-    -- | Compute the /depth-first search/ forest of a graph.
+    -- | Compute the /depth-first search/ forest of a graph that corresponds to
+    -- searching from each of the graph vertices in the 'Ord' @a@ order.
     --
     -- @
     -- dfsForest == Algebra.Graph.AdjacencyMap.'AM.dfsForest' . toAdjacencyMap
@@ -311,15 +302,6 @@ class ToGraph t where
     isAcyclic :: Ord (ToVertex t) => t -> Bool
     isAcyclic = AM.isAcyclic . toAdjacencyMap
 
-    -- | Check if a given list of vertices is a valid /topological sort/ of a
-    -- graph.
-    --
-    -- @
-    -- isTopSortOf vs == Algebra.Graph.AdjacencyMap.'AM.isTopSortOf' vs . toAdjacencyMap
-    -- @
-    isTopSortOf :: Ord (ToVertex t) => [ToVertex t] -> t -> Bool
-    isTopSortOf vs = AM.isTopSortOf vs . toAdjacencyMap
-
     -- | Convert a value to the corresponding 'AM.AdjacencyMap'.
     --
     -- @
@@ -371,6 +353,24 @@ class ToGraph t where
     toAdjacencyIntMapTranspose :: ToVertex t ~ Int => t -> AIM.AdjacencyIntMap
     toAdjacencyIntMapTranspose = foldg AIM.empty AIM.vertex AIM.overlay (flip AIM.connect)
 
+    -- | Check if a given forest is a valid /depth-first search/ forest of a
+    -- graph.
+    --
+    -- @
+    -- isDfsForestOf f == Algebra.Graph.AdjacencyMap.'AM.isDfsForestOf' f . toAdjacencyMap
+    -- @
+    isDfsForestOf :: Ord (ToVertex t) => Forest (ToVertex t) -> t -> Bool
+    isDfsForestOf f = AM.isDfsForestOf f . toAdjacencyMap
+
+    -- | Check if a given list of vertices is a valid /topological sort/ of a
+    -- graph.
+    --
+    -- @
+    -- isTopSortOf vs == Algebra.Graph.AdjacencyMap.'AM.isTopSortOf' vs . toAdjacencyMap
+    -- @
+    isTopSortOf :: Ord (ToVertex t) => [ToVertex t] -> t -> Bool
+    isTopSortOf vs = AM.isTopSortOf vs . toAdjacencyMap
+
 instance Ord a => ToGraph (G.Graph a) where
     type ToVertex (G.Graph a) = a
     toGraph = id
@@ -401,10 +401,18 @@ instance Ord a => ToGraph (AM.AdjacencyMap a) where
                                . map (fmap $ IntSet.fromAscList . Set.toAscList)
                                . Map.toAscList
                                . AM.adjacencyMap
+    dfsForest                  = AM.dfsForest
+    dfsForestFrom              = AM.dfsForestFrom
+    dfs                        = AM.dfs
+    reachable                  = AM.reachable
+    topSort                    = AM.topSort
+    isAcyclic                  = AM.isAcyclic
     toAdjacencyMap             = id
     toAdjacencyIntMap          = AIM.AM . adjacencyIntMap
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
+    isDfsForestOf              = AM.isDfsForestOf
+    isTopSortOf                = AM.isTopSortOf
 
 instance ToGraph AIM.AdjacencyIntMap where
     type ToVertex AIM.AdjacencyIntMap = Int
@@ -429,11 +437,19 @@ instance ToGraph AIM.AdjacencyIntMap where
                                . map (fmap $ Set.fromAscList . IntSet.toAscList)
                                . IntMap.toAscList
                                . AIM.adjacencyIntMap
+    dfsForest                  = AIM.dfsForest
+    dfsForestFrom              = AIM.dfsForestFrom
+    dfs                        = AIM.dfs
+    reachable                  = AIM.reachable
+    topSort                    = AIM.topSort
+    isAcyclic                  = AIM.isAcyclic
     adjacencyIntMap            = AIM.adjacencyIntMap
     toAdjacencyMap             = AM.AM . adjacencyMap
     toAdjacencyIntMap          = id
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
+    isDfsForestOf              = AIM.isDfsForestOf
+    isTopSortOf                = AIM.isTopSortOf
 
 -- TODO: Get rid of "Relation.Internal" and move this instance to "Relation".
 instance Ord a => ToGraph (R.Relation a) where
