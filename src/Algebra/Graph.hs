@@ -370,7 +370,7 @@ foldg e v o c = go
     go (Vertex  x  ) = v x
     go (Overlay x y) = o (go x) (go y)
     go (Connect x y) = c (go x) (go y)
-{-# INLINE [1] foldg #-}
+{-# INLINE [0] foldg #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -1050,23 +1050,39 @@ sparsify graph = res
         put (m + 1)
         overlay <$> s `x` m <*> m `y` t
 
+type GraphF a b = b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
+
 -- | 'fmap' on which we can apply rewrite rules
 mapG :: (a -> b) -> Graph a -> Graph b
 mapG = fmap
 {-# NOINLINE [0] mapG #-}
 
-buildG :: forall a. (forall b. b->(a->b)->(b->b->b)->(b->b->b)->b) -> Graph a
+buildG :: forall a. (forall b. GraphF a b) -> Graph a
 buildG g = g Empty Vertex Overlay Connect
 {-# INLINE [1] buildG #-}
 
+-- | FB functions
+mapGFB :: (b -> c) -> (a -> b) -> a -> c
+mapGFB v f = v . f
+{-# INLINE [0] mapGFB #-}
+
+induceFB :: b -> (a -> b) -> (a -> Bool) -> a -> b
+induceFB e v p = \x -> if p x then v x else e
+{-# INLINE [0] induceFB #-}
+
 {-# RULES
 -- Merge a foldg followed by a buildG
-"foldg/buildG" forall e v o c (g::forall b. b->(a->b)->(b->b->b)->(b->b->b)->b).
+"foldg/buildG" forall e v o c (g::forall b. GraphF a b).
                               foldg e v o c (buildG g) = g e v o c
 
 -- Transform a mapG into its build equivalent
-"mapG" [~1]    forall f g.    mapG f g = buildG (\e v o c -> foldg e (v . f) o c g)
+"mapG" [~1]    forall f g.    mapG f g = buildG (\e v o c -> foldg e (mapGFB v f) o c g)
 
 -- Transform a induce into its build equivalent
-"induce" [~1] forall p g.     induce p g = buildG (\e v o c -> foldg e (\x -> if p x then v x else e) o c g)
+"induce" [~1]  forall p g.    induce p g = buildG (\e v o c -> foldg e (induceFB e v p) o c g)
+ #-}
+
+{-# RULES
+"foldg/mapGFB"   [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect         = mapG f
+"foldg/induceFB" [1] forall f. foldg Empty (induceFB Empty Vertex f) Overlay Connect = induce f
  #-}
