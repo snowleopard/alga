@@ -6,47 +6,33 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : unstable
 --
--- This module exposes the implementation of labelled adjacency maps. The API is unstable
+-- This module exposes the implementation of edge-labelled adjacency maps. The API is unstable
 -- and unsafe, and is exposed only for documentation. You should use the
 -- non-internal module "Algebra.Graph.Labelled.AdjdacencyMap" instead.
 -----------------------------------------------------------------------------
-module Algebra.Graph.Labelled.AdjacencyMap.Internal
-        (
+module Algebra.Graph.Labelled.AdjacencyMap.Internal (
     -- * Adjacency map implementation
-          AdjacencyMap(..)
-        , consistent
-        , edgeLabel
-        , empty
-        , connect
-        , overlay
-        , vertex
-        , (-<)
-        , (>-)
-        , fromAdjacencySets
-        )
-where
+    AdjacencyMap(..), empty, vertex, overlay, connect,
+    (-<), (>-), fromAdjacencySets, consistent, edgeLabel,
+  ) where
 
-import           Data.List
-import           Data.Map.Strict                ( Map
-                                                , keysSet
-                                                , fromSet
-                                                )
-import           Data.Set                       ( Set )
-import           Data.Maybe                     ( fromMaybe )
-import           Algebra.Graph.Label            ( Dioid(..)
-                                                , Semilattice(..)
-                                                , zero
-                                                )
-import           Control.DeepSeq                ( NFData(..) )
-import qualified Data.Map.Strict               as Map
-import qualified Data.Set                      as Set
+import Control.DeepSeq
+import Data.List
+import Data.Map.Strict (Map)
+import Data.Set (Set)
+import Data.Maybe
+
+import qualified Data.Map.Strict as Map
+import qualified Data.Set        as Set
+
+import Algebra.Graph.Label
 
 newtype AdjacencyMap a e = LAM {
     -- | The /adjacency map/ of the graph: each vertex is associated with a set
     -- of its direct successors.
     adjacencyMap :: Map a (Map a e) } deriving Eq
 
-
+-- TODO: Show labels
 instance (Ord a, Show a, Ord e, Show e, Dioid e) => Show (AdjacencyMap a e) where
     show (LAM m)
         | null vs    = "empty"
@@ -54,14 +40,13 @@ instance (Ord a, Show a, Ord e, Show e, Dioid e) => Show (AdjacencyMap a e) wher
         | vs == used = eshow es
         | otherwise  = "overlay (" ++ vshow (vs \\ used) ++ ") (" ++ eshow es ++ ")"
       where
-        vs             = Set.toAscList (keysSet m)
+        vs             = Set.toAscList (Map.keysSet m)
         es             = internalEdgeList m
         vshow [x]      = "vertex "   ++ show x
         vshow xs       = "vertices " ++ show xs
-        eshow [(x, y)] = "edge "     ++ show x ++ " " ++ show y -- TODO: show edges
+        eshow [(x, y)] = "edge "     ++ show x ++ " " ++ show y
         eshow xs       = "edges "    ++ show xs
         used           = Set.toAscList (referredToVertexSet m)
-
 
 empty :: AdjacencyMap a e
 empty = LAM Map.empty
@@ -69,60 +54,37 @@ empty = LAM Map.empty
 vertex :: a -> AdjacencyMap a e
 vertex x = LAM $ Map.singleton x Map.empty
 
-overlay
-        :: (Ord a, Semilattice e)
-        => AdjacencyMap a e
-        -> AdjacencyMap a e
-        -> AdjacencyMap a e
-overlay x y = LAM $ Map.unionWith (Map.unionWith (\/))
-                                  (adjacencyMap x)
-                                  (adjacencyMap y)
+overlay :: (Ord a, Semilattice e) => AdjacencyMap a e -> AdjacencyMap a e -> AdjacencyMap a e
+overlay (LAM x) (LAM y) = LAM $ Map.unionWith (Map.unionWith (\/)) x y
 
-connect
-        :: (Ord a, Dioid e)
-        => AdjacencyMap a e
-        -> AdjacencyMap a e
-        -> AdjacencyMap a e
+connect :: (Ord a, Dioid e) => AdjacencyMap a e -> AdjacencyMap a e -> AdjacencyMap a e
 connect = lconnect one
 
-lconnect
-        :: (Ord a, Dioid e)
-        => e
-        -> AdjacencyMap a e
-        -> AdjacencyMap a e
-        -> AdjacencyMap a e
-lconnect e x y = LAM $ Map.unionsWith
-        (Map.unionWith (/\))
-        [ adjacencyMap x
-        , adjacencyMap y
-        , Map.fromSet (const cset) (keysSet $ adjacencyMap x)
-        ]
-        where cset = fromSet (const e) (keysSet $ adjacencyMap y)
+lconnect :: (Ord a, Dioid e) => e -> AdjacencyMap a e -> AdjacencyMap a e -> AdjacencyMap a e
+lconnect e (LAM x) (LAM y) = LAM $ Map.unionsWith (Map.unionWith (\/))
+    [ x, y, Map.fromSet (const cset) (Map.keysSet x) ]
+  where
+    cset = Map.fromSet (const e) (Map.keysSet y)
 
 (-<) :: AdjacencyMap a e -> e -> (AdjacencyMap a e, e)
 g -< e = (g, e)
 
-(>-)
-        :: (Ord a, Dioid e)
-        => (AdjacencyMap a e, e)
-        -> AdjacencyMap a e
-        -> AdjacencyMap a e
+(>-) :: (Ord a, Dioid e) => (AdjacencyMap a e, e) -> AdjacencyMap a e -> AdjacencyMap a e
 (g, e) >- h = lconnect e g h
 
 infixl 5 -<
 infixl 5 >-
 
 edgeLabel :: (Ord a, Dioid e) => a -> a -> AdjacencyMap a e -> e
-edgeLabel x y g =
-        fromMaybe zero (Map.lookup y =<< Map.lookup x (adjacencyMap g))
+edgeLabel x y (LAM m) = fromMaybe zero (Map.lookup x m >>= Map.lookup y)
 
 instance (Ord a, Num a, Dioid e) => Num (AdjacencyMap a e) where
-  fromInteger = vertex . fromInteger
-  (+) = overlay
-  (*) = connect
-  signum = const empty
-  abs = id
-  negate = id
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
 
 instance (NFData a, NFData e) => NFData (AdjacencyMap a e) where
     rnf (LAM a) = rnf a
@@ -162,7 +124,7 @@ fromAdjacencySets ss = LAM $ Map.unionWith (Map.unionWith (\/)) vs es
 -- consistent ('Algebra.Graph.Labelled.AdjdacencyMap.fromAdjacencyList' xs) == True
 -- @
 consistent :: (Ord a) => AdjacencyMap a e -> Bool
-consistent (LAM m) = referredToVertexSet m `Set.isSubsetOf` keysSet m
+consistent (LAM m) = referredToVertexSet m `Set.isSubsetOf` Map.keysSet m
 
 -- The set of vertices that are referred to by the edges
 referredToVertexSet :: (Ord a) => Map a (Map a e) -> Set a

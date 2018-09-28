@@ -28,7 +28,6 @@ module Algebra.Graph.Labelled (
 
 import Prelude ()
 import Prelude.Compat
-
 import Data.Set (Set)
 
 import Algebra.Graph.Label

@@ -10,11 +10,10 @@
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines the 'AdjacencyMap' data type, as well as associated
--- operations and algorithms. 'AdjacencyMap' is an instance of the 'C.Graph' type
--- class, which can be used for polymorphic graph construction and manipulation.
--- "Algebra.Graph.IntAdjacencyMap" defines adjacency maps specialised to graphs
--- with @Int@ vertices.
+-- This module defines the 'AdjacencyMap' data type for edge-labelled graphs, as
+-- well as associated operations and algorithms. 'AdjacencyMap' is an instance
+-- of the 'C.Graph' type class, which can be used for polymorphic graph
+-- construction and manipulation.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled.AdjacencyMap (
     -- * Data structure
@@ -38,17 +37,14 @@ module Algebra.Graph.Labelled.AdjacencyMap (
     transpose, gmap, emap, induce
   ) where
 
-import           Data.Set                       ( Set )
-import           Data.Tree
-import           Algebra.Graph.Label         ( Dioid(..)
-                                                , zero
-                                                , Semilattice(..)
-                                                )
+import Data.Set (Set)
+import Data.Tree
 
-import           Algebra.Graph.Labelled.AdjacencyMap.Internal
+import Algebra.Graph.Label
+import Algebra.Graph.Labelled.AdjacencyMap.Internal
 
-import qualified Data.Map.Strict               as Map
-import qualified Data.Set                      as Set
+import qualified Data.Map.Strict as Map
+import qualified Data.Set        as Set
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.

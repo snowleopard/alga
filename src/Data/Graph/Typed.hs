@@ -55,7 +55,7 @@ data GraphKL a = GraphKL {
 -- 'toGraphKL' (fromAdjacencyMap (1 * 2 + 3 * 1))                                == 'array' (0,2) [(0,[1]), (1,[]), (2,[0])]
 -- 'toGraphKL' (fromAdjacencyMap (1 * 2 + 2 * 1))                                == 'array' (0,1) [(0,[1]), (1,[0])]
 -- @
-fromAdjacencyMap :: Ord a => AM.AdjacencyMap a -> GraphKL a
+fromAdjacencyMap :: Ord a => AdjacencyMap a -> GraphKL a
 fromAdjacencyMap (AM.AM m) = GraphKL
     { toGraphKL    = g
     , fromVertexKL = \u -> case r u of (_, v, _) -> v

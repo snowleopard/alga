@@ -18,35 +18,29 @@
 -- the standard "Data.Foldable" defined for lists.
 --
 -----------------------------------------------------------------------------
-module Algebra.Graph.ToGraph
-        ( ToGraph(..)
-        )
-where
+module Algebra.Graph.ToGraph (ToGraph (..)) where
 
-import           Prelude                        ( )
-import           Prelude.Compat
+import Prelude ()
+import Prelude.Compat
+import Data.IntMap (IntMap)
+import Data.IntSet (IntSet)
+import Data.Map    (Map)
+import Data.Set    (Set)
+import Data.Tree
 
-import           Data.IntMap                    ( IntMap )
-import           Data.IntSet                    ( IntSet )
-import           Data.Map                       ( Map )
-import           Data.Set                       ( Set )
-import           Data.Tree
+import Algebra.Graph.Label
 
-import qualified Algebra.Graph                 as G
-import qualified Algebra.Graph.AdjacencyMap    as AM
-import qualified Algebra.Graph.AdjacencyMap.Internal
-                                               as AM
-import qualified Algebra.Graph.Labelled.AdjacencyMap
-                                               as LAM
-import qualified Algebra.Graph.AdjacencyIntMap as AIM
-import qualified Algebra.Graph.AdjacencyIntMap.Internal
-                                               as AIM
-import qualified Algebra.Graph.Relation        as R
-import           Algebra.Graph.Label         ( Dioid )
-import qualified Data.IntMap                   as IntMap
-import qualified Data.IntSet                   as IntSet
-import qualified Data.Map                      as Map
-import qualified Data.Set                      as Set
+import qualified Algebra.Graph                          as G
+import qualified Algebra.Graph.AdjacencyMap             as AM
+import qualified Algebra.Graph.AdjacencyMap.Internal    as AM
+import qualified Algebra.Graph.AdjacencyIntMap          as AIM
+import qualified Algebra.Graph.AdjacencyIntMap.Internal as AIM
+import qualified Algebra.Graph.Labelled.AdjacencyMap    as LAM
+import qualified Algebra.Graph.Relation                 as R
+import qualified Data.IntMap                            as IntMap
+import qualified Data.IntSet                            as IntSet
+import qualified Data.Map                               as Map
+import qualified Data.Set                               as Set
 
 -- | The 'ToGraph' type class captures data types that can be converted to
 -- algebraic graphs.
@@ -308,14 +302,6 @@ class ToGraph t where
     toAdjacencyMap :: Ord (ToVertex t) => t -> AM.AdjacencyMap (ToVertex t)
     toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
 
-    -- | Convert a value to the corresponding 'LAM.AdjacencyMap'.
-    --
-    -- @
-    -- toAdjacencyMap == 'foldg' 'LAM.empty' 'LAM.vertex' 'LAM.overlay' 'LAM.connect'
-    -- @
-    toLabelledAdjacencyMap :: (Ord (ToVertex t), Dioid e )=> t -> LAM.AdjacencyMap (ToVertex t) e
-    toLabelledAdjacencyMap = foldg LAM.empty LAM.vertex LAM.overlay LAM.connect
-
     -- | Convert a value to the corresponding 'AM.AdjacencyMap' and transpose the
     -- result.
     --
@@ -324,15 +310,6 @@ class ToGraph t where
     -- @
     toAdjacencyMapTranspose :: Ord (ToVertex t) => t -> AM.AdjacencyMap (ToVertex t)
     toAdjacencyMapTranspose = foldg AM.empty AM.vertex AM.overlay (flip AM.connect)
-
-    -- | Convert a value to the corresponding 'AM.AdjacencyMap' and transpose the
-    -- result.
-    --
-    -- @
-    -- toAdjacencyMapTranspose == 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' (flip 'AM.connect')
-    -- @
-    toLabelledAdjacencyMapTranspose :: (Ord (ToVertex t), Dioid e )=> t -> LAM.AdjacencyMap (ToVertex t) e
-    toLabelledAdjacencyMapTranspose = foldg LAM.empty LAM.vertex LAM.overlay (flip LAM.connect)
 
     -- | Convert a value to the corresponding 'AIM.AdjacencyIntMap'.
     --
