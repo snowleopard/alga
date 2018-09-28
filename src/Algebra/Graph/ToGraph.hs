@@ -38,8 +38,6 @@ import qualified Algebra.Graph.AdjacencyMap.Internal
                                                as AM
 import qualified Algebra.Graph.Labelled.AdjacencyMap
                                                as LAM
-import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal
-                                               as LAM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Internal
                                                as AIM
@@ -335,7 +333,7 @@ class ToGraph t where
     -- @
     toLabelledAdjacencyMapTranspose :: (Ord (ToVertex t), Dioid e )=> t -> LAM.AdjacencyMap (ToVertex t) e
     toLabelledAdjacencyMapTranspose = foldg LAM.empty LAM.vertex LAM.overlay (flip LAM.connect)
-    
+
     -- | Convert a value to the corresponding 'AIM.AdjacencyIntMap'.
     --
     -- @
@@ -478,7 +476,6 @@ instance Ord a => ToGraph (R.Relation a) where
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
 
-
 instance (Ord a, Dioid e) => ToGraph (LAM.AdjacencyMap a e) where
     type ToVertex (LAM.AdjacencyMap a e) = a
     toGraph                    = G.stars
@@ -505,5 +502,5 @@ instance (Ord a, Dioid e) => ToGraph (LAM.AdjacencyMap a e) where
     --                            . LAM.adjacencyMap
     toAdjacencyMap             = toAdjacencyMap
     toAdjacencyIntMap          = AIM.AM . adjacencyIntMap
-    toAdjacencyMapTranspose    = toAdjacencyMap . LAM.transpose 
+    toAdjacencyMapTranspose    = toAdjacencyMap . LAM.transpose
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap

@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.AdjacencyMap
+-- Module     : Algebra.Graph.Labelled.AdjacencyMap
 -- Copyright  : (c) Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -16,80 +16,28 @@
 -- "Algebra.Graph.IntAdjacencyMap" defines adjacency maps specialised to graphs
 -- with @Int@ vertices.
 -----------------------------------------------------------------------------
-module Algebra.Graph.Labelled.AdjacencyMap
-        (
+module Algebra.Graph.Labelled.AdjacencyMap (
     -- * Data structure
-          AdjacencyMap
-        , adjacencyMap
-        ,
-       -- * Basic graph construction primitives
-          empty
-        , vertex
-        , overlay
-        , connect
-        , edge
-        , vertices
-        , edges
-        , overlays
-        , connects
-        ,
+    AdjacencyMap, adjacencyMap,
+
+    -- * Basic graph construction primitives
+    empty, vertex, overlay, connect, edge, vertices, edges, overlays, connects,
 
     -- * Relations on graphs
-          isSubgraphOf
-        , isAcyclic
-        ,
+    isSubgraphOf,
 
     -- * Graph properties
-          isEmpty
-        , hasVertex
-        , hasEdge
-        , vertexCount
-        , edgeCount
-        , vertexList
-        , edgeList
-        , adjacencyList
-        , vertexSet
-        , edgeSet
-        , postSet
-        , preSet
-        , 
+    isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
+    adjacencyList, vertexSet, edgeSet, postSet, preSet,
 
     -- * Standard families of graphs
-          path
-        , circuit
-        , clique
-        , biclique
-        , star
-        , stars
-        , starTranspose
-        , tree
-        , forest
-        ,
+    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
 
     -- * Graph transformation
-          removeVertex
-        , removeEdge
-        , replaceVertex
-        , replaceLabel
-        , mergeVertices
-        , transpose
-        , gmap
-        , emap
-        , induce
-        ,
+    removeVertex, removeEdge, replaceVertex, replaceLabel, mergeVertices,
+    transpose, gmap, emap, induce
+  ) where
 
-    -- * Algorithms
-          dfsForest
-        , dfsForestFrom
-        , dfs
-        , topSort
-        , isTopSortOf
-        , scc
-        )
-where
-
-import           Data.Foldable                  ( toList )
-import           Data.Maybe
 import           Data.Set                       ( Set )
 import           Data.Tree
 import           Algebra.Graph.Label         ( Dioid(..)
@@ -99,8 +47,6 @@ import           Algebra.Graph.Label         ( Dioid(..)
 
 import           Algebra.Graph.Labelled.AdjacencyMap.Internal
 
-import qualified Data.Graph.Typed as Typed
-import qualified Data.Graph                    as KL
 import qualified Data.Map.Strict               as Map
 import qualified Data.Set                      as Set
 
@@ -117,7 +63,7 @@ import qualified Data.Set                      as Set
 edge :: (Ord a, Dioid e) => a -> a -> AdjacencyMap a e
 edge x y | x == y    = LAM $ Map.singleton x (Map.singleton y one)
          | otherwise = LAM $ Map.fromList [(x, Map.singleton y one), (y, Map.empty)]
-         
+
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
 -- of the given list.
@@ -658,130 +604,3 @@ induce p =
                 . Map.map (Map.filterWithKey (\k _ -> p k))
                 . Map.filterWithKey (\k _ -> p k)
                 . adjacencyMap
-
-
-
--- | Compute the /depth-first search/ forest of a graph.
---
--- @
--- 'forest' (dfsForest $ 'edge' 1 1)         == 'vertex' 1
--- 'forest' (dfsForest $ 'edge' 1 2)         == 'edge' 1 2
--- 'forest' (dfsForest $ 'edge' 2 1)         == 'vertices' [1, 2]
--- 'isSubgraphOf' ('forest' $ dfsForest x) x == True
--- dfsForest . 'forest' . dfsForest        == dfsForest
--- dfsForest ('vertices' vs)               == map (\\v -> Node v []) ('Data.List.nub' $ 'Data.List.sort' vs)
--- 'dfsForestFrom' ('vertexList' x) x        == dfsForest x
--- dfsForest $ 3 * (1 + 4) * (1 + 5)     == [ Node { rootLabel = 1
---                                                 , subForest = [ Node { rootLabel = 5
---                                                                      , subForest = [] }]}
---                                          , Node { rootLabel = 3
---                                                 , subForest = [ Node { rootLabel = 4
---                                                                      , subForest = [] }]}]
--- @
-dfsForest :: (Ord a) => AdjacencyMap a e -> Forest a
-dfsForest g = dfsForestFrom (vertexList g) g
-
--- | Compute the /depth-first search/ forest of a graph, searching from each of
--- the given vertices in order. Note that the resulting forest does not
--- necessarily span the whole graph, as some vertices may be unreachable.
---
--- @
--- 'forest' (dfsForestFrom [1]    $ 'edge' 1 1)     == 'vertex' 1
--- 'forest' (dfsForestFrom [1]    $ 'edge' 1 2)     == 'edge' 1 2
--- 'forest' (dfsForestFrom [2]    $ 'edge' 1 2)     == 'vertex' 2
--- 'forest' (dfsForestFrom [3]    $ 'edge' 1 2)     == 'empty'
--- 'forest' (dfsForestFrom [2, 1] $ 'edge' 1 2)     == 'vertices' [1, 2]
--- 'isSubgraphOf' ('forest' $ dfsForestFrom vs x) x == True
--- dfsForestFrom ('vertexList' x) x               == 'dfsForest' x
--- dfsForestFrom vs             ('vertices' vs)   == map (\\v -> Node v []) ('Data.List.nub' vs)
--- dfsForestFrom []             x               == []
--- dfsForestFrom [1, 4] $ 3 * (1 + 4) * (1 + 5) == [ Node { rootLabel = 1
---                                                        , subForest = [ Node { rootLabel = 5
---                                                                             , subForest = [] }
---                                                 , Node { rootLabel = 4
---                                                        , subForest = [] }]
--- @
-dfsForestFrom :: (Ord a) => [a] -> AdjacencyMap a e -> Forest a
-dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromLabelledAdjacencyMap
-
--- | Compute the list of vertices visited by the /depth-first search/ in a graph,
--- when searching from each of the given vertices in order.
---
--- @
--- dfs [1]    $ 'edge' 1 1                == [1]
--- dfs [1]    $ 'edge' 1 2                == [1, 2]
--- dfs [2]    $ 'edge' 1 2                == [2]
--- dfs [3]    $ 'edge' 1 2                == []
--- dfs [1, 2] $ 'edge' 1 2                == [1, 2]
--- dfs [2, 1] $ 'edge' 1 2                == [2, 1]
--- dfs []     $ x                       == []
--- dfs [1, 4] $ 3 * (1 + 4) * (1 + 5)   == [1, 5, 4]
--- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
--- @
-dfs ::  (Ord a) => [a] -> AdjacencyMap a e -> [a]
-dfs vs = concatMap flatten . dfsForestFrom vs
-
--- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
--- is cyclic.
---
--- @
--- topSort (1 * 2 + 3 * 1)             == Just [3,1,2]
--- topSort (1 * 2 + 2 * 1)             == Nothing
--- fmap (flip 'isTopSort' x) (topSort x) /= Just False
--- @
-topSort :: Ord a => AdjacencyMap a e -> Maybe [a]
-topSort m = if isTopSortOf result m then Just result else Nothing
-  where
-    result = Typed.topSort (Typed.fromLabelledAdjacencyMap m)
-
--- | Check if a given list of vertices is a valid /topological sort/ of a graph.
---
--- @
--- isTopSortOf [3, 1, 2] (1 * 2 + 3 * 1) == True
--- isTopSortOf [1, 2, 3] (1 * 2 + 3 * 1) == False
--- isTopSortOf []        (1 * 2 + 3 * 1) == False
--- isTopSortOf []        'empty'           == True
--- isTopSortOf [x]       ('vertex' x)      == True
--- isTopSortOf [x]       ('edge' x x)      == False
--- @
-isTopSortOf :: Ord a => [a] -> AdjacencyMap a e -> Bool
-isTopSortOf xs m = go Set.empty xs
-    where
-        go seen [] = seen == Map.keysSet (adjacencyMap m)
-        go seen (v : vs) =
-                let newSeen = seen `seq` Set.insert v seen
-                in  postSet v m
-                    `Set.intersection` newSeen
-                    ==                 Set.empty
-                    &&                 go newSeen vs
-
--- | Check if a given graph is /acyclic/.
---
--- @
--- isAcyclic (1 * 2 + 3 * 1) == True
--- isAcyclic (1 * 2 + 2 * 1) == False
--- isAcyclic . 'circuit'       == 'null'
--- isAcyclic                 == 'isJust' . 'topSort'
--- @
-isAcyclic :: Ord a => AdjacencyMap a e -> Bool
-isAcyclic = isJust . topSort
-
--- | Compute the /condensation/ of a graph, where each vertex corresponds to a
--- /strongly-connected component/ of the original graph.
---
--- @
--- scc 'empty'               == 'empty'
--- scc ('vertex' x)          == 'vertex' (Set.'Set.singleton' x)
--- scc ('edge' x y)          == 'edge' (Set.'Set.singleton' x) (Set.'Set.singleton' y)
--- scc ('circuit' (1:xs))    == 'edge' (Set.'Set.fromList' (1:xs)) (Set.'Set.fromList' (1:xs))
--- scc (3 * 1 * 4 * 1 * 5) == 'edges' [ (Set.'Set.fromList' [1,4], Set.'Set.fromList' [1,4])
---                                  , (Set.'Set.fromList' [1,4], Set.'Set.fromList' [5]  )
---                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [1,4])
---                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [5]  )]
--- @
-scc :: Ord a => AdjacencyMap a e -> AdjacencyMap (Set a) e
-scc m = gmap (\v -> Map.findWithDefault Set.empty v components) m
-  where
-    (Typed.GraphKL g r _) = Typed.fromLabelledAdjacencyMap m
-    components = Map.fromList $ concatMap (expand . fmap r . toList) (KL.scc g)
-    expand xs  = let s = Set.fromList xs in map (, s) xs

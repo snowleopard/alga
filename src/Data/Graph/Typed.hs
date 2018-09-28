@@ -25,8 +25,6 @@ module Data.Graph.Typed (
 import Algebra.Graph.AdjacencyMap.Internal    as AM
 import Algebra.Graph.AdjacencyIntMap.Internal as AIM
 
-import Algebra.Graph.Labelled.AdjacencyMap.Internal    as LAM  (AdjacencyMap    (..))
-
 import Data.Tree
 import Data.Maybe
 
@@ -81,29 +79,6 @@ fromAdjacencyIntMap (AIM.AM m) = GraphKL
     , toVertexKL   = t }
   where
     (g, r, t) = KL.graphFromEdges [ ((), v, IntSet.toAscList us) | (v, us) <- IntMap.toAscList m ]
-
--- | Build 'GraphKL' from a 'LabelledAdjacencyMap'.
--- If @fromLabelledAdjacencyMap g == h@ then the following holds:
---
--- @
--- map ('fromVertexKL' h) ('Data.Graph.vertices' $ 'toGraphKL' h)                               == 'Algebra.Graph.AdjacencyMap.vertexList' g
--- map (\\(x, y) -> ('fromVertexKL' h x, 'fromVertexKL' h y)) ('Data.Graph.edges' $ 'toGraphKL' h) == 'Algebra.Graph.fromLabelledAdjacencyMap.edgeList' g
---
--- 'toGraphKL' (fromLabelledAdjacencyMap (1 * 2 + 3 * 1)) == 'array' (0,2) [(0,[1]),(1,[]),(2,[0])]
--- 'toGraphKL' (fromLabelledAdjacencyMap (1 * 2 + 2 * 1)) == 'array' (0,1) [(0,[1]),(1,[0])]
--- @
-fromLabelledAdjacencyMap :: Ord a => LAM.AdjacencyMap a e -> GraphKL a
-fromLabelledAdjacencyMap (LAM.LAM m) =GraphKL
-        { toGraphKL    = g
-        , fromVertexKL = \u -> case r u of
-                (_, v, _) -> v
-        , toVertexKL   = t
-        }
-    where
-        (g, r, t) = KL.graphFromEdges
-                [ ((), v, Set.toAscList (Map.keysSet us))
-                | (v, us) <- Map.toAscList m
-                ]
 
 -- | Compute the /depth-first search/ forest of a graph.
 --

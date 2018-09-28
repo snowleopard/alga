@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Test.AdjacencyMap
+-- Module     : Algebra.Graph.Test.Labelled.AdjacencyMap
 -- Copyright  : (c) Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Testsuite for "Algebra.Graph.AdjacencyMap".
+-- Testsuite for "Algebra.Graph.Labelled.AdjacencyMap".
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Labelled.AdjacencyMap (
     -- * Testsuite
@@ -17,9 +17,6 @@ import Algebra.Graph.Labelled.AdjacencyMap
 import Algebra.Graph.Labelled.AdjacencyMap.Internal
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
-
-import qualified Data.Graph as KL
-import qualified Data.Set   as Set
 
 t :: Testsuite
 t = testsuite "Labelled.AdjacencyMap." (empty :: AdjacencyMap Int Bool)
@@ -51,24 +48,3 @@ testLabelledAdjacencyMap = do
     testTopSort           t
     testIsTopSortOf       t
     testIsAcyclic         t
-
-    putStrLn "\n============ AdjacencyMap.scc ============"
-    test "scc empty               == empty" $
-          scc(empty :: LAI)        == empty
-
-    test "scc (vertex x)          == vertex (Set.singleton x)" $ \(x :: Int) ->
-          scc (vertex x :: LAI)          == vertex (Set.singleton x)
-
-    test "scc (edge x y)          == edge (Set.singleton x) (Set.singleton y)" $ \(x :: Int) y ->
-          scc (edge x y :: LAI)          == edge (Set.singleton x) (Set.singleton y)
-
-    test "scc (circuit (1:xs))    == edge (Set.fromList (1:xs)) (Set.fromList (1:xs))" $ \(xs :: [Int]) ->
-          scc (circuit (1:xs):: LAI)    == edge (Set.fromList (1:xs)) (Set.fromList (1:xs))
-
-    test "scc (3 * 1 * 4 * 1 * 5) == <correct result>" $
-          scc (3 * 1 * 4 * 1 * 5 :: LAI) == edges [ (Set.fromList [1,4], Set.fromList [1,4])
-                                           , (Set.fromList [1,4], Set.fromList [5]  )
-                                           , (Set.fromList [3]  , Set.fromList [1,4])
-                                           , (Set.fromList [3]  , Set.fromList [5 :: Int])]
-
-
