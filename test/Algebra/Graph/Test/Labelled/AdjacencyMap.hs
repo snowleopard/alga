@@ -31,8 +31,8 @@ testLabelledAdjacencyMap = do
     test "Consistency of arbitraryLabelledAdjacencyMap" $ \(m :: LAI) ->
         consistent m
 
-    test "Consistency of fromAdjacencyList" $ \xs ->
-        consistent (fromAdjacencySets xs :: LAI)
+    test "Consistency of fromAdjacencyMaps" $ \xs ->
+        consistent (fromAdjacencyMaps xs :: LAI)
 
     testShow              t
     testBasicPrimitives   t

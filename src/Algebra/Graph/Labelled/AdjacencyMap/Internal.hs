@@ -12,8 +12,8 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled.AdjacencyMap.Internal (
     -- * Adjacency map implementation
-    AdjacencyMap(..), empty, vertex, overlay, connect,
-    (-<), (>-), fromAdjacencySets, consistent, edgeLabel,
+    AdjacencyMap(..), empty, vertex, overlay, connect, connectBy,
+    fromAdjacencyMaps, consistent, edgeLabel,
   ) where
 
 import Control.DeepSeq
@@ -31,7 +31,7 @@ newtype AdjacencyMap e a = LAM {
     -- | The /adjacency map/ of an edge-labelled graph: each vertex is
     -- associated with a map from its direct successors to the corresponding
     -- edge labels.
-    adjacencyMap :: Map a (Map a e) } deriving Eq
+    adjacencyMap :: Map a (Map a e) } deriving (Eq, NFData)
 
 -- TODO: Show labels
 instance (Ord a, Show a, Ord e, Show e, Dioid e) => Show (AdjacencyMap e a) where
@@ -59,22 +59,13 @@ overlay :: (Ord a, Semilattice e) => AdjacencyMap e a -> AdjacencyMap e a -> Adj
 overlay (LAM x) (LAM y) = LAM $ Map.unionWith (Map.unionWith (\/)) x y
 
 connect :: (Ord a, Dioid e) => AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
-connect = lconnect one
+connect = connectBy one
 
-lconnect :: (Ord a, Dioid e) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
-lconnect e (LAM x) (LAM y) = LAM $ Map.unionsWith (Map.unionWith (\/))
-    [ x, y, Map.fromSet (const cset) (Map.keysSet x) ]
+connectBy :: (Ord a, Dioid e) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
+connectBy e (LAM x) (LAM y) = LAM $ Map.unionsWith (Map.unionWith (\/))
+    [ x, y, Map.fromSet (const targets) (Map.keysSet x) ]
   where
-    cset = Map.fromSet (const e) (Map.keysSet y)
-
-(-<) :: AdjacencyMap e a -> e -> (AdjacencyMap e a, e)
-g -< e = (g, e)
-
-(>-) :: (Ord a, Dioid e) => (AdjacencyMap e a, e) -> AdjacencyMap e a -> AdjacencyMap e a
-(g, e) >- h = lconnect e g h
-
-infixl 5 -<
-infixl 5 >-
+    targets = Map.fromSet (const e) (Map.keysSet y)
 
 edgeLabel :: (Ord a, Dioid e) => a -> a -> AdjacencyMap e a -> e
 edgeLabel x y (LAM m) = fromMaybe zero (Map.lookup x m >>= Map.lookup y)
@@ -87,27 +78,21 @@ instance (Ord a, Num a, Dioid e) => Num (AdjacencyMap e a) where
     abs         = id
     negate      = id
 
-instance (NFData a, NFData e) => NFData (AdjacencyMap e a) where
-    rnf (LAM a) = rnf a
-
 -- | Construct a graph from a list of adjacency sets.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- fromAdjacencySets []                                        == 'Algebra.Graph.Labelled.AdjdacencyMap.empty'
--- fromAdjacencySets [(x, Set.'Set.empty')]                          == 'Algebra.Graph.Labelled.AdjdacencyMap.vertex' x
--- fromAdjacencySets [(x, Set.'Set.singleton' y)]                    == 'Algebra.Graph.Labelled.AdjdacencyMap.edge' x y
--- fromAdjacencySets . map (fmap Set.'Set.fromList') . 'Algebra.Graph.Labelled.AdjdacencyMap.adjacencyList' == id
--- 'Algebra.Graph.Labelled.AdjdacencyMap.overlay' (fromAdjacencySets xs) (fromAdjacencySets ys)       == fromAdjacencySets (xs ++ ys)
+-- fromAdjacencyMaps []                                        == 'Algebra.Graph.Labelled.AdjdacencyMap.empty'
+-- fromAdjacencyMaps [(x, Set.'Set.empty')]                          == 'Algebra.Graph.Labelled.AdjdacencyMap.vertex' x
+-- fromAdjacencyMaps [(x, Set.'Set.singleton' y)]                    == 'Algebra.Graph.Labelled.AdjdacencyMap.edge' x y
+-- fromAdjacencyMaps . map (fmap Set.'Set.fromList') . 'Algebra.Graph.Labelled.AdjdacencyMap.adjacencyList' == id
+-- 'Algebra.Graph.Labelled.AdjdacencyMap.overlay' (fromAdjacencyMaps xs) (fromAdjacencyMaps ys)       == fromAdjacencySets (xs ++ ys)
 -- @
-fromAdjacencySets :: (Ord a, Dioid e) => [(a, Set a)] -> AdjacencyMap e a
-fromAdjacencySets ss = LAM $ Map.unionWith (Map.unionWith (\/)) vs es
-    where
-        vs = Map.fromSet (const Map.empty) . Set.unions $ map snd ss
-        es = Map.fromListWith (Map.unionWith (\/))
-                              (fmap (\(a, s) -> (a, set2map s)) ss)
-        set2map = Map.fromSet (const one)
-
+fromAdjacencyMaps :: (Ord a, Semilattice e) => [(a, Map a e)] -> AdjacencyMap e a
+fromAdjacencyMaps ss = LAM $ Map.unionWith (Map.unionWith (\/)) vs es
+  where
+    vs = Map.fromSet (const Map.empty) . Set.unions $ map (Map.keysSet . snd) ss
+    es = Map.fromListWith (Map.unionWith (\/)) ss
 
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices. It should be impossible to create an

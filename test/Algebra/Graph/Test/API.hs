@@ -27,7 +27,6 @@ import qualified Algebra.Graph.HigherKinded.Class             as HClass
 import qualified Algebra.Graph.AdjacencyIntMap                as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Internal       as AIM
 import qualified Algebra.Graph.Labelled.AdjacencyMap          as LAM
-import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal as LAM
 import qualified Algebra.Graph.Relation                       as R
 import qualified Data.Set                                     as Set
 import qualified Data.IntSet                                  as IntSet
@@ -234,19 +233,11 @@ instance Ord a => GraphAPI (R.Relation a) where
 instance (Ord a, Dioid e, Eq e) => GraphAPI (LAM.AdjacencyMap e a) where
     edge              = LAM.edge
     vertices          = LAM.vertices
-    edges             = LAM.edges
+    -- edges             = LAM.edges
     overlays          = LAM.overlays
     connects          = LAM.connects
-    fromAdjacencySets = LAM.fromAdjacencySets
+    -- fromAdjacencySets = LAM.fromAdjacencySets
     isSubgraphOf      = LAM.isSubgraphOf
-    path              = LAM.path
-    circuit           = LAM.circuit
-    clique            = LAM.clique
-    biclique          = LAM.biclique
-    star              = LAM.star
-    stars             = LAM.stars
-    tree              = LAM.tree
-    forest            = LAM.forest
     removeVertex      = LAM.removeVertex
     removeEdge        = LAM.removeEdge
     replaceVertex     = LAM.replaceVertex
