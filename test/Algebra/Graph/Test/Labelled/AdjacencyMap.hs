@@ -19,9 +19,9 @@ import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
 t :: Testsuite
-t = testsuite "Labelled.AdjacencyMap." (empty :: AdjacencyMap Int Bool)
+t = testsuite "Labelled.AdjacencyMap." (empty :: AdjacencyMap Bool Int)
 
-type LAI = AdjacencyMap Int Bool
+type LAI = AdjacencyMap Bool Int
 
 testLabelledAdjacencyMap :: IO ()
 testLabelledAdjacencyMap = do

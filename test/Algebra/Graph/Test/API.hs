@@ -231,7 +231,7 @@ instance Ord a => GraphAPI (R.Relation a) where
     gmap          = R.gmap
     induce        = R.induce
 
-instance (Ord a, Dioid e, Eq e) => GraphAPI (LAM.AdjacencyMap a e) where
+instance (Ord a, Dioid e, Eq e) => GraphAPI (LAM.AdjacencyMap e a) where
     edge              = LAM.edge
     vertices          = LAM.vertices
     edges             = LAM.edges

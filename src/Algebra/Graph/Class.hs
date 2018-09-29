@@ -147,13 +147,13 @@ instance Graph AIM.AdjacencyIntMap where
     overlay = AIM.overlay
     connect = AIM.connect
 
-instance (Ord a, Dioid e) => Graph (LAM.AdjacencyMap a e) where
-    type Vertex (LAM.AdjacencyMap a e) = a
+instance (Ord a, Dioid e) => Graph (LAM.AdjacencyMap e a) where
+    type Vertex (LAM.AdjacencyMap e a) = a
     empty   = LAM.empty
     vertex  = LAM.vertex
     overlay = LAM.overlay
     connect = LAM.connect
-    
+
 instance Ord a => Graph (R.Relation a) where
     type Vertex (R.Relation a) = a
     empty   = R.empty

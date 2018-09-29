@@ -86,8 +86,8 @@ When specifying the time and memory complexity of graph algorithms, /n/ and /m/
 will denote the number of vertices and edges in the graph, respectively.
 -}
 newtype AdjacencyIntMap = AM {
-    -- | The /adjacency map/ of the graph: each vertex is associated with a set
-    -- of its direct successors. Complexity: /O(1)/ time and memory.
+    -- | The /adjacency map/ of a graph: each vertex is associated with a set of
+    -- its direct successors. Complexity: /O(1)/ time and memory.
     --
     -- @
     -- adjacencyIntMap 'empty'      == IntMap.'IntMap.empty'

@@ -90,7 +90,7 @@ arbitraryAdjacencyMap = AdjacencyMap.stars <$> arbitrary
 
 -- | Generate an arbitrary 'LabelledAdjacencyMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
-arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Dioid e) => Gen (LabelledAdjacencyMap.AdjacencyMap a e)
+arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Dioid e) => Gen (LabelledAdjacencyMap.AdjacencyMap e a)
 arbitraryLabelledAdjacencyMap = LabelledAdjacencyMap.stars <$> arbitrary
 
 -- | Generate an arbitrary 'AdjacencyIntMap'. It is guaranteed that the
@@ -117,7 +117,7 @@ instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
 instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
     arbitrary = arbitraryAdjacencyMap
 
-instance (Arbitrary a, Ord a, Dioid e) => Arbitrary (LabelledAdjacencyMap.AdjacencyMap a e) where
+instance (Arbitrary a, Ord a, Dioid e) => Arbitrary (LabelledAdjacencyMap.AdjacencyMap e a) where
     arbitrary = arbitraryLabelledAdjacencyMap
 
 instance Arbitrary AdjacencyIntMap where

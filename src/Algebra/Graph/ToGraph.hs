@@ -453,8 +453,8 @@ instance Ord a => ToGraph (R.Relation a) where
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
 
-instance (Ord a, Dioid e) => ToGraph (LAM.AdjacencyMap a e) where
-    type ToVertex (LAM.AdjacencyMap a e) = a
+instance (Ord a, Dioid e) => ToGraph (LAM.AdjacencyMap e a) where
+    type ToVertex (LAM.AdjacencyMap e a) = a
     toGraph                    = G.stars
                                . map (fmap (fmap fst . Map.toList))
                                . Map.toList
