@@ -1063,7 +1063,7 @@ buildG g = g Empty Vertex Overlay Connect
 
 -- | FB functions
 mapGFB :: (b -> c) -> (a -> b) -> a -> c
-mapGFB v f = v . f
+mapGFB = (.)
 {-# INLINE [0] mapGFB #-}
 
 induceFB :: b -> (a -> b) -> (a -> Bool) -> a -> b
@@ -1091,6 +1091,6 @@ induceFB e v p = \x -> if p x then v x else e
 
 -- Rules to rewrite un-merged function back
 {-# RULES
-"foldg/mapGFB"   [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect         = mapG f
-"foldg/induceFB" [1] forall f. foldg Empty (induceFB Empty Vertex f) Overlay Connect = induce f
+"mapGGraph"   [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect         = mapG f
+"induceGraph" [1] forall f. foldg Empty (induceFB Empty Vertex f) Overlay Connect = induce f
  #-}
