@@ -17,19 +17,17 @@ module Algebra.Graph.Test.API (
 import Data.Tree
 
 import Algebra.Graph.Class (Graph (..))
-import Algebra.Graph.Label
 
-import qualified Algebra.Graph                                as Graph
-import qualified Algebra.Graph.AdjacencyMap                   as AM
-import qualified Algebra.Graph.AdjacencyMap.Internal          as AM
-import qualified Algebra.Graph.Fold                           as Fold
-import qualified Algebra.Graph.HigherKinded.Class             as HClass
-import qualified Algebra.Graph.AdjacencyIntMap                as AIM
-import qualified Algebra.Graph.AdjacencyIntMap.Internal       as AIM
-import qualified Algebra.Graph.Labelled.AdjacencyMap          as LAM
-import qualified Algebra.Graph.Relation                       as R
-import qualified Data.Set                                     as Set
-import qualified Data.IntSet                                  as IntSet
+import qualified Algebra.Graph                          as Graph
+import qualified Algebra.Graph.AdjacencyMap             as AM
+import qualified Algebra.Graph.AdjacencyMap.Internal    as AM
+import qualified Algebra.Graph.Fold                     as Fold
+import qualified Algebra.Graph.HigherKinded.Class       as HClass
+import qualified Algebra.Graph.AdjacencyIntMap          as AIM
+import qualified Algebra.Graph.AdjacencyIntMap.Internal as AIM
+import qualified Algebra.Graph.Relation                 as R
+import qualified Data.Set                               as Set
+import qualified Data.IntSet                            as IntSet
 
 class Graph g => GraphAPI g where
     edge                 :: Vertex g -> Vertex g -> g
@@ -229,19 +227,3 @@ instance Ord a => GraphAPI (R.Relation a) where
     transpose     = R.transpose
     gmap          = R.gmap
     induce        = R.induce
-
-instance (Ord a, Dioid e, Eq e) => GraphAPI (LAM.AdjacencyMap e a) where
-    edge              = LAM.edge
-    vertices          = LAM.vertices
-    -- edges             = LAM.edges
-    overlays          = LAM.overlays
-    connects          = LAM.connects
-    -- fromAdjacencySets = LAM.fromAdjacencySets
-    isSubgraphOf      = LAM.isSubgraphOf
-    removeVertex      = LAM.removeVertex
-    removeEdge        = LAM.removeEdge
-    replaceVertex     = LAM.replaceVertex
-    mergeVertices     = LAM.mergeVertices
-    transpose         = LAM.transpose
-    gmap              = LAM.gmap
-    induce            = LAM.induce

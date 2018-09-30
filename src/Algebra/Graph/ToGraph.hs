@@ -28,14 +28,11 @@ import Data.Map    (Map)
 import Data.Set    (Set)
 import Data.Tree
 
-import Algebra.Graph.Label
-
 import qualified Algebra.Graph                          as G
 import qualified Algebra.Graph.AdjacencyMap             as AM
 import qualified Algebra.Graph.AdjacencyMap.Internal    as AM
 import qualified Algebra.Graph.AdjacencyIntMap          as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Internal as AIM
-import qualified Algebra.Graph.Labelled.AdjacencyMap    as LAM
 import qualified Algebra.Graph.Relation                 as R
 import qualified Data.IntMap                            as IntMap
 import qualified Data.IntSet                            as IntSet
@@ -451,33 +448,4 @@ instance Ord a => ToGraph (R.Relation a) where
     toAdjacencyMap             = AM.AM . adjacencyMap
     toAdjacencyIntMap          = AIM.AM . adjacencyIntMap
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
-    toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
-
-instance (Ord a, Dioid e) => ToGraph (LAM.AdjacencyMap e a) where
-    type ToVertex (LAM.AdjacencyMap e a) = a
-    toGraph                    = G.stars
-                               . map (fmap (fmap fst . Map.toList))
-                               . Map.toList
-                               . LAM.adjacencyMap
-    isEmpty                    = LAM.isEmpty
-    hasVertex                  = LAM.hasVertex
-    hasEdge                    = LAM.hasEdge
-    vertexCount                = LAM.vertexCount
-    edgeCount                  = LAM.edgeCount
-    vertexList                 = LAM.vertexList
-    vertexSet                  = LAM.vertexSet
-    -- vertexIntSet               = LAM.vertexIntSet
-    edgeList                   = LAM.edgeList
-    edgeSet                    = LAM.edgeSet
-    adjacencyList              = LAM.adjacencyList
-    preSet                     = LAM.preSet
-    postSet                    = LAM.postSet
-    -- adjacencyMap               = LAM.adjacencyMap
-    -- adjacencyIntMap            = IntMap.fromAscList
-    --                            . map (fmap $ IntSet.fromAscList . Set.toAscList)
-    --                            . Map.toAscList
-    --                            . LAM.adjacencyMap
-    toAdjacencyMap             = toAdjacencyMap
-    toAdjacencyIntMap          = AIM.AM . adjacencyIntMap
-    toAdjacencyMapTranspose    = toAdjacencyMap . LAM.transpose
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap

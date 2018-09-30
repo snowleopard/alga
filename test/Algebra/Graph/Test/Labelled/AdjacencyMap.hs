@@ -16,35 +16,14 @@ module Algebra.Graph.Test.Labelled.AdjacencyMap (
 import Algebra.Graph.Labelled.AdjacencyMap
 import Algebra.Graph.Labelled.AdjacencyMap.Internal
 import Algebra.Graph.Test
-import Algebra.Graph.Test.Generic
-
-t :: Testsuite
-t = testsuite "Labelled.AdjacencyMap." (empty :: AdjacencyMap Bool Int)
 
 type LAI = AdjacencyMap Bool Int
 
 testLabelledAdjacencyMap :: IO ()
 testLabelledAdjacencyMap = do
     putStrLn "\n============ Labelled.AdjacencyMap ============"
-    test "Axioms of graphs" (axioms :: GraphTestsuite LAI)
-
     test "Consistency of arbitraryLabelledAdjacencyMap" $ \(m :: LAI) ->
         consistent m
 
     test "Consistency of fromAdjacencyMaps" $ \xs ->
         consistent (fromAdjacencyMaps xs :: LAI)
-
-    testShow              t
-    testBasicPrimitives   t
-    testFromAdjacencySets t
-    testIsSubgraphOf      t
-    testToGraph           t
-    testGraphFamilies     t
-    testTransformations   t
-    testDfsForest         t
-    testDfsForestFrom     t
-    testDfs               t
-    testReachable         t
-    testTopSort           t
-    testIsTopSortOf       t
-    testIsAcyclic         t

@@ -20,28 +20,29 @@ module Algebra.Graph.Labelled.AdjacencyMap (
     AdjacencyMap, adjacencyMap,
 
     -- * Basic graph construction primitives
-    empty, vertex, overlay, connect, edge, vertices, edges, overlays, connects,
-    (-<), (>-),
+    empty, vertex, overlay, connect, edge, vertices, edges, overlays, (-<), (>-),
 
     -- * Relations on graphs
     isSubgraphOf,
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    adjacencyList, vertexSet, edgeSet, postSet, preSet,
+    vertexSet, postSet, preSet,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, replaceLabel, mergeVertices,
-    transpose, gmap, emap, induce
+    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
+    emap, induce
   ) where
 
+import Data.Maybe
+import Data.Monoid
+import Data.Map (Map)
 import Data.Set (Set)
 
 import Algebra.Graph.Label
 import Algebra.Graph.Labelled.AdjacencyMap.Internal
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Set        as Set
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
@@ -53,9 +54,10 @@ import qualified Data.Set        as Set
 -- 'vertexCount' (edge 1 1) == 1
 -- 'vertexCount' (edge 1 2) == 2
 -- @
-edge :: (Ord a, Dioid e) => a -> a -> AdjacencyMap e a
-edge x y | x == y    = LAM $ Map.singleton x (Map.singleton y one)
-         | otherwise = LAM $ Map.fromList [(x, Map.singleton y one), (y, Map.empty)]
+edge :: (Ord a, Eq e, Semilattice e) => a -> e -> a -> AdjacencyMap e a
+edge x e y | e == zero = vertices [x, y]
+           | x == y    = AM $ Map.singleton x (Map.singleton x e)
+           | otherwise = AM $ Map.fromList [(x, Map.singleton y e), (y, Map.empty)]
 
 (-<) :: AdjacencyMap e a -> e -> (AdjacencyMap e a, e)
 g -< e = (g, e)
@@ -78,7 +80,7 @@ infixl 5 >-
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: Ord a => [a] -> AdjacencyMap e a
-vertices = LAM . Map.fromList . map (, Map.empty)
+vertices = AM . Map.fromList . map (, Map.empty)
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -89,8 +91,11 @@ vertices = LAM . Map.fromList . map (, Map.empty)
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
-edges :: (Ord a, Semilattice e) => [(a, e, a)] -> AdjacencyMap e a
-edges = fromAdjacencyMaps . map (\(x, e, y) -> (x, Map.singleton y e))
+edges :: (Ord a, Eq e, Semilattice e) => [(a, e, a)] -> AdjacencyMap e a
+edges = fromAdjacencyMaps . concatMap fromEdge
+  where
+    fromEdge (x, e, y) | e == zero = [(x, Map.empty), (y, Map.empty)]
+                       | otherwise = [(x, Map.singleton y e)]
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -102,28 +107,8 @@ edges = fromAdjacencyMaps . map (\(x, e, y) -> (x, Map.singleton y e))
 -- overlays           == 'foldr' 'overlay' 'empty'
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
-overlays
-        :: (Ord a, Semilattice e)
-        => [AdjacencyMap e a]
-        -> AdjacencyMap e a
-overlays = LAM . Map.unionsWith (Map.unionWith (\/)) . map adjacencyMap
-
-
--- | Connect a given list of graphs.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- connects []        == 'empty'
--- connects [x]       == x
--- connects [x,y]     == 'connect' x y
--- connects           == 'foldr' 'connect' 'empty'
--- 'isEmpty' . connects == 'all' 'isEmpty'
--- @
-connects
-        :: (Ord a, Dioid e)
-        => [AdjacencyMap e a]
-        -> AdjacencyMap e a
-connects = foldr connect empty
+overlays :: (Ord a, Semilattice e) => [AdjacencyMap e a] -> AdjacencyMap e a
+overlays = AM . Map.unionsWith (Map.unionWith (\/)) . map adjacencyMap
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second. Complexity: /O((n + m) * log(n))/
@@ -136,14 +121,8 @@ connects = foldr connect empty
 -- isSubgraphOf ('overlay' x y) ('connect' x y) == True
 -- isSubgraphOf ('path' xs)     ('circuit' xs)  == True
 -- @
-isSubgraphOf
-        :: (Ord a, Eq e)
-        => AdjacencyMap e a
-        -> AdjacencyMap e a
-        -> Bool
-isSubgraphOf x y = Map.isSubmapOfBy Map.isSubmapOf
-                                    (adjacencyMap x)
-                                    (adjacencyMap y)
+isSubgraphOf :: (Ord a, Eq e) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
+isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy Map.isSubmapOf x y
 
 -- | Check if a graph is empty.
 -- Complexity: /O(1)/ time.
@@ -181,10 +160,7 @@ hasVertex x = Map.member x . adjacencyMap
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> AdjacencyMap e a -> Bool
-hasEdge u v a = case Map.lookup u (adjacencyMap a) of
-        Nothing -> False
-        Just vs -> Map.member v vs
-
+hasEdge x y (AM m) = fromMaybe False $ Map.member y <$> Map.lookup x m
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
@@ -207,7 +183,7 @@ vertexCount = Map.size . adjacencyMap
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: AdjacencyMap e a -> Int
-edgeCount = Map.foldr (\es r -> (Map.size es + r)) 0 . adjacencyMap
+edgeCount = getSum . foldMap (Sum . Map.size) . adjacencyMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -231,44 +207,9 @@ vertexList = Map.keys . adjacencyMap
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
 -- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
 -- @
-edgeList :: AdjacencyMap e a -> [(a, a)]
-edgeList (LAM m) = do
-        (x, ys) <- Map.toAscList m
-        (y, _ ) <- Map.toAscList ys
-        pure (x, y)
-
--- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
---
--- @
--- adjacencyList 'empty'               == []
--- adjacencyList ('vertex' x)          == [(x, [])]
--- adjacencyList ('edge' 1 2)          == [(1, [2]), (2, [])]
--- adjacencyList ('star' 2 [3,1])      == [(1, []), (2, [1,3]), (3, [])]
--- 'fromAdjacencyList' . adjacencyList == id
--- @
-adjacencyList :: AdjacencyMap e a -> [(a, [a])]
-adjacencyList =
-        map (fmap (map fst . Map.toAscList))
-                . Map.toAscList
-                . adjacencyMap
-
--- | The /preset/ of an element @x@ is the set of its /direct predecessors/.
--- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
---
--- @
--- preSet x 'empty'      == Set.'Set.empty'
--- preSet x ('vertex' x) == Set.'Set.empty'
--- preSet 1 ('edge' 1 2) == Set.'Set.empty'
--- preSet y ('edge' x y) == Set.'Set.fromList' [x]
--- @
-preSet :: Ord a => a -> AdjacencyMap e a -> Set.Set a
-preSet x = Set.fromAscList . map fst . filter p . Map.toAscList . adjacencyMap
-  where
-    p (_, set) = x `Map.member` set
-
-
-
+edgeList :: AdjacencyMap e a -> [(a, e, a)]
+edgeList (AM m) =
+    [ (x, e, y) | (x, ys) <- Map.toAscList m, (y, e) <- Map.toAscList ys ]
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -282,18 +223,9 @@ preSet x = Set.fromAscList . map fst . filter p . Map.toAscList . adjacencyMap
 vertexSet :: AdjacencyMap e a -> Set a
 vertexSet = Map.keysSet . adjacencyMap
 
--- | The set of edges of a given graph.
--- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
---
--- @
--- edgeSet 'empty'      == Set.'Set.empty'
--- edgeSet ('vertex' x) == Set.'Set.empty'
--- edgeSet ('edge' x y) == Set.'Set.singleton' (x,y)
--- edgeSet . 'edges'    == Set.'Set.fromList'
--- @
-edgeSet :: Ord a => AdjacencyMap e a -> Set (a, a)
-edgeSet = Set.fromAscList . edgeList
-
+preSet :: Ord a => a -> AdjacencyMap e a -> Map a e
+preSet x (AM m) = Map.fromAscList
+    [ (a, e) | (a, es) <- Map.toAscList m, Just e <- [Map.lookup x es] ]
 
 -- | The /postset/ (here 'postSet') of a vertex is the set of its /direct successors/.
 --
@@ -303,9 +235,8 @@ edgeSet = Set.fromAscList . edgeList
 -- postSet x ('edge' x y) == Set.'Set.fromList' [y]
 -- postSet 2 ('edge' 1 2) == Set.'Set.empty'
 -- @
-postSet :: Ord a => a -> AdjacencyMap e a -> Set a
-postSet x =
-        Map.keysSet . Map.findWithDefault Map.empty x . adjacencyMap
+postSet :: Ord a => a -> AdjacencyMap e a -> Map a e
+postSet x = Map.findWithDefault Map.empty x . adjacencyMap
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(n*log(n))/ time.
@@ -318,7 +249,7 @@ postSet x =
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Ord a => a -> AdjacencyMap e a -> AdjacencyMap e a
-removeVertex x = LAM . Map.map (Map.delete x) . Map.delete x . adjacencyMap
+removeVertex x = AM . Map.map (Map.delete x) . Map.delete x . adjacencyMap
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(log(n))/ time.
@@ -331,7 +262,7 @@ removeVertex x = LAM . Map.map (Map.delete x) . Map.delete x . adjacencyMap
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Ord a => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
-removeEdge x y = LAM . Map.adjust (Map.delete y) x . adjacencyMap
+removeEdge x y = AM . Map.adjust (Map.delete y) x . adjacencyMap
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
@@ -342,18 +273,8 @@ removeEdge x y = LAM . Map.adjust (Map.delete y) x . adjacencyMap
 -- replaceVertex x y ('vertex' x) == 'vertex' y
 -- replaceVertex x y            == 'mergeVertices' (== x) y
 -- @
-replaceVertex :: Ord a => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
+replaceVertex :: (Ord a, Semilattice e) => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
 replaceVertex u v = gmap $ \w -> if w == u then v else w
-
--- | The function @'replaceLabel' x y@ replaces label @x@ with label @y@ in a
--- given 'AdjacencyMap'.
--- Complexity: /O((n + m) * log(n))/ time.
---
--- @
--- replaceLabel x x            == id
--- @
-replaceLabel :: Eq e => e -> e -> AdjacencyMap e a -> AdjacencyMap e a
-replaceLabel u v = emap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
@@ -365,7 +286,7 @@ replaceLabel u v = emap $ \w -> if w == u then v else w
 -- mergeVertices even 1 (0 * 2)     == 1 * 1
 -- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
 -- @
-mergeVertices :: Ord a => (a -> Bool) -> a -> AdjacencyMap e a -> AdjacencyMap e a
+mergeVertices :: (Ord a, Semilattice e) => (a -> Bool) -> a -> AdjacencyMap e a -> AdjacencyMap e a
 mergeVertices p v = gmap $ \u -> if p u then v else u
 
 -- | Transpose a given graph.
@@ -378,22 +299,12 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- transpose . transpose == id
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
-transpose
-        :: (Ord a, Semilattice e)
-        => AdjacencyMap e a
-        -> AdjacencyMap e a
-transpose (LAM m) = LAM $ Map.foldrWithKey combine vs m
-    where
-        combine
-                :: (Ord a, Semilattice e)
-                => a
-                -> Map.Map a e
-                -> Map.Map a (Map.Map a e)
-                -> Map.Map a (Map.Map a e)
-        combine v es = Map.unionWith
-                (Map.unionWith (\/))
-                (Map.fromSet (const $ Map.singleton v zero) (Map.keysSet es))
-        vs = Map.fromSet (const Map.empty) (Map.keysSet m)
+transpose :: (Ord a, Semilattice e) => AdjacencyMap e a -> AdjacencyMap e a
+transpose (AM m) = AM $ Map.foldrWithKey combine vs m
+  where
+    combine v es = Map.unionWith (Map.unionWith (\/)) $
+        Map.fromAscList [ (u, Map.singleton v e) | (u, e) <- Map.toAscList es ]
+    vs = Map.fromSet (const Map.empty) (Map.keysSet m)
 
 -- | Transform a graph by applying a function to each of its vertices. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
@@ -407,8 +318,9 @@ transpose (LAM m) = LAM $ Map.foldrWithKey combine vs m
 -- gmap id           == id
 -- gmap f . gmap g   == gmap (f . g)
 -- @
-gmap :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap e a -> AdjacencyMap e b
-gmap f = LAM . Map.map (Map.mapKeys f) . Map.mapKeysWith Map.union f . adjacencyMap
+gmap :: (Ord a, Ord b, Semilattice e) => (a -> b) -> AdjacencyMap e a -> AdjacencyMap e b
+gmap f = AM . Map.map (Map.mapKeysWith (\/) f) .
+    Map.mapKeysWith (Map.unionWith (\/)) f . adjacencyMap
 
 -- | Transform a graph by applying a function to each of its edge labels. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
@@ -423,7 +335,7 @@ gmap f = LAM . Map.map (Map.mapKeys f) . Map.mapKeysWith Map.union f . adjacency
 -- emap f . gmap g   == gmap (f . g)
 -- @
 emap :: (e -> f) -> AdjacencyMap e a -> AdjacencyMap f a
-emap f = LAM . Map.map (Map.map f) . adjacencyMap
+emap f = AM . Map.map (Map.map f) . adjacencyMap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -437,12 +349,6 @@ emap f = LAM . Map.map (Map.map f) . adjacencyMap
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
-induce
-        :: (a -> Bool)
-        -> AdjacencyMap e a
-        -> AdjacencyMap e a
-induce p =
-        LAM
-                . Map.map (Map.filterWithKey (\k _ -> p k))
-                . Map.filterWithKey (\k _ -> p k)
-                . adjacencyMap
+induce :: (a -> Bool) -> AdjacencyMap e a -> AdjacencyMap e a
+induce p = AM . Map.map (Map.filterWithKey (\k _ -> p k)) .
+    Map.filterWithKey (\k _ -> p k) . adjacencyMap
