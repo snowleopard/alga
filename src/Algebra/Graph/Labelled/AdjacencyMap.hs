@@ -34,6 +34,10 @@ module Algebra.Graph.Labelled.AdjacencyMap (
     emap, induce
   ) where
 
+import Prelude ()
+import Prelude.Compat
+
+import Data.Foldable (foldMap)
 import Data.Maybe
 import Data.Monoid
 import Data.Map (Map)
