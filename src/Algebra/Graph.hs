@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, RankNTypes #-}
+{-# LANGUAGE DeriveFoldable, DeriveTraversable, RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
@@ -50,7 +50,7 @@ module Algebra.Graph (
     -- * Context
     Context (..), context,
 
-    buildG, mapG
+    buildG
   ) where
 
 import Prelude ()
@@ -157,7 +157,15 @@ data Graph a = Empty
              | Vertex a
              | Overlay (Graph a) (Graph a)
              | Connect (Graph a) (Graph a)
-             deriving (Foldable, Functor, Show, Traversable)
+             deriving (Foldable, Show, Traversable)
+
+instance Functor Graph where
+  fmap = mapG
+
+-- | 'fmap' on which we can apply rewrite rules
+mapG :: (a -> b) -> Graph a -> Graph b
+mapG f = foldg empty (vertex . f) overlay connect
+{-# NOINLINE [0] mapG #-}
 
 instance NFData a => NFData (Graph a) where
     rnf Empty         = ()
@@ -1051,11 +1059,6 @@ sparsify graph = res
         overlay <$> s `x` m <*> m `y` t
 
 type GraphF a b = b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
-
--- | 'fmap' on which we can apply rewrite rules
-mapG :: (a -> b) -> Graph a -> Graph b
-mapG = fmap
-{-# NOINLINE [0] mapG #-}
 
 buildG :: forall a. (forall b. GraphF a b) -> Graph a
 buildG g = g Empty Vertex Overlay Connect
