@@ -73,6 +73,7 @@ import Data.Set    (Set)
 
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
+import qualified Algebra.Graph.Fold.Internal   as F
 import qualified Control.Applicative           as Ap
 import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
@@ -1058,10 +1059,8 @@ sparsify graph = res
         put (m + 1)
         overlay <$> s `x` m <*> m `y` t
 
-type GraphF a b = b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
-
-buildG :: forall a. (forall b. GraphF a b) -> Graph a
-buildG g = g Empty Vertex Overlay Connect
+buildG :: forall a. F.Fold a -> Graph a
+buildG g = F.foldg Empty Vertex Overlay Connect g
 {-# INLINE [1] buildG #-}
 
 -- | FB functions
@@ -1076,17 +1075,17 @@ induceFB e v p = \x -> if p x then v x else e
 -- Rules to transform a buildG-equivalent function into its equivalent
 {-# RULES
 -- Transform a mapG into its build equivalent
-"mapG"   [~1]  forall f g.  mapG   f g = buildG (\e v o c -> foldg e (mapGFB v f) o c g)
+"mapG"   [~1]  forall f g.  mapG   f g = buildG (F.Fold $ \e v o c -> foldg e (mapGFB v f) o c g)
 
 -- Transform a induce into its build equivalent
-"induce" [~1]  forall p g.  induce p g = buildG (\e v o c -> foldg e (induceFB e v p) o c g)
+"induce" [~1]  forall p g.  induce p g = buildG (F.Fold $ \e v o c -> foldg e (induceFB e v p) o c g)
  #-}
 
 -- Rules to merge rewrited functions
 {-# RULES
 -- Merge a foldg followed by a buildG
-"foldg/buildG" forall e v o c (g::forall b. GraphF a b).
-                              foldg e v o c (buildG g) = g e v o c
+"foldg/buildG" forall e v o c (g::F.Fold a).
+                              foldg e v o c (buildG g) = F.foldg e v o c g
 
 -- Merge two mapFB
 "mapFB/mapFB"  forall c f g.  mapGFB (mapGFB c f) g    = mapGFB c (f.g)
