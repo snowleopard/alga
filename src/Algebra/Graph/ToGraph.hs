@@ -35,6 +35,7 @@ import qualified Algebra.Graph.AdjacencyMap.Internal    as AM
 import qualified Algebra.Graph.AdjacencyIntMap          as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Internal as AIM
 import qualified Algebra.Graph.Relation                 as R
+import qualified Algebra.Graph.Fold.Internal            as F
 import qualified Data.IntMap                            as IntMap
 import qualified Data.IntSet                            as IntSet
 import qualified Data.Map                               as Map
@@ -349,6 +350,10 @@ instance Ord a => ToGraph (G.Graph a) where
     toGraph = id
     foldg   = G.foldg
     hasEdge = G.hasEdge
+
+instance ToGraph (F.Fold a) where
+    type ToVertex (F.Fold a) = a
+    foldg = F.foldg
 
 instance Ord a => ToGraph (AM.AdjacencyMap a) where
     type ToVertex (AM.AdjacencyMap a) = a

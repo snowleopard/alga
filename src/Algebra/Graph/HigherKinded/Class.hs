@@ -64,10 +64,10 @@ import Control.Monad.Compat (MonadPlus, msum, mfilter)
 import Data.Foldable (toList)
 import Data.Tree
 
-import qualified Algebra.Graph      as G
-import qualified Algebra.Graph.Fold as F
-import qualified Data.IntSet        as IntSet
-import qualified Data.Set           as Set
+import qualified Algebra.Graph               as G
+import qualified Algebra.Graph.Fold.Internal as F
+import qualified Data.IntSet                 as IntSet
+import qualified Data.Set                    as Set
 
 {-|
 The core type class for constructing algebraic graphs is defined by introducing

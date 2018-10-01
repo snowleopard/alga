@@ -65,6 +65,7 @@ library
                         Algebra.Graph.Export,
                         Algebra.Graph.Export.Dot,
                         Algebra.Graph.Fold,
+                        Algebra.Graph.Fold.Internal,
                         Algebra.Graph.HigherKinded.Class,
                         Algebra.Graph.AdjacencyIntMap,
                         Algebra.Graph.AdjacencyIntMap.Internal,
