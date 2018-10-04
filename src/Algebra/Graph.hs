@@ -1072,13 +1072,19 @@ induceFB :: b -> (a -> b) -> (a -> Bool) -> a -> b
 induceFB e v p = \x -> if p x then v x else e
 {-# INLINE [0] induceFB #-}
 
+transposeFB :: (b -> b -> b) -> (b -> b -> b)
+transposeFB = flip
+{-# INLINE [0] transposeFB #-}
+
 -- Rules to transform a buildG-equivalent function into its equivalent
 {-# RULES
 -- Transform a mapG into its build equivalent
-"mapG"   [~1]  forall f g.  mapG   f g = buildG (F.Fold $ \e v o c -> foldg e (mapGFB v f) o c g)
+"mapG"   [~1]    forall f g. mapG   f g = buildG (F.Fold $ \e v o c -> foldg e (mapGFB v f) o c g)
 
 -- Transform a induce into its build equivalent
-"induce" [~1]  forall p g.  induce p g = buildG (F.Fold $ \e v o c -> foldg e (induceFB e v p) o c g)
+"induce" [~1]    forall p g. induce p g = buildG (F.Fold $ \e v o c -> foldg e (induceFB e v p) o c g)
+
+"transpose" [~1] forall g. transpose g = buildG (F.Fold $ \e v o c -> foldg e v o (transposeFB c) g)
  #-}
 
 -- Rules to merge rewrited functions
@@ -1093,6 +1099,7 @@ induceFB e v p = \x -> if p x then v x else e
 
 -- Rules to rewrite un-merged function back
 {-# RULES
-"mapGGraph"   [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect         = mapG f
-"induceGraph" [1] forall f. foldg Empty (induceFB Empty Vertex f) Overlay Connect = induce f
+"mapGGraph"      [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect         = mapG f
+"induceGraph"    [1] forall f. foldg Empty (induceFB Empty Vertex f) Overlay Connect = induce f
+"transposeGraph" [1]           foldg Empty Vertex Overlay (transposeFB Connect)      = transpose
  #-}
