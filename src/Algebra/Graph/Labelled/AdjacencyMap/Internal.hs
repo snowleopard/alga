@@ -45,8 +45,8 @@ instance (Ord a, Show a, Ord e, Show e) => Show (AdjacencyMap e a) where
             [x] -> "vertex "   ++ show x
             xs  -> "vertices " ++ show xs
         eshow es = case es of
-            [(x, e, y)] -> "edge "     ++ show x ++ show e ++ show y
-            xs          -> "edges "    ++ show xs
+            [(e, x, y)] -> "edge "  ++ show e ++ " " ++ show x ++ " " ++ show y
+            xs          -> "edges " ++ show xs
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
@@ -107,6 +107,6 @@ referredToVertexSet m = Set.fromList $ concat
     [ [x, y] | (x, ys) <- Map.toAscList m, (y, _) <- Map.toAscList ys ]
 
 -- The list of edges in an adjacency map
-internalEdgeList :: Map a (Map a e) -> [(a, e, a)]
+internalEdgeList :: Map a (Map a e) -> [(e, a, a)]
 internalEdgeList m =
-    [ (x, e, y) | (x, ys) <- Map.toAscList m, (y, e) <- Map.toAscList ys ]
+    [ (e, x, y) | (x, ys) <- Map.toAscList m, (y, e) <- Map.toAscList ys ]
