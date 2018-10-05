@@ -501,7 +501,7 @@ mesh xs ys = path xs `box` path ys
 -- @
 -- torus xs    []   == 'empty'
 -- torus []    ys   == 'empty'
--- torus [x]   [y]  == 'edge' (x, y) (x, y)
+-- torus [x]   [y]  == 'edge' (x,y) (x,y)
 -- torus xs    ys   == 'box' ('circuit' xs) ('circuit' ys)
 -- torus [1,2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
 --                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]

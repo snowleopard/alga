@@ -37,12 +37,12 @@ module Algebra.Graph (
     adjacencyIntMap,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
-    mesh, torus, deBruijn,
+    path, circuit, clique, biclique, star, stars, tree, forest, mesh, torus,
+    deBruijn,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
-    transpose, induce, simplify,
+    transpose, induce, simplify, sparsify,
 
     -- * Graph composition
     box,
@@ -57,6 +57,7 @@ import Prelude.Compat
 import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
+import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Tree
@@ -212,6 +213,7 @@ instance MonadPlus Graph where
 -- @
 empty :: Graph a
 empty = Empty
+{-# INLINE empty #-}
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
@@ -226,6 +228,7 @@ empty = Empty
 -- @
 vertex :: a -> Graph a
 vertex = Vertex
+{-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -257,6 +260,7 @@ edge x y = connect (vertex x) (vertex y)
 -- @
 overlay :: Graph a -> Graph a -> Graph a
 overlay = Overlay
+{-# INLINE overlay #-}
 
 -- | /Connect/ two graphs. An alias for the constructor 'Connect'. This is an
 -- associative operation with the identity 'empty', which distributes over
@@ -280,6 +284,7 @@ overlay = Overlay
 -- @
 connect :: Graph a -> Graph a -> Graph a
 connect = Connect
+{-# INLINE connect #-}
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -294,6 +299,7 @@ connect = Connect
 -- @
 vertices :: [a] -> Graph a
 vertices = overlays . map vertex
+{-# NOINLINE [1] vertices #-}
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -320,6 +326,7 @@ edges = overlays . map (uncurry edge)
 -- @
 overlays :: [Graph a] -> Graph a
 overlays = concatg overlay
+{-# INLINE [2] overlays #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -334,6 +341,7 @@ overlays = concatg overlay
 -- @
 connects :: [Graph a] -> Graph a
 connects = concatg connect
+{-# INLINE [2] connects #-}
 
 -- | Auxiliary function, similar to 'mconcat'.
 concatg :: (Graph a -> Graph a -> Graph a) -> [Graph a] -> Graph a
@@ -659,6 +667,7 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- @
 clique :: [a] -> Graph a
 clique = connects . map vertex
+{-# NOINLINE [1] clique #-}
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -689,6 +698,7 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 star :: a -> [a] -> Graph a
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
+{-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
 -- 'adjacencyList'.
@@ -706,21 +716,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- @
 stars :: [(a, [a])] -> Graph a
 stars = overlays . map (uncurry star)
-
--- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- starTranspose x []    == 'vertex' x
--- starTranspose x [y]   == 'edge' y x
--- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
--- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
--- starTranspose x ys    == 'transpose' ('star' x ys)
--- @
-starTranspose :: a -> [a] -> Graph a
-starTranspose x [] = vertex x
-starTranspose x ys = connect (vertices ys) (vertex x)
+{-# INLINE stars #-}
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
@@ -782,7 +778,7 @@ mesh xs  ys  = stars $  [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ipxs, (
 -- @
 -- torus xs    []   == 'empty'
 -- torus []    ys   == 'empty'
--- torus [x]   [y]  == 'edge' (x, y) (x, y)
+-- torus [x]   [y]  == 'edge' (x,y) (x,y)
 -- torus xs    ys   == 'box' ('circuit' xs) ('circuit' ys)
 -- torus [1,2] "ab" == 'edges' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\')), ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
 --                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
@@ -837,7 +833,7 @@ removeVertex v = induce (/= v)
 -- Complexity: /O(s)/ time, memory and size.
 --
 -- @
--- removeEdge x y ('edge' x y)       == 'vertices' [x, y]
+-- removeEdge x y ('edge' x y)       == 'vertices' [x,y]
 -- removeEdge x y . removeEdge x y == removeEdge x y
 -- removeEdge x y . 'removeVertex' x == 'removeVertex' x
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
@@ -855,7 +851,7 @@ removeEdge s t = filterContext s (/=s) (/=t)
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
 filterContext s i o g = maybe g go $ context (==s) g
   where
-    go (Context is os) = induce (/=s) g `overlay` starTranspose s (filter i is)
+    go (Context is os) = induce (/=s) g `overlay` transpose (star s (filter i is))
                                         `overlay` star          s (filter o os)
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
@@ -900,7 +896,6 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
 splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 
-
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
 --
@@ -914,6 +909,20 @@ splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 -- @
 transpose :: Graph a -> Graph a
 transpose = foldg Empty Vertex Overlay (flip Connect)
+{-# NOINLINE [1] transpose #-}
+
+{-# RULES
+"transpose/Empty"    transpose Empty = Empty
+"transpose/Vertex"   forall x. transpose (Vertex x) = Vertex x
+"transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay (transpose g1) (transpose g2)
+"transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect (transpose g2) (transpose g1)
+
+"transpose/overlays" forall xs. transpose (overlays xs) = overlays (map transpose xs)
+"transpose/connects" forall xs. transpose (connects xs) = connects (reverse (map transpose xs))
+
+"transpose/vertices" forall xs. transpose (vertices xs) = vertices xs
+"transpose/clique"   forall xs. transpose (clique xs)   = clique (reverse xs)
+ #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -1009,3 +1018,30 @@ context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
             | otherwise = Nothing
   where
     f = focus p g
+
+-- | /Sparsify/ a graph by adding intermediate 'Left' @Int@ vertices between the
+-- original vertices (wrapping the latter in 'Right') such that the resulting
+-- graph is /sparse/, i.e. contains only O(s) edges, but preserves the
+-- reachability relation between the original vertices. Sparsification is useful
+-- when working with dense graphs, as it can reduce the number of edges from
+-- O(n^2) down to O(n) by replacing cliques, bicliques and similar densely
+-- connected structures by sparse subgraphs built out of intermediate vertices.
+-- Complexity: O(s) time, memory and size.
+--
+-- @
+-- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x       == 'Data.List.sort' . 'Data.Either.rights' . 'Algebra.Graph.ToGraph.reachable' ('Data.Either.Right' x) . sparsify
+-- 'vertexCount' (sparsify x) <= 'vertexCount' x + 'size' x + 1
+-- 'edgeCount'   (sparsify x) <= 3 * 'size' x
+-- 'size'        (sparsify x) <= 3 * 'size' x
+-- @
+sparsify :: Graph a -> Graph (Either Int a)
+sparsify graph = res
+  where
+    (res, end) = runState (foldg e v o c graph 0 end) 1
+    e     s t  = return $ path   [Left s,          Left t]
+    v x   s t  = return $ clique [Left s, Right x, Left t]
+    o x y s t  = overlay <$> s `x` t <*> s `y` t
+    c x y s t  = do
+        m <- get
+        put (m + 1)
+        overlay <$> s `x` m <*> m `y` t

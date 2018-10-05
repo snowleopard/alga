@@ -22,6 +22,7 @@ import Data.Semigroup
 #endif
 
 import Control.Monad
+import Data.Either
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe
 import Data.Tree
@@ -29,7 +30,7 @@ import Data.Tuple
 
 import Algebra.Graph.NonEmpty
 import Algebra.Graph.Test hiding (axioms, theorems)
-import Algebra.Graph.ToGraph (toGraph)
+import Algebra.Graph.ToGraph (reachable, toGraph)
 
 import qualified Algebra.Graph      as G
 import qualified Data.List.NonEmpty as NonEmpty
@@ -459,19 +460,6 @@ testGraphNonEmpty = do
           ys = NonEmpty.fromList (getNonEmpty ys')
       in  overlay (stars1 xs) (stars1 ys) == stars1 (xs <> ys)
 
-    putStrLn $ "\n============ Graph.NonEmpty.starTranspose ============"
-    test "starTranspose x []    == vertex x" $ \(x :: Int) ->
-          starTranspose x []    == vertex x
-
-    test "starTranspose x [y]   == edge y x" $ \(x :: Int) y ->
-          starTranspose x [y]   == edge y x
-
-    test "starTranspose x [y,z] == edges1 ((y,x) :| [(z,x)])" $ \(x :: Int) y z ->
-          starTranspose x [y,z] == edges1 ((y,x) :| [(z,x)])
-
-    test "starTranspose x ys    == transpose (star x ys)" $ \(x :: Int) ys ->
-          starTranspose x ys    == transpose (star x ys)
-
     putStrLn $ "\n============ Graph.NonEmpty.tree ============"
     test "tree (Node x [])                                         == vertex x" $ \(x :: Int) ->
           tree (Node x [])                                         == vertex x
@@ -506,8 +494,8 @@ testGraphNonEmpty = do
          in size (mesh1 xs ys) == max 1 (3 * length xs * length ys - length xs - length ys -1)
 
     putStrLn $ "\n============ Graph.NonEmpty.torus1 ============"
-    test "torus1 (x :| [])  (y :| [])    == edge (x, y) (x, y)" $ \(x :: Int) (y :: Int) ->
-          torus1 (x :| [])  (y :| [])    == edge (x, y) (x, y)
+    test "torus1 (x :| [])  (y :| [])    == edge (x,y) (x,y)" $ \(x :: Int) (y :: Int) ->
+          torus1 (x :| [])  (y :| [])    == edge (x,y) (x,y)
 
     test "torus1 xs         ys           == box (circuit1 xs) (circuit1 ys)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
@@ -662,3 +650,16 @@ testGraphNonEmpty = do
 
     test "edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
           edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
+
+    putStrLn "\n============ Graph.NonEmpty.sparsify ============"
+    test "sort . reachable x       == sort . rights . reachable (Right x) . sparsify" $ \x (y :: G) ->
+         (sort . reachable x) y    == (sort . rights . reachable (Right x) . sparsify) y
+
+    test "vertexCount (sparsify x) <= vertexCount x + size x + 1" $ \(x :: G) ->
+          vertexCount (sparsify x) <= vertexCount x + size x + 1
+
+    test "edgeCount   (sparsify x) <= 3 * size x" $ \(x :: G) ->
+          edgeCount   (sparsify x) <= 3 * size x
+
+    test "size        (sparsify x) <= 3 * size x" $ \(x :: G) ->
+          size        (sparsify x) <= 3 * size x

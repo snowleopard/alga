@@ -14,9 +14,12 @@ module Algebra.Graph.Test.Graph (
     testGraph
   ) where
 
+import Data.Either
+
 import Algebra.Graph
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
+import Algebra.Graph.ToGraph (reachable)
 
 t :: Testsuite
 t = testsuite "Graph." empty
@@ -78,8 +81,8 @@ testGraph = do
     test "torus []     ys    == empty" $ \ys ->
           torus []     ys    == (empty :: Graph (Int, Int))
 
-    test "torus [x]    [y]   == edge (x, y) (x, y)" $ \(x :: Int) (y :: Int) ->
-          torus [x]    [y]   == edge (x, y) (x, y)
+    test "torus [x]    [y]   == edge (x,y) (x,y)" $ \(x :: Int) (y :: Int) ->
+          torus [x]    [y]   == edge (x,y) (x,y)
 
     test "torus xs     ys    == box (circuit xs) (circuit ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
           torus xs     ys    == box (circuit xs) (circuit ys)
@@ -149,3 +152,16 @@ testGraph = do
 
     test "edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
           edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
+
+    putStrLn "\n============ Graph.sparsify ============"
+    test "sort . reachable x       == sort . rights . reachable (Right x) . sparsify" $ \x (y :: G) ->
+         (sort . reachable x) y    == (sort . rights . reachable (Right x) . sparsify) y
+
+    test "vertexCount (sparsify x) <= vertexCount x + size x + 1" $ \(x :: G) ->
+          vertexCount (sparsify x) <= vertexCount x + size x + 1
+
+    test "edgeCount   (sparsify x) <= 3 * size x" $ \(x :: G) ->
+          edgeCount   (sparsify x) <= 3 * size x
+
+    test "size        (sparsify x) <= 3 * size x" $ \(x :: G) ->
+          size        (sparsify x) <= 3 * size x
