@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFoldable, DeriveTraversable, RankNTypes #-}
+{-# LANGUAGE RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
@@ -54,13 +54,14 @@ module Algebra.Graph (
   ) where
 
 import Prelude ()
-import Prelude.Compat
+import Prelude.Compat hiding ((<>))
 
 import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
+import Data.Monoid ((<>))
 import Data.Maybe (fromMaybe)
 import Data.Tree
 
@@ -135,19 +136,14 @@ be computed as follows:
 m == 'edgeCount' g
 s == 'size' g@
 
-Note that 'size' is slightly different from the 'length' method of the
-'Foldable' type class, as the latter does not count 'empty' leaves of the
-expression:
+Note that 'size' counts all leaves of the expression:
 
-@'length' 'empty'           == 0
-'size'   'empty'           == 1
-'length' ('vertex' x)      == 1
-'size'   ('vertex' x)      == 1
-'length' ('empty' + 'empty') == 0
-'size'   ('empty' + 'empty') == 2@
-
-The 'size' of any graph is positive, and the difference @('size' g - 'length' g)@
-corresponds to the number of occurrences of 'empty' in an expression @g@.
+@'vertexCount' 'empty'           == 0
+'size'        'empty'           == 1
+'vertexCount' ('vertex' x)      == 1
+'size'        ('vertex' x)      == 1
+'vertexCount' ('empty' + 'empty') == 0
+'size'        ('empty' + 'empty') == 2@
 
 Converting a 'Graph' to the corresponding 'AM.AdjacencyMap' takes /O(s + m * log(m))/
 time and /O(s + m)/ memory. This is also the complexity of the graph equality test,
@@ -158,7 +154,7 @@ data Graph a = Empty
              | Vertex a
              | Overlay (Graph a) (Graph a)
              | Connect (Graph a) (Graph a)
-             deriving (Foldable, Show, Traversable)
+             deriving (Show)
 
 instance Functor Graph where
   fmap = mapG
@@ -367,10 +363,9 @@ concatg combine = fromMaybe empty . foldr1Safe combine
 -- @
 -- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
 -- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
--- foldg []    return        (++)    (++)           == 'Data.Foldable.toList'
--- foldg 0     (const 1)     (+)     (+)            == 'Data.Foldable.length'
 -- foldg 1     (const 1)     (+)     (+)            == 'size'
 -- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
+-- foldg False ((==) x)      (||)    (||)           == 'hasVertex x'
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
@@ -856,7 +851,6 @@ removeVertex v = induce (/= v)
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t = filterContext s (/=s) (/=t)
 
-
 -- TODO: Export
 -- | Filter vertices in a subgraph context.
 {-# SPECIALISE filterContext :: Int -> (Int -> Bool) -> (Int -> Bool) -> Graph Int -> Graph Int #-}
@@ -1013,8 +1007,10 @@ simple op x y
 box :: Graph a -> Graph b -> Graph (a, b)
 box x y = overlays $ xs ++ ys
   where
-    xs = map (\b -> fmap (,b) x) $ toList y
-    ys = map (\a -> fmap (a,) y) $ toList x
+    xs = map (\b -> fmap (,b) x) $ toList $ toListGr y
+    ys = map (\a -> fmap (a,) y) $ toList $ toListGr x
+    toListGr :: Graph a -> List a
+    toListGr = foldg mempty pure (<>) (<>)
 
 -- | 'Focus' on a specified subgraph.
 focus :: (a -> Bool) -> Graph a -> Focus a

@@ -23,17 +23,20 @@ import Test.QuickCheck
 
 import Algebra.Graph
 import Algebra.Graph.AdjacencyMap.Internal
+import Algebra.Graph.AdjacencyIntMap.Internal
 import Algebra.Graph.Export
 import Algebra.Graph.Fold (Fold)
-import Algebra.Graph.AdjacencyIntMap.Internal
+import Algebra.Graph.Label
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived
 
-import qualified Algebra.Graph.AdjacencyMap    as AdjacencyMap
-import qualified Algebra.Graph.Class           as C
-import qualified Algebra.Graph.AdjacencyIntMap as AdjacencyIntMap
-import qualified Algebra.Graph.NonEmpty        as NE
-import qualified Algebra.Graph.Relation        as Relation
+import qualified Algebra.Graph.AdjacencyMap                   as AdjacencyMap
+import qualified Algebra.Graph.AdjacencyIntMap                as AdjacencyIntMap
+import qualified Algebra.Graph.Class                          as C
+import qualified Algebra.Graph.Labelled.AdjacencyMap          as Labelled
+import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal as Labelled
+import qualified Algebra.Graph.NonEmpty                       as NE
+import qualified Algebra.Graph.Relation                       as Relation
 
 -- | Generate an arbitrary 'Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
@@ -85,6 +88,11 @@ arbitraryRelation = Relation.stars <$> arbitrary
 arbitraryAdjacencyMap :: (Arbitrary a, Ord a) => Gen (AdjacencyMap a)
 arbitraryAdjacencyMap = AdjacencyMap.stars <$> arbitrary
 
+-- | Generate an arbitrary 'LabelledAdjacencyMap'. It is guaranteed that the
+-- resulting adjacency map is 'consistent'.
+arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Eq e, Arbitrary e, Semilattice e) => Gen (Labelled.AdjacencyMap e a)
+arbitraryLabelledAdjacencyMap = Labelled.fromAdjacencyMaps <$> arbitrary
+
 -- | Generate an arbitrary 'AdjacencyIntMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
 arbitraryAdjacencyIntMap :: Gen AdjacencyIntMap
@@ -108,6 +116,9 @@ instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
 
 instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
     arbitrary = arbitraryAdjacencyMap
+
+instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Semilattice e) => Arbitrary (Labelled.AdjacencyMap e a) where
+    arbitrary = arbitraryLabelledAdjacencyMap
 
 instance Arbitrary AdjacencyIntMap where
     arbitrary = arbitraryAdjacencyIntMap
