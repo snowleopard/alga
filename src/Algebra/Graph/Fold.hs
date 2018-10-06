@@ -45,7 +45,7 @@ module Algebra.Graph.Fold (
 import Prelude ()
 import Prelude.Compat
 
-import Control.Applicative (Alternative, liftA2)
+import Control.Applicative (Alternative)
 import Control.Monad.Compat (MonadPlus (..), ap)
 import Data.Function
 
@@ -125,19 +125,14 @@ computed as follows:
 m == 'edgeCount' g
 s == 'size' g@
 
-Note that 'size' is slightly different from the 'length' method of the
-'Foldable' type class, as the latter does not count 'empty' leaves of the
-expression:
+Note that 'size' counts all leaves of the expression:
 
-@'length' 'empty'           == 0
-'size'   'empty'           == 1
-'length' ('vertex' x)      == 1
-'size'   ('vertex' x)      == 1
-'length' ('empty' + 'empty') == 0
-'size'   ('empty' + 'empty') == 2@
-
-The 'size' of any graph is positive, and the difference @('size' g - 'length' g)@
-corresponds to the number of occurrences of 'empty' in an expression @g@.
+@'vertexCount' 'empty'           == 0
+'size'        'empty'           == 1
+'vertexCount' ('vertex' x)      == 1
+'size'        ('vertex' x)      == 1
+'vertexCount' ('empty' + 'empty') == 0
+'size'        ('empty' + 'empty') == 2@
 
 Converting a 'Fold' to the corresponding 'AM.AdjacencyMap' takes /O(s + m * log(m))/
 time and /O(s + m)/ memory. This is also the complexity of the graph equality test,
@@ -181,12 +176,6 @@ instance MonadPlus Fold where
 instance Monad Fold where
     return = vertex
     g >>=f = foldg empty f overlay connect g
-
-instance Foldable Fold where
-    foldMap f = foldg mempty f mappend mappend
-
-instance Traversable Fold where
-    traverse f = foldg (pure empty) (fmap vertex . f) (liftA2 overlay) (liftA2 connect)
 
 instance ToGraph (Fold a) where
     type ToVertex (Fold a) = a
@@ -341,10 +330,9 @@ connects = foldr connect empty
 -- @
 -- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
 -- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
--- foldg []    return        (++)    (++)           == 'Data.Foldable.toList'
--- foldg 0     (const 1)     (+)     (+)            == 'Data.Foldable.length'
 -- foldg 1     (const 1)     (+)     (+)            == 'size'
 -- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
+-- foldg False ((==) x)      (||)    (||)           == 'hasVertex x'
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
 foldg e v o c g = runFold g e v o c

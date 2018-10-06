@@ -1,5 +1,9 @@
 # Change log
 
+## 0.2.1
+
+* #121: Drop `Foldable` and `Traversable` instances
+
 ## 0.2
 
 * #117: Add `sparsify`.
