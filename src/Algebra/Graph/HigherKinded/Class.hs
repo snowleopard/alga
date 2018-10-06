@@ -46,12 +46,12 @@ module Algebra.Graph.HigherKinded.Class (
     hasEdge,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, stars, starTranspose, tree, forest,
-    mesh, torus, deBruijn,
+    path, circuit, clique, biclique, star, stars, tree, forest, mesh, torus,
+    deBruijn,
 
     -- * Graph transformation
     removeVertex, replaceVertex, mergeVertices, splitVertex, induce
-  ) where
+    ) where
 
 import Prelude ()
 import Prelude.Compat
@@ -375,21 +375,6 @@ star x ys = connect (vertex x) (vertices ys)
 -- @
 stars :: Graph g => [(a, [a])] -> g a
 stars = overlays . map (uncurry star)
-
--- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- starTranspose x []    == 'vertex' x
--- starTranspose x [y]   == 'edge' y x
--- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
--- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
--- starTranspose x ys    == transpose ('star' x ys)
--- @
-starTranspose :: Graph g => a -> [a] -> g a
-starTranspose x [] = vertex x
-starTranspose x ys = connect (vertices ys) (vertex x)
 
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
