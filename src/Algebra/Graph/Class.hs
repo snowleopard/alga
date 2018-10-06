@@ -52,11 +52,14 @@ import Prelude.Compat
 
 import Data.Tree
 
-import qualified Algebra.Graph                 as G
-import qualified Algebra.Graph.AdjacencyMap    as AM
-import qualified Algebra.Graph.Fold            as F
-import qualified Algebra.Graph.AdjacencyIntMap as AIM
-import qualified Algebra.Graph.Relation        as R
+import Algebra.Graph.Label (Dioid, one)
+
+import qualified Algebra.Graph                       as G
+import qualified Algebra.Graph.AdjacencyMap          as AM
+import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
+import qualified Algebra.Graph.Fold                  as F
+import qualified Algebra.Graph.AdjacencyIntMap       as AIM
+import qualified Algebra.Graph.Relation              as R
 
 {-|
 The core type class for constructing algebraic graphs, characterised by the
@@ -144,6 +147,13 @@ instance Graph AIM.AdjacencyIntMap where
     vertex  = AIM.vertex
     overlay = AIM.overlay
     connect = AIM.connect
+
+instance (Ord a, Dioid e) => Graph (LAM.AdjacencyMap e a) where
+    type Vertex (LAM.AdjacencyMap e a) = a
+    empty   = LAM.empty
+    vertex  = LAM.vertex
+    overlay = LAM.overlay
+    connect = LAM.connect one
 
 instance Ord a => Graph (R.Relation a) where
     type Vertex (R.Relation a) = a

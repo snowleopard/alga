@@ -22,7 +22,6 @@ module Algebra.Graph.ToGraph (ToGraph (..)) where
 
 import Prelude ()
 import Prelude.Compat
-
 import Data.IntMap (IntMap)
 import Data.IntSet (IntSet)
 import Data.Map    (Map)

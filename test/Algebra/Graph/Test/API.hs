@@ -19,13 +19,13 @@ import Data.Tree
 import Algebra.Graph.Class (Graph (..))
 
 import qualified Algebra.Graph                          as Graph
-import qualified Algebra.Graph.AdjacencyMap             as AdjacencyMap
-import qualified Algebra.Graph.AdjacencyMap.Internal    as AdjacencyMap
+import qualified Algebra.Graph.AdjacencyMap             as AM
+import qualified Algebra.Graph.AdjacencyMap.Internal    as AM
 import qualified Algebra.Graph.Fold                     as Fold
 import qualified Algebra.Graph.HigherKinded.Class       as HClass
-import qualified Algebra.Graph.AdjacencyIntMap          as AdjacencyIntMap
-import qualified Algebra.Graph.AdjacencyIntMap.Internal as AdjacencyIntMap
-import qualified Algebra.Graph.Relation                 as Relation
+import qualified Algebra.Graph.AdjacencyIntMap          as AIM
+import qualified Algebra.Graph.AdjacencyIntMap.Internal as AIM
+import qualified Algebra.Graph.Relation                 as R
 import qualified Data.Set                               as Set
 import qualified Data.IntSet                            as IntSet
 
@@ -96,29 +96,29 @@ class Graph g => GraphAPI g where
 notImplemented :: a
 notImplemented = error "Not implemented"
 
-instance Ord a => GraphAPI (AdjacencyMap.AdjacencyMap a) where
-    edge              = AdjacencyMap.edge
-    vertices          = AdjacencyMap.vertices
-    edges             = AdjacencyMap.edges
-    overlays          = AdjacencyMap.overlays
-    connects          = AdjacencyMap.connects
-    fromAdjacencySets = AdjacencyMap.fromAdjacencySets
-    isSubgraphOf      = AdjacencyMap.isSubgraphOf
-    path              = AdjacencyMap.path
-    circuit           = AdjacencyMap.circuit
-    clique            = AdjacencyMap.clique
-    biclique          = AdjacencyMap.biclique
-    star              = AdjacencyMap.star
-    stars             = AdjacencyMap.stars
-    tree              = AdjacencyMap.tree
-    forest            = AdjacencyMap.forest
-    removeVertex      = AdjacencyMap.removeVertex
-    removeEdge        = AdjacencyMap.removeEdge
-    replaceVertex     = AdjacencyMap.replaceVertex
-    mergeVertices     = AdjacencyMap.mergeVertices
-    transpose         = AdjacencyMap.transpose
-    gmap              = AdjacencyMap.gmap
-    induce            = AdjacencyMap.induce
+instance Ord a => GraphAPI (AM.AdjacencyMap a) where
+    edge              = AM.edge
+    vertices          = AM.vertices
+    edges             = AM.edges
+    overlays          = AM.overlays
+    connects          = AM.connects
+    fromAdjacencySets = AM.fromAdjacencySets
+    isSubgraphOf      = AM.isSubgraphOf
+    path              = AM.path
+    circuit           = AM.circuit
+    clique            = AM.clique
+    biclique          = AM.biclique
+    star              = AM.star
+    stars             = AM.stars
+    tree              = AM.tree
+    forest            = AM.forest
+    removeVertex      = AM.removeVertex
+    removeEdge        = AM.removeEdge
+    replaceVertex     = AM.replaceVertex
+    mergeVertices     = AM.mergeVertices
+    transpose         = AM.transpose
+    gmap              = AM.gmap
+    induce            = AM.induce
 
 instance Ord a => GraphAPI (Fold.Fold a) where
     edge          = Fold.edge
@@ -181,49 +181,49 @@ instance Ord a => GraphAPI (Graph.Graph a) where
     simplify      = Graph.simplify
     box           = Graph.box
 
-instance GraphAPI AdjacencyIntMap.AdjacencyIntMap where
-    edge                 = AdjacencyIntMap.edge
-    vertices             = AdjacencyIntMap.vertices
-    edges                = AdjacencyIntMap.edges
-    overlays             = AdjacencyIntMap.overlays
-    connects             = AdjacencyIntMap.connects
-    fromAdjacencyIntSets = AdjacencyIntMap.fromAdjacencyIntSets
-    isSubgraphOf         = AdjacencyIntMap.isSubgraphOf
-    path                 = AdjacencyIntMap.path
-    circuit              = AdjacencyIntMap.circuit
-    clique               = AdjacencyIntMap.clique
-    biclique             = AdjacencyIntMap.biclique
-    star                 = AdjacencyIntMap.star
-    stars                = AdjacencyIntMap.stars
-    tree                 = AdjacencyIntMap.tree
-    forest               = AdjacencyIntMap.forest
-    removeVertex         = AdjacencyIntMap.removeVertex
-    removeEdge           = AdjacencyIntMap.removeEdge
-    replaceVertex        = AdjacencyIntMap.replaceVertex
-    mergeVertices        = AdjacencyIntMap.mergeVertices
-    transpose            = AdjacencyIntMap.transpose
-    gmap                 = AdjacencyIntMap.gmap
-    induce               = AdjacencyIntMap.induce
+instance GraphAPI AIM.AdjacencyIntMap where
+    edge                 = AIM.edge
+    vertices             = AIM.vertices
+    edges                = AIM.edges
+    overlays             = AIM.overlays
+    connects             = AIM.connects
+    fromAdjacencyIntSets = AIM.fromAdjacencyIntSets
+    isSubgraphOf         = AIM.isSubgraphOf
+    path                 = AIM.path
+    circuit              = AIM.circuit
+    clique               = AIM.clique
+    biclique             = AIM.biclique
+    star                 = AIM.star
+    stars                = AIM.stars
+    tree                 = AIM.tree
+    forest               = AIM.forest
+    removeVertex         = AIM.removeVertex
+    removeEdge           = AIM.removeEdge
+    replaceVertex        = AIM.replaceVertex
+    mergeVertices        = AIM.mergeVertices
+    transpose            = AIM.transpose
+    gmap                 = AIM.gmap
+    induce               = AIM.induce
 
-instance Ord a => GraphAPI (Relation.Relation a) where
-    edge          = Relation.edge
-    vertices      = Relation.vertices
-    edges         = Relation.edges
-    overlays      = Relation.overlays
-    connects      = Relation.connects
-    isSubgraphOf  = Relation.isSubgraphOf
-    path          = Relation.path
-    circuit       = Relation.circuit
-    clique        = Relation.clique
-    biclique      = Relation.biclique
-    star          = Relation.star
-    stars         = Relation.stars
-    tree          = Relation.tree
-    forest        = Relation.forest
-    removeVertex  = Relation.removeVertex
-    removeEdge    = Relation.removeEdge
-    replaceVertex = Relation.replaceVertex
-    mergeVertices = Relation.mergeVertices
-    transpose     = Relation.transpose
-    gmap          = Relation.gmap
-    induce        = Relation.induce
+instance Ord a => GraphAPI (R.Relation a) where
+    edge          = R.edge
+    vertices      = R.vertices
+    edges         = R.edges
+    overlays      = R.overlays
+    connects      = R.connects
+    isSubgraphOf  = R.isSubgraphOf
+    path          = R.path
+    circuit       = R.circuit
+    clique        = R.clique
+    biclique      = R.biclique
+    star          = R.star
+    stars         = R.stars
+    tree          = R.tree
+    forest        = R.forest
+    removeVertex  = R.removeVertex
+    removeEdge    = R.removeEdge
+    replaceVertex = R.replaceVertex
+    mergeVertices = R.mergeVertices
+    transpose     = R.transpose
+    gmap          = R.gmap
+    induce        = R.induce
