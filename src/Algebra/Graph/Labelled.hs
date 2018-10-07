@@ -16,8 +16,8 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled (
     -- * Algebraic data type for edge-labeleld graphs
-    Graph (..), empty, vertex, edge, overlay, connect, connectBy, edges,
-    overlays, (-<), (>-),
+    Graph (..), empty, vertex, edge, overlay, connect, edges, overlays,
+    (-<), (>-),
 
     -- * Operations
     edgeLabel,
@@ -48,11 +48,11 @@ instance Dioid e => C.Graph (Graph e a) where
     empty   = Empty
     vertex  = Vertex
     overlay = overlay
-    connect = connect
+    connect = connect one
 
-instance (Eq e, Semilattice e) => U.ToGraph (Graph e a) where
+instance (Eq e, Monoid e) => U.ToGraph (Graph e a) where
     type ToVertex (Graph e a) = a
-    foldg e v o c = foldgl e v (\x -> if x == zero then o else c)
+    foldg e v o c = foldgl e v (\x -> if x == mempty then o else c)
 
 foldgl :: b -> (a -> b) -> (e -> b -> b -> b) -> Graph e a -> b
 foldgl e v c = go
@@ -74,43 +74,34 @@ vertex = Vertex
 
 -- | Construct the graph comprising /a single labelled edge/.
 -- Complexity: /O(1)/ time, memory and size.
-edge :: a -> e -> a -> Graph e a
-edge x e y = connectBy e (vertex x) (vertex y)
+edge :: e -> a -> a -> Graph e a
+edge e x y = connect e (vertex x) (vertex y)
 
 -- | Construct the graph from a list of labelled edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
-edges :: Semilattice e => [(a, e, a)] -> Graph e a
-edges = overlays . map (\(x, e, y) -> edge x e y)
+edges :: Monoid e => [(e, a, a)] -> Graph e a
+edges = overlays . map (\(e, x, y) -> edge e x y)
 
--- | /Overlay/ two graphs. An alias for 'Connect' 'zero'. This is a commutative,
--- associative and idempotent operation with the identity 'empty'.
+-- | /Overlay/ two graphs. An alias for 'Connect' 'mempty'. This is a
+-- commutative, associative and idempotent operation with the identity 'empty'.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
-overlay :: Semilattice e => Graph e a -> Graph e a -> Graph e a
-overlay = Connect zero
+overlay :: Monoid e => Graph e a -> Graph e a -> Graph e a
+overlay = Connect mempty
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
 -- of the given list, and /S/ is the sum of sizes of the graphs in the list.
-overlays :: Semilattice e => [Graph e a] -> Graph e a
+overlays :: Monoid e => [Graph e a] -> Graph e a
 overlays = foldr overlay empty
-
--- | /Connect/ two graphs. An alias for 'Connect' 'one'. This is an associative
--- operation with the identity 'empty', which distributes over 'overlay' and
--- obeys the decomposition axiom. See the full list of laws in "Algebra.Graph".
--- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
--- of edges in the resulting graph is quadratic with respect to the number of
--- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
-connect :: Dioid e => Graph e a -> Graph e a -> Graph e a
-connect = Connect one
 
 -- | /Connect/ two graphs with edges labelled by a given label. An alias for
 -- 'Connect'.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
 -- of edges in the resulting graph is quadratic with respect to the number of
 -- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
-connectBy :: e -> Graph e a -> Graph e a -> Graph e a
-connectBy = Connect
+connect :: e -> Graph e a -> Graph e a -> Graph e a
+connect = Connect
 
 -- | The left-hand part of a convenient ternary-ish operator @x -\<e\>- y@ for
 -- connecting graphs with labelled edges. For example:
@@ -138,13 +129,13 @@ infixl 5 -<
 infixl 5 >-
 
 -- | Extract the label of a specified edge from a graph.
-edgeLabel :: (Eq a, Semilattice e) => a -> a -> Graph e a -> e
+edgeLabel :: (Eq a, Monoid e) => a -> a -> Graph e a -> e
 edgeLabel s t g = let (res, _, _) = foldgl e v c g in res
   where
-    e                                         = (zero         , False   , False   )
-    v x                                       = (zero         , x == s  , x == t  )
-    c l (l1, s1, t1) (l2, s2, t2) | s1 && t2  = (l1 \/ l2 \/ l, s1 || s2, t1 || t2)
-                                  | otherwise = (l1 \/ l2     , s1 || s2, t1 || t2)
+    e                                         = (mempty       , False   , False   )
+    v x                                       = (mempty       , x == s  , x == t  )
+    c l (l1, s1, t1) (l2, s2, t2) | s1 && t2  = (l1 <> l2 <> l, s1 || s2, t1 || t2)
+                                  | otherwise = (l1 <> l2     , s1 || s2, t1 || t2)
 
 -- | A type synonym for /unlabelled graphs/.
 type UnlabelledGraph a = Graph Bool a

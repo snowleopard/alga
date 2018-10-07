@@ -15,8 +15,8 @@
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph.Label (
-    -- * Type classes for edge labels
-    Semilattice (..), Dioid (..),
+    -- * Dioids
+    Dioid (..), zero, (\/),
 
     -- * Data types for edge labels
     Distance (..)
@@ -24,11 +24,9 @@ module Algebra.Graph.Label (
 
 import Prelude ()
 import Prelude.Compat
-import Data.Set (Set)
+import Data.Monoid
 
-import qualified Data.Set as Set
-
-{-| A /bounded join semilattice/, satisfying the following laws:
+{-| A /dioid/ is an /idempotent semiring/, i.e. it satisfies the following laws:
 
     * Commutativity:
 
@@ -45,12 +43,8 @@ import qualified Data.Set as Set
     * Idempotence:
 
         > x \/ x == x
--}
-class Semilattice a where
-    zero :: a
-    (\/) :: a -> a -> a
 
-{-| A /dioid/ is an /idempotent semiring/, i.e. it satisfies the following laws:
+
 
     * Associativity:
 
@@ -71,20 +65,24 @@ class Semilattice a where
         > x /\ (y \/ z) == x /\ y \/ x /\ z
         > (x \/ y) /\ z == x /\ z \/ y /\ z
 -}
-class Semilattice a => Dioid a where
+class Monoid a => Dioid a where
     one  :: a
     (/\) :: a -> a -> a
+
+-- | An alias for 'mempty'.
+zero :: Dioid a => a
+zero = mempty
+
+-- | An alias for '<>'.
+(\/) :: Dioid a => a -> a -> a
+(\/) = mappend
 
 infixl 6 \/
 infixl 7 /\
 
-instance Semilattice Bool where
-    zero = False
-    (\/) = (||)
-
-instance Dioid Bool where
-    one  = True
-    (/\) = (&&)
+instance Dioid Any where
+    one            = Any True
+    Any x /\ Any y = Any (x && y)
 
 -- | A /distance/ is a non-negative value that can be 'Finite' or 'Infinite'.
 data Distance a = Finite a | Infinite deriving (Eq, Ord, Show)
@@ -107,12 +105,13 @@ instance (Ord a, Num a) => Num (Distance a) where
 
     abs = id
 
-instance Ord a => Semilattice (Distance a) where
-    zero = Infinite
+instance Ord a => Semigroup (Distance a) where
+    Infinite <> x        = x
+    x        <> Infinite = x
+    Finite x <> Finite y = Finite (min x y)
 
-    Infinite \/ x        = x
-    x        \/ Infinite = x
-    Finite x \/ Finite y = Finite (min x y)
+instance Ord a => Monoid (Distance a) where
+    mempty = Infinite
 
 instance (Num a, Ord a) => Dioid (Distance a) where
     one = Finite 0
@@ -120,7 +119,3 @@ instance (Num a, Ord a) => Dioid (Distance a) where
     Infinite /\ _        = Infinite
     _        /\ Infinite = Infinite
     Finite x /\ Finite y = Finite (x + y)
-
-instance Ord a => Semilattice (Set a) where
-    zero = Set.empty
-    (\/) = Set.union

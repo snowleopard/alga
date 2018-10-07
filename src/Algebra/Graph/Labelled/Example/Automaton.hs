@@ -56,10 +56,10 @@ data State = Choice   -- ^ Choosing what to order
 --               , ('Payment', ['Pay'        ], 'Complete') ]
 -- @
 order :: Automaton Alphabet State
-order = edges [ (Choice , [Coffee, Tea], Payment )
-              , (Choice , [Cancel     ], Complete)
-              , (Payment, [Cancel     ], Choice  )
-              , (Payment, [Pay        ], Complete) ]
+order = edges [ ([Coffee, Tea], Choice , Payment )
+              , ([Cancel     ], Choice , Complete)
+              , ([Cancel     ], Payment, Choice  )
+              , ([Pay        ], Payment, Complete) ]
 
 -- | The map of 'State' reachability.
 --
