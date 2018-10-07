@@ -67,7 +67,7 @@ import Data.Semigroup (Semigroup (..), (<>))
         > x /\ (y \/ z) == x /\ y \/ x /\ z
         > (x \/ y) /\ z == x /\ z \/ y /\ z
 -}
-class Monoid a => Dioid a where
+class (Monoid a, Semigroup a) => Dioid a where
     one  :: a
     (/\) :: a -> a -> a
 
