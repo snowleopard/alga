@@ -36,6 +36,7 @@ module Algebra.Graph.Labelled.AdjacencyMap (
 
 import Prelude ()
 import Prelude.Compat
+
 import Data.Foldable (foldMap)
 import Data.Maybe
 import Data.Map (Map)

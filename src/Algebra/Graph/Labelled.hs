@@ -28,6 +28,7 @@ module Algebra.Graph.Labelled (
 
 import Prelude ()
 import Prelude.Compat
+
 import Data.Semigroup ((<>))
 import Data.Set (Set)
 

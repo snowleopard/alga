@@ -25,7 +25,8 @@ module Algebra.Graph.Label (
 import Prelude ()
 import Prelude.Compat
 
-import Data.Semigroup
+import Data.Monoid
+import Data.Semigroup ((<>))
 
 {-| A /dioid/ is an /idempotent semiring/, i.e. it satisfies the following laws:
 
@@ -76,7 +77,7 @@ zero = mempty
 
 -- | An alias for '<>'.
 (\/) :: Dioid a => a -> a -> a
-(\/) = mappend
+(\/) = (<>)
 
 infixl 6 \/
 infixl 7 /\

@@ -16,8 +16,12 @@ module Algebra.Graph.Labelled.AdjacencyMap.Internal (
     consistent
     ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Control.DeepSeq
 import Data.Map.Strict (Map)
+import Data.Semigroup ((<>))
 import Data.Set (Set, (\\))
 
 import qualified Data.Map.Strict as Map
