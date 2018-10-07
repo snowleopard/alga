@@ -50,16 +50,16 @@ data State = Choice   -- ^ Choosing what to order
 -- | An example automaton for ordering coffee or tea.
 --
 -- @
--- order = 'edges' [ ('Choice' , ['Coffee', 'Tea'], 'Payment' )
---               , ('Choice' , ['Cancel'     ], 'Complete')
---               , ('Payment', ['Cancel'     ], 'Choice'  )
---               , ('Payment', ['Pay'        ], 'Complete') ]
+-- order = 'overlays' [ 'Choice'  '-<'['Coffee', 'Tea']'>-' 'Payment'
+--                  , 'Choice'  '-<'['Cancel'     ]'>-' 'Complete'
+--                  , 'Payment' '-<'['Cancel'     ]'>-' 'Choice'
+--                  , 'Payment' '-<'['Pay'        ]'>-' 'Complete' ]
 -- @
 order :: Automaton Alphabet State
-order = edges [ ([Coffee, Tea], Choice , Payment )
-              , ([Cancel     ], Choice , Complete)
-              , ([Cancel     ], Payment, Choice  )
-              , ([Pay        ], Payment, Complete) ]
+order = overlays [ Choice  -<[Coffee, Tea]>- Payment
+                 , Choice  -<[Cancel     ]>- Complete
+                 , Payment -<[Cancel     ]>- Choice
+                 , Payment -<[Pay        ]>- Complete ]
 
 -- | The map of 'State' reachability.
 --
