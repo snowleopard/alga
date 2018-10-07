@@ -1,8 +1,10 @@
 # Change log
 
-## 0.2.1
+## 0.3
 
-* #121: Drop `Foldable` and `Traversable` instances
+* #122: Further work on labelled algebraic graphs.
+* #121: Drop `Foldable` and `Traversable` instances.
+* #113: Add `Labelled.AdjacencyMap`.
 
 ## 0.2
 

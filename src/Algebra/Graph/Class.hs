@@ -44,8 +44,8 @@ module Algebra.Graph.Class (
     isSubgraphOf,
 
     -- * Standard families of graphs
-    path, circuit, clique, biclique, star, starTranspose, tree, forest
-  ) where
+    path, circuit, clique, biclique, star, tree, forest
+    ) where
 
 import Prelude ()
 import Prelude.Compat
@@ -414,21 +414,6 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 star :: Graph g => Vertex g -> [Vertex g] -> g
 star x [] = vertex x
 star x ys = connect (vertex x) (vertices ys)
-
--- | The /star transpose/ formed by a list of leaves connected to a centre vertex.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
---
--- @
--- starTranspose x []    == 'vertex' x
--- starTranspose x [y]   == 'edge' y x
--- starTranspose x [y,z] == 'edges' [(y,x), (z,x)]
--- starTranspose x ys    == 'connect' ('vertices' ys) ('vertex' x)
--- starTranspose x ys    == transpose ('star' x ys)
--- @
-starTranspose :: Graph g => Vertex g -> [Vertex g] -> g
-starTranspose x [] = vertex x
-starTranspose x ys = connect (vertices ys) (vertex x)
 
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
 -- Complexity: /O(T)/ time, memory and size, where /T/ is the size of the
