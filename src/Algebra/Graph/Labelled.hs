@@ -133,10 +133,10 @@ infixl 5 >-
 edgeLabel :: (Eq a, Monoid e) => a -> a -> Graph e a -> e
 edgeLabel s t g = let (res, _, _) = foldgl e v c g in res
   where
-    e                                         = (zero           , False   , False   )
-    v x                                       = (zero           , x == s  , x == t  )
-    c l (l1, s1, t1) (l2, s2, t2) | s1 && t2  = (l1 <+> l2 <+> l, s1 || s2, t1 || t2)
-                                  | otherwise = (l1 <+> l2      , s1 || s2, t1 || t2)
+    e                                         = (zero               , False   , False   )
+    v x                                       = (zero               , x == s  , x == t  )
+    c l (l1, s1, t1) (l2, s2, t2) | s1 && t2  = (mconcat [l1, l2, l], s1 || s2, t1 || t2)
+                                  | otherwise = (mconcat [l1, l2   ], s1 || s2, t1 || t2)
 
 -- | A type synonym for /unlabelled graphs/.
 type UnlabelledGraph a = Graph Any a
