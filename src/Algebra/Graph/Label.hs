@@ -26,7 +26,7 @@ import Prelude ()
 import Prelude.Compat
 
 import Data.Monoid
-import Data.Semigroup ((<>))
+import Data.Semigroup (Semigroup (..), (<>))
 
 {-| A /dioid/ is an /idempotent semiring/, i.e. it satisfies the following laws:
 
