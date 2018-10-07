@@ -25,7 +25,7 @@ module Algebra.Graph.Label (
 import Prelude ()
 import Prelude.Compat
 
-import Data.Monoid
+import Data.Monoid (Any (..), Monoid (..))
 import Data.Semigroup (Semigroup (..), (<>))
 
 {-| A /dioid/ is an /idempotent semiring/, i.e. it satisfies the following laws:

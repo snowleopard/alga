@@ -29,7 +29,8 @@ module Algebra.Graph.Labelled (
 import Prelude ()
 import Prelude.Compat
 
-import Data.Semigroup ((<>))
+import Data.Monoid (Monoid (..))
+import Data.Semigroup (Semigroup (..), (<>))
 import Data.Set (Set)
 
 import Algebra.Graph.Label

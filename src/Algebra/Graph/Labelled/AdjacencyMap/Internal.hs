@@ -21,6 +21,7 @@ import Prelude.Compat
 
 import Control.DeepSeq
 import Data.Map.Strict (Map)
+import Data.Monoid (Monoid (..))
 import Data.Semigroup (Semigroup (..), (<>))
 import Data.Set (Set, (\\))
 

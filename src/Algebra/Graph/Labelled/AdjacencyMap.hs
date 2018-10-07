@@ -40,7 +40,8 @@ import Prelude.Compat
 import Data.Foldable (foldMap)
 import Data.Maybe
 import Data.Map (Map)
-import Data.Semigroup
+import Data.Monoid (Monoid (..), Sum (..))
+import Data.Semigroup (Semigroup (..), (<>))
 import Data.Set (Set)
 
 import Algebra.Graph.Label
