@@ -113,7 +113,8 @@ instance Ord a => Semigroup (Distance a) where
     Finite x <> Finite y = Finite (min x y)
 
 instance Ord a => Monoid (Distance a) where
-    mempty = Infinite
+    mempty  = Infinite
+    mappend = (<>)
 
 instance (Num a, Ord a) => Dioid (Distance a) where
     one = Finite 0
