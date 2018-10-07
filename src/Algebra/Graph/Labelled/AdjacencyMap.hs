@@ -36,11 +36,10 @@ module Algebra.Graph.Labelled.AdjacencyMap (
 
 import Prelude ()
 import Prelude.Compat
-
 import Data.Foldable (foldMap)
 import Data.Maybe
-import Data.Monoid
 import Data.Map (Map)
+import Data.Semigroup
 import Data.Set (Set)
 
 import Algebra.Graph.Label
