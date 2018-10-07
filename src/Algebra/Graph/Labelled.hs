@@ -30,6 +30,7 @@ import Prelude ()
 import Prelude.Compat
 
 import Data.Monoid (Any (..))
+import Data.Semigroup (Semigroup)
 import Data.Set (Set)
 
 import Algebra.Graph.Label
