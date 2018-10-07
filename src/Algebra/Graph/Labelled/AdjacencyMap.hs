@@ -57,26 +57,22 @@ edge e x y | e == zero = vertices [x, y]
            | otherwise = AM $ Map.fromList [(x, Map.singleton y e), (y, Map.empty)]
 
 -- | The left-hand part of a convenient ternary-ish operator @x -\<e\>- y@ for
--- connecting graphs with labelled edges. For example:
+-- creating labelled edges. For example:
 --
 -- @
--- x = 'vertex' "x"
--- y = 'vertex' "y"
 -- z = x -\<2\>- y
 -- @
-(-<) :: AdjacencyMap e a -> e -> (AdjacencyMap e a, e)
+(-<) :: a -> e -> (a, e)
 g -< e = (g, e)
 
 -- | The right-hand part of a convenient ternary-ish operator @x -\<e\>- y@ for
--- connecting graphs with labelled edges. For example:
+-- creating labelled edges. For example:
 --
 -- @
--- x = 'vertex' "x"
--- y = 'vertex' "y"
 -- z = x -\<2\>- y
 -- @
-(>-) :: (Ord a, Dioid e) => (AdjacencyMap e a, e) -> AdjacencyMap e a -> AdjacencyMap e a
-(g, e) >- h = connect e g h
+(>-) :: (Eq e, Monoid e, Ord a) => (a, e) -> a -> AdjacencyMap e a
+(x, e) >- y = edge e x y
 
 infixl 5 -<
 infixl 5 >-
