@@ -76,7 +76,7 @@ in addition to the 'Semiring' laws:
 
         > x <+> x == x
 -}
-class Semiring a => Dioid a where
+class Semiring a => Dioid a
 
 -- | An alias for 'mempty'.
 zero :: Monoid a => a
@@ -135,7 +135,7 @@ getDistance :: Distance a -> NonNegative a
 getDistance (Distance (Min x)) = x
 
 instance (Num a, Ord a) => Semiring (Distance a) where
-    one  = 0
+    one   = 0
     (<.>) = (+)
 
 instance (Num a, Ord a) => Dioid (Distance a)
@@ -179,3 +179,23 @@ getCount (Count (Sum x)) = x
 instance Num a => Semiring (Count a) where
     one   = 1
     (<.>) = (*)
+
+type Path a = [(a, a)]
+
+data ShortestPath e a = ShortestPath (Distance e) (Path a)
+
+instance (Ord a, Ord e) => Semigroup (ShortestPath e a) where
+    ShortestPath d1 p1 <> ShortestPath d2 p2
+        | d1 < d2 || (d1 == d2 && p1 < p2) = ShortestPath d1 p1
+        | otherwise                        = ShortestPath d2 p2
+
+instance (Num e, Ord a, Ord e) => Monoid (ShortestPath e a) where
+    mempty  = ShortestPath mempty []
+    mappend = (<>)
+
+instance (Num e, Ord a, Ord e) => Semiring (ShortestPath e a) where
+    one = ShortestPath one mempty
+
+    ShortestPath d1 p1 <.> ShortestPath d2 p2 = ShortestPath (d1 <.> d2) (p1 ++ p2)
+
+instance (Num e, Ord a, Ord e) => Dioid (ShortestPath e a)
