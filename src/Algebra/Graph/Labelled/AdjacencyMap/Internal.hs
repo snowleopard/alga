@@ -92,10 +92,10 @@ instance (Ord a, Num a, Dioid e) => Num (AdjacencyMap e a) where
 -- | Construct a graph from a list of adjacency sets.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 fromAdjacencyMaps :: (Ord a, Eq e, Monoid e) => [(a, Map a e)] -> AdjacencyMap e a
-fromAdjacencyMaps ss = AM $ Map.unionWith (Map.unionWith (<+>)) vs es
+fromAdjacencyMaps ss = AM $ Map.unionWith (Map.unionWith mappend) vs es
   where
     vs = Map.fromSet (const Map.empty) . Set.unions $ map (Map.keysSet . snd) ss
-    es = Map.fromListWith (Map.unionWith (<+>)) $ map (fmap $ Map.filter (/= zero)) ss
+    es = Map.fromListWith (Map.unionWith mappend) $ map (fmap $ Map.filter (/= zero)) ss
 
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices, and there are no 'zero'-labelled edges. It
