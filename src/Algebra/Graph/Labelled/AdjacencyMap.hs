@@ -40,8 +40,8 @@ import Prelude.Compat
 import Data.Foldable (foldMap)
 import Data.Maybe
 import Data.Map (Map)
-import Data.Monoid (Monoid (..), Sum (..))
-import Data.Semigroup (Semigroup (..), (<>))
+import Data.Monoid (Monoid, Sum (..))
+import Data.Semigroup (Semigroup)
 import Data.Set (Set)
 
 import Algebra.Graph.Label
@@ -52,9 +52,9 @@ import qualified Data.Map.Strict as Map
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
 edge :: (Ord a, Eq e, Monoid e) => e -> a -> a -> AdjacencyMap e a
-edge e x y | e == mempty = vertices [x, y]
-           | x == y      = AM $ Map.singleton x (Map.singleton x e)
-           | otherwise   = AM $ Map.fromList [(x, Map.singleton y e), (y, Map.empty)]
+edge e x y | e == zero = vertices [x, y]
+           | x == y    = AM $ Map.singleton x (Map.singleton x e)
+           | otherwise = AM $ Map.fromList [(x, Map.singleton y e), (y, Map.empty)]
 
 -- | The left-hand part of a convenient ternary-ish operator @x -\<e\>- y@ for
 -- connecting graphs with labelled edges. For example:
@@ -92,13 +92,13 @@ vertices = AM . Map.fromList . map (, Map.empty)
 edges :: (Ord a, Eq e, Monoid e) => [(e, a, a)] -> AdjacencyMap e a
 edges = fromAdjacencyMaps . concatMap fromEdge
   where
-    fromEdge (e, x, y) | e == mempty = [(x, Map.empty), (y, Map.empty)]
-                       | otherwise   = [(x, Map.singleton y e)]
+    fromEdge (e, x, y) | e == zero = [(x, Map.empty), (y, Map.empty)]
+                       | otherwise = [(x, Map.singleton y e)]
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 overlays :: (Ord a, Semigroup e) => [AdjacencyMap e a] -> AdjacencyMap e a
-overlays = AM . Map.unionsWith (Map.unionWith (<>)) . map adjacencyMap
+overlays = AM . Map.unionsWith (Map.unionWith (<+>)) . map adjacencyMap
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second. Complexity: /O((n + m) * log(n))/
@@ -123,14 +123,14 @@ hasEdge x y (AM m) = fromMaybe False (Map.member y <$> Map.lookup x m)
 
 -- | Extract the label of a specified edge from a graph.
 edgeLabel :: (Ord a, Monoid e) => a -> a -> AdjacencyMap e a -> e
-edgeLabel x y (AM m) = fromMaybe mempty (Map.lookup x m >>= Map.lookup y)
+edgeLabel x y (AM m) = fromMaybe zero (Map.lookup x m >>= Map.lookup y)
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
 vertexCount :: AdjacencyMap e a -> Int
 vertexCount = Map.size . adjacencyMap
 
--- | The number of (non-'mempty') edges in a graph.
+-- | The number of (non-'zero') edges in a graph.
 -- Complexity: /O(n)/ time.
 edgeCount :: AdjacencyMap e a -> Int
 edgeCount = getSum . foldMap (Sum . Map.size) . adjacencyMap
@@ -190,7 +190,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 transpose :: (Ord a, Semigroup e) => AdjacencyMap e a -> AdjacencyMap e a
 transpose (AM m) = AM $ Map.foldrWithKey combine vs m
   where
-    combine v es = Map.unionWith (Map.unionWith (<>)) $
+    combine v es = Map.unionWith (Map.unionWith (<+>)) $
         Map.fromAscList [ (u, Map.singleton v e) | (u, e) <- Map.toAscList es ]
     vs = Map.fromSet (const Map.empty) (Map.keysSet m)
 
@@ -199,8 +199,8 @@ transpose (AM m) = AM $ Map.foldrWithKey combine vs m
 -- 'AdjacencyMap'.
 -- Complexity: /O((n + m) * log(n))/ time.
 gmap :: (Ord a, Ord b, Semigroup e) => (a -> b) -> AdjacencyMap e a -> AdjacencyMap e b
-gmap f = AM . Map.map (Map.mapKeysWith (<>) f) .
-    Map.mapKeysWith (Map.unionWith (<>)) f . adjacencyMap
+gmap f = AM . Map.map (Map.mapKeysWith (<+>) f) .
+    Map.mapKeysWith (Map.unionWith (<+>)) f . adjacencyMap
 
 -- | Transform a graph by applying a function to each of its edge labels.
 -- Complexity: /O((n + m) * log(n))/ time.

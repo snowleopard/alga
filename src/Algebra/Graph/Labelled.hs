@@ -29,6 +29,7 @@ module Algebra.Graph.Labelled (
 import Prelude ()
 import Prelude.Compat
 
+import Data.Monoid (Any (..))
 import Data.Set (Set)
 
 import Algebra.Graph.Label
@@ -53,7 +54,7 @@ instance Dioid e => C.Graph (Graph e a) where
 
 instance (Eq e, Monoid e) => U.ToGraph (Graph e a) where
     type ToVertex (Graph e a) = a
-    foldg e v o c = foldgl e v (\x -> if x == mempty then o else c)
+    foldg e v o c = foldgl e v (\x -> if x == zero then o else c)
 
 foldgl :: b -> (a -> b) -> (e -> b -> b -> b) -> Graph e a -> b
 foldgl e v c = go
@@ -84,11 +85,10 @@ edge e x y = connect e (vertex x) (vertex y)
 edges :: Monoid e => [(e, a, a)] -> Graph e a
 edges = overlays . map (\(e, x, y) -> edge e x y)
 
--- | /Overlay/ two graphs. An alias for 'Connect' 'mempty'. This is a
--- commutative, associative and idempotent operation with the identity 'empty'.
+-- | /Overlay/ two graphs. An alias for 'Connect' 'zero'.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
 overlay :: Monoid e => Graph e a -> Graph e a -> Graph e a
-overlay = Connect mempty
+overlay = Connect zero
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -133,13 +133,13 @@ infixl 5 >-
 edgeLabel :: (Eq a, Monoid e) => a -> a -> Graph e a -> e
 edgeLabel s t g = let (res, _, _) = foldgl e v c g in res
   where
-    e                                         = (mempty             , False   , False   )
-    v x                                       = (mempty             , x == s  , x == t  )
-    c l (l1, s1, t1) (l2, s2, t2) | s1 && t2  = (mconcat [l1, l2, l], s1 || s2, t1 || t2)
-                                  | otherwise = (mappend  l1  l2    , s1 || s2, t1 || t2)
+    e                                         = (zero           , False   , False   )
+    v x                                       = (zero           , x == s  , x == t  )
+    c l (l1, s1, t1) (l2, s2, t2) | s1 && t2  = (l1 <+> l2 <+> l, s1 || s2, t1 || t2)
+                                  | otherwise = (l1 <+> l2      , s1 || s2, t1 || t2)
 
 -- | A type synonym for /unlabelled graphs/.
-type UnlabelledGraph a = Graph Bool a
+type UnlabelledGraph a = Graph Any a
 
 -- | A type synonym for /automata/ or /labelled transition systems/.
 type Automaton a s = Graph (Set a) s
