@@ -16,7 +16,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Label (
     -- * Semirings and dioids
-    Semiring (..), zero, (<+>), Dioid,
+    Semiring (..), zero, (<+>), StarSemiring (..), Dioid,
 
     -- * Data types for edge labels
     NonNegative (..), Count, count, getCount, Distance, distance, getDistance,
@@ -69,6 +69,17 @@ class (Monoid a, Semigroup a) => Semiring a where
     one   :: a
     (<.>) :: a -> a -> a
 
+{-| A /star semiring/ is a 'Semiring' with an additional unary operator 'star'
+satisfying the following two laws:
+
+    * Star:
+
+        > star a = one <+> a <.> star a
+        > star a = one <+> star a <.> a
+-}
+class Semiring a => StarSemiring a where
+    star :: a -> a
+
 {-| A /dioid/ is an /idempotent semiring/, i.e. it satisfies the following law
 in addition to the 'Semiring' laws:
 
@@ -86,11 +97,15 @@ zero = mempty
 (<+>) :: Semigroup a => a -> a -> a
 (<+>) = (<>)
 
+infixr 6 <+>
 infixr 7 <.>
 
 instance Semiring Any where
     one             = Any True
     Any x <.> Any y = Any (x && y)
+
+instance StarSemiring Any where
+    star _ = Any True
 
 instance Dioid Any
 
@@ -138,6 +153,9 @@ instance (Num a, Ord a) => Semiring (Distance a) where
     one   = 0
     (<.>) = (+)
 
+instance (Num a, Ord a) => StarSemiring (Distance a) where
+    star _ = one
+
 instance (Num a, Ord a) => Dioid (Distance a)
 
 -- | A /capacity/ is a non-negative value that can be 'Finite' or 'Infinite'.
@@ -156,8 +174,11 @@ getCapacity :: Capacity a -> NonNegative a
 getCapacity (Capacity (Max x)) = x
 
 instance (Num a, Ord a) => Semiring (Capacity a) where
-    one  = capacity Infinite
-    (<.>) = max
+    one   = capacity Infinite
+    (<.>) = min
+
+instance (Num a, Ord a) => StarSemiring (Capacity a) where
+    star _ = one
 
 instance (Num a, Ord a) => Dioid (Capacity a)
 
@@ -165,7 +186,7 @@ instance (Num a, Ord a) => Dioid (Capacity a)
 -- Counts form a 'Semiring' as follows:
 -- * 'zero' = 'count' 0
 -- * '<+>'  = '+'
--- * 'one'  = 'count' 'Infinite'
+-- * 'one'  = 'count' 1
 -- * '<.>'  = '*'
 newtype Count a = Count (Sum (NonNegative a))
     deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup, Show)
@@ -179,6 +200,10 @@ getCount (Count (Sum x)) = x
 instance Num a => Semiring (Count a) where
     one   = 1
     (<.>) = (*)
+
+instance (Eq a, Num a) => StarSemiring (Count a) where
+    star x | x == zero = one
+           | otherwise = count Infinite
 
 type Path a = [(a, a)]
 
@@ -197,5 +222,8 @@ instance (Num e, Ord a, Ord e) => Semiring (ShortestPath e a) where
     one = ShortestPath one mempty
 
     ShortestPath d1 p1 <.> ShortestPath d2 p2 = ShortestPath (d1 <.> d2) (p1 ++ p2)
+
+instance (Num e, Ord a, Ord e) => StarSemiring (ShortestPath e a) where
+    star _ = one
 
 instance (Num e, Ord a, Ord e) => Dioid (ShortestPath e a)
