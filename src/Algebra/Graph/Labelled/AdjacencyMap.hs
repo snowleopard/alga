@@ -23,7 +23,7 @@ module Algebra.Graph.Labelled.AdjacencyMap (
     empty, vertex, overlay, connect, edge, vertices, edges, overlays, (-<), (>-),
 
     -- * Relations on graphs
-    isSubgraphOf, closure,
+    isSubgraphOf,
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, edgeLabel, vertexCount, edgeCount, vertexList,
@@ -31,7 +31,10 @@ module Algebra.Graph.Labelled.AdjacencyMap (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
-    emap, induce
+    emap, induce,
+
+    -- * Graph closure
+    closure, reflexiveClosure, symmetricClosure
   ) where
 
 import Prelude ()
@@ -52,7 +55,7 @@ import qualified Data.Set        as Set
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
-edge :: (Ord a, Eq e, Monoid e) => e -> a -> a -> AdjacencyMap e a
+edge :: (Eq e, Monoid e, Ord a) => e -> a -> a -> AdjacencyMap e a
 edge e x y | e == zero = vertices [x, y]
            | x == y    = AM $ Map.singleton x (Map.singleton x e)
            | otherwise = AM $ Map.fromList [(x, Map.singleton y e), (y, Map.empty)]
@@ -86,7 +89,7 @@ vertices = AM . Map.fromList . map (, Map.empty)
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
-edges :: (Ord a, Eq e, Monoid e) => [(e, a, a)] -> AdjacencyMap e a
+edges :: (Eq e, Monoid e, Ord a) => [(e, a, a)] -> AdjacencyMap e a
 edges = fromAdjacencyMaps . concatMap fromEdge
   where
     fromEdge (e, x, y) | e == zero = [(x, Map.empty), (y, Map.empty)]
@@ -100,7 +103,7 @@ overlays = AM . Map.unionsWith (Map.unionWith (<+>)) . map adjacencyMap
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second. Complexity: /O((n + m) * log(n))/
 -- time.
-isSubgraphOf :: (Ord a, Eq e) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
+isSubgraphOf :: (Eq e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
 isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy Map.isSubmapOf x y
 
 -- | Check if a graph is empty.
@@ -119,19 +122,36 @@ hasEdge :: Ord a => a -> a -> AdjacencyMap e a -> Bool
 hasEdge x y (AM m) = fromMaybe False (Map.member y <$> Map.lookup x m)
 
 -- | Extract the label of a specified edge from a graph.
-edgeLabel :: (Ord a, Monoid e) => a -> a -> AdjacencyMap e a -> e
+edgeLabel :: (Monoid e, Ord a) => a -> a -> AdjacencyMap e a -> e
 edgeLabel x y (AM m) = fromMaybe zero (Map.lookup x m >>= Map.lookup y)
 
-closure :: (Ord a, Eq e, Dioid e) => AdjacencyMap e a -> AdjacencyMap e a
-closure (AM m) = AM $ foldr update m vs
+-- TODO: Optimise.
+-- | Compute the /closure/ of a graph over the underlying star semiring using
+-- the Warshall-Floyd-Kleene algorithm.
+closure :: (Eq e, Ord a, StarSemiring e) => AdjacencyMap e a -> AdjacencyMap e a
+closure (AM m) = reflexiveClosure $ AM $ foldr update m vs
   where
     vs = Set.toAscList (Map.keysSet m)
-    update k cur = Map.fromAscList [ (i, post $ edgeLabel i k $ AM cur) | i <- vs ]
+    update k cur = Map.fromAscList [ (i, go i (get i k <.> starkk)) | i <- vs ]
       where
-        post l = Map.fromAscList
-            [ (j, e) | j <- vs
-                     , let e = l <.> (edgeLabel k j $ AM cur)
-                     , e /= zero ]
+        get i j = edgeLabel i j (AM cur)
+        starkk  = star (get k k)
+        go i ik = Map.fromAscList
+            [ (j, e) | j <- vs, let e = get i j <+> ik <.> get k j, e /= zero ]
+
+-- TODO: Optimise.
+-- | Compute the /reflexive closure/ of a graph over the underlying semiring by
+-- adding a self-loop of weight 'one' to every vertex.
+reflexiveClosure :: (Ord a, Semiring e) => AdjacencyMap e a -> AdjacencyMap e a
+reflexiveClosure (AM m) = AM $ foldr (\v -> Map.adjust (loop v) v) m (Map.keysSet m)
+  where
+    loop x = Map.insertWith (<+>) x one
+
+-- TODO: Optimise.
+-- | Compute the /symmetric closure/ of a graph by overlaying it with its own
+-- transpose.
+symmetricClosure :: (Ord a, Semiring e) => AdjacencyMap e a -> AdjacencyMap e a
+symmetricClosure m = overlay m (transpose m)
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
