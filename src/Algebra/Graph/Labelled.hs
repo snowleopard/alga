@@ -20,7 +20,7 @@ module Algebra.Graph.Labelled (
     (-<), (>-),
 
     -- * Operations
-    edgeLabel,
+    edgeLabel, toAdjacencyMap,
 
     -- * Types of edge-labelled graphs
     UnlabelledGraph, Automaton, Network

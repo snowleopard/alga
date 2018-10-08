@@ -23,7 +23,7 @@ module Algebra.Graph.Labelled.AdjacencyMap (
     empty, vertex, overlay, connect, edge, vertices, edges, overlays, (-<), (>-),
 
     -- * Relations on graphs
-    isSubgraphOf,
+    isSubgraphOf, closure,
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, edgeLabel, vertexCount, edgeCount, vertexList,
@@ -48,6 +48,7 @@ import Algebra.Graph.Label
 import Algebra.Graph.Labelled.AdjacencyMap.Internal
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set        as Set
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
@@ -120,6 +121,17 @@ hasEdge x y (AM m) = fromMaybe False (Map.member y <$> Map.lookup x m)
 -- | Extract the label of a specified edge from a graph.
 edgeLabel :: (Ord a, Monoid e) => a -> a -> AdjacencyMap e a -> e
 edgeLabel x y (AM m) = fromMaybe zero (Map.lookup x m >>= Map.lookup y)
+
+closure :: (Ord a, Eq e, Dioid e) => AdjacencyMap e a -> AdjacencyMap e a
+closure (AM m) = AM $ foldr update m vs
+  where
+    vs = Set.toAscList (Map.keysSet m)
+    update k cur = Map.fromAscList [ (i, post $ edgeLabel i k $ AM cur) | i <- vs ]
+      where
+        post l = Map.fromAscList
+            [ (j, e) | j <- vs
+                     , let e = l <.> (edgeLabel k j $ AM cur)
+                     , e /= zero ]
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
