@@ -20,7 +20,7 @@ module Algebra.Graph.Label (
 
     -- * Data types for edge labels
     NonNegative (..), Count, count, getCount, Distance, distance, getDistance,
-    Capacity, capacity, getCapacity
+    Capacity, capacity, getCapacity, RE (..)
     ) where
 
 import Prelude ()
@@ -227,3 +227,41 @@ instance (Num e, Ord a, Ord e) => StarSemiring (ShortestPath e a) where
     star _ = one
 
 instance (Num e, Ord a, Ord e) => Dioid (ShortestPath e a)
+
+data RE a = Var a
+          | RE a :+: RE a
+          | RE a :*: RE a
+          | Star (RE a)
+          | None
+          | Unit
+          deriving (Eq, Ord, Show)
+
+infixl 6 :+:
+infixl 7 :*:
+
+instance Semigroup (RE a) where
+    None   <> x      = x
+    x      <> None   = x
+    Unit   <> Unit   = Unit
+    Unit   <> Star x = Star x
+    Star x <> Unit   = Star x
+    x      <> y      = x :+: y
+
+instance Monoid (RE a) where
+    mempty  = None
+    mappend = (<>)
+
+instance Semiring (RE a) where
+    one = Unit
+
+    Unit <.> x    = x
+    x    <.> Unit = x
+    None <.> _    = None
+    _    <.> None = None
+    x    <.> y    = x :*: y
+
+instance StarSemiring (RE a) where
+    star None     = Unit
+    star Unit     = Unit
+    star (Star x) = star x
+    star x        = Star x

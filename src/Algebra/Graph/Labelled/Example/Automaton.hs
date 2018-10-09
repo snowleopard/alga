@@ -19,6 +19,7 @@ module Algebra.Graph.Labelled.Example.Automaton where
 import Data.Map (Map)
 import qualified Data.Map as Map
 
+import Algebra.Graph.Label
 import Algebra.Graph.Labelled
 import Algebra.Graph.ToGraph
 
@@ -60,6 +61,13 @@ order = overlays [ Choice  -<[Coffee, Tea]>- Payment
                  , Choice  -<[Cancel     ]>- Complete
                  , Payment -<[Cancel     ]>- Choice
                  , Payment -<[Pay        ]>- Complete ]
+
+order2 :: Graph (RE Alphabet) State
+order2 = overlays [ Choice  -<Var Coffee >- Payment
+                  , Choice  -<Var Tea    >- Payment
+                  , Choice  -<Var Cancel >- Complete
+                  , Payment -<Var Cancel >- Choice
+                  , Payment -<Var Pay    >- Complete ]
 
 -- | The map of 'State' reachability.
 --
