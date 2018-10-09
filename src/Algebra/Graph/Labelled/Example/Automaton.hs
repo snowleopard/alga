@@ -56,18 +56,17 @@ data State = Choice   -- ^ Choosing what to order
 --                  , 'Payment' '-<'['Cancel'     ]'>-' 'Choice'
 --                  , 'Payment' '-<'['Pay'        ]'>-' 'Complete' ]
 -- @
-order :: Automaton Alphabet State
-order = overlays [ Choice  -<[Coffee, Tea]>- Payment
-                 , Choice  -<[Cancel     ]>- Complete
-                 , Payment -<[Cancel     ]>- Choice
-                 , Payment -<[Pay        ]>- Complete ]
+coffeeTeaAutomaton :: Automaton Alphabet State
+coffeeTeaAutomaton = overlays [ Choice  -<[Coffee, Tea]>- Payment
+                              , Choice  -<[Cancel     ]>- Complete
+                              , Payment -<[Cancel     ]>- Choice
+                              , Payment -<[Pay        ]>- Complete ]
 
-order2 :: Graph (RE Alphabet) State
-order2 = overlays [ Choice  -<Var Coffee >- Payment
-                  , Choice  -<Var Tea    >- Payment
-                  , Choice  -<Var Cancel >- Complete
-                  , Payment -<Var Cancel >- Choice
-                  , Payment -<Var Pay    >- Complete ]
+coffeeTeaGraph :: Graph (Label Alphabet) State
+coffeeTeaGraph = overlays [ Choice  -<[Coffee, Tea]>- Payment
+                          , Choice  -<[Cancel     ]>- Complete
+                          , Payment -<[Cancel     ]>- Choice
+                          , Payment -<[Pay        ]>- Complete ]
 
 -- | The map of 'State' reachability.
 --
@@ -83,4 +82,4 @@ order2 = overlays [ Choice  -<Var Coffee >- Payment
 --                             , ('Complete', ['Complete'                   ]) ]
 -- @
 reachability :: Map State [State]
-reachability = Map.fromList $ map (\s -> (s, reachable s order)) [Choice ..]
+reachability = Map.fromList $ map (\s -> (s, reachable s coffeeTeaAutomaton)) [Choice ..]

@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor, OverloadedLists #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Label
@@ -20,7 +21,7 @@ module Algebra.Graph.Label (
 
     -- * Data types for edge labels
     NonNegative (..), Count, count, getCount, Distance, distance, getDistance,
-    Capacity, capacity, getCapacity, RE (..)
+    Capacity, capacity, getCapacity, Label (..)
     ) where
 
 import Prelude ()
@@ -28,6 +29,7 @@ import Prelude.Compat
 
 import Data.Monoid (Any (..), Monoid (..), Sum (..))
 import Data.Semigroup (Min (..), Max (..), Semigroup (..))
+import GHC.Exts (IsList (..))
 
 {-| A /semiring/ extends a commutative 'Monoid' with an additional operation
 '<.>' that acts similarly to multiplication over the underlying (additive)
@@ -228,40 +230,56 @@ instance (Num e, Ord a, Ord e) => StarSemiring (ShortestPath e a) where
 
 instance (Num e, Ord a, Ord e) => Dioid (ShortestPath e a)
 
-data RE a = Var a
-          | RE a :+: RE a
-          | RE a :*: RE a
-          | Star (RE a)
-          | None
-          | Unit
-          deriving (Eq, Ord, Show)
+-- | The type of /free labels/ over the underlying set of symbols @a@. This data
+-- type is an instance of classes 'StarSemiring' and 'Dioid'.
+data Label a = Zero
+             | One
+             | Symbol a
+             | Label a :+: Label a
+             | Label a :*: Label a
+             | Star (Label a)
+             deriving (Eq, Functor, Ord)
+
+instance IsList (Label a) where
+    type Item (Label a) = a
+    fromList = foldr ((<>) . Symbol) Zero
+    toList   = error "Label.toList cannot be given a reasonable definition"
+
+instance Show a => Show (Label a) where
+    showsPrec p label = case label of
+        Zero     -> shows "0"
+        One      -> shows "1"
+        Symbol x -> shows x
+        x :+: y  -> showParen (p >= 6) $ showsPrec 6 x . (" :+: " ++) . showsPrec 6 y
+        x :*: y  -> showParen (p >= 7) $ showsPrec 7 x . (" :*: " ++) . showsPrec 7 y
+        Star x   -> showParen (p >= 8) $ showsPrec 8 x . ("*"     ++)
 
 infixl 6 :+:
 infixl 7 :*:
 
-instance Semigroup (RE a) where
-    None   <> x      = x
-    x      <> None   = x
-    Unit   <> Unit   = Unit
-    Unit   <> Star x = Star x
-    Star x <> Unit   = Star x
+instance Semigroup (Label a) where
+    Zero   <> x      = x
+    x      <> Zero   = x
+    One    <> One    = One
+    One    <> Star x = Star x
+    Star x <> One    = Star x
     x      <> y      = x :+: y
 
-instance Monoid (RE a) where
-    mempty  = None
+instance Monoid (Label a) where
+    mempty  = Zero
     mappend = (<>)
 
-instance Semiring (RE a) where
-    one = Unit
+instance Semiring (Label a) where
+    one = One
 
-    Unit <.> x    = x
-    x    <.> Unit = x
-    None <.> _    = None
-    _    <.> None = None
+    One <.> x    = x
+    x    <.> One = x
+    Zero <.> _    = Zero
+    _    <.> Zero = Zero
     x    <.> y    = x :*: y
 
-instance StarSemiring (RE a) where
-    star None     = Unit
-    star Unit     = Unit
+instance StarSemiring (Label a) where
+    star Zero     = One
+    star One      = One
     star (Star x) = star x
     star x        = Star x
