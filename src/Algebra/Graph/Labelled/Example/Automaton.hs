@@ -58,15 +58,15 @@ data State = Choice   -- ^ Choosing what to order
 -- @
 coffeeTeaAutomaton :: Automaton Alphabet State
 coffeeTeaAutomaton = overlays [ Choice  -<[Coffee, Tea]>- Payment
+                              , Payment -<[Pay        ]>- Complete
                               , Choice  -<[Cancel     ]>- Complete
-                              , Payment -<[Cancel     ]>- Choice
-                              , Payment -<[Pay        ]>- Complete ]
+                              , Payment -<[Cancel     ]>- Choice ]
 
 coffeeTeaGraph :: Graph (Label Alphabet) State
 coffeeTeaGraph = overlays [ Choice  -<[Coffee, Tea]>- Payment
+                          , Payment -<[Pay        ]>- Complete
                           , Choice  -<[Cancel     ]>- Complete
-                          , Payment -<[Cancel     ]>- Choice
-                          , Payment -<[Pay        ]>- Complete ]
+                          , Payment -<[Cancel     ]>- Choice ]
 
 -- | The map of 'State' reachability.
 --

@@ -247,12 +247,12 @@ instance IsList (Label a) where
 
 instance Show a => Show (Label a) where
     showsPrec p label = case label of
-        Zero     -> shows "0"
-        One      -> shows "1"
+        Zero     -> shows (0 :: Int)
+        One      -> shows (1 :: Int)
         Symbol x -> shows x
-        x :+: y  -> showParen (p >= 6) $ showsPrec 6 x . (" :+: " ++) . showsPrec 6 y
-        x :*: y  -> showParen (p >= 7) $ showsPrec 7 x . (" :*: " ++) . showsPrec 7 y
-        Star x   -> showParen (p >= 8) $ showsPrec 8 x . ("*"     ++)
+        x :+: y  -> showParen (p >= 6) $ showsPrec 6 x . (" | " ++) . showsPrec 6 y
+        x :*: y  -> showParen (p >= 7) $ showsPrec 7 x . (" ; " ++) . showsPrec 7 y
+        Star x   -> showParen (p >= 8) $ showsPrec 8 x . ("*"   ++)
 
 infixl 6 :+:
 infixl 7 :*:
