@@ -58,7 +58,7 @@ scotRail = overlays [ Aberdeen  -<140>- Edinburgh
 -- | An example train network.
 --
 -- @
--- network = 'overlay' 'eastCost' 'scotRail'
+-- network = 'overlay' 'scotRail' 'eastCoast'
 -- @
 network :: Network JourneyTime City
-network = overlay eastCost scotRail
+network = overlay scotRail eastCoast
