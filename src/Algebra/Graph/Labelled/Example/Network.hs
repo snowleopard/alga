@@ -30,19 +30,19 @@ data City = Aberdeen
 -- | For simplicity we measure /journey times/ in integer number of minutes.
 type JourneyTime = Int
 
--- | A part of East-Coast train network between 'Aberdeen' and 'London'.
+-- | A part of the EastCoast train network between 'Aberdeen' and 'London'.
 --
 -- @
--- eastCost = 'overlays' [ 'Aberdeen'  '-<'&#49;50'>-' 'Edinburgh'
---                     , 'Edinburgh' '-<' 90'>-' 'Newcastle'
---                     , 'Newcastle' '-<'&#49;70'>-' 'London' ]
+-- eastCoast = 'overlays' [ 'Aberdeen'  '-<'&#49;50'>-' 'Edinburgh'
+--                      , 'Edinburgh' '-<' 90'>-' 'Newcastle'
+--                      , 'Newcastle' '-<'&#49;70'>-' 'London' ]
 -- @
-eastCost :: Network JourneyTime City
-eastCost = overlays [ Aberdeen  -<150>- Edinburgh
-                    , Edinburgh -< 90>- Newcastle
-                    , Newcastle -<170>- London ]
+eastCoast :: Network JourneyTime City
+eastCoast = overlays [ Aberdeen  -<150>- Edinburgh
+                     , Edinburgh -< 90>- Newcastle
+                     , Newcastle -<170>- London ]
 
--- | A part of ScotRail train network between 'Aberdeen' and 'Glasgow'.
+-- | A part of the ScotRail train network between 'Aberdeen' and 'Glasgow'.
 --
 -- @
 -- scotRail = 'overlays' [ 'Aberdeen'  '-<'&#49;40'>-' 'Edinburgh'
