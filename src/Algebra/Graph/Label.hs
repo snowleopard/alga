@@ -21,7 +21,7 @@ module Algebra.Graph.Label (
 
     -- * Data types for edge labels
     NonNegative (..), Count, count, getCount, Distance, distance, getDistance,
-    Capacity, capacity, getCapacity, Label (..)
+    Capacity, capacity, getCapacity, Label (..), RegularExpression
     ) where
 
 import Prelude ()
@@ -239,6 +239,9 @@ data Label a = Zero
              | Label a :*: Label a
              | Star (Label a)
              deriving (Eq, Functor, Ord)
+
+-- | A type synonym for /regular expressions/, built on top of /free labels/.
+type RegularExpression a = Label a
 
 instance IsList (Label a) where
     type Item (Label a) = a

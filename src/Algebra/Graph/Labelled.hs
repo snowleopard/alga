@@ -31,7 +31,6 @@ import Prelude.Compat
 
 import Data.Monoid (Any (..))
 import Data.Semigroup (Semigroup)
-import Data.Set (Set)
 
 import Algebra.Graph.Label
 import qualified Algebra.Graph.Class                 as C
@@ -146,7 +145,7 @@ edgeLabel s t g = let (res, _, _) = foldg e v c g in res
 type UnlabelledGraph a = Graph Any a
 
 -- | A type synonym for /automata/ or /labelled transition systems/.
-type Automaton a s = Graph (Set a) s
+type Automaton a s = Graph (RegularExpression a) s
 
 -- | A /network/ is a graph whose edges are labelled with distances.
 type Network e a = Graph (Distance e) a

@@ -19,7 +19,6 @@ module Algebra.Graph.Labelled.Example.Automaton where
 import Data.Map (Map)
 import qualified Data.Map as Map
 
-import Algebra.Graph.Label
 import Algebra.Graph.Labelled
 import Algebra.Graph.ToGraph
 
@@ -61,12 +60,6 @@ coffeeTeaAutomaton = overlays [ Choice  -<[Coffee, Tea]>- Payment
                               , Payment -<[Pay        ]>- Complete
                               , Choice  -<[Cancel     ]>- Complete
                               , Payment -<[Cancel     ]>- Choice ]
-
-coffeeTeaGraph :: Graph (Label Alphabet) State
-coffeeTeaGraph = overlays [ Choice  -<[Coffee, Tea]>- Payment
-                          , Payment -<[Pay        ]>- Complete
-                          , Choice  -<[Cancel     ]>- Complete
-                          , Payment -<[Cancel     ]>- Choice ]
 
 -- | The map of 'State' reachability.
 --
