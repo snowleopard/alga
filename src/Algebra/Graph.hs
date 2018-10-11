@@ -1055,6 +1055,29 @@ sparsify graph = res
         put (m + 1)
         overlay <$> s `x` m <*> m `y` t
 
+{- Note [The rules of foldg]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The rules for foldg work like this.
+
+* Up to (but not including) phase 1, we use the "buildG/f" rule to
+  rewrite all saturated applications of f with its buildG/foldg
+  form, hoping for fusion to happen (through the "foldg/buildG" rule).
+
+  In phase 1 and 0, we switch off these rules, inline buildG, and
+  switch on the "graph/f" rule, which rewrites the "foldg/f"
+  thing back into plain map.
+
+  It's important that these two rules aren't both active at once
+  (along with build's unfolding) else we'd get an infinite loop
+  in the rules. Hence the activation control below.
+
+* FB functions are here to remember f after applying a "builG/f" rule.
+  These functions are higher-order functionsand therefore benefits from
+  inlining.
+
+* The "mapGFB" rule optimises compositions of mapG
+-}
+
 buildG :: forall a. F.Fold a -> Graph a
 buildG g = F.foldg Empty Vertex Overlay Connect g
 {-# INLINE [1] buildG #-}
@@ -1075,12 +1098,15 @@ transposeFB = flip
 -- Rules to transform a buildG-equivalent function into its equivalent
 {-# RULES
 -- Transform a mapG into its build equivalent
-"mapG"   [~1]    forall f g. mapG   f g = buildG (F.Fold $ \e v o c -> foldg e (mapGFB v f) o c g)
+"buildG/map"       [~1] forall f g.
+  mapG   f g  = buildG (F.Fold $ \e v o c -> foldg e (mapGFB v f) o c g)
 
 -- Transform a induce into its build equivalent
-"induce" [~1]    forall p g. induce p g = buildG (F.Fold $ \e v o c -> foldg e (induceFB e v p) o c g)
+"buildG/induce"    [~1] forall p g.
+  induce p g  = buildG (F.Fold $ \e v o c -> foldg e (induceFB e v p) o c g)
 
-"transpose" [~1] forall g. transpose g = buildG (F.Fold $ \e v o c -> foldg e v o (transposeFB c) g)
+"buildG/transpose" [~1] forall g.
+  transpose g = buildG (F.Fold $ \e v o c -> foldg e v o (transposeFB c) g)
  #-}
 
 -- Rules to merge rewrited functions
@@ -1095,7 +1121,7 @@ transposeFB = flip
 
 -- Rules to rewrite un-merged function back
 {-# RULES
-"mapGGraph"      [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect         = mapG f
-"induceGraph"    [1] forall f. foldg Empty (induceFB Empty Vertex f) Overlay Connect = induce f
-"transposeGraph" [1]           foldg Empty Vertex Overlay (transposeFB Connect)      = transpose
+"graph/mapg"      [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect         = mapG f
+"graph/induce"    [1] forall f. foldg Empty (induceFB Empty Vertex f) Overlay Connect = induce f
+"graph/transpose" [1]           foldg Empty Vertex Overlay (transposeFB Connect)      = transpose
  #-}
