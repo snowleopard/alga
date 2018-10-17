@@ -49,8 +49,6 @@ module Algebra.Graph (
 
     -- * Context
     Context (..), context,
-
-    buildG
   ) where
 
 import Prelude ()
@@ -61,9 +59,11 @@ import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
-import Data.Monoid ((<>))
 import Data.Maybe (fromMaybe)
+import Data.Monoid ((<>))
 import Data.Tree
+
+import qualified GHC.Base as Base
 
 import Algebra.Graph.Internal
 
@@ -306,7 +306,7 @@ connect = Connect
 -- @
 vertices :: [a] -> Graph a
 vertices = overlays . map vertex
-{-# NOINLINE [1] vertices #-}
+{-# INLINE vertices #-}
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -332,8 +332,8 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays = concatg overlay
-{-# INLINE [2] overlays #-}
+overlays = concatg overlay empty
+{-# INLINE overlays #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -347,13 +347,14 @@ overlays = concatg overlay
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects = concatg connect
-{-# INLINE [2] connects #-}
+connects = concatg connect empty
+{-# INLINE connects #-}
 
 -- | Auxiliary function, similar to 'mconcat'.
-concatg :: (Graph a -> Graph a -> Graph a) -> [Graph a] -> Graph a
-concatg combine = fromMaybe empty . foldr1Safe combine
-
+concatg :: (a -> a -> a) -> a -> [a] -> a
+concatg combine bas = fromMaybe bas . foldr1Safe combine
+{-# NOINLINE [1] concatg #-}
+  
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
 -- The order of arguments is: empty, vertex, overlay and connect.
@@ -375,6 +376,22 @@ foldg e v o c = go
     go (Overlay x y) = o (go x) (go y)
     go (Connect x y) = c (go x) (go y)
 {-# INLINE [0] foldg #-}
+
+{-# RULES
+"foldg/Empty"   forall e v o c.
+  foldg e v o c Empty = e
+"foldg/Vertex"  forall e v o c x.
+  foldg e v o c (Vertex x) = v x
+"foldg/Overlay" forall e v o c x y.
+  foldg e v o c (Overlay x y) = o (foldg e v o c x) (foldg e v o c y)
+"foldg/Connect" forall e v o c x y.
+  foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
+
+"foldg/concatgOverlay" forall e v o c list.
+  foldg e v o c (concatg Overlay Empty list) = foldr (o . foldg e v o c) e list
+"foldg/concatgConnect" forall e v o c list.
+  foldg e v o c (concatg Connect Empty list) = foldr (c . foldg e v o c) e list
+ #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -674,7 +691,7 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- @
 clique :: [a] -> Graph a
 clique = connects . map vertex
-{-# NOINLINE [1] clique #-}
+{-# INLINE [1] clique #-}
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -914,21 +931,8 @@ splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Graph a -> Graph a
-transpose = foldg Empty Vertex Overlay (flip Connect)
-{-# NOINLINE [1] transpose #-}
-
-{-# RULES
-"transpose/Empty"    transpose Empty = Empty
-"transpose/Vertex"   forall x. transpose (Vertex x) = Vertex x
-"transpose/Overlay"  forall g1 g2. transpose (Overlay g1 g2) = Overlay (transpose g1) (transpose g2)
-"transpose/Connect"  forall g1 g2. transpose (Connect g1 g2) = Connect (transpose g2) (transpose g1)
-
-"transpose/overlays" forall xs. transpose (overlays xs) = overlays (map transpose xs)
-"transpose/connects" forall xs. transpose (connects xs) = connects (reverse (map transpose xs))
-
-"transpose/vertices" forall xs. transpose (vertices xs) = vertices xs
-"transpose/clique"   forall xs. transpose (clique xs)   = clique (reverse xs)
- #-}
+transpose = foldg Empty Vertex Overlay (transposeFB Connect)
+{-# INLINE transpose #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -1106,7 +1110,8 @@ transposeFB = flip
   induce p g  = buildG (F.Fold $ \e v o c -> foldg e (induceFB e v p) o c g)
 
 "buildG/transpose" [~1] forall g.
-  transpose g = buildG (F.Fold $ \e v o c -> foldg e v o (transposeFB c) g)
+  foldg Empty Vertex Overlay (transposeFB Connect) g
+  = buildG (F.Fold $ \e v o c -> foldg e v o (transposeFB c) g)
  #-}
 
 -- Rules to merge rewrited functions
@@ -1123,5 +1128,5 @@ transposeFB = flip
 {-# RULES
 "graph/mapg"      [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect         = mapG f
 "graph/induce"    [1] forall f. foldg Empty (induceFB Empty Vertex f) Overlay Connect = induce f
-"graph/transpose" [1]           foldg Empty Vertex Overlay (transposeFB Connect)      = transpose
+--"graph/transpose" [1]           foldg Empty Vertex Overlay (transposeFB Connect)      = transpose
  #-}

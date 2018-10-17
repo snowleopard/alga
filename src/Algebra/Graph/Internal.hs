@@ -117,4 +117,4 @@ foldr1Safe f = foldr mf Nothing
     mf x m = Just (case m of
                         Nothing -> x
                         Just y  -> f x y)
-{-# INLINE foldr1Safe #-}
+{-# INLINE [1] foldr1Safe #-}
