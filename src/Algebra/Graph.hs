@@ -48,7 +48,8 @@ module Algebra.Graph (
     box,
 
     -- * Context
-    Context (..), context,
+    Context (..), context
+
   ) where
 
 import Prelude ()
@@ -75,7 +76,6 @@ import Data.Set    (Set)
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Algebra.Graph.Fold.Internal   as F
-import qualified Control.Applicative           as Ap
 import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
 import qualified Data.Tree                     as Tree
@@ -332,8 +332,8 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays = concatg overlay empty
-{-# INLINE overlays #-}
+overlays = fromMaybe empty . foldr1Safe overlay
+{-# INLINE [1] overlays #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -347,14 +347,9 @@ overlays = concatg overlay empty
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects = concatg connect empty
+connects = fromMaybe empty . foldr1Safe connect
 {-# INLINE connects #-}
 
--- | Auxiliary function, similar to 'mconcat'.
-concatg :: (a -> a -> a) -> a -> [a] -> a
-concatg combine bas = fromMaybe bas . foldr1Safe combine
-{-# NOINLINE [1] concatg #-}
-  
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
 -- The order of arguments is: empty, vertex, overlay and connect.
@@ -387,10 +382,8 @@ foldg e v o c = go
 "foldg/Connect" forall e v o c x y.
   foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
 
-"foldg/concatgOverlay" forall e v o c list.
-  foldg e v o c (concatg Overlay Empty list) = foldr (o . foldg e v o c) e list
-"foldg/concatgConnect" forall e v o c list.
-  foldg e v o c (concatg Connect Empty list) = foldr (c . foldg e v o c) e list
+"foldg/overlays" forall e v o c (g::forall b. (Graph a->b->b) -> b -> b) .
+  foldg e v o c (overlays (Base.build g)) = fromMaybe e (g (mf (o . foldg e v o c)) Nothing)
  #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
@@ -1109,9 +1102,6 @@ transposeFB = flip
 "buildG/induce"    [~1] forall p g.
   induce p g  = buildG (F.Fold $ \e v o c -> foldg e (induceFB e v p) o c g)
 
-"buildG/transpose" [~1] forall g.
-  foldg Empty Vertex Overlay (transposeFB Connect) g
-  = buildG (F.Fold $ \e v o c -> foldg e v o (transposeFB c) g)
  #-}
 
 -- Rules to merge rewrited functions
@@ -1128,5 +1118,4 @@ transposeFB = flip
 {-# RULES
 "graph/mapg"      [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect         = mapG f
 "graph/induce"    [1] forall f. foldg Empty (induceFB Empty Vertex f) Overlay Connect = induce f
---"graph/transpose" [1]           foldg Empty Vertex Overlay (transposeFB Connect)      = transpose
  #-}

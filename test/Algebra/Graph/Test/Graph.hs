@@ -22,8 +22,6 @@ import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 import Algebra.Graph.ToGraph (reachable)
 
-import qualified Test.Inspection as I
-
 t :: Testsuite
 t = testsuite "Graph." empty
 
@@ -168,22 +166,3 @@ testGraph = do
 
     test "size        (sparsify x) <= 3 * size x" $ \(x :: G) ->
           size        (sparsify x) <= 3 * size x
-
--- | COMPILATION-time
---- starTranspose === transpose . star
-
-trvertices = transpose . vertices
-vertices' = vertices
-
-I.inspect $ 'trvertices I.=== 'vertices'
-
-{-
-starTranspose :: Int -> [Int] -> Graph Int
-starTranspose x [] = vertex x
-starTranspose x xs = connect (vertices xs) (vertex x)
-
-starTransposeRewrited :: Int -> [Int] -> Graph Int
-starTransposeRewrited x = transpose . star x
-
-I.inspect $ 'starTranspose I.=== 'starTransposeRewrited
--}

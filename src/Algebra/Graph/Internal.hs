@@ -22,7 +22,7 @@ module Algebra.Graph.Internal (
     -- * Data structures for graph traversal
     Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, Hit (..),
 
-    foldr1Safe
+    foldr1Safe, mf
   ) where
 
 import Prelude ()
@@ -112,9 +112,17 @@ data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
 -- | A safe version of 'foldr1'
 foldr1Safe :: (a -> a -> a) -> [a] -> Maybe a
-foldr1Safe f = foldr mf Nothing
-  where
-    mf x m = Just (case m of
-                        Nothing -> x
-                        Just y  -> f x y)
-{-# INLINE [1] foldr1Safe #-}
+foldr1Safe f = foldr (mf f) Nothing
+{-# INLINE [0] foldr1Safe #-}
+
+-- | Tragetting 'map' directly
+{-# RULES
+"foldr1Safe/build"
+  forall k f lst.
+  foldr1Safe k (map f lst) = foldr (mf k . f) Nothing lst
+ #-}
+
+mf :: (a -> a -> a) -> a -> Maybe a -> Maybe a
+mf f x m = Just (case m of
+                  Nothing -> x
+                  Just y  -> f x y)
