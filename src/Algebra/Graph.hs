@@ -63,6 +63,7 @@ import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Tree
+import Control.Applicative ()
 
 import qualified GHC.Base as Base
 
@@ -382,8 +383,8 @@ foldg e v o c = go
 "foldg/Connect" forall e v o c x y.
   foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
 
-"foldg/overlays" forall e v o c (g::forall b. (Graph a->b->b) -> b -> b) .
-  foldg e v o c (overlays (Base.build g)) = fromMaybe e (g (mf (o . foldg e v o c)) Nothing)
+"foldg/overlays/build" forall e v o c lst .
+  foldg e v o c (overlays lst) = fromMaybe e (Base.foldr (mf (o . foldg e v o c)) Nothing lst)
  #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
