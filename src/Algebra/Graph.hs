@@ -63,7 +63,6 @@ import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Tree
-import Control.Applicative ()
 
 import qualified GHC.Base as Base
 
@@ -77,6 +76,7 @@ import Data.Set    (Set)
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Algebra.Graph.Fold.Internal   as F
+import qualified Control.Applicative           as Ap
 import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
 import qualified Data.Tree                     as Tree
