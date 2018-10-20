@@ -64,8 +64,6 @@ import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Tree
 
-import qualified GHC.Base as Base
-
 import Algebra.Graph.Internal
 
 import Data.IntMap (IntMap)
@@ -395,9 +393,9 @@ foldg e v o c = go1
   foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
 
 "foldg/overlays" forall e v o c lst .
-  foldg e v o c (overlays lst) = fromMaybe e (Base.foldr (mf (o . foldg e v o c)) Nothing lst)
+  foldg e v o c (overlays lst) = fromMaybe e (foldr (mf (o . foldg e v o c)) Nothing lst)
 "foldg/connects" forall e v o c lst .
-  foldg e v o c (connects lst) = fromMaybe e (Base.foldr (mf (c . foldg e v o c)) Nothing lst)
+  foldg e v o c (connects lst) = fromMaybe e (foldr (mf (c . foldg e v o c)) Nothing lst)
  #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
