@@ -207,8 +207,15 @@ instance (Eq a, Num a) => StarSemiring (Count a) where
     star x | x == zero = one
            | otherwise = count Infinite
 
+-- | A /path/ is a list of edges.
 type Path a = [(a, a)]
 
+-- | A /shortest path/ is a shortest 'Distance' and a corresponding 'Path'.
+-- * 'zero' = 'ShortestPath' zero []
+-- * 'one'  = 'ShortestPath' one []
+-- * '<+>' picks the shortest of the two paths, or the lexicographically smaller
+--   one in case of a tie.
+-- * '<.>' adds distances and concatenates paths.
 data ShortestPath e a = ShortestPath (Distance e) (Path a)
 
 instance (Ord a, Ord e) => Semigroup (ShortestPath e a) where
@@ -221,7 +228,7 @@ instance (Num e, Ord a, Ord e) => Monoid (ShortestPath e a) where
     mappend = (<>)
 
 instance (Num e, Ord a, Ord e) => Semiring (ShortestPath e a) where
-    one = ShortestPath one mempty
+    one = ShortestPath one []
 
     ShortestPath d1 p1 <.> ShortestPath d2 p2 = ShortestPath (d1 <.> d2) (p1 ++ p2)
 
@@ -275,8 +282,8 @@ instance Monoid (Label a) where
 instance Semiring (Label a) where
     one = One
 
-    One <.> x    = x
-    x    <.> One = x
+    One  <.> x    = x
+    x    <.> One  = x
     Zero <.> _    = Zero
     _    <.> Zero = Zero
     x    <.> y    = x :*: y

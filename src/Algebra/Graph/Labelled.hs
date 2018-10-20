@@ -118,7 +118,7 @@ connect = Connect
 -- z = x -\<2\>- y
 -- @
 (-<) :: a -> e -> (a, e)
-g -< e = (g, e)
+x -< e = (x, e)
 
 -- | The right-hand part of a convenient ternary-ish operator @x -\<e\>- y@ for
 -- creating labelled edges. For example:
