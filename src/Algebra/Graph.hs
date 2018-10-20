@@ -349,7 +349,7 @@ overlays = fromMaybe empty . foldr1Safe overlay
 -- @
 connects :: [Graph a] -> Graph a
 connects = fromMaybe empty . foldr1Safe connect
-{-# INLINE connects #-}
+{-# INLINE [1] connects #-}
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
@@ -383,8 +383,10 @@ foldg e v o c = go
 "foldg/Connect" forall e v o c x y.
   foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
 
-"foldg/overlays/build" forall e v o c lst .
+"foldg/overlays" forall e v o c lst .
   foldg e v o c (overlays lst) = fromMaybe e (Base.foldr (mf (o . foldg e v o c)) Nothing lst)
+"foldg/connects" forall e v o c lst .
+  foldg e v o c (connects lst) = fromMaybe e (Base.foldr (mf (c . foldg e v o c)) Nothing lst)
  #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
