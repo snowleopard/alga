@@ -20,13 +20,15 @@ module Algebra.Graph.Label (
     Semiring (..), zero, (<+>), StarSemiring (..), Dioid,
 
     -- * Data types for edge labels
-    NonNegative (..), Count, count, getCount, Distance, distance, getDistance,
-    Capacity, capacity, getCapacity, Label (..), RegularExpression
+    NonNegative, finite, finiteWord, unsafeFinite, infinite, getFinite, Count,
+    count, getCount, Distance, distance, getDistance, Capacity, capacity,
+    getCapacity, Label (..), RegularExpression
     ) where
 
 import Prelude ()
 import Prelude.Compat
 
+import Control.Applicative (liftA2)
 import Data.Monoid (Any (..), Monoid (..), Sum (..))
 import Data.Semigroup (Min (..), Max (..), Semigroup (..))
 import GHC.Exts (IsList (..))
@@ -111,45 +113,76 @@ instance StarSemiring Any where
 
 instance Dioid Any
 
--- | A non-negative value that can be 'Finite' or 'Infinite'.
-data NonNegative a = Finite a | Infinite deriving (Eq, Ord, Show)
+-- | A non-negative value that can be 'finite' or 'infinite'. Note: the current
+-- implementation of the 'Num' instance raises an error on negative literals
+-- and on the 'negate' method.
+newtype NonNegative a = NonNegative (Maybe a)
+    deriving (Applicative, Functor, Eq, Monad)
+
+instance Ord a => Ord (NonNegative a) where
+    compare (NonNegative Nothing ) (NonNegative Nothing ) = EQ
+    compare (NonNegative Nothing ) (NonNegative _       ) = GT
+    compare (NonNegative _       ) (NonNegative Nothing ) = LT
+    compare (NonNegative (Just x)) (NonNegative (Just y)) = compare x y
+
+instance (Num a, Show a) => Show (NonNegative a) where
+    show (NonNegative Nothing)  = "infinite"
+    show (NonNegative (Just x)) = show x
 
 instance Num a => Bounded (NonNegative a) where
-    minBound = Finite 0
-    maxBound = Infinite
+    minBound = unsafeFinite 0
+    maxBound = infinite
 
-instance Num a => Num (NonNegative a) where
-    fromInteger = Finite . fromInteger
+instance (Num a, Ord a) => Num (NonNegative a) where
+    fromInteger x | f < 0     = error "NonNegative values cannot be negative"
+                  | otherwise = unsafeFinite f
+      where
+        f = fromInteger x
 
-    Infinite + _        = Infinite
-    _        + Infinite = Infinite
-    Finite x + Finite y = Finite (x + y)
-
-    Infinite * _        = Infinite
-    _        * Infinite = Infinite
-    Finite x * Finite y = Finite (x * y)
+    (+) = liftA2 (+)
+    (*) = liftA2 (*)
 
     negate _ = error "NonNegative values cannot be negated"
 
-    signum (Finite x) = Finite (signum x)
-    signum _          = 1
+    signum (NonNegative Nothing) = 1
+    signum x                     = signum <$> x
 
     abs = id
 
--- | A /distance/ is a non-negative value that can be 'Finite' or 'Infinite'.
+-- | A finite non-negative value or @Nothing@ if the argument is negative.
+finite :: (Num a, Ord a) => a -> Maybe (NonNegative a)
+finite x | x < 0      = Nothing
+         | otherwise  = Just (unsafeFinite x)
+
+-- | A finite 'Word'.
+finiteWord :: Word -> NonNegative Word
+finiteWord = unsafeFinite
+
+-- | Create a non-negative finite value /unsafely/: the argument is not checked
+-- for being non-negative.
+unsafeFinite :: a -> NonNegative a
+unsafeFinite = NonNegative . Just
+
+-- | The (non-negative) infinite value.
+infinite :: NonNegative a
+infinite = NonNegative Nothing
+
+-- | Get a finite value or @Nothing@ if the value is infinite.
+getFinite :: NonNegative a -> Maybe a
+getFinite (NonNegative x) = x
+
+-- | A /distance/ is a non-negative value that can be 'finite' or 'infinite'.
 -- Distances form a 'Dioid' as follows:
--- * 'zero' = 'distance' 'Infinite'
+-- * 'zero' = 'distance' 'infinite'
 -- * '<+>'  = 'min'
 -- * 'one'  = 'distance' 0
 -- * '<.>'  = '+'
 newtype Distance a = Distance (Min (NonNegative a))
-    deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup, Show)
+    deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup)
 
-distance :: NonNegative a -> Distance a
-distance = Distance . Min
-
-getDistance :: Distance a -> NonNegative a
-getDistance (Distance (Min x)) = x
+instance Show a => Show (Distance a) where
+    show (Distance (Min (NonNegative (Just x)))) = show x
+    show _                                       = "distance infinite"
 
 instance (Num a, Ord a) => Semiring (Distance a) where
     one   = 0
@@ -160,23 +193,29 @@ instance (Num a, Ord a) => StarSemiring (Distance a) where
 
 instance (Num a, Ord a) => Dioid (Distance a)
 
--- | A /capacity/ is a non-negative value that can be 'Finite' or 'Infinite'.
+-- | A non-negative distance.
+distance :: NonNegative a -> Distance a
+distance = Distance . Min
+
+-- | Get the value of a distance.
+getDistance :: Distance a -> NonNegative a
+getDistance (Distance (Min x)) = x
+
+-- | A /capacity/ is a non-negative value that can be 'finite' or 'infinite'.
 -- Capacities form a 'Dioid' as follows:
 -- * 'zero' = 'capacity' 0
 -- * '<+>'  = 'max'
--- * 'one'  = 'capacity' 'Infinite'
+-- * 'one'  = 'capacity' 'infinite'
 -- * '<.>'  = 'min'
 newtype Capacity a = Capacity (Max (NonNegative a))
-    deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup, Show)
+    deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup)
 
-capacity :: NonNegative a -> Capacity a
-capacity = Capacity . Max
-
-getCapacity :: Capacity a -> NonNegative a
-getCapacity (Capacity (Max x)) = x
+instance Show a => Show (Capacity a) where
+    show (Capacity (Max (NonNegative (Just x)))) = show x
+    show _                                       = "capacity infinite"
 
 instance (Num a, Ord a) => Semiring (Capacity a) where
-    one   = capacity Infinite
+    one   = capacity infinite
     (<.>) = min
 
 instance (Num a, Ord a) => StarSemiring (Capacity a) where
@@ -184,28 +223,42 @@ instance (Num a, Ord a) => StarSemiring (Capacity a) where
 
 instance (Num a, Ord a) => Dioid (Capacity a)
 
--- | A /count/ is a non-negative value that can be 'Finite' or 'Infinite'.
+-- | A non-negative capacity.
+capacity :: NonNegative a -> Capacity a
+capacity = Capacity . Max
+
+-- | Get the value of a capacity.
+getCapacity :: Capacity a -> NonNegative a
+getCapacity (Capacity (Max x)) = x
+
+-- | A /count/ is a non-negative value that can be 'finite' or 'infinite'.
 -- Counts form a 'Semiring' as follows:
 -- * 'zero' = 'count' 0
 -- * '<+>'  = '+'
 -- * 'one'  = 'count' 1
 -- * '<.>'  = '*'
 newtype Count a = Count (Sum (NonNegative a))
-    deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup, Show)
+    deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup)
 
-count :: NonNegative a -> Count a
-count = Count . Sum
+instance Show a => Show (Count a) where
+    show (Count (Sum (NonNegative (Just x)))) = show x
+    show _                                    = "count infinite"
 
-getCount :: Count a -> NonNegative a
-getCount (Count (Sum x)) = x
-
-instance Num a => Semiring (Count a) where
+instance (Num a, Ord a) => Semiring (Count a) where
     one   = 1
     (<.>) = (*)
 
-instance (Eq a, Num a) => StarSemiring (Count a) where
+instance (Num a, Ord a) => StarSemiring (Count a) where
     star x | x == zero = one
-           | otherwise = count Infinite
+           | otherwise = count infinite
+
+-- | A non-negative count.
+count :: NonNegative a -> Count a
+count = Count . Sum
+
+-- | Get the value of a count.
+getCount :: Count a -> NonNegative a
+getCount (Count (Sum x)) = x
 
 -- | A /path/ is a list of edges.
 type Path a = [(a, a)]
