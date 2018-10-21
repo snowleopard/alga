@@ -21,15 +21,19 @@ module Algebra.Graph.Label (
 
     -- * Data types for edge labels
     NonNegative, finite, finiteWord, unsafeFinite, infinite, getFinite,
-    Capacity, capacity, getCapacity, Count, count, getCount, Distance, distance,
-    getDistance, Power (..), ShortestPath, Path, edgePath, getShortestDistance,
-    getShortestPath, Label, isZero, RegularExpression
+    Distance, distance, getDistance, Capacity, capacity, getCapacity,
+    Count, count, getCount, PowerSet (..), Minimum, getMinimum, noMinimum,
+    Path, Label, isZero, RegularExpression,
+
+    -- * Combining edge labels
+    Optimum (..), ShortestPath, AllShortestPaths, CountShortestPaths, WidestPath
     ) where
 
 import Prelude ()
 import Prelude.Compat
 
-import Control.Applicative (liftA2)
+import Control.Applicative
+import Control.Monad
 import Data.Maybe
 import Data.Monoid (Any (..), Monoid (..), Sum (..))
 import Data.Semigroup (Min (..), Max (..), Semigroup (..))
@@ -114,18 +118,12 @@ instance Dioid Any
 -- | A non-negative value that can be 'finite' or 'infinite'. Note: the current
 -- implementation of the 'Num' instance raises an error on negative literals
 -- and on the 'negate' method.
-newtype NonNegative a = NonNegative (Maybe a)
-    deriving (Applicative, Functor, Eq, Monad)
-
-instance Ord a => Ord (NonNegative a) where
-    compare (NonNegative Nothing ) (NonNegative Nothing ) = EQ
-    compare (NonNegative Nothing ) (NonNegative _       ) = GT
-    compare (NonNegative _       ) (NonNegative Nothing ) = LT
-    compare (NonNegative (Just x)) (NonNegative (Just y)) = compare x y
+newtype NonNegative a = NonNegative (Extended a)
+    deriving (Applicative, Eq, Functor, Ord, Monad)
 
 instance (Num a, Show a) => Show (NonNegative a) where
-    show (NonNegative Nothing)  = "infinite"
-    show (NonNegative (Just x)) = show x
+    show (NonNegative Infinite  ) = "infinite"
+    show (NonNegative (Finite x)) = show x
 
 instance Num a => Bounded (NonNegative a) where
     minBound = unsafeFinite 0
@@ -142,8 +140,8 @@ instance (Num a, Ord a) => Num (NonNegative a) where
 
     negate _ = error "NonNegative values cannot be negated"
 
-    signum (NonNegative Nothing) = 1
-    signum x                     = signum <$> x
+    signum (NonNegative Infinite) = 1
+    signum x = signum <$> x
 
     abs = id
 
@@ -159,15 +157,15 @@ finiteWord = unsafeFinite
 -- | A non-negative finite value, created /unsafely/: the argument is not
 -- checked for being non-negative, so @unsafeFinite (-1)@ compiles just fine.
 unsafeFinite :: a -> NonNegative a
-unsafeFinite = NonNegative . Just
+unsafeFinite = NonNegative . Finite
 
 -- | The (non-negative) infinite value.
 infinite :: NonNegative a
-infinite = NonNegative Nothing
+infinite = NonNegative Infinite
 
 -- | Get a finite value or @Nothing@ if the value is infinite.
 getFinite :: NonNegative a -> Maybe a
-getFinite (NonNegative x) = x
+getFinite (NonNegative x) = fromExtended x
 
 -- | A /capacity/ is a non-negative value that can be 'finite' or 'infinite'.
 -- Capacities form a 'Dioid' as follows:
@@ -182,8 +180,8 @@ newtype Capacity a = Capacity (Max (NonNegative a))
     deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup)
 
 instance Show a => Show (Capacity a) where
-    show (Capacity (Max (NonNegative (Just x)))) = show x
-    show _                                       = "capacity infinite"
+    show (Capacity (Max (NonNegative (Finite x)))) = show x
+    show _ = "capacity infinite"
 
 instance (Num a, Ord a) => Semiring (Capacity a) where
     one   = capacity infinite
@@ -215,8 +213,8 @@ newtype Count a = Count (Sum (NonNegative a))
     deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup)
 
 instance Show a => Show (Count a) where
-    show (Count (Sum (NonNegative (Just x)))) = show x
-    show _                                    = "count infinite"
+    show (Count (Sum (NonNegative (Finite x)))) = show x
+    show _ = "count infinite"
 
 instance (Num a, Ord a) => Semiring (Count a) where
     one   = 1
@@ -247,8 +245,8 @@ newtype Distance a = Distance (Min (NonNegative a))
     deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup)
 
 instance Show a => Show (Distance a) where
-    show (Distance (Min (NonNegative (Just x)))) = show x
-    show _                                       = "distance infinite"
+    show (Distance (Min (NonNegative (Finite x)))) = show x
+    show _ = "distance infinite"
 
 instance (Num a, Ord a) => Semiring (Distance a) where
     one   = 0
@@ -267,6 +265,74 @@ distance = Distance . Min
 getDistance :: Distance a -> NonNegative a
 getDistance (Distance (Min x)) = x
 
+-- This data type extends the underlying type @a@ with a new 'Infinite' value.
+data Extended a = Finite a | Infinite
+    deriving (Eq, Functor, Ord, Show)
+
+instance Applicative Extended where
+    pure  = Finite
+    (<*>) = ap
+
+instance Monad Extended where
+    return = pure
+
+    Infinite >>= _ = Infinite
+    Finite x >>= f = f x
+
+-- Extract the finite value or @Nothing@ if the value is 'Infinite'.
+fromExtended :: Extended a -> Maybe a
+fromExtended (Finite a) = Just a
+fromExtended Infinite   = Nothing
+
+instance Num a => Num (Extended a) where
+    fromInteger = Finite . fromInteger
+
+    (+) = liftA2 (+)
+    (*) = liftA2 (*)
+
+    negate = fmap negate
+    signum = fmap signum
+    abs    = fmap abs
+
+-- | If @a@ is a monoid, 'Minimum' @a@ forms the following 'Dioid':
+--
+-- @
+-- 'zero'  = 'pure' 'mempty'
+-- 'one'   = 'noMinimum'
+-- ('<+>') = 'liftA2' 'min'
+-- ('<.>') = 'liftA2' 'mappend'
+-- @
+--
+-- To create a singleton value of type 'Minimum' @a@ use the 'pure' function.
+-- For example:
+--
+-- @
+-- getMinimum ('pure' "Hello, " '<+>' 'pure' "World!") == Just "Hello, "
+-- getMinimum ('pure' "Hello, " '<.>' 'pure' "World!") == Just "Hello, World!"
+-- @
+newtype Minimum a = Minimum (Extended a)
+    deriving (Applicative, Eq, Functor, Ord, Monad)
+
+-- | Extract the minimum or @Nothing@ if it does not exist.
+getMinimum :: Minimum a -> Maybe a
+getMinimum (Minimum x) = fromExtended x
+
+-- | The value corresponding to the lack of minimum, e.g. the minimum of the
+-- empty set.
+noMinimum :: Minimum a
+noMinimum = Minimum Infinite
+
+instance (Num a, Show a) => Show (Minimum a) where
+    show (Minimum Infinite  ) = "one"
+    show (Minimum (Finite x)) = show x
+
+instance IsList a => IsList (Minimum a) where
+    type Item (Minimum a) = Item a
+    fromList = Minimum . Finite . fromList
+    toList (Minimum x) = toList $ fromMaybe errorMessage (fromExtended x)
+      where
+        errorMessage = error "Minimum.toList applied to noMinimum value."
+
 -- | The /power set/ over the underlying set of elements @a@. If @a@ is a
 -- monoid, then the power set forms a 'Dioid' as follows:
 --
@@ -274,64 +340,19 @@ getDistance (Distance (Min x)) = x
 -- 'zero'  = Set.'Set.empty'
 -- 'one'   = Set.'Set.singleton' 'mempty'
 -- ('<+>') = Set.'Set.union'
--- ('<.>') = 'setProductWith' ('<>')
+-- ('<.>') = 'setProductWith' 'mappend'
 -- @
-newtype Power a = Power { getSet :: Set a }
-    deriving (Eq, Monoid, Ord, Semigroup, Show)
+newtype PowerSet a = PowerSet { getPowerSet :: Set a }
+    deriving (Eq, Monoid, Ord, Semigroup)
 
-instance (Monoid a, Ord a) => Semiring (Set a) where
-    one   = Set.singleton mempty
-    (<.>) = setProductWith (<>)
+instance (Monoid a, Ord a) => Semiring (PowerSet a) where
+    one                       = PowerSet (Set.singleton mempty)
+    PowerSet x <.> PowerSet y = PowerSet (setProductWith mappend x y)
 
-instance (Monoid a, Ord a) => Dioid (Set a) where
-
--- | A /path/ is a list of edges.
-type Path a = [(a, a)]
-
--- | A /shortest path/ encapsulating a shortest 'Distance' and the corresponding
--- 'Path'. This is an abstract datatype, whose semiring instance has the
--- following meaning:
---
--- * 'zero' is the /empty path/ of zero distance.
--- * 'one'  is the lack of any path, or a path of infinite distance.
--- * '<+>' picks the shortest of the two paths, or the lexicographically smaller
---   one in case of a tie.
--- * '<.>' concatenates two paths, adding their distances.
-data ShortestPath e a = ShortestPath (Distance e) (Path a)
-
-instance (Ord a, Ord e) => Semigroup (ShortestPath e a) where
-    ShortestPath d1 p1 <> ShortestPath d2 p2
-        | d1 < d2 || d1 == d2 && p1 < p2 = ShortestPath d1 p1
-        | otherwise                      = ShortestPath d2 p2
-
-instance (Num e, Ord a, Ord e) => Monoid (ShortestPath e a) where
-    mempty  = ShortestPath zero []
-    mappend = (<>)
-
-instance (Num e, Ord a, Ord e) => Semiring (ShortestPath e a) where
-    one = ShortestPath one []
-
-    ShortestPath d1 p1 <.> ShortestPath d2 p2 = ShortestPath (d1 <.> d2) (p1 ++ p2)
-
-instance (Num e, Ord a, Ord e) => StarSemiring (ShortestPath e a) where
+instance (Monoid a, Ord a) => StarSemiring (PowerSet a) where
     star _ = one
 
-instance (Num e, Ord a, Ord e) => Dioid (ShortestPath e a)
-
--- | A path comprising a single edge of non-negative distance between two (not
--- necessarily distinct) vertices.
-edgePath :: NonNegative e -> a -> a -> ShortestPath e a
-edgePath d x y = ShortestPath (distance d) [(x, y)]
-
--- | Get the distance corresponding to a shortest path.
-getShortestDistance :: ShortestPath e a -> NonNegative e
-getShortestDistance (ShortestPath e _) = getDistance e
-
--- | Get the shortest path or @Nothing@ if there is no path of finite distance.
-getShortestPath :: ShortestPath e a -> Maybe (Path a)
-getShortestPath (ShortestPath e p)
-    | isNothing (getFinite (getDistance e)) = Nothing
-    | otherwise                             = Just p
+instance (Monoid a, Ord a) => Dioid (PowerSet a) where
 
 -- | The type of /free labels/ over the underlying set of symbols @a@. This data
 -- type is an instance of classes 'StarSemiring' and 'Dioid'.
@@ -394,3 +415,60 @@ instance StarSemiring (Label a) where
     star One      = One
     star (Star x) = star x
     star x        = Star x
+
+-- | An /optimum semiring/ obtained by combining a semiring @o@ that defines an
+-- /optimisation criterion/, and a semiring @a@ that describes the /arguments/
+-- of an optimisation problem. For example, by choosing @o = 'Distance' Int@ and
+-- and @a = 'Minimum' ('Path' String)@, we obtain the /shortest path semiring/
+-- for computing the shortest path in an @Int@-labelled graph with @String@
+-- vertices.
+--
+-- We assume that the semiring @o@ is /selective/ i.e. for all @x@ and @y@:
+--
+-- > x <+> y == x || x <+> y == y
+--
+-- In words, the operation '<+>' always simply selects one of its arguments. For
+-- example, the 'Capacity' and 'Distance' semirings are selective, whereas the
+-- the 'Count' semiring is not.
+data Optimum o a = Optimum { getOptimum :: o, getArgument :: a }
+    deriving (Eq, Ord, Show)
+
+-- This is similar to geodetic semirings.
+-- See http://vlado.fmf.uni-lj.si/vlado/papers/SemiRingSNA.pdf
+instance (Eq o, Semigroup a, Semigroup o) => Semigroup (Optimum o a) where
+    Optimum o1 a1 <> Optimum o2 a2
+        | o1 == o2  = Optimum o1 (a1 <> a2)
+        | otherwise = Optimum o a
+            where
+              o = o1 <> o2
+              a = if o == o1 then a1 else a2
+
+instance (Eq o, Monoid a, Monoid o) => Monoid (Optimum o a) where
+    mempty  = Optimum mempty mempty
+    mappend = (<>)
+
+instance (Eq o, Semiring a, Semiring o) => Semiring (Optimum o a) where
+    one = Optimum one one
+    Optimum o1 a1 <.> Optimum o2 a2 = Optimum (o1 <.> o2) (a1 <.> a2)
+
+instance (Eq o, StarSemiring a, StarSemiring o) => StarSemiring (Optimum o a) where
+    star (Optimum o a) = Optimum (star o) (star a)
+
+instance (Eq o, Dioid a, Dioid o) => Dioid (Optimum o a) where
+
+-- | A /path/ is a list of edges.
+type Path a = [(a, a)]
+
+-- | The 'Optimum' semiring specialised to /finding the lexicographically
+-- smallest shortest path/.
+type ShortestPath e a = Optimum (Distance e) (Minimum (Path a))
+
+-- | The 'Optimum' semiring specialised to /finding all shortest paths/.
+type AllShortestPaths e a = Optimum (Distance e) (PowerSet (Path a))
+
+-- | The 'Optimum' semiring specialised to /counting all shortest paths/.
+type CountShortestPaths e a = Optimum (Distance e) (Count Integer)
+
+-- | The 'Optimum' semiring specialised to /finding the lexicographically
+-- smallest widest path/.
+type WidestPath e a = Optimum (Capacity e) (Minimum (Path a))
