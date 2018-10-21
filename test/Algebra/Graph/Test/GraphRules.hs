@@ -33,3 +33,12 @@ transposeDotOverlays :: [Graph Int] -> Graph Int
 transposeDotOverlays = transpose . overlays
 
 I.inspect $ 'overlays' I.=== 'transposeDotOverlays
+
+-- transpose . vertices
+vertices' :: [Int] -> Graph Int
+vertices' = overlays . map vertex
+
+transposeDotVertices :: [Int] -> Graph Int
+transposeDotVertices = transpose . vertices
+
+I.inspect $ 'vertices' I.=== 'transposeDotVertices
