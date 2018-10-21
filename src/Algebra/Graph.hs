@@ -368,14 +368,8 @@ concatg combine = fromMaybe empty . foldr1Safe combine
 -- foldg False ((==) x)      (||)    (||)           == 'hasVertex x'
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
-foldg e v o c = go1
+foldg e v o c = go
   where
-    -- Manual unfolding of 'go'
-    go1 Empty         = e
-    go1 (Vertex  x  ) = v x
-    go1 (Overlay x y) = o (go x) (go y)
-    go1 (Connect x y) = c (go x) (go y)
-
     go Empty         = e
     go (Vertex  x  ) = v x
     go (Overlay x y) = o (go x) (go y)

@@ -24,3 +24,12 @@ transposeDotStar :: Int -> [Int] -> Graph Int
 transposeDotStar x = transpose . star x
 
 I.inspect $ 'starTranspose I.=== 'transposeDotStar
+
+-- transpose . overlays
+overlays' :: [Graph Int] -> Graph Int
+overlays' = overlays . map transpose
+
+transposeDotOverlays :: [Graph Int] -> Graph Int
+transposeDotOverlays = transpose . overlays
+
+I.inspect $ 'overlays' I.=== 'transposeDotOverlays
