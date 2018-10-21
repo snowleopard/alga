@@ -393,9 +393,9 @@ foldg e v o c = go1
   foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
 
 "foldg/overlays" forall e v o c lst .
-  foldg e v o c (overlays lst) = fromMaybe e (foldr (mf (o . foldg e v o c)) Nothing lst)
+  foldg e v o c (overlays lst) = fromMaybe e (foldr (mf o . foldg e v o c) Nothing lst)
 "foldg/connects" forall e v o c lst .
-  foldg e v o c (connects lst) = fromMaybe e (foldr (mf (c . foldg e v o c)) Nothing lst)
+  foldg e v o c (connects lst) = fromMaybe e (foldr (mf c . foldg e v o c) Nothing lst)
  #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
@@ -1114,6 +1114,8 @@ transposeFB = flip
 "buildG/induce"    [~1] forall p g.
   induce p g  = buildG (F.Fold $ \e v o c -> foldg e (induceFB e v p) o c g)
 
+--"buildG/transpose" [~1] forall g.
+--  foldg Empty Vertex Overlay (transposeFB Connect) g = buildG (F.Fold $ \e v o c -> foldg e v o (flip c) g)
  #-}
 
 -- Rules to merge rewrited functions
