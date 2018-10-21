@@ -20,49 +20,51 @@ module Algebra.Graph.Label (
     Semiring (..), zero, (<+>), StarSemiring (..), Dioid,
 
     -- * Data types for edge labels
-    NonNegative, finite, finiteWord, unsafeFinite, infinite, getFinite, Count,
-    count, getCount, Distance, distance, getDistance, Capacity, capacity,
-    getCapacity, Label (..), RegularExpression
+    NonNegative, finite, finiteWord, unsafeFinite, infinite, getFinite,
+    Capacity, capacity, getCapacity, Count, count, getCount, Distance, distance,
+    getDistance, Power (..), ShortestPath, Path, edgePath, getShortestDistance,
+    getShortestPath, Label, isZero, RegularExpression
     ) where
 
 import Prelude ()
 import Prelude.Compat
 
 import Control.Applicative (liftA2)
+import Data.Maybe
 import Data.Monoid (Any (..), Monoid (..), Sum (..))
 import Data.Semigroup (Min (..), Max (..), Semigroup (..))
+import Data.Set (Set)
 import GHC.Exts (IsList (..))
 
-{-| A /semiring/ extends a commutative 'Monoid' with an additional operation
-'<.>' that acts similarly to multiplication over the underlying (additive)
-monoid and has 'one' as the identity. Instances of this type class must satisfy
-the following semiring laws:
+import Algebra.Graph.Internal
 
-    * Commutativity:
+import qualified Data.Set as Set
+
+{-| A /semiring/ extends a commutative 'Monoid' with operation '<.>' that acts
+similarly to multiplication over the underlying (additive) monoid and has 'one'
+as the identity. This module also provides two convenient aliases: 'zero' for
+'mempty', and '<+>' for '<>', which makes the interface more uniform.
+
+Instances of this type class must satisfy the following semiring laws:
+
+    * Associativity of '<+>' and '<.>':
+
+        > x <+> (y <+> z) == (x <+> y) <+> z
+        > x <.> (y <.> z) == (x <.> y) <.> z
+
+    * Identities of '<+>' and '<.>':
+
+        > zero <+> x == x == x <+> zero
+        >  one <.> x == x == x <.> one
+
+    * Commutativity of '<+>':
 
         > x <+> y == y <+> x
 
-    * Associativity:
-
-        > x <+> (y <+> z) == (x <+> y) <+> z
-
-    * Identity:
-
-        > x <+> 'zero' == x
-
-    * Associativity:
-
-        > x <.> (y <.> z) == (x <.> y) <.> z
-
-    * Identity:
-
-        > x <.> 'one' == x
-        > 'one' <.> x == x
-
     * Annihilating 'zero':
 
-        > x <.> 'zero' == 'zero'
-        > 'zero' <.> x == 'zero'
+        > x <.> zero == zero
+        > zero <.> x == zero
 
     * Distributivity:
 
@@ -76,20 +78,16 @@ class (Monoid a, Semigroup a) => Semiring a where
 {-| A /star semiring/ is a 'Semiring' with an additional unary operator 'star'
 satisfying the following two laws:
 
-    * Star:
-
-        > star a = one <+> a <.> star a
-        > star a = one <+> star a <.> a
+    > star a = one <+> a <.> star a
+    > star a = one <+> star a <.> a
 -}
 class Semiring a => StarSemiring a where
     star :: a -> a
 
-{-| A /dioid/ is an /idempotent semiring/, i.e. it satisfies the following law
-in addition to the 'Semiring' laws:
+{-| A /dioid/ is an /idempotent semiring/, i.e. it satisfies the following
+/idempotence/ law in addition to the 'Semiring' laws:
 
-    * Idempotence:
-
-        > x <+> x == x
+    > x <+> x == x
 -}
 class Semiring a => Dioid a
 
@@ -158,8 +156,8 @@ finite x | x < 0      = Nothing
 finiteWord :: Word -> NonNegative Word
 finiteWord = unsafeFinite
 
--- | Create a non-negative finite value /unsafely/: the argument is not checked
--- for being non-negative.
+-- | A non-negative finite value, created /unsafely/: the argument is not
+-- checked for being non-negative, so @unsafeFinite (-1)@ compiles just fine.
 unsafeFinite :: a -> NonNegative a
 unsafeFinite = NonNegative . Just
 
@@ -171,42 +169,15 @@ infinite = NonNegative Nothing
 getFinite :: NonNegative a -> Maybe a
 getFinite (NonNegative x) = x
 
--- | A /distance/ is a non-negative value that can be 'finite' or 'infinite'.
--- Distances form a 'Dioid' as follows:
--- * 'zero' = 'distance' 'infinite'
--- * '<+>'  = 'min'
--- * 'one'  = 'distance' 0
--- * '<.>'  = '+'
-newtype Distance a = Distance (Min (NonNegative a))
-    deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup)
-
-instance Show a => Show (Distance a) where
-    show (Distance (Min (NonNegative (Just x)))) = show x
-    show _                                       = "distance infinite"
-
-instance (Num a, Ord a) => Semiring (Distance a) where
-    one   = 0
-    (<.>) = (+)
-
-instance (Num a, Ord a) => StarSemiring (Distance a) where
-    star _ = one
-
-instance (Num a, Ord a) => Dioid (Distance a)
-
--- | A non-negative distance.
-distance :: NonNegative a -> Distance a
-distance = Distance . Min
-
--- | Get the value of a distance.
-getDistance :: Distance a -> NonNegative a
-getDistance (Distance (Min x)) = x
-
 -- | A /capacity/ is a non-negative value that can be 'finite' or 'infinite'.
 -- Capacities form a 'Dioid' as follows:
--- * 'zero' = 'capacity' 0
--- * '<+>'  = 'max'
--- * 'one'  = 'capacity' 'infinite'
--- * '<.>'  = 'min'
+--
+-- @
+-- 'zero'  = 0
+-- 'one'   = 'capacity' 'infinite'
+-- ('<+>') = 'max'
+-- ('<.>') = 'min'
+-- @
 newtype Capacity a = Capacity (Max (NonNegative a))
     deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup)
 
@@ -233,10 +204,13 @@ getCapacity (Capacity (Max x)) = x
 
 -- | A /count/ is a non-negative value that can be 'finite' or 'infinite'.
 -- Counts form a 'Semiring' as follows:
--- * 'zero' = 'count' 0
--- * '<+>'  = '+'
--- * 'one'  = 'count' 1
--- * '<.>'  = '*'
+--
+-- @
+-- 'zero'  = 0
+-- 'one'   = 1
+-- ('<+>') = ('+')
+-- ('<.>') = ('*')
+-- @
 newtype Count a = Count (Sum (NonNegative a))
     deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup)
 
@@ -260,24 +234,78 @@ count = Count . Sum
 getCount :: Count a -> NonNegative a
 getCount (Count (Sum x)) = x
 
+-- | A /distance/ is a non-negative value that can be 'finite' or 'infinite'.
+-- Distances form a 'Dioid' as follows:
+--
+-- @
+-- 'zero'  = 'distance' 'infinite'
+-- 'one'   = 0
+-- ('<+>') = 'min'
+-- ('<.>') = ('+')
+-- @
+newtype Distance a = Distance (Min (NonNegative a))
+    deriving (Bounded, Eq, Monoid, Num, Ord, Semigroup)
+
+instance Show a => Show (Distance a) where
+    show (Distance (Min (NonNegative (Just x)))) = show x
+    show _                                       = "distance infinite"
+
+instance (Num a, Ord a) => Semiring (Distance a) where
+    one   = 0
+    (<.>) = (+)
+
+instance (Num a, Ord a) => StarSemiring (Distance a) where
+    star _ = one
+
+instance (Num a, Ord a) => Dioid (Distance a)
+
+-- | A non-negative distance.
+distance :: NonNegative a -> Distance a
+distance = Distance . Min
+
+-- | Get the value of a distance.
+getDistance :: Distance a -> NonNegative a
+getDistance (Distance (Min x)) = x
+
+-- | The /power set/ over the underlying set of elements @a@. If @a@ is a
+-- monoid, then the power set forms a 'Dioid' as follows:
+--
+-- @
+-- 'zero'  = Set.'Set.empty'
+-- 'one'   = Set.'Set.singleton' 'mempty'
+-- ('<+>') = Set.'Set.union'
+-- ('<.>') = 'setProductWith' ('<>')
+-- @
+newtype Power a = Power { getSet :: Set a }
+    deriving (Eq, Monoid, Ord, Semigroup, Show)
+
+instance (Monoid a, Ord a) => Semiring (Set a) where
+    one   = Set.singleton mempty
+    (<.>) = setProductWith (<>)
+
+instance (Monoid a, Ord a) => Dioid (Set a) where
+
 -- | A /path/ is a list of edges.
 type Path a = [(a, a)]
 
--- | A /shortest path/ is a shortest 'Distance' and a corresponding 'Path'.
--- * 'zero' = 'ShortestPath' zero []
--- * 'one'  = 'ShortestPath' one []
+-- | A /shortest path/ encapsulating a shortest 'Distance' and the corresponding
+-- 'Path'. This is an abstract datatype, whose semiring instance has the
+-- following meaning:
+--
+-- * 'zero' is the /empty path/ of zero distance.
+-- * 'one'  is the lack of any path, or a path of infinite distance.
 -- * '<+>' picks the shortest of the two paths, or the lexicographically smaller
 --   one in case of a tie.
--- * '<.>' adds distances and concatenates paths.
+-- * '<.>' concatenates two paths, adding their distances.
 data ShortestPath e a = ShortestPath (Distance e) (Path a)
 
 instance (Ord a, Ord e) => Semigroup (ShortestPath e a) where
     ShortestPath d1 p1 <> ShortestPath d2 p2
-        | d1 < d2 || (d1 == d2 && p1 < p2) = ShortestPath d1 p1
-        | otherwise                        = ShortestPath d2 p2
+        | d1 < d2 || d1 == d2 && p1 < p2 = ShortestPath d1 p1
+        | otherwise                      = ShortestPath d2 p2
 
 instance (Num e, Ord a, Ord e) => Monoid (ShortestPath e a) where
-    mempty  = ShortestPath mempty []
+    mempty  = ShortestPath zero []
     mappend = (<>)
 
 instance (Num e, Ord a, Ord e) => Semiring (ShortestPath e a) where
@@ -290,6 +318,21 @@ instance (Num e, Ord a, Ord e) => StarSemiring (ShortestPath e a) where
 
 instance (Num e, Ord a, Ord e) => Dioid (ShortestPath e a)
 
+-- | A path comprising a single edge of non-negative distance between two (not
+-- necessarily distinct) vertices.
+edgePath :: NonNegative e -> a -> a -> ShortestPath e a
+edgePath d x y = ShortestPath (distance d) [(x, y)]
+
+-- | Get the distance corresponding to a shortest path.
+getShortestDistance :: ShortestPath e a -> NonNegative e
+getShortestDistance (ShortestPath e _) = getDistance e
+
+-- | Get the shortest path or @Nothing@ if there is no path of finite distance.
+getShortestPath :: ShortestPath e a -> Maybe (Path a)
+getShortestPath (ShortestPath e p)
+    | isNothing (getFinite (getDistance e)) = Nothing
+    | otherwise                             = Just p
+
 -- | The type of /free labels/ over the underlying set of symbols @a@. This data
 -- type is an instance of classes 'StarSemiring' and 'Dioid'.
 data Label a = Zero
@@ -298,7 +341,12 @@ data Label a = Zero
              | Label a :+: Label a
              | Label a :*: Label a
              | Star (Label a)
-             deriving (Eq, Functor, Ord)
+             deriving Functor
+
+-- | Check if a 'Label' is 'zero'.
+isZero :: Label a -> Bool
+isZero Zero = True
+isZero _    = False
 
 -- | A type synonym for /regular expressions/, built on top of /free labels/.
 type RegularExpression a = Label a

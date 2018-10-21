@@ -19,6 +19,7 @@ module Algebra.Graph.Labelled.Example.Automaton where
 import Data.Map (Map)
 import qualified Data.Map as Map
 
+import Algebra.Graph.Label
 import Algebra.Graph.Labelled
 import Algebra.Graph.ToGraph
 
@@ -75,4 +76,6 @@ coffeeTeaAutomaton = overlays [ Choice  -<[Coffee, Tea]>- Payment
 --                             , ('Complete', ['Complete'                   ]) ]
 -- @
 reachability :: Map State [State]
-reachability = Map.fromList $ map (\s -> (s, reachable s coffeeTeaAutomaton)) [Choice ..]
+reachability = Map.fromList $ map (\s -> (s, reachable s skeleton)) [Choice ..]
+  where
+    skeleton = emap (not . isZero) coffeeTeaAutomaton

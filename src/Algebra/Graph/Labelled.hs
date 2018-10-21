@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, FlexibleInstances #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled
@@ -20,7 +20,7 @@ module Algebra.Graph.Labelled (
     (-<), (>-),
 
     -- * Operations
-    edgeLabel, toAdjacencyMap,
+    edgeLabel, emap,
 
     -- * Types of edge-labelled graphs
     UnlabelledGraph, Automaton, Network
@@ -49,6 +49,7 @@ data Graph e a = Empty
 instance (Ord a, Eq e, Semigroup e) => Eq (Graph e a) where
     x == y = toAdjacencyMap x == toAdjacencyMap y
 
+-- | Extract the adjacency map of a graph.
 toAdjacencyMap :: (Ord a, Semigroup e) => Graph e a -> AM.AdjacencyMap e a
 toAdjacencyMap = foldg AM.empty AM.vertex AM.connect
 
@@ -59,9 +60,9 @@ instance Dioid e => C.Graph (Graph e a) where
     overlay = overlay
     connect = connect one
 
-instance (Eq e, Monoid e) => U.ToGraph (Graph e a) where
-    type ToVertex (Graph e a) = a
-    foldg e v o c = foldg e v (\x -> if x == zero then o else c)
+instance U.ToGraph (Graph Bool a) where
+    type ToVertex (Graph Bool a) = a
+    foldg e v o c = foldg e v (\x -> if x then c else o)
 
 foldg :: b -> (a -> b) -> (e -> b -> b -> b) -> Graph e a -> b
 foldg e v c = go
@@ -140,6 +141,11 @@ edgeLabel s t g = let (res, _, _) = foldg e v c g in res
     v x                                       = (zero               , x == s  , x == t  )
     c l (l1, s1, t1) (l2, s2, t2) | s1 && t2  = (mconcat [l1, l, l2], s1 || s2, t1 || t2)
                                   | otherwise = (mconcat [l1,    l2], s1 || s2, t1 || t2)
+
+-- | Transform a graph by applying a function to each of its edge labels.
+-- Complexity: /O((n + m) * log(n))/ time.
+emap :: (e -> f) -> Graph e a -> Graph f a
+emap f = foldg Empty Vertex (Connect . f)
 
 -- | A type synonym for /unlabelled graphs/.
 type UnlabelledGraph a = Graph Any a
