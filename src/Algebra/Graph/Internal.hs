@@ -16,13 +16,15 @@
 -- is unstable and unsafe, and is exposed only for documentation.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Internal (
-    -- * General data structures
+    -- * Data structures
     List (..),
 
-    -- * Data structures for graph traversal
+    -- * Graph traversal
     Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, Hit (..),
+    foldr1Safe,
 
-    foldr1Safe
+    -- * Utilities
+    setProduct, setProductWith
   ) where
 
 import Prelude ()
@@ -30,7 +32,9 @@ import Prelude.Compat
 
 import Data.Foldable
 import Data.Semigroup
+import Data.Set (Set)
 
+import qualified Data.Set as Set
 import qualified GHC.Exts as Exts
 
 -- | An abstract list data type with /O(1)/ time concatenation (the current
@@ -110,7 +114,7 @@ connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
 -- its 'Tail', i.e. the source vertex, the whole 'Edge', or 'Miss' it entirely.
 data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
--- | A safe version of 'foldr1'
+-- | A safe version of 'foldr1'.
 foldr1Safe :: (a -> a -> a) -> [a] -> Maybe a
 foldr1Safe f = foldr mf Nothing
   where
@@ -118,3 +122,16 @@ foldr1Safe f = foldr mf Nothing
                         Nothing -> x
                         Just y  -> f x y)
 {-# INLINE foldr1Safe #-}
+
+-- | Compute the Cartesian product of two sets.
+setProduct :: Set a -> Set b -> Set (a, b)
+#if MIN_VERSION_containers(0,5,11)
+setProduct = Set.cartesianProduct
+#else
+setProduct x y = Set.fromDistinctAscList [ (a, b) | a <- Set.toAscList x, b <- Set.toAscList y ]
+#endif
+
+-- | Compute the Cartesian product of two sets, applying a function to each
+-- resulting pair.
+setProductWith :: Ord c => (a -> b -> c) -> Set a -> Set b -> Set c
+setProductWith f x y = Set.fromList [ f a b | a <- Set.toAscList x, b <- Set.toAscList y ]
