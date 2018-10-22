@@ -1124,6 +1124,6 @@ transposeFB = flip
 
 -- Rules to rewrite un-merged function back
 {-# RULES
---"graph/mapg"      [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect         = mapG f
---"graph/induce"    [1] forall f. foldg Empty (induceFB Empty Vertex f) Overlay Connect = induce f
+"graph/mapg"      [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect         = mapG f
+"graph/induce"    [1] forall e v f. foldg Empty (induceFB e v f) Overlay Connect = induce f
  #-}
