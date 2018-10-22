@@ -1108,8 +1108,8 @@ transposeFB = flip
 "buildG/induce"    [~1] forall p g.
   induce p g  = buildG (F.Fold $ \e v o c -> foldg e (induceFB e v p) o c g)
 
---"buildG/transpose" [~1] forall g.
---  foldg Empty Vertex Overlay (transposeFB Connect) g = buildG (F.Fold $ \e v o c -> foldg e v o (flip c) g)
+"buildG/transpose" [~1] forall g.
+  foldg Empty Vertex Overlay (transposeFB Connect) g = buildG (F.Fold $ \e v o c -> foldg e v o (flip c) g)
  #-}
 
 -- Rules to merge rewrited functions
