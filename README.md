@@ -54,6 +54,18 @@ and allow the application of equational reasoning for proving the correctness of
 To represent *non-empty graphs*, we can drop the `Empty` constructor -- see module
 [Algebra.Graph.NonEmpty](http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-NonEmpty.html).
 
+To represent *edge-labelled graphs*, we can switch to the following data type, as
+explained in my [Haskell eXchange 2018 talk](https://skillsmatter.com/skillscasts/12361-labelled-algebraic-graphs):
+
+```haskell
+data Graph e a = Empty
+               | Vertex a
+               | Connect e (Graph e a) (Graph e a)
+```
+
+Here `e` is the type of edge labels. If `e` is a monoid `(<+>, zero)` then graph overlay can be recovered
+as `Connect zero`, and `<+>` corresponds to *parallel composition* of edge labels.
+
 ## How fast is the library?
 
 Alga can handle graphs comprising millions of vertices and billions of edges in a matter of seconds, which is fast

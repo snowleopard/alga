@@ -26,7 +26,6 @@ import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.AdjacencyIntMap.Internal
 import Algebra.Graph.Export
 import Algebra.Graph.Fold (Fold)
-import Algebra.Graph.Label
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived
 
@@ -90,7 +89,7 @@ arbitraryAdjacencyMap = AdjacencyMap.stars <$> arbitrary
 
 -- | Generate an arbitrary 'LabelledAdjacencyMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
-arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Eq e, Arbitrary e, Semilattice e) => Gen (Labelled.AdjacencyMap e a)
+arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Gen (Labelled.AdjacencyMap e a)
 arbitraryLabelledAdjacencyMap = Labelled.fromAdjacencyMaps <$> arbitrary
 
 -- | Generate an arbitrary 'AdjacencyIntMap'. It is guaranteed that the
@@ -117,7 +116,7 @@ instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
 instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
     arbitrary = arbitraryAdjacencyMap
 
-instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Semilattice e) => Arbitrary (Labelled.AdjacencyMap e a) where
+instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Arbitrary (Labelled.AdjacencyMap e a) where
     arbitrary = arbitraryLabelledAdjacencyMap
 
 instance Arbitrary AdjacencyIntMap where

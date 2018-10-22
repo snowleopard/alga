@@ -31,7 +31,10 @@ module Algebra.Graph.Labelled.AdjacencyMap (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
-    emap, induce
+    emap, induce,
+
+    -- * Graph closure
+    closure, reflexiveClosure, symmetricClosure
   ) where
 
 import Prelude ()
@@ -39,43 +42,41 @@ import Prelude.Compat
 
 import Data.Foldable (foldMap)
 import Data.Maybe
-import Data.Monoid
 import Data.Map (Map)
+import Data.Monoid (Monoid, Sum (..))
+import Data.Semigroup (Semigroup)
 import Data.Set (Set)
 
 import Algebra.Graph.Label
 import Algebra.Graph.Labelled.AdjacencyMap.Internal
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set        as Set
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
-edge :: (Ord a, Eq e, Semilattice e) => e -> a -> a -> AdjacencyMap e a
+edge :: (Eq e, Monoid e, Ord a) => e -> a -> a -> AdjacencyMap e a
 edge e x y | e == zero = vertices [x, y]
            | x == y    = AM $ Map.singleton x (Map.singleton x e)
            | otherwise = AM $ Map.fromList [(x, Map.singleton y e), (y, Map.empty)]
 
 -- | The left-hand part of a convenient ternary-ish operator @x -\<e\>- y@ for
--- connecting graphs with labelled edges. For example:
+-- creating labelled edges. For example:
 --
 -- @
--- x = 'vertex' "x"
--- y = 'vertex' "y"
 -- z = x -\<2\>- y
 -- @
-(-<) :: AdjacencyMap e a -> e -> (AdjacencyMap e a, e)
+(-<) :: a -> e -> (a, e)
 g -< e = (g, e)
 
 -- | The right-hand part of a convenient ternary-ish operator @x -\<e\>- y@ for
--- connecting graphs with labelled edges. For example:
+-- creating labelled edges. For example:
 --
 -- @
--- x = 'vertex' "x"
--- y = 'vertex' "y"
 -- z = x -\<2\>- y
 -- @
-(>-) :: (Ord a, Dioid e) => (AdjacencyMap e a, e) -> AdjacencyMap e a -> AdjacencyMap e a
-(g, e) >- h = connect e g h
+(>-) :: (Eq e, Monoid e, Ord a) => (a, e) -> a -> AdjacencyMap e a
+(x, e) >- y = edge e x y
 
 infixl 5 -<
 infixl 5 >-
@@ -88,7 +89,7 @@ vertices = AM . Map.fromList . map (, Map.empty)
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
-edges :: (Ord a, Eq e, Semilattice e) => [(e, a, a)] -> AdjacencyMap e a
+edges :: (Eq e, Monoid e, Ord a) => [(e, a, a)] -> AdjacencyMap e a
 edges = fromAdjacencyMaps . concatMap fromEdge
   where
     fromEdge (e, x, y) | e == zero = [(x, Map.empty), (y, Map.empty)]
@@ -96,13 +97,13 @@ edges = fromAdjacencyMaps . concatMap fromEdge
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
-overlays :: (Ord a, Semilattice e) => [AdjacencyMap e a] -> AdjacencyMap e a
-overlays = AM . Map.unionsWith (Map.unionWith (\/)) . map adjacencyMap
+overlays :: (Ord a, Semigroup e) => [AdjacencyMap e a] -> AdjacencyMap e a
+overlays = AM . Map.unionsWith (Map.unionWith (<+>)) . map adjacencyMap
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second. Complexity: /O((n + m) * log(n))/
 -- time.
-isSubgraphOf :: (Ord a, Eq e) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
+isSubgraphOf :: (Eq e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
 isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy Map.isSubmapOf x y
 
 -- | Check if a graph is empty.
@@ -121,8 +122,36 @@ hasEdge :: Ord a => a -> a -> AdjacencyMap e a -> Bool
 hasEdge x y (AM m) = fromMaybe False (Map.member y <$> Map.lookup x m)
 
 -- | Extract the label of a specified edge from a graph.
-edgeLabel :: (Ord a, Semilattice e) => a -> a -> AdjacencyMap e a -> e
+edgeLabel :: (Monoid e, Ord a) => a -> a -> AdjacencyMap e a -> e
 edgeLabel x y (AM m) = fromMaybe zero (Map.lookup x m >>= Map.lookup y)
+
+-- TODO: Optimise.
+-- | Compute the /closure/ of a graph over the underlying star semiring using
+-- the Warshall-Floyd-Kleene algorithm.
+closure :: (Eq e, Ord a, StarSemiring e) => AdjacencyMap e a -> AdjacencyMap e a
+closure (AM m) = reflexiveClosure $ AM $ foldr update m vs
+  where
+    vs = Set.toAscList (Map.keysSet m)
+    update k cur = Map.fromAscList [ (i, go i (get i k <.> starkk)) | i <- vs ]
+      where
+        get i j = edgeLabel i j (AM cur)
+        starkk  = star (get k k)
+        go i ik = Map.fromAscList
+            [ (j, e) | j <- vs, let e = get i j <+> ik <.> get k j, e /= zero ]
+
+-- TODO: Optimise.
+-- | Compute the /reflexive closure/ of a graph over the underlying semiring by
+-- adding a self-loop of weight 'one' to every vertex.
+reflexiveClosure :: (Ord a, Semiring e) => AdjacencyMap e a -> AdjacencyMap e a
+reflexiveClosure (AM m) = AM $ foldr (\v -> Map.adjust (loop v) v) m (Map.keysSet m)
+  where
+    loop x = Map.insertWith (<+>) x one
+
+-- TODO: Optimise.
+-- | Compute the /symmetric closure/ of a graph by overlaying it with its own
+-- transpose.
+symmetricClosure :: (Ord a, Semiring e) => AdjacencyMap e a -> AdjacencyMap e a
+symmetricClosure m = overlay m (transpose m)
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
@@ -175,21 +204,21 @@ removeEdge x y = AM . Map.adjust (Map.delete y) x . adjacencyMap
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O((n + m) * log(n))/ time.
-replaceVertex :: (Ord a, Semilattice e) => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
+replaceVertex :: (Ord a, Semigroup e) => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
 replaceVertex u v = gmap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
 -- /O(1)/ to be evaluated.
-mergeVertices :: (Ord a, Semilattice e) => (a -> Bool) -> a -> AdjacencyMap e a -> AdjacencyMap e a
+mergeVertices :: (Ord a, Semigroup e) => (a -> Bool) -> a -> AdjacencyMap e a -> AdjacencyMap e a
 mergeVertices p v = gmap $ \u -> if p u then v else u
 
 -- | Transpose a given graph.
 -- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
-transpose :: (Ord a, Semilattice e) => AdjacencyMap e a -> AdjacencyMap e a
+transpose :: (Ord a, Semigroup e) => AdjacencyMap e a -> AdjacencyMap e a
 transpose (AM m) = AM $ Map.foldrWithKey combine vs m
   where
-    combine v es = Map.unionWith (Map.unionWith (\/)) $
+    combine v es = Map.unionWith (Map.unionWith (<+>)) $
         Map.fromAscList [ (u, Map.singleton v e) | (u, e) <- Map.toAscList es ]
     vs = Map.fromSet (const Map.empty) (Map.keysSet m)
 
@@ -197,9 +226,9 @@ transpose (AM m) = AM $ Map.foldrWithKey combine vs m
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
 -- 'AdjacencyMap'.
 -- Complexity: /O((n + m) * log(n))/ time.
-gmap :: (Ord a, Ord b, Semilattice e) => (a -> b) -> AdjacencyMap e a -> AdjacencyMap e b
-gmap f = AM . Map.map (Map.mapKeysWith (\/) f) .
-    Map.mapKeysWith (Map.unionWith (\/)) f . adjacencyMap
+gmap :: (Ord a, Ord b, Semigroup e) => (a -> b) -> AdjacencyMap e a -> AdjacencyMap e b
+gmap f = AM . Map.map (Map.mapKeysWith (<+>) f) .
+    Map.mapKeysWith (Map.unionWith (<+>)) f . adjacencyMap
 
 -- | Transform a graph by applying a function to each of its edge labels.
 -- Complexity: /O((n + m) * log(n))/ time.
