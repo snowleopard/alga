@@ -337,10 +337,10 @@ instance IsList a => IsList (Minimum a) where
 -- monoid, then the power set forms a 'Dioid' as follows:
 --
 -- @
--- 'zero'  = Set.'Set.empty'
--- 'one'   = Set.'Set.singleton' 'mempty'
--- ('<+>') = Set.'Set.union'
--- ('<.>') = 'setProductWith' 'mappend'
+-- 'zero'    = PowerSet Set.'Set.empty'
+-- 'one'     = PowerSet $ Set.'Set.singleton' 'mempty'
+-- x '<+>' y = PowerSet $ Set.'Set.union' (getPowerSet x) (getPowerSet y)
+-- x '<.>' y = PowerSet $ 'setProductWith' 'mappend' (getPowerSet x) (getPowerSet y)
 -- @
 newtype PowerSet a = PowerSet { getPowerSet :: Set a }
     deriving (Eq, Monoid, Ord, Semigroup)
@@ -364,13 +364,8 @@ data Label a = Zero
              | Star (Label a)
              deriving Functor
 
--- | Check if a 'Label' is 'zero'.
-isZero :: Label a -> Bool
-isZero Zero = True
-isZero _    = False
-
--- | A type synonym for /regular expressions/, built on top of /free labels/.
-type RegularExpression a = Label a
+infixl 6 :+:
+infixl 7 :*:
 
 instance IsList (Label a) where
     type Item (Label a) = a
@@ -385,9 +380,6 @@ instance Show a => Show (Label a) where
         x :+: y  -> showParen (p >= 6) $ showsPrec 6 x . (" | " ++) . showsPrec 6 y
         x :*: y  -> showParen (p >= 7) $ showsPrec 7 x . (" ; " ++) . showsPrec 7 y
         Star x   -> showParen (p >= 8) $ showsPrec 8 x . ("*"   ++)
-
-infixl 6 :+:
-infixl 7 :*:
 
 instance Semigroup (Label a) where
     Zero   <> x      = x
@@ -415,6 +407,14 @@ instance StarSemiring (Label a) where
     star One      = One
     star (Star x) = star x
     star x        = Star x
+
+-- | Check if a 'Label' is 'zero'.
+isZero :: Label a -> Bool
+isZero Zero = True
+isZero _    = False
+
+-- | A type synonym for /regular expressions/, built on top of /free labels/.
+type RegularExpression a = Label a
 
 -- | An /optimum semiring/ obtained by combining a semiring @o@ that defines an
 -- /optimisation criterion/, and a semiring @a@ that describes the /arguments/
