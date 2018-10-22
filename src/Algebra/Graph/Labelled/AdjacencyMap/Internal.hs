@@ -16,8 +16,13 @@ module Algebra.Graph.Labelled.AdjacencyMap.Internal (
     consistent
     ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Control.DeepSeq
 import Data.Map.Strict (Map)
+import Data.Monoid (Monoid)
+import Data.Semigroup (Semigroup)
 import Data.Set (Set, (\\))
 
 import qualified Data.Map.Strict as Map
@@ -61,8 +66,8 @@ vertex x = AM $ Map.singleton x Map.empty
 -- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
-overlay :: (Ord a, Semilattice e) => AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
-overlay (AM x) (AM y) = AM $ Map.unionWith (Map.unionWith (\/)) x y
+overlay :: (Ord a, Semigroup e) => AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
+overlay (AM x) (AM y) = AM $ Map.unionWith (Map.unionWith (<+>)) x y
 
 -- | /Connect/ two graphs with edges labelled by a given label. When applied to
 -- the same labels, this is an associative operation with the identity 'empty',
@@ -70,8 +75,8 @@ overlay (AM x) (AM y) = AM $ Map.unionWith (Map.unionWith (\/)) x y
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
 -- number of edges in the resulting graph is quadratic with respect to the
 -- number of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
-connect :: (Ord a, Semilattice e) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
-connect e (AM x) (AM y) = AM $ Map.unionsWith (Map.unionWith (\/))
+connect :: (Ord a, Semigroup e) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
+connect e (AM x) (AM y) = AM $ Map.unionsWith (Map.unionWith (<+>))
     [ x, y, Map.fromSet (const targets) (Map.keysSet x) ]
   where
     targets = Map.fromSet (const e) (Map.keysSet y)
@@ -86,18 +91,18 @@ instance (Ord a, Num a, Dioid e) => Num (AdjacencyMap e a) where
 
 -- | Construct a graph from a list of adjacency sets.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
-fromAdjacencyMaps :: (Ord a, Eq e, Semilattice e) => [(a, Map a e)] -> AdjacencyMap e a
-fromAdjacencyMaps ss = AM $ Map.unionWith (Map.unionWith (\/)) vs es
+fromAdjacencyMaps :: (Ord a, Eq e, Monoid e) => [(a, Map a e)] -> AdjacencyMap e a
+fromAdjacencyMaps ss = AM $ Map.unionWith (Map.unionWith mappend) vs es
   where
     vs = Map.fromSet (const Map.empty) . Set.unions $ map (Map.keysSet . snd) ss
-    es = Map.fromListWith (Map.unionWith (\/)) $ map (fmap $ Map.filter (/= zero)) ss
+    es = Map.fromListWith (Map.unionWith mappend) $ map (fmap $ Map.filter (/= zero)) ss
 
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices, and there are no 'zero'-labelled edges. It
 -- should be impossible to create an inconsistent adjacency map, and we use this
 -- function in testing.
 -- /Note: this function is for internal use only/.
-consistent :: (Ord a, Eq e, Semilattice e) => AdjacencyMap e a -> Bool
+consistent :: (Ord a, Eq e, Monoid e) => AdjacencyMap e a -> Bool
 consistent (AM m) = referredToVertexSet m `Set.isSubsetOf` Map.keysSet m
     && and [ e /= zero | (_, es) <- Map.toAscList m, (_, e) <- Map.toAscList es ]
 

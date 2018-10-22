@@ -19,6 +19,7 @@ module Algebra.Graph.Labelled.Example.Automaton where
 import Data.Map (Map)
 import qualified Data.Map as Map
 
+import Algebra.Graph.Label
 import Algebra.Graph.Labelled
 import Algebra.Graph.ToGraph
 
@@ -50,16 +51,16 @@ data State = Choice   -- ^ Choosing what to order
 -- | An example automaton for ordering coffee or tea.
 --
 -- @
--- order = 'edges' [ ('Choice' , ['Coffee', 'Tea'], 'Payment' )
---               , ('Choice' , ['Cancel'     ], 'Complete')
---               , ('Payment', ['Cancel'     ], 'Choice'  )
---               , ('Payment', ['Pay'        ], 'Complete') ]
+-- order = 'overlays' [ 'Choice'  '-<'['Coffee', 'Tea']'>-' 'Payment'
+--                  , 'Choice'  '-<'['Cancel'     ]'>-' 'Complete'
+--                  , 'Payment' '-<'['Cancel'     ]'>-' 'Choice'
+--                  , 'Payment' '-<'['Pay'        ]'>-' 'Complete' ]
 -- @
-order :: Automaton Alphabet State
-order = edges [ (Choice , [Coffee, Tea], Payment )
-              , (Choice , [Cancel     ], Complete)
-              , (Payment, [Cancel     ], Choice  )
-              , (Payment, [Pay        ], Complete) ]
+coffeeTeaAutomaton :: Automaton Alphabet State
+coffeeTeaAutomaton = overlays [ Choice  -<[Coffee, Tea]>- Payment
+                              , Payment -<[Pay        ]>- Complete
+                              , Choice  -<[Cancel     ]>- Complete
+                              , Payment -<[Cancel     ]>- Choice ]
 
 -- | The map of 'State' reachability.
 --
@@ -75,4 +76,6 @@ order = edges [ (Choice , [Coffee, Tea], Payment )
 --                             , ('Complete', ['Complete'                   ]) ]
 -- @
 reachability :: Map State [State]
-reachability = Map.fromList $ map (\s -> (s, reachable s order)) [Choice ..]
+reachability = Map.fromList $ map (\s -> (s, reachable s skeleton)) [Choice ..]
+  where
+    skeleton = emap (not . isZero) coffeeTeaAutomaton

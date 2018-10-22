@@ -11,13 +11,15 @@
 module Algebra.Graph.Test.Labelled.AdjacencyMap (
     -- * Testsuite
     testLabelledAdjacencyMap
-  ) where
+    ) where
+
+import Data.Monoid
 
 import Algebra.Graph.Labelled.AdjacencyMap
 import Algebra.Graph.Labelled.AdjacencyMap.Internal
 import Algebra.Graph.Test
 
-type LAI = AdjacencyMap Bool Int
+type LAI = AdjacencyMap Any Int
 
 testLabelledAdjacencyMap :: IO ()
 testLabelledAdjacencyMap = do

@@ -15,13 +15,15 @@ module Algebra.Graph.Relation.Internal (
     -- * Binary relation implementation
     Relation (..), empty, vertex, overlay, connect, setProduct, consistent,
     referredToVertexSet
-  ) where
+    ) where
 
+import Control.DeepSeq (NFData, rnf)
 import Data.Set (Set, union)
+
+import Algebra.Graph.Internal
 
 import qualified Data.Set as Set
 
-import Control.DeepSeq (NFData, rnf)
 
 {-| The 'Relation' data type represents a graph as a /binary relation/. We
 define a 'Num' instance as a convenient notation for working with graphs:
@@ -169,14 +171,6 @@ connect x y = Relation (domain x `union` domain y)
 
 instance NFData a => NFData (Relation a) where
     rnf (Relation d r) = rnf d `seq` rnf r `seq` ()
-
--- | Compute the Cartesian product of two sets. /Note: this function is for internal use only/.
-setProduct :: Set a -> Set b -> Set (a, b)
-#if MIN_VERSION_containers(0,5,11)
-setProduct = Set.cartesianProduct
-#else
-setProduct x y = Set.fromDistinctAscList [ (a, b) | a <- Set.toAscList x, b <- Set.toAscList y ]
-#endif
 
 instance (Ord a, Num a) => Num (Relation a) where
     fromInteger = vertex . fromInteger

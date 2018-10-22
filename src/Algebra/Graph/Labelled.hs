@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, FlexibleInstances #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled
@@ -16,11 +16,11 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled (
     -- * Algebraic data type for edge-labeleld graphs
-    Graph (..), empty, vertex, edge, overlay, connect, connectBy, edges,
-    overlays, (-<), (>-),
+    Graph (..), empty, vertex, edge, overlay, connect, edges, overlays,
+    (-<), (>-),
 
     -- * Operations
-    edgeLabel,
+    edgeLabel, emap,
 
     -- * Types of edge-labelled graphs
     UnlabelledGraph, Automaton, Network
@@ -28,11 +28,14 @@ module Algebra.Graph.Labelled (
 
 import Prelude ()
 import Prelude.Compat
-import Data.Set (Set)
+
+import Data.Monoid (Any (..))
+import Data.Semigroup (Semigroup)
 
 import Algebra.Graph.Label
-import qualified Algebra.Graph.Class as C
-import qualified Algebra.Graph.ToGraph as U
+import qualified Algebra.Graph.Class                 as C
+import qualified Algebra.Graph.Labelled.AdjacencyMap as AM
+import qualified Algebra.Graph.ToGraph               as U
 
 -- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
 -- For example, @Graph Bool a@ is isomorphic to unlabelled graphs defined in
@@ -43,19 +46,26 @@ data Graph e a = Empty
                | Connect e (Graph e a) (Graph e a)
                deriving (Functor, Show)
 
+instance (Ord a, Eq e, Semigroup e) => Eq (Graph e a) where
+    x == y = toAdjacencyMap x == toAdjacencyMap y
+
+-- | Extract the adjacency map of a graph.
+toAdjacencyMap :: (Ord a, Semigroup e) => Graph e a -> AM.AdjacencyMap e a
+toAdjacencyMap = foldg AM.empty AM.vertex AM.connect
+
 instance Dioid e => C.Graph (Graph e a) where
     type Vertex (Graph e a) = a
     empty   = Empty
     vertex  = Vertex
     overlay = overlay
-    connect = connect
+    connect = connect one
 
-instance (Eq e, Semilattice e) => U.ToGraph (Graph e a) where
-    type ToVertex (Graph e a) = a
-    foldg e v o c = foldgl e v (\x -> if x == zero then o else c)
+instance U.ToGraph (Graph Bool a) where
+    type ToVertex (Graph Bool a) = a
+    foldg e v o c = foldg e v (\x -> if x then c else o)
 
-foldgl :: b -> (a -> b) -> (e -> b -> b -> b) -> Graph e a -> b
-foldgl e v c = go
+foldg :: b -> (a -> b) -> (e -> b -> b -> b) -> Graph e a -> b
+foldg e v c = go
   where
     go Empty           = e
     go (Vertex    x  ) = v x
@@ -74,83 +84,74 @@ vertex = Vertex
 
 -- | Construct the graph comprising /a single labelled edge/.
 -- Complexity: /O(1)/ time, memory and size.
-edge :: a -> e -> a -> Graph e a
-edge x e y = connectBy e (vertex x) (vertex y)
+edge :: e -> a -> a -> Graph e a
+edge e x y = connect e (vertex x) (vertex y)
 
 -- | Construct the graph from a list of labelled edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
-edges :: Semilattice e => [(a, e, a)] -> Graph e a
-edges = overlays . map (\(x, e, y) -> edge x e y)
+edges :: Monoid e => [(e, a, a)] -> Graph e a
+edges = overlays . map (\(e, x, y) -> edge e x y)
 
--- | /Overlay/ two graphs. An alias for 'Connect' 'zero'. This is a commutative,
--- associative and idempotent operation with the identity 'empty'.
+-- | /Overlay/ two graphs. An alias for 'Connect' 'zero'.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
-overlay :: Semilattice e => Graph e a -> Graph e a -> Graph e a
-overlay = Connect zero
+overlay :: Monoid e => Graph e a -> Graph e a -> Graph e a
+overlay = connect zero
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
 -- of the given list, and /S/ is the sum of sizes of the graphs in the list.
-overlays :: Semilattice e => [Graph e a] -> Graph e a
+overlays :: Monoid e => [Graph e a] -> Graph e a
 overlays = foldr overlay empty
-
--- | /Connect/ two graphs. An alias for 'Connect' 'one'. This is an associative
--- operation with the identity 'empty', which distributes over 'overlay' and
--- obeys the decomposition axiom. See the full list of laws in "Algebra.Graph".
--- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
--- of edges in the resulting graph is quadratic with respect to the number of
--- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
-connect :: Dioid e => Graph e a -> Graph e a -> Graph e a
-connect = Connect one
 
 -- | /Connect/ two graphs with edges labelled by a given label. An alias for
 -- 'Connect'.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
 -- of edges in the resulting graph is quadratic with respect to the number of
 -- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
-connectBy :: e -> Graph e a -> Graph e a -> Graph e a
-connectBy = Connect
+connect :: e -> Graph e a -> Graph e a -> Graph e a
+connect = Connect
 
 -- | The left-hand part of a convenient ternary-ish operator @x -\<e\>- y@ for
--- connecting graphs with labelled edges. For example:
+-- creating labelled edges. For example:
 --
 -- @
--- x = 'vertex' "x"
--- y = 'vertex' "y"
 -- z = x -\<2\>- y
 -- @
-(-<) :: Graph e a -> e -> (Graph e a, e)
-g -< e = (g, e)
+(-<) :: a -> e -> (a, e)
+x -< e = (x, e)
 
 -- | The right-hand part of a convenient ternary-ish operator @x -\<e\>- y@ for
--- connecting graphs with labelled edges. For example:
+-- creating labelled edges. For example:
 --
 -- @
--- x = 'vertex' "x"
--- y = 'vertex' "y"
 -- z = x -\<2\>- y
 -- @
-(>-) :: (Graph e a, e) -> Graph e a -> Graph e a
-(g, e) >- h = Connect e g h
+(>-) :: (a, e) -> a -> Graph e a
+(x, e) >- y = edge e x y
 
 infixl 5 -<
 infixl 5 >-
 
 -- | Extract the label of a specified edge from a graph.
-edgeLabel :: (Eq a, Semilattice e) => a -> a -> Graph e a -> e
-edgeLabel s t g = let (res, _, _) = foldgl e v c g in res
+edgeLabel :: (Eq a, Monoid e) => a -> a -> Graph e a -> e
+edgeLabel s t g = let (res, _, _) = foldg e v c g in res
   where
-    e                                         = (zero         , False   , False   )
-    v x                                       = (zero         , x == s  , x == t  )
-    c l (l1, s1, t1) (l2, s2, t2) | s1 && t2  = (l1 \/ l2 \/ l, s1 || s2, t1 || t2)
-                                  | otherwise = (l1 \/ l2     , s1 || s2, t1 || t2)
+    e                                         = (zero               , False   , False   )
+    v x                                       = (zero               , x == s  , x == t  )
+    c l (l1, s1, t1) (l2, s2, t2) | s1 && t2  = (mconcat [l1, l, l2], s1 || s2, t1 || t2)
+                                  | otherwise = (mconcat [l1,    l2], s1 || s2, t1 || t2)
+
+-- | Transform a graph by applying a function to each of its edge labels.
+-- Complexity: /O((n + m) * log(n))/ time.
+emap :: (e -> f) -> Graph e a -> Graph f a
+emap f = foldg Empty Vertex (Connect . f)
 
 -- | A type synonym for /unlabelled graphs/.
-type UnlabelledGraph a = Graph Bool a
+type UnlabelledGraph a = Graph Any a
 
 -- | A type synonym for /automata/ or /labelled transition systems/.
-type Automaton a s = Graph (Set a) s
+type Automaton a s = Graph (RegularExpression a) s
 
 -- | A /network/ is a graph whose edges are labelled with distances.
 type Network e a = Graph (Distance e) a

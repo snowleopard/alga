@@ -74,6 +74,7 @@ library
                         Algebra.Graph.Labelled.AdjacencyMap,
                         Algebra.Graph.Labelled.AdjacencyMap.Internal,
                         Algebra.Graph.Labelled.Example.Automaton,
+                        Algebra.Graph.Labelled.Example.Network,
                         Algebra.Graph.NonEmpty,
                         Algebra.Graph.Relation,
                         Algebra.Graph.Relation.Internal,
