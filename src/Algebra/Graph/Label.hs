@@ -435,12 +435,12 @@ data Optimum o a = Optimum { getOptimum :: o, getArgument :: a }
 
 -- This is similar to geodetic semirings.
 -- See http://vlado.fmf.uni-lj.si/vlado/papers/SemiRingSNA.pdf
-instance (Eq o, Semigroup a, Semigroup o) => Semigroup (Optimum o a) where
+instance (Eq o, Monoid a, Monoid o) => Semigroup (Optimum o a) where
     Optimum o1 a1 <> Optimum o2 a2
-        | o1 == o2  = Optimum o1 (a1 <> a2)
+        | o1 == o2  = Optimum o1 (mappend a1 a2)
         | otherwise = Optimum o a
             where
-              o = o1 <> o2
+              o = mappend o1 o2
               a = if o == o1 then a1 else a2
 
 instance (Eq o, Monoid a, Monoid o) => Monoid (Optimum o a) where
