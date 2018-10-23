@@ -160,18 +160,32 @@ instance Num a => Num (NonEmptyGraph a) where
     negate      = id
 
 instance Ord a => Eq (NonEmptyGraph a) where
-    (==) = equals
+    (==) = eq
+
+instance Ord a => Ord (NonEmptyGraph a) where
+    compare = ord
 
 -- TODO: Find a more efficient equality check.
--- | Compare two graphs by converting them to their adjacency maps.
-{-# NOINLINE [1] equals #-}
-{-# RULES "equalsInt" equals = equalsInt #-}
-equals :: Ord a => NonEmptyGraph a -> NonEmptyGraph a -> Bool
-equals x y = T.adjacencyMap x == T.adjacencyMap y
+-- | Check if two graphs are equal by converting them to their adjacency maps.
+eq :: Ord a => NonEmptyGraph a -> NonEmptyGraph a -> Bool
+eq x y = T.toAdjacencyMap x == T.toAdjacencyMap y
+{-# NOINLINE [1] eq #-}
+{-# RULES "eqInt" eq = eqInt #-}
 
--- | Like @equals@ but specialised for graphs with vertices of type 'Int'.
-equalsInt :: NonEmptyGraph Int -> NonEmptyGraph Int -> Bool
-equalsInt x y = T.adjacencyIntMap x == T.adjacencyIntMap y
+-- | Like @eq@ but specialised for graphs with vertices of type 'Int'.
+eqInt :: NonEmptyGraph Int -> NonEmptyGraph Int -> Bool
+eqInt x y = T.toAdjacencyIntMap x == T.toAdjacencyIntMap y
+
+-- TODO: Find a more efficient comparison.
+-- | Compare two graphs by converting them to their adjacency maps.
+ord :: Ord a => NonEmptyGraph a -> NonEmptyGraph a -> Ordering
+ord x y = compare (T.toAdjacencyMap x) (T.toAdjacencyMap y)
+{-# NOINLINE [1] ord #-}
+{-# RULES "ordInt" ord = ordInt #-}
+
+-- | Like @ord@ but specialised for graphs with vertices of type 'Int'.
+ordInt :: NonEmptyGraph Int -> NonEmptyGraph Int -> Ordering
+ordInt x y = compare (T.toAdjacencyIntMap x) (T.toAdjacencyIntMap y)
 
 instance Applicative NonEmptyGraph where
     pure  = Vertex

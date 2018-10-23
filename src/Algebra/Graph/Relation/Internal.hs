@@ -106,6 +106,13 @@ instance (Ord a, Show a) => Show (Relation a) where
         eshow xs       = "edges "    ++ show xs
         used           = referredToVertexSet r
 
+instance Ord a => Ord (Relation a) where
+    compare x y = mconcat
+        [ compare (Set.size $ domain   x) (Set.size $ domain   y)
+        , compare (           domain   x) (           domain   y)
+        , compare (Set.size $ relation x) (Set.size $ relation y)
+        , compare (           relation x) (           relation y) ]
+
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
 --

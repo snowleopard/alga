@@ -147,6 +147,9 @@ instance (Ord a, Show a) => Show (Fold a) where
 instance Ord a => Eq (Fold a) where
     x == y = T.adjacencyMap x == T.adjacencyMap y
 
+instance Ord a => Ord (Fold a) where
+    compare x y = compare (T.adjacencyMap x) (T.adjacencyMap y)
+
 instance NFData a => NFData (Fold a) where
     rnf = foldg () rnf seq seq
 

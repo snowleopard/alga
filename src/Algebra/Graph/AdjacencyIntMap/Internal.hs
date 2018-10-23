@@ -16,6 +16,7 @@ module Algebra.Graph.AdjacencyIntMap.Internal (
     consistent
   ) where
 
+import Data.Monoid
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)
 import Data.IntSet (IntSet)
 import Data.List
@@ -111,6 +112,17 @@ instance Show AdjacencyIntMap where
         eshow [(x, y)] = "edge "     ++ show x ++ " " ++ show y
         eshow xs       = "edges "    ++ show xs
         used           = IntSet.toAscList (referredToVertexSet m)
+
+instance Ord AdjacencyIntMap where
+    compare (AM x) (AM y) = mconcat
+        [ compare (vNum x) (vNum y)
+        , compare (vSet x) (vSet y)
+        , compare (eNum x) (eNum y)
+        , compare       x        y ]
+      where
+        vNum = IntMap.size
+        vSet = IntMap.keysSet
+        eNum = getSum . foldMap (Sum . IntSet.size)
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.

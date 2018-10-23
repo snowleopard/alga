@@ -21,7 +21,7 @@ import Prelude.Compat
 
 import Control.DeepSeq
 import Data.Map.Strict (Map)
-import Data.Monoid (Monoid)
+import Data.Monoid (Monoid, getSum, Sum (..))
 import Data.Semigroup (Semigroup)
 import Data.Set (Set, (\\))
 
@@ -52,6 +52,17 @@ instance (Ord a, Show a, Ord e, Show e) => Show (AdjacencyMap e a) where
         eshow es = case es of
             [(e, x, y)] -> "edge "  ++ show e ++ " " ++ show x ++ " " ++ show y
             xs          -> "edges " ++ show xs
+
+instance (Ord e, Monoid e, Ord a) => Ord (AdjacencyMap e a) where
+    compare (AM x) (AM y) = mconcat
+        [ compare (vNum x) (vNum y)
+        , compare (vSet x) (vSet y)
+        , compare (eNum x) (eNum y)
+        , compare       x        y ]
+      where
+        vNum = Map.size
+        vSet = Map.keysSet
+        eNum = getSum . foldMap (Sum . Map.size)
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.

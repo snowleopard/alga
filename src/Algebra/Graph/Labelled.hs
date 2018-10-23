@@ -19,6 +19,9 @@ module Algebra.Graph.Labelled (
     Graph (..), empty, vertex, edge, overlay, connect, edges, overlays,
     (-<), (>-),
 
+    -- * Relations on graphs
+    isSubgraphOf,
+
     -- * Operations
     edgeLabel, emap,
 
@@ -70,6 +73,20 @@ foldg e v c = go
     go Empty           = e
     go (Vertex    x  ) = v x
     go (Connect e x y) = c e (go x) (go y)
+
+-- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
+-- first graph is a /subgraph/ of the second.
+-- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
+-- graph can be quadratic with respect to the expression size /s/.
+--
+-- @
+-- isSubgraphOf 'empty'         x             == True
+-- isSubgraphOf ('vertex' x)    'empty'         == False
+-- isSubgraphOf x             ('overlay' x y) == True
+-- isSubgraphOf ('overlay' x y) ('connect' x y) == True
+-- @
+isSubgraphOf :: (Eq e, Monoid e, Ord a) => Graph e a -> Graph e a -> Bool
+isSubgraphOf x y = overlay x y == y
 
 -- | Construct the /empty graph/. An alias for the constructor 'Empty'.
 -- Complexity: /O(1)/ time, memory and size.

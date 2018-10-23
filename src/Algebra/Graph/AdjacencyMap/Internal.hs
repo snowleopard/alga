@@ -18,6 +18,7 @@ module Algebra.Graph.AdjacencyMap.Internal (
 
 import Data.List
 import Data.Map.Strict (Map, keysSet, fromSet)
+import Data.Monoid
 import Data.Set (Set)
 
 import Control.DeepSeq (NFData (..))
@@ -96,6 +97,17 @@ newtype AdjacencyMap a = AM {
     -- adjacencyMap ('Algebra.Graph.AdjacencyMap.edge' 1 2) == Map.'Map.fromList' [(1,Set.'Set.singleton' 2), (2,Set.'Set.empty')]
     -- @
     adjacencyMap :: Map a (Set a) } deriving Eq
+
+instance Ord a => Ord (AdjacencyMap a) where
+    compare (AM x) (AM y) = mconcat
+        [ compare (vNum x) (vNum y)
+        , compare (vSet x) (vSet y)
+        , compare (eNum x) (eNum y)
+        , compare       x        y ]
+      where
+        vNum = Map.size
+        vSet = Map.keysSet
+        eNum = getSum . foldMap (Sum . Set.size)
 
 instance (Ord a, Show a) => Show (AdjacencyMap a) where
     show (AM m)
