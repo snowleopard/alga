@@ -1,3 +1,7 @@
+resolver: lts-12.11
+
 packages:
 - '.'
-resolver: lts-12.11
+
+extra-deps:
+- inspection-testing-0.4
