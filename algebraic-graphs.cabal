@@ -127,7 +127,6 @@ test-suite test-alga
                         Algebra.Graph.Test.Fold,
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
-                        Algebra.Graph.Test.GraphRules,
                         Algebra.Graph.Test.AdjacencyIntMap,
                         Algebra.Graph.Test.Internal,
                         Algebra.Graph.Test.Labelled.AdjacencyMap,
