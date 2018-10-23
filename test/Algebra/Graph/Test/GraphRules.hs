@@ -57,11 +57,3 @@ foldgTranspose    e v o c = foldg e v o (flip c)
 foldgDotTranspose e v o c = foldg e v o c . transpose
 
 I.inspect $ 'foldgTranspose I.=== 'foldgDotTranspose
-
---- fmap . fmap fusion
-fmap', fmapDotFmap :: (a -> b) -> (b -> c) -> Graph a -> Graph c
-fmap' f g       = foldg Empty (Vertex . (g . f)) Overlay Connect
-
-fmapDotFmap f g = fmap g . fmap f
-
-I.inspect $ 'fmap' I.=== 'fmapDotFmap
