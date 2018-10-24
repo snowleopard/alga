@@ -26,7 +26,7 @@ overlaysDotMapVertex = overlays . map vertex
 
 I.inspect $ 'vertices' I.=== 'overlaysDotMapVertex
 
---- overlays . map vertex
+--- connects . map vertex
 clique', connectsDotMapVertex :: [a] -> Graph a
 clique'              = fromMaybe Empty . foldr (mf Connect . Vertex) Nothing
 connectsDotMapVertex = connects . map vertex
