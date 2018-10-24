@@ -86,8 +86,8 @@ overlay (AM x) (AM y) = AM $ Map.unionWith (Map.unionWith (<+>)) x y
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
 -- number of edges in the resulting graph is quadratic with respect to the
 -- number of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
-connect :: (Ord a, Semigroup e) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
-connect e (AM x) (AM y) = AM $ Map.unionsWith (Map.unionWith (<+>))
+connect :: (Ord a, Monoid e) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
+connect e (AM x) (AM y) = AM $ Map.unionsWith (Map.unionWith mappend)
     [ x, y, Map.fromSet (const targets) (Map.keysSet x) ]
   where
     targets = Map.fromSet (const e) (Map.keysSet y)

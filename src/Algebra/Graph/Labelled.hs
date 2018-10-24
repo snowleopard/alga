@@ -33,7 +33,6 @@ import Prelude ()
 import Prelude.Compat
 
 import Data.Monoid (Any (..))
-import Data.Semigroup (Semigroup)
 
 import Algebra.Graph.Label
 import qualified Algebra.Graph.Class                 as C
@@ -49,11 +48,11 @@ data Graph e a = Empty
                | Connect e (Graph e a) (Graph e a)
                deriving (Functor, Show)
 
-instance (Ord a, Eq e, Semigroup e) => Eq (Graph e a) where
+instance (Ord a, Eq e, Monoid e) => Eq (Graph e a) where
     x == y = toAdjacencyMap x == toAdjacencyMap y
 
 -- | Extract the adjacency map of a graph.
-toAdjacencyMap :: (Ord a, Semigroup e) => Graph e a -> AM.AdjacencyMap e a
+toAdjacencyMap :: (Ord a, Monoid e) => Graph e a -> AM.AdjacencyMap e a
 toAdjacencyMap = foldg AM.empty AM.vertex AM.connect
 
 instance Dioid e => C.Graph (Graph e a) where
