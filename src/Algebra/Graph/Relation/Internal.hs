@@ -18,6 +18,7 @@ module Algebra.Graph.Relation.Internal (
     ) where
 
 import Control.DeepSeq (NFData, rnf)
+import Data.Monoid (mconcat)
 import Data.Set (Set, union)
 
 import Algebra.Graph.Internal
