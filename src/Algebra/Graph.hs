@@ -295,7 +295,7 @@ connect = Connect
 -- @
 vertices :: [a] -> Graph a
 vertices = overlays . map vertex
-{-# INLINE [1] vertices #-}
+{-# NOINLINE [1] vertices #-}
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
