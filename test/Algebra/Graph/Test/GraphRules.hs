@@ -11,9 +11,19 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.GraphRules where
 
+import Data.Maybe (fromMaybe)
+
 import Algebra.Graph
+import Algebra.Graph.Internal
 
 import qualified Test.Inspection as I
+
+-- overlays tests
+vertices', overlaysDotMapVertex :: [a] -> Graph a
+vertices'            = fromMaybe Empty . foldr (mf Overlay . Vertex) Nothing
+overlaysDotMapVertex = overlays . map vertex
+
+I.inspect $ 'vertices' I.=== 'overlaysDotMapVertex
 
 -- transpose tests
 --- transpose . star
@@ -33,12 +43,10 @@ transposeDotOverlays = transpose . overlays
 
 I.inspect $ 'overlays' I.=== 'transposeDotOverlays
 
-{-
 --- transpose . vertices
-vertices', transposeDotVertices :: [a] -> Graph a
-vertices'            = overlays . map vertex
+verticesTransposed, transposeDotVertices :: [a] -> Graph a
+verticesTransposed   = overlays . map vertex
 
-transposeDotVertices = transpose . vertices
+transposeDotVertices = transpose . overlays . map vertex
 
-I.inspect $ 'vertices' I.=== 'transposeDotVertices
--}
+I.inspect $ 'verticesTransposed I.=== 'transposeDotVertices

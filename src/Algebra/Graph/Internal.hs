@@ -21,7 +21,7 @@ module Algebra.Graph.Internal (
 
     -- * Graph traversal
     Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, Hit (..),
-    foldr1Safe,
+    foldr1Safe, mf,
 
     -- * Utilities
     setProduct, setProductWith
@@ -116,11 +116,12 @@ data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
 -- | A safe version of 'foldr1'.
 foldr1Safe :: (a -> a -> a) -> [a] -> Maybe a
-foldr1Safe f = foldr mf Nothing
-  where
-    mf x m = Just (case m of
-                        Nothing -> x
-                        Just y  -> f x y)
+foldr1Safe f = foldr (mf f) Nothing
+
+mf :: (a -> a -> a) ->  a -> Maybe a -> Maybe a
+mf f x m = Just (case m of
+                  Nothing -> x
+                  Just y  -> f x y)
 {-# INLINE foldr1Safe #-}
 
 -- | Compute the Cartesian product of two sets.
