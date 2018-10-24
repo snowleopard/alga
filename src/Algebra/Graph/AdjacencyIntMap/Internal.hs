@@ -16,10 +16,6 @@ module Algebra.Graph.AdjacencyIntMap.Internal (
     consistent
   ) where
 
-import Prelude ()
-import Prelude.Compat
-
-import Data.Foldable (null)
 import Data.Monoid (getSum, Sum (..))
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)
 import Data.IntSet (IntSet)
