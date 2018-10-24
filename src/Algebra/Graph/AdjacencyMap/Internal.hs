@@ -16,6 +16,10 @@ module Algebra.Graph.AdjacencyMap.Internal (
     consistent
   ) where
 
+import Prelude ()
+import Prelude.Compat hiding (null)
+
+import Data.Foldable (foldMap)
 import Data.List
 import Data.Map.Strict (Map, keysSet, fromSet)
 import Data.Monoid
