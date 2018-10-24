@@ -114,7 +114,7 @@ overlays = AM . Map.unionsWith (Map.unionWith (<+>)) . map adjacencyMap
 isSubgraphOf :: (Eq e, Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
 isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy (Map.isSubmapOfBy le) x y
   where
-    le x y = x <+> y == y
+    le x y = mappend x y == y
 
 -- | Check if a graph is empty.
 -- Complexity: /O(1)/ time.
