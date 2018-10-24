@@ -143,9 +143,34 @@ Note that 'size' counts all leaves of the expression:
 'size'        ('empty' + 'empty') == 2@
 
 Converting a 'Graph' to the corresponding 'AM.AdjacencyMap' takes /O(s + m * log(m))/
-time and /O(s + m)/ memory. This is also the complexity of the graph equality test,
-because it is currently implemented by converting graph expressions to canonical
-representations based on adjacency maps.
+time and /O(s + m)/ memory. This is also the complexity of the graph equality
+test, because it is currently implemented by converting graph expressions to
+canonical representations based on adjacency maps.
+
+The total order on graphs is defined using /size-lexicographic/ comparison:
+
+* Compare the number of vertices. In case of a tie, continue.
+* Compare the sets of vertices. In case of a tie, continue.
+* Compare the number of edges. In case of a tie, continue.
+* Compare the sets of edges.
+
+Here are a few examples:
+
+@'vertex' 1 < 'vertex' 2
+'vertex' 3 < 'edge' 1 2
+'vertex' 1 < 'edge' 1 1
+'edge' 1 1 < 'edge' 1 2
+'edge' 1 2 < 'edge' 1 1 + 'edge' 2 2
+'edge' 1 2 < 'edge' 1 3@
+
+Note that the resulting order refines the 'isSubgraphOf' relation and is
+compatible with 'overlay' and 'connect' operations:
+
+@'isSubgraphOf' x y ==> x <= y@
+
+@'empty' <= x
+x     <= x + y
+x + y <= x * y@
 -}
 data Graph a = Empty
              | Vertex a
@@ -384,11 +409,12 @@ foldg e v o c = go
 -- graph can be quadratic with respect to the expression size /s/.
 --
 -- @
--- isSubgraphOf 'empty'         x             == True
--- isSubgraphOf ('vertex' x)    'empty'         == False
--- isSubgraphOf x             ('overlay' x y) == True
--- isSubgraphOf ('overlay' x y) ('connect' x y) == True
--- isSubgraphOf ('path' xs)     ('circuit' xs)  == True
+-- isSubgraphOf 'empty'         x             ==  True
+-- isSubgraphOf ('vertex' x)    'empty'         ==  False
+-- isSubgraphOf x             ('overlay' x y) ==  True
+-- isSubgraphOf ('overlay' x y) ('connect' x y) ==  True
+-- isSubgraphOf ('path' xs)     ('circuit' xs)  ==  True
+-- isSubgraphOf x y                         ==> x <= y
 -- @
 {-# SPECIALISE isSubgraphOf :: Graph Int -> Graph Int -> Bool #-}
 isSubgraphOf :: Ord a => Graph a -> Graph a -> Bool
@@ -484,9 +510,10 @@ hasEdge s t g = hit g == Edge
 -- Complexity: /O(s * log(n))/ time.
 --
 -- @
--- vertexCount 'empty'      == 0
--- vertexCount ('vertex' x) == 1
--- vertexCount            == 'length' . 'vertexList'
+-- vertexCount 'empty'             ==  0
+-- vertexCount ('vertex' x)        ==  1
+-- vertexCount                   ==  'length' . 'vertexList'
+-- vertexCount x \< vertexCount y ==> x \< y
 -- @
 {-# INLINE [1] vertexCount #-}
 {-# RULES "vertexCount/Int" vertexCount = vertexIntCount #-}

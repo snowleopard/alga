@@ -106,10 +106,11 @@ overlays = AM . Map.unionsWith (Map.unionWith (<+>)) . map adjacencyMap
 -- graph can be quadratic with respect to the expression size /s/.
 --
 -- @
--- isSubgraphOf 'empty'         x             == True
--- isSubgraphOf ('vertex' x)    'empty'         == False
--- isSubgraphOf x             ('overlay' x y) == True
--- isSubgraphOf ('overlay' x y) ('connect' x y) == True
+-- isSubgraphOf 'empty'         x             ==  True
+-- isSubgraphOf ('vertex' x)    'empty'         ==  False
+-- isSubgraphOf x             ('overlay' x y) ==  True
+-- isSubgraphOf ('overlay' x y) ('connect' x y) ==  True
+-- isSubgraphOf x y                         ==> x <= y
 -- @
 isSubgraphOf :: (Eq e, Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
 isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy (Map.isSubmapOfBy le) x y
@@ -165,6 +166,13 @@ symmetricClosure m = overlay m (transpose m)
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
+--
+-- @
+-- vertexCount 'empty'             ==  0
+-- vertexCount ('vertex' x)        ==  1
+-- vertexCount                   ==  'length' . 'vertexList'
+-- vertexCount x \< vertexCount y ==> x \< y
+-- @
 vertexCount :: AdjacencyMap e a -> Int
 vertexCount = Map.size . adjacencyMap
 

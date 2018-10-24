@@ -119,14 +119,16 @@ connects = foldr connect empty
 -- Complexity: /O((n + m) * log(n))/ time.
 --
 -- @
--- isSubgraphOf 'empty'         x             == True
--- isSubgraphOf ('vertex' x)    'empty'         == False
--- isSubgraphOf x             ('overlay' x y) == True
--- isSubgraphOf ('overlay' x y) ('connect' x y) == True
--- isSubgraphOf ('path' xs)     ('circuit' xs)  == True
+-- isSubgraphOf 'empty'         x             ==  True
+-- isSubgraphOf ('vertex' x)    'empty'         ==  False
+-- isSubgraphOf x             ('overlay' x y) ==  True
+-- isSubgraphOf ('overlay' x y) ('connect' x y) ==  True
+-- isSubgraphOf ('path' xs)     ('circuit' xs)  ==  True
+-- isSubgraphOf x y                         ==> x <= y
 -- @
 isSubgraphOf :: Ord a => Relation a -> Relation a -> Bool
-isSubgraphOf x y = domain x `Set.isSubsetOf` domain y && relation x `Set.isSubsetOf` relation y
+isSubgraphOf x y = domain   x `Set.isSubsetOf` domain   y
+                && relation x `Set.isSubsetOf` relation y
 
 -- | Check if a relation is empty.
 -- Complexity: /O(1)/ time.
@@ -170,9 +172,10 @@ hasEdge x y = Set.member (x, y) . relation
 -- Complexity: /O(1)/ time.
 --
 -- @
--- vertexCount 'empty'      == 0
--- vertexCount ('vertex' x) == 1
--- vertexCount            == 'length' . 'vertexList'
+-- vertexCount 'empty'             ==  0
+-- vertexCount ('vertex' x)        ==  1
+-- vertexCount                   ==  'length' . 'vertexList'
+-- vertexCount x \< vertexCount y ==> x \< y
 -- @
 vertexCount :: Relation a -> Int
 vertexCount = Set.size . domain

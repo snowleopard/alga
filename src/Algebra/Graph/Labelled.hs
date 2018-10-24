@@ -79,10 +79,11 @@ foldg e v c = go
 -- graph can be quadratic with respect to the expression size /s/.
 --
 -- @
--- isSubgraphOf 'empty'         x             == True
--- isSubgraphOf ('vertex' x)    'empty'         == False
--- isSubgraphOf x             ('overlay' x y) == True
--- isSubgraphOf ('overlay' x y) ('connect' x y) == True
+-- isSubgraphOf 'empty'         x             ==  True
+-- isSubgraphOf ('vertex' x)    'empty'         ==  False
+-- isSubgraphOf x             ('overlay' x y) ==  True
+-- isSubgraphOf ('overlay' x y) ('connect' x y) ==  True
+-- isSubgraphOf x y                         ==> x <= y
 -- @
 isSubgraphOf :: (Eq e, Monoid e, Ord a) => Graph e a -> Graph e a -> Bool
 isSubgraphOf x y = overlay x y == y

@@ -138,6 +138,31 @@ Converting a 'Fold' to the corresponding 'AM.AdjacencyMap' takes /O(s + m * log(
 time and /O(s + m)/ memory. This is also the complexity of the graph equality test,
 because it is currently implemented by converting graph expressions to canonical
 representations based on adjacency maps.
+
+The total order on graphs is defined using /size-lexicographic/ comparison:
+
+* Compare the number of vertices. In case of a tie, continue.
+* Compare the sets of vertices. In case of a tie, continue.
+* Compare the number of edges. In case of a tie, continue.
+* Compare the sets of edges.
+
+Here are a few examples:
+
+@'vertex' 1 < 'vertex' 2
+'vertex' 3 < 'edge' 1 2
+'vertex' 1 < 'edge' 1 1
+'edge' 1 1 < 'edge' 1 2
+'edge' 1 2 < 'edge' 1 1 + 'edge' 2 2
+'edge' 1 2 < 'edge' 1 3@
+
+Note that the resulting order refines the 'isSubgraphOf' relation and is
+compatible with 'overlay' and 'connect' operations:
+
+@'isSubgraphOf' x y ==> x <= y@
+
+@'empty' <= x
+x     <= x + y
+x + y <= x * y@
 -}
 newtype Fold a = Fold { runFold :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b }
 
@@ -145,10 +170,10 @@ instance (Ord a, Show a) => Show (Fold a) where
     show = show . foldg AM.empty AM.vertex AM.overlay AM.connect
 
 instance Ord a => Eq (Fold a) where
-    x == y = T.adjacencyMap x == T.adjacencyMap y
+    x == y = T.toAdjacencyMap x == T.toAdjacencyMap y
 
 instance Ord a => Ord (Fold a) where
-    compare x y = compare (T.adjacencyMap x) (T.adjacencyMap y)
+    compare x y = compare (T.toAdjacencyMap x) (T.toAdjacencyMap y)
 
 instance NFData a => NFData (Fold a) where
     rnf = foldg () rnf seq seq
@@ -346,11 +371,12 @@ foldg e v o c g = runFold g e v o c
 -- graph can be quadratic with respect to the expression size /s/.
 --
 -- @
--- isSubgraphOf 'empty'         x             == True
--- isSubgraphOf ('vertex' x)    'empty'         == False
--- isSubgraphOf x             ('overlay' x y) == True
--- isSubgraphOf ('overlay' x y) ('connect' x y) == True
--- isSubgraphOf ('path' xs)     ('circuit' xs)  == True
+-- isSubgraphOf 'empty'         x             ==  True
+-- isSubgraphOf ('vertex' x)    'empty'         ==  False
+-- isSubgraphOf x             ('overlay' x y) ==  True
+-- isSubgraphOf ('overlay' x y) ('connect' x y) ==  True
+-- isSubgraphOf ('path' xs)     ('circuit' xs)  ==  True
+-- isSubgraphOf x y                         ==> x <= y
 -- @
 isSubgraphOf :: Ord a => Fold a -> Fold a -> Bool
 isSubgraphOf x y = overlay x y == y
@@ -412,9 +438,10 @@ hasEdge = T.hasEdge
 -- Complexity: /O(s * log(n))/ time.
 --
 -- @
--- vertexCount 'empty'      == 0
--- vertexCount ('vertex' x) == 1
--- vertexCount            == 'length' . 'vertexList'
+-- vertexCount 'empty'             ==  0
+-- vertexCount ('vertex' x)        ==  1
+-- vertexCount                   ==  'length' . 'vertexList'
+-- vertexCount x \< vertexCount y ==> x \< y
 -- @
 vertexCount :: Ord a => Fold a -> Int
 vertexCount = T.vertexCount
