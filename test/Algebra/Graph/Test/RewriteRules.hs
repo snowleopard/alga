@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Test.Graph
+-- Module     : Algebra.Graph.Test.RewriteRules
 -- Copyright  : (c) Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -9,7 +9,7 @@
 --
 -- Testsuite for "Algebra.Graph" rewrite-rules
 -----------------------------------------------------------------------------
-module Algebra.Graph.Test.GraphRules where
+module Algebra.Graph.Test.RewriteRules where
 
 import Data.Maybe (fromMaybe)
 

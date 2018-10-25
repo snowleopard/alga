@@ -132,7 +132,7 @@ test-suite test-alga
                         Algebra.Graph.Test.Relation,
                         Data.Graph.Test.Typed
     if impl(ghc >= 8.0.2)
-        other-modules:  Algebra.Graph.Test.GraphRules
+        other-modules:  Algebra.Graph.Test.RewriteRules
     build-depends:      algebraic-graphs,
                         array        >= 0.4     && < 0.6,
                         base         >= 4.7     && < 5,
