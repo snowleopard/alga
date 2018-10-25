@@ -209,11 +209,18 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 
 -- | Replace an edge from a given graph. If it doesn't exist, it will be created.
 -- Complexity: /O(log(n))/ time.
+--
+-- @
+-- replaceEdge e x y m                 == overlay (removeEdge x y m) (edge e x y)
+-- replaceEdge e2 x y (edge e1 x y)    == edge e2 x y
+-- edgeLabel x y (replaceEdge e x y m) == e
+-- @
 replaceEdge :: (Eq e, Monoid e, Ord a) => e -> a -> a -> AdjacencyMap e a -> AdjacencyMap e a
 replaceEdge e x y
-  | e == zero  = removeEdge x y
-  | otherwise  = AM . Map.alter replace x . adjacencyMap
+  | e == zero  = AM . createVertex . Map.alter (Just . maybe Map.empty (Map.delete y)) x . adjacencyMap
+  | otherwise  = AM . createVertex . Map.alter replace x . adjacencyMap
     where
+      createVertex     = Map.alter (Just . fromMaybe Map.empty) y
       replace (Just m) = Just $ Map.insert y e m
       replace Nothing  = Just $ Map.singleton y e
 
