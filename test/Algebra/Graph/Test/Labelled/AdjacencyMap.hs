@@ -29,3 +29,11 @@ testLabelledAdjacencyMap = do
 
     test "Consistency of fromAdjacencyMaps" $ \xs ->
         consistent (fromAdjacencyMaps xs :: LAI)
+
+    putStrLn "\n============ Labelled.AdjacencyMap.replaceEdge ============"
+
+    test "edgeLabel x y (replaceEdge e x y m) == e" $ \(e :: Sum Int) (x :: Int) (y :: Int) m ->
+          edgeLabel x y (replaceEdge e x y m) == e
+
+    test "replaceEdge e2 x y (edge e1 x y) == edge e2 x y" $ \(e1 :: Sum Int) (e2 :: Sum Int) (x :: Int) (y :: Int) ->
+          replaceEdge e2 x y (edge e1 x y) == edge e2 x y
