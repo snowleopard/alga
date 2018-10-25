@@ -101,10 +101,21 @@ overlays :: (Ord a, Semigroup e) => [AdjacencyMap e a] -> AdjacencyMap e a
 overlays = AM . Map.unionsWith (Map.unionWith (<+>)) . map adjacencyMap
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
--- first graph is a /subgraph/ of the second. Complexity: /O((n + m) * log(n))/
--- time.
-isSubgraphOf :: (Eq e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
-isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy Map.isSubmapOf x y
+-- first graph is a /subgraph/ of the second.
+-- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
+-- graph can be quadratic with respect to the expression size /s/.
+--
+-- @
+-- isSubgraphOf 'empty'         x             ==  True
+-- isSubgraphOf ('vertex' x)    'empty'         ==  False
+-- isSubgraphOf x             ('overlay' x y) ==  True
+-- isSubgraphOf ('overlay' x y) ('connect' x y) ==  True
+-- isSubgraphOf x y                         ==> x <= y
+-- @
+isSubgraphOf :: (Eq e, Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
+isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy (Map.isSubmapOfBy le) x y
+  where
+    le x y = mappend x y == y
 
 -- | Check if a graph is empty.
 -- Complexity: /O(1)/ time.
@@ -155,6 +166,13 @@ symmetricClosure m = overlay m (transpose m)
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
+--
+-- @
+-- vertexCount 'empty'             ==  0
+-- vertexCount ('vertex' x)        ==  1
+-- vertexCount                   ==  'length' . 'vertexList'
+-- vertexCount x \< vertexCount y ==> x \< y
+-- @
 vertexCount :: AdjacencyMap e a -> Int
 vertexCount = Map.size . adjacencyMap
 

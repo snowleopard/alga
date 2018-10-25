@@ -16,6 +16,11 @@ module Algebra.Graph.AdjacencyIntMap.Internal (
     consistent
   ) where
 
+import Prelude ()
+import Prelude.Compat hiding (null)
+
+import Data.Foldable (foldMap)
+import Data.Monoid (getSum, Sum (..))
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)
 import Data.IntSet (IntSet)
 import Data.List
@@ -84,6 +89,31 @@ The following useful theorems can be proved from the above set of axioms.
 
 When specifying the time and memory complexity of graph algorithms, /n/ and /m/
 will denote the number of vertices and edges in the graph, respectively.
+
+The total order on graphs is defined using /size-lexicographic/ comparison:
+
+* Compare the number of vertices. In case of a tie, continue.
+* Compare the sets of vertices. In case of a tie, continue.
+* Compare the number of edges. In case of a tie, continue.
+* Compare the sets of edges.
+
+Here are a few examples:
+
+@'vertex' 1 < 'vertex' 2
+'vertex' 3 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
+'vertex' 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 1
+'Algebra.Graph.AdjacencyMap.edge' 1 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
+'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 1 + 'Algebra.Graph.AdjacencyMap.edge' 2 2
+'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 3@
+
+Note that the resulting order refines the 'isSubgraphOf' relation and is
+compatible with 'overlay' and 'connect' operations:
+
+@'Algebra.Graph.AdjacencyMap.isSubgraphOf' x y ==> x <= y@
+
+@'empty' <= x
+x     <= x + y
+x + y <= x * y@
 -}
 newtype AdjacencyIntMap = AM {
     -- | The /adjacency map/ of a graph: each vertex is associated with a set of
@@ -111,6 +141,17 @@ instance Show AdjacencyIntMap where
         eshow [(x, y)] = "edge "     ++ show x ++ " " ++ show y
         eshow xs       = "edges "    ++ show xs
         used           = IntSet.toAscList (referredToVertexSet m)
+
+instance Ord AdjacencyIntMap where
+    compare (AM x) (AM y) = mconcat
+        [ compare (vNum x) (vNum y)
+        , compare (vSet x) (vSet y)
+        , compare (eNum x) (eNum y)
+        , compare       x        y ]
+      where
+        vNum = IntMap.size
+        vSet = IntMap.keysSet
+        eNum = getSum . foldMap (Sum . IntSet.size)
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.

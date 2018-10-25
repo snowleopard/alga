@@ -121,16 +121,44 @@ Converting a 'Fold' to the corresponding 'AM.AdjacencyMap' takes /O(s + m * log(
 time and /O(s + m)/ memory. This is also the complexity of the graph equality test,
 because it is currently implemented by converting graph expressions to canonical
 representations based on adjacency maps.
+
+The total order on graphs is defined using /size-lexicographic/ comparison:
+
+* Compare the number of vertices. In case of a tie, continue.
+* Compare the sets of vertices. In case of a tie, continue.
+* Compare the number of edges. In case of a tie, continue.
+* Compare the sets of edges.
+
+Here are a few examples:
+
+@'vertex' 1 < 'vertex' 2
+'vertex' 3 < 'edge' 1 2
+'vertex' 1 < 'edge' 1 1
+'edge' 1 1 < 'edge' 1 2
+'edge' 1 2 < 'edge' 1 1 + 'edge' 2 2
+'edge' 1 2 < 'edge' 1 3@
+
+Note that the resulting order refines the 'isSubgraphOf' relation and is
+compatible with 'overlay' and 'connect' operations:
+
+@'isSubgraphOf' x y ==> x <= y@
+
+@'empty' <= x
+x     <= x + y
+x + y <= x * y@
 -}
 newtype Fold a = Fold { runFold :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b }
 
 instance (Ord a, Show a) => Show (Fold a) where
     show = show . foldg AM.empty AM.vertex AM.overlay AM.connect
 
+instance Ord a => Ord (Fold a) where
+    compare x y = compare (toAdjacencyMap x) (toAdjacencyMap y)
+
 instance Ord a => Eq (Fold a) where
     x == y = adjacencyMap x == adjacencyMap y
       where
-        adjacencyMap = AM.adjacencyMap . foldg AM.empty AM.vertex AM.overlay AM.connect
+        adjacencyMap = AM.adjacencyMap . toAdjacencyMap
 
 instance NFData a => NFData (Fold a) where
     rnf = foldg () rnf seq seq
@@ -254,3 +282,6 @@ connect x y = Fold $ \e v o c -> runFold x e v o c `c` runFold y e v o c
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
 foldg e v o c g = runFold g e v o c
+
+toAdjacencyMap :: Ord a => Fold a -> AM.AdjacencyMap a
+toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect

@@ -132,11 +132,12 @@ connects = foldr connect empty
 -- graph can be quadratic with respect to the expression size /s/.
 --
 -- @
--- isSubgraphOf 'empty'         x             == True
--- isSubgraphOf ('vertex' x)    'empty'         == False
--- isSubgraphOf x             ('overlay' x y) == True
--- isSubgraphOf ('overlay' x y) ('connect' x y) == True
--- isSubgraphOf ('path' xs)     ('circuit' xs)  == True
+-- isSubgraphOf 'empty'         x             ==  True
+-- isSubgraphOf ('vertex' x)    'empty'         ==  False
+-- isSubgraphOf x             ('overlay' x y) ==  True
+-- isSubgraphOf ('overlay' x y) ('connect' x y) ==  True
+-- isSubgraphOf ('path' xs)     ('circuit' xs)  ==  True
+-- isSubgraphOf x y                         ==> x <= y
 -- @
 isSubgraphOf :: Ord a => Fold a -> Fold a -> Bool
 isSubgraphOf x y = overlay x y == y
@@ -198,9 +199,10 @@ hasEdge = T.hasEdge
 -- Complexity: /O(s * log(n))/ time.
 --
 -- @
--- vertexCount 'empty'      == 0
--- vertexCount ('vertex' x) == 1
--- vertexCount            == 'length' . 'vertexList'
+-- vertexCount 'empty'             ==  0
+-- vertexCount ('vertex' x)        ==  1
+-- vertexCount                   ==  'length' . 'vertexList'
+-- vertexCount x \< vertexCount y ==> x \< y
 -- @
 vertexCount :: Ord a => Fold a -> Int
 vertexCount = T.vertexCount
