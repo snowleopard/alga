@@ -21,14 +21,14 @@ import Test.Inspection
 -- overlays/connects tests
 --- overlays . map vertex
 vertices', overlaysDotMapVertex :: [a] -> Graph a
-vertices'            = fromMaybe Empty . foldr (mf Overlay . Vertex) Nothing
+vertices'            = fromMaybe Empty . foldr (maybeF Overlay . Vertex) Nothing
 overlaysDotMapVertex = overlays . map vertex
 
 inspect $ 'vertices' === 'overlaysDotMapVertex
 
 --- connects . map vertex
 clique', connectsDotMapVertex :: [a] -> Graph a
-clique'              = fromMaybe Empty . foldr (mf Connect . Vertex) Nothing
+clique'              = fromMaybe Empty . foldr (maybeF Connect . Vertex) Nothing
 connectsDotMapVertex = connects . map vertex
 
 inspect $ 'clique' === 'connectsDotMapVertex
