@@ -370,7 +370,7 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays = concatg overlay
+overlays = fromMaybe empty . foldr1Safe overlay
 {-# INLINE [1] overlays #-}
 
 -- | Connect a given list of graphs.
@@ -385,13 +385,8 @@ overlays = concatg overlay
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects = concatg connect
+connects = fromMaybe empty . foldr1Safe connect
 {-# INLINE [1] connects #-}
-
--- | Auxiliary function, similar to 'mconcat'.
-concatg :: (Graph a -> Graph a -> Graph a) -> [Graph a] -> Graph a
-concatg combine = fromMaybe empty . foldr1Safe combine
-{-# INLINE concatg #-}
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
