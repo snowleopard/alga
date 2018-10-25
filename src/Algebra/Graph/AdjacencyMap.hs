@@ -133,11 +133,12 @@ connects = foldr connect empty
 -- Complexity: /O((n + m) * log(n))/ time.
 --
 -- @
--- isSubgraphOf 'empty'         x             == True
--- isSubgraphOf ('vertex' x)    'empty'         == False
--- isSubgraphOf x             ('overlay' x y) == True
--- isSubgraphOf ('overlay' x y) ('connect' x y) == True
--- isSubgraphOf ('path' xs)     ('circuit' xs)  == True
+-- isSubgraphOf 'empty'         x             ==  True
+-- isSubgraphOf ('vertex' x)    'empty'         ==  False
+-- isSubgraphOf x             ('overlay' x y) ==  True
+-- isSubgraphOf ('overlay' x y) ('connect' x y) ==  True
+-- isSubgraphOf ('path' xs)     ('circuit' xs)  ==  True
+-- isSubgraphOf x y                         ==> x <= y
 -- @
 isSubgraphOf :: Ord a => AdjacencyMap a -> AdjacencyMap a -> Bool
 isSubgraphOf x y = Map.isSubmapOfBy Set.isSubsetOf (adjacencyMap x) (adjacencyMap y)
@@ -186,9 +187,10 @@ hasEdge u v a = case Map.lookup u (adjacencyMap a) of
 -- Complexity: /O(1)/ time.
 --
 -- @
--- vertexCount 'empty'      == 0
--- vertexCount ('vertex' x) == 1
--- vertexCount            == 'length' . 'vertexList'
+-- vertexCount 'empty'             ==  0
+-- vertexCount ('vertex' x)        ==  1
+-- vertexCount                   ==  'length' . 'vertexList'
+-- vertexCount x \< vertexCount y ==> x \< y
 -- @
 vertexCount :: AdjacencyMap a -> Int
 vertexCount = Map.size . adjacencyMap

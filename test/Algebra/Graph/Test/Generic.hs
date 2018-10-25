@@ -43,15 +43,16 @@ import qualified Data.Set                      as Set
 import qualified Data.IntSet                   as IntSet
 
 data Testsuite where
-    Testsuite :: (Arbitrary g, Eq g, GraphAPI g, Num g, Show g, ToGraph g, ToVertex g ~ Int, Vertex g ~ Int)
+    Testsuite :: (Arbitrary g, GraphAPI g, Num g, Ord g, Show g, ToGraph g, ToVertex g ~ Int, Vertex g ~ Int)
               => String -> (forall r. (g -> r) -> g -> r) -> Testsuite
 
-testsuite :: (Arbitrary g, Eq g, GraphAPI g, Num g, Show g, ToGraph g, ToVertex g ~ Int, Vertex g ~ Int)
+testsuite :: (Arbitrary g, GraphAPI g, Num g, Ord g, Show g, ToGraph g, ToVertex g ~ Int, Vertex g ~ Int)
           => String -> g -> Testsuite
 testsuite prefix g = Testsuite prefix (\f x -> f (x `asTypeOf` g))
 
 testBasicPrimitives :: Testsuite -> IO ()
-testBasicPrimitives = mconcat [ testEmpty
+testBasicPrimitives = mconcat [ testOrd
+                              , testEmpty
                               , testVertex
                               , testEdge
                               , testOverlay
@@ -119,6 +120,27 @@ testShow (Testsuite prefix (%)) = do
 
     test "show (1 * 2 + 3) == \"overlay (vertex 3) (edge 1 2)\"" $
           show % (1 * 2 + 3) == "overlay (vertex 3) (edge 1 2)"
+
+testOrd :: Testsuite -> IO ()
+testOrd (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "Ord ============"
+    test "vertex 1 < vertex 2" $
+          vertex 1 < id % vertex 2
+
+    test "vertex 3 < edge 1 2" $
+          vertex 3 < id % edge 1 2
+
+    test "vertex 1 < edge 1 1" $
+          vertex 1 < id % edge 1 1
+
+    test "edge 1 1 < edge 1 2" $
+          edge 1 1 < id % edge 1 2
+
+    test "edge 1 2 < edge 1 1 + edge 2 2" $
+          edge 1 2 < edge 1 1 + id % edge 2 2
+
+    test "edge 1 2 < edge 1 3" $
+          edge 1 2 < id % edge 1 3
 
 testEmpty :: Testsuite -> IO ()
 testEmpty (Testsuite prefix (%)) = do
@@ -372,6 +394,10 @@ testIsSubgraphOf (Testsuite prefix (%)) = do
     test "isSubgraphOf (path xs)     (circuit xs)  == True" $ \xs ->
           isSubgraphOf (path xs)    % circuit xs   == True
 
+    test "isSubgraphOf x y                         ==> x <= y" $ \x z ->
+        let y = x + z -- Make sure we hit the precondition
+        in isSubgraphOf x % y                      ==> x <= y
+
 testToGraphDefault :: Testsuite -> IO ()
 testToGraphDefault (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "toGraph et al. ============"
@@ -571,14 +597,19 @@ testHasEdge (Testsuite prefix (%)) = do
 testVertexCount :: Testsuite -> IO ()
 testVertexCount (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "vertexCount ============"
-    test "vertexCount empty      == 0" $
-          vertexCount % empty    == 0
+    test "vertexCount empty             ==  0" $
+          vertexCount % empty           ==  0
 
-    test "vertexCount (vertex x) == 1" $ \x ->
-          vertexCount % vertex x == 1
+    test "vertexCount (vertex x)        ==  1" $ \x ->
+          vertexCount % (vertex x)      ==  1
 
-    test "vertexCount            == length . vertexList" $ \x ->
-          vertexCount % x        == (length . vertexList) x
+    test "vertexCount                   ==  length . vertexList" $ \x ->
+          vertexCount % x               == (length . vertexList) x
+
+    test "vertexCount x < vertexCount y ==> x < y" $ \x y ->
+        if vertexCount x < vertexCount % y
+        then property (x < y)
+        else (vertexCount x > vertexCount y ==> x > y)
 
 testEdgeCount :: Testsuite -> IO ()
 testEdgeCount (Testsuite prefix (%)) = do

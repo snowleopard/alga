@@ -18,12 +18,12 @@ module Algebra.Graph.Relation.Internal (
     ) where
 
 import Control.DeepSeq (NFData, rnf)
+import Data.Monoid (mconcat)
 import Data.Set (Set, union)
 
 import Algebra.Graph.Internal
 
 import qualified Data.Set as Set
-
 
 {-| The 'Relation' data type represents a graph as a /binary relation/. We
 define a 'Num' instance as a convenient notation for working with graphs:
@@ -83,6 +83,31 @@ The following useful theorems can be proved from the above set of axioms.
 
 When specifying the time and memory complexity of graph algorithms, /n/ and /m/
 will denote the number of vertices and edges in the graph, respectively.
+
+The total order on graphs is defined using /size-lexicographic/ comparison:
+
+* Compare the number of vertices. In case of a tie, continue.
+* Compare the sets of vertices. In case of a tie, continue.
+* Compare the number of edges. In case of a tie, continue.
+* Compare the sets of edges.
+
+Here are a few examples:
+
+@'vertex' 1 < 'vertex' 2
+'vertex' 3 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
+'vertex' 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 1
+'Algebra.Graph.AdjacencyMap.edge' 1 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
+'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 1 + 'Algebra.Graph.AdjacencyMap.edge' 2 2
+'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 3@
+
+Note that the resulting order refines the 'isSubgraphOf' relation and is
+compatible with 'overlay' and 'connect' operations:
+
+@'Algebra.Graph.AdjacencyMap.isSubgraphOf' x y ==> x <= y@
+
+@'empty' <= x
+x     <= x + y
+x + y <= x * y@
 -}
 data Relation a = Relation {
     -- | The /domain/ of the relation.
@@ -105,6 +130,13 @@ instance (Ord a, Show a) => Show (Relation a) where
         eshow [(x, y)] = "edge "     ++ show x ++ " " ++ show y
         eshow xs       = "edges "    ++ show xs
         used           = referredToVertexSet r
+
+instance Ord a => Ord (Relation a) where
+    compare x y = mconcat
+        [ compare (Set.size $ domain   x) (Set.size $ domain   y)
+        , compare (           domain   x) (           domain   y)
+        , compare (Set.size $ relation x) (Set.size $ relation y)
+        , compare (           relation x) (           relation y) ]
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.

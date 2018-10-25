@@ -11,7 +11,7 @@ module Algebra.Graph.Test (
 
 import Data.List (sort)
 import Data.List.Extra (nubOrd)
-import Prelude hiding ((+), (*), (<=))
+import Prelude hiding ((+), (*))
 import System.Exit (exitFailure)
 import Test.QuickCheck hiding ((===))
 import Test.QuickCheck.Function
@@ -36,14 +36,10 @@ test str p = do
 (*) :: Graph g => g -> g -> g
 (*) = connect
 
-(<=) :: (Eq g, Graph g) => g -> g -> Bool
-(<=) = isSubgraphOf
-
 (//) :: Testable prop => prop -> String -> Property
 p // s = label s $ counterexample ("Failed when checking '" ++ s ++ "'") p
 
 infixl 1 //
-infixl 4 <=
 infixl 6 +
 infixl 7 *
 
@@ -60,7 +56,7 @@ axioms x y z = conjoin
     , (x + y) * z == x * z + y * z              // "Right distributivity"
     ,   x * y * z == x * y + x * z + y * z      // "Decomposition" ]
 
-theorems :: (Eq g, Graph g) => GraphTestsuite g
+theorems :: (Ord g, Graph g) => GraphTestsuite g
 theorems x y z = conjoin
     [     x + empty == x                        // "Overlay identity"
     ,         x + x == x                        // "Overlay idempotence"

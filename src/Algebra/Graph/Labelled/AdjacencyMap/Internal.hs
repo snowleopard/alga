@@ -21,7 +21,7 @@ import Prelude.Compat
 
 import Control.DeepSeq
 import Data.Map.Strict (Map)
-import Data.Monoid (Monoid)
+import Data.Monoid (Monoid, getSum, Sum (..))
 import Data.Semigroup (Semigroup)
 import Data.Set (Set, (\\))
 
@@ -53,6 +53,17 @@ instance (Ord a, Show a, Ord e, Show e) => Show (AdjacencyMap e a) where
             [(e, x, y)] -> "edge "  ++ show e ++ " " ++ show x ++ " " ++ show y
             xs          -> "edges " ++ show xs
 
+instance (Ord e, Monoid e, Ord a) => Ord (AdjacencyMap e a) where
+    compare (AM x) (AM y) = mconcat
+        [ compare (vNum x) (vNum y)
+        , compare (vSet x) (vSet y)
+        , compare (eNum x) (eNum y)
+        , compare       x        y ]
+      where
+        vNum = Map.size
+        vSet = Map.keysSet
+        eNum = getSum . foldMap (Sum . Map.size)
+
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
 empty :: AdjacencyMap e a
@@ -75,8 +86,8 @@ overlay (AM x) (AM y) = AM $ Map.unionWith (Map.unionWith (<+>)) x y
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
 -- number of edges in the resulting graph is quadratic with respect to the
 -- number of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
-connect :: (Ord a, Semigroup e) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
-connect e (AM x) (AM y) = AM $ Map.unionsWith (Map.unionWith (<+>))
+connect :: (Ord a, Monoid e) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
+connect e (AM x) (AM y) = AM $ Map.unionsWith (Map.unionWith mappend)
     [ x, y, Map.fromSet (const targets) (Map.keysSet x) ]
   where
     targets = Map.fromSet (const e) (Map.keysSet y)

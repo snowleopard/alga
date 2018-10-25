@@ -55,15 +55,31 @@ theorems x y = conjoin
     ,         x * x == x * x * x                // "Connect saturation"
     ,             x <= x + y                    // "Overlay order"
     ,         x + y <= x * y                    // "Overlay-connect order" ]
-  where
-    (<=) = isSubgraphOf
-    infixl 4 <=
 
 testGraphNonEmpty :: IO ()
 testGraphNonEmpty = do
     putStrLn "\n============ Graph.NonEmpty ============"
     test "Axioms of non-empty graphs"   axioms
     test "Theorems of non-empty graphs" theorems
+
+    putStrLn $ "\n============ Ord (NonEmptyGraph a) ============"
+    test "vertex 1 < vertex 2" $
+          vertex 1 < vertex (2 :: Int)
+
+    test "vertex 3 < edge 1 2" $
+          vertex 3 < edge 1 (2 :: Int)
+
+    test "vertex 1 < edge 1 1" $
+          vertex 1 < edge 1 (1 :: Int)
+
+    test "edge 1 1 < edge 1 2" $
+          edge 1 1 < edge 1 (2 :: Int)
+
+    test "edge 1 2 < edge 1 1 + edge 2 2" $
+          edge 1 2 < edge 1 1 + edge 2 (2 :: Int)
+
+    test "edge 1 2 < edge 1 3" $
+          edge 1 2 < edge 1 (3 :: Int)
 
     putStrLn $ "\n============ Functor (NonEmptyGraph a) ============"
     test "fmap f (vertex x) == vertex (f x)" $ \(apply -> f) (x :: Int) ->
