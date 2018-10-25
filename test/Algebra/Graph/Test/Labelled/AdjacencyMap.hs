@@ -33,7 +33,7 @@ testLabelledAdjacencyMap = do
     putStrLn "\n============ Labelled.AdjacencyMap.replaceEdge ============"
 
     test "replaceEdge e x y m == overlay (removeEdge x y m) (edge e x y)" $ \(e :: Sum Int) (x :: Int) (y :: Int) m ->
-        replaceEdge e x y m == overlay (removeEdge x y m) (edge e x y)
+          replaceEdge e x y m == overlay (removeEdge x y m) (edge e x y)
 
     test "edgeLabel x y (replaceEdge e x y m) == e" $ \(e :: Sum Int) (x :: Int) (y :: Int) m ->
           edgeLabel x y (replaceEdge e x y m) == e
