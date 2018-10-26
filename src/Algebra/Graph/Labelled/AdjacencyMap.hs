@@ -30,7 +30,7 @@ module Algebra.Graph.Labelled.AdjacencyMap (
     edgeList, vertexSet, postSet, preSet,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
+    removeVertex, removeEdge, replaceVertex, replaceEdge, mergeVertices, transpose, gmap,
     emap, induce,
 
     -- * Graph closure
@@ -224,6 +224,23 @@ removeEdge x y = AM . Map.adjust (Map.delete y) x . adjacencyMap
 -- Complexity: /O((n + m) * log(n))/ time.
 replaceVertex :: (Ord a, Semigroup e) => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
 replaceVertex u v = gmap $ \w -> if w == u then v else w
+
+-- | Replace an edge from a given graph. If it doesn't exist, it will be created.
+-- Complexity: /O(log(n))/ time.
+--
+-- @
+-- replaceEdge e x y m                 == overlay (removeEdge x y m) (edge e x y)
+-- replaceEdge e2 x y (edge e1 x y)    == edge e2 x y
+-- edgeLabel x y (replaceEdge e x y m) == e
+-- @
+replaceEdge :: (Eq e, Monoid e, Ord a) => e -> a -> a -> AdjacencyMap e a -> AdjacencyMap e a
+replaceEdge e x y
+  | e == zero  = AM . createVertexY . Map.alter (Just . maybe Map.empty (Map.delete y)) x . adjacencyMap
+  | otherwise  = AM . createVertexY . Map.alter replace x . adjacencyMap
+    where
+      createVertexY    = Map.alter (Just . fromMaybe Map.empty) y
+      replace (Just m) = Just $ Map.insert y e m
+      replace Nothing  = Just $ Map.singleton y e
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
