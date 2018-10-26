@@ -32,8 +32,8 @@ module Algebra.Graph (
     isSubgraphOf, (===),
 
     -- * Graph properties
-    isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, edgeSet, adjacencyList,
+    isEmpty, size, hasVertexP, hasVertex, hasEdgeP, hasEdge, vertexCount,
+    edgeCount, vertexList, edgeList, vertexSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars, tree, forest, mesh, torus,
@@ -472,6 +472,12 @@ isEmpty = foldg True (const False) (&&) (&&)
 size :: Graph a -> Int
 size = foldg 1 (const 1) (+) (+)
 
+-- | Check if a graph contains a vertex which satisfied the supplied predicate.
+-- Complexity: /O(s)/ time.
+--
+hasVertexP :: (a -> Bool) -> Graph a -> Bool
+hasVertexP pred = foldg False pred (||) (||)
+
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
 --
@@ -483,7 +489,25 @@ size = foldg 1 (const 1) (+) (+)
 -- @
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 hasVertex :: Eq a => a -> Graph a -> Bool
-hasVertex x = foldg False (==x) (||) (||)
+hasVertex x = hasVertexP (==x)
+
+-- | Check if a graph contains an edge whose vertices match the supplied
+-- predicates.
+-- Complexity: /O(s)/ time.
+--
+hasEdgeP :: (a -> Bool) -> (a -> Bool) -> Graph a -> Bool
+hasEdgeP predFrom predTo g = hit g == Edge
+  where
+    hit Empty         = Miss
+    hit (Vertex x   ) = if predFrom x then Tail else Miss
+    hit (Overlay x y) = case hit x of
+        Miss -> hit y
+        Tail -> max Tail (hit y)
+        Edge -> Edge
+    hit (Connect x y) = case hit x of
+        Miss -> hit y
+        Tail -> if hasVertexP predTo y then Edge else Tail
+        Edge -> Edge
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
@@ -497,18 +521,7 @@ hasVertex x = foldg False (==x) (||) (||)
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = hit g == Edge
-  where
-    hit Empty         = Miss
-    hit (Vertex x   ) = if x == s then Tail else Miss
-    hit (Overlay x y) = case hit x of
-        Miss -> hit y
-        Tail -> max Tail (hit y)
-        Edge -> Edge
-    hit (Connect x y) = case hit x of
-        Miss -> hit y
-        Tail -> if hasVertex t y then Edge else Tail
-        Edge -> Edge
+hasEdge s t g = hasEdgeP (==s) (==t) g
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
