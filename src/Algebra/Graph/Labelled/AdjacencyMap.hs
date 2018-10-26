@@ -217,10 +217,10 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- @
 replaceEdge :: (Eq e, Monoid e, Ord a) => e -> a -> a -> AdjacencyMap e a -> AdjacencyMap e a
 replaceEdge e x y
-  | e == zero  = AM . createVertex . Map.alter (Just . maybe Map.empty (Map.delete y)) x . adjacencyMap
-  | otherwise  = AM . createVertex . Map.alter replace x . adjacencyMap
+  | e == zero  = AM . createVertexY . Map.alter (Just . maybe Map.empty (Map.delete y)) x . adjacencyMap
+  | otherwise  = AM . createVertexY . Map.alter replace x . adjacencyMap
     where
-      createVertex     = Map.alter (Just . fromMaybe Map.empty) y
+      createVertexY    = Map.alter (Just . fromMaybe Map.empty) y
       replace (Just m) = Just $ Map.insert y e m
       replace Nothing  = Just $ Map.singleton y e
 
