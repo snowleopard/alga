@@ -1126,9 +1126,9 @@ mapGFB :: (b -> c) -> (a -> b) -> a -> c
 mapGFB = (.)
 {-# INLINE [0] mapGFB #-}
 
-induceFB :: b -> (a -> b) -> (a -> Bool) -> a -> b
-induceFB e v p = \x -> if p x then v x else e
-{-# INLINE [0] induceFB #-}
+matchFB :: b -> (a -> b) -> (a -> Bool) -> a -> b
+matchFB e v p = \x -> if p x then v x else e
+{-# INLINE [0] matchFB #-}
 
 flipFB :: (b -> b -> b) -> (b -> b -> b)
 flipFB = flip
@@ -1142,7 +1142,7 @@ flipFB = flip
 
 -- Transform a induce into its build equivalent
 "buildG/induce"    [~1] forall p g.
-  induce p g  = buildG (F.Fold $ \e v o c -> foldg e (induceFB e v p) o c g)
+  induce p g  = buildG (F.Fold $ \e v o c -> foldg e (matchFB e v p) o c g)
 
 "buildG/transpose" [~1] forall g.
   foldg Empty Vertex Overlay (flipFB Connect) g = buildG (F.Fold $ \e v o c -> foldg e v o (flip c) g)
@@ -1161,5 +1161,5 @@ flipFB = flip
 -- Rules to rewrite un-merged function back
 {-# RULES
 "graph/mapg"      [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect    = mapG f
-"graph/induce"    [1] forall e v f. foldg Empty (induceFB e v f) Overlay Connect = induce f
+"graph/induce"    [1] forall e v f. foldg Empty (matchFB e v f) Overlay Connect = induce f
  #-}
