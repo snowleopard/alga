@@ -23,7 +23,7 @@ module Algebra.Graph.Fold (
     Fold,
 
     -- * Basic graph construction primitives
-    empty, vertex, overlay, connect, edge, vertices, edges, overlays, connects,
+    empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
 
     -- * Graph folding
     foldg,

@@ -1118,7 +1118,7 @@ The rules for foldg work like this.
 -}
 
 buildG :: forall a. F.Fold a -> Graph a
-buildG g = F.foldg Empty Vertex Overlay Connect g
+buildG = F.foldg Empty Vertex Overlay Connect
 {-# INLINE [1] buildG #-}
 
 -- | FB functions
