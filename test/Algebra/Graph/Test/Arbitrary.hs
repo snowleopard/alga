@@ -34,7 +34,7 @@ import qualified Algebra.Graph.AdjacencyIntMap                as AdjacencyIntMap
 import qualified Algebra.Graph.Class                          as C
 import qualified Algebra.Graph.Labelled.AdjacencyMap          as Labelled
 import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal as Labelled
-import qualified Algebra.Graph.NonEmpty                       as NE
+import qualified Algebra.Graph.NonEmpty                       as NonEmpty
 import qualified Algebra.Graph.Relation                       as Relation
 
 -- | Generate an arbitrary 'Graph' value of a specified size.
@@ -59,24 +59,24 @@ instance Arbitrary a => Arbitrary (Graph a) where
                         ++ [Connect x' y' | (x', y') <- shrink (x, y) ]
 
 -- | Generate an arbitrary 'NonEmptyGraph' value of a specified size.
-arbitraryNonEmptyGraph :: Arbitrary a => Gen (NE.NonEmptyGraph a)
+arbitraryNonEmptyGraph :: Arbitrary a => Gen (NonEmpty.Graph a)
 arbitraryNonEmptyGraph = sized expr
   where
-    expr 0 = NE.vertex <$> arbitrary -- can't generate non-empty graph of size 0
-    expr 1 = NE.vertex <$> arbitrary
+    expr 0 = NonEmpty.vertex <$> arbitrary -- can't generate non-empty graph of size 0
+    expr 1 = NonEmpty.vertex <$> arbitrary
     expr n = do
         left <- choose (1, n)
-        oneof [ NE.overlay <$> expr left <*> expr (n - left)
-              , NE.connect <$> expr left <*> expr (n - left) ]
+        oneof [ NonEmpty.overlay <$> expr left <*> expr (n - left)
+              , NonEmpty.connect <$> expr left <*> expr (n - left) ]
 
-instance Arbitrary a => Arbitrary (NE.NonEmptyGraph a) where
+instance Arbitrary a => Arbitrary (NonEmpty.Graph a) where
     arbitrary = arbitraryNonEmptyGraph
 
-    shrink (NE.Vertex    _) = []
-    shrink (NE.Overlay x y) = [x, y]
-                           ++ [NE.Overlay x' y' | (x', y') <- shrink (x, y) ]
-    shrink (NE.Connect x y) = [x, y, NE.Overlay x y]
-                           ++ [NE.Connect x' y' | (x', y') <- shrink (x, y) ]
+    shrink (NonEmpty.Vertex    _) = []
+    shrink (NonEmpty.Overlay x y) = [x, y]
+        ++ [NonEmpty.Overlay x' y' | (x', y') <- shrink (x, y) ]
+    shrink (NonEmpty.Connect x y) = [x, y, NonEmpty.Overlay x y]
+        ++ [NonEmpty.Connect x' y' | (x', y') <- shrink (x, y) ]
 
 -- | Generate an arbitrary 'Relation'.
 arbitraryRelation :: (Arbitrary a, Ord a) => Gen (Relation a)

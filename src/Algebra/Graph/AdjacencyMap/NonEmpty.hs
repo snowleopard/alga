@@ -12,7 +12,7 @@
 --
 -- This module defines the data type 'AdjacencyMap' for graphs that are known
 -- to be non-empty at compile time. The module is intended to be imported
--- qualified to avoid name-clashes with "Algebra.Graph.AdjacencyMap":
+-- qualified to avoid name clashes with "Algebra.Graph.AdjacencyMap":
 --
 -- @
 -- import qualified Algebra.Graph.AdjacencyMap.NonEmpty as NonEmpty

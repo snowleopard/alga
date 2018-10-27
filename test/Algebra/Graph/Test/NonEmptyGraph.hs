@@ -28,16 +28,17 @@ import Data.Maybe
 import Data.Tree
 import Data.Tuple
 
-import Algebra.Graph.NonEmpty
+import Algebra.Graph.NonEmpty hiding (Graph)
 import Algebra.Graph.Test hiding (axioms, theorems)
 import Algebra.Graph.ToGraph (reachable, toGraph)
 
-import qualified Algebra.Graph      as G
-import qualified Data.List.NonEmpty as NonEmpty
-import qualified Data.Set           as Set
-import qualified Data.IntSet        as IntSet
+import qualified Algebra.Graph          as G
+import qualified Algebra.Graph.NonEmpty as NonEmpty
+import qualified Data.List.NonEmpty     as NonEmpty
+import qualified Data.Set               as Set
+import qualified Data.IntSet            as IntSet
 
-type G = NonEmptyGraph Int
+type G = NonEmpty.Graph Int
 
 axioms :: G -> G -> G -> Property
 axioms x y z = conjoin
@@ -111,12 +112,12 @@ testGraphNonEmpty = do
     test "((x >>= f) >>= g)    == (x >>= (\\y -> (f y) >>= g))" $ mapSize (min 10) $ \(x :: G) (apply -> f) (apply -> g) ->
           ((x >>= f) >>= g)    == (x >>= (\(y :: Int) -> (f y) >>= (g :: Int -> G)))
 
-    putStrLn $ "\n============ Graph.NonEmpty.toNonEmptyGraph ============"
-    test "toNonEmptyGraph empty       == Nothing" $
-          toNonEmptyGraph (G.empty :: G.Graph Int) == Nothing
+    putStrLn $ "\n============ Graph.NonEmpty.toNonEmpty ============"
+    test "toNonEmpty empty       == Nothing" $
+          toNonEmpty (G.empty :: G.Graph Int) == Nothing
 
-    test "toNonEmptyGraph (toGraph x) == Just (x :: NonEmptyGraph a)" $ \x ->
-          toNonEmptyGraph (toGraph x) == Just (x :: NonEmptyGraph Int)
+    test "toNonEmpty (toGraph x) == Just (x :: NonEmpty.Graph a)" $ \x ->
+          toNonEmpty (toGraph x) == Just (x :: NonEmpty.Graph Int)
 
     putStrLn $ "\n============ Graph.NonEmpty.vertex ============"
     test "hasVertex x (vertex x) == True" $ \(x :: Int) ->
@@ -176,8 +177,8 @@ testGraphNonEmpty = do
     test "               overlay1 empty x == x" $ \(x :: G) ->
                          overlay1 G.empty x == x
 
-    test "x /= empty ==> overlay1 x     y == overlay (fromJust $ toNonEmptyGraph x) y" $ \(x :: G.Graph Int) (y :: G) ->
-          x /= G.empty ==> overlay1 x   y == overlay (fromJust $ toNonEmptyGraph x) y
+    test "x /= empty ==> overlay1 x     y == overlay (fromJust $ toNonEmpty x) y" $ \(x :: G.Graph Int) (y :: G) ->
+          x /= G.empty ==> overlay1 x   y == overlay (fromJust $ toNonEmpty x) y
 
 
     putStrLn $ "\n============ Graph.NonEmpty.connect ============"
@@ -553,10 +554,10 @@ testGraphNonEmpty = do
          (removeEdge x y . removeEdge x y) z == removeEdge x y z
 
     test "removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2" $
-          removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * (2 :: NonEmptyGraph Int)
+          removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * (2 :: NonEmpty.Graph Int)
 
     test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
-          removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * (2 :: NonEmptyGraph Int)
+          removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * (2 :: NonEmpty.Graph Int)
 
     test "size (removeEdge x y z)         <= 3 * size z" $ \(x :: Int) y z ->
           size (removeEdge x y z)         <= 3 * size z
