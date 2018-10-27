@@ -966,7 +966,7 @@ splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Graph a -> Graph a
-transpose = foldg Empty Vertex Overlay (transposeFB Connect)
+transpose = foldg Empty Vertex Overlay (flipFB Connect)
 {-# INLINE transpose #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
@@ -1130,9 +1130,9 @@ induceFB :: b -> (a -> b) -> (a -> Bool) -> a -> b
 induceFB e v p = \x -> if p x then v x else e
 {-# INLINE [0] induceFB #-}
 
-transposeFB :: (b -> b -> b) -> (b -> b -> b)
-transposeFB = flip
-{-# INLINE [0] transposeFB #-}
+flipFB :: (b -> b -> b) -> (b -> b -> b)
+flipFB = flip
+{-# INLINE [0] flipFB #-}
 
 -- Rules to transform a buildG-equivalent function into its equivalent
 {-# RULES
@@ -1145,7 +1145,7 @@ transposeFB = flip
   induce p g  = buildG (F.Fold $ \e v o c -> foldg e (induceFB e v p) o c g)
 
 "buildG/transpose" [~1] forall g.
-  foldg Empty Vertex Overlay (transposeFB Connect) g = buildG (F.Fold $ \e v o c -> foldg e v o (flip c) g)
+  foldg Empty Vertex Overlay (flipFB Connect) g = buildG (F.Fold $ \e v o c -> foldg e v o (flip c) g)
  #-}
 
 -- Rules to merge rewrited functions
