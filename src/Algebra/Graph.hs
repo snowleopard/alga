@@ -393,7 +393,7 @@ concatg combine = fromMaybe empty . foldr1Safe combine
 -- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
 -- foldg 1     (const 1)     (+)     (+)            == 'size'
 -- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
--- foldg False ((==) x)      (||)    (||)           == 'hasVertex x'
+-- foldg False (== x)        (||)    (||)           == 'hasVertex' x
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
@@ -468,7 +468,7 @@ isEmpty = foldg True (const False) (&&) (&&)
 size :: Graph a -> Int
 size = foldg 1 (const 1) (+) (+)
 
--- | Check if a graph contains a given vertex. A convenient alias for `elem`.
+-- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
 --
 -- @

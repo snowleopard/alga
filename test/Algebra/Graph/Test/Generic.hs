@@ -124,23 +124,29 @@ testShow (Testsuite prefix (%)) = do
 testOrd :: Testsuite -> IO ()
 testOrd (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "Ord ============"
-    test "vertex 1 < vertex 2" $
+    test "vertex 1 <  vertex 2" $
           vertex 1 < id % vertex 2
 
-    test "vertex 3 < edge 1 2" $
+    test "vertex 3 <  edge 1 2" $
           vertex 3 < id % edge 1 2
 
-    test "vertex 1 < edge 1 1" $
+    test "vertex 1 <  edge 1 1" $
           vertex 1 < id % edge 1 1
 
-    test "edge 1 1 < edge 1 2" $
+    test "edge 1 1 <  edge 1 2" $
           edge 1 1 < id % edge 1 2
 
-    test "edge 1 2 < edge 1 1 + edge 2 2" $
-          edge 1 2 < edge 1 1 + id % edge 2 2
+    test "edge 1 2 <  edge 1 1 + edge 2 2" $
+          edge 1 2 < id % edge 1 1 + edge 2 2
 
-    test "edge 1 2 < edge 1 3" $
+    test "edge 1 2 <  edge 1 3" $
           edge 1 2 < id % edge 1 3
+
+    test "x        <= x + y" $ \x y ->
+          id % x   <= x + y
+
+    test "x + y    <= x * y" $ \x y ->
+          id % x + y <= x * y
 
 testEmpty :: Testsuite -> IO ()
 testEmpty (Testsuite prefix (%)) = do

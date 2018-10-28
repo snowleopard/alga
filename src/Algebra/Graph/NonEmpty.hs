@@ -51,7 +51,7 @@ module Algebra.Graph.NonEmpty (
 
     -- * Graph composition
     box
-  ) where
+    ) where
 
 import Prelude ()
 import Prelude.Compat
@@ -60,20 +60,19 @@ import Prelude.Compat
 import Data.Semigroup
 #endif
 
-import Control.DeepSeq (NFData (..))
+import Control.DeepSeq
 import Control.Monad.Compat
-import Control.Monad.State (runState, get, put)
+import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..))
 
 import Algebra.Graph.Internal
 
-import qualified Algebra.Graph                 as G
-import qualified Algebra.Graph.AdjacencyIntMap as AIM
-import qualified Algebra.Graph.ToGraph         as T
-import qualified Data.IntSet                   as IntSet
-import qualified Data.List.NonEmpty            as NonEmpty
-import qualified Data.Set                      as Set
-import qualified Data.Tree                     as Tree
+import qualified Algebra.Graph         as G
+import qualified Algebra.Graph.ToGraph as T
+import qualified Data.IntSet           as IntSet
+import qualified Data.List.NonEmpty    as NonEmpty
+import qualified Data.Set              as Set
+import qualified Data.Tree             as Tree
 
 {-| Non-empty algebraic graphs, which are constructed using three primitives:
 'vertex', 'overlay' and 'connect'. See module "Algebra.Graph" for algebraic
@@ -87,9 +86,17 @@ We define a 'Num' instance as a convenient notation for working with graphs:
     > 1 + 2 * 3   == overlay (vertex 1) (connect (vertex 2) (vertex 3))
     > 1 * (2 + 3) == connect (vertex 1) (overlay (vertex 2) (vertex 3))
 
-__Note:__ that the 'signum' method of the type class 'Num' cannot be implemented.
+__Note:__ the 'signum' method of the type class 'Num' cannot be implemented and
+will throw an error. Furthermore, the 'Num' instance does not satisfy several
+"customary laws" of 'Num', which were recently introduced and dictate that
+'fromInteger' @0@ and 'fromInteger' @1@ should act as additive and
+multiplicative identities, and 'negate' as additive inverse. Nonetheless,
+overloading 'fromInteger', '+' and '*' is very convenient when working with
+algebraic graphs; we hope that in future Haskell's Prelude will provide a more
+fine-grained class hierarchy for algebraic structures, which we would be able to
+utilise without violating laws.
 
-The 'Eq' instance satisfies the following laws of non-empty algebraic graphs:
+The 'Eq' instance satisfies the following laws of non-empty algebraic graphs.
 
     * 'overlay' is commutative, associative and idempotent:
 
@@ -118,27 +125,20 @@ The 'Eq' instance satisfies the following laws of non-empty algebraic graphs:
 When specifying the time and memory complexity of graph algorithms, /n/ will
 denote the number of vertices in the graph, /m/ will denote the number of
 edges in the graph, and /s/ will denote the /size/ of the corresponding 'Graph'
-expression, defined as the number of vertex leaves. For example, if @g@ is a
-'Graph' then /n/, /m/ and /s/ can be computed as follows:
+expression, defined as the number of vertex leaves (note that /n/ <= /s/). If
+@g@ is a 'Graph', the corresponding /n/, /m/ and /s/ can be computed as follows:
 
 @n == 'vertexCount' g
 m == 'edgeCount' g
 s == 'size' g@
 
-Note that 'size' counts all leaves of the expression:
-
-@'vertexCount' ('vertex' x)            == 1
-'size'        ('vertex' x)            == 1
-'vertexCount' ('vertex' x + 'vertex' x) == 1
-'size'        ('vertex' x + 'vertex' x) == 2@
-
-Converting a 'Graph' to the corresponding "Algebra.Graph.AdjacencyMap.NonEmpty"
-takes /O(s + m * log(m))/ time and /O(s + m)/ memory. This is also the
+Converting a 'Graph' to the corresponding
+'Algebra.Graph.AdjacencyMap.NonEmpty.AdjacencyMap' takes /O(s + m * log(m))/ time and /O(s + m)/ memory. This is also the
 complexity of the graph equality test, because it is currently implemented by
 converting graph expressions to canonical representations based on adjacency
 maps.
 
-The total order on graphs is defined using /size-lexicographic/ comparison:
+The total order 'Ord' on graphs is defined using /size-lexicographic/ comparison:
 
 * Compare the number of vertices. In case of a tie, continue.
 * Compare the sets of vertices. In case of a tie, continue.
@@ -198,18 +198,18 @@ eq x y = T.toAdjacencyMap x == T.toAdjacencyMap y
 {-# NOINLINE [1] eq #-}
 {-# RULES "eqInt" eq = eqInt #-}
 
--- | Like @eq@ but specialised for graphs with vertices of type 'Int'.
+-- Like @eq@ but specialised for graphs with vertices of type 'Int'.
 eqInt :: Graph Int -> Graph Int -> Bool
 eqInt x y = T.toAdjacencyIntMap x == T.toAdjacencyIntMap y
 
 -- TODO: Find a more efficient comparison.
--- | Compare two graphs by converting them to their adjacency maps.
+-- Compare two graphs by converting them to their adjacency maps.
 ord :: Ord a => Graph a -> Graph a -> Ordering
 ord x y = compare (T.toAdjacencyMap x) (T.toAdjacencyMap y)
 {-# NOINLINE [1] ord #-}
 {-# RULES "ordInt" ord = ordInt #-}
 
--- | Like @ord@ but specialised for graphs with vertices of type 'Int'.
+-- Like @ord@ but specialised for graphs with vertices of type 'Int'.
 ordInt :: Graph Int -> Graph Int -> Ordering
 ordInt x y = compare (T.toAdjacencyIntMap x) (T.toAdjacencyIntMap y)
 
@@ -221,8 +221,8 @@ instance Monad Graph where
     return  = pure
     g >>= f = foldg1 f Overlay Connect g
 
--- | Convert an algebraic graph into a non-empty algebraic graph. Returns
--- 'Nothing' if the argument is 'G.empty'.
+-- | Convert an algebraic graph (from "Algebra.Graph") into a non-empty
+-- algebraic graph. Returns 'Nothing' if the argument is 'G.empty'.
 -- Complexity: /O(s)/ time, memory and size.
 --
 -- @
@@ -376,8 +376,10 @@ concatg1 combine (x :| xs) = maybe x (combine x) $ foldr1Safe combine xs
 -- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
 --
 -- @
--- foldg1 (const 1) (+)  (+)  == 'size'
--- foldg1 (==x)     (||) (||) == 'hasVertex' x
+-- foldg1 'vertex'    'overlay' 'connect'        == id
+-- foldg1 'vertex'    'overlay' (flip 'connect') == 'transpose'
+-- foldg1 (const 1) (+)     (+)            == 'size'
+-- foldg1 (== x)    (||)    (||)           == 'hasVertex' x
 -- @
 foldg1 :: (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg1 v o c = go
@@ -397,9 +399,9 @@ foldg1 v o c = go
 -- isSubgraphOf ('path1' xs)    ('circuit1' xs) ==  True
 -- isSubgraphOf x y                         ==> x <= y
 -- @
-{-# SPECIALISE isSubgraphOf :: Graph Int -> Graph Int -> Bool #-}
 isSubgraphOf :: Ord a => Graph a -> Graph a -> Bool
 isSubgraphOf x y = overlay x y == y
+{-# SPECIALISE isSubgraphOf :: Graph Int -> Graph Int -> Bool #-}
 
 -- | Structural equality on graph expressions.
 -- Complexity: /O(s)/ time.
@@ -410,12 +412,12 @@ isSubgraphOf x y = overlay x y == y
 -- 1 + 2 === 2 + 1 == False
 -- x + y === x * y == False
 -- @
-{-# SPECIALISE (===) :: Graph Int -> Graph Int -> Bool #-}
 (===) :: Eq a => Graph a -> Graph a -> Bool
 (Vertex  x1   ) === (Vertex  x2   ) = x1 ==  x2
 (Overlay x1 y1) === (Overlay x2 y2) = x1 === x2 && y1 === y2
 (Connect x1 y1) === (Connect x2 y2) = x1 === x2 && y1 === y2
 _               === _               = False
+{-# SPECIALISE (===) :: Graph Int -> Graph Int -> Bool #-}
 
 infix 4 ===
 
@@ -432,16 +434,16 @@ infix 4 ===
 size :: Graph a -> Int
 size = foldg1 (const 1) (+) (+)
 
--- | Check if a graph contains a given vertex. A convenient alias for `elem`.
+-- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
 --
 -- @
 -- hasVertex x ('vertex' x) == True
 -- hasVertex 1 ('vertex' 2) == False
 -- @
-{-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex v = foldg1 (==v) (||) (||)
+{-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 
 -- TODO: Reduce code duplication with 'Algebra.Graph.hasEdge'.
 -- | Check if a graph contains a given edge.
@@ -453,7 +455,6 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- hasEdge x y . 'removeEdge' x y == const False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
-{-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
 hasEdge s t g = hit g == Edge
   where
@@ -466,6 +467,7 @@ hasEdge s t g = hit g == Edge
         Miss -> hit y
         Tail -> if hasVertex t y then Edge else Tail
         Edge -> Edge
+{-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
@@ -475,10 +477,10 @@ hasEdge s t g = hit g == Edge
 -- vertexCount                   ==  'length' . 'vertexList'
 -- vertexCount x \< vertexCount y ==> x \< y
 -- @
-{-# RULES "vertexCount/Int" vertexCount = vertexIntCount #-}
-{-# INLINE [1] vertexCount #-}
 vertexCount :: Ord a => Graph a -> Int
 vertexCount = T.vertexCount
+{-# RULES "vertexCount/Int" vertexCount = vertexIntCount #-}
+{-# INLINE [1] vertexCount #-}
 
 -- Like 'vertexCount' but specialised for Graph with vertices of type 'Int'.
 vertexIntCount :: Graph Int -> Int
@@ -493,14 +495,14 @@ vertexIntCount = IntSet.size . vertexIntSet
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-{-# INLINE [1] edgeCount #-}
-{-# RULES "edgeCount/Int" edgeCount = edgeCountInt #-}
 edgeCount :: Ord a => Graph a -> Int
 edgeCount = T.edgeCount
+{-# INLINE [1] edgeCount #-}
+{-# RULES "edgeCount/Int" edgeCount = edgeCountInt #-}
 
 -- Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
 edgeCountInt :: Graph Int -> Int
-edgeCountInt = AIM.edgeCount . T.toAdjacencyIntMap
+edgeCountInt = T.edgeCount . T.toAdjacencyIntMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -509,10 +511,10 @@ edgeCountInt = AIM.edgeCount . T.toAdjacencyIntMap
 -- vertexList1 ('vertex' x)  == [x]
 -- vertexList1 . 'vertices1' == 'Data.List.NonEmpty.nub' . 'Data.List.NonEmpty.sort'
 -- @
-{-# RULES "vertexList1/Int" vertexList1 = vertexIntList1 #-}
-{-# INLINE [1] vertexList1 #-}
 vertexList1 :: Ord a => Graph a -> NonEmpty a
 vertexList1 = NonEmpty.fromList . Set.toAscList . vertexSet
+{-# RULES "vertexList1/Int" vertexList1 = vertexIntList1 #-}
+{-# INLINE [1] vertexList1 #-}
 
 -- | Like 'vertexList1' but specialised for Graph with vertices of type 'Int'.
 vertexIntList1 :: Graph Int -> NonEmpty Int
@@ -527,16 +529,16 @@ vertexIntList1 = NonEmpty.fromList . IntSet.toAscList . vertexIntSet
 -- edgeList ('edge' x y)     == [(x,y)]
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- edgeList . 'edges1'       == 'Data.List.nub' . 'Data.List.sort' . 'Data.List.NonEmpty.toList'
--- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
+-- edgeList . 'transpose'    == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . edgeList
 -- @
-{-# RULES "edgeList/Int" edgeList = edgeIntList #-}
-{-# INLINE [1] edgeList #-}
 edgeList :: Ord a => Graph a -> [(a, a)]
 edgeList = T.edgeList
+{-# RULES "edgeList/Int" edgeList = edgeIntList #-}
+{-# INLINE [1] edgeList #-}
 
--- | Like 'edgeList' but specialised for Graph with vertices of type 'Int'.
-edgeIntList :: Graph Int -> [(Int,Int)]
-edgeIntList = AIM.edgeList . T.toAdjacencyIntMap
+-- Like 'edgeList' but specialised for Graph with vertices of type 'Int'.
+edgeIntList :: Graph Int -> [(Int, Int)]
+edgeIntList = T.edgeList . T.toAdjacencyIntMap
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -577,9 +579,9 @@ edgeSet = T.edgeSet
 -- given list.
 --
 -- @
--- path1 [x]        == 'vertex' x
--- path1 [x,y]      == 'edge' x y
--- path1 . 'Data.List.NonEmpty.reverse'  == 'transpose' . path1
+-- path1 [x]       == 'vertex' x
+-- path1 [x,y]     == 'edge' x y
+-- path1 . 'Data.List.NonEmpty.reverse' == 'transpose' . path1
 -- @
 path1 :: NonEmpty a -> Graph a
 path1 (x :| []    ) = vertex x
@@ -645,8 +647,8 @@ star x (y:ys) = connect (vertex x) (vertices1 $ y :| ys)
 -- stars1 [(x, [] )]               == 'vertex' x
 -- stars1 [(x, [y])]               == 'edge' x y
 -- stars1 [(x, ys )]               == 'star' x ys
--- stars1                          == 'overlays1' . fmap (uncurry 'star')
--- 'overlay' (stars1 xs) (stars1 ys) == stars1 (xs <> ys)
+-- stars1                          == 'overlays1' . 'fmap' ('uncurry' 'star')
+-- 'overlay' (stars1 xs) (stars1 ys) == stars1 (xs '<>' ys)
 -- @
 stars1 :: NonEmpty (a, [a]) -> Graph a
 stars1 = overlays1 . fmap (uncurry star)
@@ -705,8 +707,8 @@ mesh1 xx@(x:|xs) yy@(y:|ys) =
 -- lengths of the given lists.
 --
 -- @
--- torus1 [x]     [y]      == 'edge' (x,y) (x,y)
--- torus1 xs      ys       == 'box' ('circuit1' xs) ('circuit1' ys)
+-- torus1 [x]   [y]        == 'edge' (x,y) (x,y)
+-- torus1 xs    ys         == 'box' ('circuit1' xs) ('circuit1' ys)
 -- torus1 [1,2] [\'a\', \'b\'] == 'edges1' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\'))
 --                                   , ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
 --                                   , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\'))
@@ -809,7 +811,7 @@ splitVertex1 v us g = g >>= \w -> if w == v then vertices1 us else vertex w
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
 -- transpose ('box' x y)   == 'box' (transpose x) (transpose y)
--- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
+-- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Graph a -> Graph a
 transpose = foldg1 vertex overlay (flip connect)

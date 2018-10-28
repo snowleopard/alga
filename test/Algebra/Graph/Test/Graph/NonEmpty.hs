@@ -63,23 +63,29 @@ testGraphNonEmpty = do
     test "Theorems of non-empty graphs" theorems
 
     putStrLn $ "\n============ Ord (NonEmpty.Graph a) ============"
-    test "vertex 1 < vertex 2" $
-          vertex 1 < vertex (2 :: Int)
+    test "vertex 1 <  vertex 2" $
+          vertex 1 <  vertex (2 :: Int)
 
-    test "vertex 3 < edge 1 2" $
-          vertex 3 < edge 1 (2 :: Int)
+    test "vertex 3 <  edge 1 2" $
+          vertex 3 <  edge 1 (2 :: Int)
 
-    test "vertex 1 < edge 1 1" $
-          vertex 1 < edge 1 (1 :: Int)
+    test "vertex 1 <  edge 1 1" $
+          vertex 1 <  edge 1 (1 :: Int)
 
-    test "edge 1 1 < edge 1 2" $
-          edge 1 1 < edge 1 (2 :: Int)
+    test "edge 1 1 <  edge 1 2" $
+          edge 1 1 <  edge 1 (2 :: Int)
 
-    test "edge 1 2 < edge 1 1 + edge 2 2" $
-          edge 1 2 < edge 1 1 + edge 2 (2 :: Int)
+    test "edge 1 2 <  edge 1 1 + edge 2 2" $
+          edge 1 2 <  edge 1 1 + edge 2 (2 :: Int)
 
-    test "edge 1 2 < edge 1 3" $
-          edge 1 2 < edge 1 (3 :: Int)
+    test "edge 1 2 <  edge 1 3" $
+          edge 1 2 <  edge 1 (3 :: Int)
+
+    test "x        <= x + y" $ \(x :: G) y ->
+          x        <= x + y
+
+    test "x + y    <= x * y" $ \(x :: G) y ->
+          x + y    <= x * y
 
     putStrLn $ "\n============ Functor (NonEmpty.Graph a) ============"
     test "fmap f (vertex x) == vertex (f x)" $ \(apply -> f) (x :: Int) ->
@@ -250,34 +256,44 @@ testGraphNonEmpty = do
           connects1 [x,y] == connect x y
 
     putStrLn $ "\n============ Graph.NonEmpty.foldg1 ============"
-    test "foldg1 (const 1) (+)  (+)  == size" $ \(x :: G) ->
-          foldg1 (const 1) (+)  (+) x == size x
+    test "foldg1 vertex    overlay connect        == id" $ \(x :: G) ->
+          foldg1 vertex    overlay connect x      == id x
 
-    test "foldg1 (==x)     (||) (||) == hasVertex x" $ \(x :: Int) y ->
-          foldg1 (==x)     (||) (||) y == hasVertex x y
+    test "foldg1 vertex    overlay (flip connect) == transpose" $ \(x :: G) ->
+          foldg1 vertex    overlay (flip connect) x == transpose x
+
+    test "foldg1 (const 1) (+)     (+)            == size" $ \(x :: G) ->
+          foldg1 (const 1) (+)     (+) x          == size x
+
+    test "foldg1 (== x)    (||)    (||)           == hasVertex x" $ \(x :: Int) y ->
+          foldg1 (== x)    (||)    (||) y         == hasVertex x y
 
     putStrLn $ "\n============ Graph.NonEmpty.isSubgraphOf ============"
-    test "isSubgraphOf x             (overlay x y) == True" $ \(x :: G) y ->
-          isSubgraphOf x             (overlay x y) == True
+    test "isSubgraphOf x             (overlay x y) ==  True" $ \(x :: G) y ->
+          isSubgraphOf x             (overlay x y) ==  True
 
-    test "isSubgraphOf (overlay x y) (connect x y) == True" $ \(x :: G) y ->
-          isSubgraphOf (overlay x y) (connect x y) == True
+    test "isSubgraphOf (overlay x y) (connect x y) ==  True" $ \(x :: G) y ->
+          isSubgraphOf (overlay x y) (connect x y) ==  True
 
-    test "isSubgraphOf (path1 xs)    (circuit1 xs) == True" $ \(xs' :: NonEmptyList Int) ->
+    test "isSubgraphOf (path1 xs)    (circuit1 xs) ==  True" $ \(xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
-        in isSubgraphOf (path1 xs)    (circuit1 xs) == True
+        in isSubgraphOf (path1 xs)    (circuit1 xs) ==  True
+
+    test "isSubgraphOf x y                         ==> x <= y" $ \(x :: G) z ->
+        let y = x + z -- Make sure we hit the precondition
+        in isSubgraphOf x y                        ==> x <= y
 
     putStrLn "\n============ Graph.NonEmpty.(===) ============"
-    test "    x === x      == True" $ \(x :: G) ->
-             (x === x)     == True
+    test "    x === x     == True" $ \(x :: G) ->
+             (x === x)    == True
 
-    test "x + y === x + y  == True" $ \(x :: G) y ->
+    test "x + y === x + y == True" $ \(x :: G) y ->
          (x + y === x + y) == True
 
-    test "1 + 2 === 2 + 1  == False" $
+    test "1 + 2 === 2 + 1 == False" $
          (1 + 2 === 2 + (1 :: G)) == False
 
-    test "x + y === x * y  == False" $ \(x :: G) y ->
+    test "x + y === x * y == False" $ \(x :: G) y ->
          (x + y === x * y) == False
 
     putStrLn $ "\n============ Graph.NonEmpty.size ============"
@@ -398,13 +414,13 @@ testGraphNonEmpty = do
         in (edgeSet . edges1) xs == (Set.fromList . NonEmpty.toList) xs
 
     putStrLn $ "\n============ Graph.NonEmpty.path1 ============"
-    test "path1 [x]        == vertex x" $ \(x :: Int) ->
-          path1 [x]        == vertex x
+    test "path1 [x]       == vertex x" $ \(x :: Int) ->
+          path1 [x]       == vertex x
 
-    test "path1 [x,y]      == edge x y" $ \(x :: Int) y ->
-          path1 [x,y]      == edge x y
+    test "path1 [x,y]     == edge x y" $ \(x :: Int) y ->
+          path1 [x,y]     == edge x y
 
-    test "path1 . reverse  == transpose . path1" $ \(xs' :: NonEmptyList Int) ->
+    test "path1 . reverse == transpose . path1" $ \(xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
         in (path1 . NonEmpty.reverse) xs == (transpose . path1) xs
 
@@ -510,13 +526,13 @@ testGraphNonEmpty = do
          in size (mesh1 xs ys) == max 1 (3 * length xs * length ys - length xs - length ys -1)
 
     putStrLn $ "\n============ Graph.NonEmpty.torus1 ============"
-    test "torus1 [x]     [y]      == edge (x,y) (x,y)" $ \(x :: Int) (y :: Int) ->
-          torus1 [x]     [y]      == edge (x,y) (x,y)
+    test "torus1 [x]   [y]        == edge (x,y) (x,y)" $ \(x :: Int) (y :: Int) ->
+          torus1 [x]   [y]        == edge (x,y) (x,y)
 
-    test "torus1 xs      ys       == box (circuit1 xs) (circuit1 ys)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
+    test "torus1 xs    ys         == box (circuit1 xs) (circuit1 ys)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
             ys = NonEmpty.fromList (getNonEmpty ys')
-        in torus1 xs      ys       == box (circuit1 xs) (circuit1 ys)
+        in torus1 xs    ys         == box (circuit1 xs) (circuit1 ys)
 
     test "torus1 [1,2] ['a', 'b'] == <correct result>" $
           torus1 [1,2] ['a', 'b'] == edges1 [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a'))
@@ -642,37 +658,6 @@ testGraphNonEmpty = do
     test "simplify (1 * 1 * 1) === 1 * 1" $
           simplify (1 * 1 * 1) === (1 * 1 :: G)
 
-    putStrLn "\n============ Graph.NonEmpty.box ============"
-    test "box (path1 [0,1]) (path1 ['a','b']) == <correct result>" $ mapSize (min 10) $
-          box (path1 [0,1]) (path1 ['a','b']) == edges1 [ ((0,'a'), (0,'b'))
-                                                        , ((0,'a'), (1,'a'))
-                                                        , ((0,'b'), (1,'b'))
-                                                        , ((1,'a'), (1::Int,'b')) ]
-
-    let unit = fmap $ \(a, ()) -> a
-        comm = fmap $ \(a,  b) -> (b, a)
-    test "box x y               ~~ box y x" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
-          comm (box x y)        == box y x
-
-    test "box x (overlay y z)   == overlay (box x y) (box x z)" $ mapSize (min 10) $ \(x :: G) (y :: G) z ->
-          box x (overlay y z)   == overlay (box x y) (box x z)
-
-    test "box x (vertex ())     ~~ x" $ mapSize (min 10) $ \(x :: G) ->
-     unit(box x (vertex ()))    == x
-
-    let assoc = fmap $ \(a, (b, c)) -> ((a, b), c)
-    test "box x (box y z)       ~~ box (box x y) z" $ mapSize (min 5) $ \(x :: G) (y :: G) (z :: G) ->
-      assoc (box x (box y z))   == box (box x y) z
-
-    test "transpose   (box x y) == box (transpose x) (transpose y)" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
-          transpose   (box x y) == box (transpose x) (transpose y)
-
-    test "vertexCount (box x y) == vertexCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
-          vertexCount (box x y) == vertexCount x * vertexCount y
-
-    test "edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
-          edgeCount   (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
-
     putStrLn "\n============ Graph.NonEmpty.sparsify ============"
     test "sort . reachable x       == sort . rights . reachable (Right x) . sparsify" $ \x (y :: G) ->
          (sort . reachable x) y    == (sort . rights . reachable (Right x) . sparsify) y
@@ -685,3 +670,34 @@ testGraphNonEmpty = do
 
     test "size        (sparsify x) <= 3 * size x" $ \(x :: G) ->
           size        (sparsify x) <= 3 * size x
+
+    putStrLn "\n============ Graph.NonEmpty.box ============"
+    test "box (path1 [0,1]) (path1 ['a','b']) == <correct result>" $ mapSize (min 10) $
+          box (path1 [0,1]) (path1 ['a','b']) == edges1 [ ((0,'a'), (0,'b'))
+                                                        , ((0,'a'), (1,'a'))
+                                                        , ((0,'b'), (1,'b'))
+                                                        , ((1,'a'), (1::Int,'b')) ]
+
+    let unit = fmap $ \(a, ()) -> a
+        comm = fmap $ \(a,  b) -> (b, a)
+    test "box x y                             ~~ box y x" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
+          comm (box x y)                      == box y x
+
+    test "box x (overlay y z)                 == overlay (box x y) (box x z)" $ mapSize (min 10) $ \(x :: G) (y :: G) z ->
+          box x (overlay y z)                 == overlay (box x y) (box x z)
+
+    test "box x (vertex ())                   ~~ x" $ mapSize (min 10) $ \(x :: G) ->
+     unit(box x (vertex ()))                  == x
+
+    let assoc = fmap $ \(a, (b, c)) -> ((a, b), c)
+    test "box x (box y z)                     ~~ box (box x y) z" $ mapSize (min 5) $ \(x :: G) (y :: G) (z :: G) ->
+      assoc (box x (box y z))                 == box (box x y) z
+
+    test "transpose   (box x y)               == box (transpose x) (transpose y)" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
+          transpose   (box x y)               == box (transpose x) (transpose y)
+
+    test "vertexCount (box x y)               == vertexCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
+          vertexCount (box x y)               == vertexCount x * vertexCount y
+
+    test "edgeCount   (box x y)               <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
+          edgeCount   (box x y)               <= vertexCount x * edgeCount y + edgeCount x * vertexCount y

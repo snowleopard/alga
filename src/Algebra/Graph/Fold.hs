@@ -409,7 +409,7 @@ isEmpty = T.isEmpty
 size :: Fold a -> Int
 size = T.size
 
--- | Check if a graph contains a given vertex. A convenient alias for `elem`.
+-- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
 --
 -- @
