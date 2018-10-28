@@ -33,7 +33,6 @@ import qualified Algebra.Graph.AdjacencyMap          as AM
 import qualified Algebra.Graph.AdjacencyMap.NonEmpty as NonEmpty
 import qualified Data.List.NonEmpty                  as NonEmpty
 import qualified Data.Set                            as Set
-import qualified Data.IntSet                         as IntSet
 
 type G = NonEmpty.AdjacencyMap Int
 
@@ -288,18 +287,6 @@ testAdjacencyMapNonEmpty = do
     test "vertexSet . clique1   == Set.fromList . toList" $ \(xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
         in (vertexSet . clique1) xs == (Set.fromList . NonEmpty.toList) xs
-
-    putStrLn $ "\n============ AdjacencyMap.NonEmpty.vertexIntSet ============"
-    test "vertexIntSet . vertex    == IntSet.singleton" $ \(x :: Int) ->
-         (vertexIntSet . vertex) x == IntSet.singleton x
-
-    test "vertexIntSet . vertices1 == IntSet.fromList . toList" $ \(xs' :: NonEmptyList Int) ->
-        let xs = NonEmpty.fromList (getNonEmpty xs')
-        in (vertexIntSet . vertices1) xs == (IntSet.fromList . NonEmpty.toList) xs
-
-    test "vertexIntSet . clique1   == IntSet.fromList . toList" $ \(xs' :: NonEmptyList Int) ->
-        let xs = NonEmpty.fromList (getNonEmpty xs')
-        in (vertexIntSet . clique1) xs == (IntSet.fromList . NonEmpty.toList) xs
 
     putStrLn $ "\n============ AdjacencyMap.NonEmpty.edgeSet ============"
     test "edgeSet (vertex x) == Set.empty" $ \(x :: Int) ->

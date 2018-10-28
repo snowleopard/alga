@@ -34,7 +34,7 @@ module Algebra.Graph.AdjacencyMap.NonEmpty (
 
     -- * Graph properties
     hasVertex, hasEdge, vertexCount, edgeCount, vertexList1, edgeList,
-    vertexSet, vertexIntSet, edgeSet, preSet, postSet,
+    vertexSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
     path1, circuit1, clique1, biclique1, star, stars1, tree,
@@ -53,7 +53,6 @@ import Algebra.Graph.AdjacencyMap.NonEmpty.Internal
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.Set                   as Set
-import qualified Data.IntSet                as IntSet
 
 -- Lifting functions to non-empty adjacency maps
 via :: (AM.AdjacencyMap a -> AM.AdjacencyMap b) -> AdjacencyMap a -> AdjacencyMap b
@@ -213,7 +212,7 @@ vertexList1 = unsafeNonEmpty . AM.vertexList . am
 -- edgeList ('edge' x y)     == [(x,y)]
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
--- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
+-- edgeList . 'transpose'    == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList = AM.edgeList . am
@@ -228,18 +227,6 @@ edgeList = AM.edgeList . am
 -- @
 vertexSet :: AdjacencyMap a -> Set a
 vertexSet = AM.vertexSet . am
-
--- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
--- graphs with vertices of type 'Int'.
--- Complexity: /O(n)/ time and memory.
---
--- @
--- vertexIntSet . 'vertex'   == IntSet.'IntSet.singleton'
--- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
--- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
--- @
-vertexIntSet :: AdjacencyMap Int -> IntSet.IntSet
-vertexIntSet = IntSet.fromAscList . Set.toAscList . vertexSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
@@ -340,8 +327,8 @@ star x = NAM . AM.star x
 -- stars1 [(x, [] )]               == 'vertex' x
 -- stars1 [(x, [y])]               == 'edge' x y
 -- stars1 [(x, ys )]               == 'star' x ys
--- stars1                          == 'overlays1' . fmap (uncurry 'star')
--- 'overlay' (stars1 xs) (stars1 ys) == stars1 (xs <> ys)
+-- stars1                          == 'overlays1' . 'fmap' ('uncurry' 'star')
+-- 'overlay' (stars1 xs) (stars1 ys) == stars1 (xs '<>' ys)
 -- @
 stars1 :: Ord a => NonEmpty (a, [a]) -> AdjacencyMap a
 stars1 = NAM . AM.stars . toList
@@ -415,7 +402,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- transpose ('vertex' x)  == 'vertex' x
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
--- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
+-- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
 transpose = NAM . AM.transpose . am

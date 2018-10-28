@@ -40,7 +40,7 @@ module Algebra.Graph.NonEmpty (
 
     -- * Graph properties
     size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList1, edgeList,
-    vertexSet, vertexIntSet, edgeSet,
+    vertexSet, edgeSet,
 
     -- * Standard families of graphs
     path1, circuit1, clique1, biclique1, star, stars1, tree, mesh1, torus1,
@@ -551,15 +551,7 @@ edgeIntList = T.edgeList . T.toAdjacencyIntMap
 vertexSet :: Ord a => Graph a -> Set.Set a
 vertexSet = T.vertexSet
 
--- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
--- graphs with vertices of type 'Int'.
--- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
---
--- @
--- vertexIntSet . 'vertex'    == IntSet.'IntSet.singleton'
--- vertexIntSet . 'vertices1' == IntSet.'IntSet.fromList' . 'Data.List.NonEmpty.toList'
--- vertexIntSet . 'clique1'   == IntSet.'IntSet.fromList' . 'Data.List.NonEmpty.toList'
--- @
+-- Like 'vertexSet' but specialised for graphs with vertices of type 'Int'.
 vertexIntSet :: Graph Int -> IntSet.IntSet
 vertexIntSet = T.vertexIntSet
 

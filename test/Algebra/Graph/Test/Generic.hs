@@ -385,20 +385,20 @@ testFromAdjacencyIntSets (Testsuite prefix (%)) = do
 testIsSubgraphOf :: Testsuite -> IO ()
 testIsSubgraphOf (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "isSubgraphOf ============"
-    test "isSubgraphOf empty         x             == True" $ \x ->
-          isSubgraphOf empty       % x             == True
+    test "isSubgraphOf empty         x             ==  True" $ \x ->
+          isSubgraphOf empty       % x             ==  True
 
-    test "isSubgraphOf (vertex x)    empty         == False" $ \x ->
-          isSubgraphOf (vertex x)  % empty         == False
+    test "isSubgraphOf (vertex x)    empty         ==  False" $ \x ->
+          isSubgraphOf (vertex x)  % empty         ==  False
 
-    test "isSubgraphOf x             (overlay x y) == True" $ \x y ->
-          isSubgraphOf x            % overlay x y  == True
+    test "isSubgraphOf x             (overlay x y) ==  True" $ \x y ->
+          isSubgraphOf x            % overlay x y  ==  True
 
-    test "isSubgraphOf (overlay x y) (connect x y) == True" $ \x y ->
-          isSubgraphOf (overlay x y) % connect x y == True
+    test "isSubgraphOf (overlay x y) (connect x y) ==  True" $ \x y ->
+          isSubgraphOf (overlay x y) % connect x y ==  True
 
-    test "isSubgraphOf (path xs)     (circuit xs)  == True" $ \xs ->
-          isSubgraphOf (path xs)    % circuit xs   == True
+    test "isSubgraphOf (path xs)     (circuit xs)  ==  True" $ \xs ->
+          isSubgraphOf (path xs)    % circuit xs   ==  True
 
     test "isSubgraphOf x y                         ==> x <= y" $ \x z ->
         let y = x + z -- Make sure we hit the precondition
