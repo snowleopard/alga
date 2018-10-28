@@ -186,7 +186,7 @@ instance Functor Graph where
 -- | 'fmap' on which we can apply rewrite rules
 mapG :: (a -> b) -> Graph a -> Graph b
 mapG f = foldg empty (vertex . f) overlay connect
-{-# NOINLINE [0] mapG #-}
+{-# INLINE [0] mapG #-}
 
 instance NFData a => NFData (Graph a) where
     rnf Empty         = ()
@@ -1160,6 +1160,6 @@ flipFB = flip
 
 -- Rules to rewrite un-merged function back
 {-# RULES
-"graph/mapg"      [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect    = mapG f
-"graph/induce"    [1] forall e v f. foldg Empty (matchFB e v f) Overlay Connect = induce f
+"graph/mapg"   [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect   = mapG f
+"graph/induce" [1] forall e v f. foldg Empty (matchFB e v f) Overlay Connect = induce f
  #-}
