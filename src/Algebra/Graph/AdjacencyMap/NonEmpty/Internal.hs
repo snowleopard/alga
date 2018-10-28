@@ -32,6 +32,14 @@ working with graphs:
 
 Note that the 'signum' method of the type class 'Num' cannot be implemented.
 
+The 'Show' instance is defined using basic graph construction primitives:
+
+@show (1         :: AdjacencyMap Int) == "vertex 1"
+show (1 + 2     :: AdjacencyMap Int) == "vertices1 [1,2]"
+show (1 * 2     :: AdjacencyMap Int) == "edge 1 2"
+show (1 * 2 * 3 :: AdjacencyMap Int) == "edges1 [(1,2),(1,3),(2,3)]"
+show (1 * 2 + 3 :: AdjacencyMap Int) == "overlay (vertex 3) (edge 1 2)"@
+
 The 'Eq' instance satisfies the following laws of algebraic graphs:
 
     * 'overlay' is commutative, associative and idempotent:
@@ -104,6 +112,21 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
     signum      = error "NonEmpty.AdjacencyMap.signum cannot be implemented."
     abs         = id
     negate      = id
+
+instance (Ord a, Show a) => Show (AdjacencyMap a) where
+    show (AM m)
+        | null vs    = error "NonEmpty.AdjacencyMap.Show: Graph is empty"
+        | null es    = vshow vs
+        | vs == used = eshow es
+        | otherwise  = "overlay (" ++ vshow (vs \\ used) ++ ") (" ++ eshow es ++ ")"
+      where
+        vs             = Set.toAscList (keysSet m)
+        es             = internalEdgeList m
+        vshow [x]      = "vertex "   ++ show x
+        vshow xs       = "vertices1 " ++ show xs
+        eshow [(x, y)] = "edge "     ++ show x ++ " " ++ show y
+        eshow xs       = "edges1 "    ++ show xs
+        used           = Set.toAscList (referredToVertexSet m)
 
 -- | Construct the graph comprising /a single isolated vertex/.
 -- Complexity: /O(1)/ time and memory.
