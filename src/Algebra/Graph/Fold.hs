@@ -70,6 +70,14 @@ construction primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a
     > 1 + 2 * 3   == overlay (vertex 1) (connect (vertex 2) (vertex 3))
     > 1 * (2 + 3) == connect (vertex 1) (overlay (vertex 2) (vertex 3))
 
+__Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
+which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
+additive and multiplicative identities, and 'negate' as additive inverse.
+Nevertheless, overloading 'fromInteger', '+' and '*' is very convenient when
+working with algebraic graphs; we hope that in future Haskell's Prelude will
+provide a more fine-grained class hierarchy for algebraic structures, which we
+would be able to utilise without violating any laws.
+
 The 'Show' instance is defined using basic graph construction primitives:
 
 @show (empty     :: Fold Int) == "empty"

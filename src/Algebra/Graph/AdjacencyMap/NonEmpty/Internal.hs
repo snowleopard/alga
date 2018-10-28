@@ -33,7 +33,15 @@ working with graphs:
     > 1 + 2 * 3   == overlay (vertex 1) (connect (vertex 2) (vertex 3))
     > 1 * (2 + 3) == connect (vertex 1) (overlay (vertex 2) (vertex 3))
 
-Note that the 'signum' method of the type class 'Num' cannot be implemented.
+__Note:__ the 'signum' method of the type class 'Num' cannot be implemented and
+will throw an error. Furthermore, the 'Num' instance does not satisfy several
+"customary laws" of 'Num', which dictate that 'fromInteger' @0@ and
+'fromInteger' @1@ should act as additive and multiplicative identities, and
+'negate' as additive inverse. Nevertheless, overloading 'fromInteger', '+' and
+'*' is very convenient when working with algebraic graphs; we hope that in
+future Haskell's Prelude will provide a more fine-grained class hierarchy for
+algebraic structures, which we would be able to utilise without violating any
+laws.
 
 The 'Show' instance is defined using basic graph construction primitives:
 
