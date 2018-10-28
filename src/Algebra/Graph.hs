@@ -33,7 +33,7 @@ module Algebra.Graph (
 
     -- * Graph properties
     isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, edgeSet, adjacencyList, adjacencyMap, adjacencyIntMap,
+    edgeList, vertexSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars, tree, forest, mesh, torus,
@@ -63,11 +63,6 @@ import Data.Maybe (fromMaybe)
 import Data.Tree
 
 import Algebra.Graph.Internal
-
-import Data.IntMap (IntMap)
-import Data.IntSet (IntSet)
-import Data.Map    (Map)
-import Data.Set    (Set)
 
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
@@ -636,23 +631,12 @@ edgeIntSet = AIM.edgeSet . toAdjacencyIntMap
 adjacencyList :: Ord a => Graph a -> [(a, [a])]
 adjacencyList = AM.adjacencyList . toAdjacencyMap
 
--- | The /adjacency map/ of a graph: each vertex is associated with a set of its
--- direct successors.
--- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
--- graph can be quadratic with respect to the expression size /s/.
-adjacencyMap :: Ord a => Graph a -> Map a (Set a)
-adjacencyMap = AM.adjacencyMap . toAdjacencyMap
-
 -- TODO: This is a very inefficient implementation. Find a way to construct an
 -- adjacency map directly, without building intermediate representations for all
 -- subgraphs.
 -- | Convert a graph to 'AM.AdjacencyMap'.
 toAdjacencyMap :: Ord a => Graph a -> AM.AdjacencyMap a
 toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
-
--- | Like 'adjacencyMap' but specialised for graphs with vertices of type 'Int'.
-adjacencyIntMap :: Graph Int -> IntMap IntSet
-adjacencyIntMap = AIM.adjacencyIntMap . toAdjacencyIntMap
 
 -- | Like @toAdjacencyMap@ but specialised for graphs with vertices of type 'Int'.
 toAdjacencyIntMap :: Graph Int -> AIM.AdjacencyIntMap
