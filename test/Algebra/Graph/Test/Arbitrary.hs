@@ -32,14 +32,14 @@ import Algebra.Graph.Relation.InternalDerived
 
 import qualified Algebra.Graph.AdjacencyIntMap                as AdjacencyIntMap
 import qualified Algebra.Graph.AdjacencyMap                   as AdjacencyMap
-import qualified Algebra.Graph.AdjacencyMap.NonEmpty          as NAM
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap          as NAM
 import qualified Algebra.Graph.Class                          as C
 import qualified Algebra.Graph.Labelled.AdjacencyMap          as Labelled
 import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal as Labelled
 import qualified Algebra.Graph.NonEmpty                       as NonEmpty
 import qualified Algebra.Graph.Relation                       as Relation
 
--- | Generate an arbitrary 'Graph' value of a specified size.
+-- | Generate an arbitrary 'C.Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
 arbitraryGraph = sized expr
   where
@@ -60,7 +60,11 @@ instance Arbitrary a => Arbitrary (Graph a) where
     shrink (Connect x y) = [Empty, x, y, Overlay x y]
                         ++ [Connect x' y' | (x', y') <- shrink (x, y) ]
 
--- | Generate an arbitrary 'NonEmptyGraph' value of a specified size.
+-- TODO: Implement a custom shrink method.
+instance Arbitrary a => Arbitrary (Fold a) where
+    arbitrary = arbitraryGraph
+
+-- | Generate an arbitrary 'NonEmpty.Graph' value of a specified size.
 arbitraryNonEmptyGraph :: Arbitrary a => Gen (NonEmpty.Graph a)
 arbitraryNonEmptyGraph = sized expr
   where
@@ -84,34 +88,6 @@ instance Arbitrary a => Arbitrary (NonEmpty.Graph a) where
 arbitraryRelation :: (Arbitrary a, Ord a) => Gen (Relation a)
 arbitraryRelation = Relation.stars <$> arbitrary
 
--- | Generate an arbitrary 'AdjacencyMap'. It is guaranteed that the
--- resulting adjacency map is 'consistent'.
-arbitraryAdjacencyMap :: (Arbitrary a, Ord a) => Gen (AdjacencyMap a)
-arbitraryAdjacencyMap = AdjacencyMap.stars <$> arbitrary
-
--- | Generate an arbitrary 'AdjacencyMap'. It is guaranteed that the
--- resulting adjacency map is 'consistent'.
-arbitraryNonEmptyAdjacencyMap :: (Arbitrary a, Ord a) => Gen (NAM.AdjacencyMap a)
-arbitraryNonEmptyAdjacencyMap = NAM.stars1 <$> nonEmpty
-  where
-    nonEmpty = do
-        xs <- arbitrary
-        case xs of
-            [] -> do
-                x <- arbitrary
-                return (x :| [])
-            (x:xs) -> return (x :| xs)
-
--- | Generate an arbitrary 'LabelledAdjacencyMap'. It is guaranteed that the
--- resulting adjacency map is 'consistent'.
-arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Gen (Labelled.AdjacencyMap e a)
-arbitraryLabelledAdjacencyMap = Labelled.fromAdjacencyMaps <$> arbitrary
-
--- | Generate an arbitrary 'AdjacencyIntMap'. It is guaranteed that the
--- resulting adjacency map is 'consistent'.
-arbitraryAdjacencyIntMap :: Gen AdjacencyIntMap
-arbitraryAdjacencyIntMap = AdjacencyIntMap.stars <$> arbitrary
-
 -- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
     arbitrary = arbitraryRelation
@@ -128,21 +104,51 @@ instance (Arbitrary a, Ord a) => Arbitrary (TransitiveRelation a) where
 instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
     arbitrary = PreorderRelation <$> arbitraryRelation
 
+-- | Generate an arbitrary 'AdjacencyMap'. It is guaranteed that the
+-- resulting adjacency map is 'consistent'.
+arbitraryAdjacencyMap :: (Arbitrary a, Ord a) => Gen (AdjacencyMap a)
+arbitraryAdjacencyMap = AdjacencyMap.stars <$> arbitrary
+
+-- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
     arbitrary = arbitraryAdjacencyMap
 
+-- | Generate an arbitrary non-empty 'NAM.AdjacencyMap'. It is guaranteed that
+-- the resulting adjacency map is 'consistent'.
+arbitraryNonEmptyAdjacencyMap :: (Arbitrary a, Ord a) => Gen (NAM.AdjacencyMap a)
+arbitraryNonEmptyAdjacencyMap = NAM.stars1 <$> nonEmpty
+  where
+    nonEmpty = do
+        xs <- arbitrary
+        case xs of
+            [] -> do
+                x <- arbitrary
+                return ((x, []) :| []) -- There must be at least one vertex
+            (x:xs) -> return (x :| xs)
+
+-- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a) => Arbitrary (NAM.AdjacencyMap a) where
     arbitrary = arbitraryNonEmptyAdjacencyMap
 
-instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Arbitrary (Labelled.AdjacencyMap e a) where
-    arbitrary = arbitraryLabelledAdjacencyMap
+-- | Generate an arbitrary 'AdjacencyIntMap'. It is guaranteed that the
+-- resulting adjacency map is 'consistent'.
+arbitraryAdjacencyIntMap :: Gen AdjacencyIntMap
+arbitraryAdjacencyIntMap = AdjacencyIntMap.stars <$> arbitrary
 
+-- TODO: Implement a custom shrink method.
 instance Arbitrary AdjacencyIntMap where
     arbitrary = arbitraryAdjacencyIntMap
 
-instance Arbitrary a => Arbitrary (Fold a) where
-    arbitrary = arbitraryGraph
+-- | Generate an arbitrary labelled 'Labelled.AdjacencyMap'. It is guaranteed
+-- that the resulting adjacency map is 'consistent'.
+arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Gen (Labelled.AdjacencyMap e a)
+arbitraryLabelledAdjacencyMap = Labelled.fromAdjacencyMaps <$> arbitrary
 
+-- TODO: Implement a custom shrink method.
+instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Arbitrary (Labelled.AdjacencyMap e a) where
+    arbitrary = arbitraryLabelledAdjacencyMap
+
+-- TODO: Implement a custom shrink method.
 instance Arbitrary a => Arbitrary (Tree a) where
     arbitrary = sized go
       where
@@ -156,5 +162,6 @@ instance Arbitrary a => Arbitrary (Tree a) where
             children <- replicateM subTrees (go subSize)
             return $ Node root children
 
+-- TODO: Implement a custom shrink method.
 instance Arbitrary s => Arbitrary (Doc s) where
     arbitrary = (mconcat . map literal) <$> arbitrary

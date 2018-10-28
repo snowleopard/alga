@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.AdjacencyMap.NonEmpty
+-- Module     : Algebra.Graph.NonEmpty.AdjacencyMap
 -- Copyright  : (c) Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -15,14 +15,14 @@
 -- qualified to avoid name clashes with "Algebra.Graph.AdjacencyMap":
 --
 -- @
--- import qualified Algebra.Graph.AdjacencyMap.NonEmpty as NonEmpty
+-- import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 -- @
 --
 -- The naming convention generally follows that of "Data.List.NonEmpty": we use
 -- suffix @1@ to indicate the functions whose interface must be changed compared
 -- to "Algebra.Graph.AdjacencyMap", e.g. 'vertices1'.
 -----------------------------------------------------------------------------
-module Algebra.Graph.AdjacencyMap.NonEmpty (
+module Algebra.Graph.NonEmpty.AdjacencyMap (
     -- * Data structure
     AdjacencyMap, toNonEmpty,
 
@@ -49,7 +49,7 @@ import Data.Maybe
 import Data.Set (Set)
 import Data.Tree
 
-import Algebra.Graph.AdjacencyMap.NonEmpty.Internal
+import Algebra.Graph.NonEmpty.AdjacencyMap.Internal
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.Set                   as Set

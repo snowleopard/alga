@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.AdjacencyMap.NonEmpty.Internal
+-- Module     : Algebra.Graph.NonEmpty.AdjacencyMap.Internal
 -- Copyright  : (c) Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -8,9 +8,9 @@
 --
 -- This module exposes the implementation of non-empty adjacency maps. The API
 -- is unstable and unsafe, and is exposed only for documentation. You should use
--- the non-internal module "Algebra.Graph.AdjacencyMap.NonEmpty" instead.
+-- the non-internal module "Algebra.Graph.NonEmpty.AdjacencyMap" instead.
 -----------------------------------------------------------------------------
-module Algebra.Graph.AdjacencyMap.NonEmpty.Internal (
+module Algebra.Graph.NonEmpty.AdjacencyMap.Internal (
     -- * Adjacency map implementation
     AdjacencyMap (..), vertex, overlay, connect, consistent
     ) where
@@ -90,11 +90,11 @@ The total order on graphs is defined using /size-lexicographic/ comparison:
 Here are a few examples:
 
 @'vertex' 1 < 'vertex' 2
-'vertex' 3 < 'Algebra.Graph.AdjacencyMap.NonEmpty.edge' 1 2
-'vertex' 1 < 'Algebra.Graph.AdjacencyMap.NonEmpty.edge' 1 1
-'Algebra.Graph.AdjacencyMap.NonEmpty.edge' 1 1 < 'Algebra.Graph.AdjacencyMap.NonEmpty.edge' 1 2
-'Algebra.Graph.AdjacencyMap.NonEmpty.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.NonEmpty.edge' 1 1 + 'Algebra.Graph.AdjacencyMap.NonEmpty.edge' 2 2
-'Algebra.Graph.AdjacencyMap.NonEmpty.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.NonEmpty.edge' 1 3@
+'vertex' 3 < 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 2
+'vertex' 1 < 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 1
+'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 1 < 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 2
+'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 1 + 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 2 2
+'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 3@
 
 Note that the resulting order refines the 'isSubgraphOf' relation and is
 compatible with 'overlay' and 'connect' operations:
@@ -109,7 +109,6 @@ newtype AdjacencyMap a = NAM {
     -- its direct successors. Complexity: /O(1)/ time and memory.
     --
     -- @
-    -- adjacencyMap 'empty'      == Map.'Map.empty'
     -- adjacencyMap ('vertex' x) == Map.'Map.singleton' x Set.'Set.empty'
     -- adjacencyMap ('Algebra.Graph.AdjacencyMap.edge' 1 1) == Map.'Map.singleton' 1 (Set.'Set.singleton' 1)
     -- adjacencyMap ('Algebra.Graph.AdjacencyMap.edge' 1 2) == Map.'Map.fromList' [(1,Set.'Set.singleton' 2), (2,Set.'Set.empty')]
@@ -143,9 +142,9 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.hasVertex' x (vertex x) == True
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' (vertex x) == 1
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount'   (vertex x) == 0
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' x (vertex x) == True
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (vertex x) == 1
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (vertex x) == 0
 -- @
 vertex :: a -> AdjacencyMap a
 vertex = NAM . AM.vertex
@@ -155,13 +154,13 @@ vertex = NAM . AM.vertex
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.hasVertex' z (overlay x y) == 'Algebra.Graph.AdjacencyMap.NonEmpty.hasVertex' z x || 'Algebra.Graph.AdjacencyMap.NonEmpty.hasVertex' z y
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' (overlay x y) >= 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' x
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' (overlay x y) <= 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' x + 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' y
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount'   (overlay x y) >= 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount' x
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount'   (overlay x y) <= 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount' x   + 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount' y
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' (overlay 1 2) == 2
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount'   (overlay 1 2) == 0
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' z (overlay x y) == 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' z x || 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' z y
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (overlay x y) >= 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' x
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (overlay x y) <= 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' x + 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (overlay x y) >= 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' x
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (overlay x y) <= 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' x   + 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' y
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (overlay 1 2) == 2
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
 overlay (NAM x) (NAM y) = NAM (AM.overlay x y)
@@ -173,15 +172,15 @@ overlay (NAM x) (NAM y) = NAM (AM.overlay x y)
 -- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
 --
 -- @
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.hasVertex' z (connect x y) == 'Algebra.Graph.AdjacencyMap.NonEmpty.hasVertex' z x || 'Algebra.Graph.AdjacencyMap.NonEmpty.hasVertex' z y
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' (connect x y) >= 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' x
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' (connect x y) <= 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' x + 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' y
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount'   (connect x y) >= 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount' x
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount'   (connect x y) >= 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount' y
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount'   (connect x y) >= 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' x * 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' y
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount'   (connect x y) <= 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' x * 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' y + 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount' x + 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount' y
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.vertexCount' (connect 1 2) == 2
--- 'Algebra.Graph.AdjacencyMap.NonEmpty.edgeCount'   (connect 1 2) == 1
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' z (connect x y) == 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' z x || 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' z y
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (connect x y) >= 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' x
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (connect x y) <= 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' x + 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' x
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' y
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' x * 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' y
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (connect x y) <= 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' x * 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' y + 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' x + 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' y
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (connect 1 2) == 2
+-- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (connect 1 2) == 1
 -- @
 connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
 connect (NAM x) (NAM y) = NAM (AM.connect x y)
@@ -196,9 +195,9 @@ connect (NAM x) (NAM y) = NAM (AM.connect x y)
 -- consistent ('vertex' x)    == True
 -- consistent ('overlay' x y) == True
 -- consistent ('connect' x y) == True
--- consistent ('Algebra.Graph.AdjacencyMap.NonEmpty.edge' x y)    == True
--- consistent ('Algebra.Graph.AdjacencyMap.NonEmpty.edges' xs)    == True
--- consistent ('Algebra.Graph.AdjacencyMap.NonEmpty.stars' xs)    == True
+-- consistent ('Algebra.Graph.NonEmpty.AdjacencyMap.edge' x y)    == True
+-- consistent ('Algebra.Graph.NonEmpty.AdjacencyMap.edges' xs)    == True
+-- consistent ('Algebra.Graph.NonEmpty.AdjacencyMap.stars' xs)    == True
 -- @
 consistent :: Ord a => AdjacencyMap a -> Bool
 consistent (NAM x) = AM.consistent x && not (AM.isEmpty x)

@@ -133,7 +133,7 @@ m == 'edgeCount' g
 s == 'size' g@
 
 Converting a 'Graph' to the corresponding
-'Algebra.Graph.AdjacencyMap.NonEmpty.AdjacencyMap' takes /O(s + m * log(m))/ time and /O(s + m)/ memory. This is also the
+'Algebra.Graph.NonEmpty.AdjacencyMap.AdjacencyMap' takes /O(s + m * log(m))/ time and /O(s + m)/ memory. This is also the
 complexity of the graph equality test, because it is currently implemented by
 converting graph expressions to canonical representations based on adjacency
 maps.

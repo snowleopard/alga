@@ -51,8 +51,8 @@ import Data.Tree
 import qualified Algebra.Graph                                as G
 import qualified Algebra.Graph.AdjacencyMap                   as AM
 import qualified Algebra.Graph.AdjacencyMap.Internal          as AM
-import qualified Algebra.Graph.AdjacencyMap.NonEmpty          as NAM
-import qualified Algebra.Graph.AdjacencyMap.NonEmpty.Internal as NAM
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap          as NAM
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap.Internal as NAM
 import qualified Algebra.Graph.AdjacencyIntMap                as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Internal       as AIM
 import qualified Algebra.Graph.Relation                       as R
@@ -446,7 +446,7 @@ instance ToGraph AIM.AdjacencyIntMap where
     isDfsForestOf              = AIM.isDfsForestOf
     isTopSortOf                = AIM.isTopSortOf
 
--- | See "Algebra.Graph.AdjacencyMap.NonEmpty".
+-- | See "Algebra.Graph.NonEmpty.AdjacencyMap".
 instance Ord a => ToGraph (NAM.AdjacencyMap a) where
     type ToVertex (NAM.AdjacencyMap a) = a
     toGraph                    = toGraph . NAM.am
