@@ -18,6 +18,7 @@ import Prelude ()
 import Prelude.Compat
 
 import Control.Monad
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Tree
 import Test.QuickCheck
 
@@ -29,8 +30,9 @@ import Algebra.Graph.Fold (Fold)
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived
 
-import qualified Algebra.Graph.AdjacencyMap                   as AdjacencyMap
 import qualified Algebra.Graph.AdjacencyIntMap                as AdjacencyIntMap
+import qualified Algebra.Graph.AdjacencyMap                   as AdjacencyMap
+import qualified Algebra.Graph.AdjacencyMap.NonEmpty          as NAM
 import qualified Algebra.Graph.Class                          as C
 import qualified Algebra.Graph.Labelled.AdjacencyMap          as Labelled
 import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal as Labelled
@@ -87,6 +89,19 @@ arbitraryRelation = Relation.stars <$> arbitrary
 arbitraryAdjacencyMap :: (Arbitrary a, Ord a) => Gen (AdjacencyMap a)
 arbitraryAdjacencyMap = AdjacencyMap.stars <$> arbitrary
 
+-- | Generate an arbitrary 'AdjacencyMap'. It is guaranteed that the
+-- resulting adjacency map is 'consistent'.
+arbitraryNonEmptyAdjacencyMap :: (Arbitrary a, Ord a) => Gen (NAM.AdjacencyMap a)
+arbitraryNonEmptyAdjacencyMap = NAM.stars1 <$> nonEmpty
+  where
+    nonEmpty = do
+        xs <- arbitrary
+        case xs of
+            [] -> do
+                x <- arbitrary
+                return (x :| [])
+            (x:xs) -> return (x :| xs)
+
 -- | Generate an arbitrary 'LabelledAdjacencyMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
 arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Gen (Labelled.AdjacencyMap e a)
@@ -115,6 +130,9 @@ instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
 
 instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
     arbitrary = arbitraryAdjacencyMap
+
+instance (Arbitrary a, Ord a) => Arbitrary (NAM.AdjacencyMap a) where
+    arbitrary = arbitraryNonEmptyAdjacencyMap
 
 instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Arbitrary (Labelled.AdjacencyMap e a) where
     arbitrary = arbitraryLabelledAdjacencyMap

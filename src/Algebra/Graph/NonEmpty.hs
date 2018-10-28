@@ -181,7 +181,7 @@ instance Num a => Num (Graph a) where
     fromInteger = Vertex . fromInteger
     (+)         = Overlay
     (*)         = Connect
-    signum      = error "Graph.signum cannot be implemented."
+    signum      = error "NonEmpty.Graph.signum cannot be implemented."
     abs         = id
     negate      = id
 

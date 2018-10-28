@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP, OverloadedLists, ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Test.NonEmptyGraph
+-- Module     : Algebra.Graph.Test.Graph.NonEmpty
 -- Copyright  : (c) Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -9,7 +9,7 @@
 --
 -- Testsuite for "Algebra.Graph.NonEmpty".
 -----------------------------------------------------------------------------
-module Algebra.Graph.Test.NonEmptyGraph (
+module Algebra.Graph.Test.Graph.NonEmpty (
     -- * Testsuite
     testGraphNonEmpty
   ) where
@@ -23,7 +23,6 @@ import Data.Semigroup
 
 import Control.Monad
 import Data.Either
-import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe
 import Data.Tree
 import Data.Tuple
@@ -63,7 +62,7 @@ testGraphNonEmpty = do
     test "Axioms of non-empty graphs"   axioms
     test "Theorems of non-empty graphs" theorems
 
-    putStrLn $ "\n============ Ord (NonEmptyGraph a) ============"
+    putStrLn $ "\n============ Ord (NonEmpty.Graph a) ============"
     test "vertex 1 < vertex 2" $
           vertex 1 < vertex (2 :: Int)
 
@@ -82,7 +81,7 @@ testGraphNonEmpty = do
     test "edge 1 2 < edge 1 3" $
           edge 1 2 < edge 1 (3 :: Int)
 
-    putStrLn $ "\n============ Functor (NonEmptyGraph a) ============"
+    putStrLn $ "\n============ Functor (NonEmpty.Graph a) ============"
     test "fmap f (vertex x) == vertex (f x)" $ \(apply -> f) (x :: Int) ->
           fmap f (vertex x) == vertex (f x :: Int)
 
@@ -95,7 +94,7 @@ testGraphNonEmpty = do
     test "fmap f . fmap g   == fmap (f . g)" $ \(apply -> f) (apply -> g) (x :: G) ->
          (fmap f . fmap g) x == (fmap (f . (g :: Int -> Int)) x :: G)
 
-    putStrLn $ "\n============ Monad (NonEmptyGraph a) ============"
+    putStrLn $ "\n============ Monad (NonEmpty.Graph a) ============"
     test "(vertex x >>= f)     == f x" $ \(apply -> f) (x :: Int) ->
           (vertex x >>= f)     == (f x :: G)
 
@@ -117,7 +116,7 @@ testGraphNonEmpty = do
           toNonEmpty (G.empty :: G.Graph Int) == Nothing
 
     test "toNonEmpty (toGraph x) == Just (x :: NonEmpty.Graph a)" $ \x ->
-          toNonEmpty (toGraph x) == Just (x :: NonEmpty.Graph Int)
+          toNonEmpty (toGraph x) == Just (x :: G)
 
     putStrLn $ "\n============ Graph.NonEmpty.vertex ============"
     test "hasVertex x (vertex x) == True" $ \(x :: Int) ->
@@ -487,8 +486,8 @@ testGraphNonEmpty = do
     test "tree (Node x [Node y [], Node z []])                     == star x [y,z]" $ \(x :: Int) y z ->
           tree (Node x [Node y [], Node z []])                     == star x [y,z]
 
-    test "tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == edges1 ((1,2) :| [(1,3), (3,4), (3,5)])" $
-          tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == edges1 ((1,2) :| [(1,3), (3,4), (3,5 :: Int)])
+    test "tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == edges1 [(1,2), (1,3), (3,4), (3,5)]" $
+          tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == edges1 [(1,2), (1,3), (3,4), (3,5::Int)]
 
     putStrLn $ "\n============ Graph.NonEmpty.mesh1 ============"
     test "mesh1 [x]     [y]        == vertex (x, y)" $ \(x :: Int) (y :: Int) ->
@@ -554,10 +553,10 @@ testGraphNonEmpty = do
          (removeEdge x y . removeEdge x y) z == removeEdge x y z
 
     test "removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2" $
-          removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * (2 :: NonEmpty.Graph Int)
+          removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * (2 :: G)
 
     test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
-          removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * (2 :: NonEmpty.Graph Int)
+          removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * (2 :: G)
 
     test "size (removeEdge x y z)         <= 3 * size z" $ \(x :: Int) y z ->
           size (removeEdge x y z)         <= 3 * size z

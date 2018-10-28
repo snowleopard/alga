@@ -24,7 +24,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap.NonEmpty (
     -- * Data structure
-    AdjacencyMap, toNonEmptyGraph,
+    AdjacencyMap, toNonEmpty,
 
     -- * Basic graph construction primitives
     vertex, edge, overlay, connect, vertices1, edges1, overlays1, connects1,
@@ -65,22 +65,22 @@ viaL :: (         [AM.AdjacencyMap a] -> AM.AdjacencyMap b)
 viaL f = NAM . f . fmap am . toList
 
 -- Unsafe creation of a NonEmpty list.
-toNonEmpty :: [a] -> NonEmpty a
-toNonEmpty = fromMaybe (error msg) . nonEmpty
+unsafeNonEmpty :: [a] -> NonEmpty a
+unsafeNonEmpty = fromMaybe (error msg) . nonEmpty
   where
-    msg = "Algebra.Graph.AdjacencyMap.NonEmpty: Graph is empty (internal error)"
+    msg = "Algebra.Graph.AdjacencyMap.unsafeNonEmpty: Graph is empty"
 
 -- | Convert a possibly empty 'AM.AdjacencyMap' into NonEmpty.'AdjacencyMap'.
 -- Returns 'Nothing' if the argument is 'AM.empty'.
 -- Complexity: /O(1)/ time, memory and size.
 --
 -- @
--- toNonEmptyGraph 'AM.empty'       == Nothing
--- toNonEmptyGraph ('AM.toGraph' x) == Just (x :: 'AdjacencyMap' a)
+-- toNonEmpty 'AM.empty'       == Nothing
+-- toNonEmpty ('AM.toGraph' x) == Just (x :: 'AdjacencyMap' a)
 -- @
-toNonEmptyGraph :: AM.AdjacencyMap a -> Maybe (AdjacencyMap a)
-toNonEmptyGraph x | AM.isEmpty x = Nothing
-                  | otherwise    = Just (NAM x)
+toNonEmpty :: AM.AdjacencyMap a -> Maybe (AdjacencyMap a)
+toNonEmpty x | AM.isEmpty x = Nothing
+             | otherwise    = Just (NAM x)
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
@@ -100,7 +100,7 @@ edge x y = NAM (AM.edge x y)
 -- of the given list.
 --
 -- @
--- vertices1 (x ':|' [])     == 'vertex' x
+-- vertices1 [x]           == 'vertex' x
 -- 'hasVertex' x . vertices1 == 'elem' x
 -- 'vertexCount' . vertices1 == 'length' . 'Data.List.NonEmpty.nub'
 -- 'vertexSet'   . vertices1 == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
@@ -112,8 +112,8 @@ vertices1 = NAM . AM.vertices . toList
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- edges1 ((x,y) ':|' []) == 'edge' x y
--- 'edgeCount' . edges1   == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
+-- edges1 [(x,y)]     == 'edge' x y
+-- 'edgeCount' . edges1 == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
 -- @
 edges1 :: Ord a => NonEmpty (a, a) -> AdjacencyMap a
 edges1 = NAM . AM.edges . toList
@@ -122,8 +122,8 @@ edges1 = NAM . AM.edges . toList
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- overlays1 (x ':|' [] ) == x
--- overlays1 (x ':|' [y]) == 'overlay' x y
+-- overlays1 [x]   == x
+-- overlays1 [x,y] == 'overlay' x y
 -- @
 overlays1 :: Ord a => NonEmpty (AdjacencyMap a) -> AdjacencyMap a
 overlays1 = viaL AM.overlays
@@ -132,8 +132,8 @@ overlays1 = viaL AM.overlays
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- connects1 (x ':|' [] ) == x
--- connects1 (x ':|' [y]) == 'connect' x y
+-- connects1 [x]   == x
+-- connects1 [x,y] == 'connect' x y
 -- @
 connects1 :: Ord a => NonEmpty (AdjacencyMap a) -> AdjacencyMap a
 connects1 = viaL AM.connects
@@ -199,11 +199,11 @@ edgeCount = AM.edgeCount . am
 -- Complexity: /O(n)/ time and memory.
 --
 -- @
--- vertexList1 ('vertex' x)  == x ':|' []
+-- vertexList1 ('vertex' x)  == [x]
 -- vertexList1 . 'vertices1' == 'Data.List.NonEmpty.nub' . 'Data.List.NonEmpty.sort'
 -- @
 vertexList1 :: AdjacencyMap a -> NonEmpty a
-vertexList1 = toNonEmpty . AM.vertexList . am
+vertexList1 = unsafeNonEmpty . AM.vertexList . am
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -278,8 +278,8 @@ postSet x = AM.postSet x . am
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- path1 (x ':|' [] ) == 'vertex' x
--- path1 (x ':|' [y]) == 'edge' x y
+-- path1 [x]        == 'vertex' x
+-- path1 [x,y]      == 'edge' x y
 -- path1 . 'Data.List.NonEmpty.reverse'  == 'transpose' . path1
 -- @
 path1 :: Ord a => NonEmpty a -> AdjacencyMap a
@@ -289,9 +289,9 @@ path1 = NAM . AM.path . toList
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- circuit1 (x ':|' [] ) == 'edge' x x
--- circuit1 (x ':|' [y]) == 'edges1' ((x,y) ':|' [(y,x)])
--- circuit1 . 'Data.List.NonEmpty.reverse'  == 'transpose' . circuit1
+-- circuit1 [x]       == 'edge' x x
+-- circuit1 [x,y]     == 'edges1' [(x,y), (y,x)]
+-- circuit1 . 'Data.List.NonEmpty.reverse' == 'transpose' . circuit1
 -- @
 circuit1 :: Ord a => NonEmpty a -> AdjacencyMap a
 circuit1 = NAM . AM.circuit . toList
@@ -300,11 +300,11 @@ circuit1 = NAM . AM.circuit . toList
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- clique1 (x ':|' []   ) == 'vertex' x
--- clique1 (x ':|' [y]  ) == 'edge' x y
--- clique1 (x ':|' [y,z]) == 'edges1' ((x,y) ':|' [(x,z), (y,z)])
--- clique1 (xs '<>' ys)   == 'connect' (clique1 xs) (clique1 ys)
--- clique1 . 'Data.List.NonEmpty.reverse'    == 'transpose' . clique1
+-- clique1 [x]        == 'vertex' x
+-- clique1 [x,y]      == 'edge' x y
+-- clique1 [x,y,z]    == 'edges1' [(x,y), (x,z), (y,z)]
+-- clique1 (xs '<>' ys) == 'connect' (clique1 xs) (clique1 ys)
+-- clique1 . 'Data.List.NonEmpty.reverse'  == 'transpose' . clique1
 -- @
 clique1 :: Ord a => NonEmpty a -> AdjacencyMap a
 clique1 = NAM . AM.clique . toList
@@ -313,8 +313,8 @@ clique1 = NAM . AM.clique . toList
 -- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
 --
 -- @
--- biclique1 (x1 ':|' [x2]) (y1 ':|' [y2]) == 'edges1' ((x1,y1) ':|' [(x1,y2), (x2,y1), (x2,y2)])
--- biclique1 xs            ys          == 'connect' ('vertices1' xs) ('vertices1' ys)
+-- biclique1 [x1,x2] [y1,y2] == 'edges1' [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
+-- biclique1 xs      ys      == 'connect' ('vertices1' xs) ('vertices1' ys)
 -- @
 biclique1 :: Ord a => NonEmpty a -> NonEmpty a -> AdjacencyMap a
 biclique1 xs ys = NAM $ AM.biclique (toList xs) (toList ys)
@@ -326,7 +326,7 @@ biclique1 xs ys = NAM $ AM.biclique (toList xs) (toList ys)
 -- @
 -- star x []    == 'vertex' x
 -- star x [y]   == 'edge' x y
--- star x [y,z] == 'edges1' ((x,y) ':|' [(x,z)])
+-- star x [y,z] == 'edges1' [(x,y), (x,z)]
 -- @
 star :: Ord a => a -> [a] -> AdjacencyMap a
 star x = NAM . AM.star x
@@ -337,9 +337,9 @@ star x = NAM . AM.star x
 -- size of the input.
 --
 -- @
--- stars1 ((x, [])  ':|' [])         == 'vertex' x
--- stars1 ((x, [y]) ':|' [])         == 'edge' x y
--- stars1 ((x, ys)  ':|' [])         == 'star' x ys
+-- stars1 [(x, [] )]               == 'vertex' x
+-- stars1 [(x, [y])]               == 'edge' x y
+-- stars1 [(x, ys )]               == 'star' x ys
 -- stars1                          == 'overlays1' . fmap (uncurry 'star')
 -- 'overlay' (stars1 xs) (stars1 ys) == stars1 (xs <> ys)
 -- @
@@ -351,9 +351,9 @@ stars1 = NAM . AM.stars . toList
 --
 -- @
 -- tree (Node x [])                                         == 'vertex' x
--- tree (Node x [Node y [Node z []]])                       == 'path1' (x ':|' [y,z])
+-- tree (Node x [Node y [Node z []]])                       == 'path1' [x,y,z]
 -- tree (Node x [Node y [], Node z []])                     == 'star' x [y,z]
--- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges1' ((1,2) ':|' [(1,3), (3,4), (3,5)])
+-- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges1' [(1,2), (1,3), (3,4), (3,5)]
 -- @
 tree :: Ord a => Tree a -> AdjacencyMap a
 tree = NAM . AM.tree
@@ -369,13 +369,13 @@ tree = NAM . AM.tree
 -- removeVertex1 x 'Control.Monad.>=>' removeVertex1 x == removeVertex1 x
 -- @
 removeVertex1 :: Ord a => a -> AdjacencyMap a -> Maybe (AdjacencyMap a)
-removeVertex1 x = toNonEmptyGraph . AM.removeVertex x . am
+removeVertex1 x = toNonEmpty . AM.removeVertex x . am
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(log(n))/ time.
 --
 -- @
--- removeEdge x y ('edge' x y)       == 'vertices1' (x ':|' [y])
+-- removeEdge x y ('edge' x y)       == 'vertices1' [x,y]
 -- removeEdge x y . removeEdge x y == removeEdge x y
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
@@ -446,4 +446,4 @@ gmap f = via (AM.gmap f)
 -- induce1 p 'Control.Monad.>=>' induce1 q == induce1 (\\x -> p x && q x)
 -- @
 induce1 :: (a -> Bool) -> AdjacencyMap a -> Maybe (AdjacencyMap a)
-induce1 p = toNonEmptyGraph . AM.induce p . am
+induce1 p = toNonEmpty . AM.induce p . am

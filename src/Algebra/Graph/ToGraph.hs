@@ -48,16 +48,18 @@ import Data.Map    (Map)
 import Data.Set    (Set)
 import Data.Tree
 
-import qualified Algebra.Graph                          as G
-import qualified Algebra.Graph.AdjacencyMap             as AM
-import qualified Algebra.Graph.AdjacencyMap.Internal    as AM
-import qualified Algebra.Graph.AdjacencyIntMap          as AIM
-import qualified Algebra.Graph.AdjacencyIntMap.Internal as AIM
-import qualified Algebra.Graph.Relation                 as R
-import qualified Data.IntMap                            as IntMap
-import qualified Data.IntSet                            as IntSet
-import qualified Data.Map                               as Map
-import qualified Data.Set                               as Set
+import qualified Algebra.Graph                                as G
+import qualified Algebra.Graph.AdjacencyMap                   as AM
+import qualified Algebra.Graph.AdjacencyMap.Internal          as AM
+import qualified Algebra.Graph.AdjacencyMap.NonEmpty          as NAM
+import qualified Algebra.Graph.AdjacencyMap.NonEmpty.Internal as NAM
+import qualified Algebra.Graph.AdjacencyIntMap                as AIM
+import qualified Algebra.Graph.AdjacencyIntMap.Internal       as AIM
+import qualified Algebra.Graph.Relation                       as R
+import qualified Data.IntMap                                  as IntMap
+import qualified Data.IntSet                                  as IntSet
+import qualified Data.Map                                     as Map
+import qualified Data.Set                                     as Set
 
 -- | The 'ToGraph' type class captures data types that can be converted to
 -- algebraic graphs.
@@ -369,6 +371,7 @@ instance Ord a => ToGraph (G.Graph a) where
     foldg   = G.foldg
     hasEdge = G.hasEdge
 
+-- | See "Algebra.Graph.AdjacencyMap".
 instance Ord a => ToGraph (AM.AdjacencyMap a) where
     type ToVertex (AM.AdjacencyMap a) = a
     toGraph                    = G.stars
@@ -442,6 +445,38 @@ instance ToGraph AIM.AdjacencyIntMap where
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
     isDfsForestOf              = AIM.isDfsForestOf
     isTopSortOf                = AIM.isTopSortOf
+
+-- | See "Algebra.Graph.AdjacencyMap.NonEmpty".
+instance Ord a => ToGraph (NAM.AdjacencyMap a) where
+    type ToVertex (NAM.AdjacencyMap a) = a
+    toGraph                    = toGraph . NAM.am
+    isEmpty _                  = False
+    hasVertex                  = NAM.hasVertex
+    hasEdge                    = NAM.hasEdge
+    vertexCount                = NAM.vertexCount
+    edgeCount                  = NAM.edgeCount
+    vertexList                 = vertexList . NAM.am
+    vertexSet                  = NAM.vertexSet
+    vertexIntSet               = NAM.vertexIntSet
+    edgeList                   = NAM.edgeList
+    edgeSet                    = NAM.edgeSet
+    adjacencyList              = adjacencyList . NAM.am
+    preSet                     = NAM.preSet
+    postSet                    = NAM.postSet
+    adjacencyMap               = adjacencyMap . NAM.am
+    adjacencyIntMap            = adjacencyIntMap . NAM.am
+    dfsForest                  = dfsForest . NAM.am
+    dfsForestFrom xs           = dfsForestFrom xs . NAM.am
+    dfs xs                     = dfs xs . NAM.am
+    reachable x                = reachable x . NAM.am
+    topSort                    = topSort . NAM.am
+    isAcyclic                  = isAcyclic . NAM.am
+    toAdjacencyMap             = NAM.am
+    toAdjacencyIntMap          = toAdjacencyIntMap . NAM.am
+    toAdjacencyMapTranspose    = NAM.am . NAM.transpose
+    toAdjacencyIntMapTranspose = toAdjacencyIntMap . NAM.transpose
+    isDfsForestOf f            = isDfsForestOf f . NAM.am
+    isTopSortOf x              = isTopSortOf x . NAM.am
 
 -- TODO: Get rid of "Relation.Internal" and move this instance to "Relation".
 instance Ord a => ToGraph (R.Relation a) where

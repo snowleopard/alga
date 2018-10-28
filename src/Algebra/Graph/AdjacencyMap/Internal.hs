@@ -13,19 +13,18 @@
 module Algebra.Graph.AdjacencyMap.Internal (
     -- * Adjacency map implementation
     AdjacencyMap (..), empty, vertex, overlay, connect, fromAdjacencySets,
-    consistent
+    consistent, internalEdgeList, referredToVertexSet
   ) where
 
 import Prelude ()
 import Prelude.Compat hiding (null)
 
+import Control.DeepSeq
 import Data.Foldable (foldMap)
 import Data.List
 import Data.Map.Strict (Map, keysSet, fromSet)
 import Data.Monoid
 import Data.Set (Set)
-
-import Control.DeepSeq (NFData (..))
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
@@ -264,10 +263,12 @@ fromAdjacencySets ss = AM $ Map.unionWith Set.union vs es
 consistent :: Ord a => AdjacencyMap a -> Bool
 consistent (AM m) = referredToVertexSet m `Set.isSubsetOf` keysSet m
 
--- The set of vertices that are referred to by the edges
-referredToVertexSet :: Ord a => Map a (Set a) -> Set a
-referredToVertexSet = Set.fromList . uncurry (++) . unzip . internalEdgeList
-
--- The list of edges in adjacency map
+-- | The list of edges of an adjacency map.
+-- /Note: this function is for internal use only/.
 internalEdgeList :: Map a (Set a) -> [(a, a)]
 internalEdgeList m = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
+
+-- | The set of vertices that are referred to by the edges of an adjacency map.
+-- /Note: this function is for internal use only/.
+referredToVertexSet :: Ord a => Map a (Set a) -> Set a
+referredToVertexSet = Set.fromList . uncurry (++) . unzip . internalEdgeList

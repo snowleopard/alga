@@ -16,9 +16,12 @@ module Algebra.Graph.AdjacencyMap.NonEmpty.Internal (
     ) where
 
 import Control.DeepSeq
+import Data.List
 
 import qualified Algebra.Graph.AdjacencyMap          as AM
 import qualified Algebra.Graph.AdjacencyMap.Internal as AM
+import qualified Data.Map.Strict                     as Map
+import qualified Data.Set                            as Set
 
 {-| The 'AdjacencyMap' data type represents a graph by a map of vertices to
 their adjacency sets. We define a 'Num' instance as a convenient notation for
@@ -114,19 +117,19 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
     negate      = id
 
 instance (Ord a, Show a) => Show (AdjacencyMap a) where
-    show (AM m)
+    show (NAM (AM.AM m))
         | null vs    = error "NonEmpty.AdjacencyMap.Show: Graph is empty"
         | null es    = vshow vs
         | vs == used = eshow es
         | otherwise  = "overlay (" ++ vshow (vs \\ used) ++ ") (" ++ eshow es ++ ")"
       where
-        vs             = Set.toAscList (keysSet m)
-        es             = internalEdgeList m
+        vs             = Set.toAscList (Map.keysSet m)
+        es             = AM.internalEdgeList m
         vshow [x]      = "vertex "   ++ show x
         vshow xs       = "vertices1 " ++ show xs
         eshow [(x, y)] = "edge "     ++ show x ++ " " ++ show y
         eshow xs       = "edges1 "    ++ show xs
-        used           = Set.toAscList (referredToVertexSet m)
+        used           = Set.toAscList (AM.referredToVertexSet m)
 
 -- | Construct the graph comprising /a single isolated vertex/.
 -- Complexity: /O(1)/ time and memory.
