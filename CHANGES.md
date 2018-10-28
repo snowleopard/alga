@@ -2,8 +2,11 @@
 
 ## 0.3
 
-* #136: Rename `Algebra.Graph.NonEmpty.NonEmptyGraph` to `Algebra.Graph.NonEmpty.Graph`,
+* #136: Rename `Algebra.Graph.NonEmpty.NonEmptyGraph` to `Algebra.Graph.NonEmpty.Graph`.
 * #136: Add `Algebra.Graph.AdjacencyMap.NonEmpty`.
+* #136: Remove `vertexIntSet` from the API of basic graph data types. Also
+        remove `Algebra.Graph.adjacencyMap` and `Algebra.Graph.adjacencyIntMap`.
+        This functionality is still available from the type class `ToGraph`.
 * #126, #131: Implement custom `Ord` instance.
 * #122, #125: Further work on labelled algebraic graphs.
 * #121: Drop `Foldable` and `Traversable` instances.
