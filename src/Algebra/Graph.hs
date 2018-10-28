@@ -987,7 +987,7 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Co
     k _ x     Empty = x -- Constant folding to get rid of Empty leaves
     k _ Empty y     = y
     k f x     y     = f x y
-{-# NOINLINE [1] induce #-}
+{-# INLINE [1] induce #-}
 
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given expression according to the laws of the algebra.
