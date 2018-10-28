@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, ViewPatterns #-}
+{-# LANGUAGE CPP, OverloadedLists, ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.NonEmptyGraph
@@ -213,8 +213,8 @@ testGraphNonEmpty = do
           edgeCount   (connect 1 2 :: G) == 1
 
     putStrLn $ "\n============ Graph.NonEmpty.vertices1 ============"
-    test "vertices1 (x :| [])     == vertex x" $ \(x :: Int) ->
-          vertices1 (x :| [])     == vertex x
+    test "vertices1 [x]           == vertex x" $ \(x :: Int) ->
+          vertices1 [x]           == vertex x
 
     test "hasVertex x . vertices1 == elem x" $ \(x :: Int) (xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
@@ -229,26 +229,26 @@ testGraphNonEmpty = do
         in (vertexSet   . vertices1) xs == (Set.fromList . NonEmpty.toList) xs
 
     putStrLn $ "\n============ Graph.NonEmpty.edges1 ============"
-    test "edges1 ((x,y) :| []) == edge x y" $ \(x :: Int) y ->
-          edges1 ((x,y) :| []) == edge x y
+    test "edges1 [(x,y)]     == edge x y" $ \(x :: Int) y ->
+          edges1 [(x,y)]     == edge x y
 
-    test "edgeCount . edges1   == length . nub" $ \(xs' :: NonEmptyList (Int, Int)) ->
+    test "edgeCount . edges1 == length . nub" $ \(xs' :: NonEmptyList (Int, Int)) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
         in (edgeCount . edges1) xs == (NonEmpty.length . NonEmpty.nub) xs
 
     putStrLn $ "\n============ Graph.NonEmpty.overlays1 ============"
-    test "overlays1 (x :| [] ) == x" $ \(x :: G) ->
-          overlays1 (x :| [] ) == x
+    test "overlays1 [x]   == x" $ \(x :: G) ->
+          overlays1 [x]   == x
 
-    test "overlays1 (x :| [y]) == overlay x y" $ \(x :: G) y ->
-          overlays1 (x :| [y]) == overlay x y
+    test "overlays1 [x,y] == overlay x y" $ \(x :: G) y ->
+          overlays1 [x,y] == overlay x y
 
     putStrLn $ "\n============ Graph.NonEmpty.connects1 ============"
-    test "connects1 (x :| [] ) == x" $ \(x :: G) ->
-          connects1 (x :| [] ) == x
+    test "connects1 [x]   == x" $ \(x :: G) ->
+          connects1 [x]   == x
 
-    test "connects1 (x :| [y]) == connect x y" $ \(x :: G) y ->
-          connects1 (x :| [y]) == connect x y
+    test "connects1 [x,y] == connect x y" $ \(x :: G) y ->
+          connects1 [x,y] == connect x y
 
     putStrLn $ "\n============ Graph.NonEmpty.foldg1 ============"
     test "foldg1 (const 1) (+)  (+)  == size" $ \(x :: G) ->
@@ -339,8 +339,8 @@ testGraphNonEmpty = do
           edgeCount x          == (length . edgeList) x
 
     putStrLn $ "\n============ Graph.NonEmpty.vertexList1 ============"
-    test "vertexList1 (vertex x)  == x :| []" $ \(x :: Int) ->
-          vertexList1 (vertex x)  == x :| []
+    test "vertexList1 (vertex x)  == [x]" $ \(x :: Int) ->
+          vertexList1 (vertex x)  == [x]
 
     test "vertexList1 . vertices1 == nub . sort" $ \(xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
@@ -399,54 +399,54 @@ testGraphNonEmpty = do
         in (edgeSet . edges1) xs == (Set.fromList . NonEmpty.toList) xs
 
     putStrLn $ "\n============ Graph.NonEmpty.path1 ============"
-    test "path1 (x :| [] ) == vertex x" $ \(x :: Int) ->
-          path1 (x :| [] ) == vertex x
+    test "path1 [x]        == vertex x" $ \(x :: Int) ->
+          path1 [x]        == vertex x
 
-    test "path1 (x :| [y]) == edge x y" $ \(x :: Int) y ->
-          path1 (x :| [y]) == edge x y
+    test "path1 [x,y]      == edge x y" $ \(x :: Int) y ->
+          path1 [x,y]      == edge x y
 
     test "path1 . reverse  == transpose . path1" $ \(xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
         in (path1 . NonEmpty.reverse) xs == (transpose . path1) xs
 
     putStrLn $ "\n============ Graph.NonEmpty.circuit1 ============"
-    test "circuit1 (x :| [] ) == edge x x" $ \(x :: Int) ->
-          circuit1 (x :| [] ) == edge x x
+    test "circuit1 [x]       == edge x x" $ \(x :: Int) ->
+          circuit1 [x]       == edge x x
 
-    test "circuit1 (x :| [y]) == edges1 ((x,y) :| [(y,x)])" $ \(x :: Int) y ->
-          circuit1 (x :| [y]) == edges1 ((x,y) :| [(y,x)])
+    test "circuit1 [x,y]     == edges1 [(x,y), (y,x)]" $ \(x :: Int) y ->
+          circuit1 [x,y]     == edges1 [(x,y), (y,x)]
 
-    test "circuit1 . reverse  == transpose . circuit1" $ \(xs' :: NonEmptyList Int) ->
+    test "circuit1 . reverse == transpose . circuit1" $ \(xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
         in (circuit1 . NonEmpty.reverse) xs == (transpose . circuit1) xs
 
     putStrLn $ "\n============ Graph.NonEmpty.clique1 ============"
-    test "clique1 (x :| []   ) == vertex x" $ \(x :: Int) ->
-          clique1 (x :| []   ) == vertex x
+    test "clique1 [x]        == vertex x" $ \(x :: Int) ->
+          clique1 [x]        == vertex x
 
-    test "clique1 (x :| [y]  ) == edge x y" $ \(x :: Int) y ->
-          clique1 (x :| [y]  ) == edge x y
+    test "clique1 [x,y]      == edge x y" $ \(x :: Int) y ->
+          clique1 [x,y]      == edge x y
 
-    test "clique1 (x :| [y,z]) == edges1 ((x,y) :| [(x,z), (y,z)])" $ \(x :: Int) y z ->
-          clique1 (x :| [y,z]) == edges1 ((x,y) :| [(x,z), (y,z)])
+    test "clique1 [x,y,z]    == edges1 [(x,y), (x,z), (y,z)]" $ \(x :: Int) y z ->
+          clique1 [x,y,z]    == edges1 [(x,y), (x,z), (y,z)]
 
-    test "clique1 (xs <> ys)   == connect (clique1 xs) (clique1 ys)" $ \(xs' :: NonEmptyList Int) ys' ->
+    test "clique1 (xs <> ys) == connect (clique1 xs) (clique1 ys)" $ \(xs' :: NonEmptyList Int) ys' ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
             ys = NonEmpty.fromList (getNonEmpty ys')
         in clique1 (xs <> ys)   == connect (clique1 xs) (clique1 ys)
 
-    test "clique1 . reverse    == transpose . clique1" $ \(xs' :: NonEmptyList Int) ->
+    test "clique1 . reverse  == transpose . clique1" $ \(xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
         in (clique1 . NonEmpty.reverse) xs == (transpose . clique1) xs
 
     putStrLn $ "\n============ Graph.NonEmpty.biclique1 ============"
-    test "biclique1 (x1 :| [x2]) (y1 :| [y2]) == edges1 ((x1,y1) :| [(x1,y2), (x2,y1), (x2,y2)])" $ \(x1 :: Int) x2 y1 y2 ->
-          biclique1 (x1 :| [x2]) (y1 :| [y2]) == edges1 ((x1,y1) :| [(x1,y2), (x2,y1), (x2,y2)])
+    test "biclique1 [x1,x2] [y1,y2] == edges1 [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]" $ \(x1 :: Int) x2 y1 y2 ->
+          biclique1 [x1,x2] [y1,y2] == edges1 [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
 
-    test "biclique1 xs            ys          == connect (vertices1 xs) (vertices1 ys)" $ \(xs' :: NonEmptyList Int) ys' ->
+    test "biclique1 xs      ys      == connect (vertices1 xs) (vertices1 ys)" $ \(xs' :: NonEmptyList Int) ys' ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
             ys = NonEmpty.fromList (getNonEmpty ys')
-        in biclique1 xs            ys          == connect (vertices1 xs) (vertices1 ys)
+        in biclique1 xs      ys      == connect (vertices1 xs) (vertices1 ys)
 
     putStrLn $ "\n============ Graph.NonEmpty.star ============"
     test "star x []    == vertex x" $ \(x :: Int) ->
@@ -455,18 +455,18 @@ testGraphNonEmpty = do
     test "star x [y]   == edge x y" $ \(x :: Int) y ->
           star x [y]   == edge x y
 
-    test "star x [y,z] == edges1 ((x,y) :| [(x,z)])" $ \(x :: Int) y z ->
-          star x [y,z] == edges1 ((x,y) :| [(x,z)])
+    test "star x [y,z] == edges1 [(x,y), (x,z)]" $ \(x :: Int) y z ->
+          star x [y,z] == edges1 [(x,y), (x,z)]
 
     putStrLn $ "\n============ Graph.NonEmpty.stars1 ============"
-    test "stars1 ((x, [])  :| [])         == vertex x" $ \(x :: Int) ->
-          stars1 ((x, [])  :| [])         == vertex x
+    test "stars1 [(x, [] )]               == vertex x" $ \(x :: Int) ->
+          stars1 [(x, [] )]               == vertex x
 
-    test "stars1 ((x, [y]) :| [])         == edge x y" $ \(x :: Int) y ->
-          stars1 ((x, [y]) :| [])         == edge x y
+    test "stars1 [(x, [y])]               == edge x y" $ \(x :: Int) y ->
+          stars1 [(x, [y])]               == edge x y
 
-    test "stars1 ((x, ys)  :| [])         == star x ys" $ \(x :: Int) ys ->
-          stars1 ((x, ys)  :| [])         == star x ys
+    test "stars1 [(x, ys )]               == star x ys" $ \(x :: Int) ys ->
+          stars1 [(x, ys )]               == star x ys
 
     test "stars1                          == overlays1 . fmap (uncurry star)" $ \(xs' :: NonEmptyList (Int, [Int])) ->
       let xs = NonEmpty.fromList (getNonEmpty xs')
@@ -481,8 +481,8 @@ testGraphNonEmpty = do
     test "tree (Node x [])                                         == vertex x" $ \(x :: Int) ->
           tree (Node x [])                                         == vertex x
 
-    test "tree (Node x [Node y [Node z []]])                       == path1 (x :| [y,z])" $ \(x :: Int) y z ->
-          tree (Node x [Node y [Node z []]])                       == path1 (x :| [y,z])
+    test "tree (Node x [Node y [Node z []]])                       == path1 [x,y,z]" $ \(x :: Int) y z ->
+          tree (Node x [Node y [Node z []]])                       == path1 [x,y,z]
 
     test "tree (Node x [Node y [], Node z []])                     == star x [y,z]" $ \(x :: Int) y z ->
           tree (Node x [Node y [], Node z []])                     == star x [y,z]
@@ -491,41 +491,41 @@ testGraphNonEmpty = do
           tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == edges1 ((1,2) :| [(1,3), (3,4), (3,5 :: Int)])
 
     putStrLn $ "\n============ Graph.NonEmpty.mesh1 ============"
-    test "mesh1 (x :| [])    (y :| [])    == vertex (x, y)" $ \(x :: Int) (y :: Int) ->
-          mesh1 (x :| [])    (y :| [])    == vertex (x, y)
+    test "mesh1 [x]     [y]        == vertex (x, y)" $ \(x :: Int) (y :: Int) ->
+          mesh1 [x]     [y]        == vertex (x, y)
 
-    test "mesh1 xs           ys           == box (path1 xs) (path1 ys)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
+    test "mesh1 xs      ys         == box (path1 xs) (path1 ys)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
             ys = NonEmpty.fromList (getNonEmpty ys')
-        in mesh1 xs           ys           == box (path1 xs) (path1 ys)
+        in mesh1 xs      ys         == box (path1 xs) (path1 ys)
 
-    test "mesh1 (1 :| [2,3]) ('a' :| \"b\") == <correct result>" $
-          mesh1 (1 :| [2,3]) ('a' :| "b") == edges1 (NonEmpty.fromList [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a'))
-                                                                      , ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
-                                                                      , ((2,'a'),(3,'a')), ((2,'b'),(3,'b'))
-                                                                      , ((3,'a'),(3 :: Int,'b')) ])
+    test "mesh1 [1,2,3] ['a', 'b'] == <correct result>" $
+          mesh1 [1,2,3] ['a', 'b'] == edges1 [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a'))
+                                             , ((1,'b'),(2,'b')), ((2,'a'),(2,'b'))
+                                             , ((2,'a'),(3,'a')), ((2,'b'),(3,'b'))
+                                             , ((3,'a'),(3 :: Int,'b')) ]
 
-    test "size (mesh xs ys)               == max 1 (3 * length xs * length ys - length xs - length ys -1)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
+    test "size (mesh xs ys)        == max 1 (3 * length xs * length ys - length xs - length ys -1)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
             ys = NonEmpty.fromList (getNonEmpty ys')
          in size (mesh1 xs ys) == max 1 (3 * length xs * length ys - length xs - length ys -1)
 
     putStrLn $ "\n============ Graph.NonEmpty.torus1 ============"
-    test "torus1 (x :| [])  (y :| [])    == edge (x,y) (x,y)" $ \(x :: Int) (y :: Int) ->
-          torus1 (x :| [])  (y :| [])    == edge (x,y) (x,y)
+    test "torus1 [x]     [y]      == edge (x,y) (x,y)" $ \(x :: Int) (y :: Int) ->
+          torus1 [x]     [y]      == edge (x,y) (x,y)
 
-    test "torus1 xs         ys           == box (circuit1 xs) (circuit1 ys)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
+    test "torus1 xs      ys       == box (circuit1 xs) (circuit1 ys)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
             ys = NonEmpty.fromList (getNonEmpty ys')
-        in torus1 xs         ys           == box (circuit1 xs) (circuit1 ys)
+        in torus1 xs      ys       == box (circuit1 xs) (circuit1 ys)
 
-    test "torus1 (1 :| [2]) ('a' :| \"b\") == <correct result>" $
-          torus1 (1 :| [2]) ('a' :| "b") == edges1 (NonEmpty.fromList [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a'))
-                                                   , ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
-                                                   , ((2,'a'),(1,'a')), ((2,'a'),(2,'b'))
-                                                   , ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ])
+    test "torus1 [1,2] ['a', 'b'] == <correct result>" $
+          torus1 [1,2] ['a', 'b'] == edges1 [ ((1,'a'),(1,'b')), ((1,'a'),(2,'a'))
+                                            , ((1,'b'),(1,'a')), ((1,'b'),(2,'b'))
+                                            , ((2,'a'),(1,'a')), ((2,'a'),(2,'b'))
+                                            , ((2,'b'),(1,'b')), ((2,'b'),(2 :: Int,'a')) ]
 
-    test "size (torus1 xs ys)            == max 1 (3 * length xs * length ys)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
+    test "size (torus1 xs ys)     == max 1 (3 * length xs * length ys)" $ \(xs' :: NonEmptyList Int) (ys' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
             ys = NonEmpty.fromList (getNonEmpty ys')
         in size (torus1 xs ys) == max 1 (3 * length xs * length ys)
@@ -547,8 +547,8 @@ testGraphNonEmpty = do
          (removeVertex1 x >=> removeVertex1 x) y == removeVertex1 x y
 
     putStrLn $ "\n============ Graph.NonEmpty.removeEdge ============"
-    test "removeEdge x y (edge x y)       == vertices1 (x :| [y])" $ \(x :: Int) y ->
-          removeEdge x y (edge x y)       == vertices1 (x :| [y])
+    test "removeEdge x y (edge x y)       == vertices1 [x,y]" $ \(x :: Int) y ->
+          removeEdge x y (edge x y)       == vertices1 [x,y]
 
     test "removeEdge x y . removeEdge x y == removeEdge x y" $ \(x :: Int) y z ->
          (removeEdge x y . removeEdge x y) z == removeEdge x y z
@@ -586,14 +586,14 @@ testGraphNonEmpty = do
           mergeVertices odd  1 (3 + 4 * 5) == (4 * 1 :: G)
 
     putStrLn $ "\n============ Graph.NonEmpty.splitVertex1 ============"
-    test "splitVertex1 x (x :| [] )               == id" $ \x (y :: G) ->
-          splitVertex1 x (x :| [] ) y             == y
+    test "splitVertex1 x [x]                 == id" $ \x (y :: G) ->
+          splitVertex1 x [x] y               == y
 
-    test "splitVertex1 x (y :| [] )               == replaceVertex x y" $ \x y (z :: G) ->
-          splitVertex1 x (y :| [] ) z             == replaceVertex x y z
+    test "splitVertex1 x [y]                 == replaceVertex x y" $ \x y (z :: G) ->
+          splitVertex1 x [y] z               == replaceVertex x y z
 
-    test "splitVertex1 1 (0 :| [1]) $ 1 * (2 + 3) == (0 + 1) * (2 + 3)" $
-          splitVertex1 1 (0 :| [1]) (1 * (2 + 3)) == (0 + 1) * (2 + 3 :: G)
+    test "splitVertex1 1 [0,1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)" $
+          splitVertex1 1 [0,1] (1 * (2 + 3)) == (0 + 1) * (2 + 3 :: G)
 
     putStrLn $ "\n============ Graph.NonEmpty.transpose ============"
     test "transpose (vertex x)  == vertex x" $ \(x :: Int) ->
@@ -625,11 +625,11 @@ testGraphNonEmpty = do
          (induce1 p >=> induce1 q) y == induce1 (\x -> p x && q x) y
 
     putStrLn $ "\n============ Graph.NonEmpty.simplify ============"
-    test "simplify              == id" $ \(x :: G) ->
-          simplify x            == x
+    test "simplify             ==  id" $ \(x :: G) ->
+          simplify x           ==  x
 
-    test "size (simplify x)     <= size x" $ \(x :: G) ->
-          size (simplify x)     <= size x
+    test "size (simplify x)    <=  size x" $ \(x :: G) ->
+          size (simplify x)    <=  size x
 
     test "simplify 1           === 1" $
           simplify 1           === (1 :: G)
@@ -644,6 +644,12 @@ testGraphNonEmpty = do
           simplify (1 * 1 * 1) === (1 * 1 :: G)
 
     putStrLn "\n============ Graph.NonEmpty.box ============"
+    test "box (path1 [0,1]) (path1 ['a','b']) == <correct result>" $ mapSize (min 10) $
+          box (path1 [0,1]) (path1 ['a','b']) == edges1 [ ((0,'a'), (0,'b'))
+                                                        , ((0,'a'), (1,'a'))
+                                                        , ((0,'b'), (1,'b'))
+                                                        , ((1,'a'), (1::Int,'b')) ]
+
     let unit = fmap $ \(a, ()) -> a
         comm = fmap $ \(a,  b) -> (b, a)
     test "box x y               ~~ box y x" $ mapSize (min 10) $ \(x :: G) (y :: G) ->

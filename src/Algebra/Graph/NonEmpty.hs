@@ -321,7 +321,7 @@ connect = Connect
 -- given list.
 --
 -- @
--- vertices1 (x ':|' [])     == 'vertex' x
+-- vertices1 [x]           == 'vertex' x
 -- 'hasVertex' x . vertices1 == 'elem' x
 -- 'vertexCount' . vertices1 == 'length' . 'Data.List.NonEmpty.nub'
 -- 'vertexSet'   . vertices1 == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
@@ -335,8 +335,8 @@ vertices1 = overlays1 . fmap vertex
 -- given list.
 --
 -- @
--- edges1 ((x,y) ':|' []) == 'edge' x y
--- 'edgeCount' . edges1   == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
+-- edges1 [(x,y)]     == 'edge' x y
+-- 'edgeCount' . edges1 == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
 -- @
 edges1 :: NonEmpty (a, a) -> Graph a
 edges1  = overlays1 . fmap (uncurry edge)
@@ -346,8 +346,8 @@ edges1  = overlays1 . fmap (uncurry edge)
 -- of the given list, and /S/ is the sum of sizes of the graphs in the list.
 --
 -- @
--- overlays1 (x ':|' [] ) == x
--- overlays1 (x ':|' [y]) == 'overlay' x y
+-- overlays1 [x]   == x
+-- overlays1 [x,y] == 'overlay' x y
 -- @
 overlays1 :: NonEmpty (Graph a) -> Graph a
 overlays1 = concatg1 overlay
@@ -358,14 +358,14 @@ overlays1 = concatg1 overlay
 -- of the given list, and /S/ is the sum of sizes of the graphs in the list.
 --
 -- @
--- connects1 (x ':|' [] ) == x
--- connects1 (x ':|' [y]) == 'connect' x y
+-- connects1 [x]   == x
+-- connects1 [x,y] == 'connect' x y
 -- @
 connects1 :: NonEmpty (Graph a) -> Graph a
 connects1 = concatg1 connect
 {-# INLINE [2] connects1 #-}
 
--- | Auxiliary function, similar to 'sconcat'.
+-- Auxiliary function, similar to 'sconcat'.
 concatg1 :: (Graph a -> Graph a -> Graph a) -> NonEmpty (Graph a) -> Graph a
 concatg1 combine (x :| xs) = maybe x (combine x) $ foldr1Safe combine xs
 
@@ -506,7 +506,7 @@ edgeCountInt = AIM.edgeCount . T.toAdjacencyIntMap
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
 --
 -- @
--- vertexList1 ('vertex' x)  == x ':|' []
+-- vertexList1 ('vertex' x)  == [x]
 -- vertexList1 . 'vertices1' == 'Data.List.NonEmpty.nub' . 'Data.List.NonEmpty.sort'
 -- @
 {-# RULES "vertexList1/Int" vertexList1 = vertexIntList1 #-}
@@ -577,8 +577,8 @@ edgeSet = T.edgeSet
 -- given list.
 --
 -- @
--- path1 (x ':|' [] ) == 'vertex' x
--- path1 (x ':|' [y]) == 'edge' x y
+-- path1 [x]        == 'vertex' x
+-- path1 [x,y]      == 'edge' x y
 -- path1 . 'Data.List.NonEmpty.reverse'  == 'transpose' . path1
 -- @
 path1 :: NonEmpty a -> Graph a
@@ -590,9 +590,9 @@ path1 (x :| (y:ys)) = edges1 ((x, y) :| zip (y:ys) ys)
 -- given list.
 --
 -- @
--- circuit1 (x ':|' [] ) == 'edge' x x
--- circuit1 (x ':|' [y]) == 'edges1' ((x,y) ':|' [(y,x)])
--- circuit1 . 'Data.List.NonEmpty.reverse'  == 'transpose' . circuit1
+-- circuit1 [x]       == 'edge' x x
+-- circuit1 [x,y]     == 'edges1' [(x,y), (y,x)]
+-- circuit1 . 'Data.List.NonEmpty.reverse' == 'transpose' . circuit1
 -- @
 circuit1 :: NonEmpty a -> Graph a
 circuit1 (x :| xs) = path1 (x :| xs ++ [x])
@@ -602,11 +602,11 @@ circuit1 (x :| xs) = path1 (x :| xs ++ [x])
 -- given list.
 --
 -- @
--- clique1 (x ':|' []   ) == 'vertex' x
--- clique1 (x ':|' [y]  ) == 'edge' x y
--- clique1 (x ':|' [y,z]) == 'edges1' ((x,y) ':|' [(x,z), (y,z)])
--- clique1 (xs '<>' ys)   == 'connect' (clique1 xs) (clique1 ys)
--- clique1 . 'Data.List.NonEmpty.reverse'    == 'transpose' . clique1
+-- clique1 [x]        == 'vertex' x
+-- clique1 [x,y]      == 'edge' x y
+-- clique1 [x,y,z]    == 'edges1' [(x,y), (x,z), (y,z)]
+-- clique1 (xs '<>' ys) == 'connect' (clique1 xs) (clique1 ys)
+-- clique1 . 'Data.List.NonEmpty.reverse'  == 'transpose' . clique1
 -- @
 clique1 :: NonEmpty a -> Graph a
 clique1 = connects1 . fmap vertex
@@ -617,8 +617,8 @@ clique1 = connects1 . fmap vertex
 -- lengths of the given lists.
 --
 -- @
--- biclique1 (x1 ':|' [x2]) (y1 ':|' [y2]) == 'edges1' ((x1,y1) ':|' [(x1,y2), (x2,y1), (x2,y2)])
--- biclique1 xs            ys          == 'connect' ('vertices1' xs) ('vertices1' ys)
+-- biclique1 [x1,x2] [y1,y2] == 'edges1' [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
+-- biclique1 xs      ys      == 'connect' ('vertices1' xs) ('vertices1' ys)
 -- @
 biclique1 :: NonEmpty a -> NonEmpty a -> Graph a
 biclique1 xs ys = connect (vertices1 xs) (vertices1 ys)
@@ -630,7 +630,7 @@ biclique1 xs ys = connect (vertices1 xs) (vertices1 ys)
 -- @
 -- star x []    == 'vertex' x
 -- star x [y]   == 'edge' x y
--- star x [y,z] == 'edges1' ((x,y) ':|' [(x,z)])
+-- star x [y,z] == 'edges1' [(x,y), (x,z)]
 -- @
 star :: a -> [a] -> Graph a
 star x []     = vertex x
@@ -642,9 +642,9 @@ star x (y:ys) = connect (vertex x) (vertices1 $ y :| ys)
 -- input.
 --
 -- @
--- stars1 ((x, [])  ':|' [])         == 'vertex' x
--- stars1 ((x, [y]) ':|' [])         == 'edge' x y
--- stars1 ((x, ys)  ':|' [])         == 'star' x ys
+-- stars1 [(x, [] )]               == 'vertex' x
+-- stars1 [(x, [y])]               == 'edge' x y
+-- stars1 [(x, ys )]               == 'star' x ys
 -- stars1                          == 'overlays1' . fmap (uncurry 'star')
 -- 'overlay' (stars1 xs) (stars1 ys) == stars1 (xs <> ys)
 -- @
@@ -658,9 +658,9 @@ stars1 = overlays1 . fmap (uncurry star)
 --
 -- @
 -- tree (Node x [])                                         == 'vertex' x
--- tree (Node x [Node y [Node z []]])                       == 'path1' (x ':|' [y,z])
+-- tree (Node x [Node y [Node z []]])                       == 'path1' [x,y,z]
 -- tree (Node x [Node y [], Node z []])                     == 'star' x [y,z]
--- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges1' ((1,2) ':|' [(1,3), (3,4), (3,5)])
+-- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges1' [(1,2), (1,3), (3,4), (3,5)]
 -- @
 tree :: Tree.Tree a -> Graph a
 tree (Tree.Node x f) = overlays1 $ star x (map Tree.rootLabel f) :| map tree f
@@ -670,12 +670,12 @@ tree (Tree.Node x f) = overlays1 $ star x (map Tree.rootLabel f) :| map tree f
 -- lengths of the given lists.
 --
 -- @
--- mesh1 (x ':|' [])    (y ':|' [])    == 'vertex' (x, y)
--- mesh1 xs           ys           == 'box' ('path1' xs) ('path1' ys)
--- mesh1 (1 ':|' [2,3]) (\'a\' ':|' "b") == 'edges1' ('Data.List.NonEmpty.fromList' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\'))
---                                                     , ((1,\'b\'),(2,\'b\')), ((2,\'a\'),(2,\'b\'))
---                                                     , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\'))
---                                                     , ((3,\'a\'),(3,\'b\')) ])
+-- mesh1 [x]     [y]        == 'vertex' (x, y)
+-- mesh1 xs      ys         == 'box' ('path1' xs) ('path1' ys)
+-- mesh1 [1,2,3] [\'a\', \'b\'] == 'edges1' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\'))
+--                                    , ((1,\'b\'),(2,\'b\')), ((2,\'a\'),(2,\'b\'))
+--                                    , ((2,\'a\'),(3,\'a\')), ((2,\'b\'),(3,\'b\'))
+--                                    , ((3,\'a\'),(3,\'b\')) ]
 -- @
 mesh1 :: NonEmpty a -> NonEmpty b -> Graph (a, b)
 mesh1 xx@(x:|xs) yy@(y:|ys) =
@@ -705,21 +705,22 @@ mesh1 xx@(x:|xs) yy@(y:|ys) =
 -- lengths of the given lists.
 --
 -- @
--- torus1 (x ':|' [])  (y ':|' [])    == 'edge' (x,y) (x,y)
--- torus1 xs         ys           == 'box' ('circuit1' xs) ('circuit1' ys)
--- torus1 (1 ':|' [2]) (\'a\' ':|' "b") == 'edges1' ('Data.List.NonEmpty.fromList' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\'))
---                                                    , ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
---                                                    , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\'))
---                                                    , ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ])
+-- torus1 [x]     [y]      == 'edge' (x,y) (x,y)
+-- torus1 xs      ys       == 'box' ('circuit1' xs) ('circuit1' ys)
+-- torus1 [1,2] [\'a\', \'b\'] == 'edges1' [ ((1,\'a\'),(1,\'b\')), ((1,\'a\'),(2,\'a\'))
+--                                   , ((1,\'b\'),(1,\'a\')), ((1,\'b\'),(2,\'b\'))
+--                                   , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\'))
+--                                   , ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus1 :: NonEmpty a -> NonEmpty b -> Graph (a, b)
-torus1 xs ys = stars1 $ fmap (\((a1,a2),(b1,b2)) -> ((a1, b1), [(a1, b2), (a2, b1)])) $ liftM2 (,) (pairs1 xs) (pairs1 ys)
+torus1 xs ys = stars1 $ fmap (\((a1,a2),(b1,b2)) -> ((a1, b1), [(a1, b2), (a2, b1)]))
+    $ liftM2 (,) (pairs1 xs) (pairs1 ys)
 
--- | Auxiliary function for 'mesh1' and 'torus1'
+-- Auxiliary function for 'mesh1' and 'torus1'
 pairs1 :: NonEmpty a -> NonEmpty (a, a)
 pairs1 as@(x:|xs) = NonEmpty.zip as $ maybe (x :| []) (`appendNonEmpty` [x]) $ NonEmpty.nonEmpty xs
 
--- | Append a list to a non-empty one
+-- Append a list to a non-empty one
 appendNonEmpty :: NonEmpty a -> [a] -> NonEmpty a
 appendNonEmpty (w:|ws) zs = w :| (ws++zs)
 
@@ -734,33 +735,33 @@ appendNonEmpty (w:|ws) zs = w :| (ws++zs)
 -- removeVertex1 1 ('edge' 1 2)          == Just ('vertex' 2)
 -- removeVertex1 x '>=>' removeVertex1 x == removeVertex1 x
 -- @
-{-# SPECIALISE removeVertex1 :: Int -> Graph Int -> Maybe (Graph Int) #-}
 removeVertex1 :: Eq a => a -> Graph a -> Maybe (Graph a)
 removeVertex1 x = induce1 (/= x)
+{-# SPECIALISE removeVertex1 :: Int -> Graph Int -> Maybe (Graph Int) #-}
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
 --
 -- @
--- removeEdge x y ('edge' x y)       == 'vertices1' (x ':|' [y])
+-- removeEdge x y ('edge' x y)       == 'vertices1' [x,y]
 -- removeEdge x y . removeEdge x y == removeEdge x y
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- 'size' (removeEdge x y z)         <= 3 * 'size' z
 -- @
-{-# SPECIALISE removeEdge :: Int -> Int -> Graph Int -> Graph Int #-}
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t = filterContext s (/=s) (/=t)
+{-# SPECIALISE removeEdge :: Int -> Int -> Graph Int -> Graph Int #-}
 
 -- TODO: Export
-{-# SPECIALISE filterContext :: Int -> (Int -> Bool) -> (Int -> Bool) -> Graph Int -> Graph Int #-}
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
 filterContext s i o g = maybe g go $ G.context (==s) (T.toGraph g)
   where
     go (G.Context is os) = G.induce (/=s) (T.toGraph g)     `overlay1`
                            transpose (star s (filter i is)) `overlay` star s (filter o os)
+{-# SPECIALISE filterContext :: Int -> (Int -> Bool) -> (Int -> Bool) -> Graph Int -> Graph Int #-}
 
--- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
+-- | The function 'replaceVertex' @x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O(s)/ time, memory and size.
 --
@@ -769,9 +770,9 @@ filterContext s i o g = maybe g go $ G.context (==s) (T.toGraph g)
 -- replaceVertex x y ('vertex' x) == 'vertex' y
 -- replaceVertex x y            == 'mergeVertices' (== x) y
 -- @
-{-# SPECIALISE replaceVertex :: Int -> Int -> Graph Int -> Graph Int #-}
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
 replaceVertex u v = fmap $ \w -> if w == u then v else w
+{-# SPECIALISE replaceVertex :: Int -> Int -> Graph Int -> Graph Int #-}
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
@@ -792,13 +793,13 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 -- given list.
 --
 -- @
--- splitVertex1 x (x ':|' [] )               == id
--- splitVertex1 x (y ':|' [] )               == 'replaceVertex' x y
--- splitVertex1 1 (0 ':|' [1]) $ 1 * (2 + 3) == (0 + 1) * (2 + 3)
+-- splitVertex1 x [x]                 == id
+-- splitVertex1 x [y]                 == 'replaceVertex' x y
+-- splitVertex1 1 [0,1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)
 -- @
-{-# SPECIALISE splitVertex1 :: Int -> NonEmpty Int -> Graph Int -> Graph Int #-}
 splitVertex1 :: Eq a => a -> NonEmpty a -> Graph a -> Graph a
 splitVertex1 v us g = g >>= \w -> if w == v then vertices1 us else vertex w
+{-# SPECIALISE splitVertex1 :: Int -> NonEmpty Int -> Graph Int -> Graph Int #-}
 
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
@@ -856,18 +857,17 @@ induce1 p = foldg1
 -- that the size of the result does not exceed the size of the given expression.
 --
 -- @
--- simplify              == id
--- 'size' (simplify x)     <= 'size' x
+-- simplify             ==  id
+-- 'size' (simplify x)    <=  'size' x
 -- simplify 1           '===' 1
 -- simplify (1 + 1)     '===' 1
 -- simplify (1 + 2 + 1) '===' 1 + 2
 -- simplify (1 * 1 * 1) '===' 1 * 1
 -- @
-{-# SPECIALISE simplify :: Graph Int -> Graph Int #-}
 simplify :: Ord a => Graph a -> Graph a
 simplify = foldg1 Vertex (simple Overlay) (simple Connect)
+{-# SPECIALISE simplify :: Graph Int -> Graph Int #-}
 
-{-# SPECIALISE simple :: (Graph Int -> Graph Int -> Graph Int) -> Graph Int -> Graph Int -> Graph Int #-}
 simple :: Eq g => (g -> g -> g) -> g -> g -> g
 simple op x y
     | x == z    = x
@@ -875,16 +875,17 @@ simple op x y
     | otherwise = z
   where
     z = op x y
+{-# SPECIALISE simple :: (Graph Int -> Graph Int -> Graph Int) -> Graph Int -> Graph Int -> Graph Int #-}
 
 -- | Compute the /Cartesian product/ of graphs.
 -- Complexity: /O(s1 * s2)/ time, memory and size, where /s1/ and /s2/ are the
 -- sizes of the given graphs.
 --
 -- @
--- box ('path1' $ 'Data.List.NonEmpty.fromList' [0,1]) ('path1' $ 'Data.List.NonEmpty.fromList' "ab") == 'edges1' ('Data.List.NonEmpty.fromList' [ ((0,\'a\'), (0,\'b\'))
---                                                                          , ((0,\'a\'), (1,\'a\'))
---                                                                          , ((0,\'b\'), (1,\'b\'))
---                                                                          , ((1,\'a\'), (1,\'b\')) ])
+-- box ('path1' [0,1]) ('path1' [\'a\',\'b\']) == 'edges1' [ ((0,\'a\'), (0,\'b\'))
+--                                               , ((0,\'a\'), (1,\'a\'))
+--                                               , ((0,\'b\'), (1,\'b\'))
+--                                               , ((1,\'a\'), (1,\'b\')) ]
 -- @
 -- Up to an isomorphism between the resulting vertex types, this operation
 -- is /commutative/, /associative/, /distributes/ over 'overlay', and has
@@ -905,6 +906,9 @@ box x y = overlays1 xs `overlay` overlays1 ys
   where
     xs = fmap (\b -> fmap (,b) x) $ toNonEmptyList y
     ys = fmap (\a -> fmap (a,) y) $ toNonEmptyList x
+
+toNonEmptyList :: Graph a -> NonEmpty a
+toNonEmptyList = foldg1 (:| []) (<>) (<>)
 
 -- | /Sparsify/ a graph by adding intermediate 'Left' @Int@ vertices between the
 -- original vertices (wrapping the latter in 'Right') such that the resulting
@@ -931,6 +935,3 @@ sparsify graph = res
         m <- get
         put (m + 1)
         overlay <$> s `x` m <*> m `y` t
-
-toNonEmptyList :: Graph a -> NonEmpty a
-toNonEmptyList = foldg1 (:| []) (<>) (<>)
