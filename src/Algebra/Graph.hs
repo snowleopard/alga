@@ -966,7 +966,7 @@ splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 -- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Graph a -> Graph a
-transpose = foldg Empty Vertex Overlay (flipFB Connect)
+transpose = foldg Empty Vertex Overlay (flipR Connect)
 {-# INLINE transpose #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
@@ -1110,42 +1110,42 @@ The rules for foldg work like this.
   (along with build's unfolding) else we'd get an infinite loop
   in the rules. Hence the activation control below.
 
-* FB functions are here to remember f after applying a "builG/f" rule.
-  These functions are higher-order functionsand therefore benefits from
-  inlining.
+* R functions (R for Rewrite) are here to remember f after applying a
+  "builG/f" rule. These functions are higher-order functions and therefore
+  benefits from inlining.
 
-* The "mapGFB" rule optimises compositions of mapG
+* The "mapGR" rule optimises compositions of mapG
 -}
 
 buildG :: forall a. F.Fold a -> Graph a
 buildG = F.foldg Empty Vertex Overlay Connect
 {-# INLINE [1] buildG #-}
 
--- | FB functions
-mapGFB :: (b -> c) -> (a -> b) -> a -> c
-mapGFB = (.)
-{-# INLINE [0] mapGFB #-}
+-- | R functions
+mapGR :: (b -> c) -> (a -> b) -> a -> c
+mapGR = (.)
+{-# INLINE [0] mapGR #-}
 
-matchFB :: b -> (a -> b) -> (a -> Bool) -> a -> b
-matchFB e v p = \x -> if p x then v x else e
-{-# INLINE [0] matchFB #-}
+matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
+matchR e v p = \x -> if p x then v x else e
+{-# INLINE [0] matchR #-}
 
-flipFB :: (b -> b -> b) -> (b -> b -> b)
-flipFB = flip
-{-# INLINE [0] flipFB #-}
+flipR :: (b -> b -> b) -> (b -> b -> b)
+flipR = flip
+{-# INLINE [0] flipR #-}
 
 -- Rules to transform a buildG-equivalent function into its equivalent
 {-# RULES
 -- Transform a mapG into its build equivalent
 "buildG/map"       [~1] forall f g.
-  mapG   f g  = buildG (F.Fold $ \e v o c -> foldg e (mapGFB v f) o c g)
+  mapG   f g  = buildG (F.Fold $ \e v o c -> foldg e (mapGR v f) o c g)
 
 -- Transform a induce into its build equivalent
 "buildG/induce"    [~1] forall p g.
-  induce p g  = buildG (F.Fold $ \e v o c -> foldg e (matchFB e v p) o c g)
+  induce p g  = buildG (F.Fold $ \e v o c -> foldg e (matchR e v p) o c g)
 
 "buildG/transpose" [~1] forall g.
-  foldg Empty Vertex Overlay (flipFB Connect) g = buildG (F.Fold $ \e v o c -> foldg e v o (flip c) g)
+  foldg Empty Vertex Overlay (flipR Connect) g = buildG (F.Fold $ \e v o c -> foldg e v o (flip c) g)
  #-}
 
 -- Rules to merge rewrited functions
@@ -1154,12 +1154,12 @@ flipFB = flip
 "foldg/buildG" forall e v o c (g::F.Fold a).
                               foldg e v o c (buildG g) = F.foldg e v o c g
 
--- Merge two mapFB
-"mapFB/mapFB"  forall c f g.  mapGFB (mapGFB c f) g    = mapGFB c (f.g)
+-- Merge two mapR
+"mapR/mapR"  forall c f g.  mapGR (mapGR c f) g    = mapGR c (f.g)
  #-}
 
 -- Rules to rewrite un-merged function back
 {-# RULES
-"graph/mapg"   [1] forall f. foldg Empty (mapGFB Vertex f) Overlay Connect        = mapG f
-"graph/induce" [1] forall f. foldg Empty (matchFB Empty Vertex f) Overlay Connect = induce f
+"graph/mapg"   [1] forall f. foldg Empty (mapGR Vertex f) Overlay Connect        = mapG f
+"graph/induce" [1] forall f. foldg Empty (matchR Empty Vertex f) Overlay Connect = induce f
  #-}
