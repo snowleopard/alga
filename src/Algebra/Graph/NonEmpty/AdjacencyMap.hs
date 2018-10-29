@@ -11,8 +11,8 @@
 -- motivation behind the library, the underlying theory, and implementation details.
 --
 -- This module defines the data type 'AdjacencyMap' for graphs that are known
--- to be non-empty at compile time. The module is intended to be imported
--- qualified to avoid name clashes with "Algebra.Graph.AdjacencyMap":
+-- to be non-empty at compile time. To avoid name clashes with
+-- "Algebra.Graph.AdjacencyMap", this module can be imported qualified:
 --
 -- @
 -- import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
@@ -74,8 +74,8 @@ unsafeNonEmpty = fromMaybe (error msg) . nonEmpty
 -- Complexity: /O(1)/ time, memory and size.
 --
 -- @
--- toNonEmpty 'AM.empty'       == Nothing
--- toNonEmpty ('AM.toGraph' x) == Just (x :: 'AdjacencyMap' a)
+-- toNonEmpty 'AM.empty'              == Nothing
+-- toNonEmpty ('Algebra.Graph.ToGraph.toAdjacencyMap' x) == Just (x :: 'AdjacencyMap' a)
 -- @
 toNonEmpty :: AM.AdjacencyMap a -> Maybe (AdjacencyMap a)
 toNonEmpty x | AM.isEmpty x = Nothing
@@ -166,7 +166,7 @@ hasVertex x = AM.hasVertex x . am
 -- @
 -- hasEdge x y ('vertex' z)       == False
 -- hasEdge x y ('edge' x y)       == True
--- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
@@ -387,10 +387,10 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- /O(1)/ to be evaluated.
 --
 -- @
--- mergeVertices (const False) x    == id
+-- mergeVertices ('const' False) x    == id
 -- mergeVertices (== x) y           == 'replaceVertex' x y
--- mergeVertices even 1 (0 * 2)     == 1 * 1
--- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
+-- mergeVertices 'even' 1 (0 * 2)     == 1 * 1
+-- mergeVertices 'odd'  1 (3 + 4 * 5) == 4 * 1
 -- @
 mergeVertices :: Ord a => (a -> Bool) -> a -> AdjacencyMap a -> AdjacencyMap a
 mergeVertices p v = gmap $ \u -> if p u then v else u
@@ -427,8 +427,8 @@ gmap f = via (AM.gmap f)
 -- be evaluated.
 --
 -- @
--- induce1 (const True ) x == Just x
--- induce1 (const False) x == Nothing
+-- induce1 ('const' True ) x == Just x
+-- induce1 ('const' False) x == Nothing
 -- induce1 (/= x)          == 'removeVertex1' x
 -- induce1 p 'Control.Monad.>=>' induce1 q == induce1 (\\x -> p x && q x)
 -- @

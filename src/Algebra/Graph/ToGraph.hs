@@ -94,7 +94,7 @@ class ToGraph t where
     -- | Check if a graph is empty.
     --
     -- @
-    -- isEmpty == 'foldg' True (const False) (&&) (&&)
+    -- isEmpty == 'foldg' True ('const' False) (&&) (&&)
     -- @
     isEmpty :: t -> Bool
     isEmpty = foldg True (const False) (&&) (&&)
@@ -102,8 +102,12 @@ class ToGraph t where
     -- | The /size/ of a graph, i.e. the number of leaves of the expression
     -- including 'empty' leaves.
     --
+    -- __Note:__ The default implementation of this function violates the
+    -- requirement that the four arguments of 'foldg' should satisfy the laws
+    -- of algebraic graphs, since @1 + 1 /= 1@. Use this function with care.
+    --
     -- @
-    -- size == 'foldg' 1 (const 1) (+) (+)
+    -- size == 'foldg' 1 ('const' 1) (+) (+)
     -- @
     size :: t -> Int
     size = foldg 1 (const 1) (+) (+)
@@ -330,7 +334,7 @@ class ToGraph t where
     -- result.
     --
     -- @
-    -- toAdjacencyMapTranspose == 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' (flip 'AM.connect')
+    -- toAdjacencyMapTranspose == 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' ('flip' 'AM.connect')
     -- @
     toAdjacencyMapTranspose :: Ord (ToVertex t) => t -> AM.AdjacencyMap (ToVertex t)
     toAdjacencyMapTranspose = foldg AM.empty AM.vertex AM.overlay (flip AM.connect)
@@ -347,7 +351,7 @@ class ToGraph t where
     -- the result.
     --
     -- @
-    -- toAdjacencyIntMapTranspose == 'foldg' 'AIM.empty' 'AIM.vertex' 'AIM.overlay' (flip 'AIM.connect')
+    -- toAdjacencyIntMapTranspose == 'foldg' 'AIM.empty' 'AIM.vertex' 'AIM.overlay' ('flip' 'AIM.connect')
     -- @
     toAdjacencyIntMapTranspose :: ToVertex t ~ Int => t -> AIM.AdjacencyIntMap
     toAdjacencyIntMapTranspose = foldg AIM.empty AIM.vertex AIM.overlay (flip AIM.connect)

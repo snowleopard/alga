@@ -12,8 +12,8 @@
 -- motivation behind the library, the underlying theory, and implementation details.
 --
 -- This module defines the data type 'Graph' for algebraic graphs that are known
--- to be non-empty at compile time. The module is intended to be imported
--- qualified to avoid name clashes with "Algebra.Graph":
+-- to be non-empty at compile time. To avoid name clashes with "Algebra.Graph",
+-- this module can be imported qualified:
 --
 -- @
 -- import qualified Algebra.Graph.NonEmpty as NonEmpty
@@ -377,8 +377,8 @@ concatg1 combine (x :| xs) = maybe x (combine x) $ foldr1Safe combine xs
 --
 -- @
 -- foldg1 'vertex'    'overlay' 'connect'        == id
--- foldg1 'vertex'    'overlay' (flip 'connect') == 'transpose'
--- foldg1 (const 1) (+)     (+)            == 'size'
+-- foldg1 'vertex'    'overlay' ('flip' 'connect') == 'transpose'
+-- foldg1 ('const' 1) (+)     (+)            == 'size'
 -- foldg1 (== x)    (||)    (||)           == 'hasVertex' x
 -- @
 foldg1 :: (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
@@ -452,7 +452,7 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- @
 -- hasEdge x y ('vertex' z)       == False
 -- hasEdge x y ('edge' x y)       == True
--- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
@@ -773,10 +773,10 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 -- /O(1)/ to be evaluated.
 --
 -- @
--- mergeVertices (const False) x    == id
+-- mergeVertices ('const' False) x    == id
 -- mergeVertices (== x) y           == 'replaceVertex' x y
--- mergeVertices even 1 (0 * 2)     == 1 * 1
--- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
+-- mergeVertices 'even' 1 (0 * 2)     == 1 * 1
+-- mergeVertices 'odd'  1 (3 + 4 * 5) == 4 * 1
 -- @
 mergeVertices :: (a -> Bool) -> a -> Graph a -> Graph a
 mergeVertices p v = fmap $ \w -> if p w then v else w
@@ -828,8 +828,8 @@ transpose = foldg1 vertex overlay (flip connect)
 -- /O(1)/ to be evaluated.
 --
 -- @
--- induce1 (const True ) x == Just x
--- induce1 (const False) x == Nothing
+-- induce1 ('const' True ) x == Just x
+-- induce1 ('const' False) x == Nothing
 -- induce1 (/= x)          == 'removeVertex1' x
 -- induce1 p '>=>' induce1 q == induce1 (\\x -> p x && q x)
 -- @

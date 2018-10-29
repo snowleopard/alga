@@ -364,10 +364,10 @@ connects = foldr connect empty
 --
 -- @
 -- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
--- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
--- foldg 1     (const 1)     (+)     (+)            == 'size'
--- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
--- foldg False ((==) x)      (||)    (||)           == 'hasVertex x'
+-- foldg 'empty' 'vertex'        'overlay' ('flip' 'connect') == 'transpose'
+-- foldg 1     ('const' 1)     (+)     (+)            == 'size'
+-- foldg True  ('const' False) (&&)    (&&)           == 'isEmpty'
+-- foldg False (== x)        (||)    (||)           == 'hasVertex' x
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
 foldg e v o c g = runFold g e v o c
@@ -423,7 +423,7 @@ size = T.size
 -- hasVertex x 'empty'            == False
 -- hasVertex x ('vertex' x)       == True
 -- hasVertex 1 ('vertex' 2)       == False
--- hasVertex x . 'removeVertex' x == const False
+-- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Eq a => a -> Fold a -> Bool
 hasVertex = T.hasVertex
@@ -435,7 +435,7 @@ hasVertex = T.hasVertex
 -- hasEdge x y 'empty'            == False
 -- hasEdge x y ('vertex' z)       == False
 -- hasEdge x y ('edge' x y)       == True
--- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Fold a -> Bool
@@ -693,8 +693,8 @@ transpose = foldg empty vertex overlay (flip connect)
 -- /O(1)/ to be evaluated.
 --
 -- @
--- induce (const True ) x      == x
--- induce (const False) x      == 'empty'
+-- induce ('const' True ) x      == x
+-- induce ('const' False) x      == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True
