@@ -212,6 +212,8 @@ connect x y = Relation (domain x `union` domain y)
 instance NFData a => NFData (Relation a) where
     rnf (Relation d r) = rnf d `seq` rnf r `seq` ()
 
+-- | __Note:__ this does not satisfy the usual ring laws; see 'Relation' for
+-- more details.
 instance (Ord a, Num a) => Num (Relation a) where
     fromInteger = vertex . fromInteger
     (+)         = overlay

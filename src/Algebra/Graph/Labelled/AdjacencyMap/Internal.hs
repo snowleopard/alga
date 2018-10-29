@@ -92,6 +92,8 @@ connect e (AM x) (AM y) = AM $ Map.unionsWith (Map.unionWith mappend)
   where
     targets = Map.fromSet (const e) (Map.keysSet y)
 
+-- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap'
+-- for more details.
 instance (Ord a, Num a, Dioid e) => Num (AdjacencyMap e a) where
     fromInteger = vertex . fromInteger
     (+)         = overlay

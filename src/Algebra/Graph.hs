@@ -186,6 +186,8 @@ instance NFData a => NFData (Graph a) where
     rnf (Overlay x y) = rnf x `seq` rnf y
     rnf (Connect x y) = rnf x `seq` rnf y
 
+-- | __Note:__ this does not satisfy the usual ring laws; see 'Graph' for more
+-- details.
 instance Num a => Num (Graph a) where
     fromInteger = Vertex . fromInteger
     (+)         = Overlay

@@ -228,6 +228,8 @@ connect x y = AM $ IntMap.unionsWith IntSet.union [ adjacencyIntMap x, adjacency
     fromSet (const . keysSet $ adjacencyIntMap y) (keysSet $ adjacencyIntMap x) ]
 {-# NOINLINE [1] connect #-}
 
+-- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyIntMap'
+-- for more details.
 instance Num AdjacencyIntMap where
     fromInteger = vertex . fromInteger
     (+)         = overlay
