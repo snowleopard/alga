@@ -346,13 +346,13 @@ testNonEmptyAdjacencyMap = do
           postSet 2 (edge 1 2 :: G) == Set.empty
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.path1 ============"
-    test "path1 [x]        == vertex x" $ \(x :: Int) ->
-          path1 [x]        == vertex x
+    test "path1 [x]       == vertex x" $ \(x :: Int) ->
+          path1 [x]       == vertex x
 
-    test "path1 [x,y]      == edge x y" $ \(x :: Int) y ->
-          path1 [x,y]      == edge x y
+    test "path1 [x,y]     == edge x y" $ \(x :: Int) y ->
+          path1 [x,y]     == edge x y
 
-    test "path1 . reverse  == transpose . path1" $ \(xs' :: NonEmptyList Int) ->
+    test "path1 . reverse == transpose . path1" $ \(xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
         in (path1 . NonEmpty.reverse) xs == (transpose . path1) xs
 

@@ -44,7 +44,8 @@ module Algebra.Graph.NonEmpty.AdjacencyMap (
     induce1
     ) where
 
-import Data.List.NonEmpty (NonEmpty (..), nonEmpty, toList)
+import Prelude hiding (reverse)
+import Data.List.NonEmpty (NonEmpty (..), nonEmpty, toList, reverse)
 import Data.Maybe
 import Data.Set (Set)
 import Data.Tree
@@ -106,6 +107,7 @@ edge x y = NAM (AM.edge x y)
 -- @
 vertices1 :: Ord a => NonEmpty a -> AdjacencyMap a
 vertices1 = NAM . AM.vertices . toList
+{-# NOINLINE [1] vertices1 #-}
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -126,6 +128,7 @@ edges1 = NAM . AM.edges . toList
 -- @
 overlays1 :: Ord a => NonEmpty (AdjacencyMap a) -> AdjacencyMap a
 overlays1 = viaL AM.overlays
+{-# NOINLINE overlays1 #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -136,6 +139,7 @@ overlays1 = viaL AM.overlays
 -- @
 connects1 :: Ord a => NonEmpty (AdjacencyMap a) -> AdjacencyMap a
 connects1 = viaL AM.connects
+{-# NOINLINE connects1 #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -265,9 +269,9 @@ postSet x = AM.postSet x . am
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- path1 [x]        == 'vertex' x
--- path1 [x,y]      == 'edge' x y
--- path1 . 'Data.List.NonEmpty.reverse'  == 'transpose' . path1
+-- path1 [x]       == 'vertex' x
+-- path1 [x,y]     == 'edge' x y
+-- path1 . 'Data.List.NonEmpty.reverse' == 'transpose' . path1
 -- @
 path1 :: Ord a => NonEmpty a -> AdjacencyMap a
 path1 = NAM . AM.path . toList
@@ -295,6 +299,7 @@ circuit1 = NAM . AM.circuit . toList
 -- @
 clique1 :: Ord a => NonEmpty a -> AdjacencyMap a
 clique1 = NAM . AM.clique . toList
+{-# NOINLINE [1] clique1 #-}
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
@@ -317,6 +322,7 @@ biclique1 xs ys = NAM $ AM.biclique (toList xs) (toList ys)
 -- @
 star :: Ord a => a -> [a] -> AdjacencyMap a
 star x = NAM . AM.star x
+{-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
 -- 'adjacencyList'.
@@ -406,6 +412,19 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- @
 transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
 transpose = NAM . AM.transpose . am
+{-# NOINLINE [1] transpose #-}
+
+{-# RULES
+"transpose/vertex"   forall x. transpose (vertex x) = vertex x
+"transpose/overlay"  forall g1 g2. transpose (overlay g1 g2) = overlay (transpose g1) (transpose g2)
+"transpose/connect"  forall g1 g2. transpose (connect g1 g2) = connect (transpose g2) (transpose g1)
+
+"transpose/overlays1" forall xs. transpose (overlays1 xs) = overlays1 (fmap transpose xs)
+"transpose/connects1" forall xs. transpose (connects1 xs) = connects1 (reverse (fmap transpose xs))
+
+"transpose/vertices1" forall xs. transpose (vertices1 xs) = vertices1 xs
+"transpose/clique1"   forall xs. transpose (clique1 xs)   = clique1 (reverse xs)
+ #-}
 
 -- | Transform a graph by applying a function to each of its vertices. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
