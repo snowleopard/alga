@@ -1096,7 +1096,7 @@ The rules for foldg work like this.
   "builG/f" rule. These functions are higher-order functions and therefore
   benefits from inlining.
 
-* The "mapGR" rule optimises compositions of mapG
+* The "mapR/mapR" rule optimises compositions of mapG
 -}
 
 buildG :: forall a. F.Fold a -> Graph a
@@ -1104,9 +1104,9 @@ buildG = F.foldg Empty Vertex Overlay Connect
 {-# INLINE [1] buildG #-}
 
 -- | R functions
-mapGR :: (b -> c) -> (a -> b) -> a -> c
-mapGR = (.)
-{-# INLINE [0] mapGR #-}
+composeR :: (b -> c) -> (a -> b) -> a -> c
+composeR = (.)
+{-# INLINE [0] composeR #-}
 
 matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
 matchR e v p = \x -> if p x then v x else e
@@ -1120,7 +1120,7 @@ flipR = flip
 {-# RULES
 -- Transform a mapG into its build equivalent
 "buildG/map"       [~1] forall f g.
-  mapG   f g  = buildG (F.Fold $ \e v o c -> foldg e (mapGR v f) o c g)
+  mapG   f g  = buildG (F.Fold $ \e v o c -> foldg e (composeR v f) o c g)
 
 -- Transform a induce into its build equivalent
 "buildG/induce"    [~1] forall p g.
@@ -1137,11 +1137,11 @@ flipR = flip
                               foldg e v o c (buildG g) = F.foldg e v o c g
 
 -- Merge two mapR
-"mapR/mapR"  forall c f g.  mapGR (mapGR c f) g    = mapGR c (f.g)
+"mapR/mapR"  forall c f g.  composeR (composeR c f) g  = composeR c (f.g)
  #-}
 
 -- Rules to rewrite un-merged function back
 {-# RULES
-"graph/mapg"   [1] forall f. foldg Empty (mapGR Vertex f) Overlay Connect        = mapG f
+"graph/mapg"   [1] forall f. foldg Empty (composeR Vertex f) Overlay Connect        = mapG f
 "graph/induce" [1] forall f. foldg Empty (matchR Empty Vertex f) Overlay Connect = induce f
  #-}
