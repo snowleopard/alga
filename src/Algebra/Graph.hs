@@ -186,7 +186,7 @@ data Graph a = Empty
 
 This module contains several functions whose only purpose is to guide GHC
 rewrite rules. The names of all such functions are suffixed with "R" so that it
-is easier to distinguish them from others. 
+is easier to distinguish them from others.
 
 Why do we need them?
 
@@ -210,12 +210,12 @@ not under our control. We therefore choose the safe and more explicit path of
 creating our own intermediate functions for guiding rewrite rules when needed.
 -}
 instance Functor Graph where
-  fmap = mapG
+  fmap = fmapR
 
 -- | 'fmap' on which we can apply rewrite rules
-mapG :: (a -> b) -> Graph a -> Graph b
-mapG f = foldg empty (vertex . f) overlay connect
-{-# INLINE [0] mapG #-}
+fmapR :: (a -> b) -> Graph a -> Graph b
+fmapR f = foldg empty (vertex . f) overlay connect
+{-# INLINE [0] fmapR #-}
 
 instance NFData a => NFData (Graph a) where
     rnf Empty         = ()
@@ -1123,7 +1123,7 @@ The rules for foldg work like this.
   "builG/f" rule. These functions are higher-order functions and therefore
   benefits from inlining.
 
-* The "mapR/mapR" rule optimises compositions of mapG
+* The "mapR/mapR" rule optimises compositions of fmapR
 -}
 
 buildG :: forall a. F.Fold a -> Graph a
@@ -1145,9 +1145,9 @@ flipR = flip
 
 -- Rules to transform a buildG-equivalent function into its equivalent
 {-# RULES
--- Transform a mapG into its build equivalent
+-- Transform a fmapR into its build equivalent
 "buildG/map"       [~1] forall f g.
-  mapG   f g  = buildG (F.Fold $ \e v o c -> foldg e (composeR v f) o c g)
+  fmapR   f g  = buildG (F.Fold $ \e v o c -> foldg e (composeR v f) o c g)
 
 -- Transform a induce into its build equivalent
 "buildG/induce"    [~1] forall p g.
@@ -1169,6 +1169,6 @@ flipR = flip
 
 -- Rules to rewrite un-merged function back
 {-# RULES
-"graph/mapg"   [1] forall f. foldg Empty (composeR Vertex f) Overlay Connect        = mapG f
+"graph/mapg"   [1] forall f. foldg Empty (composeR Vertex f) Overlay Connect     = fmapR f
 "graph/induce" [1] forall f. foldg Empty (matchR Empty Vertex f) Overlay Connect = induce f
  #-}
