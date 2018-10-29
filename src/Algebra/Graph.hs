@@ -181,7 +181,34 @@ data Graph a = Empty
              | Overlay (Graph a) (Graph a)
              | Connect (Graph a) (Graph a)
              deriving (Show)
+{- Note [Functions for rewrite rules]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+This module contains several functions whose only purpose is to guide GHC
+rewrite rules. The names of all such functions are suffixed with "R" so that it
+is easier to distinguish them from others. 
+
+Why do we need them?
+
+These functions are annotated with carefully chosen GHC pragmas that control
+inlining, which would be impossible or unreliable if we used standard functions
+instead. For example, the function 'eqR' has the following annotations:
+
+{-# NOINLINE [1] eqR #-}
+{-# RULES "eqIntR" eqR = eqIntR #-}
+
+This tells GHC to rewrite 'eqR' to faster 'eqIntR' if possible (if the types
+match), and -- importantly -- not to inline 'eqR' too early, before the rewrite
+rule had a chance to fire.
+
+We could have written the following rule instead:
+
+{-# RULES "eqIntR" (==) = eqIntR #-}
+
+But that would have to rely on appropriate inlining behaviour of (==) which is
+not under our control. We therefore choose the safe and more explicit path of
+creating our own intermediate functions for guiding rewrite rules when needed.
+-}
 instance Functor Graph where
   fmap = mapG
 
