@@ -14,29 +14,32 @@
 -- This module defines the type class 'ToGraph' for capturing data types that
 -- can be converted to algebraic graphs. To make an instance of this class you
 -- need to define just a single method ('toGraph' or 'foldg'), which gives you
--- access to many other useful methods for free. This type class is similar to
--- the standard "Data.Foldable" defined for lists.
+-- access to many other useful methods for free (although note that the default
+-- implementations may be suboptimal performance-wise).
 --
--- It is in fact so similar to "Data.Foldable" that one can define 'foldMap' using
--- 'foldg':
---
--- @
--- foldMap f = foldg mempty f (<>) (<>)
--- @
---
--- This allow to define a valid "Data.Foldable" instance but it leads to some
--- problems because this instance can show the internal structure of a graph.
--- For example:
+-- This type class is similar to the standard type class 'Data.Foldable.Foldable'
+-- defined for lists. Furthermore, one can define 'Foldable' methods 'foldMap'
+-- and 'Data.Foldable.toList' using @ToGraph@.'foldg':
 --
 -- @
--- toList (overlay (vertex 0) (vertex 0)) \/= toList (vertex 0)
+-- 'foldMap' f = 'foldg' 'mempty' f    ('<>') ('<>')
+-- 'Data.Foldable.toList'    = 'foldg' []     'pure' ('++') ('++')
 -- @
 --
--- BUT
+-- However, the resulting 'Foldable' instance is problematic. For example,
+-- folding equivalent algebraic graphs @1@ and @1@ + @1@ leads to different
+-- results:
 --
 -- @
--- overlay (vertex 0) (vertex 0) == vertex 0
+-- 'Data.Foldable.toList' (1    ) == [1]
+-- 'Data.Foldable.toList' (1 + 1) == [1, 1]
 -- @
+--
+-- To avoid such cases, we do not provide 'Foldable' instances for algebraic
+-- graph datatypes. Furthermore, we require that the four arguments passed to
+-- 'foldg' satisfy the laws of the algebra of graphs. The above definitions
+-- of 'foldMap' and 'Data.Foldable.toList' violate this requirement, for example
+-- @[1] ++ [1] /= [1]@, and are therefore disallowed.
 -----------------------------------------------------------------------------
 module Algebra.Graph.ToGraph (ToGraph (..)) where
 
@@ -62,9 +65,11 @@ import qualified Data.Map                                     as Map
 import qualified Data.Set                                     as Set
 
 -- | The 'ToGraph' type class captures data types that can be converted to
--- algebraic graphs.
+-- algebraic graphs. Instances of this type class should satisfy the laws
+-- specified by the default method definitions.
 class ToGraph t where
     {-# MINIMAL toGraph | foldg #-}
+    -- | The type of vertices of the resulting graph.
     type ToVertex t
 
     -- | Convert a value to the corresponding algebraic graph, see "Algebra.Graph".
