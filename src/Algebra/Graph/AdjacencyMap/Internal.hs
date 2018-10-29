@@ -13,19 +13,18 @@
 module Algebra.Graph.AdjacencyMap.Internal (
     -- * Adjacency map implementation
     AdjacencyMap (..), empty, vertex, overlay, connect, fromAdjacencySets,
-    consistent
+    consistent, internalEdgeList, referredToVertexSet
   ) where
 
 import Prelude ()
 import Prelude.Compat hiding (null)
 
+import Control.DeepSeq
 import Data.Foldable (foldMap)
 import Data.List
 import Data.Map.Strict (Map, keysSet, fromSet)
 import Data.Monoid
 import Data.Set (Set)
-
-import Control.DeepSeq (NFData (..))
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
@@ -39,6 +38,14 @@ working with graphs:
     > 1 * 2       == connect (vertex 1) (vertex 2)
     > 1 + 2 * 3   == overlay (vertex 1) (connect (vertex 2) (vertex 3))
     > 1 * (2 + 3) == connect (vertex 1) (overlay (vertex 2) (vertex 3))
+
+__Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
+which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
+additive and multiplicative identities, and 'negate' as additive inverse.
+Nevertheless, overloading 'fromInteger', '+' and '*' is very convenient when
+working with algebraic graphs; we hope that in future Haskell's Prelude will
+provide a more fine-grained class hierarchy for algebraic structures, which we
+would be able to utilise without violating any laws.
 
 The 'Show' instance is defined using basic graph construction primitives:
 
@@ -264,10 +271,12 @@ fromAdjacencySets ss = AM $ Map.unionWith Set.union vs es
 consistent :: Ord a => AdjacencyMap a -> Bool
 consistent (AM m) = referredToVertexSet m `Set.isSubsetOf` keysSet m
 
--- The set of vertices that are referred to by the edges
-referredToVertexSet :: Ord a => Map a (Set a) -> Set a
-referredToVertexSet = Set.fromList . uncurry (++) . unzip . internalEdgeList
-
--- The list of edges in adjacency map
+-- | The list of edges of an adjacency map.
+-- /Note: this function is for internal use only/.
 internalEdgeList :: Map a (Set a) -> [(a, a)]
 internalEdgeList m = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
+
+-- | The set of vertices that are referred to by the edges of an adjacency map.
+-- /Note: this function is for internal use only/.
+referredToVertexSet :: Ord a => Map a (Set a) -> Set a
+referredToVertexSet = Set.fromList . uncurry (++) . unzip . internalEdgeList

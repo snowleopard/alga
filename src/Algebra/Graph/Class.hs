@@ -438,7 +438,7 @@ tree (Node x f ) = star x (map rootLabel f)
 -- forest []                                                  == 'empty'
 -- forest [x]                                                 == 'tree' x
 -- forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == 'edges' [(1,2), (1,3), (4,5)]
--- forest                                                     == 'overlays' . map 'tree'
+-- forest                                                     == 'overlays' . 'map' 'tree'
 -- @
 forest :: Graph g => Forest (Vertex g) -> g
 forest = overlays . map tree

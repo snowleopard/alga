@@ -33,7 +33,7 @@ module Algebra.Graph.Fold (
 
     -- * Graph properties
     isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
+    edgeList, vertexSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars,
@@ -53,7 +53,7 @@ import Algebra.Graph.ToGraph (toGraph)
 
 import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.ToGraph      as T
-import qualified Data.IntSet                as IntSet
+
 import qualified Data.Set                   as Set
 
 -- | Construct the graph comprising /a single edge/.
@@ -170,14 +170,14 @@ isEmpty = T.isEmpty
 size :: Fold a -> Int
 size = T.size
 
--- | Check if a graph contains a given vertex. A convenient alias for `elem`.
+-- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
 --
 -- @
 -- hasVertex x 'empty'            == False
 -- hasVertex x ('vertex' x)       == True
 -- hasVertex 1 ('vertex' 2)       == False
--- hasVertex x . 'removeVertex' x == const False
+-- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Eq a => a -> Fold a -> Bool
 hasVertex = T.hasVertex
@@ -189,7 +189,7 @@ hasVertex = T.hasVertex
 -- hasEdge x y 'empty'            == False
 -- hasEdge x y ('vertex' z)       == False
 -- hasEdge x y ('edge' x y)       == True
--- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Fold a -> Bool
@@ -241,7 +241,7 @@ vertexList = T.vertexList
 -- edgeList ('edge' x y)     == [(x,y)]
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
--- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
+-- edgeList . 'transpose'    == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: Ord a => Fold a -> [(a, a)]
 edgeList = T.edgeList
@@ -257,19 +257,6 @@ edgeList = T.edgeList
 -- @
 vertexSet :: Ord a => Fold a -> Set.Set a
 vertexSet = T.vertexSet
-
--- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
--- graphs with vertices of type 'Int'.
--- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
---
--- @
--- vertexIntSet 'empty'      == IntSet.'IntSet.empty'
--- vertexIntSet . 'vertex'   == IntSet.'IntSet.singleton'
--- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
--- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
--- @
-vertexIntSet :: Fold Int -> IntSet.IntSet
-vertexIntSet = T.vertexIntSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
@@ -383,7 +370,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- stars [(x, [])]               == 'vertex' x
 -- stars [(x, [y])]              == 'edge' x y
 -- stars [(x, ys)]               == 'star' x ys
--- stars                         == 'overlays' . map (uncurry 'star')
+-- stars                         == 'overlays' . 'map' ('uncurry' 'star')
 -- stars . 'adjacencyList'         == id
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
@@ -435,7 +422,7 @@ filterContext s i o g = maybe g go $ G.context (==s) (toGraph g)
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
 -- transpose ('box' x y)   == 'box' (transpose x) (transpose y)
--- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
+-- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Fold a -> Fold a
 transpose = foldg empty vertex overlay (flip connect)
@@ -460,8 +447,8 @@ transpose = foldg empty vertex overlay (flip connect)
 -- /O(1)/ to be evaluated.
 --
 -- @
--- induce (const True ) x      == x
--- induce (const False) x      == 'empty'
+-- induce ('const' True ) x      == x
+-- induce ('const' False) x      == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True

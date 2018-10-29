@@ -369,7 +369,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- stars [(x, [])]               == 'vertex' x
 -- stars [(x, [y])]              == 'edge' x y
 -- stars [(x, ys)]               == 'star' x ys
--- stars                         == 'overlays' . map (uncurry 'star')
+-- stars                         == 'overlays' . 'map' ('uncurry' 'star')
 -- stars . 'adjacencyList'         == id
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
@@ -399,7 +399,7 @@ tree (Node x f ) = star x (map rootLabel f)
 -- forest []                                                  == 'empty'
 -- forest [x]                                                 == 'tree' x
 -- forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == 'edges' [(1,2), (1,3), (4,5)]
--- forest                                                     == 'overlays' . map 'tree'
+-- forest                                                     == 'overlays' . 'map' 'tree'
 -- @
 forest :: Graph g => Forest a -> g a
 forest = overlays . map tree
@@ -479,8 +479,8 @@ deBruijn len alphabet = skeleton >>= expand
 -- /O(1)/ to be evaluated.
 --
 -- @
--- induce (const True ) x      == x
--- induce (const False) x      == 'empty'
+-- induce ('const' True ) x      == x
+-- induce ('const' False) x      == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True
@@ -518,10 +518,10 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 -- /O(1)/ to be evaluated.
 --
 -- @
--- mergeVertices (const False) x    == id
+-- mergeVertices ('const' False) x    == id
 -- mergeVertices (== x) y           == 'replaceVertex' x y
--- mergeVertices even 1 (0 * 2)     == 1 * 1
--- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
+-- mergeVertices 'even' 1 (0 * 2)     == 1 * 1
+-- mergeVertices 'odd'  1 (3 + 4 * 5) == 4 * 1
 -- @
 mergeVertices :: Graph g => (a -> Bool) -> a -> g a -> g a
 mergeVertices p v = fmap $ \w -> if p w then v else w

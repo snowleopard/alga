@@ -124,23 +124,29 @@ testShow (Testsuite prefix (%)) = do
 testOrd :: Testsuite -> IO ()
 testOrd (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "Ord ============"
-    test "vertex 1 < vertex 2" $
+    test "vertex 1 <  vertex 2" $
           vertex 1 < id % vertex 2
 
-    test "vertex 3 < edge 1 2" $
+    test "vertex 3 <  edge 1 2" $
           vertex 3 < id % edge 1 2
 
-    test "vertex 1 < edge 1 1" $
+    test "vertex 1 <  edge 1 1" $
           vertex 1 < id % edge 1 1
 
-    test "edge 1 1 < edge 1 2" $
+    test "edge 1 1 <  edge 1 2" $
           edge 1 1 < id % edge 1 2
 
-    test "edge 1 2 < edge 1 1 + edge 2 2" $
-          edge 1 2 < edge 1 1 + id % edge 2 2
+    test "edge 1 2 <  edge 1 1 + edge 2 2" $
+          edge 1 2 < id % edge 1 1 + edge 2 2
 
-    test "edge 1 2 < edge 1 3" $
+    test "edge 1 2 <  edge 1 3" $
           edge 1 2 < id % edge 1 3
+
+    test "x        <= x + y" $ \x y ->
+          id % x   <= x + y
+
+    test "x + y    <= x * y" $ \x y ->
+          id % x + y <= x * y
 
 testEmpty :: Testsuite -> IO ()
 testEmpty (Testsuite prefix (%)) = do
@@ -379,20 +385,20 @@ testFromAdjacencyIntSets (Testsuite prefix (%)) = do
 testIsSubgraphOf :: Testsuite -> IO ()
 testIsSubgraphOf (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "isSubgraphOf ============"
-    test "isSubgraphOf empty         x             == True" $ \x ->
-          isSubgraphOf empty       % x             == True
+    test "isSubgraphOf empty         x             ==  True" $ \x ->
+          isSubgraphOf empty       % x             ==  True
 
-    test "isSubgraphOf (vertex x)    empty         == False" $ \x ->
-          isSubgraphOf (vertex x)  % empty         == False
+    test "isSubgraphOf (vertex x)    empty         ==  False" $ \x ->
+          isSubgraphOf (vertex x)  % empty         ==  False
 
-    test "isSubgraphOf x             (overlay x y) == True" $ \x y ->
-          isSubgraphOf x            % overlay x y  == True
+    test "isSubgraphOf x             (overlay x y) ==  True" $ \x y ->
+          isSubgraphOf x            % overlay x y  ==  True
 
-    test "isSubgraphOf (overlay x y) (connect x y) == True" $ \x y ->
-          isSubgraphOf (overlay x y) % connect x y == True
+    test "isSubgraphOf (overlay x y) (connect x y) ==  True" $ \x y ->
+          isSubgraphOf (overlay x y) % connect x y ==  True
 
-    test "isSubgraphOf (path xs)     (circuit xs)  == True" $ \xs ->
-          isSubgraphOf (path xs)    % circuit xs   == True
+    test "isSubgraphOf (path xs)     (circuit xs)  ==  True" $ \xs ->
+          isSubgraphOf (path xs)    % circuit xs   ==  True
 
     test "isSubgraphOf x y                         ==> x <= y" $ \x z ->
         let y = x + z -- Make sure we hit the precondition

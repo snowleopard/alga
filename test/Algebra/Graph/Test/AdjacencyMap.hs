@@ -18,7 +18,7 @@ import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
-import qualified Data.Set   as Set
+import qualified Data.Set as Set
 
 t :: Testsuite
 t = testsuite "AdjacencyMap." empty
