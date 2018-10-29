@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Fold
+-- Module     : Algebra.Graph.Fold.Internal
 -- Copyright  : (c) Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
