@@ -102,9 +102,7 @@ library
                         TupleSections
                         TypeFamilies
     other-extensions:   CPP
-                        DeriveFoldable
                         DeriveFunctor
-                        DeriveTraversable
                         OverloadedStrings
                         RecordWildCards
     GHC-options:        -Wall
