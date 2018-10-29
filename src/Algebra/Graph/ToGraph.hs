@@ -14,29 +14,32 @@
 -- This module defines the type class 'ToGraph' for capturing data types that
 -- can be converted to algebraic graphs. To make an instance of this class you
 -- need to define just a single method ('toGraph' or 'foldg'), which gives you
--- access to many other useful methods for free. This type class is similar to
--- the standard "Data.Foldable" defined for lists.
+-- access to many other useful methods for free (although note that the default
+-- implementations may be suboptimal performance-wise).
 --
--- It is in fact so similar to "Data.Foldable" that one can define 'foldMap' using
--- 'foldg':
---
--- @
--- foldMap f = foldg mempty f (<>) (<>)
--- @
---
--- This allow to define a valid "Data.Foldable" instance but it leads to some
--- problems because this instance can show the internal structure of a graph.
--- For example:
+-- This type class is similar to the standard type class 'Data.Foldable.Foldable'
+-- defined for lists. Furthermore, one can define 'Foldable' methods 'foldMap'
+-- and 'Data.Foldable.toList' using @ToGraph@.'foldg':
 --
 -- @
--- toList (overlay (vertex 0) (vertex 0)) \/= toList (vertex 0)
+-- 'foldMap' f = 'foldg' 'mempty' f    ('<>') ('<>')
+-- 'Data.Foldable.toList'    = 'foldg' []     'pure' ('++') ('++')
 -- @
 --
--- BUT
+-- However, the resulting 'Foldable' instance is problematic. For example,
+-- folding equivalent algebraic graphs @1@ and @1@ + @1@ leads to different
+-- results:
 --
 -- @
--- overlay (vertex 0) (vertex 0) == vertex 0
+-- 'Data.Foldable.toList' (1    ) == [1]
+-- 'Data.Foldable.toList' (1 + 1) == [1, 1]
 -- @
+--
+-- To avoid such cases, we do not provide 'Foldable' instances for algebraic
+-- graph datatypes. Furthermore, we require that the four arguments passed to
+-- 'foldg' satisfy the laws of the algebra of graphs. The above definitions
+-- of 'foldMap' and 'Data.Foldable.toList' violate this requirement, for example
+-- @[1] ++ [1] /= [1]@, and are therefore disallowed.
 -----------------------------------------------------------------------------
 module Algebra.Graph.ToGraph (ToGraph (..)) where
 
@@ -48,21 +51,25 @@ import Data.Map    (Map)
 import Data.Set    (Set)
 import Data.Tree
 
-import qualified Algebra.Graph                          as G
-import qualified Algebra.Graph.AdjacencyMap             as AM
-import qualified Algebra.Graph.AdjacencyMap.Internal    as AM
-import qualified Algebra.Graph.AdjacencyIntMap          as AIM
-import qualified Algebra.Graph.AdjacencyIntMap.Internal as AIM
-import qualified Algebra.Graph.Relation                 as R
-import qualified Data.IntMap                            as IntMap
-import qualified Data.IntSet                            as IntSet
-import qualified Data.Map                               as Map
-import qualified Data.Set                               as Set
+import qualified Algebra.Graph                                as G
+import qualified Algebra.Graph.AdjacencyMap                   as AM
+import qualified Algebra.Graph.AdjacencyMap.Internal          as AM
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap          as NAM
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap.Internal as NAM
+import qualified Algebra.Graph.AdjacencyIntMap                as AIM
+import qualified Algebra.Graph.AdjacencyIntMap.Internal       as AIM
+import qualified Algebra.Graph.Relation                       as R
+import qualified Data.IntMap                                  as IntMap
+import qualified Data.IntSet                                  as IntSet
+import qualified Data.Map                                     as Map
+import qualified Data.Set                                     as Set
 
 -- | The 'ToGraph' type class captures data types that can be converted to
--- algebraic graphs.
+-- algebraic graphs. Instances of this type class should satisfy the laws
+-- specified by the default method definitions.
 class ToGraph t where
     {-# MINIMAL toGraph | foldg #-}
+    -- | The type of vertices of the resulting graph.
     type ToVertex t
 
     -- | Convert a value to the corresponding algebraic graph, see "Algebra.Graph".
@@ -87,7 +94,7 @@ class ToGraph t where
     -- | Check if a graph is empty.
     --
     -- @
-    -- isEmpty == 'foldg' True (const False) (&&) (&&)
+    -- isEmpty == 'foldg' True ('const' False) (&&) (&&)
     -- @
     isEmpty :: t -> Bool
     isEmpty = foldg True (const False) (&&) (&&)
@@ -95,8 +102,12 @@ class ToGraph t where
     -- | The /size/ of a graph, i.e. the number of leaves of the expression
     -- including 'empty' leaves.
     --
+    -- __Note:__ The default implementation of this function violates the
+    -- requirement that the four arguments of 'foldg' should satisfy the laws
+    -- of algebraic graphs, since @1 + 1 /= 1@. Use this function with care.
+    --
     -- @
-    -- size == 'foldg' 1 (const 1) (+) (+)
+    -- size == 'foldg' 1 ('const' 1) (+) (+)
     -- @
     size :: t -> Int
     size = foldg 1 (const 1) (+) (+)
@@ -323,7 +334,7 @@ class ToGraph t where
     -- result.
     --
     -- @
-    -- toAdjacencyMapTranspose == 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' (flip 'AM.connect')
+    -- toAdjacencyMapTranspose == 'foldg' 'AM.empty' 'AM.vertex' 'AM.overlay' ('flip' 'AM.connect')
     -- @
     toAdjacencyMapTranspose :: Ord (ToVertex t) => t -> AM.AdjacencyMap (ToVertex t)
     toAdjacencyMapTranspose = foldg AM.empty AM.vertex AM.overlay (flip AM.connect)
@@ -340,7 +351,7 @@ class ToGraph t where
     -- the result.
     --
     -- @
-    -- toAdjacencyIntMapTranspose == 'foldg' 'AIM.empty' 'AIM.vertex' 'AIM.overlay' (flip 'AIM.connect')
+    -- toAdjacencyIntMapTranspose == 'foldg' 'AIM.empty' 'AIM.vertex' 'AIM.overlay' ('flip' 'AIM.connect')
     -- @
     toAdjacencyIntMapTranspose :: ToVertex t ~ Int => t -> AIM.AdjacencyIntMap
     toAdjacencyIntMapTranspose = foldg AIM.empty AIM.vertex AIM.overlay (flip AIM.connect)
@@ -369,6 +380,7 @@ instance Ord a => ToGraph (G.Graph a) where
     foldg   = G.foldg
     hasEdge = G.hasEdge
 
+-- | See "Algebra.Graph.AdjacencyMap".
 instance Ord a => ToGraph (AM.AdjacencyMap a) where
     type ToVertex (AM.AdjacencyMap a) = a
     toGraph                    = G.stars
@@ -382,7 +394,7 @@ instance Ord a => ToGraph (AM.AdjacencyMap a) where
     edgeCount                  = AM.edgeCount
     vertexList                 = AM.vertexList
     vertexSet                  = AM.vertexSet
-    vertexIntSet               = AM.vertexIntSet
+    vertexIntSet               = IntSet.fromAscList . AM.vertexList
     edgeList                   = AM.edgeList
     edgeSet                    = AM.edgeSet
     adjacencyList              = AM.adjacencyList
@@ -443,6 +455,38 @@ instance ToGraph AIM.AdjacencyIntMap where
     isDfsForestOf              = AIM.isDfsForestOf
     isTopSortOf                = AIM.isTopSortOf
 
+-- | See "Algebra.Graph.NonEmpty.AdjacencyMap".
+instance Ord a => ToGraph (NAM.AdjacencyMap a) where
+    type ToVertex (NAM.AdjacencyMap a) = a
+    toGraph                    = toGraph . NAM.am
+    isEmpty _                  = False
+    hasVertex                  = NAM.hasVertex
+    hasEdge                    = NAM.hasEdge
+    vertexCount                = NAM.vertexCount
+    edgeCount                  = NAM.edgeCount
+    vertexList                 = vertexList . NAM.am
+    vertexSet                  = NAM.vertexSet
+    vertexIntSet               = vertexIntSet . NAM.am
+    edgeList                   = NAM.edgeList
+    edgeSet                    = NAM.edgeSet
+    adjacencyList              = adjacencyList . NAM.am
+    preSet                     = NAM.preSet
+    postSet                    = NAM.postSet
+    adjacencyMap               = adjacencyMap . NAM.am
+    adjacencyIntMap            = adjacencyIntMap . NAM.am
+    dfsForest                  = dfsForest . NAM.am
+    dfsForestFrom xs           = dfsForestFrom xs . NAM.am
+    dfs xs                     = dfs xs . NAM.am
+    reachable x                = reachable x . NAM.am
+    topSort                    = topSort . NAM.am
+    isAcyclic                  = isAcyclic . NAM.am
+    toAdjacencyMap             = NAM.am
+    toAdjacencyIntMap          = toAdjacencyIntMap . NAM.am
+    toAdjacencyMapTranspose    = NAM.am . NAM.transpose
+    toAdjacencyIntMapTranspose = toAdjacencyIntMap . NAM.transpose
+    isDfsForestOf f            = isDfsForestOf f . NAM.am
+    isTopSortOf x              = isTopSortOf x . NAM.am
+
 -- TODO: Get rid of "Relation.Internal" and move this instance to "Relation".
 instance Ord a => ToGraph (R.Relation a) where
     type ToVertex (R.Relation a) = a
@@ -455,7 +499,7 @@ instance Ord a => ToGraph (R.Relation a) where
     edgeCount                  = R.edgeCount
     vertexList                 = R.vertexList
     vertexSet                  = R.vertexSet
-    vertexIntSet               = R.vertexIntSet
+    vertexIntSet               = IntSet.fromAscList . R.vertexList
     edgeList                   = R.edgeList
     edgeSet                    = R.edgeSet
     adjacencyList              = R.adjacencyList

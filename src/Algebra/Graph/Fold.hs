@@ -33,7 +33,7 @@ module Algebra.Graph.Fold (
 
     -- * Graph properties
     isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList,
+    edgeList, vertexSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars,
@@ -57,7 +57,6 @@ import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Algebra.Graph.ToGraph      as T
 import qualified Control.Applicative        as Ap
-import qualified Data.IntSet                as IntSet
 import qualified Data.Set                   as Set
 
 {-| The 'Fold' data type is the Boehm-Berarducci encoding of the core graph
@@ -69,6 +68,14 @@ construction primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a
     > 1 * 2       == connect (vertex 1) (vertex 2)
     > 1 + 2 * 3   == overlay (vertex 1) (connect (vertex 2) (vertex 3))
     > 1 * (2 + 3) == connect (vertex 1) (overlay (vertex 2) (vertex 3))
+
+__Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
+which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
+additive and multiplicative identities, and 'negate' as additive inverse.
+Nevertheless, overloading 'fromInteger', '+' and '*' is very convenient when
+working with algebraic graphs; we hope that in future Haskell's Prelude will
+provide a more fine-grained class hierarchy for algebraic structures, which we
+would be able to utilise without violating any laws.
 
 The 'Show' instance is defined using basic graph construction primitives:
 
@@ -357,10 +364,10 @@ connects = foldr connect empty
 --
 -- @
 -- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
--- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
--- foldg 1     (const 1)     (+)     (+)            == 'size'
--- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
--- foldg False ((==) x)      (||)    (||)           == 'hasVertex x'
+-- foldg 'empty' 'vertex'        'overlay' ('flip' 'connect') == 'transpose'
+-- foldg 1     ('const' 1)     (+)     (+)            == 'size'
+-- foldg True  ('const' False) (&&)    (&&)           == 'isEmpty'
+-- foldg False (== x)        (||)    (||)           == 'hasVertex' x
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Fold a -> b
 foldg e v o c g = runFold g e v o c
@@ -409,14 +416,14 @@ isEmpty = T.isEmpty
 size :: Fold a -> Int
 size = T.size
 
--- | Check if a graph contains a given vertex. A convenient alias for `elem`.
+-- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
 --
 -- @
 -- hasVertex x 'empty'            == False
 -- hasVertex x ('vertex' x)       == True
 -- hasVertex 1 ('vertex' 2)       == False
--- hasVertex x . 'removeVertex' x == const False
+-- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Eq a => a -> Fold a -> Bool
 hasVertex = T.hasVertex
@@ -428,7 +435,7 @@ hasVertex = T.hasVertex
 -- hasEdge x y 'empty'            == False
 -- hasEdge x y ('vertex' z)       == False
 -- hasEdge x y ('edge' x y)       == True
--- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Fold a -> Bool
@@ -480,7 +487,7 @@ vertexList = T.vertexList
 -- edgeList ('edge' x y)     == [(x,y)]
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
--- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
+-- edgeList . 'transpose'    == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: Ord a => Fold a -> [(a, a)]
 edgeList = T.edgeList
@@ -496,19 +503,6 @@ edgeList = T.edgeList
 -- @
 vertexSet :: Ord a => Fold a -> Set.Set a
 vertexSet = T.vertexSet
-
--- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
--- graphs with vertices of type 'Int'.
--- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
---
--- @
--- vertexIntSet 'empty'      == IntSet.'IntSet.empty'
--- vertexIntSet . 'vertex'   == IntSet.'IntSet.singleton'
--- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
--- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
--- @
-vertexIntSet :: Fold Int -> IntSet.IntSet
-vertexIntSet = T.vertexIntSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
@@ -622,7 +616,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- stars [(x, [])]               == 'vertex' x
 -- stars [(x, [y])]              == 'edge' x y
 -- stars [(x, ys)]               == 'star' x ys
--- stars                         == 'overlays' . map (uncurry 'star')
+-- stars                         == 'overlays' . 'map' ('uncurry' 'star')
 -- stars . 'adjacencyList'         == id
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
@@ -674,7 +668,7 @@ filterContext s i o g = maybe g go $ G.context (==s) (toGraph g)
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
 -- transpose ('box' x y)   == 'box' (transpose x) (transpose y)
--- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
+-- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Fold a -> Fold a
 transpose = foldg empty vertex overlay (flip connect)
@@ -699,8 +693,8 @@ transpose = foldg empty vertex overlay (flip connect)
 -- /O(1)/ to be evaluated.
 --
 -- @
--- induce (const True ) x      == x
--- induce (const False) x      == 'empty'
+-- induce ('const' True ) x      == x
+-- induce ('const' False) x      == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True

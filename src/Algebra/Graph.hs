@@ -33,8 +33,7 @@ module Algebra.Graph (
 
     -- * Graph properties
     isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, vertexIntSet, edgeSet, adjacencyList, adjacencyMap,
-    adjacencyIntMap,
+    edgeList, vertexSet, edgeSet, adjacencyList,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars, tree, forest, mesh, torus,
@@ -65,11 +64,6 @@ import Data.Tree
 
 import Algebra.Graph.Internal
 
-import Data.IntMap (IntMap)
-import Data.IntSet (IntSet)
-import Data.Map    (Map)
-import Data.Set    (Set)
-
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Control.Applicative           as Ap
@@ -86,6 +80,14 @@ instance as a convenient notation for working with graphs:
     > 1 * 2       == Connect (Vertex 1) (Vertex 2)
     > 1 + 2 * 3   == Overlay (Vertex 1) (Connect (Vertex 2) (Vertex 3))
     > 1 * (2 + 3) == Connect (Vertex 1) (Overlay (Vertex 2) (Vertex 3))
+
+__Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
+which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
+additive and multiplicative identities, and 'negate' as additive inverse.
+Nevertheless, overloading 'fromInteger', '+' and '*' is very convenient when
+working with algebraic graphs; we hope that in future Haskell's Prelude will
+provide a more fine-grained class hierarchy for algebraic structures, which we
+would be able to utilise without violating any laws.
 
 The 'Eq' instance is currently implemented using the 'AM.AdjacencyMap' as the
 /canonical graph representation/ and satisfies all axioms of algebraic graphs:
@@ -390,10 +392,10 @@ concatg combine = fromMaybe empty . foldr1Safe combine
 --
 -- @
 -- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
--- foldg 'empty' 'vertex'        'overlay' (flip 'connect') == 'transpose'
--- foldg 1     (const 1)     (+)     (+)            == 'size'
--- foldg True  (const False) (&&)    (&&)           == 'isEmpty'
--- foldg False ((==) x)      (||)    (||)           == 'hasVertex x'
+-- foldg 'empty' 'vertex'        'overlay' ('flip' 'connect') == 'transpose'
+-- foldg 1     ('const' 1)     (+)     (+)            == 'size'
+-- foldg True  ('const' False) (&&)    (&&)           == 'isEmpty'
+-- foldg False (== x)        (||)    (||)           == 'hasVertex' x
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
@@ -468,14 +470,14 @@ isEmpty = foldg True (const False) (&&) (&&)
 size :: Graph a -> Int
 size = foldg 1 (const 1) (+) (+)
 
--- | Check if a graph contains a given vertex. A convenient alias for `elem`.
+-- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
 --
 -- @
 -- hasVertex x 'empty'            == False
 -- hasVertex x ('vertex' x)       == True
 -- hasVertex 1 ('vertex' 2)       == False
--- hasVertex x . 'removeVertex' x == const False
+-- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 hasVertex :: Eq a => a -> Graph a -> Bool
@@ -488,7 +490,7 @@ hasVertex x = foldg False (==x) (||) (||)
 -- hasEdge x y 'empty'            == False
 -- hasEdge x y ('vertex' z)       == False
 -- hasEdge x y ('edge' x y)       == True
--- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
@@ -570,7 +572,7 @@ vertexIntList = IntSet.toList . vertexIntSet
 -- edgeList ('edge' x y)     == [(x,y)]
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
--- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
+-- edgeList . 'transpose'    == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . edgeList
 -- @
 {-# INLINE [1] edgeList #-}
 {-# RULES "edgeList/Int" edgeList = edgeIntList #-}
@@ -593,16 +595,7 @@ edgeIntList = AIM.edgeList . toAdjacencyIntMap
 vertexSet :: Ord a => Graph a -> Set.Set a
 vertexSet = foldg Set.empty Set.singleton Set.union Set.union
 
--- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
--- graphs with vertices of type 'Int'.
--- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
---
--- @
--- vertexIntSet 'empty'      == IntSet.'IntSet.empty'
--- vertexIntSet . 'vertex'   == IntSet.'IntSet.singleton'
--- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
--- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
--- @
+-- Like 'vertexSet' but specialised for graphs with vertices of type 'Int'.
 vertexIntSet :: Graph Int -> IntSet.IntSet
 vertexIntSet = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 
@@ -638,23 +631,12 @@ edgeIntSet = AIM.edgeSet . toAdjacencyIntMap
 adjacencyList :: Ord a => Graph a -> [(a, [a])]
 adjacencyList = AM.adjacencyList . toAdjacencyMap
 
--- | The /adjacency map/ of a graph: each vertex is associated with a set of its
--- direct successors.
--- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
--- graph can be quadratic with respect to the expression size /s/.
-adjacencyMap :: Ord a => Graph a -> Map a (Set a)
-adjacencyMap = AM.adjacencyMap . toAdjacencyMap
-
 -- TODO: This is a very inefficient implementation. Find a way to construct an
 -- adjacency map directly, without building intermediate representations for all
 -- subgraphs.
 -- | Convert a graph to 'AM.AdjacencyMap'.
 toAdjacencyMap :: Ord a => Graph a -> AM.AdjacencyMap a
 toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
-
--- | Like 'adjacencyMap' but specialised for graphs with vertices of type 'Int'.
-adjacencyIntMap :: Graph Int -> IntMap IntSet
-adjacencyIntMap = AIM.adjacencyIntMap . toAdjacencyIntMap
 
 -- | Like @toAdjacencyMap@ but specialised for graphs with vertices of type 'Int'.
 toAdjacencyIntMap :: Graph Int -> AIM.AdjacencyIntMap
@@ -746,7 +728,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- stars [(x, [])]               == 'vertex' x
 -- stars [(x, [y])]              == 'edge' x y
 -- stars [(x, ys)]               == 'star' x ys
--- stars                         == 'overlays' . map (uncurry 'star')
+-- stars                         == 'overlays' . 'map' ('uncurry' 'star')
 -- stars . 'adjacencyList'         == id
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
@@ -777,7 +759,7 @@ tree (Node x f ) = star x (map rootLabel f)
 -- forest []                                                  == 'empty'
 -- forest [x]                                                 == 'tree' x
 -- forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == 'edges' [(1,2), (1,3), (4,5)]
--- forest                                                     == 'overlays' . map 'tree'
+-- forest                                                     == 'overlays' . 'map' 'tree'
 -- @
 forest :: Tree.Forest a -> Graph a
 forest = overlays . map tree
@@ -908,10 +890,10 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 -- /O(1)/ to be evaluated.
 --
 -- @
--- mergeVertices (const False) x    == id
+-- mergeVertices ('const' False) x    == id
 -- mergeVertices (== x) y           == 'replaceVertex' x y
--- mergeVertices even 1 (0 * 2)     == 1 * 1
--- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
+-- mergeVertices 'even' 1 (0 * 2)     == 1 * 1
+-- mergeVertices 'odd'  1 (3 + 4 * 5) == 4 * 1
 -- @
 mergeVertices :: (a -> Bool) -> a -> Graph a -> Graph a
 mergeVertices p v = fmap $ \w -> if p w then v else w
@@ -940,7 +922,7 @@ splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
 -- transpose ('box' x y)   == 'box' (transpose x) (transpose y)
--- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
+-- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Graph a -> Graph a
 transpose = foldg Empty Vertex Overlay (flip Connect)
@@ -965,8 +947,8 @@ transpose = foldg Empty Vertex Overlay (flip Connect)
 -- /O(1)/ to be evaluated.
 --
 -- @
--- induce (const True ) x      == x
--- induce (const False) x      == 'empty'
+-- induce ('const' True ) x      == x
+-- induce ('const' False) x      == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True

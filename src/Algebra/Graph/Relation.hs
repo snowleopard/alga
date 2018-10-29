@@ -26,7 +26,7 @@ module Algebra.Graph.Relation (
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
+    adjacencyList, vertexSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars, tree, forest,
@@ -46,7 +46,6 @@ import Data.Tuple
 
 import Algebra.Graph.Relation.Internal
 
-import qualified Data.IntSet as IntSet
 import qualified Data.Set    as Set
 import qualified Data.Tree   as Tree
 
@@ -150,7 +149,7 @@ isEmpty = null . domain
 -- hasVertex x 'empty'            == False
 -- hasVertex x ('vertex' x)       == True
 -- hasVertex 1 ('vertex' 2)       == False
--- hasVertex x . 'removeVertex' x == const False
+-- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Ord a => a -> Relation a -> Bool
 hasVertex x = Set.member x . domain
@@ -162,7 +161,7 @@ hasVertex x = Set.member x . domain
 -- hasEdge x y 'empty'            == False
 -- hasEdge x y ('vertex' z)       == False
 -- hasEdge x y ('edge' x y)       == True
--- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> Relation a -> Bool
@@ -212,7 +211,7 @@ vertexList = Set.toAscList . domain
 -- edgeList ('edge' x y)     == [(x,y)]
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
--- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
+-- edgeList . 'transpose'    == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: Relation a -> [(a, a)]
 edgeList = Set.toAscList . relation
@@ -228,19 +227,6 @@ edgeList = Set.toAscList . relation
 -- @
 vertexSet :: Relation a -> Set.Set a
 vertexSet = domain
-
--- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
--- graphs with vertices of type 'Int'.
--- Complexity: /O(n)/ time.
---
--- @
--- vertexIntSet 'empty'      == IntSet.'IntSet.empty'
--- vertexIntSet . 'vertex'   == IntSet.'IntSet.singleton'
--- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
--- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
--- @
-vertexIntSet :: Relation Int -> IntSet.IntSet
-vertexIntSet = IntSet.fromAscList . vertexList
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(1)/ time.
@@ -385,7 +371,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- stars [(x, [])]               == 'vertex' x
 -- stars [(x, [y])]              == 'edge' x y
 -- stars [(x, ys)]               == 'star' x ys
--- stars                         == 'overlays' . map (uncurry 'star')
+-- stars                         == 'overlays' . 'map' ('uncurry' 'star')
 -- stars . 'adjacencyList'         == id
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
@@ -416,7 +402,7 @@ tree (Node x f ) = star x (map rootLabel f)
 -- forest []                                                  == 'empty'
 -- forest [x]                                                 == 'tree' x
 -- forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == 'edges' [(1,2), (1,3), (4,5)]
--- forest                                                     == 'overlays' . map 'tree'
+-- forest                                                     == 'overlays' . 'map' 'tree'
 -- @
 forest :: Ord a => Tree.Forest a -> Relation a
 forest = overlays. map tree
@@ -466,10 +452,10 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- /O(1)/ to be evaluated.
 --
 -- @
--- mergeVertices (const False) x    == id
+-- mergeVertices ('const' False) x    == id
 -- mergeVertices (== x) y           == 'replaceVertex' x y
--- mergeVertices even 1 (0 * 2)     == 1 * 1
--- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
+-- mergeVertices 'even' 1 (0 * 2)     == 1 * 1
+-- mergeVertices 'odd'  1 (3 + 4 * 5) == 4 * 1
 -- @
 mergeVertices :: Ord a => (a -> Bool) -> a -> Relation a -> Relation a
 mergeVertices p v = gmap $ \u -> if p u then v else u
@@ -482,7 +468,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- transpose ('vertex' x)  == 'vertex' x
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
--- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
+-- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Ord a => Relation a -> Relation a
 transpose (Relation d r) = Relation d (Set.map swap r)
@@ -508,8 +494,8 @@ gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) 
 -- be evaluated.
 --
 -- @
--- induce (const True ) x      == x
--- induce (const False) x      == 'empty'
+-- induce ('const' True ) x      == x
+-- induce ('const' False) x      == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True

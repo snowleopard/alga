@@ -28,7 +28,7 @@ module Algebra.Graph.AdjacencyMap (
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
-    adjacencyList, vertexSet, vertexIntSet, edgeSet, preSet, postSet,
+    adjacencyList, vertexSet, edgeSet, preSet, postSet,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars, tree, forest,
@@ -57,7 +57,6 @@ import qualified Data.Graph.Typed as Typed
 import qualified Data.Graph       as KL
 import qualified Data.Map.Strict  as Map
 import qualified Data.Set         as Set
-import qualified Data.IntSet      as IntSet
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
@@ -163,7 +162,7 @@ isEmpty = Map.null . adjacencyMap
 -- hasVertex x 'empty'            == False
 -- hasVertex x ('vertex' x)       == True
 -- hasVertex 1 ('vertex' 2)       == False
--- hasVertex x . 'removeVertex' x == const False
+-- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Ord a => a -> AdjacencyMap a -> Bool
 hasVertex x = Map.member x . adjacencyMap
@@ -175,7 +174,7 @@ hasVertex x = Map.member x . adjacencyMap
 -- hasEdge x y 'empty'            == False
 -- hasEdge x y ('vertex' z)       == False
 -- hasEdge x y ('edge' x y)       == True
--- hasEdge x y . 'removeEdge' x y == const False
+-- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
@@ -227,7 +226,7 @@ vertexList = Map.keys . adjacencyMap
 -- edgeList ('edge' x y)     == [(x,y)]
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
--- edgeList . 'transpose'    == 'Data.List.sort' . map 'Data.Tuple.swap' . edgeList
+-- edgeList . 'transpose'    == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList (AM m) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
@@ -243,19 +242,6 @@ edgeList (AM m) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
 -- @
 vertexSet :: AdjacencyMap a -> Set a
 vertexSet = Map.keysSet . adjacencyMap
-
--- | The set of vertices of a given graph. Like 'vertexSet' but specialised for
--- graphs with vertices of type 'Int'.
--- Complexity: /O(n)/ time and memory.
---
--- @
--- vertexIntSet 'empty'      == IntSet.'IntSet.empty'
--- vertexIntSet . 'vertex'   == IntSet.'IntSet.singleton'
--- vertexIntSet . 'vertices' == IntSet.'IntSet.fromList'
--- vertexIntSet . 'clique'   == IntSet.'IntSet.fromList'
--- @
-vertexIntSet :: AdjacencyMap Int -> IntSet.IntSet
-vertexIntSet = IntSet.fromAscList . Set.toAscList . vertexSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
@@ -395,7 +381,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- stars [(x, [])]               == 'vertex' x
 -- stars [(x, [y])]              == 'edge' x y
 -- stars [(x, ys)]               == 'star' x ys
--- stars                         == 'overlays' . map (uncurry 'star')
+-- stars                         == 'overlays' . 'map' ('uncurry' 'star')
 -- stars . 'adjacencyList'         == id
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
@@ -423,7 +409,7 @@ tree (Node x f ) = star x (map rootLabel f)
 -- forest []                                                  == 'empty'
 -- forest [x]                                                 == 'tree' x
 -- forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == 'edges' [(1,2), (1,3), (4,5)]
--- forest                                                     == 'overlays' . map 'tree'
+-- forest                                                     == 'overlays' . 'map' 'tree'
 -- @
 forest :: Ord a => Forest a -> AdjacencyMap a
 forest = overlays . map tree
@@ -471,10 +457,10 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- /O(1)/ to be evaluated.
 --
 -- @
--- mergeVertices (const False) x    == id
+-- mergeVertices ('const' False) x    == id
 -- mergeVertices (== x) y           == 'replaceVertex' x y
--- mergeVertices even 1 (0 * 2)     == 1 * 1
--- mergeVertices odd  1 (3 + 4 * 5) == 4 * 1
+-- mergeVertices 'even' 1 (0 * 2)     == 1 * 1
+-- mergeVertices 'odd'  1 (3 + 4 * 5) == 4 * 1
 -- @
 mergeVertices :: Ord a => (a -> Bool) -> a -> AdjacencyMap a -> AdjacencyMap a
 mergeVertices p v = gmap $ \u -> if p u then v else u
@@ -487,7 +473,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- transpose ('vertex' x)  == 'vertex' x
 -- transpose ('edge' x y)  == 'edge' y x
 -- transpose . transpose == id
--- 'edgeList' . transpose  == 'Data.List.sort' . map 'Data.Tuple.swap' . 'edgeList'
+-- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
 transpose (AM m) = AM $ Map.foldrWithKey combine vs m
@@ -530,8 +516,8 @@ gmap f = AM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 -- be evaluated.
 --
 -- @
--- induce (const True ) x      == x
--- induce (const False) x      == 'empty'
+-- induce ('const' True ) x      == x
+-- induce ('const' False) x      == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True
@@ -629,7 +615,7 @@ reachable x = dfs [x]
 -- @
 -- topSort (1 * 2 + 3 * 1)               == Just [3,1,2]
 -- topSort (1 * 2 + 2 * 1)               == Nothing
--- fmap (flip 'isTopSortOf' x) (topSort x) /= Just False
+-- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Just False
 -- 'isJust' . topSort                      == 'isAcyclic'
 -- @
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]

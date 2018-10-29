@@ -59,6 +59,8 @@ source-repository head
 library
     hs-source-dirs:     src
     exposed-modules:    Algebra.Graph,
+                        Algebra.Graph.AdjacencyIntMap,
+                        Algebra.Graph.AdjacencyIntMap.Internal,
                         Algebra.Graph.AdjacencyMap,
                         Algebra.Graph.AdjacencyMap.Internal,
                         Algebra.Graph.Class,
@@ -66,8 +68,6 @@ library
                         Algebra.Graph.Export.Dot,
                         Algebra.Graph.Fold,
                         Algebra.Graph.HigherKinded.Class,
-                        Algebra.Graph.AdjacencyIntMap,
-                        Algebra.Graph.AdjacencyIntMap.Internal,
                         Algebra.Graph.Internal,
                         Algebra.Graph.Label,
                         Algebra.Graph.Labelled,
@@ -76,6 +76,8 @@ library
                         Algebra.Graph.Labelled.Example.Automaton,
                         Algebra.Graph.Labelled.Example.Network,
                         Algebra.Graph.NonEmpty,
+                        Algebra.Graph.NonEmpty.AdjacencyMap,
+                        Algebra.Graph.NonEmpty.AdjacencyMap.Internal,
                         Algebra.Graph.Relation,
                         Algebra.Graph.Relation.Internal,
                         Algebra.Graph.Relation.InternalDerived,
@@ -100,9 +102,7 @@ library
                         TupleSections
                         TypeFamilies
     other-extensions:   CPP
-                        DeriveFoldable
                         DeriveFunctor
-                        DeriveTraversable
                         OverloadedStrings
                         RecordWildCards
     GHC-options:        -Wall
@@ -119,16 +119,17 @@ test-suite test-alga
     main-is:            Main.hs
     other-modules:      Algebra.Graph.Test,
                         Algebra.Graph.Test.API,
+                        Algebra.Graph.Test.AdjacencyIntMap,
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,
                         Algebra.Graph.Test.Export,
                         Algebra.Graph.Test.Fold,
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
-                        Algebra.Graph.Test.AdjacencyIntMap,
                         Algebra.Graph.Test.Internal,
+                        Algebra.Graph.Test.NonEmpty.AdjacencyMap,
+                        Algebra.Graph.Test.NonEmpty.Graph,
                         Algebra.Graph.Test.Labelled.AdjacencyMap,
-                        Algebra.Graph.Test.NonEmptyGraph,
                         Algebra.Graph.Test.Relation,
                         Data.Graph.Test.Typed
     build-depends:      algebraic-graphs,
