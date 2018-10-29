@@ -181,6 +181,7 @@ data Graph a = Empty
              | Overlay (Graph a) (Graph a)
              | Connect (Graph a) (Graph a)
              deriving (Show)
+
 {- Note [Functions for rewrite rules]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -933,7 +934,6 @@ filterContext s i o g = maybe g go $ context (==s) g
 {-# SPECIALISE replaceVertex :: Int -> Int -> Graph Int -> Graph Int #-}
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
 replaceVertex u v = fmap $ \w -> if w == u then v else w
-
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
