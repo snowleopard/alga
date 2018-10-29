@@ -60,26 +60,48 @@ testNonEmptyAdjacencyMap = do
     test "Theorems of non-empty graphs" theorems
 
     putStrLn $ "\n============ Ord (NonEmpty.AdjacencyMap a) ============"
-    test "vertex 1 < vertex 2" $
-          vertex 1 < vertex (2 :: Int)
+    test "vertex 1 <  vertex 2" $
+          vertex 1 <  vertex (2 :: Int)
 
-    test "vertex 3 < edge 1 2" $
-          vertex 3 < edge 1 (2 :: Int)
+    test "vertex 3 <  edge 1 2" $
+          vertex 3 <  edge 1 (2 :: Int)
 
-    test "vertex 1 < edge 1 1" $
-          vertex 1 < edge 1 (1 :: Int)
+    test "vertex 1 <  edge 1 1" $
+          vertex 1 <  edge 1 (1 :: Int)
 
-    test "edge 1 1 < edge 1 2" $
-          edge 1 1 < edge 1 (2 :: Int)
+    test "edge 1 1 <  edge 1 2" $
+          edge 1 1 <  edge 1 (2 :: Int)
 
-    test "edge 1 2 < edge 1 1 + edge 2 2" $
-          edge 1 2 < edge 1 1 + edge 2 (2 :: Int)
+    test "edge 1 2 <  edge 1 1 + edge 2 2" $
+          edge 1 2 <  edge 1 1 + edge 2 (2 :: Int)
 
-    test "edge 1 2 < edge 1 3" $
-          edge 1 2 < edge 1 (3 :: Int)
+    test "edge 1 2 <  edge 1 3" $
+          edge 1 2 <  edge 1 (3 :: Int)
+
+    test "x        <= x + y" $ \(x :: G) y ->
+          x        <= x + y
+
+    test "x + y    <= x * y" $ \(x :: G) y ->
+          x + y    <= x * y
+
+    putStrLn $ "\n============ Show (NonEmpty.AdjacencyMap a) ============"
+    test "show (1         :: AdjacencyMap Int) == \"vertex 1\"" $
+          show (1         :: AdjacencyMap Int) == "vertex 1"
+
+    test "show (1 + 2     :: AdjacencyMap Int) == \"vertices1 [1,2]\"" $
+          show (1 + 2     :: AdjacencyMap Int) == "vertices1 [1,2]"
+
+    test "show (1 * 2     :: AdjacencyMap Int) == \"edge 1 2\"" $
+          show (1 * 2     :: AdjacencyMap Int) == "edge 1 2"
+
+    test "show (1 * 2 * 3 :: AdjacencyMap Int) == \"edges1 [(1,2),(1,3),(2,3)]\"" $
+          show (1 * 2 * 3 :: AdjacencyMap Int) == "edges1 [(1,2),(1,3),(2,3)]"
+
+    test "show (1 * 2 + 3 :: AdjacencyMap Int) == \"overlay (vertex 3) (edge 1 2)\"" $
+          show (1 * 2 + 3 :: AdjacencyMap Int) == "overlay (vertex 3) (edge 1 2)"
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.toNonEmpty ============"
-    test "toNonEmpty empty       == Nothing" $
+    test "toNonEmpty empty              == Nothing" $
           toNonEmpty (AM.empty :: AM.AdjacencyMap Int) == Nothing
 
     test "toNonEmpty (toAdjacencyMap x) == Just (x :: NonEmpty.AdjacencyMap a)" $ \x ->
@@ -200,15 +222,19 @@ testNonEmptyAdjacencyMap = do
           connects1 [x,y] == connect x y
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.isSubgraphOf ============"
-    test "isSubgraphOf x             (overlay x y) == True" $ \(x :: G) y ->
-          isSubgraphOf x             (overlay x y) == True
+    test "isSubgraphOf x             (overlay x y) ==  True" $ \(x :: G) y ->
+          isSubgraphOf x             (overlay x y) ==  True
 
-    test "isSubgraphOf (overlay x y) (connect x y) == True" $ \(x :: G) y ->
-          isSubgraphOf (overlay x y) (connect x y) == True
+    test "isSubgraphOf (overlay x y) (connect x y) ==  True" $ \(x :: G) y ->
+          isSubgraphOf (overlay x y) (connect x y) ==  True
 
-    test "isSubgraphOf (path1 xs)    (circuit1 xs) == True" $ \(xs' :: NonEmptyList Int) ->
+    test "isSubgraphOf (path1 xs)    (circuit1 xs) ==  True" $ \(xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
         in isSubgraphOf (path1 xs)    (circuit1 xs) == True
+
+    test "isSubgraphOf x y                         ==> x <= y" $ \(x :: G) z ->
+        let y = x + z -- Make sure we hit the precondition
+        in isSubgraphOf x y                        ==> x <= y
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.hasVertex ============"
     test "hasVertex x (vertex x) == True" $ \(x :: Int) ->
@@ -298,6 +324,26 @@ testNonEmptyAdjacencyMap = do
     test "edgeSet . edges1   == Set.fromList . toList" $ \(xs' :: NonEmptyList (Int, Int)) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
         in (edgeSet . edges1) xs == (Set.fromList . NonEmpty.toList) xs
+
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.preSet ============"
+    test "preSet x (vertex x) == Set.empty" $ \(x :: G) ->
+          preSet x (vertex x) == Set.empty
+
+    test "preSet 1 (edge 1 2) == Set.empty" $
+          preSet 1 (edge 1 2 :: G) == Set.empty
+
+    test "preSet y (edge x y) == Set.fromList [x]" $ \(x :: G) y ->
+          preSet y (edge x y) == Set.fromList [x]
+
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.postSet ============"
+    test "postSet x (vertex x) == Set.empty" $ \(x :: G) ->
+          postSet x (vertex x) == Set.empty
+
+    test "postSet x (edge x y) == Set.fromList [y]" $ \(x :: G) y ->
+          postSet x (edge x y) == Set.fromList [y]
+
+    test "postSet 2 (edge 1 2) == Set.empty" $
+          postSet 2 (edge 1 2 :: G) == Set.empty
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.path1 ============"
     test "path1 [x]        == vertex x" $ \(x :: Int) ->
@@ -455,6 +501,19 @@ testNonEmptyAdjacencyMap = do
 
     test "edgeList . transpose  == sort . map swap . edgeList" $ \(x :: G) ->
          (edgeList . transpose) x == (sort . map swap . edgeList) x
+
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.gmap ============"
+    test "gmap f (vertex x) == vertex (f x)" $ \(apply -> f) (x :: Int) ->
+          gmap f (vertex x) == vertex (f x :: Int)
+
+    test "gmap f (edge x y) == edge (f x) (f y)" $ \(apply -> f) (x :: Int) y ->
+          gmap f (edge x y) == edge (f x) (f y :: Int)
+
+    test "gmap id           == id" $ \(x :: G) ->
+          gmap id x         == x
+
+    test "gmap f . gmap g   == gmap (f . g)" $ \(apply -> f) (apply -> g) (x :: G) ->
+         (gmap f . gmap g) x == (gmap (f . (g :: Int -> Int)) x :: G)
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.induce1 ============"
     test "induce1 (const True ) x == Just x" $ \(x :: G) ->
