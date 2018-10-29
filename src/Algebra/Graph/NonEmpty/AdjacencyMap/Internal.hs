@@ -148,6 +148,7 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
 -- @
 vertex :: a -> AdjacencyMap a
 vertex = NAM . AM.vertex
+{-# NOINLINE [1] vertex #-}
 
 -- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
@@ -164,6 +165,7 @@ vertex = NAM . AM.vertex
 -- @
 overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
 overlay (NAM x) (NAM y) = NAM (AM.overlay x y)
+{-# NOINLINE [1] overlay #-}
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
 -- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
@@ -184,6 +186,7 @@ overlay (NAM x) (NAM y) = NAM (AM.overlay x y)
 -- @
 connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
 connect (NAM x) (NAM y) = NAM (AM.connect x y)
+{-# NOINLINE [1] connect #-}
 
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices, and the graph is non-empty. It should be
