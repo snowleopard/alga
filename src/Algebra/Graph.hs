@@ -1110,11 +1110,11 @@ sparsify graph = res
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The rules for foldg work like this.
 
-* Up to (but not including) phase 1, we use the "buildG/f" rule to
-  rewrite all saturated applications of f with its buildG/foldg
-  form, hoping for fusion to happen (through the "foldg/buildG" rule).
+* Up to (but not including) phase 1, we use the "buildR/f" rule to
+  rewrite all saturated applications of f with its buildR/foldg
+  form, hoping for fusion to happen (through the "foldg/buildR" rule).
 
-  In phase 1 and 0, we switch off these rules, inline buildG, and
+  In phase 1 and 0, we switch off these rules, inline buildR, and
   switch on the "graph/f" rule, which rewrites the "foldg/f"
   thing back into plain map.
 
@@ -1129,9 +1129,9 @@ The rules for foldg work like this.
 * The "mapR/mapR" rule optimises compositions of fmapR
 -}
 
-buildG :: forall a. F.Fold a -> Graph a
-buildG = F.foldg Empty Vertex Overlay Connect
-{-# INLINE [1] buildG #-}
+buildR :: forall a. F.Fold a -> Graph a
+buildR = F.foldg Empty Vertex Overlay Connect
+{-# INLINE [1] buildR #-}
 
 -- R functions
 composeR :: (b -> c) -> (a -> b) -> a -> c
@@ -1146,25 +1146,25 @@ flipR :: (b -> b -> b) -> (b -> b -> b)
 flipR = flip
 {-# INLINE [0] flipR #-}
 
--- Rules to transform a buildG-equivalent function into its equivalent
+-- Rules to transform a buildR-equivalent function into its equivalent
 {-# RULES
 -- Transform a fmapR into its build equivalent
-"buildG/map"       [~1] forall f g.
-  fmapR   f g  = buildG (F.Fold $ \e v o c -> foldg e (composeR v f) o c g)
+"buildR/map"       [~1] forall f g.
+  fmapR   f g  = buildR (F.Fold $ \e v o c -> foldg e (composeR v f) o c g)
 
 -- Transform a induce into its build equivalent
-"buildG/induce"    [~1] forall p g.
-  induce p g  = buildG (F.Fold $ \e v o c -> foldg e (matchR e v p) o c g)
+"buildR/induce"    [~1] forall p g.
+  induce p g  = buildR (F.Fold $ \e v o c -> foldg e (matchR e v p) o c g)
 
-"buildG/transpose" [~1] forall g.
-  foldg Empty Vertex Overlay (flipR Connect) g = buildG (F.Fold $ \e v o c -> foldg e v o (flip c) g)
+"buildR/transpose" [~1] forall g.
+  foldg Empty Vertex Overlay (flipR Connect) g = buildR (F.Fold $ \e v o c -> foldg e v o (flip c) g)
  #-}
 
 -- Rules to merge rewrited functions
 {-# RULES
--- Merge a foldg followed by a buildG
-"foldg/buildG" forall e v o c (g::F.Fold a).
-                              foldg e v o c (buildG g) = F.foldg e v o c g
+-- Merge a foldg followed by a buildR
+"foldg/buildR" forall e v o c (g::F.Fold a).
+                              foldg e v o c (buildR g) = F.foldg e v o c g
 
 -- Merge two mapR
 "mapR/mapR"  forall c f g.  composeR (composeR c f) g  = composeR c (f.g)
