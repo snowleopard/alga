@@ -1110,13 +1110,21 @@ sparsify graph = res
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The rules for foldg work like this.
 
-* Up to (but not including) phase 1, we use the "buildR/f" rule to
-  rewrite all saturated applications of f with its buildR/foldg
-  form, hoping for fusion to happen (through the "foldg/buildR" rule).
+* Up to (but not including) phase 1, we use the "buildG/f" rule to
+  rewrite all saturated applications of f with its buildG/foldg
+  form, hoping for fusion to happen (through the "foldg/buildG" rule).
 
-* R functions (R for Rewrite) are here to remember for technical reasons.
-  These functions are higher-order functions and therefore  benefits from
-  inlining.
+  In phase 1 and 0, we switch off these rules, inline buildG, and
+  switch on the "graph/f" rule, which rewrites the "foldg/f"
+  thing back into plain function if needed.
+
+  It's important that these two rules aren't both active at once
+  (along with build's unfolding) else we'd get an infinite loop
+  in the rules. Hence the activation control below.
+
+* R functions (R for Rewrite) are here to remember f after applying a
+  "builG/f" rule. These functions are higher-order functions and therefore
+  benefits from inlining.
 
 * The "fmapR/fmapR" rule optimises compositions of fmapR
 -}
@@ -1129,6 +1137,10 @@ composeR :: (b -> c) -> (a -> b) -> a -> c
 composeR = (.)
 {-# INLINE [0] composeR #-}
 
+matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
+matchR e v p = \x -> if p x then v x else e
+{-# INLINE [0] matchR #-}
+
 flipR :: (b -> b -> b) -> (b -> b -> b)
 flipR = flip
 {-# INLINE [0] flipR #-}
@@ -1140,16 +1152,16 @@ flipR = flip
   fmapR  f g = buildR (F.Fold $ \e v o c -> foldg e (composeR v f) o c g)
 
 -- Transform an induce into its build equivalent
-"buildR/induce" forall p g.
-  induce p g = buildR (F.Fold $ \e v o c -> foldg e (\x -> if p x then v x else e) o c g)
+"buildR/induce"    [~1] forall p g.
+  induce p g = buildR (F.Fold $ \e v o c -> foldg e (matchR e v p) o c g)
 
-"buildR/foldevofc" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b))  g.
+"buildR/foldg(fc)" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b))  g.
   foldg Empty Vertex Overlay (f Connect) g = buildR (F.Fold $ \e v o c -> foldg e v o (f c) g)
 
-"buildR/foldevfoc" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b))  g.
+"buildR/foldg(fo)" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b))  g.
   foldg Empty Vertex (f Overlay) Connect g = buildR (F.Fold $ \e v o c -> foldg e v (f o) c g)
 
-"buildR/foldevfohc" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b))  (h::forall b. (b -> b -> b) -> (b -> b -> b)) g.
+"buildR/foldg(fo)(hc)" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b)) (h::forall b. (b -> b -> b) -> (b -> b -> b)) g.
   foldg Empty Vertex (f Overlay) (h Connect) g = buildR (F.Fold $ \e v o c -> foldg e v (f o) (h c) g)
  #-}
 
@@ -1163,4 +1175,9 @@ flipR = flip
 -- This occurs when two adjacent 'fmapR' were rewritted in their
 -- buildR form.
 "fmapR/fmapR"  forall c f g. composeR (composeR c f) g = composeR c (f.g)
+ #-}
+
+-- Rules to rewrite un-merged function back
+{-# RULES
+"graph/induce" [1] forall f. foldg Empty (matchR Empty Vertex f) Overlay Connect = induce f
  #-}
