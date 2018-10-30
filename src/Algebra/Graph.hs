@@ -1126,7 +1126,7 @@ The rules for foldg work like this.
   "builG/f" rule. These functions are higher-order functions and therefore
   benefits from inlining.
 
-* The "mapR/mapR" rule optimises compositions of fmapR
+* The "fmapR/fmapR" rule optimises compositions of fmapR
 -}
 
 buildR :: forall a. F.Fold a -> Graph a
@@ -1154,7 +1154,7 @@ flipR = flip
 
 -- Transform a induce into its build equivalent
 "buildR/induce"    [~1] forall p g.
-  induce p g  = buildR (F.Fold $ \e v o c -> foldg e (matchR e v p) o c g)
+  induce p g   = buildR (F.Fold $ \e v o c -> foldg e (matchR e v p) o c g)
 
 "buildR/transpose" [~1] forall g.
   foldg Empty Vertex Overlay (flipR Connect) g = buildR (F.Fold $ \e v o c -> foldg e v o (flip c) g)
@@ -1166,8 +1166,10 @@ flipR = flip
 "foldg/buildR" forall e v o c (g::F.Fold a).
                               foldg e v o c (buildR g) = F.foldg e v o c g
 
--- Merge two mapR
-"mapR/mapR"  forall c f g.  composeR (composeR c f) g  = composeR c (f.g)
+-- Merge two composeR
+-- This occurs when two adjacent 'fmapR' were rewritted in their
+-- buildR form.
+"fmapR/fmapR"  forall c f g. composeR (composeR c f) g = composeR c (f.g)
  #-}
 
 -- Rules to rewrite un-merged function back
