@@ -475,6 +475,7 @@ size = foldg 1 (const 1) (+) (+)
 -- | Check if a graph contains a vertex which satisfied the supplied predicate.
 -- Complexity: /O(s)/ time.
 --
+{-# INLINE [1] hasVertexP #-}
 hasVertexP :: (a -> Bool) -> Graph a -> Bool
 hasVertexP pred = foldg False pred (||) (||)
 
@@ -495,6 +496,7 @@ hasVertex x = hasVertexP (==x)
 -- predicates.
 -- Complexity: /O(s)/ time.
 --
+{-# INLINE [1] hasEdgeP #-}
 hasEdgeP :: (a -> Bool) -> (a -> Bool) -> Graph a -> Bool
 hasEdgeP predFrom predTo g = hit g == Edge
   where
