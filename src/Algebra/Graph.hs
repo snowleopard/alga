@@ -1136,15 +1136,21 @@ flipR = flip
 -- Rules to transform a buildR-equivalent function into its equivalent
 {-# RULES
 -- Transform a fmapR into its build equivalent
-"buildR/map"    forall f g.
+"buildR/fmapR"  forall f g.
   fmapR  f g = buildR (F.Fold $ \e v o c -> foldg e (composeR v f) o c g)
 
--- Transform a induce into its build equivalent
+-- Transform an induce into its build equivalent
 "buildR/induce" forall p g.
   induce p g = buildR (F.Fold $ \e v o c -> foldg e (\x -> if p x then v x else e) o c g)
 
-"buildR/transpose" forall g.
-  foldg Empty Vertex Overlay (flipR Connect) g = buildR (F.Fold $ \e v o c -> foldg e v o (flip c) g)
+"buildR/foldevofc" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b))  g.
+  foldg Empty Vertex Overlay (f Connect) g = buildR (F.Fold $ \e v o c -> foldg e v o (f c) g)
+
+"buildR/foldevfoc" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b))  g.
+  foldg Empty Vertex (f Overlay) Connect g = buildR (F.Fold $ \e v o c -> foldg e v (f o) c g)
+
+"buildR/foldevfohc" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b))  (h::forall b. (b -> b -> b) -> (b -> b -> b)) g.
+  foldg Empty Vertex (f Overlay) (h Connect) g = buildR (F.Fold $ \e v o c -> foldg e v (f o) (h c) g)
  #-}
 
 -- Rules to merge rewrited functions
