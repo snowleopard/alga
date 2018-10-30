@@ -177,6 +177,8 @@ instance T.ToGraph (Graph a) where
     foldg _ = foldg1
     hasEdge = hasEdge
 
+-- | __Note:__ this does not satisfy the usual ring laws; see 'Graph' for more
+-- details.
 instance Num a => Num (Graph a) where
     fromInteger = Vertex . fromInteger
     (+)         = Overlay

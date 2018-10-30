@@ -163,6 +163,8 @@ instance Ord a => Eq (Fold a) where
 instance NFData a => NFData (Fold a) where
     rnf = foldg () rnf seq seq
 
+-- | __Note:__ this does not satisfy the usual ring laws; see 'Fold' for more
+-- details.
 instance Num a => Num (Fold a) where
     fromInteger = vertex . fromInteger
     (+)         = overlay

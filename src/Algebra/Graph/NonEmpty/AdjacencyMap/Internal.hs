@@ -115,6 +115,8 @@ newtype AdjacencyMap a = NAM {
     -- @
     am :: AM.AdjacencyMap a } deriving (Eq, NFData, Ord)
 
+-- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap' for
+-- more details.
 instance (Ord a, Num a) => Num (AdjacencyMap a) where
     fromInteger = vertex . fromInteger
     (+)         = overlay
