@@ -210,6 +210,7 @@ But that would have to rely on appropriate inlining behaviour of (==) which is
 not under our control. We therefore choose the safe and more explicit path of
 creating our own intermediate functions for guiding rewrite rules when needed.
 -}
+
 instance Functor Graph where
   fmap = fmapR
 
