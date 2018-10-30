@@ -214,7 +214,7 @@ creating our own intermediate functions for guiding rewrite rules when needed.
 instance Functor Graph where
   fmap = fmapR
 
--- | 'fmap' on which we can apply rewrite rules
+-- 'fmap' on which we can apply rewrite rules
 fmapR :: (a -> b) -> Graph a -> Graph b
 fmapR f = foldg empty (vertex . f) overlay connect
 {-# INLINE [0] fmapR #-}
@@ -236,32 +236,32 @@ instance Num a => Num (Graph a) where
     negate      = id
 
 instance Ord a => Eq (Graph a) where
-    (==) = eq
+    (==) = eqR
 
 instance Ord a => Ord (Graph a) where
-    compare = ord
+    compare = ordR
 
 -- TODO: Find a more efficient equality check.
--- | Check if two graphs are equal by converting them to their adjacency maps.
-eq :: Ord a => Graph a -> Graph a -> Bool
-eq x y = toAdjacencyMap x == toAdjacencyMap y
-{-# NOINLINE [1] eq #-}
-{-# RULES "eqInt" eq = eqInt #-}
+-- Check if two graphs are equal by converting them to their adjacency maps.
+eqR :: Ord a => Graph a -> Graph a -> Bool
+eqR x y = toAdjacencyMap x == toAdjacencyMap y
+{-# NOINLINE [1] eqR #-}
+{-# RULES "eqR/Int" eqR = eqIntR #-}
 
--- | Like @eq@ but specialised for graphs with vertices of type 'Int'.
-eqInt :: Graph Int -> Graph Int -> Bool
-eqInt x y = toAdjacencyIntMap x == toAdjacencyIntMap y
+-- Like 'eqR' but specialised for graphs with vertices of type 'Int'.
+eqIntR :: Graph Int -> Graph Int -> Bool
+eqIntR x y = toAdjacencyIntMap x == toAdjacencyIntMap y
 
 -- TODO: Find a more efficient comparison.
--- | Compare two graphs by converting them to their adjacency maps.
-ord :: Ord a => Graph a -> Graph a -> Ordering
-ord x y = compare (toAdjacencyMap x) (toAdjacencyMap y)
-{-# NOINLINE [1] ord #-}
-{-# RULES "ordInt" ord = ordInt #-}
+-- Compare two graphs by converting them to their adjacency maps.
+ordR :: Ord a => Graph a -> Graph a -> Ordering
+ordR x y = compare (toAdjacencyMap x) (toAdjacencyMap y)
+{-# NOINLINE [1] ordR #-}
+{-# RULES "ordR/Int" ordR = ordIntR #-}
 
--- | Like @ord@ but specialised for graphs with vertices of type 'Int'.
-ordInt :: Graph Int -> Graph Int -> Ordering
-ordInt x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
+-- | Like'ordR' but specialised for graphs with vertices of type 'Int'.
+ordIntR :: Graph Int -> Graph Int -> Ordering
+ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 
 instance Applicative Graph where
     pure  = Vertex
@@ -572,13 +572,13 @@ hasEdge s t g = hit g == Edge
 -- vertexCount x \< vertexCount y ==> x \< y
 -- @
 {-# INLINE [1] vertexCount #-}
-{-# RULES "vertexCount/Int" vertexCount = vertexIntCount #-}
+{-# RULES "vertexCount/Int" vertexCount = vertexIntCountR #-}
 vertexCount :: Ord a => Graph a -> Int
 vertexCount = Set.size . vertexSet
 
--- | Like 'vertexCount' but specialised for graphs with vertices of type 'Int'.
-vertexIntCount :: Graph Int -> Int
-vertexIntCount = IntSet.size . vertexIntSet
+-- Like 'vertexCount' but specialised for graphs with vertices of type 'Int'.
+vertexIntCountR :: Graph Int -> Int
+vertexIntCountR = IntSet.size . vertexIntSetR
 
 -- | The number of edges in a graph.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
@@ -591,13 +591,13 @@ vertexIntCount = IntSet.size . vertexIntSet
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 {-# INLINE [1] edgeCount #-}
-{-# RULES "edgeCount/Int" edgeCount = edgeCountInt #-}
+{-# RULES "edgeCount/Int" edgeCount = edgeCountIntR #-}
 edgeCount :: Ord a => Graph a -> Int
 edgeCount = AM.edgeCount . toAdjacencyMap
 
--- | Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
-edgeCountInt :: Graph Int -> Int
-edgeCountInt = AIM.edgeCount . toAdjacencyIntMap
+-- Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
+edgeCountIntR :: Graph Int -> Int
+edgeCountIntR = AIM.edgeCount . toAdjacencyIntMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -608,13 +608,13 @@ edgeCountInt = AIM.edgeCount . toAdjacencyIntMap
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
 {-# INLINE [1] vertexList #-}
-{-# RULES "vertexList/Int" vertexList = vertexIntList #-}
+{-# RULES "vertexList/Int" vertexList = vertexIntListR #-}
 vertexList :: Ord a => Graph a -> [a]
 vertexList = Set.toAscList . vertexSet
 
--- | Like 'vertexList' but specialised for graphs with vertices of type 'Int'.
-vertexIntList :: Graph Int -> [Int]
-vertexIntList = IntSet.toList . vertexIntSet
+-- Like 'vertexList' but specialised for graphs with vertices of type 'Int'.
+vertexIntListR :: Graph Int -> [Int]
+vertexIntListR = IntSet.toList . vertexIntSetR
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
@@ -629,13 +629,13 @@ vertexIntList = IntSet.toList . vertexIntSet
 -- edgeList . 'transpose'    == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . edgeList
 -- @
 {-# INLINE [1] edgeList #-}
-{-# RULES "edgeList/Int" edgeList = edgeIntList #-}
+{-# RULES "edgeList/Int" edgeList = edgeIntListR #-}
 edgeList :: Ord a => Graph a -> [(a, a)]
 edgeList = AM.edgeList . toAdjacencyMap
 
--- | Like 'edgeList' but specialised for graphs with vertices of type 'Int'.
-edgeIntList :: Graph Int -> [(Int, Int)]
-edgeIntList = AIM.edgeList . toAdjacencyIntMap
+-- Like 'edgeList' but specialised for graphs with vertices of type 'Int'.
+edgeIntListR :: Graph Int -> [(Int, Int)]
+edgeIntListR = AIM.edgeList . toAdjacencyIntMap
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -650,8 +650,8 @@ vertexSet :: Ord a => Graph a -> Set.Set a
 vertexSet = foldg Set.empty Set.singleton Set.union Set.union
 
 -- Like 'vertexSet' but specialised for graphs with vertices of type 'Int'.
-vertexIntSet :: Graph Int -> IntSet.IntSet
-vertexIntSet = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
+vertexIntSetR :: Graph Int -> IntSet.IntSet
+vertexIntSetR = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
@@ -665,11 +665,11 @@ vertexIntSet = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 edgeSet :: Ord a => Graph a -> Set.Set (a, a)
 edgeSet = AM.edgeSet . toAdjacencyMap
 {-# INLINE [1] edgeSet #-}
-{-# RULES "edgeSet/Int" edgeSet = edgeIntSet #-}
+{-# RULES "edgeSet/Int" edgeSet = edgeIntSetR #-}
 
--- | Like 'edgeSet' but specialised for graphs with vertices of type 'Int'.
-edgeIntSet :: Graph Int -> Set.Set (Int,Int)
-edgeIntSet = AIM.edgeSet . toAdjacencyIntMap
+-- Like 'edgeSet' but specialised for graphs with vertices of type 'Int'.
+edgeIntSetR :: Graph Int -> Set.Set (Int,Int)
+edgeIntSetR = AIM.edgeSet . toAdjacencyIntMap
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -1133,7 +1133,7 @@ buildG :: forall a. F.Fold a -> Graph a
 buildG = F.foldg Empty Vertex Overlay Connect
 {-# INLINE [1] buildG #-}
 
--- | R functions
+-- R functions
 composeR :: (b -> c) -> (a -> b) -> a -> c
 composeR = (.)
 {-# INLINE [0] composeR #-}
