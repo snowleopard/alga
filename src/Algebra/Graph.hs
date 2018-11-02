@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, TupleSections #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
