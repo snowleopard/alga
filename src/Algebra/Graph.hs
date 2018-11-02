@@ -35,7 +35,7 @@ module Algebra.Graph (
     isEmpty, size, hasVertexP, hasVertex, hasEdgeP, hasEdge, vertexCount,
     edgeCount, vertexList, edgeList, vertexSet, edgeSet, adjacencyList,
 
-    findVertices,
+    findVertices, findEdges,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars, tree, forest, mesh, torus,
@@ -60,6 +60,7 @@ import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
+import Data.List (intersect)
 import Data.Monoid ((<>))
 import Data.Maybe (fromMaybe)
 import Data.Tree
@@ -497,6 +498,15 @@ hasVertexP pred = foldg False pred (||) (||)
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex x g = not . null $ findVertices (== x) g
+
+-- | Find all edges in a graph whose vertices match the supplied predicates.
+-- | Complexity: XXX
+{-# INLINE [1] findEdges #-}
+findEdges :: (a -> Bool) -> (a -> Bool) -> Graph a -> [(a, a)]
+findEdges f t (Overlay a b) = findEdges f t a ++ findEdges f t b
+findEdges f t (Connect a b) =
+    [(x,y) | [x,y] <- sequence [findVertices f a, findVertices t b]] ++ findEdges f t (Overlay a b)
+findEdges _ _ _ = []
 
 -- | Check if a graph contains an edge whose vertices match the supplied
 -- predicates.
