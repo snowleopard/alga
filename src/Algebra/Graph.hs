@@ -496,7 +496,6 @@ hasVertexP pred = foldg False pred (||) (||)
 -- @
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 hasVertex :: Eq a => a -> Graph a -> Bool
---hasVertex x = hasVertexP (==x)
 hasVertex x g = not . null $ findVertices (== x) g
 
 -- | Check if a graph contains an edge whose vertices match the supplied
