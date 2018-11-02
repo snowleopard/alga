@@ -514,18 +514,7 @@ findEdges _ _ _ = []
 --
 {-# INLINE [1] hasEdgeP #-}
 hasEdgeP :: (a -> Bool) -> (a -> Bool) -> Graph a -> Bool
-hasEdgeP predFrom predTo g = hit g == Edge
-  where
-    hit Empty         = Miss
-    hit (Vertex x   ) = if predFrom x then Tail else Miss
-    hit (Overlay x y) = case hit x of
-        Miss -> hit y
-        Tail -> max Tail (hit y)
-        Edge -> Edge
-    hit (Connect x y) = case hit x of
-        Miss -> hit y
-        Tail -> if hasVertexP predTo y then Edge else Tail
-        Edge -> Edge
+hasEdgeP f t g = not . null $ findEdges f t g
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
