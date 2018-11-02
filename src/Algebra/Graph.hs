@@ -475,6 +475,8 @@ isEmpty = foldg True (const False) (&&) (&&)
 size :: Graph a -> Int
 size = foldg 1 (const 1) (+) (+)
 
+-- | Find all vertices in a graph matching the supplied predicate.
+-- | Complexity: XXX
 {-# INLINE [1] findVertices #-}
 findVertices :: (a -> Bool) -> Graph a -> [a]
 findVertices p = foldg [] (\x -> [ x | p x ]) (++) (++)
@@ -510,7 +512,7 @@ findEdges _ _ _ = []
 
 -- | Check if a graph contains an edge whose vertices match the supplied
 -- predicates.
--- Complexity: /O(s)/ time.
+-- Complexity: XXX
 --
 {-# INLINE [1] hasEdgeP #-}
 hasEdgeP :: (a -> Bool) -> (a -> Bool) -> Graph a -> Bool
