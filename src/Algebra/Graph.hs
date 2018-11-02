@@ -35,6 +35,8 @@ module Algebra.Graph (
     isEmpty, size, hasVertexP, hasVertex, hasEdgeP, hasEdge, vertexCount,
     edgeCount, vertexList, edgeList, vertexSet, edgeSet, adjacencyList,
 
+    findVertices,
+
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars, tree, forest, mesh, torus,
     deBruijn,
@@ -472,6 +474,10 @@ isEmpty = foldg True (const False) (&&) (&&)
 size :: Graph a -> Int
 size = foldg 1 (const 1) (+) (+)
 
+{-# INLINE [1] findVertices #-}
+findVertices :: (a -> Bool) -> Graph a -> [a]
+findVertices p = foldg [] (\x -> [ x | p x ]) (++) (++)
+
 -- | Check if a graph contains a vertex which satisfied the supplied predicate.
 -- Complexity: /O(s)/ time.
 --
@@ -490,7 +496,8 @@ hasVertexP pred = foldg False pred (||) (||)
 -- @
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 hasVertex :: Eq a => a -> Graph a -> Bool
-hasVertex x = hasVertexP (==x)
+--hasVertex x = hasVertexP (==x)
+hasVertex x g = not . null $ findVertices (== x) g
 
 -- | Check if a graph contains an edge whose vertices match the supplied
 -- predicates.
