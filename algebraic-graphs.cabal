@@ -56,7 +56,7 @@ source-repository head
     type:     git
     location: https://github.com/snowleopard/alga.git
 
-flag inspection-testing
+Flag inspection-testing
     Description: Enable test of rewrite rules with inspection-testing
 
 library
