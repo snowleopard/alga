@@ -16,7 +16,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Export (
     -- * Constructing and exporting documents
-    Doc, literal, render,
+    Doc, isEmpty, literal, render,
 
     -- * Common combinators for text documents
     (<+>), brackets, doubleQuotes, indent, unlines,
@@ -45,19 +45,39 @@ import Algebra.Graph.Internal
 -- 'literal'. Alternatively, you can construct documents as string literals, e.g.
 -- simply as @"alga"@, by using the @OverloadedStrings@ GHC extension. To extract
 -- the document contents use the function 'render'. See some examples below.
+-- Note that the document comprising a single empty string is considered to be
+-- different from the empty document.
 newtype Doc s = Doc (List s) deriving (Monoid, Semigroup)
 
 instance (Monoid s, Show s) => Show (Doc s) where
     show = show . render
 
 instance (Monoid s, Eq s) => Eq (Doc s) where
-    x == y = render x == render y
+    x == y | isEmpty x = isEmpty y
+           | isEmpty y = False
+           | otherwise = render x == render y
 
+-- | The empty document is smallest.
 instance (Monoid s, Ord s) => Ord (Doc s) where
-    compare x y = compare (render x) (render y)
+    compare x y | isEmpty x = if isEmpty y then EQ else LT
+                | isEmpty y = GT
+                | otherwise = compare (render x) (render y)
 
 instance IsString s => IsString (Doc s) where
     fromString = literal . fromString
+
+-- | Check if a document is empty. The result is the same as comparing the given
+-- document to 'mempty', but does not require the @Eq s@ constraint. Note that
+-- the document comprising a single empty string is considered to be different
+-- from the empty document.
+--
+-- @
+-- isEmpty 'mempty'       == True
+-- isEmpty ('literal' \"\") == False
+-- isEmpty x            == (x == 'mempty')
+-- @
+isEmpty :: Doc s -> Bool
+isEmpty (Doc xs) = null xs
 
 -- | Construct a document comprising a single symbol or string. If @s@ is an
 -- instance of class 'IsString', then documents of type 'Doc' @s@ can be
@@ -66,9 +86,7 @@ instance IsString s => IsString (Doc s) where
 -- @
 -- literal "Hello, " 'Data.Monoid.<>' literal "World!" == literal "Hello, World!"
 -- literal "I am just a string literal"  == "I am just a string literal"
--- literal 'mempty'                        == 'mempty'
 -- 'render' . literal                      == 'id'
--- literal . 'render'                      == 'id'
 -- @
 literal :: s -> Doc s
 literal = Doc . pure
@@ -80,7 +98,6 @@ literal = Doc . pure
 -- render ('literal' "al" 'Data.Monoid.<>' 'literal' "ga") == "alga"
 -- render 'mempty'                         == 'mempty'
 -- render . 'literal'                      == 'id'
--- 'literal' . render                      == 'id'
 -- @
 render :: Monoid s => Doc s -> s
 render (Doc x) = fold x
@@ -94,10 +111,10 @@ render (Doc x) = fold x
 -- x \<+\> (y \<+\> z)      == (x \<+\> y) \<+\> z
 -- "name" \<+\> "surname" == "name surname"
 -- @
-(<+>) :: (Eq s, IsString s, Monoid s) => Doc s -> Doc s -> Doc s
-x <+> y | x == mempty = y
-        | y == mempty = x
-        | otherwise   = x <> " " <> y
+(<+>) :: IsString s => Doc s -> Doc s -> Doc s
+x <+> y | isEmpty x = y
+        | isEmpty y = x
+        | otherwise = x <> " " <> y
 
 infixl 7 <+>
 
