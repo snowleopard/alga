@@ -31,6 +31,14 @@ import qualified Algebra.Graph.Export.Dot as ED
 
 testExport :: IO ()
 testExport = do
+    putStrLn "\n============ Export.Eq ============"
+    test "mempty /= literal \"\"" $
+          mempty /= (literal "" :: Doc String)
+
+    putStrLn "\n============ Export.Ord ============"
+    test "mempty <  literal \"\"" $
+          mempty < (literal "" :: Doc String)
+
     putStrLn "\n============ Export.isEmpty ============"
     test "isEmpty mempty       == True" $
           isEmpty mempty       == True

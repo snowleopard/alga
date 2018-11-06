@@ -39,14 +39,24 @@ import Algebra.Graph.Internal
 -- | An abstract document data type with /O(1)/ time concatenation (the current
 -- implementation uses difference lists). Here @s@ is the type of abstract
 -- symbols or strings (text or binary). 'Doc' @s@ is a 'Monoid', therefore
--- 'mempty' corresponds to the empty document and two documents can be
+-- 'mempty' corresponds to the /empty document/ and two documents can be
 -- concatenated with 'mappend' (or operator 'Data.Monoid.<>'). Documents
 -- comprising a single symbol or string can be constructed using the function
--- 'literal'. Alternatively, you can construct documents as string literals, e.g.
--- simply as @"alga"@, by using the @OverloadedStrings@ GHC extension. To extract
--- the document contents use the function 'render'. See some examples below.
+-- 'literal'. Alternatively, you can construct documents as string literals,
+-- e.g. simply as @"alga"@, by using the @OverloadedStrings@ GHC extension. To
+-- extract the document contents use the function 'render'.
+--
 -- Note that the document comprising a single empty string is considered to be
--- different from the empty document.
+-- different from the empty document. This design choice is motivated by the
+-- desire to support string types @s@ that have no 'Eq' instance, such as
+-- "Data.ByteString.Builder", for which there is no way to check whether a
+-- string is empty or not. As a consequence, the 'Eq' and 'Ord' instances are
+-- defined as follows:
+--
+-- @
+-- 'mempty' /= 'literal' ""
+-- 'mempty' <  'literal' ""
+-- @
 newtype Doc s = Doc (List s) deriving (Monoid, Semigroup)
 
 instance (Monoid s, Show s) => Show (Doc s) where
@@ -66,10 +76,10 @@ instance (Monoid s, Ord s) => Ord (Doc s) where
 instance IsString s => IsString (Doc s) where
     fromString = literal . fromString
 
--- | Check if a document is empty. The result is the same as comparing the given
--- document to 'mempty', but does not require the @Eq s@ constraint. Note that
--- the document comprising a single empty string is considered to be different
--- from the empty document.
+-- | Check if a document is empty. The result is the same as when comparing the
+-- given document to 'mempty', but this function does not require the 'Eq' @s@
+-- constraint. Note that the document comprising a single empty string is
+-- considered to be different from the empty document.
 --
 -- @
 -- isEmpty 'mempty'       == True
