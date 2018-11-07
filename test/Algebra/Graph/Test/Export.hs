@@ -31,6 +31,24 @@ import qualified Algebra.Graph.Export.Dot as ED
 
 testExport :: IO ()
 testExport = do
+    putStrLn "\n============ Export.Eq ============"
+    test "mempty /= literal \"\"" $
+          mempty /= (literal "" :: Doc String)
+
+    putStrLn "\n============ Export.Ord ============"
+    test "mempty <  literal \"\"" $
+          mempty < (literal "" :: Doc String)
+
+    putStrLn "\n============ Export.isEmpty ============"
+    test "isEmpty mempty       == True" $
+          isEmpty mempty       == True
+
+    test "isEmpty (literal \"\") == False" $
+          isEmpty (literal "" :: Doc String) == False
+
+    test "isEmpty x            == (x == mempty)" $ \(x :: Doc String) ->
+          isEmpty x            == (x == mempty)
+
     putStrLn "\n============ Export.literal ============"
     test "literal \"Hello, \" <> literal \"World!\" == literal \"Hello, World!\"" $
           literal "Hello, " <> literal "World!" == literal ("Hello, World!" :: String)
@@ -38,14 +56,8 @@ testExport = do
     test "literal \"I am just a string literal\"  == \"I am just a string literal\"" $
           literal "I am just a string literal"  == ("I am just a string literal" :: Doc String)
 
-    test "literal mempty                        == mempty" $
-          literal mempty                        == (mempty :: Doc String)
-
     test "render . literal                      == id" $ \(x :: String) ->
          (render . literal) x                   == x
-
-    test "literal . render                      == id" $ \(xs :: [String]) -> let x = mconcat (map literal xs) in
-         (literal . render) x                   == x
 
     putStrLn "\n============ Export.render ============"
     test "render (literal \"al\" <> literal \"ga\") == \"alga\"" $
@@ -113,7 +125,7 @@ testExport = do
     putStrLn "\n============ Export.Dot.export ============"
     let style = ED.Style
             { ED.graphName               = "Example"
-            , ED.preamble                = "  // This is an example\n"
+            , ED.preamble                = ["  // This is an example", ""]
             , ED.graphAttributes         = ["label" := "Example", "labelloc" := "top"]
             , ED.defaultVertexAttributes = ["shape" := "circle"]
             , ED.defaultEdgeAttributes   = mempty
@@ -142,7 +154,7 @@ testExport = do
     putStrLn "\n============ Export.Dot.exportAsIs ============"
     test "exportAsIs (circuit [\"a\", \"b\", \"c\"] :: Graph String)" $
         (ED.exportAsIs (circuit ["a", "b", "c"] :: Graph String) :: String) ==
-            unlines [ "digraph"
+            unlines [ "digraph "
                     , "{"
                     , "  \"a\""
                     , "  \"b\""
@@ -155,7 +167,7 @@ testExport = do
     putStrLn "\n============ Export.Dot.exportViaShow ============"
     test "exportViaShow (1 + 2 * (3 + 4) :: Graph Int)" $
         (ED.exportViaShow (1 + 2 * (3 + 4) :: Graph Int) :: String) ==
-            unlines [ "digraph"
+            unlines [ "digraph "
                     , "{"
                     , "  \"1\""
                     , "  \"2\""

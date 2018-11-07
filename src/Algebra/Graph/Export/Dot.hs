@@ -43,8 +43,8 @@ data Attribute s = (:=) s s
 data Style a s = Style
     { graphName :: s
     -- ^ Name of the graph.
-    , preamble :: s
-    -- ^ Preamble is added at the beginning of the DOT file body.
+    , preamble :: [s]
+    -- ^ Preamble (a list of lines) is added at the beginning of the DOT file body.
     , graphAttributes :: [Attribute s]
     -- ^ Graph style, e.g. @["bgcolor" := "azure"]@.
     , defaultVertexAttributes :: [Attribute s]
@@ -62,7 +62,7 @@ data Style a s = Style
 -- | Default style for exporting graphs. All style settings are empty except for
 -- 'vertexName', which is provided as the only argument.
 defaultStyle :: Monoid s => (a -> s) -> Style a s
-defaultStyle v = Style mempty mempty [] [] [] v (\_ -> []) (\_ _ -> [])
+defaultStyle v = Style mempty [] [] [] [] v (\_ -> []) (\_ _ -> [])
 
 -- | Default style for exporting graphs whose vertices are 'Show'-able. All
 -- style settings are empty except for 'vertexName', which is computed from
@@ -82,7 +82,7 @@ defaultStyleViaShow = defaultStyle (fromString . show)
 -- style :: 'Style' Int String
 -- style = 'Style'
 --     { 'graphName'               = \"Example\"
---     , 'preamble'                = "  // This is an example\\n"
+--     , 'preamble'                = ["  // This is an example", ""]
 --     , 'graphAttributes'         = ["label" := \"Example\", "labelloc" := "top"]
 --     , 'defaultVertexAttributes' = ["shape" := "circle"]
 --     , 'defaultEdgeAttributes'   = 'mempty'
@@ -109,14 +109,14 @@ defaultStyleViaShow = defaultStyle (fromString . show)
 --   "v4" -> "v5"
 -- }
 -- @
-export :: (IsString s, Monoid s, Eq s, Ord a, ToGraph g, ToVertex g ~ a) => Style a s -> g -> s
+export :: (IsString s, Monoid s, Ord a, ToGraph g, ToVertex g ~ a) => Style a s -> g -> s
 export Style {..} g = render $ header <> body <> "}\n"
   where
     header    = "digraph" <+> literal graphName <> "\n{\n"
-             <> if preamble == mempty then mempty else literal preamble <> "\n"
-    with x as = if null as            then mempty else line (x <+> attributes as)
+    with x as = if null as then mempty else line (x <+> attributes as)
     line s    = indent 2 s <> "\n"
-    body      = ("graph" `with` graphAttributes)
+    body      = unlines (map literal preamble)
+             <> ("graph" `with` graphAttributes)
              <> ("node"  `with` defaultVertexAttributes)
              <> ("edge"  `with` defaultEdgeAttributes)
              <> E.export vDoc eDoc g
@@ -150,7 +150,7 @@ attributes as = brackets . mconcat . intersperse " " $ map dot as
 --   "c" -> "a"
 -- }
 -- @
-exportAsIs :: (IsString s, Monoid s, Ord s, ToGraph g, ToVertex g ~ s) => g -> s
+exportAsIs :: (IsString s, Monoid s, Ord (ToVertex g), ToGraph g, ToVertex g ~ s) => g -> s
 exportAsIs = export (defaultStyle id)
 
 -- | Export a graph using the 'defaultStyleViaShow'.
@@ -170,5 +170,5 @@ exportAsIs = export (defaultStyle id)
 --   "2" -> "4"
 -- }
 -- @
-exportViaShow :: (IsString s, Monoid s, Eq s, ToGraph g, Ord (ToVertex g), Show (ToVertex g)) => g -> s
+exportViaShow :: (IsString s, Monoid s, Ord (ToVertex g), Show (ToVertex g), ToGraph g) => g -> s
 exportViaShow = export defaultStyleViaShow
