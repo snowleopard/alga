@@ -2,6 +2,7 @@
 
 ## 0.3
 
+* #138: Do not require `Eq` instance on the string type when exporting graphs.
 * #136: Rename `Algebra.Graph.NonEmpty.NonEmptyGraph` to `Algebra.Graph.NonEmpty.Graph`.
 * #136: Add `Algebra.Graph.NonEmpty.AdjacencyMap`.
 * #136: Remove `vertexIntSet` from the API of basic graph data types. Also
