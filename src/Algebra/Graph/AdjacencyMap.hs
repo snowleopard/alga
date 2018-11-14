@@ -45,7 +45,7 @@ module Algebra.Graph.AdjacencyMap (
   ) where
 
 import Control.Monad
-import Data.Foldable (foldMap, toList)
+import Data.Foldable (foldMap)
 import Data.Maybe
 import Data.Monoid
 import Data.Set (Set)
@@ -54,7 +54,6 @@ import Data.Tree
 import Algebra.Graph.AdjacencyMap.Internal
 
 import qualified Data.Graph.Typed as Typed
-import qualified Data.Graph       as KL
 import qualified Data.Map.Strict  as Map
 import qualified Data.Set         as Set
 

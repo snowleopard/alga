@@ -30,13 +30,13 @@ import qualified Data.Set                            as Set
 --
 -- @
 -- scc 'empty'               == 'empty'
--- scc ('vertex' x)          == 'vertex' (Set.'Set.singleton' x)
--- scc ('edge' x y)          == 'edge' (Set.'Set.singleton' x) (Set.'Set.singleton' y)
--- scc ('circuit' (1:xs))    == 'edge' (Set.'Set.fromList' (1:xs)) (Set.'Set.fromList' (1:xs))
--- scc (3 * 1 * 4 * 1 * 5) == 'edges' [ (Set.'Set.fromList' [1,4], Set.'Set.fromList' [1,4])
---                                  , (Set.'Set.fromList' [1,4], Set.'Set.fromList' [5]  )
---                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [1,4])
---                                  , (Set.'Set.fromList' [3]  , Set.'Set.fromList' [5]  )]
+-- scc ('vertex' x)          == 'vertex' (NonEmpty.'Algebra.Graph.NonEmpty.AdjacencyMap.vertex' x)
+-- scc ('edge' 1 1)          == 'vertex' (NonEmpty.'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 1)
+-- scc ('edge' 1 2)          == 'edge'   (NonEmpty.'Algebra.Graph.NonEmpty.AdjacencyMap.vertex' 1) (NonEmpty.'Algebra.Graph.NonEmpty.AdjacencyMap.vertex' 2)
+-- scc ('circuit' (1:xs))    == 'vertex' (NonEmpty.'Algebra.Graph.NonEmpty.AdjacencyMap.circuit1' (1 'Data.List.NonEmpty.:|' xs))
+-- scc (3 * 1 * 4 * 1 * 5) == 'edges'  [ (NonEmpty.'Algebra.Graph.NonEmpty.AdjacencyMap.vertex'  3      , NonEmpty.'Algebra.Graph.NonEmpty.AdjacencyMap.vertex'  5      )
+--                                   , (NonEmpty.'Algebra.Graph.NonEmpty.AdjacencyMap.vertex'  3      , NonEmpty.'Algebra.Graph.NonEmpty.AdjacencyMap.clique1' [1,4,1])
+--                                   , (NonEmpty.'Algebra.Graph.NonEmpty.AdjacencyMap.clique1' [1,4,1], NonEmpty.'Algebra.Graph.NonEmpty.AdjacencyMap.vertex'  5      ) ]
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (NonEmpty.AdjacencyMap a)
 scc m = fromAdjacencySets

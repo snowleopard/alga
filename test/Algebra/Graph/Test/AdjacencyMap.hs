@@ -63,11 +63,11 @@ testAdjacencyMap = do
     test "scc (edge 1 1)          == vertex (NonEmpty.edge 1 1)" $
           scc (edge 1 1 :: AI)    == vertex (NonEmpty.edge 1 1)
 
-    test "scc (edge 1 2)          == edge (NonEmpty.vertex 1) (NonEmpty.vertex 2)" $
-          scc (edge 1 2 :: AI)    == edge (NonEmpty.vertex 1) (NonEmpty.vertex 2)
+    test "scc (edge 1 2)          == edge   (NonEmpty.vertex 1) (NonEmpty.vertex 2)" $
+          scc (edge 1 2 :: AI)    == edge   (NonEmpty.vertex 1) (NonEmpty.vertex 2)
 
-    test "scc (circuit (1:xs))    == vertex (NonEmpty.circuit1 (1:|xs))" $ \(xs :: [Int]) ->
-          scc (circuit (1:xs))    == vertex (NonEmpty.circuit1 (1:|xs))
+    test "scc (circuit (1:xs))    == vertex (NonEmpty.circuit1 (1 :| xs))" $ \(xs :: [Int]) ->
+          scc (circuit (1:xs))    == vertex (NonEmpty.circuit1 (1 :| xs))
 
     test "scc (3 * 1 * 4 * 1 * 5) == <correct result>" $
           scc (3 * 1 * 4 * 1 * 5) == edges [ (NonEmpty.vertex 3       , NonEmpty.vertex  5      )
