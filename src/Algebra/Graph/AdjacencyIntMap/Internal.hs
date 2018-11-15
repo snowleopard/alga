@@ -12,8 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyIntMap.Internal (
     -- * Adjacency map implementation
-    AdjacencyIntMap (..), empty, vertex, overlay, connect, fromAdjacencyIntSets,
-    consistent
+    AdjacencyIntMap (..), consistent
   ) where
 
 import Prelude ()
@@ -107,19 +106,20 @@ The total order on graphs is defined using /size-lexicographic/ comparison:
 
 Here are a few examples:
 
-@'vertex' 1 < 'vertex' 2
-'vertex' 3 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
-'vertex' 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 1
-'Algebra.Graph.AdjacencyMap.edge' 1 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
-'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 1 + 'Algebra.Graph.AdjacencyMap.edge' 2 2
-'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 3@
+@'Algebra.Graph.AdjacencyIntMap.vertex' 1 < 'Algebra.Graph.AdjacencyIntMap.vertex' 2
+'Algebra.Graph.AdjacencyIntMap.vertex' 3 < 'Algebra.Graph.AdjacencyIntMap.edge' 1 2
+'Algebra.Graph.AdjacencyIntMap.vertex' 1 < 'Algebra.Graph.AdjacencyIntMap.edge' 1 1
+'Algebra.Graph.AdjacencyIntMap.edge' 1 1 < 'Algebra.Graph.AdjacencyIntMap.edge' 1 2
+'Algebra.Graph.AdjacencyIntMap.edge' 1 2 < 'Algebra.Graph.AdjacencyIntMap.edge' 1 1 + 'Algebra.Graph.AdjacencyIntMap.edge' 2 2
+'Algebra.Graph.AdjacencyIntMap.edge' 1 2 < 'Algebra.Graph.AdjacencyIntMap.edge' 1 3@
 
-Note that the resulting order refines the 'isSubgraphOf' relation and is
-compatible with 'overlay' and 'connect' operations:
+Note that the resulting order refines the 'Algebra.Graph.AdjacencyIntMap.isSubgraphOf'
+relation and is compatible with 'Algebra.Graph.AdjacencyIntMap.overlay' and
+'Algebra.Graph.AdjacencyIntMap.connect' operations:
 
-@'Algebra.Graph.AdjacencyMap.isSubgraphOf' x y ==> x <= y@
+@'Algebra.Graph.AdjacencyIntMap.isSubgraphOf' x y ==> x <= y@
 
-@'empty' <= x
+@'Algebra.Graph.AdjacencyIntMap.empty' <= x
 x     <= x + y
 x + y <= x * y@
 -}
@@ -161,101 +161,19 @@ instance Ord AdjacencyIntMap where
         vSet = IntMap.keysSet
         eNum = getSum . foldMap (Sum . IntSet.size)
 
--- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
---
--- @
--- 'Algebra.Graph.AdjacencyIntMap.isEmpty'     empty == True
--- 'Algebra.Graph.AdjacencyIntMap.hasVertex' x empty == False
--- 'Algebra.Graph.AdjacencyIntMap.vertexCount' empty == 0
--- 'Algebra.Graph.AdjacencyIntMap.edgeCount'   empty == 0
--- @
-empty :: AdjacencyIntMap
-empty = AM IntMap.empty
-{-# NOINLINE [1] empty #-}
-
--- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
---
--- @
--- 'Algebra.Graph.AdjacencyIntMap.isEmpty'     (vertex x) == False
--- 'Algebra.Graph.AdjacencyIntMap.hasVertex' x (vertex x) == True
--- 'Algebra.Graph.AdjacencyIntMap.vertexCount' (vertex x) == 1
--- 'Algebra.Graph.AdjacencyIntMap.edgeCount'   (vertex x) == 0
--- @
-vertex :: Int -> AdjacencyIntMap
-vertex x = AM $ IntMap.singleton x IntSet.empty
-{-# NOINLINE [1] vertex #-}
-
--- | /Overlay/ two graphs. This is a commutative, associative and idempotent
--- operation with the identity 'empty'.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- 'Algebra.Graph.AdjacencyIntMap.isEmpty'     (overlay x y) == 'Algebra.Graph.AdjacencyIntMap.isEmpty'   x   && 'Algebra.Graph.AdjacencyIntMap.isEmpty'   y
--- 'Algebra.Graph.AdjacencyIntMap.hasVertex' z (overlay x y) == 'Algebra.Graph.AdjacencyIntMap.hasVertex' z x || 'Algebra.Graph.AdjacencyIntMap.hasVertex' z y
--- 'Algebra.Graph.AdjacencyIntMap.vertexCount' (overlay x y) >= 'Algebra.Graph.AdjacencyIntMap.vertexCount' x
--- 'Algebra.Graph.AdjacencyIntMap.vertexCount' (overlay x y) <= 'Algebra.Graph.AdjacencyIntMap.vertexCount' x + 'Algebra.Graph.AdjacencyIntMap.vertexCount' y
--- 'Algebra.Graph.AdjacencyIntMap.edgeCount'   (overlay x y) >= 'Algebra.Graph.AdjacencyIntMap.edgeCount' x
--- 'Algebra.Graph.AdjacencyIntMap.edgeCount'   (overlay x y) <= 'Algebra.Graph.AdjacencyIntMap.edgeCount' x   + 'Algebra.Graph.AdjacencyIntMap.edgeCount' y
--- 'Algebra.Graph.AdjacencyIntMap.vertexCount' (overlay 1 2) == 2
--- 'Algebra.Graph.AdjacencyIntMap.edgeCount'   (overlay 1 2) == 0
--- @
-overlay :: AdjacencyIntMap -> AdjacencyIntMap -> AdjacencyIntMap
-overlay x y = AM $ IntMap.unionWith IntSet.union (adjacencyIntMap x) (adjacencyIntMap y)
-{-# NOINLINE [1] overlay #-}
-
--- | /Connect/ two graphs. This is an associative operation with the identity
--- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
--- number of edges in the resulting graph is quadratic with respect to the number
--- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
---
--- @
--- 'Algebra.Graph.AdjacencyIntMap.isEmpty'     (connect x y) == 'Algebra.Graph.AdjacencyIntMap.isEmpty'   x   && 'Algebra.Graph.AdjacencyIntMap.isEmpty'   y
--- 'Algebra.Graph.AdjacencyIntMap.hasVertex' z (connect x y) == 'Algebra.Graph.AdjacencyIntMap.hasVertex' z x || 'Algebra.Graph.AdjacencyIntMap.hasVertex' z y
--- 'Algebra.Graph.AdjacencyIntMap.vertexCount' (connect x y) >= 'Algebra.Graph.AdjacencyIntMap.vertexCount' x
--- 'Algebra.Graph.AdjacencyIntMap.vertexCount' (connect x y) <= 'Algebra.Graph.AdjacencyIntMap.vertexCount' x + 'Algebra.Graph.AdjacencyIntMap.vertexCount' y
--- 'Algebra.Graph.AdjacencyIntMap.edgeCount'   (connect x y) >= 'Algebra.Graph.AdjacencyIntMap.edgeCount' x
--- 'Algebra.Graph.AdjacencyIntMap.edgeCount'   (connect x y) >= 'Algebra.Graph.AdjacencyIntMap.edgeCount' y
--- 'Algebra.Graph.AdjacencyIntMap.edgeCount'   (connect x y) >= 'Algebra.Graph.AdjacencyIntMap.vertexCount' x * 'Algebra.Graph.AdjacencyIntMap.vertexCount' y
--- 'Algebra.Graph.AdjacencyIntMap.edgeCount'   (connect x y) <= 'Algebra.Graph.AdjacencyIntMap.vertexCount' x * 'Algebra.Graph.AdjacencyIntMap.vertexCount' y + 'Algebra.Graph.AdjacencyIntMap.edgeCount' x + 'Algebra.Graph.AdjacencyIntMap.edgeCount' y
--- 'Algebra.Graph.AdjacencyIntMap.vertexCount' (connect 1 2) == 2
--- 'Algebra.Graph.AdjacencyIntMap.edgeCount'   (connect 1 2) == 1
--- @
-connect :: AdjacencyIntMap -> AdjacencyIntMap -> AdjacencyIntMap
-connect x y = AM $ IntMap.unionsWith IntSet.union [ adjacencyIntMap x, adjacencyIntMap y,
-    fromSet (const . keysSet $ adjacencyIntMap y) (keysSet $ adjacencyIntMap x) ]
-{-# NOINLINE [1] connect #-}
-
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyIntMap'
 -- for more details.
 instance Num AdjacencyIntMap where
-    fromInteger = vertex . fromInteger
-    (+)         = overlay
-    (*)         = connect
-    signum      = const empty
-    abs         = id
-    negate      = id
+    fromInteger x = AM $ IntMap.singleton (fromInteger x) IntSet.empty
+    x + y  = AM $ IntMap.unionWith IntSet.union (adjacencyIntMap x) (adjacencyIntMap y)
+    x * y  = AM $ IntMap.unionsWith IntSet.union [ adjacencyIntMap x, adjacencyIntMap y,
+        fromSet (const . keysSet $ adjacencyIntMap y) (keysSet $ adjacencyIntMap x) ]
+    signum = const (AM IntMap.empty)
+    abs    = id
+    negate = id
 
 instance NFData AdjacencyIntMap where
     rnf (AM a) = rnf a
-
--- | Construct a graph from a list of adjacency sets.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- fromAdjacencyIntSets []                                           == 'Algebra.Graph.AdjacencyIntMap.empty'
--- fromAdjacencyIntSets [(x, IntSet.'IntSet.empty')]                          == 'Algebra.Graph.AdjacencyIntMap.vertex' x
--- fromAdjacencyIntSets [(x, IntSet.'IntSet.singleton' y)]                    == 'Algebra.Graph.AdjacencyIntMap.edge' x y
--- fromAdjacencyIntSets . map (fmap IntSet.'IntSet.fromList') . 'Algebra.Graph.AdjacencyIntMap.adjacencyList' == id
--- 'Algebra.Graph.AdjacencyIntMap.overlay' (fromAdjacencyIntSets xs) (fromAdjacencyIntSets ys)       == fromAdjacencyIntSets (xs ++ ys)
--- @
-fromAdjacencyIntSets :: [(Int, IntSet)] -> AdjacencyIntMap
-fromAdjacencyIntSets ss = AM $ IntMap.unionWith IntSet.union vs es
-  where
-    vs = IntMap.fromSet (const IntSet.empty) . IntSet.unions $ map snd ss
-    es = IntMap.fromListWith IntSet.union ss
 
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices. It should be impossible to create an

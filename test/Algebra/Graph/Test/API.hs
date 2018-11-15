@@ -18,16 +18,14 @@ import Data.Tree
 
 import Algebra.Graph.Class (Graph (..))
 
-import qualified Algebra.Graph                          as Graph
-import qualified Algebra.Graph.AdjacencyMap             as AM
-import qualified Algebra.Graph.AdjacencyMap.Internal    as AM
-import qualified Algebra.Graph.Fold                     as Fold
-import qualified Algebra.Graph.HigherKinded.Class       as HClass
-import qualified Algebra.Graph.AdjacencyIntMap          as AIM
-import qualified Algebra.Graph.AdjacencyIntMap.Internal as AIM
-import qualified Algebra.Graph.Relation                 as R
-import qualified Data.Set                               as Set
-import qualified Data.IntSet                            as IntSet
+import qualified Algebra.Graph                    as Graph
+import qualified Algebra.Graph.AdjacencyMap       as AM
+import qualified Algebra.Graph.Fold               as Fold
+import qualified Algebra.Graph.HigherKinded.Class as HClass
+import qualified Algebra.Graph.AdjacencyIntMap    as AIM
+import qualified Algebra.Graph.Relation           as R
+import qualified Data.Set                         as Set
+import qualified Data.IntSet                      as IntSet
 
 class Graph g => GraphAPI g where
     edge                 :: Vertex g -> Vertex g -> g

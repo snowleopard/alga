@@ -82,6 +82,56 @@ toNonEmpty :: AM.AdjacencyMap a -> Maybe (AdjacencyMap a)
 toNonEmpty x | AM.isEmpty x = Nothing
              | otherwise    = Just (NAM x)
 
+-- | Construct the graph comprising /a single isolated vertex/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'AdjacencyMap.hasVertex' x (vertex x) == True
+-- 'AdjacencyMap.vertexCount' (vertex x) == 1
+-- 'AdjacencyMap.edgeCount'   (vertex x) == 0
+-- @
+vertex :: a -> AdjacencyMap a
+vertex = NAM . AM.vertex
+{-# NOINLINE [1] vertex #-}
+
+-- | /Overlay/ two graphs. This is a commutative, associative and idempotent
+-- operation with the identity 'empty'.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (overlay x y) >= 'vertexCount' x
+-- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (overlay x y) >= 'edgeCount' x
+-- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
+-- 'vertexCount' (overlay 1 2) == 2
+-- 'edgeCount'   (overlay 1 2) == 0
+-- @
+overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
+overlay (NAM x) (NAM y) = NAM (AM.overlay x y)
+{-# NOINLINE [1] overlay #-}
+
+-- | /Connect/ two graphs. This is an associative operation with the identity
+-- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
+-- number of edges in the resulting graph is quadratic with respect to the number
+-- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
+--
+-- @
+-- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (connect x y) >= 'vertexCount' x
+-- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (connect x y) >= 'edgeCount' x
+-- 'edgeCount'   (connect x y) >= 'edgeCount' y
+-- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
+-- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
+-- 'vertexCount' (connect 1 2) == 2
+-- 'edgeCount'   (connect 1 2) == 1
+-- @
+connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
+connect (NAM x) (NAM y) = NAM (AM.connect x y)
+{-# NOINLINE [1] connect #-}
+
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
 --
