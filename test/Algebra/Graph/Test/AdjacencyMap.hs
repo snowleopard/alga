@@ -73,3 +73,9 @@ testAdjacencyMap = do
           scc (3 * 1 * 4 * 1 * 5) == edges [ (NonEmpty.vertex 3       , NonEmpty.vertex  5      )
                                            , (NonEmpty.vertex 3       , NonEmpty.clique1 [1,4,1])
                                            , (NonEmpty.clique1 [1,4,1], NonEmpty.vertex  (5 :: Int)) ]
+
+    test "isAcyclic . scc == const True" $ \(x :: AI) ->
+          (isAcyclic . scc) x == (const True) x
+
+    test "isAcyclic x     == (scc x == gmap NonEmpty.vertex x)" $ \(x :: AI) ->
+          isAcyclic x     == (scc x == gmap NonEmpty.vertex x)
