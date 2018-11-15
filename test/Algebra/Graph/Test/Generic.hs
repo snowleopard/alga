@@ -36,11 +36,12 @@ import Algebra.Graph.ToGraph (ToGraph (..))
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API
 
-import qualified Algebra.Graph                 as G
-import qualified Algebra.Graph.AdjacencyMap    as AM
-import qualified Algebra.Graph.AdjacencyIntMap as AIM
-import qualified Data.Set                      as Set
-import qualified Data.IntSet                   as IntSet
+import qualified Algebra.Graph                        as G
+import qualified Algebra.Graph.AdjacencyMap           as AM
+import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
+import qualified Algebra.Graph.AdjacencyIntMap        as AIM
+import qualified Data.Set                             as Set
+import qualified Data.IntSet                          as IntSet
 
 data Testsuite where
     Testsuite :: (Arbitrary g, GraphAPI g, Num g, Ord g, Show g, ToGraph g, ToVertex g ~ Int, Vertex g ~ Int)
@@ -349,38 +350,38 @@ testStars (Testsuite prefix (%)) = do
 testFromAdjacencySets :: Testsuite -> IO ()
 testFromAdjacencySets (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "fromAdjacencySets ============"
-    test "fromAdjacencySets []                                        == empty" $
-          fromAdjacencySets []                                        == id % empty
+    test "fromAdjacencySets []                                  == empty" $
+          fromAdjacencySets []                                  == id % empty
 
-    test "fromAdjacencySets [(x, Set.empty)]                          == vertex x" $ \x ->
-          fromAdjacencySets [(x, Set.empty)]                          == id % vertex x
+    test "fromAdjacencySets [(x, Set.empty)]                    == vertex x" $ \x ->
+          fromAdjacencySets [(x, Set.empty)]                    == id % vertex x
 
-    test "fromAdjacencySets [(x, Set.singleton y)]                    == edge x y" $ \x y ->
-          fromAdjacencySets [(x, Set.singleton y)]                    == id % edge x y
+    test "fromAdjacencySets [(x, Set.singleton y)]              == edge x y" $ \x y ->
+          fromAdjacencySets [(x, Set.singleton y)]              == id % edge x y
 
-    test "fromAdjacencySets . map (fmap Set.fromList) . adjacencyList == id" $ \x ->
-         (fromAdjacencySets . map (fmap Set.fromList) . adjacencyList) % x == x
+    test "fromAdjacencySets . map (fmap Set.fromList)           == stars" $ \x ->
+         (fromAdjacencySets . map (fmap Set.fromList)) x        == id % stars x
 
-    test "overlay (fromAdjacencySets xs) (fromAdjacencySets ys)       == fromAdjacencySets (xs ++ ys)" $ \xs ys ->
-          overlay (fromAdjacencySets xs) % fromAdjacencySets ys       == fromAdjacencySets (xs ++ ys)
+    test "overlay (fromAdjacencySets xs) (fromAdjacencySets ys) == fromAdjacencySets (xs ++ ys)" $ \xs ys ->
+          overlay (fromAdjacencySets xs) % fromAdjacencySets ys == fromAdjacencySets (xs ++ ys)
 
 testFromAdjacencyIntSets :: Testsuite -> IO ()
 testFromAdjacencyIntSets (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "fromAdjacencyIntSets ============"
-    test "fromAdjacencyIntSets []                                           == empty" $
-          fromAdjacencyIntSets []                                           == id % empty
+    test "fromAdjacencyIntSets []                                     == empty" $
+          fromAdjacencyIntSets []                                     == id % empty
 
-    test "fromAdjacencyIntSets [(x, IntSet.empty)]                          == vertex x" $ \x ->
-          fromAdjacencyIntSets [(x, IntSet.empty)]                          == id % vertex x
+    test "fromAdjacencyIntSets [(x, IntSet.empty)]                    == vertex x" $ \x ->
+          fromAdjacencyIntSets [(x, IntSet.empty)]                    == id % vertex x
 
-    test "fromAdjacencyIntSets [(x, IntSet.singleton y)]                    == edge x y" $ \x y ->
-          fromAdjacencyIntSets [(x, IntSet.singleton y)]                    == id % edge x y
+    test "fromAdjacencyIntSets [(x, IntSet.singleton y)]              == edge x y" $ \x y ->
+          fromAdjacencyIntSets [(x, IntSet.singleton y)]              == id % edge x y
 
-    test "fromAdjacencyIntSets . map (fmap IntSet.fromList) . adjacencyList == id" $ \x ->
-         (fromAdjacencyIntSets . map (fmap IntSet.fromList) . adjacencyList) % x == x
+    test "fromAdjacencyIntSets . map (fmap IntSet.fromList)           == stars" $ \x ->
+         (fromAdjacencyIntSets . map (fmap IntSet.fromList)) x        == id % stars x
 
-    test "overlay (fromAdjacencyIntSets xs) (fromAdjacencyIntSets ys)       == fromAdjacencyIntSets (xs ++ ys)" $ \xs ys ->
-          overlay (fromAdjacencyIntSets xs) % fromAdjacencyIntSets ys       == fromAdjacencyIntSets (xs ++ ys)
+    test "overlay (fromAdjacencyIntSets xs) (fromAdjacencyIntSets ys) == fromAdjacencyIntSets (xs ++ ys)" $ \xs ys ->
+          overlay (fromAdjacencyIntSets xs) % fromAdjacencyIntSets ys == fromAdjacencyIntSets (xs ++ ys)
 
 testIsSubgraphOf :: Testsuite -> IO ()
 testIsSubgraphOf (Testsuite prefix (%)) = do

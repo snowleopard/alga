@@ -60,8 +60,10 @@ library
     hs-source-dirs:     src
     exposed-modules:    Algebra.Graph,
                         Algebra.Graph.AdjacencyIntMap,
+                        Algebra.Graph.AdjacencyIntMap.Algorithm,
                         Algebra.Graph.AdjacencyIntMap.Internal,
                         Algebra.Graph.AdjacencyMap,
+                        Algebra.Graph.AdjacencyMap.Algorithm,
                         Algebra.Graph.AdjacencyMap.Internal,
                         Algebra.Graph.Class,
                         Algebra.Graph.Export,

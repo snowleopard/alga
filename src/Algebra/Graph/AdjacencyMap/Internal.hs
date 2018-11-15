@@ -12,8 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap.Internal (
     -- * Adjacency map implementation
-    AdjacencyMap (..), empty, vertex, overlay, connect, fromAdjacencySets,
-    consistent, internalEdgeList, referredToVertexSet
+    AdjacencyMap (..), consistent, internalEdgeList, referredToVertexSet
   ) where
 
 import Prelude ()
@@ -106,19 +105,20 @@ The total order on graphs is defined using /size-lexicographic/ comparison:
 
 Here are a few examples:
 
-@'vertex' 1 < 'vertex' 2
-'vertex' 3 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
-'vertex' 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 1
+@'Algebra.Graph.AdjacencyMap.vertex' 1 < 'Algebra.Graph.AdjacencyMap.vertex' 2
+'Algebra.Graph.AdjacencyMap.vertex' 3 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
+'Algebra.Graph.AdjacencyMap.vertex' 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 1
 'Algebra.Graph.AdjacencyMap.edge' 1 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
 'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 1 + 'Algebra.Graph.AdjacencyMap.edge' 2 2
 'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 3@
 
-Note that the resulting order refines the 'isSubgraphOf' relation and is
-compatible with 'overlay' and 'connect' operations:
+Note that the resulting order refines the 'Algebra.Graph.AdjacencyMap.isSubgraphOf'
+relation and is compatible with 'Algebra.Graph.AdjacencyMap.overlay' and
+'Algebra.Graph.AdjacencyMap.connect' operations:
 
 @'Algebra.Graph.AdjacencyMap.isSubgraphOf' x y ==> x <= y@
 
-@'empty' <= x
+@'Algebra.Graph.AdjacencyMap.empty' <= x
 x     <= x + y
 x + y <= x * y@
 -}
@@ -127,8 +127,8 @@ newtype AdjacencyMap a = AM {
     -- its direct successors. Complexity: /O(1)/ time and memory.
     --
     -- @
-    -- adjacencyMap 'empty'      == Map.'Map.empty'
-    -- adjacencyMap ('vertex' x) == Map.'Map.singleton' x Set.'Set.empty'
+    -- adjacencyMap 'Algebra.Graph.AdjacencyMap.empty'      == Map.'Map.empty'
+    -- adjacencyMap ('Algebra.Graph.AdjacencyMap.vertex' x) == Map.'Map.singleton' x Set.'Set.empty'
     -- adjacencyMap ('Algebra.Graph.AdjacencyMap.edge' 1 1) == Map.'Map.singleton' 1 (Set.'Set.singleton' 1)
     -- adjacencyMap ('Algebra.Graph.AdjacencyMap.edge' 1 2) == Map.'Map.fromList' [(1,Set.'Set.singleton' 2), (2,Set.'Set.empty')]
     -- @
@@ -160,101 +160,19 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
         eshow xs       = "edges "    ++ show xs
         used           = Set.toAscList (referredToVertexSet m)
 
--- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
---
--- @
--- 'Algebra.Graph.AdjacencyMap.isEmpty'     empty == True
--- 'Algebra.Graph.AdjacencyMap.hasVertex' x empty == False
--- 'Algebra.Graph.AdjacencyMap.vertexCount' empty == 0
--- 'Algebra.Graph.AdjacencyMap.edgeCount'   empty == 0
--- @
-empty :: AdjacencyMap a
-empty = AM Map.empty
-{-# NOINLINE [1] empty #-}
-
--- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
---
--- @
--- 'Algebra.Graph.AdjacencyMap.isEmpty'     (vertex x) == False
--- 'Algebra.Graph.AdjacencyMap.hasVertex' x (vertex x) == True
--- 'Algebra.Graph.AdjacencyMap.vertexCount' (vertex x) == 1
--- 'Algebra.Graph.AdjacencyMap.edgeCount'   (vertex x) == 0
--- @
-vertex :: a -> AdjacencyMap a
-vertex x = AM $ Map.singleton x Set.empty
-{-# NOINLINE [1] vertex #-}
-
--- | /Overlay/ two graphs. This is a commutative, associative and idempotent
--- operation with the identity 'empty'.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- 'Algebra.Graph.AdjacencyMap.isEmpty'     (overlay x y) == 'Algebra.Graph.AdjacencyMap.isEmpty'   x   && 'Algebra.Graph.AdjacencyMap.isEmpty'   y
--- 'Algebra.Graph.AdjacencyMap.hasVertex' z (overlay x y) == 'Algebra.Graph.AdjacencyMap.hasVertex' z x || 'Algebra.Graph.AdjacencyMap.hasVertex' z y
--- 'Algebra.Graph.AdjacencyMap.vertexCount' (overlay x y) >= 'Algebra.Graph.AdjacencyMap.vertexCount' x
--- 'Algebra.Graph.AdjacencyMap.vertexCount' (overlay x y) <= 'Algebra.Graph.AdjacencyMap.vertexCount' x + 'Algebra.Graph.AdjacencyMap.vertexCount' y
--- 'Algebra.Graph.AdjacencyMap.edgeCount'   (overlay x y) >= 'Algebra.Graph.AdjacencyMap.edgeCount' x
--- 'Algebra.Graph.AdjacencyMap.edgeCount'   (overlay x y) <= 'Algebra.Graph.AdjacencyMap.edgeCount' x   + 'Algebra.Graph.AdjacencyMap.edgeCount' y
--- 'Algebra.Graph.AdjacencyMap.vertexCount' (overlay 1 2) == 2
--- 'Algebra.Graph.AdjacencyMap.edgeCount'   (overlay 1 2) == 0
--- @
-overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-overlay x y = AM $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
-{-# NOINLINE [1] overlay #-}
-
--- | /Connect/ two graphs. This is an associative operation with the identity
--- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
--- number of edges in the resulting graph is quadratic with respect to the number
--- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
---
--- @
--- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'Algebra.Graph.AdjacencyMap.isEmpty'   y
--- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'Algebra.Graph.AdjacencyMap.hasVertex' z y
--- 'vertexCount' (connect x y) >= 'vertexCount' x
--- 'vertexCount' (connect x y) <= 'vertexCount' x + 'Algebra.Graph.AdjacencyMap.vertexCount' y
--- 'edgeCount'   (connect x y) >= 'edgeCount' x
--- 'edgeCount'   (connect x y) >= 'edgeCount' y
--- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'Algebra.Graph.AdjacencyMap.vertexCount' y
--- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'Algebra.Graph.AdjacencyMap.vertexCount' y + 'Algebra.Graph.AdjacencyMap.edgeCount' x + 'Algebra.Graph.AdjacencyMap.edgeCount' y
--- 'vertexCount' (connect 1 2) == 2
--- 'edgeCount'   (connect 1 2) == 1
--- @
-connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-connect x y = AM $ Map.unionsWith Set.union [ adjacencyMap x, adjacencyMap y,
-    fromSet (const . keysSet $ adjacencyMap y) (keysSet $ adjacencyMap x) ]
-{-# NOINLINE [1] connect #-}
-
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap'
 -- for more details.
 instance (Ord a, Num a) => Num (AdjacencyMap a) where
-    fromInteger = vertex . fromInteger
-    (+)         = overlay
-    (*)         = connect
-    signum      = const empty
-    abs         = id
-    negate      = id
+    fromInteger x = AM $ Map.singleton (fromInteger x) Set.empty
+    x + y  = AM $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
+    x * y  = AM $ Map.unionsWith Set.union [ adjacencyMap x, adjacencyMap y,
+        fromSet (const . keysSet $ adjacencyMap y) (keysSet $ adjacencyMap x) ]
+    signum = const (AM Map.empty)
+    abs    = id
+    negate = id
 
 instance NFData a => NFData (AdjacencyMap a) where
     rnf (AM a) = rnf a
-
--- | Construct a graph from a list of adjacency sets.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- fromAdjacencySets []                                        == 'Algebra.Graph.AdjacencyMap.empty'
--- fromAdjacencySets [(x, Set.'Set.empty')]                          == 'Algebra.Graph.AdjacencyMap.vertex' x
--- fromAdjacencySets [(x, Set.'Set.singleton' y)]                    == 'Algebra.Graph.AdjacencyMap.edge' x y
--- fromAdjacencySets . map (fmap Set.'Set.fromList') . 'Algebra.Graph.AdjacencyMap.adjacencyList' == id
--- 'Algebra.Graph.AdjacencyMap.overlay' (fromAdjacencySets xs) (fromAdjacencySets ys)       == fromAdjacencySets (xs ++ ys)
--- @
-fromAdjacencySets :: Ord a => [(a, Set a)] -> AdjacencyMap a
-fromAdjacencySets ss = AM $ Map.unionWith Set.union vs es
-  where
-    vs = Map.fromSet (const Set.empty) . Set.unions $ map snd ss
-    es = Map.fromListWith Set.union ss
 
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices. It should be impossible to create an
