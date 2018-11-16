@@ -12,7 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.NonEmpty.AdjacencyMap.Internal (
     -- * Adjacency map implementation
-    AdjacencyMap (..), vertex, overlay, connect, consistent
+    AdjacencyMap (..), consistent
     ) where
 
 import Control.DeepSeq
@@ -53,26 +53,26 @@ show (1 * 2 + 3 :: AdjacencyMap Int) == "overlay (vertex 3) (edge 1 2)"@
 
 The 'Eq' instance satisfies the following laws of algebraic graphs:
 
-    * 'overlay' is commutative, associative and idempotent:
+    * 'Algebra.Graph.NonEmpty.AdjacencyMap.overlay' is commutative, associative and idempotent:
 
         >       x + y == y + x
         > x + (y + z) == (x + y) + z
         >       x + x == x
 
-    * 'connect' is associative:
+    * 'Algebra.Graph.NonEmpty.AdjacencyMap.connect' is associative:
 
         > x * (y * z) == (x * y) * z
 
-    * 'connect' distributes over 'overlay':
+    * 'Algebra.Graph.NonEmpty.AdjacencyMap.connect' distributes over 'Algebra.Graph.NonEmpty.AdjacencyMap.overlay':
 
         > x * (y + z) == x * y + x * z
         > (x + y) * z == x * z + y * z
 
-    * 'connect' can be decomposed:
+    * 'Algebra.Graph.NonEmpty.AdjacencyMap.connect' can be decomposed:
 
         > x * y * z == x * y + x * z + y * z
 
-    * 'connect' satisfies absorption and saturation:
+    * 'Algebra.Graph.NonEmpty.AdjacencyMap.connect' satisfies absorption and saturation:
 
         > x * y + x + y == x * y
         >     x * x * x == x * x
@@ -89,17 +89,19 @@ The total order on graphs is defined using /size-lexicographic/ comparison:
 
 Here are a few examples:
 
-@'vertex' 1 < 'vertex' 2
-'vertex' 3 < 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 2
-'vertex' 1 < 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 1
+@'Algebra.Graph.NonEmpty.AdjacencyMap.vertex' 1 < 'Algebra.Graph.NonEmpty.AdjacencyMap.vertex' 2
+'Algebra.Graph.NonEmpty.AdjacencyMap.vertex' 3 < 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 2
+'Algebra.Graph.NonEmpty.AdjacencyMap.vertex' 1 < 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 1
 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 1 < 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 2
 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 1 + 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 2 2
 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 3@
 
-Note that the resulting order refines the 'isSubgraphOf' relation and is
-compatible with 'overlay' and 'connect' operations:
+Note that the resulting order refines the
+'Algebra.Graph.NonEmpty.AdjacencyMap.isSubgraphOf' relation and is compatible
+with 'Algebra.Graph.NonEmpty.AdjacencyMap.overlay' and
+'Algebra.Graph.NonEmpty.AdjacencyMap.connect' operations:
 
-@'Algebra.Graph.AdjacencyMap.isSubgraphOf' x y ==> x <= y@
+@'Algebra.Graph.NonEmpty.AdjacencyMap.isSubgraphOf' x y ==> x <= y@
 
 @x     <= x + y
 x + y <= x * y@
@@ -110,20 +112,20 @@ newtype AdjacencyMap a = NAM {
     --
     -- @
     -- adjacencyMap ('vertex' x) == Map.'Map.singleton' x Set.'Set.empty'
-    -- adjacencyMap ('Algebra.Graph.AdjacencyMap.edge' 1 1) == Map.'Map.singleton' 1 (Set.'Set.singleton' 1)
-    -- adjacencyMap ('Algebra.Graph.AdjacencyMap.edge' 1 2) == Map.'Map.fromList' [(1,Set.'Set.singleton' 2), (2,Set.'Set.empty')]
+    -- adjacencyMap ('Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 1) == Map.'Map.singleton' 1 (Set.'Set.singleton' 1)
+    -- adjacencyMap ('Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 2) == Map.'Map.fromList' [(1,Set.'Set.singleton' 2), (2,Set.'Set.empty')]
     -- @
     am :: AM.AdjacencyMap a } deriving (Eq, NFData, Ord)
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap' for
 -- more details.
 instance (Ord a, Num a) => Num (AdjacencyMap a) where
-    fromInteger = vertex . fromInteger
-    (+)         = overlay
-    (*)         = connect
-    signum      = error "NonEmpty.AdjacencyMap.signum cannot be implemented."
-    abs         = id
-    negate      = id
+    fromInteger   = NAM . AM.vertex . fromInteger
+    NAM x + NAM y = NAM (AM.overlay x y)
+    NAM x * NAM y = NAM (AM.connect x y)
+    signum        = error "NonEmpty.AdjacencyMap.signum cannot be implemented."
+    abs           = id
+    negate        = id
 
 instance (Ord a, Show a) => Show (AdjacencyMap a) where
     show (NAM (AM.AM m))
@@ -139,56 +141,6 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
         eshow [(x, y)] = "edge "     ++ show x ++ " " ++ show y
         eshow xs       = "edges1 "    ++ show xs
         used           = Set.toAscList (AM.referredToVertexSet m)
-
--- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
---
--- @
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' x (vertex x) == True
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (vertex x) == 1
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (vertex x) == 0
--- @
-vertex :: a -> AdjacencyMap a
-vertex = NAM . AM.vertex
-{-# NOINLINE [1] vertex #-}
-
--- | /Overlay/ two graphs. This is a commutative, associative and idempotent
--- operation with the identity 'empty'.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' z (overlay x y) == 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' z x || 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' z y
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (overlay x y) >= 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' x
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (overlay x y) <= 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' x + 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' y
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (overlay x y) >= 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' x
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (overlay x y) <= 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' x   + 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' y
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (overlay 1 2) == 2
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (overlay 1 2) == 0
--- @
-overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-overlay (NAM x) (NAM y) = NAM (AM.overlay x y)
-{-# NOINLINE [1] overlay #-}
-
--- | /Connect/ two graphs. This is an associative operation with the identity
--- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
--- number of edges in the resulting graph is quadratic with respect to the number
--- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
---
--- @
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' z (connect x y) == 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' z x || 'Algebra.Graph.NonEmpty.AdjacencyMap.hasVertex' z y
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (connect x y) >= 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' x
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (connect x y) <= 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' x + 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' y
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' x
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' y
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (connect x y) >= 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' x * 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' y
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (connect x y) <= 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' x * 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' y + 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' x + 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount' y
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.vertexCount' (connect 1 2) == 2
--- 'Algebra.Graph.NonEmpty.AdjacencyMap.edgeCount'   (connect 1 2) == 1
--- @
-connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-connect (NAM x) (NAM y) = NAM (AM.connect x y)
-{-# NOINLINE [1] connect #-}
 
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices, and the graph is non-empty. It should be

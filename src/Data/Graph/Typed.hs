@@ -96,7 +96,7 @@ fromAdjacencyIntMap (AIM.AM m) = GraphKL
 -- 'Algebra.Graph.AdjacencyMap.forest' (dfsForest % 'Algebra.Graph.AdjacencyMap.edge' 2 1)           == 'AM.vertices' [1, 2]
 -- 'AM.isSubgraphOf' ('Algebra.Graph.AdjacencyMap.forest' $ dfsForest % x) x == True
 -- dfsForest % 'Algebra.Graph.AdjacencyMap.forest' (dfsForest % x)      == dfsForest % x
--- dfsForest % 'AM.vertices' vs                 == map (\\v -> Node v []) ('Data.List.nub' $ 'Data.List.sort' vs)
+-- dfsForest % 'AM.vertices' vs                 == 'map' (\\v -> Node v []) ('Data.List.nub' $ 'Data.List.sort' vs)
 -- 'Algebra.Graph.AdjacencyMap.dfsForestFrom' ('Algebra.Graph.AdjacencyMap.vertexList' x) % x        == dfsForest % x
 -- dfsForest % (3 * (1 + 4) * (1 + 5))     == [ Node { rootLabel = 1
 --                                                   , subForest = [ Node { rootLabel = 5
@@ -120,7 +120,7 @@ dfsForest (GraphKL g r _) = fmap (fmap r) (KL.dff g)
 -- 'Algebra.Graph.AdjacencyMap.forest' (dfsForestFrom [2, 1] % 'Algebra.Graph.AdjacencyMap.edge' 1 2)       == 'Algebra.Graph.AdjacencyMap.vertices' [1, 2]
 -- 'Algebra.Graph.AdjacencyMap.isSubgraphOf' ('Algebra.Graph.AdjacencyMap.forest' $ dfsForestFrom vs % x) x == True
 -- dfsForestFrom ('Algebra.Graph.AdjacencyMap.vertexList' x) % x               == 'dfsForest' % x
--- dfsForestFrom vs               % 'Algebra.Graph.AdjacencyMap.vertices' vs   == map (\\v -> Node v []) ('Data.List.nub' vs)
+-- dfsForestFrom vs               % 'Algebra.Graph.AdjacencyMap.vertices' vs   == 'map' (\\v -> Node v []) ('Data.List.nub' vs)
 -- dfsForestFrom []               % x             == []
 -- dfsForestFrom [1, 4] % (3 * (1 + 4) * (1 + 5)) == [ Node { rootLabel = 1
 --                                                          , subForest = [ Node { rootLabel = 5

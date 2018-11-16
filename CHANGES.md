@@ -2,6 +2,9 @@
 
 ## 0.3
 
+* #128, #130: Modify the SCC algorithm to return non-empty graph components.
+* #130: Move adjacency map algorithms to separate modules.
+* #130: Export `fromAdjacencySets` and `fromAdjacencyIntSets`.
 * #138: Do not require `Eq` instance on the string type when exporting graphs.
 * #136: Rename `Algebra.Graph.NonEmpty.NonEmptyGraph` to `Algebra.Graph.NonEmpty.Graph`.
 * #136: Add `Algebra.Graph.NonEmpty.AdjacencyMap`.
