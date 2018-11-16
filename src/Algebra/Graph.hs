@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, TupleSections #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
@@ -32,8 +32,10 @@ module Algebra.Graph (
     isSubgraphOf, (===),
 
     -- * Graph properties
-    isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, edgeSet, adjacencyList,
+    isEmpty, size, hasVertexP, hasVertex, hasEdgeP, hasEdge, vertexCount,
+    edgeCount, vertexList, edgeList, vertexSet, edgeSet, adjacencyList,
+
+    findVertices, findEdges,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars, tree, forest, mesh, torus,
@@ -58,6 +60,7 @@ import Control.DeepSeq (NFData (..))
 import Control.Monad.Compat
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
+import Data.List (intersect)
 import Data.Monoid ((<>))
 import Data.Maybe (fromMaybe)
 import Data.Tree
@@ -472,6 +475,19 @@ isEmpty = foldg True (const False) (&&) (&&)
 size :: Graph a -> Int
 size = foldg 1 (const 1) (+) (+)
 
+-- | Find all vertices in a graph matching the supplied predicate.
+-- | Complexity: XXX
+{-# INLINE [1] findVertices #-}
+findVertices :: (a -> Bool) -> Graph a -> [a]
+findVertices p = foldg [] (\x -> [ x | p x ]) (++) (++)
+
+-- | Check if a graph contains a vertex which satisfied the supplied predicate.
+-- Complexity: /O(s)/ time.
+--
+{-# INLINE [1] hasVertexP #-}
+hasVertexP :: (a -> Bool) -> Graph a -> Bool
+hasVertexP pred = foldg False pred (||) (||)
+
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
 --
@@ -483,7 +499,24 @@ size = foldg 1 (const 1) (+) (+)
 -- @
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 hasVertex :: Eq a => a -> Graph a -> Bool
-hasVertex x = foldg False (==x) (||) (||)
+hasVertex x g = not . null $ findVertices (== x) g
+
+-- | Find all edges in a graph whose vertices match the supplied predicates.
+-- | Complexity: XXX
+{-# INLINE [1] findEdges #-}
+findEdges :: (a -> Bool) -> (a -> Bool) -> Graph a -> [(a, a)]
+findEdges f t (Overlay a b) = findEdges f t a ++ findEdges f t b
+findEdges f t (Connect a b) =
+    [(x,y) | [x,y] <- sequence [findVertices f a, findVertices t b]] ++ findEdges f t (Overlay a b)
+findEdges _ _ _ = []
+
+-- | Check if a graph contains an edge whose vertices match the supplied
+-- predicates.
+-- Complexity: XXX
+--
+{-# INLINE [1] hasEdgeP #-}
+hasEdgeP :: (a -> Bool) -> (a -> Bool) -> Graph a -> Bool
+hasEdgeP f t g = not . null $ findEdges f t g
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
@@ -497,18 +530,7 @@ hasVertex x = foldg False (==x) (||) (||)
 -- @
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = hit g == Edge
-  where
-    hit Empty         = Miss
-    hit (Vertex x   ) = if x == s then Tail else Miss
-    hit (Overlay x y) = case hit x of
-        Miss -> hit y
-        Tail -> max Tail (hit y)
-        Edge -> Edge
-    hit (Connect x y) = case hit x of
-        Miss -> hit y
-        Tail -> if hasVertex t y then Edge else Tail
-        Edge -> Edge
+hasEdge s t g = hasEdgeP (==s) (==t) g
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
