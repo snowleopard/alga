@@ -77,11 +77,10 @@ transposeDotConnects = transpose . connects
 inspect $ 'connectsTransposed === 'transposeDotConnects
 
 --- transpose . vertices
-verticesTransposed, transposeDotVertices :: [a] -> Graph a
-verticesTransposed   = overlays . map vertex
+transposeDotVertices :: [a] -> Graph a
 transposeDotVertices = transpose . overlays . map vertex
 
-inspect $ 'verticesTransposed === 'transposeDotVertices
+inspect $ 'vertices' === 'transposeDotVertices
 
 --- transpose . clique
 cliqueTransposed, transposeDotClique :: [a] -> Graph a
