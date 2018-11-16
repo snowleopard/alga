@@ -978,7 +978,7 @@ splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 -- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Graph a -> Graph a
-transpose = foldg Empty Vertex Overlay (flipR Connect)
+transpose = foldg Empty Vertex Overlay (flip Connect)
 {-# INLINE transpose #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
@@ -1110,11 +1110,11 @@ sparsify graph = res
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The rules for foldg work like this.
 
-* Up to (but not including) phase 1, we use the "buildG/f" rule to
-  rewrite all saturated applications of f with its buildG/foldg
-  form, hoping for fusion to happen (through the "foldg/buildG" rule).
+* Up to (but not including) phase 1, we use the "buildR/f" rule to
+  rewrite all saturated applications of f with its buildR/foldg
+  form, hoping for fusion to happen (through the "foldg/buildR" rule).
 
-  In phase 1 and 0, we switch off these rules, inline buildG, and
+  In phase 1 and 0, we switch off these rules, inline buildR, and
   switch on the "graph/f" rule, which rewrites the "foldg/f"
   thing back into plain function if needed.
 
@@ -1122,9 +1122,9 @@ The rules for foldg work like this.
   (along with build's unfolding) else we'd get an infinite loop
   in the rules. Hence the activation control below.
 
-* R functions (R for Rewrite) are here to remember f after applying a
-  "builG/f" rule. These functions are higher-order functions and therefore
-  benefits from inlining.
+* composeR and matchR are here to remember the original function after
+  applying a "builR/f" rule. These functions are higher-order functions
+  and therefore benefits from inlining in final phase.
 
 * The "fmapR/fmapR" rule optimises compositions of fmapR
 -}
@@ -1140,10 +1140,6 @@ composeR = (.)
 matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
 matchR e v p = \x -> if p x then v x else e
 {-# INLINE [0] matchR #-}
-
-flipR :: (b -> b -> b) -> (b -> b -> b)
-flipR = flip
-{-# INLINE [0] flipR #-}
 
 -- Rules to transform a buildR-equivalent function into its equivalent
 {-# RULES
