@@ -67,7 +67,6 @@ import Algebra.Graph.Internal
 
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
-import qualified Algebra.Graph.Fold.Internal   as F
 import qualified Control.Applicative           as Ap
 import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
@@ -1129,8 +1128,10 @@ The rules for foldg work like this.
 * The "fmapR/fmapR" rule optimises compositions of fmapR
 -}
 
-buildR :: forall a. F.Fold a -> Graph a
-buildR = F.foldg Empty Vertex Overlay Connect
+type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
+
+buildR :: forall a. Foldg a -> Graph a
+buildR g = g Empty Vertex Overlay Connect
 {-# INLINE [1] buildR #-}
 
 composeR :: (b -> c) -> (a -> b) -> a -> c
@@ -1145,27 +1146,27 @@ matchR e v p = \x -> if p x then v x else e
 {-# RULES
 -- Transform a fmapR into its build equivalent
 "buildR/fmapR"  forall f g.
-  fmapR  f g = buildR (F.Fold $ \e v o c -> foldg e (composeR v f) o c g)
+  fmapR  f g = buildR (\e v o c -> foldg e (composeR v f) o c g)
 
 -- Transform an induce into its build equivalent
 "buildR/induce"    [~1] forall p g.
-  induce p g = buildR (F.Fold $ \e v o c -> foldg e (matchR e v p) o c g)
+  induce p g = buildR (\e v o c -> foldg e (matchR e v p) o c g)
 
 "buildR/foldg(fc)" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b))  g.
-  foldg Empty Vertex Overlay (f Connect) g = buildR (F.Fold $ \e v o c -> foldg e v o (f c) g)
+  foldg Empty Vertex Overlay (f Connect) g = buildR (\e v o c -> foldg e v o (f c) g)
 
 "buildR/foldg(fo)" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b))  g.
-  foldg Empty Vertex (f Overlay) Connect g = buildR (F.Fold $ \e v o c -> foldg e v (f o) c g)
+  foldg Empty Vertex (f Overlay) Connect g = buildR (\e v o c -> foldg e v (f o) c g)
 
 "buildR/foldg(fo)(hc)" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b)) (h::forall b. (b -> b -> b) -> (b -> b -> b)) g.
-  foldg Empty Vertex (f Overlay) (h Connect) g = buildR (F.Fold $ \e v o c -> foldg e v (f o) (h c) g)
+  foldg Empty Vertex (f Overlay) (h Connect) g = buildR (\e v o c -> foldg e v (f o) (h c) g)
  #-}
 
 -- Rules to merge rewrited functions
 {-# RULES
 -- Merge a foldg followed by a buildR
-"foldg/buildR" forall e v o c (g::F.Fold a).
-               foldg e v o c (buildR g) = F.foldg e v o c g
+"foldg/buildR" forall e v o c (g::Foldg a).
+               foldg e v o c (buildR g) = g e v o c
 
 -- Merge two composeR
 -- This occurs when two adjacent 'fmapR' were rewritted in their

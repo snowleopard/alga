@@ -60,8 +60,8 @@ import Control.Applicative (Alternative(empty, (<|>)))
 import Control.Monad.Compat (MonadPlus, mfilter)
 import Data.Tree
 
-import qualified Algebra.Graph               as G
-import qualified Algebra.Graph.Fold.Internal as F
+import qualified Algebra.Graph       as G
+import qualified Algebra.Graph.Fold  as F
 
 {-|
 The core type class for constructing algebraic graphs is defined by introducing
