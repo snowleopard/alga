@@ -1122,7 +1122,7 @@ The rules for foldg work like this.
   in the rules. Hence the activation control below.
 
 * composeR and matchR are here to remember the original function after
-  applying a "builR/f" rule. These functions are higher-order functions
+  applying a "buildR/f" rule. These functions are higher-order functions
   and therefore benefits from inlining in final phase.
 
 * The "fmapR/fmapR" rule optimises compositions of fmapR
@@ -1130,7 +1130,7 @@ The rules for foldg work like this.
 
 type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
 
-buildR :: forall a. Foldg a -> Graph a
+buildR :: Foldg a -> Graph a
 buildR g = g Empty Vertex Overlay Connect
 {-# INLINE [1] buildR #-}
 
