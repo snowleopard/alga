@@ -71,21 +71,20 @@ inspect $ 'overlaysTransposed === 'transposeDotOverlays
 
 --- transpose . connects
 connectsTransposed, transposeDotConnects :: [Graph a] -> Graph a
-connectsTransposed   = connects . reverse . map transpose
+connectsTransposed   = fromMaybe Empty . foldr (maybeF (flip Connect) . transpose) Nothing
 transposeDotConnects = transpose . connects
 
 inspect $ 'connectsTransposed === 'transposeDotConnects
 
 --- transpose . vertices
-verticesTransposed, transposeDotVertices :: [a] -> Graph a
-verticesTransposed   = overlays . map vertex
+transposeDotVertices :: [a] -> Graph a
 transposeDotVertices = transpose . overlays . map vertex
 
-inspect $ 'verticesTransposed === 'transposeDotVertices
+inspect $ 'vertices' === 'transposeDotVertices
 
 --- transpose . clique
 cliqueTransposed, transposeDotClique :: [a] -> Graph a
-cliqueTransposed   = connects . reverse . map vertex
+cliqueTransposed   = fromMaybe Empty . foldr (maybeF (flip Connect) . Vertex) Nothing
 transposeDotClique = transpose . connects . map vertex
 
 inspect $ 'cliqueTransposed === 'transposeDotClique
