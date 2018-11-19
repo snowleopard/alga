@@ -136,18 +136,21 @@ newtype AdjacencyIntMap = AM {
     adjacencyIntMap :: IntMap IntSet } deriving Eq
 
 instance Show AdjacencyIntMap where
-    show (AM m)
-        | null vs    = "empty"
-        | null es    = vshow vs
-        | vs == used = eshow es
-        | otherwise  = "overlay (" ++ vshow (vs \\ used) ++ ") (" ++ eshow es ++ ")"
+    showsPrec p (AM m)
+        | null vs    = showString "empty"
+        | null es    = showParen (p > 10) $ vshow vs
+        | vs == used = showParen (p > 10) $ eshow es
+        | otherwise  = showParen (p > 10) $
+                           showString "overlay (" . vshow (vs \\ used) .
+                           showString ") (" . eshow es . showString ")"
       where
         vs             = IntSet.toAscList (keysSet m)
         es             = internalEdgeList m
-        vshow [x]      = "vertex "   ++ show x
-        vshow xs       = "vertices " ++ show xs
-        eshow [(x, y)] = "edge "     ++ show x ++ " " ++ show y
-        eshow xs       = "edges "    ++ show xs
+        vshow [x]      = showString "vertex "   . showsPrec 11 x
+        vshow xs       = showString "vertices " . showsPrec 11 xs
+        eshow [(x, y)] = showString "edge "     . showsPrec 11 x .
+                         showString " "         . showsPrec 11 y
+        eshow xs       = showString "edges "    . showsPrec 11 xs
         used           = IntSet.toAscList (referredToVertexSet m)
 
 instance Ord AdjacencyIntMap where

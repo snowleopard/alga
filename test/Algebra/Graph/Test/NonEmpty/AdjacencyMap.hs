@@ -100,6 +100,12 @@ testNonEmptyAdjacencyMap = do
     test "show (1 * 2 + 3 :: AdjacencyMap Int) == \"overlay (vertex 3) (edge 1 2)\"" $
           show (1 * 2 + 3 :: AdjacencyMap Int) == "overlay (vertex 3) (edge 1 2)"
 
+    test "show (vertex (vertex 1) :: AdjacencyMap (AdjacencyMap Int)) == \"vertex (vertex 1)\"" $
+          show (vertex (vertex 1) :: AdjacencyMap (AdjacencyMap Int)) == "vertex (vertex 1)"
+
+    test "show (edge (edge 1 2) (edge 1 2) :: AdjacencyMap (AdjacencyMap Int)) == \"edge (edge 1 2) (edge 1 2)\"" $
+          show (edge (edge 1 2) (edge 1 2) :: AdjacencyMap (AdjacencyMap Int)) == "edge (edge 1 2) (edge 1 2)"
+
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.toNonEmpty ============"
     test "toNonEmpty empty              == Nothing" $
           toNonEmpty (AM.empty :: AM.AdjacencyMap Int) == Nothing

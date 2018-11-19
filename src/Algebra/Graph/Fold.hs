@@ -174,7 +174,7 @@ x + y <= x * y@
 newtype Fold a = Fold { runFold :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b }
 
 instance (Ord a, Show a) => Show (Fold a) where
-    show = show . foldg AM.empty AM.vertex AM.overlay AM.connect
+    showsPrec p = showsPrec p . foldg AM.empty AM.vertex AM.overlay AM.connect
 
 instance Ord a => Eq (Fold a) where
     x == y = T.toAdjacencyMap x == T.toAdjacencyMap y
