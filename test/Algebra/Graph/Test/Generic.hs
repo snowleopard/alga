@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, RankNTypes, ViewPatterns #-}
+{-# LANGUAGE GADTs, NegativeLiterals, RankNTypes, ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Generic
@@ -122,20 +122,20 @@ testShow (Testsuite prefix (%)) = do
     test "show (1 * 2 + 3) == \"overlay (vertex 3) (edge 1 2)\"" $
           show % (1 * 2 + 3) == "overlay (vertex 3) (edge 1 2)"
 
-    test "showsPrec 11 empty \"\" == \"empty\"" $
-          (showsPrec 11 % empty) "" == "empty"
+    test "show (vertex (-1)                            ) == \"vertex (-1)\"" $
+          show % (vertex (-1)                            ) == "vertex (-1)"
 
-    test "showsPrec 11 1 \"\" == \"(vertex 1)\"" $
-          (showsPrec 11 % 1) "" == "(vertex 1)"
+    test "show (vertex (-1) + vertex (-2)              ) == \"vertices [-2,-1]\"" $
+          show % (vertex (-1) + vertex (-2)              ) == "vertices [-2,-1]"
 
-    test "showsPrec 11 (1 * 2) \"\" == \"(edge 1 2)\"" $
-          (showsPrec 11 % (1 * 2)) "" == "(edge 1 2)"
+    test "show (vertex (-1) * vertex (-2)              ) == \"edge (-1) (-2)\"" $
+          show % (vertex (-1) * vertex (-2)              ) == "edge (-1) (-2)"
 
-    test "showsPrec 11 (1 * 2 * 3) \"\" == \"(edges [(1,2),(1,3),(2,3)])\"" $
-          (showsPrec 11 % (1 * 2 * 3)) "" == "(edges [(1,2),(1,3),(2,3)])"
+    test "show (vertex (-1) * vertex (-2) * vertex (-3)) == \"edges [(-2,-3),(-1,-3),(-1,-2)]\"" $
+          show % (vertex (-1) * vertex (-2) * vertex (-3)) == "edges [(-2,-3),(-1,-3),(-1,-2)]"
 
-    test "showsPrec 11 (1 * 2 + 3) \"\" == \"(overlay (vertex 3) (edge 1 2))\"" $
-          (showsPrec 11 % (1 * 2 + 3)) "" == "(overlay (vertex 3) (edge 1 2))"
+    test "show (vertex (-1) * vertex (-2) + vertex (-3)) == \"overlay (vertex (-3)) (edge (-1) (-2))\"" $
+          show % (vertex (-1) * vertex (-2) + vertex (-3)) == "overlay (vertex (-3)) (edge (-1) (-2))"
 
 
 testOrd :: Testsuite -> IO ()

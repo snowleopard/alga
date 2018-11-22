@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, OverloadedLists, ViewPatterns #-}
+{-# LANGUAGE CPP, NegativeLiterals, OverloadedLists, ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.NonEmpty.AdjacencyMap
@@ -100,11 +100,20 @@ testNonEmptyAdjacencyMap = do
     test "show (1 * 2 + 3 :: AdjacencyMap Int) == \"overlay (vertex 3) (edge 1 2)\"" $
           show (1 * 2 + 3 :: AdjacencyMap Int) == "overlay (vertex 3) (edge 1 2)"
 
-    test "show (vertex (vertex 1) :: AdjacencyMap (AdjacencyMap Int)) == \"vertex (vertex 1)\"" $
-          show (vertex (vertex 1) :: AdjacencyMap (AdjacencyMap Int)) == "vertex (vertex 1)"
+    test "show (vertex (-1)                             :: AdjacencyMap Int) == \"vertex (-1)\"" $
+          show (vertex (-1)                             :: AdjacencyMap Int) == "vertex (-1)"
 
-    test "show (edge (edge 1 2) (edge 1 2) :: AdjacencyMap (AdjacencyMap Int)) == \"edge (edge 1 2) (edge 1 2)\"" $
-          show (edge (edge 1 2) (edge 1 2) :: AdjacencyMap (AdjacencyMap Int)) == "edge (edge 1 2) (edge 1 2)"
+    test "show (vertex (-1) + vertex (-2)               :: AdjacencyMap Int) == \"vertices1 [-2,-1]\"" $
+          show (vertex (-1) + vertex (-2)               :: AdjacencyMap Int) == "vertices1 [-2,-1]"
+
+    test "show (vertex (-1) * vertex (-2)               :: AdjacencyMap Int) == \"edge (-1) (-2)\"" $
+          show (vertex (-1) * vertex (-2)               :: AdjacencyMap Int) == "edge (-1) (-2)"
+
+    test "show (vertex (-1) * vertex (-2) * vertex (-3) :: AdjacencyMap Int) == \"edges1 [(-2,-3),(-1,-3),(-1,-2)]\"" $
+          show (vertex (-1) * vertex (-2) * vertex (-3) :: AdjacencyMap Int) == "edges1 [(-2,-3),(-1,-3),(-1,-2)]"
+
+    test "show (vertex (-1) * vertex (-2) + vertex (-3) :: AdjacencyMap Int) == \"overlay (vertex (-3)) (edge (-1) (-2))\"" $
+          show (vertex (-1) * vertex (-2) + vertex (-3) :: AdjacencyMap Int) == "overlay (vertex (-3)) (edge (-1) (-2))"
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.toNonEmpty ============"
     test "toNonEmpty empty              == Nothing" $
