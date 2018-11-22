@@ -126,17 +126,21 @@ data Relation a = Relation {
   } deriving Eq
 
 instance (Ord a, Show a) => Show (Relation a) where
-    show (Relation d r)
-        | Set.null d = "empty"
-        | Set.null r = vshow (Set.toAscList d)
-        | d == used  = eshow (Set.toAscList r)
-        | otherwise  = "overlay (" ++ vshow (Set.toAscList $ Set.difference d used)
-                    ++ ") (" ++ eshow (Set.toAscList r) ++ ")"
+    showsPrec p (Relation d r)
+        | Set.null d = showString "empty"
+        | Set.null r = showParen (p > 10) $ vshow (Set.toAscList d)
+        | d == used  = showParen (p > 10) $ eshow (Set.toAscList r)
+        | otherwise  = showParen (p > 10) $
+                           showString "overlay (" .
+                           vshow (Set.toAscList $ Set.difference d used) .
+                           showString ") (" . eshow (Set.toAscList r) .
+                           showString ")"
       where
-        vshow [x]      = "vertex "   ++ show x
-        vshow xs       = "vertices " ++ show xs
-        eshow [(x, y)] = "edge "     ++ show x ++ " " ++ show y
-        eshow xs       = "edges "    ++ show xs
+        vshow [x]      = showString "vertex "   . showsPrec 11 x
+        vshow xs       = showString "vertices " . showsPrec 11 xs
+        eshow [(x, y)] = showString "edge "     . showsPrec 11 x .
+                         showString " "         . showsPrec 11 y
+        eshow xs       = showString "edges "    . showsPrec 11 xs
         used           = referredToVertexSet r
 
 instance Ord a => Ord (Relation a) where

@@ -122,6 +122,22 @@ testShow (Testsuite prefix (%)) = do
     test "show (1 * 2 + 3) == \"overlay (vertex 3) (edge 1 2)\"" $
           show % (1 * 2 + 3) == "overlay (vertex 3) (edge 1 2)"
 
+    test "show (vertex (-1)                            ) == \"vertex (-1)\"" $
+          show % (vertex (-1)                            ) == "vertex (-1)"
+
+    test "show (vertex (-1) + vertex (-2)              ) == \"vertices [-2,-1]\"" $
+          show % (vertex (-1) + vertex (-2)              ) == "vertices [-2,-1]"
+
+    test "show (vertex (-1) * vertex (-2)              ) == \"edge (-1) (-2)\"" $
+          show % (vertex (-1) * vertex (-2)              ) == "edge (-1) (-2)"
+
+    test "show (vertex (-1) * vertex (-2) * vertex (-3)) == \"edges [(-2,-3),(-1,-3),(-1,-2)]\"" $
+          show % (vertex (-1) * vertex (-2) * vertex (-3)) == "edges [(-2,-3),(-1,-3),(-1,-2)]"
+
+    test "show (vertex (-1) * vertex (-2) + vertex (-3)) == \"overlay (vertex (-3)) (edge (-1) (-2))\"" $
+          show % (vertex (-1) * vertex (-2) + vertex (-3)) == "overlay (vertex (-3)) (edge (-1) (-2))"
+
+
 testOrd :: Testsuite -> IO ()
 testOrd (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "Ord ============"

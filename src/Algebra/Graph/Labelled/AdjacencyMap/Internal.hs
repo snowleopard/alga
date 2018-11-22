@@ -37,21 +37,25 @@ newtype AdjacencyMap e a = AM {
     adjacencyMap :: Map a (Map a e) } deriving (Eq, NFData)
 
 instance (Ord a, Show a, Ord e, Show e) => Show (AdjacencyMap e a) where
-    show (AM m)
-        | Set.null vs = "empty"
-        | null es     = vshow vs
-        | vs == used  = eshow es
-        | otherwise   = "overlay (" ++ vshow (vs \\ used) ++ ") (" ++ eshow es ++ ")"
+    showsPrec p (AM m)
+        | Set.null vs = showString "empty"
+        | null es     = showParen (p > 10) $ vshow vs
+        | vs == used  = showParen (p > 10) $ eshow es
+        | otherwise   = showParen (p > 10) $
+                            showString "overlay (" . vshow (vs \\ used) .
+                            showString ") ("       . eshow es . showString ")"
       where
         vs   = Map.keysSet m
         es   = internalEdgeList m
         used = referredToVertexSet m
         vshow vs = case Set.toAscList vs of
-            [x] -> "vertex "   ++ show x
-            xs  -> "vertices " ++ show xs
+            [x] -> showString "vertex "   . showsPrec 11 x
+            xs  -> showString "vertices " . showsPrec 11 xs
         eshow es = case es of
-            [(e, x, y)] -> "edge "  ++ show e ++ " " ++ show x ++ " " ++ show y
-            xs          -> "edges " ++ show xs
+            [(e, x, y)] -> showString "edge "  . showsPrec 11 e .
+                           showString " "      . showsPrec 11 x .
+                           showString " "      . showsPrec 11 y
+            xs          -> showString "edges " . showsPrec 11 xs
 
 instance (Ord e, Monoid e, Ord a) => Ord (AdjacencyMap e a) where
     compare (AM x) (AM y) = mconcat
