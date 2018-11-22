@@ -136,11 +136,11 @@ instance (Ord a, Show a) => Show (Relation a) where
                            showString ") (" . eshow (Set.toAscList r) .
                            showString ")"
       where
-        vshow [x]      = showString "vertex "   . showsPrec p x
-        vshow xs       = showString "vertices " . showsPrec p xs
-        eshow [(x, y)] = showString "edge "     . showsPrec p x .
-                         showString " "         . showsPrec p y
-        eshow xs       = showString "edges "    . showsPrec p xs
+        vshow [x]      = showString "vertex "   . showsPrec 11 x
+        vshow xs       = showString "vertices " . showsPrec 11 xs
+        eshow [(x, y)] = showString "edge "     . showsPrec 11 x .
+                         showString " "         . showsPrec 11 y
+        eshow xs       = showString "edges "    . showsPrec 11 xs
         used           = referredToVertexSet r
 
 instance Ord a => Ord (Relation a) where
