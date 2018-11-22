@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, NegativeLiterals, OverloadedLists, ViewPatterns #-}
+{-# LANGUAGE CPP, OverloadedLists, ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.NonEmpty.AdjacencyMap

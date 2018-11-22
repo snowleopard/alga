@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, NegativeLiterals, RankNTypes, ViewPatterns #-}
+{-# LANGUAGE GADTs, RankNTypes, ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Generic
