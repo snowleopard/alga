@@ -2,6 +2,8 @@
 
 ## 0.3
 
+* #143: Allow newer QuickCheck.
+* #140, #142: Fix `Show` instances.
 * #128, #130: Modify the SCC algorithm to return non-empty graph components.
 * #130: Move adjacency map algorithms to separate modules.
 * #130: Export `fromAdjacencySets` and `fromAdjacencyIntSets`.
