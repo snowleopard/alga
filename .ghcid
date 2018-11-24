@@ -1,1 +1,0 @@
---command="stack ghci --test --bench --ghci-options=\"-fno-code -fno-break-on-exception -fno-break-on-error -v1 -ferror-spans -j -fobject-code -O -fspec-constr\""
