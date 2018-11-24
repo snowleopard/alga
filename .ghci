@@ -1,0 +1,6 @@
+:set -Wall -fno-warn-name-shadowing -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
+
+:set -isrc
+:set -itest
+
+:load test/Main.hs
