@@ -1,0 +1,7 @@
+:set -Wall -fno-warn-name-shadowing -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
+
+:set -isrc
+:set -itest
+:set prompt "> "
+
+:load Main Algebra.Graph.Labelled.Example.Automaton Algebra.Graph.Labelled.Example.Network
