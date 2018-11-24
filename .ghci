@@ -2,5 +2,6 @@
 
 :set -isrc
 :set -itest
+:set prompt "> "
 
-:load test/Main.hs
+:load Main Algebra.Graph.Labelled.Example.Automaton Algebra.Graph.Labelled.Example.Network
