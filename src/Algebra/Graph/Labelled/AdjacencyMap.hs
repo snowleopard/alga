@@ -150,7 +150,7 @@ closure (AM m) = reflexiveClosure $ AM $ foldr update m vs
         go i ik = Map.fromAscList
             [ (j, e) | j <- vs, let e = get i j <+> ik <.> get k j, e /= zero ]
 
--- TODO: Optimise.
+-- TODO: Optimise using mapWithKey
 -- | Compute the /reflexive closure/ of a graph over the underlying semiring by
 -- adding a self-loop of weight 'one' to every vertex.
 reflexiveClosure :: (Ord a, Semiring e) => AdjacencyMap e a -> AdjacencyMap e a

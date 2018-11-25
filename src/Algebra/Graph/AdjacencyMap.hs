@@ -37,7 +37,10 @@ module Algebra.Graph.AdjacencyMap (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
-    induce
+    induce,
+
+    -- * Relational operations
+    compose, reflexiveClosure, symmetricClosure, transitiveClosure
     ) where
 
 import Data.Foldable (foldMap)
@@ -599,3 +602,73 @@ gmap f = AM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 -- @
 induce :: (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
 induce p = AM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjacencyMap
+
+-- | /Relational composition/ of graphs: vertices @x@ and @z@ are connected in
+-- the resulting graph if there is a vertex @y@, such that @x@ is connected to
+-- @y@ in the first graph, and @y@ is connected to @z@ in the second graph.
+-- Isolated vertices are dropped from the result. This operation is associative,
+-- has 'empty' as the /annihilating zero/, and distributes over 'overlay'.
+-- Complexity: /O(n * m * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- compose 'empty'            x                == 'empty'
+-- compose x                'empty'            == 'empty'
+-- compose x                (compose y z)    == compose (compose x y) z
+-- compose x                ('overlay' y z)    == 'overlay' (compose x y) (compose x z)
+-- compose ('overlay' x y)    z                == 'overlay' (compose x z) (compose x z)
+-- compose ('edge' x y)       ('edge' y z)       == 'edge' x z
+-- compose ('path'    [1..5]) ('path'    [1..5]) == 'edges' [(1,3), (2,4), (3,5)]
+-- compose ('circuit' [1..5]) ('circuit' [1..5]) == 'circuit' [1,3,5,2,4]
+-- @
+compose :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
+compose x y = fromAdjacencySets r
+  where
+    t = transpose x
+    d = Map.keysSet (adjacencyMap x) `Set.union` Map.keysSet (adjacencyMap y)
+    r = [ (a, cs) | b <- Set.toAscList d, let cs = postSet b y, not (Set.null cs)
+                  , a <- Set.toAscList (postSet b t) ]
+
+-- | Compute the /reflexive closure/ of a graph by adding a self-loop to every
+-- vertex.
+-- Complexity: /O(n * log(n))/ time.
+--
+-- @
+-- reflexiveClosure 'empty'              == 'empty'
+-- reflexiveClosure ('vertex' x)         == 'edge' x x
+-- reflexiveClosure ('edge' 1 1)         == 'edge' 1 1
+-- reflexiveClosure ('edge' 1 2)         == 'edges' [(1,1), (1,2), (2,2)]
+-- reflexiveClosure . reflexiveClosure == reflexiveClosure
+-- @
+reflexiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
+reflexiveClosure (AM m) = AM $ Map.mapWithKey (\k -> Set.insert k) m
+
+-- | Compute the /symmetric closure/ of a graph by overlaying it with its own
+-- transpose.
+-- Complexity: /O((n + m) * log(n))/ time.
+--
+-- @
+-- symmetricClosure 'empty'              == 'empty'
+-- symmetricClosure ('vertex' x)         == 'vertex' x
+-- symmetricClosure ('edge' x y)         == 'edges' [(x,y), (y,x)]
+-- symmetricClosure x                  == 'overlay' x ('transpose' x)
+-- symmetricClosure . symmetricClosure == symmetricClosure
+-- @
+symmetricClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
+symmetricClosure m = overlay m (transpose m)
+
+-- | Compute the /transitive closure/ of a 'Relation'.
+-- Complexity: /O(n * m * log(n) * log(m))/ time.
+--
+-- @
+-- transitiveClosure 'empty'           == 'empty'
+-- transitiveClosure ('vertex' x)      == 'vertex' x
+-- transitiveClosure ('path' $ 'Data.List.nub' xs) == 'clique' ('Data.List.nub' xs)
+-- @
+transitiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
+transitiveClosure old
+    | old == new = old
+    | otherwise  = transitiveClosure new
+  where
+    new = overlay old (old `compose` old)
+
+

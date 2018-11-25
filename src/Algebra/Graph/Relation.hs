@@ -505,32 +505,38 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
   where
     pp (x, y) = p x && p y
 
--- | /Compose/ two relations: @R = 'compose' Q P@. Two elements @x@ and @y@ are
--- related in the resulting relation, i.e. @xRy@, if there exists an element @z@,
--- such that @xPz@ and @zQy@. This is an associative operation which has 'empty'
--- as the /annihilating zero/.
+-- | /Relational composition/ of graphs: vertices @x@ and @z@ are connected in
+-- the resulting graph if there is a vertex @y@, such that @x@ is connected to
+-- @y@ in the first graph, and @y@ is connected to @z@ in the second graph.
+-- Isolated vertices are dropped from the result. This operation is associative,
+-- has 'empty' as the /annihilating zero/, and distributes over 'overlay'.
 -- Complexity: /O(n * m * log(m))/ time and /O(n + m)/ memory.
 --
 -- @
 -- compose 'empty'            x                == 'empty'
 -- compose x                'empty'            == 'empty'
 -- compose x                (compose y z)    == compose (compose x y) z
--- compose ('edge' y z)       ('edge' x y)       == 'edge' x z
--- compose ('path'    [1..5]) ('path'    [1..5]) == 'edges' [(1,3),(2,4),(3,5)]
+-- compose x                ('overlay' y z)    == 'overlay' (compose x y) (compose x z)
+-- compose ('overlay' x y)    z                == 'overlay' (compose x z) (compose x z)
+-- compose ('edge' x y)       ('edge' y z)       == 'edge' x z
+-- compose ('path'    [1..5]) ('path'    [1..5]) == 'edges' [(1,3), (2,4), (3,5)]
 -- compose ('circuit' [1..5]) ('circuit' [1..5]) == 'circuit' [1,3,5,2,4]
 -- @
 compose :: Ord a => Relation a -> Relation a -> Relation a
 compose x y = Relation (referredToVertexSet r) r
   where
     d = domain x `Set.union` domain y
-    r = Set.unions [ preSet z y `setProduct` postSet z x | z <- Set.toAscList d ]
+    r = Set.unions [ preSet v x `setProduct` postSet v y | v <- Set.toAscList d ]
 
 -- | Compute the /reflexive closure/ of a 'Relation'.
 -- Complexity: /O(n * log(m))/ time.
 --
 -- @
--- reflexiveClosure 'empty'      == 'empty'
--- reflexiveClosure ('vertex' x) == 'edge' x x
+-- reflexiveClosure 'empty'              == 'empty'
+-- reflexiveClosure ('vertex' x)         == 'edge' x x
+-- reflexiveClosure ('edge' 1 1)         == 'edge' 1 1
+-- reflexiveClosure ('edge' 1 2)         == 'edges' [(1,1), (1,2), (2,2)]
+-- reflexiveClosure . reflexiveClosure == reflexiveClosure
 -- @
 reflexiveClosure :: Ord a => Relation a -> Relation a
 reflexiveClosure (Relation d r) =
@@ -540,9 +546,11 @@ reflexiveClosure (Relation d r) =
 -- Complexity: /O(m * log(m))/ time.
 --
 -- @
--- symmetricClosure 'empty'      == 'empty'
--- symmetricClosure ('vertex' x) == 'vertex' x
--- symmetricClosure ('edge' x y) == 'edges' [(x, y), (y, x)]
+-- symmetricClosure 'empty'              == 'empty'
+-- symmetricClosure ('vertex' x)         == 'vertex' x
+-- symmetricClosure ('edge' x y)         == 'edges' [(x,y), (y,x)]
+-- symmetricClosure x                  == 'overlay' x ('transpose' x)
+-- symmetricClosure . symmetricClosure == symmetricClosure
 -- @
 symmetricClosure :: Ord a => Relation a -> Relation a
 symmetricClosure (Relation d r) = Relation d $ r `Set.union` Set.map swap r

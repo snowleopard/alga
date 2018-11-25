@@ -44,6 +44,7 @@ testAdjacencyMap = do
     testToGraph           t
     testGraphFamilies     t
     testTransformations   t
+    testRelational        t
     testDfsForest         t
     testDfsForestFrom     t
     testDfs               t

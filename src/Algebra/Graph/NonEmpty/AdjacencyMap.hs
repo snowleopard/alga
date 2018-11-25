@@ -41,7 +41,10 @@ module Algebra.Graph.NonEmpty.AdjacencyMap (
 
     -- * Graph transformation
     removeVertex1, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
-    induce1
+    induce1,
+
+    -- * Graph closure
+    reflexiveClosure, symmetricClosure
     ) where
 
 import Prelude hiding (reverse)
@@ -503,3 +506,29 @@ gmap f = via (AM.gmap f)
 -- @
 induce1 :: (a -> Bool) -> AdjacencyMap a -> Maybe (AdjacencyMap a)
 induce1 p = toNonEmpty . AM.induce p . am
+
+-- | Compute the /reflexive closure/ of a graph by adding a self-loop to every
+-- vertex.
+-- Complexity: /O(n * log(n))/ time.
+--
+-- @
+-- reflexiveClosure ('vertex' x)         == 'edge' x x
+-- reflexiveClosure ('edge' 1 1)         == 'edge' 1 1
+-- reflexiveClosure ('edge' 1 2)         == 'edges1' [(1,1), (1,2), (2,2)]
+-- reflexiveClosure . reflexiveClosure == reflexiveClosure
+-- @
+reflexiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
+reflexiveClosure = via AM.reflexiveClosure
+
+-- | Compute the /symmetric closure/ of a graph by overlaying it with its own
+-- transpose.
+-- Complexity: /O((n + m) * log(n))/ time.
+--
+-- @
+-- symmetricClosure ('vertex' x)         == 'vertex' x
+-- symmetricClosure ('edge' x y)         == 'edges1' [(x,y), (y,x)]
+-- symmetricClosure x                  == 'overlay' x ('transpose' x)
+-- symmetricClosure . symmetricClosure == symmetricClosure
+-- @
+symmetricClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
+symmetricClosure = via AM.symmetricClosure

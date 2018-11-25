@@ -47,53 +47,7 @@ testRelation = do
     testToGraph         t
     testGraphFamilies   t
     testTransformations t
-
-    putStrLn "\n============ Relation.compose ============"
-    test "compose empty            x                == empty" $ \(x :: RI) ->
-          compose empty            x                == empty
-
-    test "compose x                empty            == empty" $ \(x :: RI) ->
-          compose x                empty            == empty
-
-    test "compose x                (compose y z)    == compose (compose x y) z" $ sizeLimit $ \(x :: RI) y z ->
-          compose x                (compose y z)    == compose (compose x y) z
-
-    test "compose (edge y z)       (edge x y)       == edge x z" $ \(x :: Int) y z ->
-          compose (edge y z)       (edge x y)       == edge x z
-
-    test "compose (path    [1..5]) (path    [1..5]) == edges [(1,3),(2,4),(3,5)]" $
-          compose (path    [1..5]) (path    [1..5]) == edges [(1,3),(2,4),(3,5::Int)]
-
-    test "compose (circuit [1..5]) (circuit [1..5]) == circuit [1,3,5,2,4]" $
-          compose (circuit [1..5]) (circuit [1..5]) == circuit [1,3,5,2,4::Int]
-
-    putStrLn "\n============ Relation.reflexiveClosure ============"
-    test "reflexiveClosure empty      == empty" $
-          reflexiveClosure empty      ==(empty :: RI)
-
-    test "reflexiveClosure (vertex x) == edge x x" $ \(x :: Int) ->
-          reflexiveClosure (vertex x) == edge x x
-
-    putStrLn "\n============ Relation.symmetricClosure ============"
-
-    test "symmetricClosure empty      == empty" $
-          symmetricClosure empty      ==(empty :: RI)
-
-    test "symmetricClosure (vertex x) == vertex x" $ \(x :: Int) ->
-          symmetricClosure (vertex x) == vertex x
-
-    test "symmetricClosure (edge x y) == edges [(x, y), (y, x)]" $ \(x :: Int) y ->
-          symmetricClosure (edge x y) == edges [(x, y), (y, x)]
-
-    putStrLn "\n============ Relation.transitiveClosure ============"
-    test "transitiveClosure empty           == empty" $
-          transitiveClosure empty           ==(empty :: RI)
-
-    test "transitiveClosure (vertex x)      == vertex x" $ \(x :: Int) ->
-          transitiveClosure (vertex x)      == vertex x
-
-    test "transitiveClosure (path $ nub xs) == clique (nub $ xs)" $ \(xs :: [Int]) ->
-          transitiveClosure (path $ nubOrd xs) == clique (nubOrd xs)
+    testRelational      t
 
     putStrLn "\n============ Relation.preorderClosure ============"
     test "preorderClosure empty           == empty" $

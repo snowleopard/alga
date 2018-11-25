@@ -542,3 +542,29 @@ testNonEmptyAdjacencyMap = do
 
     test "induce1 p >=> induce1 q == induce1 (\\x -> p x && q x)" $ \(apply -> p) (apply -> q) (y :: G) ->
          (induce1 p >=> induce1 q) y == induce1 (\x -> p x && q x) y
+
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.reflexiveClosure ============"
+    test "reflexiveClosure (vertex x)         == edge x x" $ \(x :: Int) ->
+          reflexiveClosure (vertex x)         == edge x x
+
+    test "reflexiveClosure (edge 1 1)         == edge 1 1" $
+          reflexiveClosure (edge 1 1)         == edge 1 (1 :: Int)
+
+    test "reflexiveClosure (edge 1 2)         == edges1 [(1,1), (1,2), (2,2)]" $
+          reflexiveClosure (edge 1 2)         == edges1 [(1,1), (1,2), (2,2 :: Int)]
+
+    test "reflexiveClosure . reflexiveClosure == reflexiveClosure" $ \(x :: G) ->
+         (reflexiveClosure . reflexiveClosure) x == reflexiveClosure x
+
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.symmetricClosure ============"
+    test "symmetricClosure (vertex x)         == vertex x" $ \(x :: Int) ->
+          symmetricClosure (vertex x)         == vertex x
+
+    test "symmetricClosure (edge x y)         == edges1 [(x,y), (y,x)]" $ \(x :: G) y ->
+          symmetricClosure (edge x y)         == edges1 [(x,y), (y,x)]
+
+    test "symmetricClosure x                  == overlay x (transpose x)" $ \(x :: G) ->
+          symmetricClosure x                  == overlay x (transpose x)
+
+    test "symmetricClosure . symmetricClosure == symmetricClosure" $ \(x :: G) ->
+         (symmetricClosure . symmetricClosure) x == symmetricClosure x
