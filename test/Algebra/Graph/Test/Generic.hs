@@ -1051,8 +1051,8 @@ testCompose (Testsuite prefix (%)) = do
     test "compose x                (overlay y z)    == overlay (compose x y) (compose x z)" $ sizeLimit $ \x y z ->
           compose x              % (overlay y z)    == overlay (compose x y) (compose x z)
 
-    test "compose (overlay x y) z                   == overlay (compose x z) (compose x z)" $ sizeLimit $ \x y z ->
-          compose (overlay x y) % z                 == overlay (compose x z) (compose x z)
+    test "compose (overlay x y) z                   == overlay (compose x z) (compose y z)" $ sizeLimit $ \x y z ->
+          compose (overlay x y) % z                 == overlay (compose x z) (compose y z)
 
     test "compose (edge x y)       (edge y z)       == edge x z" $ \x y z ->
           compose (edge x y) %     (edge y z)       == edge x z

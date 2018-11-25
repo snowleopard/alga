@@ -517,7 +517,7 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
 -- compose x                'empty'            == 'empty'
 -- compose x                (compose y z)    == compose (compose x y) z
 -- compose x                ('overlay' y z)    == 'overlay' (compose x y) (compose x z)
--- compose ('overlay' x y)    z                == 'overlay' (compose x z) (compose x z)
+-- compose ('overlay' x y)    z                == 'overlay' (compose x z) (compose y z)
 -- compose ('edge' x y)       ('edge' y z)       == 'edge' x z
 -- compose ('path'    [1..5]) ('path'    [1..5]) == 'edges' [(1,3), (2,4), (3,5)]
 -- compose ('circuit' [1..5]) ('circuit' [1..5]) == 'circuit' [1,3,5,2,4]
