@@ -609,12 +609,15 @@ induce p = AM . IntMap.map (IntSet.filter p) . IntMap.filterWithKey (\k _ -> p k
 -- the resulting graph if there is a vertex @y@, such that @x@ is connected to
 -- @y@ in the first graph, and @y@ is connected to @z@ in the second graph.
 -- Isolated vertices are dropped from the result. This operation is associative,
--- has 'empty' as the /annihilating zero/, and distributes over 'overlay'.
+-- has 'empty' and single-'vertex' graphs as /annihilating zeroes/, and
+-- distributes over 'overlay'.
 -- Complexity: /O(n * m * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
 -- compose 'empty'            x                == 'empty'
 -- compose x                'empty'            == 'empty'
+-- compose ('vertex' x)       y                == 'empty'
+-- compose x                ('vertex' y)       == 'empty'
 -- compose x                (compose y z)    == compose (compose x y) z
 -- compose x                ('overlay' y z)    == 'overlay' (compose x y) (compose x z)
 -- compose ('overlay' x y)    z                == 'overlay' (compose x z) (compose y z)
@@ -658,13 +661,15 @@ reflexiveClosure (AM m) = AM $ IntMap.mapWithKey (\k -> IntSet.insert k) m
 symmetricClosure :: AdjacencyIntMap -> AdjacencyIntMap
 symmetricClosure m = overlay m (transpose m)
 
--- | Compute the /transitive closure/ of a 'Relation'.
--- Complexity: /O(n * m * log(n) * log(m))/ time.
+-- | Compute the /transitive closure/ of a graph.
+-- Complexity: /O(n * m * log(n)^2)/ time.
 --
 -- @
--- transitiveClosure 'empty'           == 'empty'
--- transitiveClosure ('vertex' x)      == 'vertex' x
--- transitiveClosure ('path' $ 'Data.List.nub' xs) == 'clique' ('Data.List.nub' xs)
+-- transitiveClosure 'empty'               == 'empty'
+-- transitiveClosure ('vertex' x)          == 'vertex' x
+-- transitiveClosure ('edge' x y)          == 'edge' x y
+-- transitiveClosure ('path' $ 'Data.List.nub' xs)     == 'clique' ('Data.List.nub' xs)
+-- transitiveClosure . transitiveClosure == transitiveClosure
 -- @
 transitiveClosure :: AdjacencyIntMap -> AdjacencyIntMap
 transitiveClosure old

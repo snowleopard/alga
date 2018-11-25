@@ -44,7 +44,7 @@ module Algebra.Graph.NonEmpty.AdjacencyMap (
     induce1,
 
     -- * Graph closure
-    reflexiveClosure, symmetricClosure
+    reflexiveClosure, symmetricClosure, transitiveClosure
     ) where
 
 import Prelude hiding (reverse)
@@ -58,11 +58,17 @@ import Algebra.Graph.NonEmpty.AdjacencyMap.Internal
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.Set                   as Set
 
--- Lifting functions to non-empty adjacency maps
-via :: (AM.AdjacencyMap a -> AM.AdjacencyMap b) -> AdjacencyMap a -> AdjacencyMap b
+-- Lift a function to non-empty adjacency maps
+via :: (AM.AdjacencyMap a -> AM.AdjacencyMap b)
+    ->     AdjacencyMap a ->    AdjacencyMap b
 via f = NAM . f . am
 
--- Lifting list functions to non-empty adjacency maps
+-- Lift a two-argument function to non-empty adjacency maps
+via2 :: (AM.AdjacencyMap a -> AM.AdjacencyMap b -> AM.AdjacencyMap c)
+     ->     AdjacencyMap a ->    AdjacencyMap b ->    AdjacencyMap c
+via2 f (NAM x) (NAM y) = NAM (f x y)
+
+-- Lift a list function to non-empty adjacency maps
 viaL :: (         [AM.AdjacencyMap a] -> AM.AdjacencyMap b)
      ->  NonEmpty (   AdjacencyMap a) ->    AdjacencyMap b
 viaL f = NAM . f . fmap am . toList
@@ -111,7 +117,7 @@ vertex = NAM . AM.vertex
 -- 'edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-overlay (NAM x) (NAM y) = NAM (AM.overlay x y)
+overlay = via2 AM.overlay
 {-# NOINLINE [1] overlay #-}
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
@@ -132,7 +138,7 @@ overlay (NAM x) (NAM y) = NAM (AM.overlay x y)
 -- 'edgeCount'   (connect 1 2) == 1
 -- @
 connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-connect (NAM x) (NAM y) = NAM (AM.connect x y)
+connect = via2 AM.connect
 {-# NOINLINE [1] connect #-}
 
 -- | Construct the graph comprising /a single edge/.
@@ -439,7 +445,7 @@ removeEdge x y = via (AM.removeEdge x y)
 -- replaceVertex x y            == 'mergeVertices' (== x) y
 -- @
 replaceVertex :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
-replaceVertex u v = gmap $ \w -> if w == u then v else w
+replaceVertex u v = via (AM.replaceVertex u v)
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
@@ -452,7 +458,7 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- mergeVertices 'odd'  1 (3 + 4 * 5) == 4 * 1
 -- @
 mergeVertices :: Ord a => (a -> Bool) -> a -> AdjacencyMap a -> AdjacencyMap a
-mergeVertices p v = gmap $ \u -> if p u then v else u
+mergeVertices p v = via (AM.mergeVertices p v)
 
 -- | Transpose a given graph.
 -- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
@@ -464,7 +470,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
-transpose = NAM . AM.transpose . am
+transpose = via AM.transpose
 {-# NOINLINE [1] transpose #-}
 
 {-# RULES
@@ -532,3 +538,15 @@ reflexiveClosure = via AM.reflexiveClosure
 -- @
 symmetricClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
 symmetricClosure = via AM.symmetricClosure
+
+-- | Compute the /transitive closure/ of a graph.
+-- Complexity: /O(n * m * log(n)^2)/ time.
+--
+-- @
+-- transitiveClosure ('vertex' x)          == 'vertex' x
+-- transitiveClosure ('edge' x y)          == 'edge' x y
+-- transitiveClosure ('path1' $ 'Data.List.nub' xs)    == 'clique1' ('Data.List.nub' xs)
+-- transitiveClosure . transitiveClosure == transitiveClosure
+-- @
+transitiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
+transitiveClosure = via AM.transitiveClosure

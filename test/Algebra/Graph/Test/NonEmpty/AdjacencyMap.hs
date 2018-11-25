@@ -34,6 +34,9 @@ import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.List.NonEmpty                  as NonEmpty
 import qualified Data.Set                            as Set
 
+sizeLimit :: Testable prop => prop -> Property
+sizeLimit = mapSize (min 10)
+
 type G = NonEmpty.AdjacencyMap Int
 
 axioms :: G -> G -> G -> Property
@@ -568,3 +571,17 @@ testNonEmptyAdjacencyMap = do
 
     test "symmetricClosure . symmetricClosure == symmetricClosure" $ \(x :: G) ->
          (symmetricClosure . symmetricClosure) x == symmetricClosure x
+
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.transitiveClosure ============"
+    test "transitiveClosure (vertex x)          == vertex x" $ \(x :: Int) ->
+          transitiveClosure (vertex x)          == vertex x
+
+    test "transitiveClosure (edge x y)          == edge x y" $ \(x :: G) y ->
+          transitiveClosure (edge x y)          == edge x y
+
+    test "transitiveClosure (path1 $ nub xs)    == clique1 (nub $ xs)" $ \(xs :: NonEmptyList Int) ->
+        let ys = NonEmpty.fromList (nubOrd $ getNonEmpty xs)
+        in transitiveClosure (path1 ys) == clique1 ys
+
+    test "transitiveClosure . transitiveClosure == transitiveClosure" $ sizeLimit $ \(x :: G) ->
+         (transitiveClosure . transitiveClosure) x == transitiveClosure x

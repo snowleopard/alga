@@ -509,12 +509,15 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
 -- the resulting graph if there is a vertex @y@, such that @x@ is connected to
 -- @y@ in the first graph, and @y@ is connected to @z@ in the second graph.
 -- Isolated vertices are dropped from the result. This operation is associative,
--- has 'empty' as the /annihilating zero/, and distributes over 'overlay'.
+-- has 'empty' and single-'vertex' graphs as /annihilating zeroes/, and
+-- distributes over 'overlay'.
 -- Complexity: /O(n * m * log(m))/ time and /O(n + m)/ memory.
 --
 -- @
 -- compose 'empty'            x                == 'empty'
 -- compose x                'empty'            == 'empty'
+-- compose ('vertex' x)       y                == 'empty'
+-- compose x                ('vertex' y)       == 'empty'
 -- compose x                (compose y z)    == compose (compose x y) z
 -- compose x                ('overlay' y z)    == 'overlay' (compose x y) (compose x z)
 -- compose ('overlay' x y)    z                == 'overlay' (compose x z) (compose y z)
@@ -559,9 +562,11 @@ symmetricClosure (Relation d r) = Relation d $ r `Set.union` Set.map swap r
 -- Complexity: /O(n * m * log(n) * log(m))/ time.
 --
 -- @
--- transitiveClosure 'empty'           == 'empty'
--- transitiveClosure ('vertex' x)      == 'vertex' x
--- transitiveClosure ('path' $ 'Data.List.nub' xs) == 'clique' ('Data.List.nub' xs)
+-- transitiveClosure 'empty'               == 'empty'
+-- transitiveClosure ('vertex' x)          == 'vertex' x
+-- transitiveClosure ('edge' x y)          == 'edge' x y
+-- transitiveClosure ('path' $ 'Data.List.nub' xs)     == 'clique' ('Data.List.nub' xs)
+-- transitiveClosure . transitiveClosure == transitiveClosure
 -- @
 transitiveClosure :: Ord a => Relation a -> Relation a
 transitiveClosure old
@@ -571,7 +576,7 @@ transitiveClosure old
     new = overlay old (old `compose` old)
 
 -- | Compute the /preorder closure/ of a 'Relation'.
--- Complexity: /O(n * m * log(m))/ time.
+-- Complexity: /O(n * m * log(n) * log(m))/ time.
 --
 -- @
 -- preorderClosure 'empty'           == 'empty'

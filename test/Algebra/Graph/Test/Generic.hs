@@ -1045,6 +1045,12 @@ testCompose (Testsuite prefix (%)) = do
     test "compose x                empty            == empty" $ \x ->
           compose x              % empty            == empty
 
+    test "compose (vertex x)       y                == empty" $ \x y ->
+          compose (vertex x)     % y                == empty
+
+    test "compose x                (vertex y)       == empty" $ \x y ->
+          compose x              % (vertex y)       == empty
+
     test "compose x                (compose y z)    == compose (compose x y) z" $ sizeLimit $ \x y z ->
           compose x              % (compose y z)    == compose (compose x y) z
 
@@ -1102,14 +1108,20 @@ testSymmetricClosure (Testsuite prefix (%)) = do
 testTransitiveClosure :: Testsuite -> IO ()
 testTransitiveClosure (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "transitiveClosure ============"
-    test "transitiveClosure empty           == empty" $
-          transitiveClosure % empty         == empty
+    test "transitiveClosure empty               == empty" $
+          transitiveClosure % empty             == empty
 
-    test "transitiveClosure (vertex x)      == vertex x" $ \x ->
-          transitiveClosure % (vertex x)    == vertex x
+    test "transitiveClosure (vertex x)          == vertex x" $ \x ->
+          transitiveClosure % (vertex x)        == vertex x
 
-    test "transitiveClosure (path $ nub xs) == clique (nub $ xs)" $ \xs ->
+    test "transitiveClosure (edge x y)          == edge x y" $ \x y ->
+          transitiveClosure % (edge x y)        == edge x y
+
+    test "transitiveClosure (path $ nub xs)     == clique (nub $ xs)" $ \xs ->
           transitiveClosure % (path $ nubOrd xs) == clique (nubOrd xs)
+
+    test "transitiveClosure . transitiveClosure == transitiveClosure" $ sizeLimit $ \x ->
+         (transitiveClosure . transitiveClosure) x == transitiveClosure % x
 
 testSplitVertex :: Testsuite -> IO ()
 testSplitVertex (Testsuite prefix (%)) = do
