@@ -2,6 +2,9 @@
 
 ## 0.3
 
+* #139, #146: Add relational operations to adjacency maps.
+* #146: Rename `preorderClosure` to `closure`.
+* #146: Switch to left-to-right composition in `Relation.compose`.
 * #143: Allow newer QuickCheck.
 * #140, #142: Fix `Show` instances.
 * #128, #130: Modify the SCC algorithm to return non-empty graph components.
