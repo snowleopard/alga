@@ -25,24 +25,34 @@ description:
     .
     The top-level module
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph.html Algebra.Graph>
-    defines the core data type
+    defines the main data type for /algebraic graphs/
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph.html#t:Graph Graph>,
-    which is a deep embedding of four graph construction primitives /empty/,
-    /vertex/, /overlay/ and /connect/. To represent non-empty graphs, see
+    as well as associated algorithms. For type-safe representation and
+    manipulation of /non-empty algebraic graphs/, see
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-NonEmpty.html Algebra.Graph.NonEmpty>.
-    More conventional graph representations can be found in
+    Furthermore, /algebraic graphs with edge labels/ are implemented in
+    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Labelled.html Algebra.Graph.Labelled>.
+    .
+    The library also provides conventional graph data structures, such as
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-AdjacencyMap.html Algebra.Graph.AdjacencyMap>
-    and
-    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Relation.html Algebra.Graph.Relation>.
+    along with its various flavours: adjacency maps specialised to graphs with
+    vertices of type 'Int'
+    (<http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-AdjacencyIntMap.html Algebra.Graph.AdjacencyIntMap>),
+    non-empty adjacency maps
+    (<http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-NonEmpty-AdjacencyMap.html Algebra.Graph.NonEmpty.AdjacencyMap>),
+    and adjacency maps with edge labels
+    (<http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Labelled-AdjacencyMap.html Algebra.Graph.Labelled.AdjacencyMap>).
+    A large part of the API of algebraic graphs and adjacency maps is available
+    through the 'Foldable'-like type class
+    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-ToGraph.html Algebra.Graph.ToGraph>.
     .
     The type classes defined in
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Class.html Algebra.Graph.Class>
     and
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-HigherKinded-Class.html Algebra.Graph.HigherKinded.Class>
-    can be used for polymorphic graph construction and manipulation. Also see
+    can be used for polymorphic construction and manipulation of graphs. Also see
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Fold.html Algebra.Graph.Fold>
-    that defines the Boehm-Berarducci encoding of algebraic graphs and provides additional
-    flexibility for polymorphic graph manipulation.
+    that defines the Boehm-Berarducci encoding of algebraic graphs.
     .
     This is an experimental library and the API is expected to remain unstable until version 1.0.0.
     Please consider contributing to the on-going
