@@ -34,8 +34,8 @@ module Algebra.Graph.Relation (
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
 
-    -- * Operations on binary relations
-    compose, reflexiveClosure, symmetricClosure, transitiveClosure, preorderClosure
+    -- * Relational operations
+    compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure
   ) where
 
 import Prelude ()
@@ -505,55 +505,85 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
   where
     pp (x, y) = p x && p y
 
--- | /Compose/ two relations: @R = 'compose' Q P@. Two elements @x@ and @y@ are
--- related in the resulting relation, i.e. @xRy@, if there exists an element @z@,
--- such that @xPz@ and @zQy@. This is an associative operation which has 'empty'
--- as the /annihilating zero/.
+-- | Left-to-right /relational composition/ of graphs: vertices @x@ and @z@ are
+-- connected in the resulting graph if there is a vertex @y@, such that @x@ is
+-- connected to @y@ in the first graph, and @y@ is connected to @z@ in the
+-- second graph. There are no isolated vertices in the result. This operation is
+-- associative, has 'empty' and single-'vertex' graphs as /annihilating zeroes/,
+-- and distributes over 'overlay'.
 -- Complexity: /O(n * m * log(m))/ time and /O(n + m)/ memory.
 --
 -- @
 -- compose 'empty'            x                == 'empty'
 -- compose x                'empty'            == 'empty'
+-- compose ('vertex' x)       y                == 'empty'
+-- compose x                ('vertex' y)       == 'empty'
 -- compose x                (compose y z)    == compose (compose x y) z
--- compose ('edge' y z)       ('edge' x y)       == 'edge' x z
--- compose ('path'    [1..5]) ('path'    [1..5]) == 'edges' [(1,3),(2,4),(3,5)]
+-- compose x                ('overlay' y z)    == 'overlay' (compose x y) (compose x z)
+-- compose ('overlay' x y)    z                == 'overlay' (compose x z) (compose y z)
+-- compose ('edge' x y)       ('edge' y z)       == 'edge' x z
+-- compose ('path'    [1..5]) ('path'    [1..5]) == 'edges' [(1,3), (2,4), (3,5)]
 -- compose ('circuit' [1..5]) ('circuit' [1..5]) == 'circuit' [1,3,5,2,4]
 -- @
 compose :: Ord a => Relation a -> Relation a -> Relation a
 compose x y = Relation (referredToVertexSet r) r
   where
     d = domain x `Set.union` domain y
-    r = Set.unions [ preSet z y `setProduct` postSet z x | z <- Set.toAscList d ]
+    r = Set.unions [ preSet v x `setProduct` postSet v y | v <- Set.toAscList d ]
 
--- | Compute the /reflexive closure/ of a 'Relation'.
+-- | Compute the /reflexive and transitive closure/ of a graph.
+-- Complexity: /O(n * m * log(n) * log(m))/ time.
+--
+-- @
+-- closure 'empty'           == 'empty'
+-- closure ('vertex' x)      == 'edge' x x
+-- closure ('edge' x x)      == 'edge' x x
+-- closure ('edge' x y)      == 'edges' [(x,x), (x,y), (y,y)]
+-- closure ('path' $ 'Data.List.nub' xs) == 'reflexiveClosure' ('clique' $ 'Data.List.nub' xs)
+-- closure                 == 'reflexiveClosure' . 'transitiveClosure'
+-- closure                 == 'transitiveClosure' . 'reflexiveClosure'
+-- closure . closure       == closure
+-- 'postSet' x (closure y)   == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
+-- @
+closure :: Ord a => Relation a -> Relation a
+closure = reflexiveClosure . transitiveClosure
+
+-- | Compute the /reflexive closure/ of a graph.
 -- Complexity: /O(n * log(m))/ time.
 --
 -- @
--- reflexiveClosure 'empty'      == 'empty'
--- reflexiveClosure ('vertex' x) == 'edge' x x
+-- reflexiveClosure 'empty'              == 'empty'
+-- reflexiveClosure ('vertex' x)         == 'edge' x x
+-- reflexiveClosure ('edge' x x)         == 'edge' x x
+-- reflexiveClosure ('edge' x y)         == 'edges' [(x,x), (x,y), (y,y)]
+-- reflexiveClosure . reflexiveClosure == reflexiveClosure
 -- @
 reflexiveClosure :: Ord a => Relation a -> Relation a
 reflexiveClosure (Relation d r) =
     Relation d $ r `Set.union` Set.fromDistinctAscList [ (a, a) | a <- Set.toAscList d ]
 
--- | Compute the /symmetric closure/ of a 'Relation'.
+-- | Compute the /symmetric closure/ of a graph.
 -- Complexity: /O(m * log(m))/ time.
 --
 -- @
--- symmetricClosure 'empty'      == 'empty'
--- symmetricClosure ('vertex' x) == 'vertex' x
--- symmetricClosure ('edge' x y) == 'edges' [(x, y), (y, x)]
+-- symmetricClosure 'empty'              == 'empty'
+-- symmetricClosure ('vertex' x)         == 'vertex' x
+-- symmetricClosure ('edge' x y)         == 'edges' [(x,y), (y,x)]
+-- symmetricClosure x                  == 'overlay' x ('transpose' x)
+-- symmetricClosure . symmetricClosure == symmetricClosure
 -- @
 symmetricClosure :: Ord a => Relation a -> Relation a
 symmetricClosure (Relation d r) = Relation d $ r `Set.union` Set.map swap r
 
--- | Compute the /transitive closure/ of a 'Relation'.
+-- | Compute the /transitive closure/ of a graph.
 -- Complexity: /O(n * m * log(n) * log(m))/ time.
 --
 -- @
--- transitiveClosure 'empty'           == 'empty'
--- transitiveClosure ('vertex' x)      == 'vertex' x
--- transitiveClosure ('path' $ 'Data.List.nub' xs) == 'clique' ('Data.List.nub' xs)
+-- transitiveClosure 'empty'               == 'empty'
+-- transitiveClosure ('vertex' x)          == 'vertex' x
+-- transitiveClosure ('edge' x y)          == 'edge' x y
+-- transitiveClosure ('path' $ 'Data.List.nub' xs)     == 'clique' ('Data.List.nub' xs)
+-- transitiveClosure . transitiveClosure == transitiveClosure
 -- @
 transitiveClosure :: Ord a => Relation a -> Relation a
 transitiveClosure old
@@ -561,14 +591,3 @@ transitiveClosure old
     | otherwise  = transitiveClosure new
   where
     new = overlay old (old `compose` old)
-
--- | Compute the /preorder closure/ of a 'Relation'.
--- Complexity: /O(n * m * log(m))/ time.
---
--- @
--- preorderClosure 'empty'           == 'empty'
--- preorderClosure ('vertex' x)      == 'edge' x x
--- preorderClosure ('path' $ 'Data.List.nub' xs) == 'reflexiveClosure' ('clique' $ 'Data.List.nub' xs)
--- @
-preorderClosure :: Ord a => Relation a -> Relation a
-preorderClosure = reflexiveClosure . transitiveClosure

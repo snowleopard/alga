@@ -84,6 +84,16 @@ class Graph g => GraphAPI g where
     gmap                 = notImplemented
     induce               :: (Vertex g -> Bool) -> g -> g
     induce               = notImplemented
+    compose              :: g -> g -> g
+    compose              = notImplemented
+    closure              :: g -> g
+    closure              = notImplemented
+    reflexiveClosure     :: g -> g
+    reflexiveClosure     = notImplemented
+    symmetricClosure     :: g -> g
+    symmetricClosure     = notImplemented
+    transitiveClosure    :: g -> g
+    transitiveClosure    = notImplemented
     bind                 :: Vertex g ~ Int => g -> (Int -> g) -> g
     bind                 = notImplemented
     simplify             :: g -> g
@@ -117,6 +127,11 @@ instance Ord a => GraphAPI (AM.AdjacencyMap a) where
     transpose         = AM.transpose
     gmap              = AM.gmap
     induce            = AM.induce
+    compose           = AM.compose
+    closure           = AM.closure
+    reflexiveClosure  = AM.reflexiveClosure
+    symmetricClosure  = AM.symmetricClosure
+    transitiveClosure = AM.transitiveClosure
 
 instance Ord a => GraphAPI (Fold.Fold a) where
     edge          = Fold.edge
@@ -201,26 +216,36 @@ instance GraphAPI AIM.AdjacencyIntMap where
     transpose            = AIM.transpose
     gmap                 = AIM.gmap
     induce               = AIM.induce
+    compose              = AIM.compose
+    closure              = AIM.closure
+    reflexiveClosure     = AIM.reflexiveClosure
+    symmetricClosure     = AIM.symmetricClosure
+    transitiveClosure    = AIM.transitiveClosure
 
 instance Ord a => GraphAPI (R.Relation a) where
-    edge          = R.edge
-    vertices      = R.vertices
-    edges         = R.edges
-    overlays      = R.overlays
-    connects      = R.connects
-    isSubgraphOf  = R.isSubgraphOf
-    path          = R.path
-    circuit       = R.circuit
-    clique        = R.clique
-    biclique      = R.biclique
-    star          = R.star
-    stars         = R.stars
-    tree          = R.tree
-    forest        = R.forest
-    removeVertex  = R.removeVertex
-    removeEdge    = R.removeEdge
-    replaceVertex = R.replaceVertex
-    mergeVertices = R.mergeVertices
-    transpose     = R.transpose
-    gmap          = R.gmap
-    induce        = R.induce
+    edge              = R.edge
+    vertices          = R.vertices
+    edges             = R.edges
+    overlays          = R.overlays
+    connects          = R.connects
+    isSubgraphOf      = R.isSubgraphOf
+    path              = R.path
+    circuit           = R.circuit
+    clique            = R.clique
+    biclique          = R.biclique
+    star              = R.star
+    stars             = R.stars
+    tree              = R.tree
+    forest            = R.forest
+    removeVertex      = R.removeVertex
+    removeEdge        = R.removeEdge
+    replaceVertex     = R.replaceVertex
+    mergeVertices     = R.mergeVertices
+    transpose         = R.transpose
+    gmap              = R.gmap
+    induce            = R.induce
+    compose           = R.compose
+    closure           = R.closure
+    reflexiveClosure  = R.reflexiveClosure
+    symmetricClosure  = R.symmetricClosure
+    transitiveClosure = R.transitiveClosure

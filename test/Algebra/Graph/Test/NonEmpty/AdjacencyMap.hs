@@ -27,12 +27,15 @@ import Data.Tuple
 
 import Algebra.Graph.NonEmpty.AdjacencyMap
 import Algebra.Graph.Test hiding (axioms, theorems)
-import Algebra.Graph.ToGraph (toAdjacencyMap)
+import Algebra.Graph.ToGraph (toAdjacencyMap, reachable)
 
 import qualified Algebra.Graph.AdjacencyMap          as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.List.NonEmpty                  as NonEmpty
 import qualified Data.Set                            as Set
+
+sizeLimit :: Testable prop => prop -> Property
+sizeLimit = mapSize (min 10)
 
 type G = NonEmpty.AdjacencyMap Int
 
@@ -542,3 +545,69 @@ testNonEmptyAdjacencyMap = do
 
     test "induce1 p >=> induce1 q == induce1 (\\x -> p x && q x)" $ \(apply -> p) (apply -> q) (y :: G) ->
          (induce1 p >=> induce1 q) y == induce1 (\x -> p x && q x) y
+
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.closure ============"
+    test "closure (vertex x)      == edge x x" $ \(x :: Int) ->
+          closure (vertex x)      == edge x x
+
+    test "closure (edge x x)      == edge x x" $ \(x :: Int) ->
+          closure (edge x x)      == edge x x
+
+    test "closure (edge x y)      == edges1 [(x,x), (x,y), (y,y)]" $ \(x :: Int) y ->
+          closure (edge x y)      == edges1 [(x,x), (x,y), (y,y)]
+
+    test "closure (path1 $ nub xs) == reflexiveClosure (clique1 $ nub xs)" $ \(xs :: NonEmptyList Int) ->
+        let ys = NonEmpty.fromList (nubOrd $ getNonEmpty xs)
+        in closure (path1 $ ys) == reflexiveClosure (clique1 $ ys)
+
+    test "closure                 == reflexiveClosure . transitiveClosure" $ sizeLimit $ \(x :: G) ->
+          closure x               == (reflexiveClosure . transitiveClosure) x
+
+    test "closure                 == transitiveClosure . reflexiveClosure" $ sizeLimit $ \(x :: G) ->
+          closure x               == (transitiveClosure . reflexiveClosure) x
+
+    test "closure . closure       == closure" $ sizeLimit $ \(x :: G) ->
+         (closure . closure) x    == closure x
+
+    test "postSet x (closure y)   == Set.fromList (reachable x y)" $ sizeLimit $ \x (y :: G) ->
+          postSet x (closure y)   == Set.fromList (reachable x y)
+
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.reflexiveClosure ============"
+    test "reflexiveClosure (vertex x)         == edge x x" $ \(x :: Int) ->
+          reflexiveClosure (vertex x)         == edge x x
+
+    test "reflexiveClosure (edge x x)         == edge x x" $ \(x :: Int) ->
+          reflexiveClosure (edge x x)         == edge x x
+
+    test "reflexiveClosure (edge x y)         == edges1 [(x,x), (x,y), (y,y)]" $ \(x :: Int) y ->
+          reflexiveClosure (edge x y)         == edges1 [(x,x), (x,y), (y,y)]
+
+    test "reflexiveClosure . reflexiveClosure == reflexiveClosure" $ \(x :: G) ->
+         (reflexiveClosure . reflexiveClosure) x == reflexiveClosure x
+
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.symmetricClosure ============"
+    test "symmetricClosure (vertex x)         == vertex x" $ \(x :: Int) ->
+          symmetricClosure (vertex x)         == vertex x
+
+    test "symmetricClosure (edge x y)         == edges1 [(x,y), (y,x)]" $ \(x :: G) y ->
+          symmetricClosure (edge x y)         == edges1 [(x,y), (y,x)]
+
+    test "symmetricClosure x                  == overlay x (transpose x)" $ \(x :: G) ->
+          symmetricClosure x                  == overlay x (transpose x)
+
+    test "symmetricClosure . symmetricClosure == symmetricClosure" $ \(x :: G) ->
+         (symmetricClosure . symmetricClosure) x == symmetricClosure x
+
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.transitiveClosure ============"
+    test "transitiveClosure (vertex x)          == vertex x" $ \(x :: Int) ->
+          transitiveClosure (vertex x)          == vertex x
+
+    test "transitiveClosure (edge x y)          == edge x y" $ \(x :: G) y ->
+          transitiveClosure (edge x y)          == edge x y
+
+    test "transitiveClosure (path1 $ nub xs)    == clique1 (nub $ xs)" $ \(xs :: NonEmptyList Int) ->
+        let ys = NonEmpty.fromList (nubOrd $ getNonEmpty xs)
+        in transitiveClosure (path1 ys) == clique1 ys
+
+    test "transitiveClosure . transitiveClosure == transitiveClosure" $ sizeLimit $ \(x :: G) ->
+         (transitiveClosure . transitiveClosure) x == transitiveClosure x

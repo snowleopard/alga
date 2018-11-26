@@ -23,7 +23,7 @@ import Control.DeepSeq (NFData (..))
 
 import Algebra.Graph.Class
 import Algebra.Graph.Relation (Relation, reflexiveClosure, symmetricClosure,
-                               transitiveClosure, preorderClosure)
+                               transitiveClosure, closure)
 
 {-| The 'ReflexiveRelation' data type represents a /reflexive binary relation/
 over a set of elements. Reflexive relations satisfy all laws of the
@@ -146,10 +146,10 @@ newtype PreorderRelation a = PreorderRelation { fromPreorder :: Relation a }
     deriving (Num, NFData)
 
 instance (Ord a, Show a) => Show (PreorderRelation a) where
-    show = show . preorderClosure . fromPreorder
+    show = show . closure . fromPreorder
 
 instance Ord a => Eq (PreorderRelation a) where
-    x == y = preorderClosure (fromPreorder x) == preorderClosure (fromPreorder y)
+    x == y = closure (fromPreorder x) == closure (fromPreorder y)
 
 -- TODO: To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Ord a => Graph (PreorderRelation a) where

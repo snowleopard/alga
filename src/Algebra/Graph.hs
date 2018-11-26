@@ -258,7 +258,7 @@ ordR x y = compare (toAdjacencyMap x) (toAdjacencyMap y)
 {-# NOINLINE [1] ordR #-}
 {-# RULES "ordR/Int" ordR = ordIntR #-}
 
--- | Like'ordR' but specialised for graphs with vertices of type 'Int'.
+-- Like 'ordR' but specialised for graphs with vertices of type 'Int'.
 ordIntR :: Graph Int -> Graph Int -> Ordering
 ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 
