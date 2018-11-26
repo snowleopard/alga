@@ -637,14 +637,15 @@ compose x y = fromAdjacencyIntSets r
 -- Complexity: /O(n * m * log(n)^2)/ time.
 --
 -- @
--- closure 'empty'           == 'empty'
--- closure ('vertex' x)      == 'edge' x x
--- closure ('edge' x x)      == 'edge' x x
--- closure ('edge' x y)      == 'edges' [(x,x), (x,y), (y,y)]
+-- closure 'empty'            == 'empty'
+-- closure ('vertex' x)       == 'edge' x x
+-- closure ('edge' x x)       == 'edge' x x
+-- closure ('edge' x y)       == 'edges' [(x,x), (x,y), (y,y)]
 -- closure ('path' $ 'Data.List.nub' xs) == 'reflexiveClosure' ('clique' $ 'Data.List.nub' xs)
--- closure                 == 'reflexiveClosure' . 'transitiveClosure'
--- closure                 == 'transitiveClosure' . 'reflexiveClosure'
--- closure . closure       == closure
+-- closure                  == 'reflexiveClosure' . 'transitiveClosure'
+-- closure                  == 'transitiveClosure' . 'reflexiveClosure'
+-- closure . closure        == closure
+-- 'postIntSet' x (closure y) == IntSet.'IntSet.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
 -- @
 closure :: AdjacencyIntMap -> AdjacencyIntMap
 closure = reflexiveClosure . transitiveClosure

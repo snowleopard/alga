@@ -133,6 +133,7 @@ testShow (Testsuite prefix (%)) = do
     test "show (1 * 2 + 3) == \"overlay (vertex 3) (edge 1 2)\"" $
           show % (1 * 2 + 3) == "overlay (vertex 3) (edge 1 2)"
 
+    putStrLn ""
     test "show (vertex (-1)                            ) == \"vertex (-1)\"" $
           show % (vertex (-1)                            ) == "vertex (-1)"
 
@@ -1072,7 +1073,7 @@ testCompose (Testsuite prefix (%)) = do
 
 testClosure :: Testsuite -> IO ()
 testClosure (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "compose ============"
+    putStrLn $ "\n============ " ++ prefix ++ "closure ============"
     test "closure empty           == empty" $
           closure % empty         == empty
 
@@ -1096,6 +1097,9 @@ testClosure (Testsuite prefix (%)) = do
 
     test "closure . closure       == closure" $ sizeLimit $ \x ->
          (closure . closure) % x  == closure x
+
+    test "postSet x (closure y)   == Set.fromList (reachable x y)" $ sizeLimit $ \x y ->
+          postSet x % (closure y) == Set.fromList (reachable x y)
 
 testReflexiveClosure :: Testsuite -> IO ()
 testReflexiveClosure (Testsuite prefix (%)) = do

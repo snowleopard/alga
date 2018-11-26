@@ -27,7 +27,7 @@ import Data.Tuple
 
 import Algebra.Graph.NonEmpty.AdjacencyMap
 import Algebra.Graph.Test hiding (axioms, theorems)
-import Algebra.Graph.ToGraph (toAdjacencyMap)
+import Algebra.Graph.ToGraph (toAdjacencyMap, reachable)
 
 import qualified Algebra.Graph.AdjacencyMap          as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
@@ -568,6 +568,9 @@ testNonEmptyAdjacencyMap = do
 
     test "closure . closure       == closure" $ sizeLimit $ \(x :: G) ->
          (closure . closure) x    == closure x
+
+    test "postSet x (closure y)   == Set.fromList (reachable x y)" $ sizeLimit $ \x (y :: G) ->
+          postSet x (closure y)   == Set.fromList (reachable x y)
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.reflexiveClosure ============"
     test "reflexiveClosure (vertex x)         == edge x x" $ \(x :: Int) ->

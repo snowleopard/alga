@@ -543,6 +543,7 @@ compose x y = Relation (referredToVertexSet r) r
 -- closure                 == 'reflexiveClosure' . 'transitiveClosure'
 -- closure                 == 'transitiveClosure' . 'reflexiveClosure'
 -- closure . closure       == closure
+-- 'postSet' x (closure y)   == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
 -- @
 closure :: Ord a => Relation a -> Relation a
 closure = reflexiveClosure . transitiveClosure

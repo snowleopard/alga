@@ -524,6 +524,7 @@ induce1 p = toNonEmpty . AM.induce p . am
 -- closure                  == 'reflexiveClosure' . 'transitiveClosure'
 -- closure                  == 'transitiveClosure' . 'reflexiveClosure'
 -- closure . closure        == closure
+-- 'postSet' x (closure y)    == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
 -- @
 closure :: Ord a => AdjacencyMap a -> AdjacencyMap a
 closure = via (AM.closure)
