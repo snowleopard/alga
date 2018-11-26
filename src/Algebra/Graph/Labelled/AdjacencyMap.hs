@@ -33,8 +33,8 @@ module Algebra.Graph.Labelled.AdjacencyMap (
     removeVertex, removeEdge, replaceVertex, replaceEdge, mergeVertices, transpose, gmap,
     emap, induce,
 
-    -- * Graph closure
-    closure, reflexiveClosure, symmetricClosure
+    -- * Relational operations
+    closure, reflexiveClosure, symmetricClosure, transitiveClosure
   ) where
 
 import Prelude ()
@@ -135,34 +135,6 @@ hasEdge x y (AM m) = fromMaybe False (Map.member y <$> Map.lookup x m)
 -- | Extract the label of a specified edge from a graph.
 edgeLabel :: (Monoid e, Ord a) => a -> a -> AdjacencyMap e a -> e
 edgeLabel x y (AM m) = fromMaybe zero (Map.lookup x m >>= Map.lookup y)
-
--- TODO: Optimise.
--- | Compute the /closure/ of a graph over the underlying star semiring using
--- the Warshall-Floyd-Kleene algorithm.
-closure :: (Eq e, Ord a, StarSemiring e) => AdjacencyMap e a -> AdjacencyMap e a
-closure (AM m) = reflexiveClosure $ AM $ foldr update m vs
-  where
-    vs = Set.toAscList (Map.keysSet m)
-    update k cur = Map.fromAscList [ (i, go i (get i k <.> starkk)) | i <- vs ]
-      where
-        get i j = edgeLabel i j (AM cur)
-        starkk  = star (get k k)
-        go i ik = Map.fromAscList
-            [ (j, e) | j <- vs, let e = get i j <+> ik <.> get k j, e /= zero ]
-
--- TODO: Optimise using mapWithKey
--- | Compute the /reflexive closure/ of a graph over the underlying semiring by
--- adding a self-loop of weight 'one' to every vertex.
-reflexiveClosure :: (Ord a, Semiring e) => AdjacencyMap e a -> AdjacencyMap e a
-reflexiveClosure (AM m) = AM $ foldr (\v -> Map.adjust (loop v) v) m (Map.keysSet m)
-  where
-    loop x = Map.insertWith (<+>) x one
-
--- TODO: Optimise.
--- | Compute the /symmetric closure/ of a graph by overlaying it with its own
--- transpose.
-symmetricClosure :: (Ord a, Semiring e) => AdjacencyMap e a -> AdjacencyMap e a
-symmetricClosure m = overlay m (transpose m)
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
@@ -277,3 +249,36 @@ emap f = AM . Map.map (Map.map f) . adjacencyMap
 induce :: (a -> Bool) -> AdjacencyMap e a -> AdjacencyMap e a
 induce p = AM . Map.map (Map.filterWithKey (\k _ -> p k)) .
     Map.filterWithKey (\k _ -> p k) . adjacencyMap
+
+-- | Compute the /reflexive and transitive closure/ of a graph over the
+-- underlying star semiring using the Warshall-Floyd-Kleene algorithm.
+closure :: (Eq e, Ord a, StarSemiring e) => AdjacencyMap e a -> AdjacencyMap e a
+closure = goWarshallFloydKleene . reflexiveClosure
+
+-- | Compute the /reflexive closure/ of a graph over the underlying semiring by
+-- adding a self-loop of weight 'one' to every vertex.
+reflexiveClosure :: (Ord a, Semiring e) => AdjacencyMap e a -> AdjacencyMap e a
+reflexiveClosure (AM m) = AM $ Map.mapWithKey (\k -> Map.insertWith (<+>) k one) m
+
+-- | Compute the /symmetric closure/ of a graph by overlaying it with its own
+-- transpose.
+symmetricClosure :: (Ord a, Semiring e) => AdjacencyMap e a -> AdjacencyMap e a
+symmetricClosure m = overlay m (transpose m)
+
+-- | Compute the /transitive closure/ of a graph over the underlying star
+-- semiring using a modified version of the Warshall-Floyd-Kleene algorithm,
+-- which omits the reflexivity step.
+transitiveClosure :: (Eq e, Ord a, StarSemiring e) => AdjacencyMap e a -> AdjacencyMap e a
+transitiveClosure = goWarshallFloydKleene
+
+-- The iterative part of the Warshall-Floyd-Kleene algorithm
+goWarshallFloydKleene :: (Eq e, Ord a, StarSemiring e) => AdjacencyMap e a -> AdjacencyMap e a
+goWarshallFloydKleene (AM m) = AM $ foldr update m vs
+  where
+    vs = Set.toAscList (Map.keysSet m)
+    update k cur = Map.fromAscList [ (i, go i (get i k <.> starkk)) | i <- vs ]
+      where
+        get i j = edgeLabel i j (AM cur)
+        starkk  = star (get k k)
+        go i ik = Map.fromAscList
+            [ (j, e) | j <- vs, let e = get i j <+> ik <.> get k j, e /= zero ]

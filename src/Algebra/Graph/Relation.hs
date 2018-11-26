@@ -34,7 +34,7 @@ module Algebra.Graph.Relation (
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
 
-    -- * Operations on binary relations
+    -- * Relational operations
     compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure
   ) where
 
