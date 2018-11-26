@@ -25,4 +25,4 @@ fromRelation = PreorderRelation
 -- | Extract the underlying relation.
 -- Complexity: /O(n * m * log(m))/ time.
 toRelation :: Ord a => PreorderRelation a -> Relation a
-toRelation = preorderClosure . fromPreorder
+toRelation = closure . fromPreorder

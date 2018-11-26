@@ -44,7 +44,7 @@ module Algebra.Graph.NonEmpty.AdjacencyMap (
     induce1,
 
     -- * Graph closure
-    reflexiveClosure, symmetricClosure, transitiveClosure
+    closure, reflexiveClosure, symmetricClosure, transitiveClosure
     ) where
 
 import Prelude hiding (reverse)
@@ -274,7 +274,7 @@ vertexList1 = unsafeNonEmpty . AM.vertexList . am
 -- edgeList ('vertex' x)     == []
 -- edgeList ('edge' x y)     == [(x,y)]
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
--- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
+-- edgeList . 'edges'        == 'Data.List.NonEmpty.nub' . 'Data.List.sort'
 -- edgeList . 'transpose'    == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
@@ -513,14 +513,29 @@ gmap f = via (AM.gmap f)
 induce1 :: (a -> Bool) -> AdjacencyMap a -> Maybe (AdjacencyMap a)
 induce1 p = toNonEmpty . AM.induce p . am
 
+-- | Compute the /reflexive and transitive closure/ of a graph.
+-- Complexity: /O(n * m * log(n)^2)/ time.
+--
+-- @
+-- closure ('vertex' x)       == 'edge' x x
+-- closure ('edge' x x)       == 'edge' x x
+-- closure ('edge' x y)       == 'edges1' [(x,x), (x,y), (y,y)]
+-- closure ('path1' $ 'Data.List.NonEmpty.nub' xs) == 'reflexiveClosure' ('clique1' $ 'Data.List.NonEmpty.nub' xs)
+-- closure                  == 'reflexiveClosure' . 'transitiveClosure'
+-- closure                  == 'transitiveClosure' . 'reflexiveClosure'
+-- closure . closure        == closure
+-- @
+closure :: Ord a => AdjacencyMap a -> AdjacencyMap a
+closure = via (AM.closure)
+
 -- | Compute the /reflexive closure/ of a graph by adding a self-loop to every
 -- vertex.
 -- Complexity: /O(n * log(n))/ time.
 --
 -- @
 -- reflexiveClosure ('vertex' x)         == 'edge' x x
--- reflexiveClosure ('edge' 1 1)         == 'edge' 1 1
--- reflexiveClosure ('edge' 1 2)         == 'edges1' [(1,1), (1,2), (2,2)]
+-- reflexiveClosure ('edge' x x)         == 'edge' x x
+-- reflexiveClosure ('edge' x y)         == 'edges1' [(x,x), (x,y), (y,y)]
 -- reflexiveClosure . reflexiveClosure == reflexiveClosure
 -- @
 reflexiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
@@ -545,7 +560,7 @@ symmetricClosure = via AM.symmetricClosure
 -- @
 -- transitiveClosure ('vertex' x)          == 'vertex' x
 -- transitiveClosure ('edge' x y)          == 'edge' x y
--- transitiveClosure ('path1' $ 'Data.List.nub' xs)    == 'clique1' ('Data.List.nub' xs)
+-- transitiveClosure ('path1' $ 'Data.List.NonEmpty.nub' xs)    == 'clique1' ('Data.List.NonEmpty.nub' xs)
 -- transitiveClosure . transitiveClosure == transitiveClosure
 -- @
 transitiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a

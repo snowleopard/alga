@@ -546,15 +546,38 @@ testNonEmptyAdjacencyMap = do
     test "induce1 p >=> induce1 q == induce1 (\\x -> p x && q x)" $ \(apply -> p) (apply -> q) (y :: G) ->
          (induce1 p >=> induce1 q) y == induce1 (\x -> p x && q x) y
 
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.closure ============"
+    test "closure (vertex x)      == edge x x" $ \(x :: Int) ->
+          closure (vertex x)      == edge x x
+
+    test "closure (edge x x)      == edge x x" $ \(x :: Int) ->
+          closure (edge x x)      == edge x x
+
+    test "closure (edge x y)      == edges1 [(x,x), (x,y), (y,y)]" $ \(x :: Int) y ->
+          closure (edge x y)      == edges1 [(x,x), (x,y), (y,y)]
+
+    test "closure (path1 $ nub xs) == reflexiveClosure (clique1 $ nub xs)" $ \(xs :: NonEmptyList Int) ->
+        let ys = NonEmpty.fromList (nubOrd $ getNonEmpty xs)
+        in closure (path1 $ ys) == reflexiveClosure (clique1 $ ys)
+
+    test "closure                 == reflexiveClosure . transitiveClosure" $ sizeLimit $ \(x :: G) ->
+          closure x               == (reflexiveClosure . transitiveClosure) x
+
+    test "closure                 == transitiveClosure . reflexiveClosure" $ sizeLimit $ \(x :: G) ->
+          closure x               == (transitiveClosure . reflexiveClosure) x
+
+    test "closure . closure       == closure" $ sizeLimit $ \(x :: G) ->
+         (closure . closure) x    == closure x
+
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.reflexiveClosure ============"
     test "reflexiveClosure (vertex x)         == edge x x" $ \(x :: Int) ->
           reflexiveClosure (vertex x)         == edge x x
 
-    test "reflexiveClosure (edge 1 1)         == edge 1 1" $
-          reflexiveClosure (edge 1 1)         == edge 1 (1 :: Int)
+    test "reflexiveClosure (edge x x)         == edge x x" $ \(x :: Int) ->
+          reflexiveClosure (edge x x)         == edge x x
 
-    test "reflexiveClosure (edge 1 2)         == edges1 [(1,1), (1,2), (2,2)]" $
-          reflexiveClosure (edge 1 2)         == edges1 [(1,1), (1,2), (2,2 :: Int)]
+    test "reflexiveClosure (edge x y)         == edges1 [(x,x), (x,y), (y,y)]" $ \(x :: Int) y ->
+          reflexiveClosure (edge x y)         == edges1 [(x,x), (x,y), (y,y)]
 
     test "reflexiveClosure . reflexiveClosure == reflexiveClosure" $ \(x :: G) ->
          (reflexiveClosure . reflexiveClosure) x == reflexiveClosure x

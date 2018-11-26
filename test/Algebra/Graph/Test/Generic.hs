@@ -88,6 +88,7 @@ testToGraph = mconcat [ testToGraphDefault
 
 testRelational :: Testsuite -> IO ()
 testRelational = mconcat [ testCompose
+                         , testClosure
                          , testReflexiveClosure
                          , testSymmetricClosure
                          , testTransitiveClosure ]
@@ -1069,6 +1070,33 @@ testCompose (Testsuite prefix (%)) = do
     test "compose (circuit [1..5]) (circuit [1..5]) == circuit [1,3,5,2,4]" $
           compose (circuit [1..5])%(circuit [1..5]) == circuit [1,3,5,2,4]
 
+testClosure :: Testsuite -> IO ()
+testClosure (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "compose ============"
+    test "closure empty           == empty" $
+          closure % empty         == empty
+
+    test "closure (vertex x)      == edge x x" $ \x ->
+          closure % (vertex x)    == edge x x
+
+    test "closure (edge x x)      == edge x x" $ \x ->
+          closure % (edge x x)    == edge x x
+
+    test "closure (edge x y)      == edges [(x,x), (x,y), (y,y)]" $ \x y ->
+          closure % (edge x y)    == edges [(x,x), (x,y), (y,y)]
+
+    test "closure (path $ nub xs) == reflexiveClosure (clique $ nub xs)" $ \xs ->
+          closure % (path $ nubOrd xs) == reflexiveClosure (clique $ nubOrd xs)
+
+    test "closure                 == reflexiveClosure . transitiveClosure" $ sizeLimit $ \x ->
+          closure % x             == (reflexiveClosure . transitiveClosure) x
+
+    test "closure                 == transitiveClosure . reflexiveClosure" $ sizeLimit $ \x ->
+          closure % x             == (transitiveClosure . reflexiveClosure) x
+
+    test "closure . closure       == closure" $ sizeLimit $ \x ->
+         (closure . closure) % x  == closure x
+
 testReflexiveClosure :: Testsuite -> IO ()
 testReflexiveClosure (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "reflexiveClosure ============"
@@ -1078,11 +1106,11 @@ testReflexiveClosure (Testsuite prefix (%)) = do
     test "reflexiveClosure (vertex x)         == edge x x" $ \x ->
           reflexiveClosure % vertex x         == edge x x
 
-    test "reflexiveClosure (edge 1 1)         == edge 1 1" $
-          reflexiveClosure % edge 1 1         == edge 1 1
+    test "reflexiveClosure (edge x x)         == edge x x" $ \x ->
+          reflexiveClosure % edge x x         == edge x x
 
-    test "reflexiveClosure (edge 1 2)         == edges [(1,1), (1,2), (2,2)]" $
-          reflexiveClosure % edge 1 2         == edges [(1,1), (1,2), (2,2)]
+    test "reflexiveClosure (edge x y)         == edges [(x,x), (x,y), (y,y)]" $ \x y ->
+          reflexiveClosure % edge x y         == edges [(x,x), (x,y), (y,y)]
 
     test "reflexiveClosure . reflexiveClosure == reflexiveClosure" $ \x ->
          (reflexiveClosure . reflexiveClosure) x == reflexiveClosure % x

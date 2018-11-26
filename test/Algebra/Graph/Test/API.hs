@@ -86,6 +86,8 @@ class Graph g => GraphAPI g where
     induce               = notImplemented
     compose              :: g -> g -> g
     compose              = notImplemented
+    closure              :: g -> g
+    closure              = notImplemented
     reflexiveClosure     :: g -> g
     reflexiveClosure     = notImplemented
     symmetricClosure     :: g -> g
@@ -126,6 +128,7 @@ instance Ord a => GraphAPI (AM.AdjacencyMap a) where
     gmap              = AM.gmap
     induce            = AM.induce
     compose           = AM.compose
+    closure           = AM.closure
     reflexiveClosure  = AM.reflexiveClosure
     symmetricClosure  = AM.symmetricClosure
     transitiveClosure = AM.transitiveClosure
@@ -214,6 +217,7 @@ instance GraphAPI AIM.AdjacencyIntMap where
     gmap                 = AIM.gmap
     induce               = AIM.induce
     compose              = AIM.compose
+    closure              = AIM.closure
     reflexiveClosure     = AIM.reflexiveClosure
     symmetricClosure     = AIM.symmetricClosure
     transitiveClosure    = AIM.transitiveClosure
@@ -241,6 +245,7 @@ instance Ord a => GraphAPI (R.Relation a) where
     gmap              = R.gmap
     induce            = R.induce
     compose           = R.compose
+    closure           = R.closure
     reflexiveClosure  = R.reflexiveClosure
     symmetricClosure  = R.symmetricClosure
     transitiveClosure = R.transitiveClosure

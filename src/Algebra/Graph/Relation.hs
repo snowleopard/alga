@@ -35,7 +35,7 @@ module Algebra.Graph.Relation (
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
 
     -- * Operations on binary relations
-    compose, reflexiveClosure, symmetricClosure, transitiveClosure, preorderClosure
+    compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure
   ) where
 
 import Prelude ()
@@ -505,12 +505,12 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
   where
     pp (x, y) = p x && p y
 
--- | /Relational composition/ of graphs: vertices @x@ and @z@ are connected in
--- the resulting graph if there is a vertex @y@, such that @x@ is connected to
--- @y@ in the first graph, and @y@ is connected to @z@ in the second graph.
--- Isolated vertices are dropped from the result. This operation is associative,
--- has 'empty' and single-'vertex' graphs as /annihilating zeroes/, and
--- distributes over 'overlay'.
+-- | Left-to-right /relational composition/ of graphs: vertices @x@ and @z@ are
+-- connected in the resulting graph if there is a vertex @y@, such that @x@ is
+-- connected to @y@ in the first graph, and @y@ is connected to @z@ in the
+-- second graph. There are no isolated vertices in the result. This operation is
+-- associative, has 'empty' and single-'vertex' graphs as /annihilating zeroes/,
+-- and distributes over 'overlay'.
 -- Complexity: /O(n * m * log(m))/ time and /O(n + m)/ memory.
 --
 -- @
@@ -531,21 +531,37 @@ compose x y = Relation (referredToVertexSet r) r
     d = domain x `Set.union` domain y
     r = Set.unions [ preSet v x `setProduct` postSet v y | v <- Set.toAscList d ]
 
--- | Compute the /reflexive closure/ of a 'Relation'.
+-- | Compute the /reflexive and transitive closure/ of a graph.
+-- Complexity: /O(n * m * log(n) * log(m))/ time.
+--
+-- @
+-- closure 'empty'           == 'empty'
+-- closure ('vertex' x)      == 'edge' x x
+-- closure ('edge' x x)      == 'edge' x x
+-- closure ('edge' x y)      == 'edges' [(x,x), (x,y), (y,y)]
+-- closure ('path' $ 'Data.List.nub' xs) == 'reflexiveClosure' ('clique' $ 'Data.List.nub' xs)
+-- closure                 == 'reflexiveClosure' . 'transitiveClosure'
+-- closure                 == 'transitiveClosure' . 'reflexiveClosure'
+-- closure . closure       == closure
+-- @
+closure :: Ord a => Relation a -> Relation a
+closure = reflexiveClosure . transitiveClosure
+
+-- | Compute the /reflexive closure/ of a graph.
 -- Complexity: /O(n * log(m))/ time.
 --
 -- @
 -- reflexiveClosure 'empty'              == 'empty'
 -- reflexiveClosure ('vertex' x)         == 'edge' x x
--- reflexiveClosure ('edge' 1 1)         == 'edge' 1 1
--- reflexiveClosure ('edge' 1 2)         == 'edges' [(1,1), (1,2), (2,2)]
+-- reflexiveClosure ('edge' x x)         == 'edge' x x
+-- reflexiveClosure ('edge' x y)         == 'edges' [(x,x), (x,y), (y,y)]
 -- reflexiveClosure . reflexiveClosure == reflexiveClosure
 -- @
 reflexiveClosure :: Ord a => Relation a -> Relation a
 reflexiveClosure (Relation d r) =
     Relation d $ r `Set.union` Set.fromDistinctAscList [ (a, a) | a <- Set.toAscList d ]
 
--- | Compute the /symmetric closure/ of a 'Relation'.
+-- | Compute the /symmetric closure/ of a graph.
 -- Complexity: /O(m * log(m))/ time.
 --
 -- @
@@ -558,7 +574,7 @@ reflexiveClosure (Relation d r) =
 symmetricClosure :: Ord a => Relation a -> Relation a
 symmetricClosure (Relation d r) = Relation d $ r `Set.union` Set.map swap r
 
--- | Compute the /transitive closure/ of a 'Relation'.
+-- | Compute the /transitive closure/ of a graph.
 -- Complexity: /O(n * m * log(n) * log(m))/ time.
 --
 -- @
@@ -574,14 +590,3 @@ transitiveClosure old
     | otherwise  = transitiveClosure new
   where
     new = overlay old (old `compose` old)
-
--- | Compute the /preorder closure/ of a 'Relation'.
--- Complexity: /O(n * m * log(n) * log(m))/ time.
---
--- @
--- preorderClosure 'empty'           == 'empty'
--- preorderClosure ('vertex' x)      == 'edge' x x
--- preorderClosure ('path' $ 'Data.List.nub' xs) == 'reflexiveClosure' ('clique' $ 'Data.List.nub' xs)
--- @
-preorderClosure :: Ord a => Relation a -> Relation a
-preorderClosure = reflexiveClosure . transitiveClosure

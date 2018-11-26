@@ -39,7 +39,7 @@ module Algebra.Graph.AdjacencyIntMap (
     induce,
 
     -- * Relational operations
-    compose, reflexiveClosure, symmetricClosure, transitiveClosure
+    compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure
     ) where
 
 import Data.Foldable (foldMap)
@@ -605,12 +605,12 @@ gmap f = AM . IntMap.map (IntSet.map f) . IntMap.mapKeysWith IntSet.union f . ad
 induce :: (Int -> Bool) -> AdjacencyIntMap -> AdjacencyIntMap
 induce p = AM . IntMap.map (IntSet.filter p) . IntMap.filterWithKey (\k _ -> p k) . adjacencyIntMap
 
--- | /Relational composition/ of graphs: vertices @x@ and @z@ are connected in
--- the resulting graph if there is a vertex @y@, such that @x@ is connected to
--- @y@ in the first graph, and @y@ is connected to @z@ in the second graph.
--- Isolated vertices are dropped from the result. This operation is associative,
--- has 'empty' and single-'vertex' graphs as /annihilating zeroes/, and
--- distributes over 'overlay'.
+-- | Left-to-right /relational composition/ of graphs: vertices @x@ and @z@ are
+-- connected in the resulting graph if there is a vertex @y@, such that @x@ is
+-- connected to @y@ in the first graph, and @y@ is connected to @z@ in the
+-- second graph. There are no isolated vertices in the result. This operation is
+-- associative, has 'empty' and single-'vertex' graphs as /annihilating zeroes/,
+-- and distributes over 'overlay'.
 -- Complexity: /O(n * m * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
@@ -633,6 +633,22 @@ compose x y = fromAdjacencyIntSets r
     r = [ (a, cs) | b <- IntSet.toAscList d, let cs = postIntSet b y
                   , not (IntSet.null cs), a <- IntSet.toAscList (postIntSet b t) ]
 
+-- | Compute the /reflexive and transitive closure/ of a graph.
+-- Complexity: /O(n * m * log(n)^2)/ time.
+--
+-- @
+-- closure 'empty'           == 'empty'
+-- closure ('vertex' x)      == 'edge' x x
+-- closure ('edge' x x)      == 'edge' x x
+-- closure ('edge' x y)      == 'edges' [(x,x), (x,y), (y,y)]
+-- closure ('path' $ 'Data.List.nub' xs) == 'reflexiveClosure' ('clique' $ 'Data.List.nub' xs)
+-- closure                 == 'reflexiveClosure' . 'transitiveClosure'
+-- closure                 == 'transitiveClosure' . 'reflexiveClosure'
+-- closure . closure       == closure
+-- @
+closure :: AdjacencyIntMap -> AdjacencyIntMap
+closure = reflexiveClosure . transitiveClosure
+
 -- | Compute the /reflexive closure/ of a graph by adding a self-loop to every
 -- vertex.
 -- Complexity: /O(n * log(n))/ time.
@@ -640,8 +656,8 @@ compose x y = fromAdjacencyIntSets r
 -- @
 -- reflexiveClosure 'empty'              == 'empty'
 -- reflexiveClosure ('vertex' x)         == 'edge' x x
--- reflexiveClosure ('edge' 1 1)         == 'edge' 1 1
--- reflexiveClosure ('edge' 1 2)         == 'edges' [(1,1), (1,2), (2,2)]
+-- reflexiveClosure ('edge' x x)         == 'edge' x x
+-- reflexiveClosure ('edge' x y)         == 'edges' [(x,x), (x,y), (y,y)]
 -- reflexiveClosure . reflexiveClosure == reflexiveClosure
 -- @
 reflexiveClosure :: AdjacencyIntMap -> AdjacencyIntMap

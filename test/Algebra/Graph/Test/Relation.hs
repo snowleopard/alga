@@ -49,16 +49,6 @@ testRelation = do
     testTransformations t
     testRelational      t
 
-    putStrLn "\n============ Relation.preorderClosure ============"
-    test "preorderClosure empty           == empty" $
-          preorderClosure empty           ==(empty :: RI)
-
-    test "preorderClosure (vertex x)      == edge x x" $ \(x :: Int) ->
-          preorderClosure (vertex x)      == edge x x
-
-    test "preorderClosure (path $ nub xs) == reflexiveClosure (clique $ nub xs)" $ \(xs :: [Int]) ->
-          preorderClosure (path $ nubOrd xs) == reflexiveClosure (clique $ nubOrd xs)
-
     putStrLn "\n============ ReflexiveRelation ============"
     test "Axioms of reflexive graphs" $ sizeLimit
         (reflexiveAxioms :: GraphTestsuite (ReflexiveRelation Int))
