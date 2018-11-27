@@ -17,7 +17,7 @@ module Algebra.Graph.Test.Generic (
     testPostSet, testPostIntSet, testGraphFamilies, testTransformations,
     testSplitVertex, testBind, testSimplify, testDfsForest, testDfsForestFrom,
     testDfs, testReachable, testTopSort, testIsAcyclic, testIsDfsForestOf,
-    testIsTopSortOf
+    testIsTopSortOf, testCompose
     ) where
 
 import Prelude ()

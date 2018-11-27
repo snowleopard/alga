@@ -626,12 +626,12 @@ induce p = AM . IntMap.map (IntSet.filter p) . IntMap.filterWithKey (\k _ -> p k
 -- compose ('circuit' [1..5]) ('circuit' [1..5]) == 'circuit' [1,3,5,2,4]
 -- @
 compose :: AdjacencyIntMap -> AdjacencyIntMap -> AdjacencyIntMap
-compose x y = fromAdjacencyIntSets r
+compose x y = fromAdjacencyIntSets
+    [ (t, ys) | v <- IntSet.toList vs, let ys = postIntSet v y
+              , not (IntSet.null ys), t <- IntSet.toList (postIntSet v tx) ]
   where
-    t = transpose x
-    d = IntMap.keysSet (adjacencyIntMap x) `IntSet.union` IntMap.keysSet (adjacencyIntMap y)
-    r = [ (a, cs) | b <- IntSet.toAscList d, let cs = postIntSet b y
-                  , not (IntSet.null cs), a <- IntSet.toAscList (postIntSet b t) ]
+    tx = transpose x
+    vs = vertexIntSet x `IntSet.union` vertexIntSet y
 
 -- | Compute the /reflexive and transitive closure/ of a graph.
 -- Complexity: /O(n * m * log(n)^2)/ time.
