@@ -7,7 +7,7 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Testsuite for "Algebra.Graph" rewrite-rules
+-- Testsuite for "Algebra.Graph" rewrite rules.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.RewriteRules where
 
@@ -18,81 +18,81 @@ import Algebra.Graph.Internal
 
 import Test.Inspection
 
--- overlays/connects tests
---- overlays . map vertex
-vertices', overlaysDotMapVertex :: [a] -> Graph a
-vertices'            = fromMaybe Empty . foldr (maybeF Overlay . Vertex) Nothing
-overlaysDotMapVertex = overlays . map vertex
+-- Naming convention: we use the suffix "R" to indicate the desired outcome of
+-- rewrite rules, and suffices "1", "2", etc. to indicate initial expressions.
 
-inspect $ 'vertices' === 'overlaysDotMapVertex
+-- Testsuite for 'overlays' and 'connects'.
+vertices1, verticesR :: [a] -> Graph a
+vertices1 = overlays . map vertex
+verticesR = fromMaybe Empty . foldr (maybeF Overlay . Vertex) Nothing
 
---- connects . map vertex
-clique', connectsDotMapVertex :: [a] -> Graph a
-clique'              = fromMaybe Empty . foldr (maybeF Connect . Vertex) Nothing
-connectsDotMapVertex = connects . map vertex
+inspect $ 'vertices1 === 'verticesR
 
-inspect $ 'clique' === 'connectsDotMapVertex
+clique1, cliqueR :: [a] -> Graph a
+clique1 = connects . map vertex
+cliqueR = fromMaybe Empty . foldr (maybeF Connect . Vertex) Nothing
 
--- transpose tests
---- transpose empty
-empty', transposeEmpty :: Graph a
-empty'         = Empty
-transposeEmpty = transpose Empty
+inspect $ 'clique1 === 'cliqueR
 
-inspect $ 'empty' === 'transposeEmpty
+-- Testsuite for 'transpose'.
+empty1, emptyR :: Graph a
+empty1 = transpose Empty
+emptyR = Empty
 
---- transpose . vertex
-vertex', transposeDotVertex :: a -> Graph a
-vertex'            = Vertex
-transposeDotVertex = transpose . vertex
+inspect $ 'empty1 === 'emptyR
 
-inspect $ 'vertex' === 'transposeDotVertex
+vertex1, vertexR :: a -> Graph a
+vertex1 = transpose . vertex
+vertexR = Vertex
 
---- transpose . overlay
-overlayTransposed, transposeDotOverlay :: Graph a -> Graph a -> Graph a
-overlayTransposed   g1 g2 = Overlay (transpose g1) (transpose g2)
-transposeDotOverlay g1 g2 = transpose $ Overlay g1 g2
+inspect $ 'vertex1 === 'vertexR
 
-inspect $ 'overlayTransposed === 'transposeDotOverlay
+overlay1, overlayR :: Graph a -> Graph a -> Graph a
+overlay1 x y = transpose (Overlay x y)
+overlayR x y = Overlay (transpose x) (transpose y)
 
---- transpose . connect
-connectTransposed, transposeDotConnect :: Graph a -> Graph a -> Graph a
-connectTransposed   g1 g2 = Connect (transpose g2) (transpose g1)
-transposeDotConnect g1 g2 = transpose $ Connect g1 g2
+inspect $ 'overlay1 === 'overlayR
 
-inspect $ 'connectTransposed === 'transposeDotConnect
+connect1, connectR :: Graph a -> Graph a -> Graph a
+connect1 x y = transpose (Connect x y)
+connectR x y = Connect (transpose y) (transpose x)
 
---- transpose . overlays
-overlaysTransposed, transposeDotOverlays :: [Graph a] -> Graph a
-overlaysTransposed   = overlays . map transpose
-transposeDotOverlays = transpose . overlays
+inspect $ 'connect1 === 'connectR
 
-inspect $ 'overlaysTransposed === 'transposeDotOverlays
+overlays1, overlaysR :: [Graph a] -> Graph a
+overlays1 = transpose . overlays
+overlaysR = overlays . map transpose
 
---- transpose . connects
-connectsTransposed, transposeDotConnects :: [Graph a] -> Graph a
-connectsTransposed   = fromMaybe Empty . foldr (maybeF (flip Connect) . transpose) Nothing
-transposeDotConnects = transpose . connects
+inspect $ 'overlays1 === 'overlaysR
 
-inspect $ 'connectsTransposed === 'transposeDotConnects
+connects1, connectsR :: [Graph a] -> Graph a
+connects1 = transpose . connects
+connectsR = fromMaybe Empty . foldr (maybeF (flip Connect) . transpose) Nothing
 
---- transpose . vertices
-transposeDotVertices :: [a] -> Graph a
-transposeDotVertices = transpose . overlays . map vertex
+inspect $ 'connects1 === 'connectsR
 
-inspect $ 'vertices' === 'transposeDotVertices
+vertices2 :: [a] -> Graph a
+vertices2 = transpose . overlays . map vertex
 
---- transpose . clique
-cliqueTransposed, transposeDotClique :: [a] -> Graph a
-cliqueTransposed   = fromMaybe Empty . foldr (maybeF (flip Connect) . Vertex) Nothing
-transposeDotClique = transpose . connects . map vertex
+inspect $ 'vertices2 === 'vertices1
 
-inspect $ 'cliqueTransposed === 'transposeDotClique
+-- Note that we currently have these three tests:
+-- * vertices2 === vertices1
+-- * vertices1 === verticesR
+-- * vertices2 =/= verticesR
+-- This non-transitivity is awkward, and feels like a bug in the inspection
+-- testing library. See https://github.com/nomeata/inspection-testing/issues/23.
+inspect $ 'vertices2 =/= 'verticesR
 
---- transpose . star
-starTranspose, transposeDotStar :: a -> [a] -> Graph a
-starTranspose a [] = vertex a
-starTranspose a xs = connect (vertices xs) (vertex a)
-transposeDotStar x = transpose . star x
+cliqueT1, cliqueTR :: [a] -> Graph a
+cliqueT1 = transpose . connects . map vertex
+cliqueTR = fromMaybe Empty . foldr (maybeF (flip Connect) . Vertex) Nothing
 
-inspect $ 'starTranspose === 'transposeDotStar
+inspect $ 'cliqueT1 === 'cliqueTR
+
+starT1, starTR :: a -> [a] -> Graph a
+starT1 x = transpose . star x
+starTR a [] = vertex a
+starTR a xs = connect (vertices xs) (vertex a)
+
+inspect $ 'starT1 === 'starTR

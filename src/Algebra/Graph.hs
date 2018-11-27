@@ -194,8 +194,8 @@ These functions are annotated with carefully chosen GHC pragmas that control
 inlining, which would be impossible or unreliable if we used standard functions
 instead. For example, the function 'eqR' has the following annotations:
 
-{-# NOINLINE [1] eqR #-}
-{-# RULES "eqIntR" eqR = eqIntR #-}
+    NOINLINE [1] eqR
+    RULES "eqIntR" eqR = eqIntR
 
 This tells GHC to rewrite 'eqR' to faster 'eqIntR' if possible (if the types
 match), and -- importantly -- not to inline 'eqR' too early, before the rewrite
@@ -203,7 +203,7 @@ rule had a chance to fire.
 
 We could have written the following rule instead:
 
-{-# RULES "eqIntR" (==) = eqIntR #-}
+    RULES "eqIntR" (==) = eqIntR
 
 But that would have to rely on appropriate inlining behaviour of (==) which is
 not under our control. We therefore choose the safe and more explicit path of
@@ -211,9 +211,9 @@ creating our own intermediate functions for guiding rewrite rules when needed.
 -}
 
 instance Functor Graph where
-  fmap = fmapR
+    fmap = fmapR
 
--- 'fmap' on which we can apply rewrite rules
+-- This is a usual implementation of 'fmap', but with custom rewrite rules.
 fmapR :: (a -> b) -> Graph a -> Graph b
 fmapR f = foldg empty (vertex . f) overlay connect
 {-# INLINE [0] fmapR #-}
@@ -444,18 +444,18 @@ foldg e v o c = go
 
 {-# RULES
 "foldg/Empty"   forall e v o c.
-  foldg e v o c Empty = e
+    foldg e v o c Empty = e
 "foldg/Vertex"  forall e v o c x.
-  foldg e v o c (Vertex x) = v x
+    foldg e v o c (Vertex x) = v x
 "foldg/Overlay" forall e v o c x y.
-  foldg e v o c (Overlay x y) = o (foldg e v o c x) (foldg e v o c y)
+    foldg e v o c (Overlay x y) = o (foldg e v o c x) (foldg e v o c y)
 "foldg/Connect" forall e v o c x y.
-  foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
+    foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
 
-"foldg/overlays" forall e v o c lst .
-  foldg e v o c (overlays lst) = fromMaybe e (foldr (maybeF o . foldg e v o c) Nothing lst)
-"foldg/connects" forall e v o c lst .
-  foldg e v o c (connects lst) = fromMaybe e (foldr (maybeF c . foldg e v o c) Nothing lst)
+"foldg/overlays" forall e v o c xs.
+    foldg e v o c (overlays xs) = fromMaybe e (foldr (maybeF o . foldg e v o c) Nothing xs)
+"foldg/connects" forall e v o c xs.
+    foldg e v o c (connects xs) = fromMaybe e (foldr (maybeF c . foldg e v o c) Nothing xs)
  #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
@@ -471,9 +471,9 @@ foldg e v o c = go
 -- isSubgraphOf ('path' xs)     ('circuit' xs)  ==  True
 -- isSubgraphOf x y                         ==> x <= y
 -- @
-{-# SPECIALISE isSubgraphOf :: Graph Int -> Graph Int -> Bool #-}
 isSubgraphOf :: Ord a => Graph a -> Graph a -> Bool
 isSubgraphOf x y = overlay x y == y
+{-# SPECIALISE isSubgraphOf :: Graph Int -> Graph Int -> Bool #-}
 
 -- | Structural equality on graph expressions.
 -- Complexity: /O(s)/ time.
@@ -485,13 +485,13 @@ isSubgraphOf x y = overlay x y == y
 -- 1 + 2 === 2 + 1     == False
 -- x + y === x * y     == False
 -- @
-{-# SPECIALISE (===) :: Graph Int -> Graph Int -> Bool #-}
 (===) :: Eq a => Graph a -> Graph a -> Bool
 Empty           === Empty           = True
 (Vertex  x1   ) === (Vertex  x2   ) = x1 ==  x2
 (Overlay x1 y1) === (Overlay x2 y2) = x1 === x2 && y1 === y2
 (Connect x1 y1) === (Connect x2 y2) = x1 === x2 && y1 === y2
 _               === _               = False
+{-# SPECIALISE (===) :: Graph Int -> Graph Int -> Bool #-}
 
 infix 4 ===
 
@@ -532,9 +532,9 @@ size = foldg 1 (const 1) (+) (+)
 -- hasVertex 1 ('vertex' 2)       == False
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
-{-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex x = foldg False (==x) (||) (||)
+{-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
@@ -546,7 +546,6 @@ hasVertex x = foldg False (==x) (||) (||)
 -- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
-{-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
 hasEdge s t g = hit g == Edge
   where
@@ -560,6 +559,7 @@ hasEdge s t g = hit g == Edge
         Miss -> hit y
         Tail -> if hasVertex t y then Edge else Tail
         Edge -> Edge
+{-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
@@ -570,10 +570,10 @@ hasEdge s t g = hit g == Edge
 -- vertexCount                   ==  'length' . 'vertexList'
 -- vertexCount x \< vertexCount y ==> x \< y
 -- @
-{-# INLINE [1] vertexCount #-}
-{-# RULES "vertexCount/Int" vertexCount = vertexIntCountR #-}
 vertexCount :: Ord a => Graph a -> Int
 vertexCount = Set.size . vertexSet
+{-# INLINE [1] vertexCount #-}
+{-# RULES "vertexCount/Int" vertexCount = vertexIntCountR #-}
 
 -- Like 'vertexCount' but specialised for graphs with vertices of type 'Int'.
 vertexIntCountR :: Graph Int -> Int
@@ -589,10 +589,10 @@ vertexIntCountR = IntSet.size . vertexIntSetR
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-{-# INLINE [1] edgeCount #-}
-{-# RULES "edgeCount/Int" edgeCount = edgeCountIntR #-}
 edgeCount :: Ord a => Graph a -> Int
 edgeCount = AM.edgeCount . toAdjacencyMap
+{-# INLINE [1] edgeCount #-}
+{-# RULES "edgeCount/Int" edgeCount = edgeCountIntR #-}
 
 -- Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
 edgeCountIntR :: Graph Int -> Int
@@ -606,10 +606,10 @@ edgeCountIntR = AIM.edgeCount . toAdjacencyIntMap
 -- vertexList ('vertex' x) == [x]
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
-{-# INLINE [1] vertexList #-}
-{-# RULES "vertexList/Int" vertexList = vertexIntListR #-}
 vertexList :: Ord a => Graph a -> [a]
 vertexList = Set.toAscList . vertexSet
+{-# INLINE [1] vertexList #-}
+{-# RULES "vertexList/Int" vertexList = vertexIntListR #-}
 
 -- Like 'vertexList' but specialised for graphs with vertices of type 'Int'.
 vertexIntListR :: Graph Int -> [Int]
@@ -627,10 +627,10 @@ vertexIntListR = IntSet.toList . vertexIntSetR
 -- edgeList . 'edges'        == 'Data.List.nub' . 'Data.List.sort'
 -- edgeList . 'transpose'    == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . edgeList
 -- @
-{-# INLINE [1] edgeList #-}
-{-# RULES "edgeList/Int" edgeList = edgeIntListR #-}
 edgeList :: Ord a => Graph a -> [(a, a)]
 edgeList = AM.edgeList . toAdjacencyMap
+{-# INLINE [1] edgeList #-}
+{-# RULES "edgeList/Int" edgeList = edgeIntListR #-}
 
 -- Like 'edgeList' but specialised for graphs with vertices of type 'Int'.
 edgeIntListR :: Graph Int -> [(Int, Int)]
@@ -680,9 +680,9 @@ edgeIntSetR = AIM.edgeSet . toAdjacencyIntMap
 -- adjacencyList ('star' 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]
 -- 'stars' . adjacencyList        == id
 -- @
-{-# SPECIALISE adjacencyList :: Graph Int -> [(Int, [Int])] #-}
 adjacencyList :: Ord a => Graph a -> [(a, [a])]
 adjacencyList = AM.adjacencyList . toAdjacencyMap
+{-# SPECIALISE adjacencyList :: Graph Int -> [(Int, [Int])] #-}
 
 -- TODO: This is a very inefficient implementation. Find a way to construct an
 -- adjacency map directly, without building intermediate representations for all
@@ -896,9 +896,9 @@ deBruijn len alphabet = skeleton >>= expand
 -- removeVertex 1 ('edge' 1 2)       == 'vertex' 2
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
-{-# SPECIALISE removeVertex :: Int -> Graph Int -> Graph Int #-}
 removeVertex :: Eq a => a -> Graph a -> Graph a
 removeVertex v = induce (/= v)
+{-# SPECIALISE removeVertex :: Int -> Graph Int -> Graph Int #-}
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
@@ -911,18 +911,18 @@ removeVertex v = induce (/= v)
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- 'size' (removeEdge x y z)         <= 3 * 'size' z
 -- @
-{-# SPECIALISE removeEdge :: Int -> Int -> Graph Int -> Graph Int #-}
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t = filterContext s (/=s) (/=t)
+{-# SPECIALISE removeEdge :: Int -> Int -> Graph Int -> Graph Int #-}
 
 -- TODO: Export
 -- | Filter vertices in a subgraph context.
-{-# SPECIALISE filterContext :: Int -> (Int -> Bool) -> (Int -> Bool) -> Graph Int -> Graph Int #-}
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
 filterContext s i o g = maybe g go $ context (==s) g
   where
     go (Context is os) = induce (/=s) g `overlay` transpose (star s (filter i is))
                                         `overlay` star          s (filter o os)
+{-# SPECIALISE filterContext :: Int -> (Int -> Bool) -> (Int -> Bool) -> Graph Int -> Graph Int #-}
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
@@ -933,9 +933,9 @@ filterContext s i o g = maybe g go $ context (==s) g
 -- replaceVertex x y ('vertex' x) == 'vertex' y
 -- replaceVertex x y            == 'mergeVertices' (== x) y
 -- @
-{-# SPECIALISE replaceVertex :: Int -> Int -> Graph Int -> Graph Int #-}
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
 replaceVertex u v = fmap $ \w -> if w == u then v else w
+{-# SPECIALISE replaceVertex :: Int -> Int -> Graph Int -> Graph Int #-}
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
@@ -961,9 +961,9 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 -- splitVertex x [y]                 == 'replaceVertex' x y
 -- splitVertex 1 [0,1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)
 -- @
-{-# SPECIALISE splitVertex :: Int -> [Int] -> Graph Int -> Graph Int #-}
 splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
 splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
+{-# SPECIALISE splitVertex :: Int -> [Int] -> Graph Int -> Graph Int #-}
 
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
@@ -1016,11 +1016,10 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Co
 -- simplify (1 + 2 + 1) '===' 1 + 2
 -- simplify (1 * 1 * 1) '===' 1 * 1
 -- @
-{-# SPECIALISE simplify :: Graph Int -> Graph Int #-}
 simplify :: Ord a => Graph a -> Graph a
 simplify = foldg Empty Vertex (simple Overlay) (simple Connect)
+{-# SPECIALISE simplify :: Graph Int -> Graph Int #-}
 
-{-# SPECIALISE simple :: (Int -> Int -> Int) -> Int -> Int -> Int #-}
 simple :: Eq g => (g -> g -> g) -> g -> g -> g
 simple op x y
     | x == z    = x
@@ -1028,6 +1027,7 @@ simple op x y
     | otherwise = z
   where
     z = op x y
+{-# SPECIALISE simple :: (Int -> Int -> Int) -> Int -> Int -> Int #-}
 
 -- | Compute the /Cartesian product/ of graphs.
 -- Complexity: /O(s1 * s2)/ time, memory and size, where /s1/ and /s2/ are the
@@ -1106,26 +1106,27 @@ sparsify graph = res
         overlay <$> s `x` m <*> m `y` t
 
 {- Note [The rules of foldg]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The rules for foldg work like this.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Up to (but not including) phase 1, we use the "buildR/f" rule to
-  rewrite all saturated applications of f with its buildR/foldg
-  form, hoping for fusion to happen (through the "foldg/buildR" rule).
+The rules for foldg work very similarly to GHC's mapFB rules; see a note below
+this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
 
-  In phase 1 and 0, we switch off these rules, inline buildR, and
-  switch on the "graph/f" rule, which rewrites the "foldg/f"
-  thing back into plain function if needed.
+* Up to (but not including) phase 1, we use the "buildR/f" rule to rewrite all
+  saturated applications of f into its buildR/foldg form, hoping for fusion to
+  happen (through the "foldg/buildR" rule).
 
-  It's important that these two rules aren't both active at once
-  (along with build's unfolding) else we'd get an infinite loop
-  in the rules. Hence the activation control below.
+  In phases 1 and 0, we switch off these rules, inline buildR, and switch on the
+  "graph/f" rule, which rewrites "foldg/f" back into plain functions if needed.
 
-* composeR and matchR are here to remember the original function after
-  applying a "buildR/f" rule. These functions are higher-order functions
-  and therefore benefits from inlining in final phase.
+  It's important that these two rules aren't both active at once (along with
+  build's unfolding) else we'd get an infinite loop in the rules. Hence the
+  activation control below.
 
-* The "fmapR/fmapR" rule optimises compositions of fmapR
+* composeR and matchR are here to remember the original function after applying
+  a "buildR/f" rule. These functions are higher-order functions and therefore
+  benefit from inlining in the final phase.
+
+* The "fmapR/fmapR" rule optimises compositions of multiple fmapR's.
 -}
 
 type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
@@ -1142,39 +1143,38 @@ matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
 matchR e v p = \x -> if p x then v x else e
 {-# INLINE [0] matchR #-}
 
--- Rules to transform a buildR-equivalent function into its equivalent
+-- These rules transform functions into their buildR equivalents.
 {-# RULES
--- Transform a fmapR into its build equivalent
-"buildR/fmapR"  forall f g.
-  fmapR  f g = buildR (\e v o c -> foldg e (composeR v f) o c g)
+"buildR/fmapR" forall f g.
+    fmapR f g = buildR (\e v o c -> foldg e (composeR v f) o c g)
 
--- Transform an induce into its build equivalent
-"buildR/induce"    [~1] forall p g.
-  induce p g = buildR (\e v o c -> foldg e (matchR e v p) o c g)
+"buildR/induce" [~1] forall p g.
+    induce p g = buildR (\e v o c -> foldg e (matchR e v p) o c g)
 
-"buildR/foldg(fc)" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b))  g.
-  foldg Empty Vertex Overlay (f Connect) g = buildR (\e v o c -> foldg e v o (f c) g)
+"buildR/foldg(fc)" [~1] forall (f :: forall b. (b -> b -> b) -> (b -> b -> b)) g.
+    foldg Empty Vertex Overlay (f Connect) g = buildR (\e v o c -> foldg e v o (f c) g)
 
-"buildR/foldg(fo)" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b))  g.
-  foldg Empty Vertex (f Overlay) Connect g = buildR (\e v o c -> foldg e v (f o) c g)
+"buildR/foldg(fo)" [~1] forall (f :: forall b. (b -> b -> b) -> (b -> b -> b)) g.
+    foldg Empty Vertex (f Overlay) Connect g = buildR (\e v o c -> foldg e v (f o) c g)
 
-"buildR/foldg(fo)(hc)" [~1] forall (f::forall b. (b -> b -> b) -> (b -> b -> b)) (h::forall b. (b -> b -> b) -> (b -> b -> b)) g.
-  foldg Empty Vertex (f Overlay) (h Connect) g = buildR (\e v o c -> foldg e v (f o) (h c) g)
+"buildR/foldg(fo)(hc)" [~1] forall (f :: forall b. (b -> b -> b) -> (b -> b -> b)) (h :: forall b. (b -> b -> b) -> (b -> b -> b)) g.
+    foldg Empty Vertex (f Overlay) (h Connect) g = buildR (\e v o c -> foldg e v (f o) (h c) g)
  #-}
 
--- Rules to merge rewrited functions
+-- Rewrite rules for fusion.
 {-# RULES
--- Merge a foldg followed by a buildR
-"foldg/buildR" forall e v o c (g::Foldg a).
-               foldg e v o c (buildR g) = g e v o c
+-- Fuse a foldg followed by a buildR
+"foldg/buildR" forall e v o c (g :: Foldg a).
+    foldg e v o c (buildR g) = g e v o c
 
--- Merge two composeR
--- This occurs when two adjacent 'fmapR' were rewritted in their
--- buildR form.
-"fmapR/fmapR"  forall c f g. composeR (composeR c f) g = composeR c (f.g)
+-- Fuse composeR's. This occurs when two adjacent 'fmapR' were rewritted into
+-- their buildR form.
+"fmapR/fmapR" forall c f g.
+    composeR (composeR c f) g = composeR c (f.g)
  #-}
 
--- Rules to rewrite un-merged function back
+-- Eliminate remaining rewrite-only functions.
 {-# RULES
-"graph/induce" [1] forall f. foldg Empty (matchR Empty Vertex f) Overlay Connect = induce f
+"graph/induce" [1] forall f.
+    foldg Empty (matchR Empty Vertex f) Overlay Connect = induce f
  #-}
