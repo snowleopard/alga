@@ -27,7 +27,7 @@ module Algebra.Graph.Labelled (
 
     -- * Types of edge-labelled graphs
     UnlabelledGraph, Automaton, Network
-  ) where
+    ) where
 
 import Prelude ()
 import Prelude.Compat

@@ -20,7 +20,8 @@ module Algebra.Graph.Labelled.AdjacencyMap (
     AdjacencyMap, adjacencyMap,
 
     -- * Basic graph construction primitives
-    empty, vertex, overlay, connect, edge, vertices, edges, overlays, (-<), (>-),
+    empty, vertex, overlay, connect, edge, (-<), (>-), vertices, edges,
+    overlays, fromAdjacencyMaps,
 
     -- * Relations on graphs
     isSubgraphOf,
@@ -53,6 +54,16 @@ import Algebra.Graph.Labelled.AdjacencyMap.Internal
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
 
+-- | Construct the /empty graph/.
+-- Complexity: /O(1)/ time and memory.
+empty :: AdjacencyMap e a
+empty = AM Map.empty
+
+-- | Construct the graph comprising /a single isolated vertex/.
+-- Complexity: /O(1)/ time and memory.
+vertex :: a -> AdjacencyMap e a
+vertex x = AM $ Map.singleton x Map.empty
+
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
 edge :: (Eq e, Monoid e, Ord a) => e -> a -> a -> AdjacencyMap e a
@@ -81,6 +92,24 @@ g -< e = (g, e)
 infixl 5 -<
 infixl 5 >-
 
+-- | /Overlay/ two graphs. This is a commutative, associative and idempotent
+-- operation with the identity 'empty'.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+overlay :: (Ord a, Semigroup e) => AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
+overlay (AM x) (AM y) = AM $ Map.unionWith (Map.unionWith (<+>)) x y
+
+-- | /Connect/ two graphs with edges labelled by a given label. When applied to
+-- the same labels, this is an associative operation with the identity 'empty',
+-- which distributes over 'overlay' and obeys the decomposition axiom.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
+-- number of edges in the resulting graph is quadratic with respect to the
+-- number of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
+connect :: (Ord a, Monoid e) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
+connect e (AM x) (AM y) = AM $ Map.unionsWith (Map.unionWith mappend)
+    [ x, y, Map.fromSet (const targets) (Map.keysSet x) ]
+  where
+    targets = Map.fromSet (const e) (Map.keysSet y)
+
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
 -- of the given list.
@@ -99,6 +128,14 @@ edges = fromAdjacencyMaps . concatMap fromEdge
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 overlays :: (Ord a, Semigroup e) => [AdjacencyMap e a] -> AdjacencyMap e a
 overlays = AM . Map.unionsWith (Map.unionWith (<+>)) . map adjacencyMap
+
+-- | Construct a graph from a list of adjacency sets.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+fromAdjacencyMaps :: (Ord a, Eq e, Monoid e) => [(a, Map a e)] -> AdjacencyMap e a
+fromAdjacencyMaps ss = AM $ Map.unionWith (Map.unionWith mappend) vs es
+  where
+    vs = Map.fromSet (const Map.empty) . Set.unions $ map (Map.keysSet . snd) ss
+    es = Map.fromListWith (Map.unionWith mappend) $ map (fmap $ Map.filter (/= zero)) ss
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.

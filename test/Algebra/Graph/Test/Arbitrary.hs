@@ -35,7 +35,6 @@ import qualified Algebra.Graph.AdjacencyMap                   as AdjacencyMap
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap          as NAM
 import qualified Algebra.Graph.Class                          as C
 import qualified Algebra.Graph.Labelled.AdjacencyMap          as Labelled
-import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal as Labelled
 import qualified Algebra.Graph.NonEmpty                       as NonEmpty
 import qualified Algebra.Graph.Relation                       as Relation
 
