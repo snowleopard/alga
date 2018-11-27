@@ -76,7 +76,12 @@ vertices2 = transpose . overlays . map vertex
 
 inspect $ 'vertices2 === 'vertices1
 
--- TODO: Why can't we reach the desired target expression?
+-- Note that we currently have these three tests:
+-- * vertices2 === vertices1
+-- * vertices1 === verticesR
+-- * vertices2 =/= verticesR
+-- This non-transitivity is awkward, and feels like a bug in the inspection
+-- testing library. See https://github.com/nomeata/inspection-testing/issues/23.
 inspect $ 'vertices2 =/= 'verticesR
 
 cliqueT1, cliqueTR :: [a] -> Graph a
