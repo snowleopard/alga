@@ -1053,6 +1053,7 @@ simple op x y
 -- compose ('edge' x y)       ('edge' y z)       == 'edge' x z
 -- compose ('path'    [1..5]) ('path'    [1..5]) == 'edges' [(1,3), (2,4), (3,5)]
 -- compose ('circuit' [1..5]) ('circuit' [1..5]) == 'circuit' [1,3,5,2,4]
+-- 'size' (compose x y)                        <= 'edgeCount' x + 'edgeCount' y + 1
 -- @
 compose :: Ord a => Graph a -> Graph a -> Graph a
 compose x y = overlays

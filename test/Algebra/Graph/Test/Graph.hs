@@ -38,7 +38,13 @@ testGraph = do
     testSize            t
     testGraphFamilies   t
     testTransformations t
+
+    ----------------------------------------------------------------
+    -- Generic relational composition tests, plus an additional one
     testCompose         t
+    test "size (compose x y)                        <= edgeCount x + edgeCount y + 1" $ \(x :: G) y ->
+          size (compose x y)                        <= edgeCount x + edgeCount y + 1
+    ----------------------------------------------------------------
 
     putStrLn "\n============ Graph.(===) ============"
     test "    x === x         == True" $ \(x :: G) ->
