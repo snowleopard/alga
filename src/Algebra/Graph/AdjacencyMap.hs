@@ -624,12 +624,12 @@ induce p = AM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjac
 -- compose ('circuit' [1..5]) ('circuit' [1..5]) == 'circuit' [1,3,5,2,4]
 -- @
 compose :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-compose x y = fromAdjacencySets r
+compose x y = fromAdjacencySets
+    [ (t, ys) | v <- Set.toList vs, let ys = postSet v y, not (Set.null ys)
+              , t <- Set.toList (postSet v tx) ]
   where
-    t = transpose x
-    d = Map.keysSet (adjacencyMap x) `Set.union` Map.keysSet (adjacencyMap y)
-    r = [ (a, cs) | b <- Set.toAscList d, let cs = postSet b y, not (Set.null cs)
-                  , a <- Set.toAscList (postSet b t) ]
+    tx = transpose x
+    vs = vertexSet x `Set.union` vertexSet y
 
 -- | Compute the /reflexive and transitive closure/ of a graph.
 -- Complexity: /O(n * m * log(n)^2)/ time.
