@@ -189,6 +189,7 @@ instance Ord a => GraphAPI (Graph.Graph a) where
     transpose     = Graph.transpose
     gmap          = fmap
     induce        = Graph.induce
+    compose       = Graph.compose
     bind          = (>>=)
     simplify      = Graph.simplify
     box           = Graph.box

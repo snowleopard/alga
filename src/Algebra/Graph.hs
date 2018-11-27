@@ -44,7 +44,7 @@ module Algebra.Graph (
     transpose, induce, simplify, sparsify,
 
     -- * Graph composition
-    box,
+    compose, box,
 
     -- * Context
     Context (..), context
@@ -1028,6 +1028,41 @@ simple op x y
   where
     z = op x y
 {-# SPECIALISE simple :: (Int -> Int -> Int) -> Int -> Int -> Int #-}
+
+-- | Left-to-right /relational composition/ of graphs: vertices @x@ and @z@ are
+-- connected in the resulting graph if there is a vertex @y@, such that @x@ is
+-- connected to @y@ in the first graph, and @y@ is connected to @z@ in the
+-- second graph. There are no isolated vertices in the result. This operation is
+-- associative, has 'empty' and single-'vertex' graphs as /annihilating zeroes/,
+-- and distributes over 'overlay'.
+-- Complexity: /O(n * m * log(n))/ time, /O(n + m)/ memory, and /O(m1 + m2)/
+-- size, where /n/ and /m/ stand for the number of vertices and edges in the
+-- resulting graph, while /m1/ and /m2/ are the number of edges in the original
+-- graphs. Note that the number of edges in the resulting graph may be
+-- quadratic, i.e. /m = O(m1 * m2)/, but the algebraic representation requires
+-- only /O(m1 + m2)/ operations to list them.
+--
+-- @
+-- compose 'empty'            x                == 'empty'
+-- compose x                'empty'            == 'empty'
+-- compose ('vertex' x)       y                == 'empty'
+-- compose x                ('vertex' y)       == 'empty'
+-- compose x                (compose y z)    == compose (compose x y) z
+-- compose x                ('overlay' y z)    == 'overlay' (compose x y) (compose x z)
+-- compose ('overlay' x y)    z                == 'overlay' (compose x z) (compose y z)
+-- compose ('edge' x y)       ('edge' y z)       == 'edge' x z
+-- compose ('path'    [1..5]) ('path'    [1..5]) == 'edges' [(1,3), (2,4), (3,5)]
+-- compose ('circuit' [1..5]) ('circuit' [1..5]) == 'circuit' [1,3,5,2,4]
+-- @
+compose :: Ord a => Graph a -> Graph a -> Graph a
+compose x y = overlays
+    [ biclique xs ys
+    | v <- Set.toList (AM.vertexSet mx `Set.union` AM.vertexSet my)
+    , let xs = Set.toList (AM.postSet v mx), not (null xs)
+    , let ys = Set.toList (AM.postSet v my), not (null ys) ]
+  where
+    mx = toAdjacencyMap (transpose x)
+    my = toAdjacencyMap y
 
 -- | Compute the /Cartesian product/ of graphs.
 -- Complexity: /O(s1 * s2)/ time, memory and size, where /s1/ and /s2/ are the

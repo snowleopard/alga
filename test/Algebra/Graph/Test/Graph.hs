@@ -38,6 +38,7 @@ testGraph = do
     testSize            t
     testGraphFamilies   t
     testTransformations t
+    testCompose         t
 
     putStrLn "\n============ Graph.(===) ============"
     test "    x === x         == True" $ \(x :: G) ->
