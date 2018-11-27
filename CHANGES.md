@@ -2,6 +2,7 @@
 
 ## 0.3
 
+* #63, #148: Add relational composition of algebraic graphs.
 * #139, #146: Add relational operations to adjacency maps.
 * #146: Rename `preorderClosure` to `closure`.
 * #146: Switch to left-to-right composition in `Relation.compose`.
