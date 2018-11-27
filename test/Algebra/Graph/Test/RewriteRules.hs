@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.RewriteRules
--- Copyright  : (c) Andrey Mokhov R016-R018
+-- Copyright  : (c) Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
