@@ -2,6 +2,7 @@
 
 ## 0.3
 
+* #129: Add a testsuite for rewrite rules based on the `inspection-testing` library.
 * #63, #148: Add relational composition of algebraic graphs.
 * #139, #146: Add relational operations to adjacency maps.
 * #146: Rename `preorderClosure` to `closure`.
