@@ -171,8 +171,9 @@ test-suite test-alga
                         -Wredundant-constraints
     default-extensions: FlexibleContexts
                         GeneralizedNewtypeDeriving
-                        TypeFamilies
                         ScopedTypeVariables
+                        TupleSections
+                        TypeFamilies
     other-extensions:   ConstrainedClassMethods
                         ConstraintKinds
                         RankNTypes

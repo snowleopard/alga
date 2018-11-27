@@ -3,7 +3,6 @@
 
 :set -isrc
 :set -itest
-:set prompt "> "
 
 :set -XFlexibleContexts
 :set -XGeneralizedNewtypeDeriving
@@ -13,6 +12,15 @@
 
 :load Main Algebra.Graph.Labelled.Example.Automaton Algebra.Graph.Labelled.Example.Network
 
-:set -XOverloadedLists
-:set -XOverloadedStrings
-:set -fno-warn-type-defaults
+:set prompt "\x03BB> "
+:set prompt-cont "\x03BB| "
+:!cls
+
+:{
+:def alga \top -> return $ unlines $
+    [ ":set -XOverloadedLists"
+    , ":set -XOverloadedStrings"
+    , ":set -fno-warn-type-defaults"
+    , ":m Algebra.Graph" ++ (if null top then "" else ".") ++ top
+    , ":show imports" ]
+:}
