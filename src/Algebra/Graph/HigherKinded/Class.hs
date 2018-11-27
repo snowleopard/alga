@@ -286,7 +286,7 @@ isSubgraphOf x y = overlay x y == y
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: (Eq (g a), Graph g, Ord a) => a -> a -> g a -> Bool
-hasEdge u v = (edge u v `isSubgraphOf`) . induce (`elem` [u, v])
+hasEdge u v = (edge u v `isSubgraphOf`) . induce (\x -> x == u || x == v)
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
