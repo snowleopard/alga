@@ -28,7 +28,7 @@ module Algebra.Graph.Labelled.AdjacencyMap (
 
     -- * Graph properties
     isEmpty, hasVertex, hasEdge, edgeLabel, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, postSet, preSet, skeleton,
+    edgeList, vertexSet, edgeSet, postSet, preSet, skeleton,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, replaceEdge, mergeVertices, transpose, gmap,
@@ -132,17 +132,20 @@ infixl 5 >-
 -- 'edgeCount'   (overlay 1 2) == 0
 -- @
 --
--- Note: 'overlay' composes parallel edges using the operator '<+>':
+-- Note: 'overlay' composes edges in parallel using the operator '<+>' with
+-- 'zero' acting as the identity:
 --
 -- @
--- overlay ('edge' e x y) ('edge' f x y) == 'edge' (e '<+>' f) x y
+-- 'edgeLabel' x y $ overlay ('edge' e x y) ('edge' 'zero' x y) == e
+-- 'edgeLabel' x y $ overlay ('edge' e x y) ('edge' f    x y) == e '<+>' f
 -- @
 --
 -- Furthermore, when applied to transitive graphs, 'overlay' composes edges in
--- sequence using the operator '<.>':
+-- sequence using the operator '<.>' with 'one' acting as the identity:
 --
 -- @
--- 'transitiveClosure' (overlay ('edge' e 1 2) ('edge' f 2 3)) == 'overlays' ['edge' e 1 2, 'edge' f 2 3, 'edge' (e '<.>' f) 1 3]
+-- 'edgeLabel' x z $ 'transitiveClosure' (overlay ('edge' e x y) ('edge' 'one' y z)) == e
+-- 'edgeLabel' x z $ 'transitiveClosure' (overlay ('edge' e x y) ('edge' f   y z)) == e '<.>' f
 -- @
 overlay :: (Eq e, Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
 overlay (AM x) (AM y) = AM $ Map.unionWith nonZeroUnion x y
@@ -170,8 +173,8 @@ nonZeroUnion x y = Map.filter (/= zero) $ Map.unionWith mappend x y
 connect :: (Eq e, Monoid e, Ord a) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
 connect e (AM x) (AM y)
     | e == mempty = overlay (AM x) (AM y)
-    | otherwise   = AM $ Map.unionsWith nonZeroUnion
-        [ x, y, Map.fromSet (const targets) (Map.keysSet x) ]
+    | otherwise   = AM $ Map.unionsWith nonZeroUnion $ x : y :
+        [ Map.fromSet (const targets) (Map.keysSet x) ]
   where
     targets = Map.fromSet (const e) (Map.keysSet y)
 
@@ -254,15 +257,38 @@ isEmpty = Map.null . adjacencyMap
 
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(log(n))/ time.
+--
+-- @
+-- hasVertex x 'empty'            == False
+-- hasVertex x ('vertex' x)       == True
+-- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x . 'removeVertex' x == 'const' False
+-- @
 hasVertex :: Ord a => a -> AdjacencyMap e a -> Bool
 hasVertex x = Map.member x . adjacencyMap
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(log(n))/ time.
+--
+-- @
+-- hasEdge x y 'empty'            == False
+-- hasEdge x y ('vertex' z)       == False
+-- hasEdge x y ('edge' e x y)     == (e /= 'zero')
+-- hasEdge x y . 'removeEdge' x y == 'const' False
+-- hasEdge x y                  == 'not' . 'null' . 'filter' (\\(_,ex,ey) -> ex == x && ey == y) . 'edgeList'
+-- @
 hasEdge :: Ord a => a -> a -> AdjacencyMap e a -> Bool
 hasEdge x y (AM m) = fromMaybe False (Map.member y <$> Map.lookup x m)
 
--- | Extract the label of a specified edge from a graph.
+-- | Extract the label of a specified edge in a graph.
+-- Complexity: /O(log(n))/ time.
+--
+-- @
+-- edgeLabel x y 'empty'         == 'zero'
+-- edgeLabel x y ('vertex' z)    == 'zero'
+-- edgeLabel x y ('edge' e x y)  == e
+-- edgeLabel s t ('overlay' x y) == edgeLabel s t x <+> edgeLabel s t y
+-- @
 edgeLabel :: (Monoid e, Ord a) => a -> a -> AdjacencyMap e a -> e
 edgeLabel x y (AM m) = fromMaybe zero (Map.lookup x m >>= Map.lookup y)
 
@@ -280,25 +306,61 @@ vertexCount = Map.size . adjacencyMap
 
 -- | The number of (non-'zero') edges in a graph.
 -- Complexity: /O(n)/ time.
+--
+-- @
+-- edgeCount 'empty'        == 0
+-- edgeCount ('vertex' x)   == 0
+-- edgeCount ('edge' e x y) == if e == 'zero' then 0 else 1
+-- edgeCount              == 'length' . 'edgeList'
+-- @
 edgeCount :: AdjacencyMap e a -> Int
 edgeCount = getSum . foldMap (Sum . Map.size) . adjacencyMap
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
+--
+-- @
+-- vertexList 'empty'      == []
+-- vertexList ('vertex' x) == [x]
+-- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
+-- @
 vertexList :: AdjacencyMap e a -> [a]
 vertexList = Map.keys . adjacencyMap
 
 -- | The list of edges of a graph, sorted lexicographically with respect to
 -- pairs of connected vertices (i.e. edge-labels are ignored when sorting).
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- edgeList 'empty'        == []
+-- edgeList ('vertex' x)   == []
+-- edgeList ('edge' e x y) == if e == 'zero' then [] else [(e,x,y)]
+-- @
 edgeList :: AdjacencyMap e a -> [(e, a, a)]
 edgeList (AM m) =
     [ (e, x, y) | (x, ys) <- Map.toAscList m, (y, e) <- Map.toAscList ys ]
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
+--
+-- @
+-- vertexSet 'empty'      == Set.'Set.empty'
+-- vertexSet . 'vertex'   == Set.'Set.singleton'
+-- vertexSet . 'vertices' == Set.'Set.fromList'
+-- @
 vertexSet :: AdjacencyMap e a -> Set a
 vertexSet = Map.keysSet . adjacencyMap
+
+-- | The set of vertices of a given graph.
+-- Complexity: /O(n)/ time and memory.
+--
+-- @
+-- edgeSet 'empty'        == Set.'Set.empty'
+-- edgeSet ('vertex' x)   == Set.'Set.empty'
+-- edgeSet ('edge' e x y) == if e == 'zero' then Set.'Set.empty' else Set.'Set.singleton' (e,x,y)
+-- @
+edgeSet :: (Eq a, Eq e) => AdjacencyMap e a -> Set (e, a, a)
+edgeSet = Set.fromAscList . edgeList
 
 -- | The /preset/ of an element @x@ is the set of its /direct predecessors/.
 -- Complexity: /O(n * log(n))/ time and /O(n)/ memory.

@@ -60,19 +60,21 @@ instance (Ord e, Monoid e, Ord a) => Ord (AdjacencyMap e a) where
         [ compare (vNum x) (vNum y)
         , compare (vSet x) (vSet y)
         , compare (eNum x) (eNum y)
+        , compare (eSet x) (eSet y)
         , compare       x        y ]
       where
-        vNum = Map.size
-        vSet = Map.keysSet
-        eNum = getSum . foldMap (Sum . Map.size)
+        vNum   = Map.size
+        vSet   = Map.keysSet
+        eNum   = getSum . foldMap (Sum . Map.size)
+        eSet m = [ (x, y) | (x, ys) <- Map.toAscList m, (y, _) <- Map.toAscList ys ]
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap'
 -- for more details.
 instance (Ord a, Num a, Dioid e) => Num (AdjacencyMap e a) where
     fromInteger x = AM $ Map.singleton (fromInteger x) Map.empty
     AM x + AM y   = AM $ Map.unionWith (Map.unionWith (<+>)) x y
-    AM x * AM y   = AM $ Map.unionsWith (Map.unionWith (<+>))
-        [ x, y, Map.fromSet (const targets) (Map.keysSet x) ]
+    AM x * AM y   = AM $ Map.unionsWith (Map.unionWith (<+>)) $ x : y :
+        [ Map.fromSet (const targets) (Map.keysSet x) ]
       where
         targets = Map.fromSet (const one) (Map.keysSet y)
     signum      = const (AM Map.empty)
