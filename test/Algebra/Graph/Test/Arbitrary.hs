@@ -27,6 +27,7 @@ import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.AdjacencyIntMap.Internal
 import Algebra.Graph.Export
 import Algebra.Graph.Fold (Fold)
+import Algebra.Graph.Label
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived
 
@@ -164,3 +165,6 @@ instance Arbitrary a => Arbitrary (Tree a) where
 -- TODO: Implement a custom shrink method.
 instance Arbitrary s => Arbitrary (Doc s) where
     arbitrary = (mconcat . map literal) <$> arbitrary
+
+instance (Arbitrary a, Num a, Ord a) => Arbitrary (Distance a) where
+    arbitrary = (\x -> if x < 0 then distance infinite else distance (unsafeFinite x)) <$> arbitrary

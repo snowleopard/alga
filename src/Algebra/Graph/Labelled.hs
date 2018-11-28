@@ -52,7 +52,7 @@ instance (Ord a, Eq e, Monoid e) => Eq (Graph e a) where
     x == y = toAdjacencyMap x == toAdjacencyMap y
 
 -- | Extract the adjacency map of a graph.
-toAdjacencyMap :: (Ord a, Monoid e) => Graph e a -> AM.AdjacencyMap e a
+toAdjacencyMap :: (Eq e, Monoid e, Ord a) => Graph e a -> AM.AdjacencyMap e a
 toAdjacencyMap = foldg AM.empty AM.vertex AM.connect
 
 instance Dioid e => C.Graph (Graph e a) where

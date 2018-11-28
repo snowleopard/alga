@@ -30,9 +30,6 @@ t = testsuite "Relation." empty
 
 type RI = Relation Int
 
-sizeLimit :: Testable prop => prop -> Property
-sizeLimit = mapSize (min 10)
-
 testRelation :: IO ()
 testRelation = do
     putStrLn "\n============ Relation ============"

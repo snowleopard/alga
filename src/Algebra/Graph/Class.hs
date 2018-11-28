@@ -148,7 +148,7 @@ instance Graph AIM.AdjacencyIntMap where
     overlay = AIM.overlay
     connect = AIM.connect
 
-instance (Ord a, Dioid e) => Graph (LAM.AdjacencyMap e a) where
+instance (Dioid e, Eq e, Ord a) => Graph (LAM.AdjacencyMap e a) where
     type Vertex (LAM.AdjacencyMap e a) = a
     empty   = LAM.empty
     vertex  = LAM.vertex

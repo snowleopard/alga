@@ -9,16 +9,7 @@
 --
 -- Generic graph API testing.
 -----------------------------------------------------------------------------
-module Algebra.Graph.Test.Generic (
-    -- * Generic tests
-    Testsuite, testsuite, testShow, testFromAdjacencySets,
-    testFromAdjacencyIntSets, testBasicPrimitives, testIsSubgraphOf, testSize,
-    testToGraph, testRelational, testAdjacencyList, testPreSet, testPreIntSet,
-    testPostSet, testPostIntSet, testGraphFamilies, testTransformations,
-    testSplitVertex, testBind, testSimplify, testDfsForest, testDfsForestFrom,
-    testDfs, testReachable, testTopSort, testIsAcyclic, testIsDfsForestOf,
-    testIsTopSortOf, testCompose
-    ) where
+module Algebra.Graph.Test.Generic where
 
 import Prelude ()
 import Prelude.Compat
