@@ -501,7 +501,6 @@ edgeList = T.edgeList
 -- vertexSet 'empty'      == Set.'Set.empty'
 -- vertexSet . 'vertex'   == Set.'Set.singleton'
 -- vertexSet . 'vertices' == Set.'Set.fromList'
--- vertexSet . 'clique'   == Set.'Set.fromList'
 -- @
 vertexSet :: Ord a => Fold a -> Set.Set a
 vertexSet = T.vertexSet

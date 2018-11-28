@@ -709,9 +709,6 @@ testVertexSet (Testsuite prefix (%)) = do
     test "vertexSet . vertices == Set.fromList" $ \xs ->
           vertexSet % vertices xs == Set.fromList xs
 
-    test "vertexSet . clique   == Set.fromList" $ \xs ->
-          vertexSet % clique xs == Set.fromList xs
-
 testVertexIntSet :: Testsuite -> IO ()
 testVertexIntSet (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "vertexIntSet ============"

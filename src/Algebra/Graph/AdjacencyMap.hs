@@ -130,8 +130,8 @@ overlay x y = AM $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
 -- 'edgeCount'   (connect 1 2) == 1
 -- @
 connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-connect x y = AM $ Map.unionsWith Set.union [ adjacencyMap x, adjacencyMap y,
-    Map.fromSet (const . Map.keysSet $ adjacencyMap y) (Map.keysSet $ adjacencyMap x) ]
+connect x y = AM $ Map.unionsWith Set.union $ adjacencyMap x : adjacencyMap y :
+    [ Map.fromSet (const . Map.keysSet $ adjacencyMap y) (Map.keysSet $ adjacencyMap x) ]
 {-# NOINLINE [1] connect #-}
 
 -- | Construct the graph comprising a given list of isolated vertices.
@@ -300,7 +300,6 @@ edgeList (AM m) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
 -- vertexSet 'empty'      == Set.'Set.empty'
 -- vertexSet . 'vertex'   == Set.'Set.singleton'
 -- vertexSet . 'vertices' == Set.'Set.fromList'
--- vertexSet . 'clique'   == Set.'Set.fromList'
 -- @
 vertexSet :: AdjacencyMap a -> Set a
 vertexSet = Map.keysSet . adjacencyMap
@@ -314,7 +313,7 @@ vertexSet = Map.keysSet . adjacencyMap
 -- edgeSet ('edge' x y) == Set.'Set.singleton' (x,y)
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
-edgeSet :: Ord a => AdjacencyMap a -> Set (a, a)
+edgeSet :: Eq a => AdjacencyMap a -> Set (a, a)
 edgeSet = Set.fromAscList . edgeList
 
 -- | The sorted /adjacency list/ of a graph.
