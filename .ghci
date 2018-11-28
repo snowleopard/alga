@@ -5,6 +5,7 @@
 :set -itest
 
 :set -XFlexibleContexts
+:set -XFlexibleInstances
 :set -XGeneralizedNewtypeDeriving
 :set -XScopedTypeVariables
 :set -XTupleSections
