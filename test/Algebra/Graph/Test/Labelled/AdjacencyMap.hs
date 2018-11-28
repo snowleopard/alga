@@ -220,12 +220,38 @@ testLabelledAdjacencyMap = do
     test "edgeSet (edge e x y) == if e == zero then Set.empty else Set.singleton (e,x,y)" $ \(e :: Sum Int) (x :: Int) y ->
           edgeSet (edge e x y) == if e == zero then Set.empty else Set.singleton (e,x,y)
 
+    putStrLn "\n============ Labelled.AdjacencyMap.preSet ============"
+    test "preSet x empty        == Set.empty" $ \x ->
+          preSet x (empty :: LAS) == Set.empty
+
+    test "preSet x (vertex x)   == Set.empty" $ \x ->
+          preSet x (vertex x :: LAS) == Set.empty
+
+    test "preSet 1 (edge e 1 2) == Set.empty" $ \e ->
+          preSet 1 (edge e 1 2 :: LAS) == Set.empty
+
+    test "preSet y (edge e x y) == if e == zero then Set.empty else Set.fromList [x]" $ \(e :: Sum Int) (x :: Int) y ->
+          preSet y (edge e x y) == if e == zero then Set.empty else Set.fromList [x]
+
+    putStrLn "\n============ Labelled.AdjacencyMap.postSet ============"
+    test "postSet x empty        == Set.empty" $ \x ->
+          postSet x (empty :: LAS) == Set.empty
+
+    test "postSet x (vertex x)   == Set.empty" $ \x ->
+          postSet x (vertex x :: LAS) == Set.empty
+
+    test "postSet x (edge e x y) == if e == zero then Set.empty else Set.fromList [y]" $ \(e :: Sum Int) (x :: Int) y ->
+          postSet x (edge e x y) == if e == zero then Set.empty else Set.fromList [y]
+
+    test "postSet 2 (edge e 1 2) == Set.empty" $ \e ->
+          postSet 2 (edge e 1 2 :: LAS) == Set.empty
+
     putStrLn "\n============ Labelled.AdjacencyMap.replaceEdge ============"
-    test "replaceEdge e x y m                 == overlay (removeEdge x y m) (edge e x y)" $ \(e :: Sum Int) (x :: Int) y m ->
-          replaceEdge e x y m                 == overlay (removeEdge x y m) (edge e x y)
+    test "replaceEdge e x y z                 == overlay (removeEdge x y z) (edge e x y)" $ \(e :: Sum Int) (x :: Int) y z ->
+          replaceEdge e x y z                 == overlay (removeEdge x y z) (edge e x y)
 
     test "replaceEdge e x y (edge f x y)      == edge e x y" $ \(e :: Sum Int) f (x :: Int) y ->
           replaceEdge e x y (edge f x y)      == edge e x y
 
-    test "edgeLabel x y (replaceEdge e x y m) == e" $ \(e :: Sum Int) (x :: Int) y m ->
-          edgeLabel x y (replaceEdge e x y m) == e
+    test "edgeLabel x y (replaceEdge e x y z) == e" $ \(e :: Sum Int) (x :: Int) y z ->
+          edgeLabel x y (replaceEdge e x y z) == e

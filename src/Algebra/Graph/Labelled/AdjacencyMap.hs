@@ -31,7 +31,7 @@ module Algebra.Graph.Labelled.AdjacencyMap (
     edgeList, vertexSet, edgeSet, postSet, preSet, skeleton,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, replaceEdge, mergeVertices, transpose, gmap,
+    removeVertex, removeEdge, replaceVertex, replaceEdge, transpose, gmap,
     emap, induce,
 
     -- * Relational operations
@@ -364,18 +364,32 @@ edgeSet = Set.fromAscList . edgeList
 
 -- | The /preset/ of an element @x@ is the set of its /direct predecessors/.
 -- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
-preSet :: Ord a => a -> AdjacencyMap e a -> Map a e
-preSet x (AM m) = Map.fromAscList
-    [ (a, e) | (a, es) <- Map.toAscList m, Just e <- [Map.lookup x es] ]
-
--- | Convert to unlabelled adjacency map.
-skeleton :: AdjacencyMap Any a -> AM.AdjacencyMap a
-skeleton (AM m) = AM.AM (Map.map Map.keysSet m)
+--
+-- @
+-- preSet x 'empty'        == Set.'Set.empty'
+-- preSet x ('vertex' x)   == Set.'Set.empty'
+-- preSet 1 ('edge' e 1 2) == Set.'Set.empty'
+-- preSet y ('edge' e x y) == if e == 'zero' then Set.'Set.empty' else Set.'Set.fromList' [x]
+-- @
+preSet :: Ord a => a -> AdjacencyMap e a -> Set a
+preSet x (AM m) = Set.fromAscList
+    [ a | (a, es) <- Map.toAscList m, Map.member x es ]
 
 -- | The /postset/ of a vertex is the set of its /direct successors/.
 -- Complexity: /O(log(n))/ time and /O(1)/ memory.
-postSet :: Ord a => a -> AdjacencyMap e a -> Map a e
-postSet x = Map.findWithDefault Map.empty x . adjacencyMap
+--
+-- @
+-- postSet x 'empty'        == Set.'Set.empty'
+-- postSet x ('vertex' x)   == Set.'Set.empty'
+-- postSet x ('edge' e x y) == if e == 'zero' then Set.'Set.empty' else Set.'Set.fromList' [y]
+-- postSet 2 ('edge' e 1 2) == Set.'Set.empty'
+-- @
+postSet :: Ord a => a -> AdjacencyMap e a -> Set a
+postSet x = Map.keysSet . Map.findWithDefault Map.empty x . adjacencyMap
+
+-- | Convert to the unlabelled 'AM.AdjacencyMap'.
+skeleton :: AdjacencyMap Any a -> AM.AdjacencyMap a
+skeleton (AM m) = AM.AM (Map.map Map.keysSet m)
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(n*log(n))/ time.
@@ -397,9 +411,9 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- Complexity: /O(log(n))/ time.
 --
 -- @
--- replaceEdge e x y m                 == 'overlay' (removeEdge x y m) ('edge' e x y)
+-- replaceEdge e x y z                 == 'overlay' (removeEdge x y z) ('edge' e x y)
 -- replaceEdge e x y ('edge' f x y)      == 'edge' e x y
--- 'edgeLabel' x y (replaceEdge e x y m) == e
+-- 'edgeLabel' x y (replaceEdge e x y z) == e
 -- @
 replaceEdge :: (Eq e, Monoid e, Ord a) => e -> a -> a -> AdjacencyMap e a -> AdjacencyMap e a
 replaceEdge e x y
@@ -409,12 +423,6 @@ replaceEdge e x y
     addY             = Map.alter (Just . fromMaybe Map.empty) y
     replace (Just m) = Just $ Map.insert y e m
     replace Nothing  = Just $ Map.singleton y e
-
--- | Merge vertices satisfying a given predicate into a given vertex.
--- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
--- /O(1)/ to be evaluated.
-mergeVertices :: (Ord a, Semigroup e) => (a -> Bool) -> a -> AdjacencyMap e a -> AdjacencyMap e a
-mergeVertices p v = gmap $ \u -> if p u then v else u
 
 -- | Transpose a given graph.
 -- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
