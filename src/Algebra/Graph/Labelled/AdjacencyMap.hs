@@ -356,10 +356,11 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 
 -- | Transpose a given graph.
 -- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
-transpose :: (Ord a, Semigroup e) => AdjacencyMap e a -> AdjacencyMap e a
+transpose :: (Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a
 transpose (AM m) = AM $ Map.foldrWithKey combine vs m
   where
-    combine v es = Map.unionWith (Map.unionWith (<+>)) $
+    -- No need to do use @nonZeroUnion@ here, since we do not add any new edges
+    combine v es = Map.unionWith (Map.unionWith mappend) $
         Map.fromAscList [ (u, Map.singleton v e) | (u, e) <- Map.toAscList es ]
     vs = Map.fromSet (const Map.empty) (Map.keysSet m)
 
