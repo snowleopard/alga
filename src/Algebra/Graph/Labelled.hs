@@ -608,14 +608,21 @@ connectFoci e x y
 focus :: (Eq e, Monoid e) => (a -> Bool) -> Graph e a -> Focus e a
 focus f = foldg emptyFocus (vertexFocus f) connectFoci
 
--- | The /context/ of a subgraph comprises the input and output vertices outside
--- the subgraph that are connected to the vertices inside the subgraph (along
--- with the corresponding edge labels).
+-- | The /context/ of a subgraph comprises the input and output vertices that
+-- are connected to the vertices inside the subgraph (along with the
+-- corresponding edge labels).
 data Context e a = Context { inputs :: [(e, a)], outputs :: [(e, a)] }
-    deriving Show
+    deriving (Eq, Show)
 
 -- | Extract the context of a subgraph specified by a given predicate. Returns
 -- @Nothing@ if the specified subgraph is empty.
+--
+-- @
+-- context ('const' False) x                   == Nothing
+-- context (== 1)        ('edge' e 1 2)        == if e == 'zero' then Just ('Context' [] []) else Just ('Context' []      [(e,2)])
+-- context (== 2)        ('edge' e 1 2)        == if e == 'zero' then Just ('Context' [] []) else Just ('Context' [(e,1)] []     )
+-- context (== 4)        (3 * 1 * 4 * 1 * 5) == Just ('Context' [('one',3), ('one',1)] [('one',1), ('one',5)])
+-- @
 context :: (Eq e, Monoid e) => (a -> Bool) -> Graph e a -> Maybe (Context e a)
 context p g | ok f      = Just $ Context (Exts.toList $ is f) (Exts.toList $ os f)
             | otherwise = Nothing

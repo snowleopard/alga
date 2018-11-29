@@ -447,3 +447,16 @@ testLabelledGraph = do
 
     test "transitiveClosure . transitiveClosure == transitiveClosure" $ size10 $ \x ->
          (transitiveClosure . transitiveClosure) x == transitiveClosure (x :: LAD)
+
+    putStrLn "\n============ Labelled.Graph.context ============"
+    test "context (const False) x                   == Nothing" $ \x ->
+          context (const False) (x :: LAS)          == Nothing
+
+    test "context (== 1)        (edge e 1 2)        == if e == zero then Just (Context [] []) else Just (Context []      [(e,2)])" $ \e ->
+          context (== 1)        (edge e 1 2 :: LAS) == if e == zero then Just (Context [] []) else Just (Context []      [(e,2)])
+
+    test "context (== 2)        (edge e 1 2)        == if e == zero then Just (Context [] []) else Just (Context [(e,1)] []     )" $ \e ->
+          context (== 2)        (edge e 1 2 :: LAS) == if e == zero then Just (Context [] []) else Just (Context [(e,1)] []     )
+
+    test "context (== 4)        (3 * 1 * 4 * 1 * 5) == Just (Context [(one,3), (one,1)] [(one,1), (one,5)])" $
+          context (== 4)        (3 * 1 * 4 * 1 * 5 :: LAD) == Just (Context [(one,3), (one,1)] [(one,1), (one,5)])

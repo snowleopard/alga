@@ -1201,13 +1201,20 @@ matchR e v p = \x -> if p x then v x else e
 focus :: (a -> Bool) -> Graph a -> Focus a
 focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
 
--- | The /context/ of a subgraph comprises the input and output vertices outside
--- the subgraph that are connected to the vertices inside the subgraph.
+-- | The /context/ of a subgraph comprises the input and output vertices that
+-- are connected to the vertices inside the subgraph.
 data Context a = Context { inputs :: [a], outputs :: [a] }
-    deriving Show
+    deriving (Eq, Show)
 
 -- | Extract the context of a subgraph specified by a given predicate. Returns
 -- @Nothing@ if the specified subgraph is empty.
+--
+-- @
+-- context ('const' False) x                   == Nothing
+-- context (== 1)        ('edge' 1 2)          == Just ('Context' []    [2]  )
+-- context (== 2)        ('edge' 1 2)          == Just ('Context' [1]   []   )
+-- context (== 4)        (3 * 1 * 4 * 1 * 5) == Just ('Context' [3,1] [1,5])
+-- @
 context :: (a -> Bool) -> Graph a -> Maybe (Context a)
 context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
             | otherwise = Nothing
