@@ -47,6 +47,7 @@ import Prelude ()
 import Prelude.Compat
 
 import Data.Monoid (Any (..))
+import Data.Semigroup ((<>))
 
 import Algebra.Graph.Internal (List (..))
 import Algebra.Graph.Label
