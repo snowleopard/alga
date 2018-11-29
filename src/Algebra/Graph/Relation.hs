@@ -223,7 +223,6 @@ edgeList = Set.toAscList . relation
 -- vertexSet 'empty'      == Set.'Set.empty'
 -- vertexSet . 'vertex'   == Set.'Set.singleton'
 -- vertexSet . 'vertices' == Set.'Set.fromList'
--- vertexSet . 'clique'   == Set.'Set.fromList'
 -- @
 vertexSet :: Relation a -> Set.Set a
 vertexSet = domain

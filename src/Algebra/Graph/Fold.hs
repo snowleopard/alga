@@ -40,7 +40,7 @@ module Algebra.Graph.Fold (
 
     -- * Graph transformation
     removeVertex, removeEdge, transpose, induce, simplify,
-  ) where
+    ) where
 
 import Prelude ()
 import Prelude.Compat
@@ -501,7 +501,6 @@ edgeList = T.edgeList
 -- vertexSet 'empty'      == Set.'Set.empty'
 -- vertexSet . 'vertex'   == Set.'Set.singleton'
 -- vertexSet . 'vertices' == Set.'Set.fromList'
--- vertexSet . 'clique'   == Set.'Set.fromList'
 -- @
 vertexSet :: Ord a => Fold a -> Set.Set a
 vertexSet = T.vertexSet
@@ -654,12 +653,12 @@ removeEdge :: Eq a => a -> a -> Fold a -> Fold a
 removeEdge s t = filterContext s (/=s) (/=t)
 
 -- TODO: Export
--- | Filter vertices in a subgraph context.
+-- Filter vertices in a subgraph context.
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Fold a -> Fold a
 filterContext s i o g = maybe g go $ G.context (==s) (toGraph g)
   where
     go (G.Context is os) = induce (/=s) g `overlay` transpose (star s (filter i is))
-                                          `overlay` star      s (filter o os)
+                                          `overlay` star            s (filter o os)
 
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.

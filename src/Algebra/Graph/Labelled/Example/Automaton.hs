@@ -16,17 +16,19 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled.Example.Automaton where
 
-import Data.Map (Map)
-import qualified Data.Map as Map
+import Data.Map    (Map)
+import Data.Monoid (Any (..))
 
 import Algebra.Graph.Label
 import Algebra.Graph.Labelled
 import Algebra.Graph.ToGraph
 
+import qualified Data.Map as Map
+
 #if !MIN_VERSION_base(4,8,0)
 import Data.Set (Set)
 import qualified Data.Set as Set
-import GHC.Exts
+import GHC.Exts hiding (Any)
 
 instance Ord a => IsList (Set a) where
     type Item (Set a) = a
@@ -78,4 +80,5 @@ coffeeTeaAutomaton = overlays [ Choice  -<[Coffee, Tea]>- Payment
 reachability :: Map State [State]
 reachability = Map.fromList $ map (\s -> (s, reachable s skeleton)) [Choice ..]
   where
-    skeleton = emap (not . isZero) coffeeTeaAutomaton
+    skeleton :: Graph Any State
+    skeleton = emap (Any . not . isZero) coffeeTeaAutomaton

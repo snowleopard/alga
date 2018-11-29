@@ -27,17 +27,18 @@ import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.AdjacencyIntMap.Internal
 import Algebra.Graph.Export
 import Algebra.Graph.Fold (Fold)
+import Algebra.Graph.Label
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived
 
-import qualified Algebra.Graph.AdjacencyIntMap                as AdjacencyIntMap
-import qualified Algebra.Graph.AdjacencyMap                   as AdjacencyMap
-import qualified Algebra.Graph.NonEmpty.AdjacencyMap          as NAM
-import qualified Algebra.Graph.Class                          as C
-import qualified Algebra.Graph.Labelled.AdjacencyMap          as Labelled
-import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal as Labelled
-import qualified Algebra.Graph.NonEmpty                       as NonEmpty
-import qualified Algebra.Graph.Relation                       as Relation
+import qualified Algebra.Graph.AdjacencyIntMap       as AdjacencyIntMap
+import qualified Algebra.Graph.AdjacencyMap          as AdjacencyMap
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NAM
+import qualified Algebra.Graph.Class                 as C
+import qualified Algebra.Graph.Labelled              as LG
+import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
+import qualified Algebra.Graph.NonEmpty              as NonEmpty
+import qualified Algebra.Graph.Relation              as Relation
 
 -- | Generate an arbitrary 'C.Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
@@ -139,14 +140,33 @@ arbitraryAdjacencyIntMap = AdjacencyIntMap.stars <$> arbitrary
 instance Arbitrary AdjacencyIntMap where
     arbitrary = arbitraryAdjacencyIntMap
 
--- | Generate an arbitrary labelled 'Labelled.AdjacencyMap'. It is guaranteed
+-- | Generate an arbitrary labelled 'LAM.AdjacencyMap'. It is guaranteed
 -- that the resulting adjacency map is 'consistent'.
-arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Gen (Labelled.AdjacencyMap e a)
-arbitraryLabelledAdjacencyMap = Labelled.fromAdjacencyMaps <$> arbitrary
+arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Gen (LAM.AdjacencyMap e a)
+arbitraryLabelledAdjacencyMap = LAM.fromAdjacencyMaps <$> arbitrary
 
 -- TODO: Implement a custom shrink method.
-instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Arbitrary (Labelled.AdjacencyMap e a) where
+instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Arbitrary (LAM.AdjacencyMap e a) where
     arbitrary = arbitraryLabelledAdjacencyMap
+
+-- | Generate an arbitrary labelled 'LAM.Graph' value of a specified size.
+arbitraryLabelledGraph :: (Arbitrary a, Arbitrary e) => Gen (LG.Graph e a)
+arbitraryLabelledGraph = sized expr
+  where
+    expr 0 = return LG.empty
+    expr 1 = LG.vertex <$> arbitrary
+    expr n = do
+        label <- arbitrary
+        left  <- choose (0, n)
+        LG.connect label <$> expr left <*> expr (n - left)
+
+instance (Arbitrary a, Arbitrary e, Monoid e) => Arbitrary (LG.Graph e a) where
+    arbitrary = arbitraryLabelledGraph
+
+    shrink LG.Empty           = []
+    shrink (LG.Vertex      _) = [LG.Empty]
+    shrink (LG.Connect e x y) = [LG.Empty, x, y, LG.Connect mempty x y]
+                             ++ [LG.Connect e x' y' | (x', y') <- shrink (x, y) ]
 
 -- TODO: Implement a custom shrink method.
 instance Arbitrary a => Arbitrary (Tree a) where
@@ -165,3 +185,6 @@ instance Arbitrary a => Arbitrary (Tree a) where
 -- TODO: Implement a custom shrink method.
 instance Arbitrary s => Arbitrary (Doc s) where
     arbitrary = (mconcat . map literal) <$> arbitrary
+
+instance (Arbitrary a, Num a, Ord a) => Arbitrary (Distance a) where
+    arbitrary = (\x -> if x < 0 then distance infinite else distance (unsafeFinite x)) <$> arbitrary

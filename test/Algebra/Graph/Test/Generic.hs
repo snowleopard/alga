@@ -9,16 +9,7 @@
 --
 -- Generic graph API testing.
 -----------------------------------------------------------------------------
-module Algebra.Graph.Test.Generic (
-    -- * Generic tests
-    Testsuite, testsuite, testShow, testFromAdjacencySets,
-    testFromAdjacencyIntSets, testBasicPrimitives, testIsSubgraphOf, testSize,
-    testToGraph, testRelational, testAdjacencyList, testPreSet, testPreIntSet,
-    testPostSet, testPostIntSet, testGraphFamilies, testTransformations,
-    testSplitVertex, testBind, testSimplify, testDfsForest, testDfsForestFrom,
-    testDfs, testReachable, testTopSort, testIsAcyclic, testIsDfsForestOf,
-    testIsTopSortOf, testCompose
-    ) where
+module Algebra.Graph.Test.Generic where
 
 import Prelude ()
 import Prelude.Compat
@@ -52,8 +43,8 @@ testsuite :: (Arbitrary g, GraphAPI g, Num g, Ord g, Show g, ToGraph g, ToVertex
           => String -> g -> Testsuite
 testsuite prefix g = Testsuite prefix (\f x -> f (x `asTypeOf` g))
 
-sizeLimit :: Testable prop => prop -> Property
-sizeLimit = mapSize (min 10)
+size10 :: Testable prop => prop -> Property
+size10 = mapSize (min 10)
 
 testBasicPrimitives :: Testsuite -> IO ()
 testBasicPrimitives = mconcat [ testOrd
@@ -327,10 +318,10 @@ testOverlays (Testsuite prefix (%)) = do
     test "overlays [x,y]     == overlay x y" $ \x y ->
           overlays [x,y]     == id % overlay x y
 
-    test "overlays           == foldr overlay empty" $ sizeLimit $ \xs ->
+    test "overlays           == foldr overlay empty" $ size10 $ \xs ->
           overlays xs        == id % foldr overlay empty xs
 
-    test "isEmpty . overlays == all isEmpty" $ sizeLimit $ \xs ->
+    test "isEmpty . overlays == all isEmpty" $ size10 $ \xs ->
           isEmpty % overlays xs == all isEmpty xs
 
 testConnects :: Testsuite -> IO ()
@@ -345,10 +336,10 @@ testConnects (Testsuite prefix (%)) = do
     test "connects [x,y]     == connect x y" $ \x y ->
           connects [x,y]     == id % connect x y
 
-    test "connects           == foldr connect empty" $ sizeLimit $ \xs ->
+    test "connects           == foldr connect empty" $ size10 $ \xs ->
           connects xs        == id % foldr connect empty xs
 
-    test "isEmpty . connects == all isEmpty" $ sizeLimit $ \xs ->
+    test "isEmpty . connects == all isEmpty" $ size10 $ \xs ->
           isEmpty % connects xs == all isEmpty xs
 
 testStars :: Testsuite -> IO ()
@@ -718,9 +709,6 @@ testVertexSet (Testsuite prefix (%)) = do
     test "vertexSet . vertices == Set.fromList" $ \xs ->
           vertexSet % vertices xs == Set.fromList xs
 
-    test "vertexSet . clique   == Set.fromList" $ \xs ->
-          vertexSet % clique xs == Set.fromList xs
-
 testVertexIntSet :: Testsuite -> IO ()
 testVertexIntSet (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "vertexIntSet ============"
@@ -996,7 +984,7 @@ testTranspose (Testsuite prefix (%)) = do
     test "transpose (edge x y)  == edge y x" $ \x y ->
           transpose % edge x y  == edge y x
 
-    test "transpose . transpose == id" $ sizeLimit $ \x ->
+    test "transpose . transpose == id" $ size10 $ \x ->
          (transpose . transpose) % x == x
 
     test "edgeList . transpose  == sort . map swap . edgeList" $ \x ->
@@ -1053,13 +1041,13 @@ testCompose (Testsuite prefix (%)) = do
     test "compose x                (vertex y)       == empty" $ \x y ->
           compose x              % (vertex y)       == empty
 
-    test "compose x                (compose y z)    == compose (compose x y) z" $ sizeLimit $ \x y z ->
+    test "compose x                (compose y z)    == compose (compose x y) z" $ size10 $ \x y z ->
           compose x              % (compose y z)    == compose (compose x y) z
 
-    test "compose x                (overlay y z)    == overlay (compose x y) (compose x z)" $ sizeLimit $ \x y z ->
+    test "compose x                (overlay y z)    == overlay (compose x y) (compose x z)" $ size10 $ \x y z ->
           compose x              % (overlay y z)    == overlay (compose x y) (compose x z)
 
-    test "compose (overlay x y) z                   == overlay (compose x z) (compose y z)" $ sizeLimit $ \x y z ->
+    test "compose (overlay x y) z                   == overlay (compose x z) (compose y z)" $ size10 $ \x y z ->
           compose (overlay x y) % z                 == overlay (compose x z) (compose y z)
 
     test "compose (edge x y)       (edge y z)       == edge x z" $ \x y z ->
@@ -1089,16 +1077,16 @@ testClosure (Testsuite prefix (%)) = do
     test "closure (path $ nub xs) == reflexiveClosure (clique $ nub xs)" $ \xs ->
           closure % (path $ nubOrd xs) == reflexiveClosure (clique $ nubOrd xs)
 
-    test "closure                 == reflexiveClosure . transitiveClosure" $ sizeLimit $ \x ->
+    test "closure                 == reflexiveClosure . transitiveClosure" $ size10 $ \x ->
           closure % x             == (reflexiveClosure . transitiveClosure) x
 
-    test "closure                 == transitiveClosure . reflexiveClosure" $ sizeLimit $ \x ->
+    test "closure                 == transitiveClosure . reflexiveClosure" $ size10 $ \x ->
           closure % x             == (transitiveClosure . reflexiveClosure) x
 
-    test "closure . closure       == closure" $ sizeLimit $ \x ->
+    test "closure . closure       == closure" $ size10 $ \x ->
          (closure . closure) % x  == closure x
 
-    test "postSet x (closure y)   == Set.fromList (reachable x y)" $ sizeLimit $ \x y ->
+    test "postSet x (closure y)   == Set.fromList (reachable x y)" $ size10 $ \x y ->
           postSet x % (closure y) == Set.fromList (reachable x y)
 
 testReflexiveClosure :: Testsuite -> IO ()
@@ -1152,7 +1140,7 @@ testTransitiveClosure (Testsuite prefix (%)) = do
     test "transitiveClosure (path $ nub xs)     == clique (nub $ xs)" $ \xs ->
           transitiveClosure % (path $ nubOrd xs) == clique (nubOrd xs)
 
-    test "transitiveClosure . transitiveClosure == transitiveClosure" $ sizeLimit $ \x ->
+    test "transitiveClosure . transitiveClosure == transitiveClosure" $ size10 $ \x ->
          (transitiveClosure . transitiveClosure) x == transitiveClosure % x
 
 testSplitVertex :: Testsuite -> IO ()
@@ -1182,7 +1170,7 @@ testBind (Testsuite prefix (%)) = do
     test "bind (edge x y) f    == connect (f x) (f y)" $ \(apply -> f) x y ->
           bind (edge x y) f    == connect (f x) % f y
 
-    test "bind (vertices xs) f == overlays (map f xs)" $ sizeLimit $ \xs (apply -> f) ->
+    test "bind (vertices xs) f == overlays (map f xs)" $ size10 $ \xs (apply -> f) ->
           bind (vertices xs) f == id % overlays (map f xs)
 
     test "bind x (const empty) == empty" $ \x ->
@@ -1191,7 +1179,7 @@ testBind (Testsuite prefix (%)) = do
     test "bind x vertex        == x" $ \x ->
           bind x vertex        == id % x
 
-    test "bind (bind x f) g    == bind x (\\y -> bind (f y) g)" $ sizeLimit $ \x (apply -> f) (apply -> g) ->
+    test "bind (bind x f) g    == bind x (\\y -> bind (f y) g)" $ size10 $ \x (apply -> f) (apply -> g) ->
           bind (bind x f) g    == bind (id % x) (\y -> bind (f y) g)
 
 testSimplify :: Testsuite -> IO ()

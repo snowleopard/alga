@@ -14,18 +14,21 @@ module Algebra.Graph.Test.API (
     GraphAPI (..)
   ) where
 
+import Data.Monoid (Any)
 import Data.Tree
 
 import Algebra.Graph.Class (Graph (..))
 
-import qualified Algebra.Graph                    as Graph
-import qualified Algebra.Graph.AdjacencyMap       as AM
-import qualified Algebra.Graph.Fold               as Fold
-import qualified Algebra.Graph.HigherKinded.Class as HClass
-import qualified Algebra.Graph.AdjacencyIntMap    as AIM
-import qualified Algebra.Graph.Relation           as R
-import qualified Data.Set                         as Set
-import qualified Data.IntSet                      as IntSet
+import qualified Algebra.Graph                       as Graph
+import qualified Algebra.Graph.AdjacencyMap          as AM
+import qualified Algebra.Graph.Labelled              as LG
+import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
+import qualified Algebra.Graph.Fold                  as Fold
+import qualified Algebra.Graph.HigherKinded.Class    as HClass
+import qualified Algebra.Graph.AdjacencyIntMap       as AIM
+import qualified Algebra.Graph.Relation              as R
+import qualified Data.Set                            as Set
+import qualified Data.IntSet                         as IntSet
 
 class Graph g => GraphAPI g where
     edge                 :: Vertex g -> Vertex g -> g
@@ -250,3 +253,17 @@ instance Ord a => GraphAPI (R.Relation a) where
     reflexiveClosure  = R.reflexiveClosure
     symmetricClosure  = R.symmetricClosure
     transitiveClosure = R.transitiveClosure
+
+instance Ord a => GraphAPI (LG.Graph Any a) where
+    vertices     = LG.vertices
+    overlays     = LG.overlays
+    isSubgraphOf = LG.isSubgraphOf
+    removeVertex = LG.removeVertex
+    induce       = LG.induce
+
+instance Ord a => GraphAPI (LAM.AdjacencyMap Any a) where
+    vertices     = LAM.vertices
+    overlays     = LAM.overlays
+    isSubgraphOf = LAM.isSubgraphOf
+    removeVertex = LAM.removeVertex
+    induce       = LAM.induce

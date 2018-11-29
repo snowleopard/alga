@@ -7,6 +7,7 @@ import Algebra.Graph.Test.Graph
 import Algebra.Graph.Test.NonEmpty.Graph
 import Algebra.Graph.Test.Internal
 import Algebra.Graph.Test.Labelled.AdjacencyMap
+import Algebra.Graph.Test.Labelled.Graph
 import Algebra.Graph.Test.Relation
 import Data.Graph.Test.Typed
 
@@ -19,6 +20,7 @@ main = do
     testGraph
     testInternal
     testLabelledAdjacencyMap
+    testLabelledGraph
     testNonEmptyAdjacencyMap
     testNonEmptyGraph
     testRelation

@@ -12,8 +12,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled.AdjacencyMap.Internal (
     -- * Labelled adjacency map implementation
-    AdjacencyMap (..), empty, vertex, overlay, connect, fromAdjacencyMaps,
-    consistent
+    AdjacencyMap (..), consistent
     ) where
 
 import Prelude ()
@@ -22,7 +21,6 @@ import Prelude.Compat
 import Control.DeepSeq
 import Data.Map.Strict (Map)
 import Data.Monoid (Monoid, getSum, Sum (..))
-import Data.Semigroup (Semigroup)
 import Data.Set (Set, (\\))
 
 import qualified Data.Map.Strict as Map
@@ -30,6 +28,11 @@ import qualified Data.Set        as Set
 
 import Algebra.Graph.Label
 
+-- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
+-- For example, 'AdjacencyMap' @Bool@ @a@ is isomorphic to unlabelled graphs
+-- defined in the top-level module "Algebra.Graph.AdjacencyMap", where @False@
+-- and @True@ denote the lack of and the existence of an unlabelled edge,
+-- respectively.
 newtype AdjacencyMap e a = AM {
     -- | The /adjacency map/ of an edge-labelled graph: each vertex is
     -- associated with a map from its direct successors to the corresponding
@@ -62,57 +65,33 @@ instance (Ord e, Monoid e, Ord a) => Ord (AdjacencyMap e a) where
         [ compare (vNum x) (vNum y)
         , compare (vSet x) (vSet y)
         , compare (eNum x) (eNum y)
-        , compare       x        y ]
+        , compare (eSet x) (eSet y)
+        , cmp ]
       where
-        vNum = Map.size
-        vSet = Map.keysSet
-        eNum = getSum . foldMap (Sum . Map.size)
+        vNum   = Map.size
+        vSet   = Map.keysSet
+        eNum   = getSum . foldMap (Sum . Map.size)
+        eSet m = [ (x, y) | (x, ys) <- Map.toAscList m, (y, _) <- Map.toAscList ys ]
+        cmp | x == y               = EQ
+            | overlays [x, y] == y = LT
+            | otherwise            = compare x y
 
--- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
-empty :: AdjacencyMap e a
-empty = AM Map.empty
-
--- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
-vertex :: a -> AdjacencyMap e a
-vertex x = AM $ Map.singleton x Map.empty
-
--- | /Overlay/ two graphs. This is a commutative, associative and idempotent
--- operation with the identity 'empty'.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
-overlay :: (Ord a, Semigroup e) => AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
-overlay (AM x) (AM y) = AM $ Map.unionWith (Map.unionWith (<+>)) x y
-
--- | /Connect/ two graphs with edges labelled by a given label. When applied to
--- the same labels, this is an associative operation with the identity 'empty',
--- which distributes over 'overlay' and obeys the decomposition axiom.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
--- number of edges in the resulting graph is quadratic with respect to the
--- number of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
-connect :: (Ord a, Monoid e) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
-connect e (AM x) (AM y) = AM $ Map.unionsWith (Map.unionWith mappend)
-    [ x, y, Map.fromSet (const targets) (Map.keysSet x) ]
-  where
-    targets = Map.fromSet (const e) (Map.keysSet y)
+-- Overlay a list of adjacency maps.
+overlays :: (Eq e, Monoid e, Ord a) => [Map a (Map a e)] -> Map a (Map a e)
+overlays = Map.unionsWith (\x -> Map.filter (/= zero) . Map.unionWith mappend x)
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap'
 -- for more details.
-instance (Ord a, Num a, Dioid e) => Num (AdjacencyMap e a) where
-    fromInteger = vertex . fromInteger
-    (+)         = overlay
-    (*)         = connect one
-    signum      = const empty
+instance (Eq e, Dioid e, Num a, Ord a) => Num (AdjacencyMap e a) where
+    fromInteger x = AM $ Map.singleton (fromInteger x) Map.empty
+    AM x + AM y   = AM $ overlays [x, y]
+    AM x * AM y   = AM $ overlays $ x : y :
+        [ Map.fromSet (const targets) (Map.keysSet x) ]
+      where
+        targets = Map.fromSet (const one) (Map.keysSet y)
+    signum      = const (AM Map.empty)
     abs         = id
     negate      = id
-
--- | Construct a graph from a list of adjacency sets.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
-fromAdjacencyMaps :: (Ord a, Eq e, Monoid e) => [(a, Map a e)] -> AdjacencyMap e a
-fromAdjacencyMaps ss = AM $ Map.unionWith (Map.unionWith mappend) vs es
-  where
-    vs = Map.fromSet (const Map.empty) . Set.unions $ map (Map.keysSet . snd) ss
-    es = Map.fromListWith (Map.unionWith mappend) $ map (fmap $ Map.filter (/= zero)) ss
 
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices, and there are no 'zero'-labelled edges. It

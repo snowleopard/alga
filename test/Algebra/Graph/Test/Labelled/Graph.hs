@@ -1,73 +1,64 @@
 {-# LANGUAGE ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Test.Labelled.AdjacencyMap
+-- Module     : Algebra.Graph.Test.Labelled.Graph
 -- Copyright  : (c) Andrey Mokhov 2016-2018
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Testsuite for "Algebra.Graph.Labelled.AdjacencyMap".
+-- Testsuite for "Algebra.Graph.Labelled.Graph".
 -----------------------------------------------------------------------------
-module Algebra.Graph.Test.Labelled.AdjacencyMap (
+module Algebra.Graph.Test.Labelled.Graph (
     -- * Testsuite
-    testLabelledAdjacencyMap
+    testLabelledGraph
     ) where
 
 import Data.Monoid
 
 import Algebra.Graph.Label
-import Algebra.Graph.Labelled.AdjacencyMap
-import Algebra.Graph.Labelled.AdjacencyMap.Internal
+import Algebra.Graph.Labelled
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
-import Algebra.Graph.ToGraph (reachable)
 
-import qualified Algebra.Graph.AdjacencyMap as AM
-import qualified Data.Map                   as Map
-import qualified Data.Set                   as Set
+import qualified Algebra.Graph.ToGraph as T
+import qualified Data.Set              as Set
 
 t :: Testsuite
-t = testsuite "Labelled.AdjacencyMap." (empty :: LAI)
+t = testsuite "Labelled.Graph." (empty :: LAI)
 
 type S = Sum Int
 type D = Distance Int
 
-type LAI = AdjacencyMap Any Int
-type LAS = AdjacencyMap S   Int
-type LAD = AdjacencyMap D   Int
+type LAI = Graph Any Int
+type LAS = Graph S   Int
+type LAD = Graph D   Int
 
-testLabelledAdjacencyMap :: IO ()
-testLabelledAdjacencyMap = do
-    putStrLn "\n============ Labelled.AdjacencyMap.Internal.consistent ============"
-    test "arbitraryLabelledAdjacencyMap" $ \x -> consistent (x           :: LAS)
-    test "empty" $                      consistent (empty                :: LAS)
-    test "vertex" $ \x               -> consistent (vertex x             :: LAS)
-    test "edge" $ \e x y             -> consistent (edge e x y           :: LAS)
-    test "overlay" $ \x y            -> consistent (overlay x y          :: LAS)
-    test "connect" $ size10 $ \e x y -> consistent (connect e x y        :: LAS)
-    test "vertices" $ \xs            -> consistent (vertices xs          :: LAS)
-    test "edges" $ \es               -> consistent (edges es             :: LAS)
-    test "overlays" $ size10 $ \xs   -> consistent (overlays xs          :: LAS)
-    test "fromAdjacencyMaps" $ \xs   -> consistent (fromAdjacencyMaps xs :: LAS)
-    test "removeVertex" $ \x y       -> consistent (removeVertex x y     :: LAS)
-    test "removeEdge" $ \x y z       -> consistent (removeEdge x y z     :: LAS)
-    test "replaceVertex" $ \x y z    -> consistent (replaceVertex x y z  :: LAS)
-    test "replaceEdge" $ \e x y z    -> consistent (replaceEdge e x y z  :: LAS)
-    test "transpose" $ \x            -> consistent (transpose x          :: LAS)
-    test "gmap" $ \(apply -> f) x    -> consistent (gmap f (x :: LAS)    :: LAS)
-    test "emap" $ \(apply -> f) x    -> consistent (emap (fmap f::S->S) x:: LAS)
-    test "induce" $ \(apply -> p) x  -> consistent (induce p x           :: LAS)
+testLabelledGraph :: IO ()
+testLabelledGraph = do
+    putStrLn "\n============ Labelled.Graph.foldg ============"
+    test "foldg empty     vertex        connect             == id" $ \(x :: LAS) ->
+          foldg empty     vertex        connect x           == id x
 
-    test "closure"           $ size10 $ \x -> consistent (closure           x :: LAD)
-    test "reflexiveClosure"  $ size10 $ \x -> consistent (reflexiveClosure  x :: LAD)
-    test "symmetricClosure"  $ size10 $ \x -> consistent (symmetricClosure  x :: LAD)
-    test "transitiveClosure" $ size10 $ \x -> consistent (transitiveClosure x :: LAD)
+    test "foldg empty     vertex        (fmap flip connect) == transpose" $ \(x :: LAS) ->
+          foldg empty     vertex        (fmap flip connect) x == transpose x
+
+    test "foldg 1         (const 1)     (const (+))         == size" $ \(x :: LAS) ->
+          foldg 1         (const 1)     (const (+)) x       == size x
+
+    test "foldg True      (const False) (const (&&))        == isEmpty" $ \(x :: LAS) ->
+          foldg True      (const False) (const (&&)) x      == isEmpty x
+
+    test "foldg False     (== x)        (const (||))        == hasVertex x" $ \x (y :: LAS) ->
+          foldg False     (== x)        (const (||)) y      == hasVertex x y
+
+    test "foldg Set.empty Set.singleton (const Set.union)   == vertexSet" $ \(x :: LAS) ->
+          foldg Set.empty Set.singleton (const Set.union) x == vertexSet x
 
     testEmpty  t
     testVertex t
 
-    putStrLn "\n============ Labelled.AdjacencyMap.edge ============"
+    putStrLn "\n============ Labelled.Graph.edge ============"
     test "edge e    x y              == connect e (vertex x) (vertex y)" $ \(e :: S) (x :: Int) y ->
           edge e    x y              == connect e (vertex x) (vertex y)
 
@@ -81,13 +72,13 @@ testLabelledAdjacencyMap = do
           edgeLabel x y (edge e x y) == e
 
     test "edgeCount     (edge e x y) == if e == mempty then 0 else 1" $ \(e :: S) (x :: Int) y ->
-          edgeCount     (edge e x y) == if e == mempty then 0 else 1
+          T.edgeCount     (edge e x y) == if e == mempty then 0 else 1
 
     test "vertexCount   (edge e 1 1) == 1" $ \(e :: S) ->
-          vertexCount   (edge e 1 (1 :: Int)) == 1
+          T.vertexCount   (edge e 1 (1 :: Int)) == 1
 
     test "vertexCount   (edge e 1 2) == 2" $ \(e :: S) ->
-          vertexCount   (edge e 1 (2 :: Int)) == 2
+          T.vertexCount   (edge e 1 (2 :: Int)) == 2
 
     test "x -<e>- y                  == edge e x y" $ \(e :: S) (x :: Int) y ->
           x -<e>- y                  == edge e x y
@@ -108,7 +99,7 @@ testLabelledAdjacencyMap = do
     test "edgeLabel 1 3 $ transitiveClosure (overlay (edge e 1 2) (edge f   2 3)) == e <.> f" $ \(e :: D) f ->
           edgeLabel 1 3 (transitiveClosure (overlay (edge e 1 2) (edge f   2 (3 :: Int))))== e <.> f
 
-    putStrLn "\n============ Labelled.AdjacencyMap.connect ============"
+    putStrLn "\n============ Labelled.Graph.connect ============"
     test "isEmpty     (connect e x y) == isEmpty   x   && isEmpty   y" $ size10 $ \(e :: S) (x :: LAS) y ->
           isEmpty     (connect e x y) ==(isEmpty   x   && isEmpty   y)
 
@@ -116,23 +107,23 @@ testLabelledAdjacencyMap = do
           hasVertex z (connect e x y) ==(hasVertex z x || hasVertex z y)
 
     test "vertexCount (connect e x y) >= vertexCount x" $ size10 $ \(e :: S) (x :: LAS) y ->
-          vertexCount (connect e x y) >= vertexCount x
+          T.vertexCount (connect e x y) >= T.vertexCount x
 
     test "vertexCount (connect e x y) <= vertexCount x + vertexCount y" $ size10 $ \(e :: S) (x :: LAS) y ->
-          vertexCount (connect e x y) <= vertexCount x + vertexCount y
+          T.vertexCount (connect e x y) <= T.vertexCount x + T.vertexCount y
 
     test "edgeCount   (connect e x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y" $ size10 $ \(e :: S) (x :: LAS) y ->
-          edgeCount   (connect e x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y
+          T.edgeCount   (connect e x y) <= T.vertexCount x * T.vertexCount y + T.edgeCount x + T.edgeCount y
 
     test "vertexCount (connect e 1 2) == 2" $ \(e :: Any) ->
-          vertexCount (connect e 1 (2 :: LAI)) == 2
+          T.vertexCount (connect e 1 (2 :: LAI)) == 2
 
     test "edgeCount   (connect e 1 2) == if e == zero then 0 else 1" $ \(e :: Any) ->
-          edgeCount   (connect e 1 (2 :: LAI)) == if e == zero then 0 else 1
+          T.edgeCount   (connect e 1 (2 :: LAI)) == if e == zero then 0 else 1
 
     testVertices t
 
-    putStrLn "\n============ Labelled.AdjacencyMap.edges ============"
+    putStrLn "\n============ Labelled.Graph.edges ============"
     test "edges []        == empty" $
           edges []        == (empty :: LAS)
 
@@ -144,20 +135,7 @@ testLabelledAdjacencyMap = do
 
     testOverlays t
 
-    putStrLn "\n============ Labelled.AdjacencyMap.fromAdjacencyMaps ============"
-    test "fromAdjacencyMaps []                                  == empty" $
-          fromAdjacencyMaps []                                  == (empty :: LAS)
-
-    test "fromAdjacencyMaps [(x, Map.empty)]                    == vertex x" $ \(x :: Int) ->
-          fromAdjacencyMaps [(x, Map.empty)]                    == (vertex x :: LAS)
-
-    test "fromAdjacencyMaps [(x, Map.singleton y e)]            == if e == zero then vertices [x,y] else edge e x y" $ \(e :: S) (x :: Int) y ->
-          fromAdjacencyMaps [(x, Map.singleton y e)]            == if e == zero then vertices [x,y] else edge e x y
-
-    test "overlay (fromAdjacencyMaps xs) (fromAdjacencyMaps ys) == fromAdjacencyMaps (xs ++ ys)" $ \xs ys ->
-          overlay (fromAdjacencyMaps xs) (fromAdjacencyMaps ys) == (fromAdjacencyMaps (xs ++ ys) :: LAS)
-
-    putStrLn "\n============ Labelled.AdjacencyMap.isSubgraphOf ============"
+    putStrLn "\n============ Labelled.Graph.isSubgraphOf ============"
     test "isSubgraphOf empty      x     ==  True" $ \(x :: LAS) ->
           isSubgraphOf empty      x     ==  True
 
@@ -168,7 +146,7 @@ testLabelledAdjacencyMap = do
         let y = x + z -- Make sure we hit the precondition
         in isSubgraphOf x y             ==> x <= y
 
-    putStrLn "\n============ Labelled.AdjacencyMap.isEmpty ============"
+    putStrLn "\n============ Labelled.Graph.isEmpty ============"
     test "isEmpty empty                         == True" $
           isEmpty empty                         == True
 
@@ -186,12 +164,12 @@ testLabelledAdjacencyMap = do
 
     testHasVertex t
 
-    putStrLn "\n============ Labelled.AdjacencyMap.hasEdge ============"
+    putStrLn "\n============ Labelled.Graph.hasEdge ============"
     test "hasEdge x y empty            == False" $ \(x :: Int) y ->
-          hasEdge x y empty            == False
+          hasEdge x y (empty :: LAS)   == False
 
     test "hasEdge x y (vertex z)       == False" $ \(x :: Int) y z ->
-          hasEdge x y (vertex z)       == False
+          hasEdge x y (vertex z :: LAS) == False
 
     test "hasEdge x y (edge e x y)     == (e /= zero)" $ \(e :: S) (x :: Int) y ->
           hasEdge x y (edge e x y)     == (e /= zero)
@@ -203,7 +181,7 @@ testLabelledAdjacencyMap = do
         (_, u, v) <- elements ((zero, x, y) : edgeList z)
         return $ hasEdge u v z         == (not . null . filter (\(_,ex,ey) -> ex == u && ey == v) . edgeList) z
 
-    putStrLn "\n============ Labelled.AdjacencyMap.edgeLabel ============"
+    putStrLn "\n============ Labelled.Graph.edgeLabel ============"
     test "edgeLabel x y empty         == zero" $ \(x :: Int) y ->
           edgeLabel x y empty         == (zero :: S)
 
@@ -215,28 +193,28 @@ testLabelledAdjacencyMap = do
 
     test "edgeLabel s t (overlay x y) == edgeLabel s t x + edgeLabel s t y" $ \(x :: LAS) y -> do
         z <- arbitrary
-        s <- elements ([z] ++ vertexList x ++ vertexList y)
-        t <- elements ([z] ++ vertexList x ++ vertexList y)
+        s <- elements ([z] ++ T.vertexList x ++ T.vertexList y)
+        t <- elements ([z] ++ T.vertexList x ++ T.vertexList y)
         return $ edgeLabel s t (overlay x y) == edgeLabel s t x + edgeLabel s t y
 
     testVertexCount t
 
-    putStrLn "\n============ Labelled.AdjacencyMap.edgeCount ============"
+    putStrLn "\n============ Labelled.Graph.edgeCount ============"
     test "edgeCount empty        == 0" $
-          edgeCount empty        == 0
+          T.edgeCount (empty :: LAS) == 0
 
     test "edgeCount (vertex x)   == 0" $ \(x :: Int) ->
-          edgeCount (vertex x)   == 0
+          T.edgeCount (vertex x :: LAS) == 0
 
     test "edgeCount (edge e x y) == if e == zero then 0 else 1" $ \(e :: S) (x :: Int) y ->
-          edgeCount (edge e x y) == if e == zero then 0 else 1
+          T.edgeCount (edge e x y) == if e == zero then 0 else 1
 
     test "edgeCount              == length . edgeList" $ \(x :: LAS) ->
-          edgeCount x            == (length . edgeList) x
+          T.edgeCount x            == (length . edgeList) x
 
     testVertexList t
 
-    putStrLn "\n============ Labelled.AdjacencyMap.edgeList ============"
+    putStrLn "\n============ Labelled.Graph.edgeList ============"
     test "edgeList empty        == []" $
           edgeList (empty :: LAS) == []
 
@@ -248,7 +226,7 @@ testLabelledAdjacencyMap = do
 
     testVertexSet t
 
-    putStrLn "\n============ Labelled.AdjacencyMap.edgeSet ============"
+    putStrLn "\n============ Labelled.Graph.edgeSet ============"
     test "edgeSet empty        == Set.empty" $
           edgeSet (empty :: LAS) == Set.empty
 
@@ -258,37 +236,33 @@ testLabelledAdjacencyMap = do
     test "edgeSet (edge e x y) == if e == zero then Set.empty else Set.singleton (e,x,y)" $ \(e :: S) (x :: Int) y ->
           edgeSet (edge e x y) == if e == zero then Set.empty else Set.singleton (e,x,y)
 
-    putStrLn "\n============ Labelled.AdjacencyMap.preSet ============"
+    putStrLn "\n============ Labelled.Graph.preSet ============"
     test "preSet x empty        == Set.empty" $ \x ->
-          preSet x (empty :: LAS) == Set.empty
+          T.preSet x (empty :: LAS) == Set.empty
 
     test "preSet x (vertex x)   == Set.empty" $ \x ->
-          preSet x (vertex x :: LAS) == Set.empty
+          T.preSet x (vertex x :: LAS) == Set.empty
 
     test "preSet 1 (edge e 1 2) == Set.empty" $ \e ->
-          preSet 1 (edge e 1 2 :: LAS) == Set.empty
+          T.preSet 1 (edge e 1 2 :: LAS) == Set.empty
 
     test "preSet y (edge e x y) == if e == zero then Set.empty else Set.fromList [x]" $ \(e :: S) (x :: Int) y ->
-          preSet y (edge e x y) == if e == zero then Set.empty else Set.fromList [x]
+          T.preSet y (edge e x y) == if e == zero then Set.empty else Set.fromList [x]
 
-    putStrLn "\n============ Labelled.AdjacencyMap.postSet ============"
+    putStrLn "\n============ Labelled.Graph.postSet ============"
     test "postSet x empty        == Set.empty" $ \x ->
-          postSet x (empty :: LAS) == Set.empty
+          T.postSet x (empty :: LAS) == Set.empty
 
     test "postSet x (vertex x)   == Set.empty" $ \x ->
-          postSet x (vertex x :: LAS) == Set.empty
+          T.postSet x (vertex x :: LAS) == Set.empty
 
     test "postSet x (edge e x y) == if e == zero then Set.empty else Set.fromList [y]" $ \(e :: S) (x :: Int) y ->
-          postSet x (edge e x y) == if e == zero then Set.empty else Set.fromList [y]
+          T.postSet x (edge e x y) == if e == zero then Set.empty else Set.fromList [y]
 
     test "postSet 2 (edge e 1 2) == Set.empty" $ \e ->
-          postSet 2 (edge e 1 2 :: LAS) == Set.empty
+          T.postSet 2 (edge e 1 2 :: LAS) == Set.empty
 
-    putStrLn "\n============ Labelled.AdjacencyMap.skeleton ============"
-    test "hasEdge x y == hasEdge x y . skeleton" $ \x y (z :: LAS) ->
-          hasEdge x y z == (AM.hasEdge x y . skeleton) z
-
-    putStrLn "\n============ Labelled.AdjacencyMap.removeVertex ============"
+    putStrLn "\n============ Labelled.Graph.removeVertex ============"
     test "removeVertex x (vertex x)       == empty" $ \x ->
           removeVertex x (vertex x)       == (empty :: LAS)
 
@@ -304,7 +278,7 @@ testLabelledAdjacencyMap = do
     test "removeVertex x . removeVertex x == removeVertex x" $ \x (y :: LAS) ->
          (removeVertex x . removeVertex x) y == removeVertex x y
 
-    putStrLn "\n============ Labelled.AdjacencyMap.removeEdge ============"
+    putStrLn "\n============ Labelled.Graph.removeEdge ============"
     test "removeEdge x y (edge e x y)     == vertices [x,y]" $ \(e :: S) (x :: Int) y ->
           removeEdge x y (edge e x y)     == vertices [x,y]
 
@@ -320,17 +294,17 @@ testLabelledAdjacencyMap = do
     test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
           removeEdge 1 2 (1 * 1 * 2 * 2)  == (1 * 1 + 2 * 2 :: LAD)
 
-    putStrLn "\n============ Labelled.AdjacencyMap.replaceVertex ============"
+    putStrLn "\n============ Labelled.Graph.replaceVertex ============"
     test "replaceVertex x x            == id" $ \x y ->
           replaceVertex x x y          == (y :: LAS)
 
     test "replaceVertex x y (vertex x) == vertex y" $ \x y ->
           replaceVertex x y (vertex x) == (vertex y :: LAS)
 
-    test "replaceVertex x y            == gmap (\\v -> if v == x then y else v)" $ \x y (z :: LAS) ->
-          replaceVertex x y z          == gmap (\v -> if v == x then y else v) z
+    test "replaceVertex x y            == fmap (\\v -> if v == x then y else v)" $ \x y (z :: LAS) ->
+          replaceVertex x y z          == fmap (\v -> if v == x then y else v) z
 
-    putStrLn "\n============ Labelled.AdjacencyMap.replaceEdge ============"
+    putStrLn "\n============ Labelled.Graph.replaceEdge ============"
     test "replaceEdge e x y z                 == overlay (removeEdge x y z) (edge e x y)" $ \(e :: S) (x :: Int) y z ->
           replaceEdge e x y z                 == overlay (removeEdge x y z) (edge e x y)
 
@@ -340,7 +314,7 @@ testLabelledAdjacencyMap = do
     test "edgeLabel x y (replaceEdge e x y z) == e" $ \(e :: S) (x :: Int) y z ->
           edgeLabel x y (replaceEdge e x y z) == e
 
-    putStrLn "\n============ Labelled.AdjacencyMap.transpose ============"
+    putStrLn "\n============ Labelled.Graph.transpose ============"
     test "transpose empty        == empty" $
           transpose empty        == (empty :: LAS)
 
@@ -353,27 +327,27 @@ testLabelledAdjacencyMap = do
     test "transpose . transpose == id" $ size10 $ \x ->
          (transpose . transpose) x == (x :: LAS)
 
-    putStrLn "\n============ Labelled.AdjacencyMap.gmap ============"
-    test "gmap f empty        == empty" $ \(apply -> f) ->
-          gmap f (empty :: LAS) == (empty :: LAS)
+    putStrLn "\n============ Labelled.Graph.fmap ============"
+    test "fmap f empty        == empty" $ \(apply -> f) ->
+          fmap f (empty :: LAS) == (empty :: LAS)
 
-    test "gmap f (vertex x)   == vertex (f x)" $ \(apply -> f) x ->
-          gmap f (vertex x :: LAS) == (vertex (f x) :: LAS)
+    test "fmap f (vertex x)   == vertex (f x)" $ \(apply -> f) x ->
+          fmap f (vertex x :: LAS) == (vertex (f x) :: LAS)
 
-    test "gmap f (edge e x y) == edge e (f x) (f y)" $ \(apply -> f) e x y ->
-          gmap f (edge e x y :: LAS) == (edge e (f x) (f y) :: LAS)
+    test "fmap f (edge e x y) == edge e (f x) (f y)" $ \(apply -> f) e x y ->
+          fmap f (edge e x y :: LAS) == (edge e (f x) (f y) :: LAS)
 
-    test "gmap id             == id" $ \x ->
-          gmap id x           == (x :: LAS)
+    test "fmap id             == id" $ \x ->
+          fmap id x           == (x :: LAS)
 
-    test "gmap f . gmap g     == gmap (f . g)" $ \(apply -> f) (apply -> g) x ->
-         ((gmap f :: LAS -> LAS) . gmap g) (x :: LAS)  == gmap (f . g) x
+    test "fmap f . fmap g     == fmap (f . g)" $ \(apply -> f) (apply -> g) x ->
+         ((fmap f :: LAS -> LAS) . fmap g) (x :: LAS)  == fmap (f . g) x
 
     -- TODO: We only test homomorphisms @h@ on @Sum Int@, which all happen to be
     -- just linear transformations: @h = (k*)@ for some @k :: Int@. These tests
     -- are therefore rather weak and do not cover the ruch space of possible
     -- monoid homomorphisms. How can we improve this?
-    putStrLn "\n============ Labelled.AdjacencyMap.emap ============"
+    putStrLn "\n============ Labelled.Graph.emap ============"
     test "emap h empty           == empty" $ \(k :: S) ->
         let h = (k*)
         in emap h empty          == (empty :: LAS)
@@ -404,7 +378,7 @@ testLabelledAdjacencyMap = do
 
     testInduce t
 
-    putStrLn "\n============ Labelled.AdjacencyMap.closure ============"
+    putStrLn "\n============ Labelled.Graph.closure ============"
     test "closure empty         == empty" $
           closure empty         == (empty :: LAD)
 
@@ -427,9 +401,9 @@ testLabelledAdjacencyMap = do
          (closure . closure) x  == closure (x :: LAD)
 
     test "postSet x (closure y) == Set.fromList (reachable x y)" $ size10 $ \(x :: Int) (y :: LAD) ->
-          postSet x (closure y) == Set.fromList (reachable x y)
+          T.postSet x (closure y) == Set.fromList (T.reachable x y)
 
-    putStrLn "\n============ Labelled.AdjacencyMap.reflexiveClosure ============"
+    putStrLn "\n============ Labelled.Graph.reflexiveClosure ============"
     test "reflexiveClosure empty              == empty" $
           reflexiveClosure empty              == (empty :: LAD)
 
@@ -445,7 +419,7 @@ testLabelledAdjacencyMap = do
     test "reflexiveClosure . reflexiveClosure == reflexiveClosure" $ size10 $ \x ->
          (reflexiveClosure . reflexiveClosure) x == reflexiveClosure (x :: LAD)
 
-    putStrLn "\n============ Labelled.AdjacencyMap.symmetricClosure ============"
+    putStrLn "\n============ Labelled.Graph.symmetricClosure ============"
     test "symmetricClosure empty              == empty" $
           symmetricClosure empty              == (empty :: LAD)
 
@@ -461,7 +435,7 @@ testLabelledAdjacencyMap = do
     test "symmetricClosure . symmetricClosure == symmetricClosure" $ size10 $ \x ->
          (symmetricClosure . symmetricClosure) x == symmetricClosure (x :: LAD)
 
-    putStrLn "\n============ Labelled.AdjacencyMap.transitiveClosure ============"
+    putStrLn "\n============ Labelled.Graph.transitiveClosure ============"
     test "transitiveClosure empty               == empty" $
           transitiveClosure empty               == (empty :: LAD)
 
@@ -473,3 +447,19 @@ testLabelledAdjacencyMap = do
 
     test "transitiveClosure . transitiveClosure == transitiveClosure" $ size10 $ \x ->
          (transitiveClosure . transitiveClosure) x == transitiveClosure (x :: LAD)
+
+    putStrLn "\n============ Labelled.Graph.context ============"
+    test "context (const False) x                   == Nothing" $ \x ->
+          context (const False) (x :: LAS)          == Nothing
+
+    test "context (== 1)        (edge e 1 2)        == if e == zero then Just (Context [] []) else Just (Context []      [(e,2)])" $ \e ->
+          context (== 1)        (edge e 1 2 :: LAS) == if e == zero then Just (Context [] []) else Just (Context []      [(e,2)])
+
+    test "context (== 2)        (edge e 1 2)        == if e == zero then Just (Context [] []) else Just (Context [(e,1)] []     )" $ \e ->
+          context (== 2)        (edge e 1 2 :: LAS) == if e == zero then Just (Context [] []) else Just (Context [(e,1)] []     )
+
+    test "context (const True ) (edge e 1 2)        == if e == zero then Just (Context [] []) else Just (Context [(e,1)] [(e,2)])" $ \e ->
+          context (const True ) (edge e 1 2 :: LAS) == if e == zero then Just (Context [] []) else Just (Context [(e,1)] [(e,2)])
+
+    test "context (== 4)        (3 * 1 * 4 * 1 * 5) == Just (Context [(one,3), (one,1)] [(one,1), (one,5)])" $
+          context (== 4)        (3 * 1 * 4 * 1 * 5 :: LAD) == Just (Context [(one,3), (one,1)] [(one,1), (one,5)])

@@ -48,8 +48,7 @@ module Algebra.Graph (
 
     -- * Context
     Context (..), context
-
-  ) where
+    ) where
 
 import Prelude ()
 import Prelude.Compat hiding ((<>))
@@ -643,7 +642,6 @@ edgeIntListR = AIM.edgeList . toAdjacencyIntMap
 -- vertexSet 'empty'      == Set.'Set.empty'
 -- vertexSet . 'vertex'   == Set.'Set.singleton'
 -- vertexSet . 'vertices' == Set.'Set.fromList'
--- vertexSet . 'clique'   == Set.'Set.fromList'
 -- @
 vertexSet :: Ord a => Graph a -> Set.Set a
 vertexSet = foldg Set.empty Set.singleton Set.union Set.union
@@ -687,11 +685,11 @@ adjacencyList = AM.adjacencyList . toAdjacencyMap
 -- TODO: This is a very inefficient implementation. Find a way to construct an
 -- adjacency map directly, without building intermediate representations for all
 -- subgraphs.
--- | Convert a graph to 'AM.AdjacencyMap'.
+-- Convert a graph to 'AM.AdjacencyMap'.
 toAdjacencyMap :: Ord a => Graph a -> AM.AdjacencyMap a
 toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
 
--- | Like @toAdjacencyMap@ but specialised for graphs with vertices of type 'Int'.
+-- Like @toAdjacencyMap@ but specialised for graphs with vertices of type 'Int'.
 toAdjacencyIntMap :: Graph Int -> AIM.AdjacencyIntMap
 toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 
@@ -916,12 +914,12 @@ removeEdge s t = filterContext s (/=s) (/=t)
 {-# SPECIALISE removeEdge :: Int -> Int -> Graph Int -> Graph Int #-}
 
 -- TODO: Export
--- | Filter vertices in a subgraph context.
+-- Filter vertices in a subgraph context.
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
 filterContext s i o g = maybe g go $ context (==s) g
   where
     go (Context is os) = induce (/=s) g `overlay` transpose (star s (filter i is))
-                                        `overlay` star          s (filter o os)
+                                        `overlay` star            s (filter o os)
 {-# SPECIALISE filterContext :: Int -> (Int -> Bool) -> (Int -> Bool) -> Graph Int -> Graph Int #-}
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
@@ -1098,22 +1096,6 @@ box x y = overlays $ xs ++ ys
     toListGr :: Graph a -> List a
     toListGr = foldg mempty pure (<>) (<>)
 
--- | 'Focus' on a specified subgraph.
-focus :: (a -> Bool) -> Graph a -> Focus a
-focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
-
--- | The context of a subgraph comprises the input and output vertices outside
--- the subgraph that are connected to the vertices inside the subgraph.
-data Context a = Context { inputs :: [a], outputs :: [a] }
-
--- | Extract the context from a graph 'Focus'. Returns @Nothing@ if the focus
--- could not be obtained.
-context :: (a -> Bool) -> Graph a -> Maybe (Context a)
-context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
-            | otherwise = Nothing
-  where
-    f = focus p g
-
 -- | /Sparsify/ a graph by adding intermediate 'Left' @Int@ vertices between the
 -- original vertices (wrapping the latter in 'Right') such that the resulting
 -- graph is /sparse/, i.e. contains only O(s) edges, but preserves the
@@ -1214,3 +1196,31 @@ matchR e v p = \x -> if p x then v x else e
 "graph/induce" [1] forall f.
     foldg Empty (matchR Empty Vertex f) Overlay Connect = induce f
  #-}
+
+-- 'Focus' on a specified subgraph.
+focus :: (a -> Bool) -> Graph a -> Focus a
+focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
+
+-- | The 'Context' of a subgraph comprises its 'inputs' and 'outputs', i.e. all
+-- the vertices that are connected to the subgraph's vertices. Note that inputs
+-- and outputs can belong to the subgraph itself. In general, there are no
+-- guarantees on the order of vertices in 'inputs' and 'outputs'; furthermore,
+-- there may be repetitions.
+data Context a = Context { inputs :: [a], outputs :: [a] }
+    deriving (Eq, Show)
+
+-- | Extract the 'Context' of a subgraph specified by a given predicate. Returns
+-- @Nothing@ if the specified subgraph is empty.
+--
+-- @
+-- context ('const' False) x                   == Nothing
+-- context (== 1)        ('edge' 1 2)          == Just ('Context' [   ] [2  ])
+-- context (== 2)        ('edge' 1 2)          == Just ('Context' [1  ] [   ])
+-- context ('const' True ) ('edge' 1 2)          == Just ('Context' [1  ] [2  ])
+-- context (== 4)        (3 * 1 * 4 * 1 * 5) == Just ('Context' [3,1] [1,5])
+-- @
+context :: (a -> Bool) -> Graph a -> Maybe (Context a)
+context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
+            | otherwise = Nothing
+  where
+    f = focus p g
