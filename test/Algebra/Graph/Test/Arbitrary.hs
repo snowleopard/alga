@@ -149,7 +149,6 @@ arbitraryLabelledAdjacencyMap = LAM.fromAdjacencyMaps <$> arbitrary
 instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Arbitrary (LAM.AdjacencyMap e a) where
     arbitrary = arbitraryLabelledAdjacencyMap
 
--- TODO: Implement a custom shrink method.
 -- | Generate an arbitrary labelled 'LAM.Graph' value of a specified size.
 arbitraryLabelledGraph :: (Arbitrary a, Arbitrary e) => Gen (LG.Graph e a)
 arbitraryLabelledGraph = sized expr
@@ -161,8 +160,13 @@ arbitraryLabelledGraph = sized expr
         left  <- choose (0, n)
         LG.connect label <$> expr left <*> expr (n - left)
 
-instance (Arbitrary a, Arbitrary e) => Arbitrary (LG.Graph e a) where
+instance (Arbitrary a, Arbitrary e, Monoid e) => Arbitrary (LG.Graph e a) where
     arbitrary = arbitraryLabelledGraph
+
+    shrink LG.Empty           = []
+    shrink (LG.Vertex      _) = [LG.Empty]
+    shrink (LG.Connect e x y) = [LG.Empty, x, y, LG.Connect mempty x y]
+                             ++ [LG.Connect e x' y' | (x', y') <- shrink (x, y) ]
 
 -- TODO: Implement a custom shrink method.
 instance Arbitrary a => Arbitrary (Tree a) where

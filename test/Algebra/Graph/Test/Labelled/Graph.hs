@@ -21,8 +21,8 @@ import Algebra.Graph.Labelled
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
-import qualified Algebra.Graph.ToGraph      as T
-import qualified Data.Set                   as Set
+import qualified Algebra.Graph.ToGraph as T
+import qualified Data.Set              as Set
 
 t :: Testsuite
 t = testsuite "Labelled.Graph." (empty :: LAI)
@@ -37,20 +37,23 @@ type LAD = Graph D   Int
 testLabelledGraph :: IO ()
 testLabelledGraph = do
     putStrLn "\n============ Labelled.Graph.foldg ============"
-    test "foldg empty vertex        connect             == id" $ \(x :: LAS) ->
-          foldg empty vertex        connect x           == id x
+    test "foldg empty     vertex        connect             == id" $ \(x :: LAS) ->
+          foldg empty     vertex        connect x           == id x
 
-    test "foldg empty vertex        (fmap flip connect) == transpose" $ \(x :: LAS) ->
-          foldg empty vertex        (fmap flip connect) x == transpose x
+    test "foldg empty     vertex        (fmap flip connect) == transpose" $ \(x :: LAS) ->
+          foldg empty     vertex        (fmap flip connect) x == transpose x
 
-    test "foldg 1     (const 1)     (const (+))         == size" $ \(x :: LAS) ->
-          foldg 1     (const 1)     (const (+)) x       == size x
+    test "foldg 1         (const 1)     (const (+))         == size" $ \(x :: LAS) ->
+          foldg 1         (const 1)     (const (+)) x       == size x
 
-    test "foldg True  (const False) (const (&&))        == isEmpty" $ \(x :: LAS) ->
-          foldg True  (const False) (const (&&)) x      == isEmpty x
+    test "foldg True      (const False) (const (&&))        == isEmpty" $ \(x :: LAS) ->
+          foldg True      (const False) (const (&&)) x      == isEmpty x
 
-    test "foldg False (== x)        (const (||))        == hasVertex x" $ \x (y :: LAS) ->
-          foldg False (== x)        (const (||)) y      == hasVertex x y
+    test "foldg False     (== x)        (const (||))        == hasVertex x" $ \x (y :: LAS) ->
+          foldg False     (== x)        (const (||)) y      == hasVertex x y
+
+    test "foldg Set.empty Set.singleton (const Set.union)   == vertexSet" $ \(x :: LAS) ->
+          foldg Set.empty Set.singleton (const Set.union) x == vertexSet x
 
     testEmpty  t
     testVertex t
@@ -89,12 +92,12 @@ testLabelledGraph = do
     test "edgeLabel x y $ overlay (edge e x y) (edge f    x y) == e <+> f" $ \(e :: S) f (x :: Int) y ->
           edgeLabel x y (overlay (edge e x y) (edge f    x y)) == e <+> f
 
-    -- putStrLn ""
-    -- test "edgeLabel 1 3 $ transitiveClosure (overlay (edge e 1 2) (edge one 2 3)) == e" $ \(e :: D) ->
-    --       edgeLabel 1 3 (transitiveClosure (overlay (edge e 1 2) (edge one 2 (3 :: Int)))) == e
+    putStrLn ""
+    test "edgeLabel 1 3 $ transitiveClosure (overlay (edge e 1 2) (edge one 2 3)) == e" $ \(e :: D) ->
+          edgeLabel 1 3 (transitiveClosure (overlay (edge e 1 2) (edge one 2 (3 :: Int)))) == e
 
-    -- test "edgeLabel 1 3 $ transitiveClosure (overlay (edge e 1 2) (edge f   2 3)) == e <.> f" $ \(e :: D) f ->
-    --       edgeLabel 1 3 (transitiveClosure (overlay (edge e 1 2) (edge f   2 (3 :: Int))))== e <.> f
+    test "edgeLabel 1 3 $ transitiveClosure (overlay (edge e 1 2) (edge f   2 3)) == e <.> f" $ \(e :: D) f ->
+          edgeLabel 1 3 (transitiveClosure (overlay (edge e 1 2) (edge f   2 (3 :: Int))))== e <.> f
 
     putStrLn "\n============ Labelled.Graph.connect ============"
     test "isEmpty     (connect e x y) == isEmpty   x   && isEmpty   y" $ size10 $ \(e :: S) (x :: LAS) y ->
@@ -156,8 +159,8 @@ testLabelledGraph = do
     test "isEmpty (removeVertex x $ vertex x)   == True" $ \(x :: Int) ->
           isEmpty (removeVertex x $ vertex x)   == True
 
-    -- test "isEmpty (removeEdge x y $ edge e x y) == False" $ \(e :: S) (x :: Int) y ->
-    --       isEmpty (removeEdge x y $ edge e x y) == False
+    test "isEmpty (removeEdge x y $ edge e x y) == False" $ \(e :: S) (x :: Int) y ->
+          isEmpty (removeEdge x y $ edge e x y) == False
 
     testHasVertex t
 
@@ -171,8 +174,8 @@ testLabelledGraph = do
     test "hasEdge x y (edge e x y)     == (e /= zero)" $ \(e :: S) (x :: Int) y ->
           hasEdge x y (edge e x y)     == (e /= zero)
 
-    -- test "hasEdge x y . removeEdge x y == const False" $ \x y (z :: LAS) ->
-    --      (hasEdge x y . removeEdge x y) z == const False z
+    test "hasEdge x y . removeEdge x y == const False" $ \x y (z :: LAS) ->
+         (hasEdge x y . removeEdge x y) z == const False z
 
     test "hasEdge x y                  == not . null . filter (\\(_,ex,ey) -> ex == x && ey == y) . edgeList" $ \x y (z :: LAS) -> do
         (_, u, v) <- elements ((zero, x, y) : edgeList z)
@@ -206,8 +209,8 @@ testLabelledGraph = do
     test "edgeCount (edge e x y) == if e == zero then 0 else 1" $ \(e :: S) (x :: Int) y ->
           T.edgeCount (edge e x y) == if e == zero then 0 else 1
 
-    -- test "edgeCount              == length . edgeList" $ \(x :: LAS) ->
-    --       T.edgeCount x            == (length . edgeList) x
+    test "edgeCount              == length . edgeList" $ \(x :: LAS) ->
+          T.edgeCount x            == (length . edgeList) x
 
     testVertexList t
 
@@ -275,21 +278,21 @@ testLabelledGraph = do
     test "removeVertex x . removeVertex x == removeVertex x" $ \x (y :: LAS) ->
          (removeVertex x . removeVertex x) y == removeVertex x y
 
-    -- putStrLn "\n============ Labelled.Graph.removeEdge ============"
-    -- test "removeEdge x y (edge e x y)     == vertices [x,y]" $ \(e :: S) (x :: Int) y ->
-    --       removeEdge x y (edge e x y)     == vertices [x,y]
+    putStrLn "\n============ Labelled.Graph.removeEdge ============"
+    test "removeEdge x y (edge e x y)     == vertices [x,y]" $ \(e :: S) (x :: Int) y ->
+          removeEdge x y (edge e x y)     == vertices [x,y]
 
-    -- test "removeEdge x y . removeEdge x y == removeEdge x y" $ \x y (z :: LAS) ->
-    --      (removeEdge x y . removeEdge x y) z == removeEdge x y z
+    test "removeEdge x y . removeEdge x y == removeEdge x y" $ \x y (z :: LAS) ->
+         (removeEdge x y . removeEdge x y) z == removeEdge x y z
 
-    -- test "removeEdge x y . removeVertex x == removeVertex x" $ \x y (z :: LAS) ->
-    --      (removeEdge x y . removeVertex x) z == removeVertex x z
+    test "removeEdge x y . removeVertex x == removeVertex x" $ \x y (z :: LAS) ->
+         (removeEdge x y . removeVertex x) z == removeVertex x z
 
-    -- test "removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2" $
-    --       removeEdge 1 1 (1 * 1 * 2 * 2)  == (1 * 2 * 2 :: LAD)
+    test "removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2" $
+          removeEdge 1 1 (1 * 1 * 2 * 2)  == (1 * 2 * 2 :: LAD)
 
-    -- test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
-    --       removeEdge 1 2 (1 * 1 * 2 * 2)  == (1 * 1 + 2 * 2 :: LAD)
+    test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
+          removeEdge 1 2 (1 * 1 * 2 * 2)  == (1 * 1 + 2 * 2 :: LAD)
 
     putStrLn "\n============ Labelled.Graph.replaceVertex ============"
     test "replaceVertex x x            == id" $ \x y ->
@@ -301,15 +304,15 @@ testLabelledGraph = do
     test "replaceVertex x y            == fmap (\\v -> if v == x then y else v)" $ \x y (z :: LAS) ->
           replaceVertex x y z          == fmap (\v -> if v == x then y else v) z
 
-    -- putStrLn "\n============ Labelled.Graph.replaceEdge ============"
-    -- test "replaceEdge e x y z                 == overlay (removeEdge x y z) (edge e x y)" $ \(e :: S) (x :: Int) y z ->
-    --       replaceEdge e x y z                 == overlay (removeEdge x y z) (edge e x y)
+    putStrLn "\n============ Labelled.Graph.replaceEdge ============"
+    test "replaceEdge e x y z                 == overlay (removeEdge x y z) (edge e x y)" $ \(e :: S) (x :: Int) y z ->
+          replaceEdge e x y z                 == overlay (removeEdge x y z) (edge e x y)
 
-    -- test "replaceEdge e x y (edge f x y)      == edge e x y" $ \(e :: S) f (x :: Int) y ->
-    --       replaceEdge e x y (edge f x y)      == edge e x y
+    test "replaceEdge e x y (edge f x y)      == edge e x y" $ \(e :: S) f (x :: Int) y ->
+          replaceEdge e x y (edge f x y)      == edge e x y
 
-    -- test "edgeLabel x y (replaceEdge e x y z) == e" $ \(e :: S) (x :: Int) y z ->
-    --       edgeLabel x y (replaceEdge e x y z) == e
+    test "edgeLabel x y (replaceEdge e x y z) == e" $ \(e :: S) (x :: Int) y z ->
+          edgeLabel x y (replaceEdge e x y z) == e
 
     putStrLn "\n============ Labelled.Graph.transpose ============"
     test "transpose empty        == empty" $
@@ -375,72 +378,72 @@ testLabelledGraph = do
 
     testInduce t
 
-    -- putStrLn "\n============ Labelled.Graph.closure ============"
-    -- test "closure empty         == empty" $
-    --       closure empty         == (empty :: LAD)
+    putStrLn "\n============ Labelled.Graph.closure ============"
+    test "closure empty         == empty" $
+          closure empty         == (empty :: LAD)
 
-    -- test "closure (vertex x)    == edge one x x" $ \x ->
-    --       closure (vertex x)    == (edge one x x :: LAD)
+    test "closure (vertex x)    == edge one x x" $ \x ->
+          closure (vertex x)    == (edge one x x :: LAD)
 
-    -- test "closure (edge e x x)  == edge one x x" $ \e x ->
-    --       closure (edge e x x)  == (edge one x x :: LAD)
+    test "closure (edge e x x)  == edge one x x" $ \e x ->
+          closure (edge e x x)  == (edge one x x :: LAD)
 
-    -- test "closure (edge e x y)  == edges [(one,x,x), (e,x,y), (one,y,y)]" $ \e x y ->
-    --       closure (edge e x y)  == (edges [(one,x,x), (e,x,y), (one,y,y)] :: LAD)
+    test "closure (edge e x y)  == edges [(one,x,x), (e,x,y), (one,y,y)]" $ \e x y ->
+          closure (edge e x y)  == (edges [(one,x,x), (e,x,y), (one,y,y)] :: LAD)
 
-    -- test "closure               == reflexiveClosure . transitiveClosure" $ size10 $ \x ->
-    --       closure (x :: LAD)    == (reflexiveClosure . transitiveClosure) x
+    test "closure               == reflexiveClosure . transitiveClosure" $ size10 $ \x ->
+          closure (x :: LAD)    == (reflexiveClosure . transitiveClosure) x
 
-    -- test "closure               == transitiveClosure . reflexiveClosure" $ size10 $ \x ->
-    --       closure (x :: LAD)    == (transitiveClosure . reflexiveClosure) x
+    test "closure               == transitiveClosure . reflexiveClosure" $ size10 $ \x ->
+          closure (x :: LAD)    == (transitiveClosure . reflexiveClosure) x
 
-    -- test "closure . closure     == closure" $ size10 $ \x ->
-    --      (closure . closure) x  == closure (x :: LAD)
+    test "closure . closure     == closure" $ size10 $ \x ->
+         (closure . closure) x  == closure (x :: LAD)
 
-    -- test "postSet x (closure y) == Set.fromList (reachable x y)" $ size10 $ \(x :: Int) (y :: LAD) ->
-    --       postSet x (closure y) == Set.fromList (reachable x y)
+    test "postSet x (closure y) == Set.fromList (reachable x y)" $ size10 $ \(x :: Int) (y :: LAD) ->
+          T.postSet x (closure y) == Set.fromList (T.reachable x y)
 
-    -- putStrLn "\n============ Labelled.Graph.reflexiveClosure ============"
-    -- test "reflexiveClosure empty              == empty" $
-    --       reflexiveClosure empty              == (empty :: LAD)
+    putStrLn "\n============ Labelled.Graph.reflexiveClosure ============"
+    test "reflexiveClosure empty              == empty" $
+          reflexiveClosure empty              == (empty :: LAD)
 
-    -- test "reflexiveClosure (vertex x)         == edge one x x" $ \x ->
-    --       reflexiveClosure (vertex x)         == (edge one x x :: LAD)
+    test "reflexiveClosure (vertex x)         == edge one x x" $ \x ->
+          reflexiveClosure (vertex x)         == (edge one x x :: LAD)
 
-    -- test "reflexiveClosure (edge e x x)       == edge one x x" $ \e x ->
-    --       reflexiveClosure (edge e x x)       == (edge one x x :: LAD)
+    test "reflexiveClosure (edge e x x)       == edge one x x" $ \e x ->
+          reflexiveClosure (edge e x x)       == (edge one x x :: LAD)
 
-    -- test "reflexiveClosure (edge e x y)       == edges [(one,x,x), (e,x,y), (one,y,y)]" $ \e x y ->
-    --       reflexiveClosure (edge e x y)       == (edges [(one,x,x), (e,x,y), (one,y,y)] :: LAD)
+    test "reflexiveClosure (edge e x y)       == edges [(one,x,x), (e,x,y), (one,y,y)]" $ \e x y ->
+          reflexiveClosure (edge e x y)       == (edges [(one,x,x), (e,x,y), (one,y,y)] :: LAD)
 
-    -- test "reflexiveClosure . reflexiveClosure == reflexiveClosure" $ size10 $ \x ->
-    --      (reflexiveClosure . reflexiveClosure) x == reflexiveClosure (x :: LAD)
+    test "reflexiveClosure . reflexiveClosure == reflexiveClosure" $ size10 $ \x ->
+         (reflexiveClosure . reflexiveClosure) x == reflexiveClosure (x :: LAD)
 
-    -- putStrLn "\n============ Labelled.Graph.symmetricClosure ============"
-    -- test "symmetricClosure empty              == empty" $
-    --       symmetricClosure empty              == (empty :: LAD)
+    putStrLn "\n============ Labelled.Graph.symmetricClosure ============"
+    test "symmetricClosure empty              == empty" $
+          symmetricClosure empty              == (empty :: LAD)
 
-    -- test "symmetricClosure (vertex x)         == vertex x" $ \x ->
-    --       symmetricClosure (vertex x)         == (vertex x :: LAD)
+    test "symmetricClosure (vertex x)         == vertex x" $ \x ->
+          symmetricClosure (vertex x)         == (vertex x :: LAD)
 
-    -- test "symmetricClosure (edge e x y)       == edges [(e,x,y), (e,y,x)]" $ \e x y ->
-    --       symmetricClosure (edge e x y)       == (edges [(e,x,y), (e,y,x)] :: LAD)
+    test "symmetricClosure (edge e x y)       == edges [(e,x,y), (e,y,x)]" $ \e x y ->
+          symmetricClosure (edge e x y)       == (edges [(e,x,y), (e,y,x)] :: LAD)
 
-    -- test "symmetricClosure x                  == overlay x (transpose x)" $ \x ->
-    --       symmetricClosure x                  == (overlay x (transpose x) :: LAD)
+    test "symmetricClosure x                  == overlay x (transpose x)" $ \x ->
+          symmetricClosure x                  == (overlay x (transpose x) :: LAD)
 
-    -- test "symmetricClosure . symmetricClosure == symmetricClosure" $ size10 $ \x ->
-    --      (symmetricClosure . symmetricClosure) x == symmetricClosure (x :: LAD)
+    test "symmetricClosure . symmetricClosure == symmetricClosure" $ size10 $ \x ->
+         (symmetricClosure . symmetricClosure) x == symmetricClosure (x :: LAD)
 
-    -- putStrLn "\n============ Labelled.Graph.transitiveClosure ============"
-    -- test "transitiveClosure empty               == empty" $
-    --       transitiveClosure empty               == (empty :: LAD)
+    putStrLn "\n============ Labelled.Graph.transitiveClosure ============"
+    test "transitiveClosure empty               == empty" $
+          transitiveClosure empty               == (empty :: LAD)
 
-    -- test "transitiveClosure (vertex x)          == vertex x" $ \x ->
-    --       transitiveClosure (vertex x)          == (vertex x :: LAD)
+    test "transitiveClosure (vertex x)          == vertex x" $ \x ->
+          transitiveClosure (vertex x)          == (vertex x :: LAD)
 
-    -- test "transitiveClosure (edge e x y)        == edge e x y" $ \e x y ->
-    --       transitiveClosure (edge e x y)        == (edge e x y :: LAD)
+    test "transitiveClosure (edge e x y)        == edge e x y" $ \e x y ->
+          transitiveClosure (edge e x y)        == (edge e x y :: LAD)
 
-    -- test "transitiveClosure . transitiveClosure == transitiveClosure" $ size10 $ \x ->
-    --      (transitiveClosure . transitiveClosure) x == transitiveClosure (x :: LAD)
+    test "transitiveClosure . transitiveClosure == transitiveClosure" $ size10 $ \x ->
+         (transitiveClosure . transitiveClosure) x == transitiveClosure (x :: LAD)

@@ -48,8 +48,7 @@ module Algebra.Graph (
 
     -- * Context
     Context (..), context
-
-  ) where
+    ) where
 
 import Prelude ()
 import Prelude.Compat hiding ((<>))
@@ -915,12 +914,12 @@ removeEdge s t = filterContext s (/=s) (/=t)
 {-# SPECIALISE removeEdge :: Int -> Int -> Graph Int -> Graph Int #-}
 
 -- TODO: Export
--- | Filter vertices in a subgraph context.
+-- Filter vertices in a subgraph context.
 filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
 filterContext s i o g = maybe g go $ context (==s) g
   where
     go (Context is os) = induce (/=s) g `overlay` transpose (star s (filter i is))
-                                        `overlay` star          s (filter o os)
+                                        `overlay` star            s (filter o os)
 {-# SPECIALISE filterContext :: Int -> (Int -> Bool) -> (Int -> Bool) -> Graph Int -> Graph Int #-}
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
@@ -1097,22 +1096,6 @@ box x y = overlays $ xs ++ ys
     toListGr :: Graph a -> List a
     toListGr = foldg mempty pure (<>) (<>)
 
--- | 'Focus' on a specified subgraph.
-focus :: (a -> Bool) -> Graph a -> Focus a
-focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
-
--- | The context of a subgraph comprises the input and output vertices outside
--- the subgraph that are connected to the vertices inside the subgraph.
-data Context a = Context { inputs :: [a], outputs :: [a] }
-
--- | Extract the context from a graph 'Focus'. Returns @Nothing@ if the focus
--- could not be obtained.
-context :: (a -> Bool) -> Graph a -> Maybe (Context a)
-context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
-            | otherwise = Nothing
-  where
-    f = focus p g
-
 -- | /Sparsify/ a graph by adding intermediate 'Left' @Int@ vertices between the
 -- original vertices (wrapping the latter in 'Right') such that the resulting
 -- graph is /sparse/, i.e. contains only O(s) edges, but preserves the
@@ -1213,3 +1196,20 @@ matchR e v p = \x -> if p x then v x else e
 "graph/induce" [1] forall f.
     foldg Empty (matchR Empty Vertex f) Overlay Connect = induce f
  #-}
+
+-- 'Focus' on a specified subgraph.
+focus :: (a -> Bool) -> Graph a -> Focus a
+focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
+
+-- | The /context/ of a subgraph comprises the input and output vertices outside
+-- the subgraph that are connected to the vertices inside the subgraph.
+data Context a = Context { inputs :: [a], outputs :: [a] }
+    deriving Show
+
+-- | Extract the context of a subgraph specified by a given predicate. Returns
+-- @Nothing@ if the specified subgraph is empty.
+context :: (a -> Bool) -> Graph a -> Maybe (Context a)
+context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
+            | otherwise = Nothing
+  where
+    f = focus p g

@@ -462,7 +462,15 @@ instance ToGraph AIM.AdjacencyIntMap where
 -- | See "Algebra.Graph.Labelled".
 instance (Eq e, Monoid e, Ord a) => ToGraph (LG.Graph e a) where
     type ToVertex (LG.Graph e a) = a
-    foldg e v o c = LG.foldg e v (\e -> if e == mempty then o else c)
+    foldg e v o c              = LG.foldg e v (\e -> if e == mempty then o else c)
+    vertexList                 = LG.vertexList
+    vertexSet                  = LG.vertexSet
+    toAdjacencyMap             = LAM.skeleton
+                               . LG.foldg LAM.empty LAM.vertex LAM.connect
+    toAdjacencyMapTranspose    = LAM.skeleton
+                               . LG.foldg LAM.empty LAM.vertex (fmap flip LAM.connect)
+    toAdjacencyIntMap          = toAdjacencyIntMap . toAdjacencyMap
+    toAdjacencyIntMapTranspose = toAdjacencyIntMapTranspose . toAdjacencyMapTranspose
 
 -- | See "Algebra.Graph.Labelled.AdjacencyMap".
 instance (Eq e, Monoid e, Ord a) => ToGraph (LAM.AdjacencyMap e a) where

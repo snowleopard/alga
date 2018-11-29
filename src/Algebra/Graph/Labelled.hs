@@ -26,13 +26,21 @@ module Algebra.Graph.Labelled (
     isSubgraphOf,
 
     -- * Graph properties
-    isEmpty, size, hasVertex, hasEdge, edgeLabel, edgeList, edgeSet,
+    isEmpty, size, hasVertex, hasEdge, edgeLabel, vertexList, edgeList,
+    vertexSet, edgeSet,
 
     -- * Graph transformation
-    removeVertex, replaceVertex, transpose, emap, induce,
+    removeVertex, removeEdge, replaceVertex, replaceEdge, transpose, emap,
+    induce,
+
+    -- * Relational operations
+    closure, reflexiveClosure, symmetricClosure, transitiveClosure,
 
     -- * Types of edge-labelled graphs
-    UnlabelledGraph, Automaton, Network
+    UnlabelledGraph, Automaton, Network,
+
+    -- * Context
+    Context (..), context
     ) where
 
 import Prelude ()
@@ -40,9 +48,13 @@ import Prelude.Compat
 
 import Data.Monoid (Any (..))
 
+import Algebra.Graph.Internal (List (..))
 import Algebra.Graph.Label
+
 import qualified Algebra.Graph.Labelled.AdjacencyMap as AM
 import qualified Data.Set                            as Set
+import qualified Data.Map                            as Map
+import qualified GHC.Exts                            as Exts
 
 -- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
 -- For example, 'Graph' @Bool@ @a@ is isomorphic to unlabelled graphs defined in
@@ -76,6 +88,12 @@ instance (Ord a, Num a, Dioid e) => Num (Graph e a) where
 toAdjacencyMap :: (Eq e, Monoid e, Ord a) => Graph e a -> AM.AdjacencyMap e a
 toAdjacencyMap = foldg AM.empty AM.vertex AM.connect
 
+-- Convert the adjacency map to a graph.
+fromAdjacencyMap :: Monoid e => AM.AdjacencyMap e a -> Graph e a
+fromAdjacencyMap = overlays . map go . Map.toList . AM.adjacencyMap
+  where
+    go (u, m) = overlay (vertex u) (edges [ (e, u, v) | (v, e) <- Map.toList m])
+
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
 -- The order of arguments is: empty, vertex and connect.
@@ -83,11 +101,12 @@ toAdjacencyMap = foldg AM.empty AM.vertex AM.connect
 -- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
 --
 -- @
--- foldg 'empty' 'vertex'        'connect'             == 'id'
--- foldg 'empty' 'vertex'        ('fmap' 'flip' 'connect') == 'transpose'
--- foldg 1     ('const' 1)     ('const' (+))         == 'size'
--- foldg True  ('const' False) ('const' (&&))        == 'isEmpty'
--- foldg False (== x)        ('const' (||))        == 'hasVertex' x
+-- foldg 'empty'     'vertex'        'connect'             == 'id'
+-- foldg 'empty'     'vertex'        ('fmap' 'flip' 'connect') == 'transpose'
+-- foldg 1         ('const' 1)     ('const' (+))         == 'size'
+-- foldg True      ('const' False) ('const' (&&))        == 'isEmpty'
+-- foldg False     (== x)        ('const' (||))        == 'hasVertex' x
+-- foldg Set.'Set.empty' Set.'Set.singleton' ('const' Set.'Set.union')   == 'vertexSet'
 -- @
 foldg :: b -> (a -> b) -> (e -> b -> b -> b) -> Graph e a -> b
 foldg e v c = go
@@ -195,7 +214,12 @@ infixl 5 >-
 -- @
 --
 -- Furthermore, when applied to transitive graphs, 'overlay' composes edges in
--- sequence using the operator '<.>' with 'one' acting as the identity.
+-- sequence using the operator '<.>' with 'one' acting as the identity:
+--
+-- @
+-- 'edgeLabel' x z $ 'transitiveClosure' (overlay ('edge' e x y) ('edge' 'one' y z)) == e
+-- 'edgeLabel' x z $ 'transitiveClosure' (overlay ('edge' e x y) ('edge' f   y z)) == e '<.>' f
+-- @
 overlay :: Monoid e => Graph e a -> Graph e a -> Graph e a
 overlay = connect zero
 
@@ -319,6 +343,17 @@ edgeLabel s t g = let (res, _, _) = foldg e v c g in res
     c l (l1, s1, t1) (l2, s2, t2) | s1 && t2  = (mconcat [l1, l, l2], s1 || s2, t1 || t2)
                                   | otherwise = (mconcat [l1,    l2], s1 || s2, t1 || t2)
 
+-- | The sorted list of vertices of a given graph.
+-- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
+--
+-- @
+-- vertexList 'empty'      == []
+-- vertexList ('vertex' x) == [x]
+-- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
+-- @
+vertexList :: Ord a => Graph e a -> [a]
+vertexList = Set.toAscList . vertexSet
+
 -- | The list of edges of a graph, sorted lexicographically with respect to
 -- pairs of connected vertices (i.e. edge-labels are ignored when sorting).
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -330,6 +365,17 @@ edgeLabel s t g = let (res, _, _) = foldg e v c g in res
 -- @
 edgeList :: (Eq e, Monoid e, Ord a) => Graph e a -> [(e, a, a)]
 edgeList = AM.edgeList . toAdjacencyMap
+
+-- | The set of vertices of a given graph.
+-- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
+--
+-- @
+-- vertexSet 'empty'      == Set.'Set.empty'
+-- vertexSet . 'vertex'   == Set.'Set.singleton'
+-- vertexSet . 'vertices' == Set.'Set.fromList'
+-- @
+vertexSet :: Ord a => Graph e a -> Set.Set a
+vertexSet = foldg Set.empty Set.singleton (const Set.union)
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -355,6 +401,19 @@ edgeSet = Set.fromAscList . edgeList
 removeVertex :: Eq a => a -> Graph e a -> Graph e a
 removeVertex x = induce (/= x)
 
+-- | Remove an edge from a given graph.
+-- Complexity: /O(s)/ time, memory and size.
+--
+-- @
+-- removeEdge x y ('edge' e x y)     == 'vertices' [x,y]
+-- removeEdge x y . removeEdge x y == removeEdge x y
+-- removeEdge x y . 'removeVertex' x == 'removeVertex' x
+-- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
+-- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
+-- @
+removeEdge :: (Eq a, Eq e, Monoid e) => a -> a -> Graph e a -> Graph e a
+removeEdge s t = filterContext s (/=s) (/=t)
+
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O(s)/ time, memory and size.
@@ -366,6 +425,17 @@ removeVertex x = induce (/= x)
 -- @
 replaceVertex :: Eq a => a -> a -> Graph e a -> Graph e a
 replaceVertex u v = fmap $ \w -> if w == u then v else w
+
+-- | Replace an edge from a given graph. If it doesn't exist, it will be created.
+-- Complexity: /O(log(n))/ time.
+--
+-- @
+-- replaceEdge e x y z                 == 'overlay' (removeEdge x y z) ('edge' e x y)
+-- replaceEdge e x y ('edge' f x y)      == 'edge' e x y
+-- 'edgeLabel' x y (replaceEdge e x y z) == e
+-- @
+replaceEdge :: (Eq e, Monoid e, Ord a) => e -> a -> a -> Graph e a -> Graph e a
+replaceEdge e x y = overlay (edge e x y) . removeEdge x y
 
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
@@ -432,6 +502,63 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) c
     c _ Empty y     = y
     c e x     y     = Connect e x y
 
+-- | Compute the /reflexive and transitive closure/ of a graph over the
+-- underlying star semiring using the Warshall-Floyd-Kleene algorithm.
+--
+-- @
+-- closure 'empty'         == 'empty'
+-- closure ('vertex' x)    == 'edge' 'one' x x
+-- closure ('edge' e x x)  == 'edge' 'one' x x
+-- closure ('edge' e x y)  == 'edges' [('one',x,x), (e,x,y), ('one',y,y)]
+-- closure               == 'reflexiveClosure' . 'transitiveClosure'
+-- closure               == 'transitiveClosure' . 'reflexiveClosure'
+-- closure . closure     == closure
+-- 'Algebra.Graph.ToGraph.postSet' x (closure y) == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
+-- @
+closure :: (Eq e, Ord a, StarSemiring e) => Graph e a -> Graph e a
+closure = fromAdjacencyMap . AM.closure . toAdjacencyMap
+
+-- | Compute the /reflexive closure/ of a graph over the underlying semiring by
+-- adding a self-loop of weight 'one' to every vertex.
+-- Complexity: /O(n * log(n))/ time.
+--
+-- @
+-- reflexiveClosure 'empty'              == 'empty'
+-- reflexiveClosure ('vertex' x)         == 'edge' 'one' x x
+-- reflexiveClosure ('edge' e x x)       == 'edge' 'one' x x
+-- reflexiveClosure ('edge' e x y)       == 'edges' [('one',x,x), (e,x,y), ('one',y,y)]
+-- reflexiveClosure . reflexiveClosure == reflexiveClosure
+-- @
+reflexiveClosure :: (Ord a, Semiring e) => Graph e a -> Graph e a
+reflexiveClosure x = overlay x $ edges [ (one, v, v) | v <- vertexList x ]
+
+-- | Compute the /symmetric closure/ of a graph by overlaying it with its own
+-- transpose.
+-- Complexity: /O((n + m) * log(n))/ time.
+--
+-- @
+-- symmetricClosure 'empty'              == 'empty'
+-- symmetricClosure ('vertex' x)         == 'vertex' x
+-- symmetricClosure ('edge' e x y)       == 'edges' [(e,x,y), (e,y,x)]
+-- symmetricClosure x                  == 'overlay' x ('transpose' x)
+-- symmetricClosure . symmetricClosure == symmetricClosure
+-- @
+symmetricClosure :: Monoid e => Graph e a -> Graph e a
+symmetricClosure m = overlay m (transpose m)
+
+-- | Compute the /transitive closure/ of a graph over the underlying star
+-- semiring using a modified version of the Warshall-Floyd-Kleene algorithm,
+-- which omits the reflexivity step.
+--
+-- @
+-- transitiveClosure 'empty'               == 'empty'
+-- transitiveClosure ('vertex' x)          == 'vertex' x
+-- transitiveClosure ('edge' e x y)        == 'edge' e x y
+-- transitiveClosure . transitiveClosure == transitiveClosure
+-- @
+transitiveClosure :: (Eq e, Ord a, StarSemiring e) => Graph e a -> Graph e a
+transitiveClosure = fromAdjacencyMap . AM.transitiveClosure . toAdjacencyMap
+
 -- | A type synonym for /unlabelled graphs/.
 type UnlabelledGraph a = Graph Any a
 
@@ -440,3 +567,57 @@ type Automaton a s = Graph (RegularExpression a) s
 
 -- | A /network/ is a graph whose edges are labelled with distances.
 type Network e a = Graph (Distance e) a
+
+-- Filter vertices in a subgraph context.
+filterContext :: (Eq a, Eq e, Monoid e) => a -> (a -> Bool) -> (a -> Bool) -> Graph e a -> Graph e a
+filterContext s i o g = maybe g go $ context (==s) g
+  where
+    go (Context is os) = overlays [ vertex s
+                                  , induce (/=s) g
+                                  , edges [ (e, v, s) | (e, v) <- is, i v ]
+                                  , edges [ (e, s, v) | (e, v) <- os, o v ] ]
+
+-- The /focus/ of a graph expression is a flattened represenentation of the
+-- subgraph under focus, its context, as well as the list of all encountered
+-- vertices. See 'removeEdge' for a use-case example.
+data Focus e a = Focus
+    { ok :: Bool        -- ^ True if focus on the specified subgraph is obtained.
+    , is :: List (e, a) -- ^ Inputs into the focused subgraph.
+    , os :: List (e, a) -- ^ Outputs out of the focused subgraph.
+    , vs :: List a    } -- ^ All vertices (leaves) of the graph expression.
+
+-- Focus on the 'empty' graph.
+emptyFocus :: Focus e a
+emptyFocus = Focus False mempty mempty mempty
+
+-- | Focus on the graph with a single vertex, given a predicate indicating
+-- whether the vertex is of interest.
+vertexFocus :: (a -> Bool) -> a -> Focus e a
+vertexFocus f x = Focus (f x) mempty mempty (pure x)
+
+-- | Connect two foci.
+connectFoci :: (Eq e, Monoid e) => e -> Focus e a -> Focus e a -> Focus e a
+connectFoci e x y
+    | e == mempty = Focus (ok x || ok y) (is x <> is y) (os x <> os y) (vs x <> vs y)
+    | otherwise   = Focus (ok x || ok y) (xs   <> is y) (os x <> ys  ) (vs x <> vs y)
+  where
+    xs = if ok y then fmap (e,) (vs x) else is x
+    ys = if ok x then fmap (e,) (vs y) else os y
+
+-- | 'Focus' on a specified subgraph.
+focus :: (Eq e, Monoid e) => (a -> Bool) -> Graph e a -> Focus e a
+focus f = foldg emptyFocus (vertexFocus f) connectFoci
+
+-- | The /context/ of a subgraph comprises the input and output vertices outside
+-- the subgraph that are connected to the vertices inside the subgraph (along
+-- with the corresponding edge labels).
+data Context e a = Context { inputs :: [(e, a)], outputs :: [(e, a)] }
+    deriving Show
+
+-- | Extract the context of a subgraph specified by a given predicate. Returns
+-- @Nothing@ if the specified subgraph is empty.
+context :: (Eq e, Monoid e) => (a -> Bool) -> Graph e a -> Maybe (Context e a)
+context p g | ok f      = Just $ Context (Exts.toList $ is f) (Exts.toList $ os f)
+            | otherwise = Nothing
+  where
+    f = focus p g
