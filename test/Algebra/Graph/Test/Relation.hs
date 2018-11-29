@@ -33,7 +33,7 @@ type RI = Relation Int
 testRelation :: IO ()
 testRelation = do
     putStrLn "\n============ Relation ============"
-    test "Axioms of graphs" $ sizeLimit (axioms :: GraphTestsuite RI)
+    test "Axioms of graphs" $ size10 (axioms :: GraphTestsuite RI)
 
     test "Consistency of arbitraryRelation" $ \(m :: RI) ->
         consistent m
@@ -47,11 +47,11 @@ testRelation = do
     testRelational      t
 
     putStrLn "\n============ ReflexiveRelation ============"
-    test "Axioms of reflexive graphs" $ sizeLimit
+    test "Axioms of reflexive graphs" $ size10
         (reflexiveAxioms :: GraphTestsuite (ReflexiveRelation Int))
 
     putStrLn "\n============ SymmetricRelation ============"
-    test "Axioms of undirected graphs" $ sizeLimit
+    test "Axioms of undirected graphs" $ size10
         (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))
 
     putStrLn "\n============ SymmetricRelation.neighbours ============"
@@ -68,15 +68,15 @@ testRelation = do
           neighbours y (C.edge x y) == Set.fromList [x]
 
     putStrLn "\n============ TransitiveRelation ============"
-    test "Axioms of transitive graphs" $ sizeLimit
+    test "Axioms of transitive graphs" $ size10
         (transitiveAxioms :: GraphTestsuite (TransitiveRelation Int))
 
-    test "path xs == (clique xs :: TransitiveRelation Int)" $ sizeLimit $ \xs ->
+    test "path xs == (clique xs :: TransitiveRelation Int)" $ size10 $ \xs ->
           C.path xs == (C.clique xs :: TransitiveRelation Int)
 
     putStrLn "\n============ PreorderRelation ============"
-    test "Axioms of preorder graphs" $ sizeLimit
+    test "Axioms of preorder graphs" $ size10
         (preorderAxioms :: GraphTestsuite (PreorderRelation Int))
 
-    test "path xs == (clique xs :: PreorderRelation Int)" $ sizeLimit $ \xs ->
+    test "path xs == (clique xs :: PreorderRelation Int)" $ size10 $ \xs ->
           C.path xs == (C.clique xs :: PreorderRelation Int)

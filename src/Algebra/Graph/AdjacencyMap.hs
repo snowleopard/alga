@@ -390,7 +390,7 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- clique [x]        == 'vertex' x
 -- clique [x,y]      == 'edge' x y
 -- clique [x,y,z]    == 'edges' [(x,y), (x,z), (y,z)]
--- clique (xs ++ ys) == 'connect' (clique xs) (clique ys)
+-- clique (xs '++' ys) == 'connect' (clique xs) (clique ys)
 -- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: Ord a => [a] -> AdjacencyMap a
@@ -444,7 +444,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- stars [(x, ys)]               == 'star' x ys
 -- stars                         == 'overlays' . 'map' ('uncurry' 'star')
 -- stars . 'adjacencyList'         == id
--- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
+-- 'overlay' (stars xs) (stars ys) == stars (xs '++' ys)
 -- @
 stars :: Ord a => [(a, [a])] -> AdjacencyMap a
 stars = fromAdjacencySets . map (fmap Set.fromList)
@@ -457,7 +457,7 @@ stars = fromAdjacencySets . map (fmap Set.fromList)
 -- fromAdjacencySets [(x, Set.'Set.empty')]                    == 'vertex' x
 -- fromAdjacencySets [(x, Set.'Set.singleton' y)]              == 'edge' x y
 -- fromAdjacencySets . 'map' ('fmap' Set.'Set.fromList')           == 'stars'
--- 'overlay' (fromAdjacencySets xs) (fromAdjacencySets ys) == fromAdjacencySets (xs ++ ys)
+-- 'overlay' (fromAdjacencySets xs) (fromAdjacencySets ys) == fromAdjacencySets (xs '++' ys)
 -- @
 fromAdjacencySets :: Ord a => [(a, Set a)] -> AdjacencyMap a
 fromAdjacencySets ss = AM $ Map.unionWith Set.union vs es
@@ -581,7 +581,7 @@ transpose (AM m) = AM $ Map.foldrWithKey combine vs m
 -- gmap f 'empty'      == 'empty'
 -- gmap f ('vertex' x) == 'vertex' (f x)
 -- gmap f ('edge' x y) == 'edge' (f x) (f y)
--- gmap id           == id
+-- gmap 'id'           == 'id'
 -- gmap f . gmap g   == gmap (f . g)
 -- @
 gmap :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap a -> AdjacencyMap b

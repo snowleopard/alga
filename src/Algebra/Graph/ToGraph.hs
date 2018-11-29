@@ -48,7 +48,6 @@ import Prelude.Compat
 import Data.IntMap (IntMap)
 import Data.IntSet (IntSet)
 import Data.Map    (Map)
-import Data.Monoid (Any)
 import Data.Set    (Set)
 import Data.Tree
 
@@ -460,36 +459,27 @@ instance ToGraph AIM.AdjacencyIntMap where
     isTopSortOf                = AIM.isTopSortOf
 
 -- | See "Algebra.Graph.Labelled.AdjacencyMap".
-instance Ord a => ToGraph (LAM.AdjacencyMap Any a) where
-    type ToVertex (LAM.AdjacencyMap Any a) = a
-    toGraph                   = toGraph . LAM.skeleton
-    -- isEmpty _                  = False
-    -- hasVertex                  = NAM.hasVertex
-    -- hasEdge                    = NAM.hasEdge
-    -- vertexCount                = NAM.vertexCount
-    -- edgeCount                  = NAM.edgeCount
-    -- vertexList                 = vertexList . NAM.am
-    -- vertexSet                  = NAM.vertexSet
-    -- vertexIntSet               = vertexIntSet . NAM.am
-    -- edgeList                   = NAM.edgeList
-    -- edgeSet                    = NAM.edgeSet
-    -- adjacencyList              = adjacencyList . NAM.am
-    -- preSet                     = NAM.preSet
-    -- postSet                    = NAM.postSet
-    -- adjacencyMap               = adjacencyMap . NAM.am
-    -- adjacencyIntMap            = adjacencyIntMap . NAM.am
-    -- dfsForest                  = dfsForest . NAM.am
-    -- dfsForestFrom xs           = dfsForestFrom xs . NAM.am
-    -- dfs xs                     = dfs xs . NAM.am
-    -- reachable x                = reachable x . NAM.am
-    -- topSort                    = topSort . NAM.am
-    -- isAcyclic                  = isAcyclic . NAM.am
-    -- toAdjacencyMap             = NAM.am
-    -- toAdjacencyIntMap          = toAdjacencyIntMap . NAM.am
-    -- toAdjacencyMapTranspose    = NAM.am . NAM.transpose
-    -- toAdjacencyIntMapTranspose = toAdjacencyIntMap . NAM.transpose
-    -- isDfsForestOf f            = isDfsForestOf f . NAM.am
-    -- isTopSortOf x              = isTopSortOf x . NAM.am
+instance (Eq e, Monoid e, Ord a) => ToGraph (LAM.AdjacencyMap e a) where
+    type ToVertex (LAM.AdjacencyMap e a) = a
+    toGraph                    = toGraph . LAM.skeleton
+    foldg e v o c              = foldg e v o c . LAM.skeleton
+    isEmpty                    = LAM.isEmpty
+    hasVertex                  = LAM.hasVertex
+    hasEdge                    = LAM.hasEdge
+    vertexCount                = LAM.vertexCount
+    edgeCount                  = LAM.edgeCount
+    vertexList                 = LAM.vertexList
+    vertexSet                  = LAM.vertexSet
+    vertexIntSet               = IntSet.fromAscList . LAM.vertexList
+    edgeList                   = edgeList . LAM.skeleton
+    edgeSet                    = edgeSet . LAM.skeleton
+    adjacencyList              = adjacencyList . LAM.skeleton
+    preSet                     = LAM.preSet
+    postSet                    = LAM.postSet
+    toAdjacencyMap             = LAM.skeleton
+    toAdjacencyIntMap          = toAdjacencyIntMap . LAM.skeleton
+    toAdjacencyMapTranspose    = toAdjacencyMapTranspose . LAM.skeleton
+    toAdjacencyIntMapTranspose = toAdjacencyIntMapTranspose . LAM.skeleton
 
 -- | See "Algebra.Graph.NonEmpty.AdjacencyMap".
 instance Ord a => ToGraph (NAM.AdjacencyMap a) where

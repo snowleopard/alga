@@ -256,4 +256,6 @@ instance Ord a => GraphAPI (R.Relation a) where
 instance Ord a => GraphAPI (LAM.AdjacencyMap Any a) where
     vertices     = LAM.vertices
     overlays     = LAM.overlays
+    isSubgraphOf = LAM.isSubgraphOf
     removeVertex = LAM.removeVertex
+    induce       = LAM.induce
