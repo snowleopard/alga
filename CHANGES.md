@@ -19,7 +19,7 @@
         remove `Algebra.Graph.adjacencyMap` and `Algebra.Graph.adjacencyIntMap`.
         This functionality is still available from the type class `ToGraph`.
 * #126, #131: Implement custom `Ord` instance.
-* #122, #125: Further work on labelled algebraic graphs.
+* #17, #122, #125, #149: Add labelled algebraic graphs.
 * #121: Drop `Foldable` and `Traversable` instances.
 * #113: Add `Labelled.AdjacencyMap`.
 
