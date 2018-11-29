@@ -55,6 +55,7 @@ import qualified Algebra.Graph                                as G
 import qualified Algebra.Graph.AdjacencyMap                   as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm         as AM
 import qualified Algebra.Graph.AdjacencyMap.Internal          as AM
+import qualified Algebra.Graph.Labelled                       as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap          as LAM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap          as NAM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap.Internal as NAM
@@ -457,6 +458,11 @@ instance ToGraph AIM.AdjacencyIntMap where
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
     isDfsForestOf              = AIM.isDfsForestOf
     isTopSortOf                = AIM.isTopSortOf
+
+-- | See "Algebra.Graph.Labelled".
+instance (Eq e, Monoid e, Ord a) => ToGraph (LG.Graph e a) where
+    type ToVertex (LG.Graph e a) = a
+    foldg e v o c = LG.foldg e v (\e -> if e == mempty then o else c)
 
 -- | See "Algebra.Graph.Labelled.AdjacencyMap".
 instance (Eq e, Monoid e, Ord a) => ToGraph (LAM.AdjacencyMap e a) where

@@ -686,11 +686,11 @@ adjacencyList = AM.adjacencyList . toAdjacencyMap
 -- TODO: This is a very inefficient implementation. Find a way to construct an
 -- adjacency map directly, without building intermediate representations for all
 -- subgraphs.
--- | Convert a graph to 'AM.AdjacencyMap'.
+-- Convert a graph to 'AM.AdjacencyMap'.
 toAdjacencyMap :: Ord a => Graph a -> AM.AdjacencyMap a
 toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
 
--- | Like @toAdjacencyMap@ but specialised for graphs with vertices of type 'Int'.
+-- Like @toAdjacencyMap@ but specialised for graphs with vertices of type 'Int'.
 toAdjacencyIntMap :: Graph Int -> AIM.AdjacencyIntMap
 toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 

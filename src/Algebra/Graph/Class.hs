@@ -56,6 +56,7 @@ import Algebra.Graph.Label (Dioid, one)
 
 import qualified Algebra.Graph                       as G
 import qualified Algebra.Graph.AdjacencyMap          as AM
+import qualified Algebra.Graph.Labelled              as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
 import qualified Algebra.Graph.Fold                  as F
 import qualified Algebra.Graph.AdjacencyIntMap       as AIM
@@ -147,6 +148,13 @@ instance Graph AIM.AdjacencyIntMap where
     vertex  = AIM.vertex
     overlay = AIM.overlay
     connect = AIM.connect
+
+instance Dioid e => Graph (LG.Graph e a) where
+    type Vertex (LG.Graph e a) = a
+    empty   = LG.empty
+    vertex  = LG.vertex
+    overlay = LG.overlay
+    connect = LG.connect one
 
 instance (Dioid e, Eq e, Ord a) => Graph (LAM.AdjacencyMap e a) where
     type Vertex (LAM.AdjacencyMap e a) = a

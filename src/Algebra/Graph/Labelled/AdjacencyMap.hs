@@ -359,8 +359,8 @@ edgeList (AM m) =
 vertexSet :: AdjacencyMap e a -> Set a
 vertexSet = Map.keysSet . adjacencyMap
 
--- | The set of vertices of a given graph.
--- Complexity: /O(n)/ time and memory.
+-- | The set of edges of a given graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
 --
 -- @
 -- edgeSet 'empty'        == Set.'Set.empty'
@@ -489,7 +489,7 @@ transpose (AM m) = AM $ Map.foldrWithKey combine vs m
 -- gmap f . gmap g     == gmap (f . g)
 -- @
 gmap :: (Eq e, Monoid e, Ord a, Ord b) => (a -> b) -> AdjacencyMap e a -> AdjacencyMap e b
-gmap f = AM . trimZeroes . Map.map (Map.mapKeysWith (<+>) f) .
+gmap f = AM . trimZeroes . Map.map (Map.mapKeysWith mappend f) .
     Map.mapKeysWith (Map.unionWith mappend) f . adjacencyMap
 
 -- | Transform a graph by applying a function @h@ to each of its edge labels.

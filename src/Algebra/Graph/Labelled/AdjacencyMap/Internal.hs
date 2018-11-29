@@ -28,6 +28,11 @@ import qualified Data.Set        as Set
 
 import Algebra.Graph.Label
 
+-- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
+-- For example, 'AdjacencyMap' @Bool@ @a@ is isomorphic to unlabelled graphs
+-- defined in the top-level module "Algebra.Graph.AdjacencyMap", where @False@
+-- and @True@ denote the lack of and the existence of an unlabelled edge,
+-- respectively.
 newtype AdjacencyMap e a = AM {
     -- | The /adjacency map/ of an edge-labelled graph: each vertex is
     -- associated with a map from its direct successors to the corresponding

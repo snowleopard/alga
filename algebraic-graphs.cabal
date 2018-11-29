@@ -141,9 +141,10 @@ test-suite test-alga
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
                         Algebra.Graph.Test.Internal,
+                        Algebra.Graph.Test.Labelled.AdjacencyMap,
+                        Algebra.Graph.Test.Labelled.Graph,
                         Algebra.Graph.Test.NonEmpty.AdjacencyMap,
                         Algebra.Graph.Test.NonEmpty.Graph,
-                        Algebra.Graph.Test.Labelled.AdjacencyMap,
                         Algebra.Graph.Test.Relation,
                         Data.Graph.Test.Typed
     if impl(ghc >= 8.0.2)

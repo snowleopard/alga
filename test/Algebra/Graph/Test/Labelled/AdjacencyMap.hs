@@ -188,7 +188,7 @@ testLabelledAdjacencyMap = do
 
     putStrLn "\n============ Labelled.AdjacencyMap.hasEdge ============"
     test "hasEdge x y empty            == False" $ \(x :: Int) y ->
-          hasEdge x y empty          == False
+          hasEdge x y empty            == False
 
     test "hasEdge x y (vertex z)       == False" $ \(x :: Int) y z ->
           hasEdge x y (vertex z)       == False
