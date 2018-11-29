@@ -29,11 +29,7 @@ module Algebra.Graph.Labelled (
     isEmpty, size, hasVertex, hasEdge, edgeLabel, edgeList, edgeSet,
 
     -- * Graph transformation
-    removeVertex, replaceVertex,
-    -- removeEdge, replaceEdge,
-    transpose,
-    --  gmap,
-    emap, induce,
+    removeVertex, replaceVertex, transpose, emap, induce,
 
     -- * Types of edge-labelled graphs
     UnlabelledGraph, Automaton, Network
