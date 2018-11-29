@@ -117,8 +117,8 @@ isSubgraphOf x y = overlay x y == y
 -- @
 -- 'isEmpty'     empty == True
 -- 'hasVertex' x empty == False
--- 'vertexCount' empty == 0
--- 'edgeCount'   empty == 0
+-- 'Algebra.Graph.ToGraph.vertexCount' empty == 0
+-- 'Algebra.Graph.ToGraph.edgeCount'   empty == 0
 -- @
 empty :: Graph e a
 empty = Empty
@@ -130,8 +130,8 @@ empty = Empty
 -- @
 -- 'isEmpty'     (vertex x) == False
 -- 'hasVertex' x (vertex x) == True
--- 'vertexCount' (vertex x) == 1
--- 'edgeCount'   (vertex x) == 0
+-- 'Algebra.Graph.ToGraph.vertexCount' (vertex x) == 1
+-- 'Algebra.Graph.ToGraph.edgeCount'   (vertex x) == 0
 -- @
 vertex :: a -> Graph e a
 vertex = Vertex
@@ -144,9 +144,9 @@ vertex = Vertex
 -- edge 'zero' x y              == 'vertices' [x,y]
 -- 'hasEdge'   x y (edge e x y) == (e /= 'zero')
 -- 'edgeLabel' x y (edge e x y) == e
--- 'edgeCount'     (edge e x y) == if e == 'zero' then 0 else 1
--- 'vertexCount'   (edge e 1 1) == 1
--- 'vertexCount'   (edge e 1 2) == 2
+-- 'Algebra.Graph.ToGraph.edgeCount'     (edge e x y) == if e == 'zero' then 0 else 1
+-- 'Algebra.Graph.ToGraph.vertexCount'   (edge e 1 1) == 1
+-- 'Algebra.Graph.ToGraph.vertexCount'   (edge e 1 2) == 2
 -- @
 edge :: e -> a -> a -> Graph e a
 edge e x y = connect e (vertex x) (vertex y)
@@ -172,28 +172,48 @@ g -< e = (g, e)
 infixl 5 -<
 infixl 5 >-
 
--- | Construct the graph from a list of labelled edges.
--- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
--- given list.
-edges :: Monoid e => [(e, a, a)] -> Graph e a
-edges = overlays . map (\(e, x, y) -> edge e x y)
-
 -- | /Overlay/ two graphs. An alias for 'Connect' 'zero'.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size.
+--
+-- @
+-- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'Algebra.Graph.ToGraph.vertexCount' (overlay x y) >= 'Algebra.Graph.ToGraph.vertexCount' x
+-- 'Algebra.Graph.ToGraph.vertexCount' (overlay x y) <= 'Algebra.Graph.ToGraph.vertexCount' x + 'Algebra.Graph.ToGraph.vertexCount' y
+-- 'Algebra.Graph.ToGraph.edgeCount'   (overlay x y) >= 'Algebra.Graph.ToGraph.edgeCount' x
+-- 'Algebra.Graph.ToGraph.edgeCount'   (overlay x y) <= 'Algebra.Graph.ToGraph.edgeCount' x   + 'Algebra.Graph.ToGraph.edgeCount' y
+-- 'Algebra.Graph.ToGraph.vertexCount' (overlay 1 2) == 2
+-- 'Algebra.Graph.ToGraph.edgeCount'   (overlay 1 2) == 0
+-- @
+--
+-- Note: 'overlay' composes edges in parallel using the operator '<+>' with
+-- 'zero' acting as the identity:
+--
+-- @
+-- 'edgeLabel' x y $ overlay ('edge' e x y) ('edge' 'zero' x y) == e
+-- 'edgeLabel' x y $ overlay ('edge' e x y) ('edge' f    x y) == e '<+>' f
+-- @
+--
+-- Furthermore, when applied to transitive graphs, 'overlay' composes edges in
+-- sequence using the operator '<.>' with 'one' acting as the identity.
 overlay :: Monoid e => Graph e a -> Graph e a -> Graph e a
 overlay = connect zero
-
--- | Overlay a given list of graphs.
--- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
--- of the given list, and /S/ is the sum of sizes of the graphs in the list.
-overlays :: Monoid e => [Graph e a] -> Graph e a
-overlays = foldr overlay empty
 
 -- | /Connect/ two graphs with edges labelled by a given label. An alias for
 -- 'Connect'.
 -- Complexity: /O(1)/ time and memory, /O(s1 + s2)/ size. Note that the number
 -- of edges in the resulting graph is quadratic with respect to the number of
 -- vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
+--
+-- @
+-- 'isEmpty'     (connect e x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (connect e x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'Algebra.Graph.ToGraph.vertexCount' (connect e x y) >= 'Algebra.Graph.ToGraph.vertexCount' x
+-- 'Algebra.Graph.ToGraph.vertexCount' (connect e x y) <= 'Algebra.Graph.ToGraph.vertexCount' x + 'Algebra.Graph.ToGraph.vertexCount' y
+-- 'Algebra.Graph.ToGraph.edgeCount'   (connect e x y) <= 'Algebra.Graph.ToGraph.vertexCount' x * 'Algebra.Graph.ToGraph.vertexCount' y + 'Algebra.Graph.ToGraph.edgeCount' x + 'Algebra.Graph.ToGraph.edgeCount' y
+-- 'Algebra.Graph.ToGraph.vertexCount' (connect e 1 2) == 2
+-- 'Algebra.Graph.ToGraph.edgeCount'   (connect e 1 2) == if e == 'zero' then 0 else 1
+-- @
 connect :: e -> Graph e a -> Graph e a -> Graph e a
 connect = Connect
 
@@ -205,11 +225,37 @@ connect = Connect
 -- vertices []            == 'empty'
 -- vertices [x]           == 'vertex' x
 -- 'hasVertex' x . vertices == 'elem' x
--- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
--- 'vertexSet'   . vertices == Set.'Set.fromList'
+-- 'Algebra.Graph.ToGraph.vertexCount' . vertices == 'length' . 'Data.List.nub'
+-- 'Algebra.Graph.ToGraph.vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: Monoid e => [a] -> Graph e a
 vertices = overlays . map vertex
+
+-- | Construct the graph from a list of labelled edges.
+-- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
+-- given list.
+--
+-- @
+-- edges []        == 'empty'
+-- edges [(e,x,y)] == 'edge' e x y
+-- edges           == 'overlays' . 'map' (\\(e, x, y) -> 'edge' e x y)
+-- @
+edges :: Monoid e => [(e, a, a)] -> Graph e a
+edges = overlays . map (\(e, x, y) -> edge e x y)
+
+-- | Overlay a given list of graphs.
+-- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
+-- of the given list, and /S/ is the sum of sizes of the graphs in the list.
+--
+-- @
+-- overlays []        == 'empty'
+-- overlays [x]       == x
+-- overlays [x,y]     == 'overlay' x y
+-- overlays           == 'foldr' 'overlay' 'empty'
+-- 'isEmpty' . overlays == 'all' 'isEmpty'
+-- @
+overlays :: Monoid e => [Graph e a] -> Graph e a
+overlays = foldr overlay empty
 
 -- | Check if a graph is empty. A convenient alias for 'null'.
 -- Complexity: /O(s)/ time.
@@ -234,7 +280,7 @@ isEmpty = foldg True (const False) (const (&&))
 -- size ('overlay' x y) == size x + size y
 -- size ('connect' x y) == size x + size y
 -- size x             >= 1
--- size x             >= 'vertexCount' x
+-- size x             >= 'Algebra.Graph.ToGraph.vertexCount' x
 -- @
 size :: Graph e a -> Int
 size = foldg 1 (const 1) (const (+))
@@ -322,7 +368,7 @@ replaceVertex :: Eq a => a -> a -> Graph e a -> Graph e a
 replaceVertex u v = fmap $ \w -> if w == u then v else w
 
 -- | Transpose a given graph.
--- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
+-- Complexity: /O(s)/ time, memory and size.
 --
 -- @
 -- transpose 'empty'        == 'empty'
@@ -334,14 +380,43 @@ transpose :: Graph e a -> Graph e a
 transpose = foldg empty vertex (fmap flip connect)
 
 -- | Transform a graph by applying a function to each of its edge labels.
--- Complexity: /O((n + m) * log(n))/ time.
+-- Complexity: /O(s)/ time, memory and size.
+--
+-- The function @h@ is required to be a /homomorphism/ on the underlying type of
+-- labels @e@. At the very least it must preserve 'zero' and '<+>':
+--
+-- @
+-- h 'zero'      == 'zero'
+-- h x '<+>' h y == h (x '<+>' y)
+-- @
+--
+-- If @e@ is also a semiring, then @h@ must also preserve the multiplicative
+-- structure:
+--
+-- @
+-- h 'one'       == 'one'
+-- h x '<.>' h y == h (x '<.>' y)
+-- @
+--
+-- If the above requirements hold, then the implementation provides the
+-- following guarantees.
+--
+-- @
+-- emap h 'empty'           == 'empty'
+-- emap h ('vertex' x)      == 'vertex' x
+-- emap h ('edge' e x y)    == 'edge' (h e) x y
+-- emap h ('overlay' x y)   == 'overlay' (emap h x) (emap h y)
+-- emap h ('connect' e x y) == 'connect' (h e) (emap h x) (emap h y)
+-- emap 'id'                == 'id'
+-- emap g . emap h        == emap (g . h)
+-- @
 emap :: (e -> f) -> Graph e a -> Graph f a
 emap f = foldg Empty Vertex (Connect . f)
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(m)/ time, assuming that the predicate takes /O(1)/ to
--- be evaluated.
+-- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
+-- /O(1)/ to be evaluated.
 --
 -- @
 -- induce ('const' True ) x      == x

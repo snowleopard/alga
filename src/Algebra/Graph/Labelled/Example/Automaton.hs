@@ -28,7 +28,7 @@ import qualified Data.Map as Map
 #if !MIN_VERSION_base(4,8,0)
 import Data.Set (Set)
 import qualified Data.Set as Set
-import GHC.Exts
+import GHC.Exts hiding (Any)
 
 instance Ord a => IsList (Set a) where
     type Item (Set a) = a
