@@ -609,19 +609,22 @@ connectFoci e x y
 focus :: (Eq e, Monoid e) => (a -> Bool) -> Graph e a -> Focus e a
 focus f = foldg emptyFocus (vertexFocus f) connectFoci
 
--- | The /context/ of a subgraph comprises the input and output vertices that
--- are connected to the vertices inside the subgraph (along with the
--- corresponding edge labels).
+-- | The 'Context' of a subgraph comprises its 'inputs' and 'outputs', i.e. all
+-- the vertices that are connected to the subgraph's vertices (along with the
+-- corresponding edge labels). Note that inputs and outputs can belong to the
+-- subgraph itself. In general, there are no guarantees on the order of vertices
+-- in 'inputs' and 'outputs'; furthermore, there may be repetitions.
 data Context e a = Context { inputs :: [(e, a)], outputs :: [(e, a)] }
     deriving (Eq, Show)
 
--- | Extract the context of a subgraph specified by a given predicate. Returns
+-- | Extract the 'Context' of a subgraph specified by a given predicate. Returns
 -- @Nothing@ if the specified subgraph is empty.
 --
 -- @
 -- context ('const' False) x                   == Nothing
--- context (== 1)        ('edge' e 1 2)        == if e == 'zero' then Just ('Context' [] []) else Just ('Context' []      [(e,2)])
--- context (== 2)        ('edge' e 1 2)        == if e == 'zero' then Just ('Context' [] []) else Just ('Context' [(e,1)] []     )
+-- context (== 1)        ('edge' e 1 2)        == if e == 'zero' then Just ('Context' [] []) else Just ('Context' [     ] [(e,2)])
+-- context (== 2)        ('edge' e 1 2)        == if e == 'zero' then Just ('Context' [] []) else Just ('Context' [(e,1)] [     ])
+-- context ('const' True ) ('edge' e 1 2)        == if e == 'zero' then Just ('Context' [] []) else Just ('Context' [(e,1)] [(e,2)])
 -- context (== 4)        (3 * 1 * 4 * 1 * 5) == Just ('Context' [('one',3), ('one',1)] [('one',1), ('one',5)])
 -- @
 context :: (Eq e, Monoid e) => (a -> Bool) -> Graph e a -> Maybe (Context e a)

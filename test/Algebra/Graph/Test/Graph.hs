@@ -172,3 +172,19 @@ testGraph = do
 
     test "size        (sparsify x) <= 3 * size x" $ \(x :: G) ->
           size        (sparsify x) <= 3 * size x
+
+    putStrLn "\n============ Labelled.Graph.context ============"
+    test "context (const False) x                   == Nothing" $ \x ->
+          context (const False) (x :: G)            == Nothing
+
+    test "context (== 1)        (edge 1 2)          == Just (Context [   ] [2  ])" $
+          context (== 1)        (edge 1 2 :: G)     == Just (Context [   ] [2  ])
+
+    test "context (== 2)        (edge 1 2)          == Just (Context [1  ] [   ])" $
+          context (== 2)        (edge 1 2 :: G)     == Just (Context [1  ] [   ])
+
+    test "context (const True ) (edge 1 2)          == Just (Context [1  ] [2  ])" $
+          context (const True ) (edge 1 2 :: G)     == Just (Context [1  ] [2  ])
+
+    test "context (== 4)        (3 * 1 * 4 * 1 * 5) == Just (Context [3,1] [1,5])" $
+          context (== 4)        (3 * 1 * 4 * 1 * 5 :: G) == Just (Context [3,1] [1,5])

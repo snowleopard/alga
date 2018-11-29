@@ -458,5 +458,8 @@ testLabelledGraph = do
     test "context (== 2)        (edge e 1 2)        == if e == zero then Just (Context [] []) else Just (Context [(e,1)] []     )" $ \e ->
           context (== 2)        (edge e 1 2 :: LAS) == if e == zero then Just (Context [] []) else Just (Context [(e,1)] []     )
 
+    test "context (const True ) (edge e 1 2)        == if e == zero then Just (Context [] []) else Just (Context [(e,1)] [(e,2)])" $ \e ->
+          context (const True ) (edge e 1 2 :: LAS) == if e == zero then Just (Context [] []) else Just (Context [(e,1)] [(e,2)])
+
     test "context (== 4)        (3 * 1 * 4 * 1 * 5) == Just (Context [(one,3), (one,1)] [(one,1), (one,5)])" $
           context (== 4)        (3 * 1 * 4 * 1 * 5 :: LAD) == Just (Context [(one,3), (one,1)] [(one,1), (one,5)])
