@@ -66,19 +66,26 @@ instance (Ord e, Monoid e, Ord a) => Ord (AdjacencyMap e a) where
         , compare (vSet x) (vSet y)
         , compare (eNum x) (eNum y)
         , compare (eSet x) (eSet y)
-        , compare       x        y ]
+        , cmp ]
       where
         vNum   = Map.size
         vSet   = Map.keysSet
         eNum   = getSum . foldMap (Sum . Map.size)
         eSet m = [ (x, y) | (x, ys) <- Map.toAscList m, (y, _) <- Map.toAscList ys ]
+        cmp | x == y               = EQ
+            | overlays [x, y] == y = LT
+            | otherwise            = compare x y
+
+-- Overlay a list of adjacency maps.
+overlays :: (Eq e, Monoid e, Ord a) => [Map a (Map a e)] -> Map a (Map a e)
+overlays = Map.unionsWith (\x -> Map.filter (/= zero) . Map.unionWith mappend x)
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap'
 -- for more details.
-instance (Ord a, Num a, Dioid e) => Num (AdjacencyMap e a) where
+instance (Eq e, Dioid e, Num a, Ord a) => Num (AdjacencyMap e a) where
     fromInteger x = AM $ Map.singleton (fromInteger x) Map.empty
-    AM x + AM y   = AM $ Map.unionWith (Map.unionWith (<+>)) x y
-    AM x * AM y   = AM $ Map.unionsWith (Map.unionWith (<+>)) $ x : y :
+    AM x + AM y   = AM $ overlays [x, y]
+    AM x * AM y   = AM $ overlays $ x : y :
         [ Map.fromSet (const targets) (Map.keysSet x) ]
       where
         targets = Map.fromSet (const one) (Map.keysSet y)
