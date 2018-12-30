@@ -1147,7 +1147,7 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
   a "buildR/f" rule. These functions are higher-order functions and therefore
   benefit from inlining in the final phase.
 
-* The "fmapR/fmapR" rule optimises compositions of multiple fmapR's.
+* The "bindR/bindR" rule optimises compositions of multiple bindR's.
 -}
 
 type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
@@ -1188,9 +1188,9 @@ matchR e v p = \x -> if p x then v x else e
 "foldg/buildR" forall e v o c (g :: Foldg a).
     foldg e v o c (buildR g) = g e v o c
 
--- Fuse composeR's. This occurs when two adjacent 'fmapR' were rewritted into
+-- Fuse composeR's. This occurs when two adjacent 'bindR' were rewritted into
 -- their buildR form.
-"fmapR/fmapR" forall c f g.
+"bindR/bindR" forall c f g.
     composeR (composeR c f) g = composeR c (f.g)
  #-}
 
