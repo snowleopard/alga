@@ -213,7 +213,7 @@ instance Functor Graph where
     fmap = fmapR
 
 fmapR :: (a -> b) -> Graph a -> Graph b
-fmapR f g = g >>= (vertex . f)
+fmapR f g = bindR g (vertex . f)
 {-# INLINE fmapR #-}
 
 instance NFData a => NFData (Graph a) where
