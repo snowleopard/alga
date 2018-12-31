@@ -212,10 +212,9 @@ creating our own intermediate functions for guiding rewrite rules when needed.
 instance Functor Graph where
     fmap = fmapR
 
--- This is a usual implementation of 'fmap', but with custom rewrite rules.
 fmapR :: (a -> b) -> Graph a -> Graph b
-fmapR f = foldg empty (vertex . f) overlay connect
-{-# INLINE [0] fmapR #-}
+fmapR f g = bindR g (vertex . f)
+{-# INLINE fmapR #-}
 
 instance NFData a => NFData (Graph a) where
     rnf Empty         = ()
@@ -266,8 +265,12 @@ instance Applicative Graph where
     (<*>) = ap
 
 instance Monad Graph where
-    return  = pure
-    g >>= f = foldg Empty f Overlay Connect g
+    return = pure
+    (>>=)  = bindR
+
+bindR :: Graph a -> (a -> Graph b) -> Graph b
+bindR g f = foldg Empty f Overlay Connect g
+{-# INLINE [0] bindR #-}
 
 instance Alternative Graph where
     empty = Empty
@@ -1144,7 +1147,7 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
   a "buildR/f" rule. These functions are higher-order functions and therefore
   benefit from inlining in the final phase.
 
-* The "fmapR/fmapR" rule optimises compositions of multiple fmapR's.
+* The "bindR/bindR" rule optimises compositions of multiple bindR's.
 -}
 
 type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
@@ -1163,8 +1166,8 @@ matchR e v p = \x -> if p x then v x else e
 
 -- These rules transform functions into their buildR equivalents.
 {-# RULES
-"buildR/fmapR" forall f g.
-    fmapR f g = buildR (\e v o c -> foldg e (composeR v f) o c g)
+"buildR/bindR" forall f g.
+    bindR g f = buildR (\e v o c -> foldg e (composeR (foldg e v o c) f) o c g)
 
 "buildR/induce" [~1] forall p g.
     induce p g = buildR (\e v o c -> foldg e (matchR e v p) o c g)
@@ -1185,9 +1188,9 @@ matchR e v p = \x -> if p x then v x else e
 "foldg/buildR" forall e v o c (g :: Foldg a).
     foldg e v o c (buildR g) = g e v o c
 
--- Fuse composeR's. This occurs when two adjacent 'fmapR' were rewritted into
+-- Fuse composeR's. This occurs when two adjacent 'bindR' were rewritted into
 -- their buildR form.
-"fmapR/fmapR" forall c f g.
+"bindR/bindR" forall c f g.
     composeR (composeR c f) g = composeR c (f.g)
  #-}
 

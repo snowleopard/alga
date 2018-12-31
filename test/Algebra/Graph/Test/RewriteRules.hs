@@ -96,3 +96,9 @@ starTR a [] = vertex a
 starTR a xs = connect (vertices xs) (vertex a)
 
 inspect $ 'starT1 === 'starTR
+
+fmapFmap1, fmapFmapR :: Graph a -> (a -> b) -> (b -> c) -> Graph c
+fmapFmap1 g f h = fmap h (fmap f g)
+fmapFmapR g f h = fmap (h . f) g
+
+inspect $ 'fmapFmap1 === 'fmapFmapR
