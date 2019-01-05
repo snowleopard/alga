@@ -51,7 +51,7 @@ module Algebra.Graph (
     ) where
 
 import Prelude ()
-import Prelude.Compat hiding ((<>))
+import Prelude.Compat
 
 import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
@@ -59,7 +59,6 @@ import Control.Monad.Compat
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
-import Data.Monoid ((<>))
 import Data.Tree
 
 import Algebra.Graph.Internal
@@ -1092,12 +1091,10 @@ compose x y = overlays
 -- 'edgeCount'   (box x y) <= 'vertexCount' x * 'edgeCount' y + 'edgeCount' x * 'vertexCount' y
 -- @
 box :: Graph a -> Graph b -> Graph (a, b)
-box x y = overlays $ xs ++ ys
+box x y = overlay (fx <*> y) (fy <*> x)
   where
-    xs = map (\b -> fmap (,b) x) $ toList $ toListGr y
-    ys = map (\a -> fmap (a,) y) $ toList $ toListGr x
-    toListGr :: Graph a -> List a
-    toListGr = foldg mempty pure (<>) (<>)
+    fx = foldg empty (vertex .      (,)) overlay overlay x
+    fy = foldg empty (vertex . flip (,)) overlay overlay y
 
 -- | /Sparsify/ a graph by adding intermediate 'Left' @Int@ vertices between the
 -- original vertices (wrapping the latter in 'Right') such that the resulting

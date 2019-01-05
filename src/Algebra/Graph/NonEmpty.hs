@@ -56,10 +56,6 @@ module Algebra.Graph.NonEmpty (
 import Prelude ()
 import Prelude.Compat
 
-#if !MIN_VERSION_base(4,11,0)
-import Data.Semigroup
-#endif
-
 import Control.DeepSeq
 import Control.Monad.Compat
 import Control.Monad.State
@@ -898,13 +894,10 @@ simple op x y
 -- 'edgeCount'   (box x y) <= 'vertexCount' x * 'edgeCount' y + 'edgeCount' x * 'vertexCount' y
 -- @
 box :: Graph a -> Graph b -> Graph (a, b)
-box x y = overlays1 xs `overlay` overlays1 ys
+box x y = overlay (fx <*> y) (fy <*> x)
   where
-    xs = fmap (\b -> fmap (,b) x) $ toNonEmptyList y
-    ys = fmap (\a -> fmap (a,) y) $ toNonEmptyList x
-
-toNonEmptyList :: Graph a -> NonEmpty a
-toNonEmptyList = foldg1 (:| []) (<>) (<>)
+    fx = foldg1 (vertex .      (,)) overlay overlay x
+    fy = foldg1 (vertex . flip (,)) overlay overlay y
 
 -- | /Sparsify/ a graph by adding intermediate 'Left' @Int@ vertices between the
 -- original vertices (wrapping the latter in 'Right') such that the resulting
