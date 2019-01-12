@@ -260,8 +260,8 @@ ordIntR :: Graph Int -> Graph Int -> Ordering
 ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 
 instance Applicative Graph where
-    pure  = Vertex
-    (<*>) = ap
+    pure    = Vertex
+    f <*> x = bindR f (<$> x)
 
 instance Monad Graph where
     return = pure
