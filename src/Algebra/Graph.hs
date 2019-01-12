@@ -473,7 +473,9 @@ foldg e v o c = go
 -- isSubgraphOf x y                         ==> x <= y
 -- @
 isSubgraphOf :: Ord a => Graph a -> Graph a -> Bool
-isSubgraphOf x y = overlay x y == y
+isSubgraphOf x y = AM.overlay (toAdjacencyMap x) yAM == yAM
+  where
+    yAM = toAdjacencyMap y
 {-# SPECIALISE isSubgraphOf :: Graph Int -> Graph Int -> Bool #-}
 
 -- | Structural equality on graph expressions.
