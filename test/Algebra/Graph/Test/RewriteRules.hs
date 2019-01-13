@@ -102,3 +102,17 @@ fmapFmap1 g f h = fmap h (fmap f g)
 fmapFmapR g f h = fmap (h . f) g
 
 inspect $ 'fmapFmap1 === 'fmapFmapR
+
+bind2, bind2R :: (a -> Graph b) -> (b -> Graph c) -> Graph a -> Graph c
+bind2 f g x = x >>= f >>= g
+bind2R f g x = x >>= (\x -> f x >>= g)
+
+inspect $ 'bind2 === 'bind2R
+
+{-
+ovSeqAp, seqApOv :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
+ovSeqAp x y z = (overlay x y) <*> z
+seqApOv x y z = overlay (x <*> z) (y <*> z)
+
+inspect $ 'ovSeqAp === 'seqApOv
+-}
