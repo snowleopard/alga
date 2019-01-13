@@ -212,8 +212,8 @@ ordInt :: Graph Int -> Graph Int -> Ordering
 ordInt x y = compare (T.toAdjacencyIntMap x) (T.toAdjacencyIntMap y)
 
 instance Applicative Graph where
-    pure  = Vertex
-    (<*>) = ap
+    pure    = Vertex
+    f <*> x = f >>= (<$> x)
 
 instance Monad Graph where
     return  = pure
