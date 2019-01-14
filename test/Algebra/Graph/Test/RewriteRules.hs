@@ -109,10 +109,8 @@ bind2R f g x = x >>= (\x -> f x >>= g)
 
 inspect $ 'bind2 === 'bind2R
 
-{-
 ovSeqAp, seqApOv :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
 ovSeqAp x y z = (overlay x y) <*> z
-seqApOv x y z = overlay (x <*> z) (y <*> z)
+seqApOv x y z = overlay (x >>= (<$> z)) (y >>= (<$> z))
 
 inspect $ 'ovSeqAp === 'seqApOv
--}
