@@ -400,17 +400,13 @@ foldg1 v o c = go
 -- isSubgraphOf x y                         ==> x <= y
 -- @
 isSubgraphOf :: Ord a => Graph a -> Graph a -> Bool
-isSubgraphOf x y = AM.overlay (T.toAdjacencyMap x) yAM == yAM
-  where
-    yAM = T.toAdjacencyMap y
+isSubgraphOf x y = AM.isSubgraphOf (T.toAdjacencyMap x) (T.toAdjacencyMap y)
 {-# NOINLINE [1] isSubgraphOf #-}
 {-# RULES "isSubgraphOf/Int" isSubgraphOf = isSubgraphOfIntR #-}
 
 -- Like 'isSubgraphOf' but specialised for graphs with vertices of type 'Int'.
 isSubgraphOfIntR :: Graph Int -> Graph Int -> Bool
-isSubgraphOfIntR x y = AIM.overlay (T.toAdjacencyIntMap x) yAM == yAM
-  where
-    yAM = T.toAdjacencyIntMap y
+isSubgraphOfIntR x y = AIM.isSubgraphOf (T.toAdjacencyIntMap x) (T.toAdjacencyIntMap y)
 
 -- | Structural equality on graph expressions.
 -- Complexity: /O(s)/ time.
