@@ -1165,14 +1165,10 @@ matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
 matchR e v p = \x -> if p x then v x else e
 {-# INLINE [0] matchR #-}
 
-toR :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
-toR e v o c g = foldg e v o c g
-{-# INLINE [0] toR #-}
-
 -- These rules transform functions into their buildR equivalents.
 {-# RULES
 "buildR/bindR" forall f g.
-    bindR g f = buildR (\e v o c -> foldg e (composeR (toR e v o c) f) o c g)
+    bindR g f = buildR (\e v o c -> foldg e (composeR (foldg e v o c) f) o c g)
 
 "buildR/induce" [~1] forall p g.
     induce p g = buildR (\e v o c -> foldg e (matchR e v p) o c g)
@@ -1198,8 +1194,9 @@ toR e v o c g = foldg e v o c g
 "bindR/bindR" forall c f g.
     composeR (composeR c f) g = composeR c (f.g)
 
-"toR/final" forall f.
-    composeR (toR Empty Vertex Overlay Connect) f = f
+-- Remove identity (which can appear in the rewriting of bindR)
+"foldg/id"
+    foldg Empty Vertex Overlay Connect = id
  #-}
 
 -- Eliminate remaining rewrite-only functions.
