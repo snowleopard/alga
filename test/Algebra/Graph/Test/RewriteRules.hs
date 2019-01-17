@@ -110,7 +110,7 @@ bind2R f g x = x >>= (\x -> f x >>= g)
 inspect $ 'bind2 === 'bind2R
 
 -- Ideally, we want this test to pass.
--- Strangely, '<*>' in 'ovSeqApR' does not inline and makes the test fail.
+-- Strangely, '<*>' in 'ovApR' does not inline and makes the test fail.
 --
 -- This is corrected below, where '<*>' was inlined "by hand"
 ovAp, ovApR :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
