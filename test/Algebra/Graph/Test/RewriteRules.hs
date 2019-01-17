@@ -113,14 +113,14 @@ inspect $ 'bind2 === 'bind2R
 -- Strangely, '<*>' in 'ovSeqApR' does not inline and makes the test fail.
 --
 -- This is corrected below, where '<*>' was inlined "by hand"
-ovSeqAp, ovSeqApR :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
-ovSeqAp  x y z = (overlay x y) <*> z
-ovSeqApR x y z = overlay (x <*> z) (y <*> z)
+ovAp, ovApR :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
+ovAp  x y z = overlay x y <*> z
+ovApR x y z = overlay (x <*> z) (y <*> z)
 
-inspect $ 'ovSeqAp =/= 'ovSeqApR
+inspect $ 'ovAp =/= 'ovApR
 
-ovSeqAp', ovSeqApR' :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
-ovSeqAp'  x y z = (overlay x y) <*> z
-ovSeqApR' x y z = overlay (x >>= (<$> z)) (y >>= (<$> z))
+ovAp', ovApR' :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
+ovAp'  x y z = overlay x y <*> z
+ovApR' x y z = overlay (x >>= (<$> z)) (y >>= (<$> z))
 
-inspect $ 'ovSeqAp' === 'ovSeqApR'
+inspect $ 'ovAp' === 'ovApR'
