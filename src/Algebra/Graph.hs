@@ -261,7 +261,11 @@ ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 
 instance Applicative Graph where
     pure  = Vertex
-    (<*>) = ap
+    (<*>) = apR
+
+apR :: Graph (a -> b) -> Graph a -> Graph b
+apR f x = bindR f (<$> x)
+{-# INLINE apR #-}
 
 instance Monad Graph where
     return = pure
@@ -1194,6 +1198,10 @@ matchR e v p = \x -> if p x then v x else e
 -- their buildR form.
 "bindR/bindR" forall c f g.
     composeR (composeR c f) g = composeR c (f.g)
+
+-- Rewrite identity (which can appear in the rewriting of bindR) to a much efficient one
+"foldg/id"
+    foldg Empty Vertex Overlay Connect = id
  #-}
 
 -- Eliminate remaining rewrite-only functions.

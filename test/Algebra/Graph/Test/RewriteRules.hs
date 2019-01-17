@@ -102,3 +102,25 @@ fmapFmap1 g f h = fmap h (fmap f g)
 fmapFmapR g f h = fmap (h . f) g
 
 inspect $ 'fmapFmap1 === 'fmapFmapR
+
+bind2, bind2R :: (a -> Graph b) -> (b -> Graph c) -> Graph a -> Graph c
+bind2 f g x = x >>= f >>= g
+bind2R f g x = x >>= (\x -> f x >>= g)
+
+inspect $ 'bind2 === 'bind2R
+
+-- Ideally, we want this test to pass.
+-- Strangely, '<*>' in 'ovApR' does not inline and makes the test fail.
+--
+-- This is corrected below, where '<*>' was inlined "by hand"
+ovAp, ovApR :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
+ovAp  x y z = overlay x y <*> z
+ovApR x y z = overlay (x <*> z) (y <*> z)
+
+inspect $ 'ovAp =/= 'ovApR
+
+ovAp', ovApR' :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
+ovAp'  x y z = overlay x y <*> z
+ovApR' x y z = overlay (x >>= (<$> z)) (y >>= (<$> z))
+
+inspect $ 'ovAp' === 'ovApR'
