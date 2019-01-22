@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, FlexibleInstances #-}
+{-# LANGUAGE CPP, DeriveFunctor, FlexibleInstances #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled
@@ -46,6 +46,9 @@ module Algebra.Graph.Labelled (
 import Prelude ()
 import Prelude.Compat
 
+#if MIN_VERSION_base(4,8,0)
+import Data.Bifunctor
+#endif
 import Data.Monoid (Any (..))
 import Data.Semigroup ((<>))
 
@@ -81,6 +84,11 @@ instance (Ord a, Num a, Dioid e) => Num (Graph e a) where
     signum      = const empty
     abs         = id
     negate      = id
+
+#if MIN_VERSION_base(4,8,0)
+instance Bifunctor Graph where
+  bimap f g = emap f . fmap g
+#endif
 
 -- TODO: This is a very inefficient implementation. Find a way to construct an
 -- adjacency map directly, without building intermediate representations for all
