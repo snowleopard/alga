@@ -87,7 +87,7 @@ instance (Ord a, Num a, Dioid e) => Num (Graph e a) where
 
 #if MIN_VERSION_base(4,8,0)
 instance Bifunctor Graph where
-  bimap f g = emap f . fmap g
+  bimap f g = foldg Empty (Vertex . g) (Connect . f)
 #endif
 
 -- TODO: This is a very inefficient implementation. Find a way to construct an
