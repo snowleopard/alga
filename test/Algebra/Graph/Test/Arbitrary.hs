@@ -205,7 +205,6 @@ instance (Arbitrary a, Arbitrary e, Monoid e) => Arbitrary (LG.Graph e a) where
     shrink (LG.Connect e x y) = [LG.Empty, x, y, LG.Connect mempty x y]
                              ++ [LG.Connect e x' y' | (x', y') <- shrink (x, y) ]
 
--- TODO: Implement a custom shrink method.
 instance Arbitrary a => Arbitrary (Tree a) where
     arbitrary = sized go
       where
@@ -219,9 +218,11 @@ instance Arbitrary a => Arbitrary (Tree a) where
             children <- replicateM subTrees (go subSize)
             return $ Node root children
 
+    shrink (Node r fs) = [Node r fs' | fs' <- shrink fs]
+
 -- TODO: Implement a custom shrink method.
 instance Arbitrary s => Arbitrary (Doc s) where
-    arbitrary = (mconcat . map literal) <$> arbitrary
+    arbitrary = mconcat . map literal <$> arbitrary
 
 instance (Arbitrary a, Num a, Ord a) => Arbitrary (Distance a) where
     arbitrary = (\x -> if x < 0 then distance infinite else distance (unsafeFinite x)) <$> arbitrary
