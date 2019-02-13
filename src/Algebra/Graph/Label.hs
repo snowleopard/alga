@@ -322,6 +322,18 @@ getMinimum (Minimum x) = fromExtended x
 noMinimum :: Minimum a
 noMinimum = Minimum Infinite
 
+instance Ord a => Semigroup (Minimum a) where
+    (<>) = liftA2 min
+
+instance (Monoid a, Ord a) => Monoid (Minimum a) where
+    mempty = pure mempty 
+
+instance (Monoid a, Ord a) => Semiring (Minimum a) where
+    one = noMinimum
+    (<.>) = liftA2 mappend
+
+instance (Monoid a, Ord a) => Dioid (Minimum a)
+
 instance (Num a, Show a) => Show (Minimum a) where
     show (Minimum Infinite  ) = "one"
     show (Minimum (Finite x)) = show x
