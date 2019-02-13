@@ -107,6 +107,8 @@ library
                         mtl         >= 2.1     && < 2.3
     if !impl(ghc >= 8.0)
         build-depends:  semigroups  >= 0.18.3  && < 0.18.4
+    if !impl(ghc >= 7.10)
+        build-depends:  bifunctors  >= 5       && < 5.6
     default-language:   Haskell2010
     default-extensions: FlexibleContexts
                         FlexibleInstances
