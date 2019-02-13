@@ -343,7 +343,7 @@ instance IsList a => IsList (Minimum a) where
 -- x '<.>' y = PowerSet $ 'setProductWith' 'mappend' (getPowerSet x) (getPowerSet y)
 -- @
 newtype PowerSet a = PowerSet { getPowerSet :: Set a }
-    deriving (Eq, Monoid, Ord, Semigroup)
+    deriving (Eq, Monoid, Ord, Semigroup, Show)
 
 instance (Monoid a, Ord a) => Semiring (PowerSet a) where
     one                       = PowerSet (Set.singleton mempty)
