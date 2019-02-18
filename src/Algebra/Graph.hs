@@ -41,7 +41,7 @@ module Algebra.Graph (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
-    transpose, induce, simplify, sparsify,
+    transpose, induce, simplify, sparsify, sparsifyKL,
 
     -- * Graph composition
     compose, box,
@@ -59,6 +59,7 @@ import Control.Monad.Compat
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
+import Data.Semigroup ((<>))
 import Data.Tree
 
 import Algebra.Graph.Internal
@@ -66,9 +67,11 @@ import Algebra.Graph.Internal
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Control.Applicative           as Ap
+import qualified Data.Graph                    as KL
 import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
 import qualified Data.Tree                     as Tree
+import qualified GHC.Exts                      as Exts
 
 {-| The 'Graph' data type is a deep embedding of the core graph construction
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
@@ -1131,6 +1134,35 @@ sparsify graph = res
         m <- get
         put (m + 1)
         overlay <$> s `x` m <*> m `y` t
+
+-- | Sparsify a graph whose vertices are integers in the range @[1..n]@, where
+-- @n@ is the first argument of the function, producing an array-based graph
+-- representation from "Data.Graph" (introduced by King and Launchbury, hence
+-- the name of the function). In the resulting graph, vertices @[1..n]@
+-- correspond to the original vertices, and all vertices greater than @n@ are
+-- introduced by the sparsification procedure.
+--
+-- Complexity: /O(s)/ time and memory. Note that thanks to sparsification, the
+-- resulting graph has a linear number of edges with respect to the size of the
+-- original algebraic representation even though the latter can potentially
+-- contain a quadratic /O(s^2)/ number of edges.
+--
+-- @
+-- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' k                 == 'Data.List.sort' . 'filter' (<= n) . 'flip' 'Data.Graph.reachable' k . sparsifyKL n
+-- 'length' ('Data.Graph.vertices' $ sparsifyKL n x) <= 'vertexCount' x + 'size' x + 1
+-- 'length' ('Data.Graph.edges'    $ sparsifyKL n x) <= 3 * 'size' x
+-- @
+sparsifyKL :: Int -> Graph Int -> KL.Graph
+sparsifyKL n graph = KL.buildG (1, end) (Exts.toList (res :: List KL.Edge))
+  where
+    (res, end) = runState (foldg e v o c graph (n + 1) end) (n + 2)
+    e     s t  = return $ Exts.fromList [(s,t)]
+    v x   s t  = return $ Exts.fromList [(s,t), (s,x), (x,t)]
+    o x y s t  = (<>) <$> s `x` t <*> s `y` t
+    c x y s t  = do
+        m <- get
+        put (m + 1)
+        (<>) <$> s `x` m <*> m `y` t
 
 {- Note [The rules of foldg]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

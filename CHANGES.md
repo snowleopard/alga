@@ -1,5 +1,9 @@
 # Change log
 
+## 0.4
+
+* #171: Implement sparsification for King-Launchbury graph representation.
+
 ## 0.3
 
 * #129: Add a testsuite for rewrite rules based on the `inspection-testing` library.
