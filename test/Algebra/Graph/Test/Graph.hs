@@ -18,12 +18,13 @@ import Prelude ()
 import Prelude.Compat
 
 import Data.Either
-import qualified Data.Graph as KL
 
 import Algebra.Graph
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 import Algebra.Graph.ToGraph (reachable)
+
+import qualified Data.Graph as KL
 
 t :: Testsuite
 t = testsuite "Graph." empty
@@ -178,7 +179,7 @@ testGraph = do
           size        (sparsify x) <= 3 * size x
 
     putStrLn "\n============ Graph.sparsifyKL ============"
-    test "sort . reachable k               == sort . filter (<= n) . flip reachable k . sparsifyKL n" $ \(Positive n) -> do
+    test "sort . reachable k                 == sort . filter (<= n) . flip reachable k . sparsifyKL n" $ \(Positive n) -> do
         let pairs = (,) <$> choose (1, n) <*> choose (1, n)
         k  <- choose (1, n)
         es <- listOf pairs

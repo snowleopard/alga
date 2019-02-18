@@ -67,10 +67,10 @@ import Algebra.Graph.Internal
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Control.Applicative           as Ap
+import qualified Data.Graph                    as KL
 import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
 import qualified Data.Tree                     as Tree
-import qualified Data.Graph                    as KL
 import qualified GHC.Exts                      as Exts
 
 {-| The 'Graph' data type is a deep embedding of the core graph construction

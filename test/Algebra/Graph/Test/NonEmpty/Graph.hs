@@ -33,6 +33,7 @@ import Algebra.Graph.ToGraph (reachable, toGraph)
 
 import qualified Algebra.Graph          as G
 import qualified Algebra.Graph.NonEmpty as NonEmpty
+import qualified Data.Graph             as KL
 import qualified Data.List.NonEmpty     as NonEmpty
 import qualified Data.Set               as Set
 
@@ -657,6 +658,26 @@ testNonEmptyGraph = do
 
     test "size        (sparsify x) <= 3 * size x" $ \(x :: G) ->
           size        (sparsify x) <= 3 * size x
+
+    putStrLn "\n============ NonEmpty.Graph.sparsify ============"
+    test "sort . reachable k                 == sort . filter (<= n) . flip reachable k . sparsifyKL n" $ \(Positive n) -> do
+        let pairs = (,) <$> choose (1, n) <*> choose (1, n)
+        k  <- choose (1, n)
+        es <- listOf pairs
+        let x = G.edges es `overlay1` vertices1 [1..n]
+        return $ (sort . reachable k) x == (sort . filter (<= n) . flip KL.reachable k . sparsifyKL n) x
+
+    test "length (vertices $ sparsifyKL n x) <= vertexCount x + size x + 1" $ \(Positive n) -> do
+        let pairs = (,) <$> choose (1, n) <*> choose (1, n)
+        es <- listOf pairs
+        let x = G.edges es `overlay1` vertices1 [1..n]
+        return $ length (KL.vertices $ sparsifyKL n x) <= vertexCount x + size x + 1
+
+    test "length (edges    $ sparsifyKL n x) <= 3 * size x" $ \(Positive n) -> do
+        let pairs = (,) <$> choose (1, n) <*> choose (1, n)
+        es <- listOf pairs
+        let x = G.edges es `overlay1` vertices1 [1..n]
+        return $ length (KL.edges $ sparsifyKL n x) <= 3 * size x
 
     putStrLn "\n============ NonEmpty.Graph.box ============"
     test "box (path1 [0,1]) (path1 ['a','b']) == <correct result>" $ mapSize (min 10) $
