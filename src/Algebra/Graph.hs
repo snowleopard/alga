@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedLists, RankNTypes #-}
+{-# LANGUAGE RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
@@ -59,6 +59,7 @@ import Control.Monad.Compat
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
+import Data.Semigroup ((<>))
 import Data.Tree
 
 import Algebra.Graph.Internal
@@ -70,6 +71,7 @@ import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
 import qualified Data.Tree                     as Tree
 import qualified Data.Graph                    as KL
+import qualified GHC.Exts                      as Exts
 
 {-| The 'Graph' data type is a deep embedding of the core graph construction
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
@@ -1151,11 +1153,11 @@ sparsify graph = res
 -- 'length' ('Data.Graph.edges'    $ sparsifyKL n x) <= 3 * 'size' x
 -- @
 sparsifyKL :: Int -> Graph Int -> KL.Graph
-sparsifyKL n graph = KL.buildG (1, end) (toList (res :: List KL.Edge))
+sparsifyKL n graph = KL.buildG (1, end) (Exts.toList (res :: List KL.Edge))
   where
     (res, end) = runState (foldg e v o c graph (n + 1) end) (n + 2)
-    e     s t  = return [(s,t)]
-    v x   s t  = return [(s,t), (s,x), (x,t)]
+    e     s t  = return $ Exts.fromList [(s,t)]
+    v x   s t  = return $ Exts.fromList [(s,t), (s,x), (x,t)]
     o x y s t  = (<>) <$> s `x` t <*> s `y` t
     c x y s t  = do
         m <- get
