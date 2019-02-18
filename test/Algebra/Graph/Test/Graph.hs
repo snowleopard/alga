@@ -15,6 +15,7 @@ module Algebra.Graph.Test.Graph (
   ) where
 
 import Data.Either
+import qualified Data.Graph as KL
 
 import Algebra.Graph
 import Algebra.Graph.Test
@@ -172,6 +173,29 @@ testGraph = do
 
     test "size        (sparsify x) <= 3 * size x" $ \(x :: G) ->
           size        (sparsify x) <= 3 * size x
+
+    putStrLn "\n============ Graph.sparsifyKL ============"
+    test "sort . reachable k               == sort . filter (<= n) . flip reachable k . sparsifyKL n" $ \(Positive n) -> do
+        let pairs = (,) <$> choose (1, n) <*> choose (1, n)
+        k  <- choose (1, n)
+        es <- listOf pairs
+        let x = vertices [1..n] `overlay` edges es
+        return $
+         (sort . reachable k) x            == (sort . filter (<= n) . flip KL.reachable k . sparsifyKL n) x
+
+    test "length (vertices $ sparsifyKL n x) <= vertexCount x + size x + 1" $ \(Positive n) -> do
+        let pairs = (,) <$> choose (1, n) <*> choose (1, n)
+        es <- listOf pairs
+        let x = vertices [1..n] `overlay` edges es
+        return $
+          length (KL.vertices $ sparsifyKL n x) <= vertexCount x + size x + 1
+
+    test "length (edges    $ sparsifyKL n x) <= 3 * size x" $ \(Positive n) -> do
+        let pairs = (,) <$> choose (1, n) <*> choose (1, n)
+        es <- listOf pairs
+        let x = vertices [1..n] `overlay` edges es
+        return $
+          length (KL.edges    $ sparsifyKL n x) <= 3 * size x
 
     putStrLn "\n============ Labelled.Graph.context ============"
     test "context (const False) x                   == Nothing" $ \x ->
