@@ -14,6 +14,9 @@ module Algebra.Graph.Test.Graph (
     testGraph
   ) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Data.Either
 import qualified Data.Graph as KL
 
