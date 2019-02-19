@@ -953,12 +953,12 @@ sparsify graph = res
 -- 'length' ('Data.Graph.edges'    $ sparsifyKL n x) <= 3 * 'size' x
 -- @
 sparsifyKL :: Int -> Graph Int -> KL.Graph
-sparsifyKL n graph = KL.buildG (1, end) (Exts.toList (res :: List KL.Edge))
+sparsifyKL n graph = KL.buildG (1, next - 1) ((n + 1, n + 2) : Exts.toList (res :: List KL.Edge))
   where
-    (res, end) = runState (foldg1 v o c graph (n + 1) end) (n + 2)
-    v x   s t  = return $ Exts.fromList [(s,t), (s,x), (x,t)]
-    o x y s t  = (<>) <$> s `x` t <*> s `y` t
-    c x y s t  = do
+    (res, next) = runState (foldg1 v o c graph (n + 1) (n + 2)) (n + 3)
+    v x   s t   = return $ Exts.fromList [(s,x), (x,t)]
+    o x y s t   = (<>) <$> s `x` t <*> s `y` t
+    c x y s t   = do
         m <- get
         put (m + 1)
-        (<>) <$> s `x` m <*> m `y` t
+        (\xs ys -> Exts.fromList [(s,m), (m,t)] <> xs <> ys) <$> s `x` m <*> m `y` t
