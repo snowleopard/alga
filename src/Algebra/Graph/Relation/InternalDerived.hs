@@ -89,12 +89,13 @@ instance Ord a => Graph (SymmetricRelation a) where
 {-| 'Num' instance respects the comutativity of connect
 -}
 instance (Ord a, Num a) => Num (SymmetricRelation a) where
-    fromInteger = SymmetricRelation . vertex . fromInteger
+    fromInteger = vertex . fromInteger
     x + y       = SymmetricRelation $ fromSymmetric x `overlay` fromSymmetric y
     x * y       = SymmetricRelation . symmetricClosure $ fromSymmetric x `connect` fromSymmetric y
-    signum      = SymmetricRelation empty
+    signum      = empty
     abs         = id
     negate      = id
+
 
 instance Ord a => Undirected (SymmetricRelation a)
 
