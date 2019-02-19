@@ -66,9 +66,11 @@ The 'Show' instance produces symmetrically closed expressions:
 
 @show (1     :: SymmetricRelation Int) == "vertex 1"
 show (1 * 2 :: SymmetricRelation Int) == "edges [(1,2),(2,1)]"@
+
+The 'Graph' instance respects the comutativity of connect.
 -}
 newtype SymmetricRelation a = SymmetricRelation { fromSymmetric :: Relation a }
-    deriving (Num, NFData)
+    deriving NFData
 
 instance Ord a => Eq (SymmetricRelation a) where
     x == y = symmetricClosure (fromSymmetric x) == symmetricClosure (fromSymmetric y)
@@ -82,7 +84,7 @@ instance Ord a => Graph (SymmetricRelation a) where
     empty       = SymmetricRelation empty
     vertex      = SymmetricRelation . vertex
     overlay x y = SymmetricRelation $ fromSymmetric x `overlay` fromSymmetric y
-    connect x y = SymmetricRelation $ fromSymmetric x `connect` fromSymmetric y
+    connect x y = SymmetricRelation . symmetricClosure $ fromSymmetric x `connect` fromSymmetric y
 
 instance Ord a => Undirected (SymmetricRelation a)
 
