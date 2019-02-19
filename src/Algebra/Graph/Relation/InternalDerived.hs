@@ -86,6 +86,16 @@ instance Ord a => Graph (SymmetricRelation a) where
     overlay x y = SymmetricRelation $ fromSymmetric x `overlay` fromSymmetric y
     connect x y = SymmetricRelation . symmetricClosure $ fromSymmetric x `connect` fromSymmetric y
 
+{-| 'Num' instance respects the comutativity of connect
+-}
+instance (Ord a, Num a) => Num (SymmetricRelation a) where
+    fromInteger = SymmetricRelation . vertex . fromInteger
+    x + y       = SymmetricRelation $ fromSymmetric x `overlay` fromSymmetric y
+    x * y       = SymmetricRelation . symmetricClosure $ fromSymmetric x `connect` fromSymmetric y
+    signum      = SymmetricRelation empty
+    abs         = id
+    negate      = id
+
 instance Ord a => Undirected (SymmetricRelation a)
 
 -- TODO: Optimise the implementation by caching the results of transitive closure.

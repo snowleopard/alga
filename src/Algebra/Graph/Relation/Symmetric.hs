@@ -43,16 +43,6 @@ import Data.Tuple
 import Data.Tree 
 import qualified Data.Tree as Tree
 
-{-| 'Num' instance respects the comutativity of connect
--}
-instance (Ord a, Num a) => Num (SymmetricRelation a) where
-    fromInteger = vertex . fromInteger
-    (+)         = overlay
-    (*)         = connect
-    signum      = const empty
-    abs         = id
-    negate      = id
-
 -- | Construct a symmetric relation from a 'Relation'.
 -- Complexity: /O(1)/ time.
 fromRelation :: R.Relation a -> SymmetricRelation a
@@ -470,7 +460,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- transpose  == id
 -- 'edgeList' . transpose  == 'edgeList'
 -- @
-transpose :: Ord a => SymmetricRelation a -> SymmetricRelation a
+transpose :: SymmetricRelation a -> SymmetricRelation a
 transpose = id
 
 -- | Transform a graph by applying a function to each of its vertices. This is

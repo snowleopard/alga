@@ -26,7 +26,7 @@ import qualified Algebra.Graph.Class as C
 import qualified Data.Set            as Set
 
 t :: Testsuite
-t = testsuite "Relation." empty
+t = testsuite "Relation." C.empty
 
 type RI = Relation Int
 
