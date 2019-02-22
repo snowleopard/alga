@@ -23,7 +23,8 @@ import Control.DeepSeq (NFData (..))
 
 import Algebra.Graph.Class
 import Algebra.Graph.Relation (Relation, reflexiveClosure, symmetricClosure,
-                               transitiveClosure, closure)
+                               transitiveClosure, closure, domain, relation)
+import qualified Data.Set as Set
 
 {-| The 'ReflexiveRelation' data type represents a /reflexive binary relation/
 over a set of elements. Reflexive relations satisfy all laws of the
@@ -68,6 +69,33 @@ The 'Show' instance produces symmetrically closed expressions:
 show (1 * 2 :: SymmetricRelation Int) == "edges [(1,2),(2,1)]"@
 
 The 'Graph' instance respects the comutativity of connect.
+
+The 'Num' instance respects the comutativity of connect.
+
+The total order on graphs is defined using /size-lexicographic/ comparison:
+
+* Compare the number of vertices. In case of a tie, continue.
+* Compare the sets of vertices. In case of a tie, continue.
+* Compare the number of edges. In case of a tie, continue.
+* Compare the sets of edges.
+
+Here are a few examples:
+
+@'vertex' 1 < 'vertex' 2
+'vertex' 3 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
+'vertex' 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 1
+'Algebra.Graph.AdjacencyMap.edge' 1 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
+'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 1 + 'Algebra.Graph.AdjacencyMap.edge' 2 2
+'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 3@
+
+Note that the resulting order refines the 'isSubgraphOf' relation and is
+compatible with 'overlay' and 'connect' operations:
+
+@'Algebra.Graph.AdjacencyMap.isSubgraphOf' x y ==> x <= y@
+
+@'empty' <= x
+x     <= x + y
+x + y <= x * y@
 -}
 newtype SymmetricRelation a = SymmetricRelation { fromSymmetric :: Relation a }
     deriving NFData
@@ -86,8 +114,6 @@ instance Ord a => Graph (SymmetricRelation a) where
     overlay x y = SymmetricRelation $ fromSymmetric x `overlay` fromSymmetric y
     connect x y = SymmetricRelation . symmetricClosure $ fromSymmetric x `connect` fromSymmetric y
 
-{-| 'Num' instance respects the comutativity of connect
--}
 instance (Ord a, Num a) => Num (SymmetricRelation a) where
     fromInteger = vertex . fromInteger
     x + y       = SymmetricRelation $ fromSymmetric x `overlay` fromSymmetric y
@@ -96,6 +122,12 @@ instance (Ord a, Num a) => Num (SymmetricRelation a) where
     abs         = id
     negate      = id
 
+instance Ord a => Ord (SymmetricRelation a) where
+    compare x y = mconcat
+        [ compare (Set.size . domain . fromSymmetric $   x) (Set.size . domain . fromSymmetric $   y)
+        , compare (           domain . fromSymmetric $   x) (           domain . fromSymmetric $   y)
+        , compare (Set.size . relation . fromSymmetric $ x) (Set.size . relation . fromSymmetric $ y)
+        , compare (           relation . fromSymmetric $ x) (           relation . fromSymmetric $ y) ]
 
 instance Ord a => Undirected (SymmetricRelation a)
 
