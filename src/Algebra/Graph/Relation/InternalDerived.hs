@@ -96,7 +96,6 @@ compatible with 'overlay' and 'connect' operations:
 @'empty' <= x
 x     <= x + y
 x + y <= x * y@
-
 -}
 newtype SymmetricRelation a = SymmetricRelation { fromSymmetric :: Relation a }
     deriving NFData
