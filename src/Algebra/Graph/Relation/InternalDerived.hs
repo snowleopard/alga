@@ -25,6 +25,7 @@ import Algebra.Graph.Class
 import Algebra.Graph.Relation (Relation, reflexiveClosure, symmetricClosure,
                                transitiveClosure, closure, domain, relation)
 import qualified Data.Set as Set
+import Data.Monoid (mconcat)
 
 {-| The 'ReflexiveRelation' data type represents a /reflexive binary relation/
 over a set of elements. Reflexive relations satisfy all laws of the

@@ -27,7 +27,7 @@ module Algebra.Graph.Relation.Symmetric (
     path, circuit, clique, biclique, star, stars, tree, forest,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
+    removeVertex, removeEdge, replaceVertex, mergeVertices, gmap, induce,
 
     -- * Relational operations
     compose, -- closure, reflexiveClosure, symmetricClosure, transitiveClosure
@@ -57,7 +57,7 @@ toRelation = R.symmetricClosure . fromSymmetric
 -- Complexity: /O(1)/ time, memory and size.
 --
 -- @
--- edge x y               == 'overlay' ('connect' ('vertex' x) ('vertex'
+-- edge x y                 == 'overlay' ('connect' ('vertex' x) ('vertex'
 -- y)) ('connect' ('vertex' y) ('vertex' x))
 -- 'hasEdge' x y (edge x y) == True
 -- 'edgeCount'   (edge x y) == 2
@@ -449,19 +449,6 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- @
 mergeVertices :: Ord a => (a -> Bool) -> a -> SymmetricRelation a -> SymmetricRelation a
 mergeVertices p v = gmap $ \u -> if p u then v else u
-
--- | Transpose a given graph.
--- Complexity: /O(1)/ time.
---
--- @
--- transpose 'empty'       == 'empty'
--- transpose ('vertex' x)  == 'vertex' x
--- transpose ('edge' x y)  == 'edge' y x
--- transpose  == id
--- 'edgeList' . transpose  == 'edgeList'
--- @
-transpose :: SymmetricRelation a -> SymmetricRelation a
-transpose = id
 
 -- | Transform a graph by applying a function to each of its vertices. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
