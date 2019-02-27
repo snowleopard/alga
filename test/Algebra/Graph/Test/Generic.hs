@@ -59,7 +59,7 @@ testBasicPrimitives = mconcat [ testOrd
                               , testConnects ]
 
 testSymmetricBasicPrimitives :: Testsuite -> IO ()
-testSymmetricBasicPrimitives = mconcat [ testOrd
+testSymmetricBasicPrimitives = mconcat [ testSymmetricOrd
                                         , testEmpty
                                         , testVertex
                                         , testSymmetricEdge
@@ -88,6 +88,23 @@ testToGraph = mconcat [ testToGraphDefault
                       , testPreIntSet
                       , testPostSet
                       , testPostIntSet ]
+
+testSymmetricToGraph :: Testsuite -> IO ()
+testSymmetricToGraph = mconcat [ testToGraphDefault
+                      , testSymmetricFoldg
+                      , testIsEmpty
+                      , testHasVertex
+                      , testHasEdge
+                      , testVertexCount
+                      , testSymmetricEdgeCount
+                      , testVertexList
+                      , testVertexSet
+                      , testVertexIntSet
+                      , testSymmetricEdgeList
+                      , testSymmetricEdgeSet
+                      , testSymmetricAdjacencyList
+                      , testSymmetricPreSet
+                      , testSymmetricPostSet ]
 
 testRelational :: Testsuite -> IO ()
 testRelational = mconcat [ testCompose
@@ -216,6 +233,33 @@ testOrd (Testsuite prefix (%)) = do
     test "x + y    <= x * y" $ \x y ->
           id % x + y <= x * y
 
+testSymmetricOrd :: Testsuite -> IO ()
+testSymmetricOrd (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "Ord ============"
+    test "vertex 1 <  vertex 2" $
+          vertex 1 < id % vertex 2
+
+    test "vertex 3 <  edge 1 2" $
+          vertex 3 < id % edge 1 2
+
+    test "vertex 1 <  edge 1 1" $
+          vertex 1 < id % edge 1 1
+
+    test "edge 1 1 <  edge 1 2" $
+          edge 1 1 < id % edge 1 2
+
+    test "edge 1 2 >  edge 1 1 + edge 2 2" $
+          edge 1 2 > id % edge 1 1 + edge 2 2
+
+    test "edge 1 2 <  edge 1 3" $
+          edge 1 2 < id % edge 1 3
+
+    test "x        <= x + y" $ \x y ->
+          id % x   <= x + y
+
+    test "x + y    <= x * y" $ \x y ->
+          id % x + y <= x * y
+
 testEmpty :: Testsuite -> IO ()
 testEmpty (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "empty ============"
@@ -276,8 +320,8 @@ testSymmetricEdge (Testsuite prefix (%)) = do
     test "hasEdge y x (edge x y) == True" $ \x y ->
           hasEdge y x % edge x y == True
 
-    test "edgeCount   (edge x y) == 2" $ \x y ->
-          edgeCount %  edge x y  == 2
+    test "edgeCount   (edge x y) <= 2" $ \x y ->
+          edgeCount %  edge x y  <= 2
 
     test "vertexCount (edge 1 1) == 1" $
           vertexCount % edge 1 1 == 1
@@ -368,9 +412,6 @@ testSymmetricConnect (Testsuite prefix (%)) = do
 
     test "edgeCount   (connect x y) >= vertexCount x * vertexCount y" $ \x y ->
           edgeCount  % connect x y  >= vertexCount x * vertexCount y
-
-    test "edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y" $ \x y ->
-          edgeCount  % connect x y  <= vertexCount x * vertexCount y + edgeCount x + edgeCount y
 
     test "vertexCount (connect 1 2) == 2" $
           vertexCount % connect 1 2 == 2
@@ -661,6 +702,21 @@ testFoldg (Testsuite prefix (%)) = do
     test "foldg True  (const False) (&&)    (&&)           == isEmpty" $ \x ->
           foldg True  (const False) (&&)    (&&) % x       == isEmpty x
 
+testSymmetricFoldg :: Testsuite -> IO ()
+testSymmetricFoldg (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "foldg ============"
+    test "foldg empty vertex        overlay connect        == id" $ \x ->
+          foldg empty vertex        overlay connect % x    == id x
+
+    test "foldg empty vertex        overlay (flip connect) == id" $ \x ->
+          foldg empty vertex        overlay (flip connect) % x == id x
+
+    test "foldg 1     (const 1)     (+)     (+)            == size" $ \x ->
+          foldg 1     (const 1)     (+)     (+) % x        == size x
+
+    test "foldg True  (const False) (&&)    (&&)           == isEmpty" $ \x ->
+          foldg True  (const False) (&&)    (&&) % x       == isEmpty x
+
 testIsEmpty :: Testsuite -> IO ()
 testIsEmpty (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "isEmpty ============"
@@ -766,6 +822,21 @@ testEdgeCount (Testsuite prefix (%)) = do
     test "edgeCount            == length . edgeList" $ \x ->
           edgeCount % x        == (length . edgeList) x
 
+testSymmetricEdgeCount :: Testsuite -> IO ()
+testSymmetricEdgeCount (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "edgeCount ============"
+    test "edgeCount empty      == 0" $
+          edgeCount % empty    == 0
+
+    test "edgeCount (vertex x) == 0" $ \x ->
+          edgeCount % vertex x == 0
+
+    test "edgeCount (edge x y) <= 2" $ \x y ->
+          edgeCount % edge x y <= 2
+
+    test "edgeCount            == length . edgeList" $ \x ->
+          edgeCount % x        == (length . edgeList) x
+
 testVertexList :: Testsuite -> IO ()
 testVertexList (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "vertexList ============"
@@ -796,6 +867,18 @@ testEdgeList (Testsuite prefix (%)) = do
     test "edgeList . edges        == nub . sort" $ \xs ->
           edgeList % edges xs     == (nubOrd . sort) xs
 
+testSymmetricEdgeList :: Testsuite -> IO ()
+testSymmetricEdgeList (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "edgeList ============"
+    test "edgeList empty          == []" $
+          edgeList % empty        == []
+
+    test "edgeList (vertex x)     == []" $ \x ->
+          edgeList % vertex x     == []
+
+    test "edgeList (star 2 [3,1]) == [(1,2),(2,1),(2,3),(3,2)]" $
+          edgeList % star 2 [3,1] == [(1,2),(2,1),(2,3),(3,2)]
+
 testAdjacencyList :: Testsuite -> IO ()
 testAdjacencyList (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "adjacencyList ============"
@@ -810,6 +893,21 @@ testAdjacencyList (Testsuite prefix (%)) = do
 
     test "adjacencyList (star 2 [3,1]) == [(1, []), (2, [1,3]), (3, [])]" $
           adjacencyList % star 2 [3,1] == [(1, []), (2, [1,3]), (3, [])]
+
+testSymmetricAdjacencyList :: Testsuite -> IO ()
+testSymmetricAdjacencyList (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "adjacencyList ============"
+    test "adjacencyList empty          == []" $
+          adjacencyList % empty        == []
+
+    test "adjacencyList (vertex x)     == [(x, [])]" $ \x ->
+          adjacencyList % vertex x     == [(x, [])]
+
+    test "adjacencyList (edge 1 2)     == [(1, [2]), (2, [1])]" $
+          adjacencyList % edge 1 2     == [(1, [2]), (2, [1])]
+
+    test "adjacencyList (star 2 [3,1]) == [(1, [2]), (2, [1,3]), (3, [2])]" $
+          adjacencyList % star 2 [3,1] == [(1, [2]), (2, [1,3]), (3, [2])]
 
 testVertexSet :: Testsuite -> IO ()
 testVertexSet (Testsuite prefix (%)) = do
@@ -853,6 +951,15 @@ testEdgeSet (Testsuite prefix (%)) = do
     test "edgeSet . edges    == Set.fromList" $ \xs ->
           edgeSet % edges xs == Set.fromList xs
 
+testSymmetricEdgeSet :: Testsuite -> IO ()
+testSymmetricEdgeSet (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "edgeSet ============"
+    test "edgeSet empty      == Set.empty" $
+          edgeSet % empty    == Set.empty
+
+    test "edgeSet (vertex x) == Set.empty" $ \x ->
+          edgeSet % vertex x == Set.empty
+
 testPreSet :: Testsuite -> IO ()
 testPreSet (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "preSet ============"
@@ -864,6 +971,21 @@ testPreSet (Testsuite prefix (%)) = do
 
     test "preSet 1 (edge 1 2) == Set.empty" $
           preSet 1 % edge 1 2 == Set.empty
+
+    test "preSet y (edge x y) == Set.fromList [x]" $ \x y ->
+          preSet y % edge x y == Set.fromList [x]
+
+testSymmetricPreSet :: Testsuite -> IO ()
+testSymmetricPreSet (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "preSet ============"
+    test "preSet x empty      == Set.empty" $ \x ->
+          preSet x % empty    == Set.empty
+
+    test "preSet x (vertex x) == Set.empty" $ \x ->
+          preSet x % vertex x == Set.empty
+
+    test "preSet 1 (edge 1 2) == Set.fromList" $
+          preSet 1 % edge 1 2 == Set.fromList [2]
 
     test "preSet y (edge x y) == Set.fromList [x]" $ \x y ->
           preSet y % edge x y == Set.fromList [x]
@@ -882,6 +1004,21 @@ testPostSet (Testsuite prefix (%)) = do
 
     test "postSet 2 (edge 1 2) == Set.empty" $
           postSet 2 % edge 1 2 == Set.empty
+
+testSymmetricPostSet :: Testsuite -> IO ()
+testSymmetricPostSet (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "postSet ============"
+    test "postSet x empty      == Set.empty" $ \x ->
+          postSet x % empty    == Set.empty
+
+    test "postSet x (vertex x) == Set.empty" $ \x ->
+          postSet x % vertex x == Set.empty
+
+    test "postSet x (edge x y) == Set.fromList [y]" $ \x y ->
+          postSet x % edge x y == Set.fromList [y]
+
+    test "postSet 2 (edge 1 2) == Set.fromList [1]" $
+          postSet 2 % edge 1 2 == Set.fromList [1]
 
 testPreIntSet :: Testsuite -> IO ()
 testPreIntSet (Testsuite prefix (%)) = do

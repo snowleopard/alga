@@ -56,10 +56,10 @@ toRelation = R.symmetricClosure . fromSymmetric
 -- Complexity: /O(1)/ time, memory and size.
 --
 -- @
--- edge x y                 == 'overlay' ('connect' ('vertex' x) ('vertex'
+-- edge x y                 == edges [(1,2),(2,1)]
 -- y)) ('connect' ('vertex' y) ('vertex' x))
 -- 'hasEdge' x y (edge x y) == True
--- 'edgeCount'   (edge x y) == 2
+-- 'edgeCount'   (edge x y) <= 2
 -- 'vertexCount' (edge 1 1) == 1
 -- 'vertexCount' (edge 1 2) == 2
 -- @

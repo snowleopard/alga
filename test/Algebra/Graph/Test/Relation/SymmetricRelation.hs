@@ -14,6 +14,7 @@ module Algebra.Graph.Test.Relation.SymmetricRelation (
   ) where
 
 import Algebra.Graph.Relation.Symmetric
+import Algebra.Graph.Relation.InternalDerived
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
@@ -30,15 +31,15 @@ testSymmetricRelation = do
     putStrLn "\n============ SymmetricRelation ============"
     test "Axioms of graphs" $ size10 (axioms :: GraphTestsuite SRI)
 
-    -- test "Consistency of arbitraryRelation" $ \(m :: SRI) ->
-    --     consistent m
+    test "Consistency of arbitraryRelation" $ \(m :: SRI) ->
+         consistent m
 
     testSymmetricShow            t
     testSymmetricBasicPrimitives t
-    testIsSubgraphOf    t
-    testToGraph         t
-    testGraphFamilies   t
-    testTransformations t
+    testIsSubgraphOf             t
+    testSymmetricToGraph         t
+    testGraphFamilies            t
+    testTransformations          t
 
     test "Axioms of undirected graphs" $ size10
         (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))

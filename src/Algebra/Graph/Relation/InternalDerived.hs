@@ -77,7 +77,7 @@ Here are a few examples:
 'vertex' 3 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
 'vertex' 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 1
 'Algebra.Graph.AdjacencyMap.edge' 1 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
-'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 1 + 'Algebra.Graph.AdjacencyMap.edge' 2 2
+'Algebra.Graph.AdjacencyMap.edge' 1 2 > 'Algebra.Graph.AdjacencyMap.edge' 1 1 + 'Algebra.Graph.AdjacencyMap.edge' 2 2
 'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 3@
 
 Note that the resulting order refines the 'isSubgraphOf' relation and is
@@ -161,7 +161,6 @@ overlay x y = SymmetricRelation $ Relation (domain (fromSymmetric x) `Set.union`
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.Symmetric.edgeCount' x
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.Symmetric.edgeCount' y
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.Symmetric.vertexCount' x * 'Algebra.Graph.Relation.Symmetric.vertexCount' y
--- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect x y) <= 'Algebra.Graph.Relation.Symmetric.vertexCount' x * 'Algebra.Graph.Relation.Symmetric.vertexCount' y + 'Algebra.Graph.Relation.Symmetric.edgeCount' x + 'Algebra.Graph.Relation.Symmetric.edgeCount' y
 -- 'Algebra.Graph.Relation.Symmetric.vertexCount' (connect 1 2) == 2
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect 1 2) == 2
 -- @
