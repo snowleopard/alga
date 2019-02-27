@@ -58,6 +58,18 @@ testBasicPrimitives = mconcat [ testOrd
                               , testOverlays
                               , testConnects ]
 
+testSymmetricBasicPrimitives :: Testsuite -> IO ()
+testSymmetricBasicPrimitives = mconcat [ testOrd
+                                        , testEmpty
+                                        , testVertex
+                                        , testSymmetricEdge
+                                        , testOverlay
+                                        , testSymmetricConnect
+                                        , testVertices
+                                        , testSymmetricEdges
+                                        , testOverlays
+                                        , testConnects ]
+
 testToGraph :: Testsuite -> IO ()
 testToGraph = mconcat [ testToGraphDefault
                       , testFoldg
@@ -140,6 +152,42 @@ testShow (Testsuite prefix (%)) = do
     test "show (vertex (-1) * vertex (-2) + vertex (-3)) == \"overlay (vertex (-3)) (edge (-1) (-2))\"" $
           show % (vertex (-1) * vertex (-2) + vertex (-3)) == "overlay (vertex (-3)) (edge (-1) (-2))"
 
+testSymmetricShow :: Testsuite -> IO ()
+testSymmetricShow (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "Show ============"
+    test "show (empty    ) == \"empty\"" $
+          show % empty     ==  "empty"
+
+    test "show (1        ) == \"vertex 1\"" $
+          show % 1         ==  "vertex 1"
+
+    test "show (1 + 2    ) == \"vertices [1,2]\"" $
+          show % (1 + 2)   ==  "vertices [1,2]"
+
+    test "show (1 * 2    ) == \"edges [(1,2),(2,1)]\"" $
+          show % (1 * 2)   ==  "edges [(1,2),(2,1)]"
+
+    test "show (1 * 2 * 3) == \"edges [(1,2),(1,3),(2,1),(2,3),(3,1),(3,2)]\"" $
+          show % (1 * 2 * 3) == "edges [(1,2),(1,3),(2,1),(2,3),(3,1),(3,2)]"
+
+    test "show (1 * 2 + 3) == \"overlay (vertex 3) (edges [(1,2),(2,1)])\"" $
+          show % (1 * 2 + 3) == "overlay (vertex 3) (edges [(1,2),(2,1)])"
+
+    putStrLn ""
+    test "show (vertex (-1)                            ) == \"vertex (-1)\"" $
+          show % (vertex (-1)                            ) == "vertex (-1)"
+
+    test "show (vertex (-1) + vertex (-2)              ) == \"vertices [-2,-1]\"" $
+          show % (vertex (-1) + vertex (-2)              ) == "vertices [-2,-1]"
+
+    test "show (vertex (-1) * vertex (-2)              ) == \"edges [(-2,-1),(-1,-2)]\"" $
+          show % (vertex (-1) * vertex (-2)              ) == "edges [(-2,-1),(-1,-2)]"
+
+    test "show (vertex (-1) * vertex (-2) * vertex (-3)) == \"edges [(-3,-2),(-3,-1),(-2,-3),(-2,-1),(-1,-3),(-1,-2)]\"" $
+          show % (vertex (-1) * vertex (-2) * vertex (-3)) == "edges [(-3,-2),(-3,-1),(-2,-3),(-2,-1),(-1,-3),(-1,-2)]"
+
+    test "show (vertex (-1) * vertex (-2) + vertex (-3)) == \"overlay (vertex (-3)) (edges [(-2,-1),(-1,-2)])\"" $
+          show % (vertex (-1) * vertex (-2) + vertex (-3)) == "overlay (vertex (-3)) (edges [(-2,-1),(-1,-2)])"
 
 testOrd :: Testsuite -> IO ()
 testOrd (Testsuite prefix (%)) = do
@@ -216,6 +264,27 @@ testEdge (Testsuite prefix (%)) = do
     test "vertexCount (edge 1 2) == 2" $
           vertexCount % edge 1 2 == 2
 
+testSymmetricEdge :: Testsuite -> IO ()
+testSymmetricEdge (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "edge ============"
+    test "edge x y               == connect (vertex x) (vertex y)" $ \x y ->
+          edge x y               == connect (vertex x) % vertex y
+
+    test "hasEdge x y (edge x y) == True" $ \x y ->
+          hasEdge x y % edge x y == True
+
+    test "hasEdge y x (edge x y) == True" $ \x y ->
+          hasEdge y x % edge x y == True
+
+    test "edgeCount   (edge x y) == 2" $ \x y ->
+          edgeCount %  edge x y  == 2
+
+    test "vertexCount (edge 1 1) == 1" $
+          vertexCount % edge 1 1 == 1
+
+    test "vertexCount (edge 1 2) == 2" $
+          vertexCount % edge 1 2 == 2
+
 testOverlay :: Testsuite -> IO ()
 testOverlay (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "overlay ============"
@@ -276,6 +345,39 @@ testConnect (Testsuite prefix (%)) = do
     test "edgeCount   (connect 1 2) == 1" $
           edgeCount  % connect 1 2  == 1
 
+testSymmetricConnect :: Testsuite -> IO ()
+testSymmetricConnect (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "connect ============"
+    test "isEmpty     (connect x y) == isEmpty   x   && isEmpty   y" $ \x y ->
+          isEmpty    % connect x y  == (isEmpty   x   && isEmpty   y)
+
+    test "hasVertex z (connect x y) == hasVertex z x || hasVertex z y" $ \x y z ->
+          hasVertex z % connect x y == (hasVertex z x || hasVertex z y)
+
+    test "vertexCount (connect x y) >= vertexCount x" $ \x y ->
+          vertexCount % connect x y >= vertexCount x
+
+    test "vertexCount (connect x y) <= vertexCount x + vertexCount y" $ \x y ->
+          vertexCount % connect x y <= vertexCount x + vertexCount y
+
+    test "edgeCount   (connect x y) >= edgeCount x" $ \x y ->
+          edgeCount  % connect x y  >= edgeCount x
+
+    test "edgeCount   (connect x y) >= edgeCount y" $ \x y ->
+          edgeCount  % connect x y  >= edgeCount y
+
+    test "edgeCount   (connect x y) >= vertexCount x * vertexCount y" $ \x y ->
+          edgeCount  % connect x y  >= vertexCount x * vertexCount y
+
+    test "edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y" $ \x y ->
+          edgeCount  % connect x y  <= vertexCount x * vertexCount y + edgeCount x + edgeCount y
+
+    test "vertexCount (connect 1 2) == 2" $
+          vertexCount % connect 1 2 == 2
+
+    test "edgeCount   (connect 1 2) == 2" $
+          edgeCount  % connect 1 2  == 2
+
 testVertices :: Testsuite -> IO ()
 testVertices (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "vertices ============"
@@ -305,6 +407,18 @@ testEdges (Testsuite prefix (%)) = do
 
     test "edgeCount . edges == length . nub" $ \xs ->
           edgeCount % edges xs == (length . nubOrd) xs
+
+testSymmetricEdges :: Testsuite -> IO ()
+testSymmetricEdges (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "edges ============"
+    test "edges []          == empty" $
+          edges []          == id % empty
+
+    test "edges [(x,y)]     == edge x y" $ \x y ->
+          edges [(x,y)]     == id % edge x y
+
+    test "edgeCount . edges == length . nub" $ \xs ->
+          edgeCount % edges xs >= (length . nubOrd) xs
 
 testOverlays :: Testsuite -> IO ()
 testOverlays (Testsuite prefix (%)) = do
