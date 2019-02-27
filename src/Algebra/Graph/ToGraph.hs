@@ -63,6 +63,7 @@ import qualified Algebra.Graph.AdjacencyIntMap                as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Algorithm      as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Internal       as AIM
 import qualified Algebra.Graph.Relation                       as R
+import qualified Algebra.Graph.Relation.Symmetric             as SR
 import qualified Data.IntMap                                  as IntMap
 import qualified Data.IntSet                                  as IntSet
 import qualified Data.Map                                     as Map
@@ -549,6 +550,32 @@ instance Ord a => ToGraph (R.Relation a) where
     adjacencyIntMap            = IntMap.fromAscList
                                . map (fmap IntSet.fromAscList)
                                . R.adjacencyList
+    toAdjacencyMap             = AM.AM . adjacencyMap
+    toAdjacencyIntMap          = AIM.AM . adjacencyIntMap
+    toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
+    toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
+
+instance Ord a => ToGraph (SR.SymmetricRelation a) where
+    type ToVertex (SR.SymmetricRelation a) = a
+    toGraph (SR.SymmetricRelation r)                  = G.vertices (Set.toList $ R.domain   r) `G.overlay`
+                                                        G.edges    (Set.toList $ R.relation r)
+    isEmpty                    = SR.isEmpty
+    hasVertex                  = SR.hasVertex
+    hasEdge                    = SR.hasEdge
+    vertexCount                = SR.vertexCount
+    edgeCount                  = SR.edgeCount
+    vertexList                 = SR.vertexList
+    vertexSet                  = SR.vertexSet
+    vertexIntSet               = IntSet.fromAscList . SR.vertexList
+    edgeList                   = SR.edgeList
+    edgeSet                    = SR.edgeSet
+    adjacencyList              = SR.adjacencyList
+    adjacencyMap               = Map.fromAscList
+                               . map (fmap Set.fromAscList)
+                               . SR.adjacencyList
+    adjacencyIntMap            = IntMap.fromAscList
+                               . map (fmap IntSet.fromAscList)
+                               . SR.adjacencyList
     toAdjacencyMap             = AM.AM . adjacencyMap
     toAdjacencyIntMap          = AIM.AM . adjacencyIntMap
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap

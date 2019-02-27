@@ -11,7 +11,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.Symmetric (
     -- * Data structure
-    SymmetricRelation, fromRelation, toRelation,
+    SymmetricRelation(..), fromRelation, toRelation,
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
