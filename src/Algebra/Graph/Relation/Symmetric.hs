@@ -34,9 +34,8 @@ module Algebra.Graph.Relation.Symmetric (
   ) where
 
 import qualified Algebra.Graph.Relation as R
-import qualified Algebra.Graph.Relation.Internal as RI
+import qualified Algebra.Graph.Relation.Internal as RI hiding (empty, vertex, overlay, connect, referredToVertexSet)
 import Algebra.Graph.Relation.InternalDerived
-import Algebra.Graph.Class (connect, empty, vertex, overlay)
 
 import qualified Data.Set as Set
 import Data.Tuple

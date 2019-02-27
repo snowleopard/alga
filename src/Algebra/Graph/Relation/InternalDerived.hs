@@ -14,15 +14,16 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.InternalDerived (
     -- * Implementation of derived binary relations
-    ReflexiveRelation (..), SymmetricRelation (..), TransitiveRelation (..),
+    ReflexiveRelation (..), SymmetricRelation (..), empty, vertex, overlay, connect, consistent,
+    referredToVertexSet, TransitiveRelation (..),
     PreorderRelation (..)
   ) where
 
 
 import Control.DeepSeq (NFData (..))
 
-import Algebra.Graph.Class
-import Algebra.Graph.Relation (Relation, reflexiveClosure, symmetricClosure,
+import Algebra.Graph.Relation.Internal hiding (empty, vertex, overlay, connect, referredToVertexSet, consistent)
+import Algebra.Graph.Relation (reflexiveClosure, symmetricClosure,
                                transitiveClosure, closure, domain, relation)
 import qualified Data.Set as Set
 import Data.Monoid (mconcat)
@@ -47,16 +48,6 @@ instance Ord a => Eq (ReflexiveRelation a) where
 instance (Ord a, Show a) => Show (ReflexiveRelation a) where
     show = show . reflexiveClosure . fromReflexive
 
-instance Ord a => Graph (ReflexiveRelation a) where
-    type Vertex (ReflexiveRelation a) = a
-    empty       = ReflexiveRelation empty
-    vertex      = ReflexiveRelation . vertex
-    overlay x y = ReflexiveRelation $ fromReflexive x `overlay` fromReflexive y
-    connect x y = ReflexiveRelation $ fromReflexive x `connect` fromReflexive y
-
-instance Ord a => Reflexive (ReflexiveRelation a)
-
--- TODO: Optimise the implementation by caching the results of symmetric closure.
 {-|  The 'SymmetricRelation' data type represents a /symmetric binary relation/
 over a set of elements. Symmetric relations satisfy all laws of the
 'Undirected' type class and, in particular, the
@@ -107,22 +98,6 @@ instance Ord a => Eq (SymmetricRelation a) where
 instance (Ord a, Show a) => Show (SymmetricRelation a) where
     show = show . symmetricClosure . fromSymmetric
 
--- TODO: To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
-instance Ord a => Graph (SymmetricRelation a) where
-    type Vertex (SymmetricRelation a) = a
-    empty       = SymmetricRelation empty
-    vertex      = SymmetricRelation . vertex
-    overlay x y = SymmetricRelation $ fromSymmetric x `overlay` fromSymmetric y
-    connect x y = SymmetricRelation . symmetricClosure $ fromSymmetric x `connect` fromSymmetric y
-
-instance (Ord a, Num a) => Num (SymmetricRelation a) where
-    fromInteger = vertex . fromInteger
-    x + y       = SymmetricRelation $ fromSymmetric x `overlay` fromSymmetric y
-    x * y       = SymmetricRelation . symmetricClosure $ fromSymmetric x `connect` fromSymmetric y
-    signum      = empty
-    abs         = id
-    negate      = id
-
 instance Ord a => Ord (SymmetricRelation a) where
     compare x y = mconcat
         [ compare (Set.size . domain . fromSymmetric $   x) (Set.size . domain . fromSymmetric $   y)
@@ -130,9 +105,101 @@ instance Ord a => Ord (SymmetricRelation a) where
         , compare (Set.size . relation . fromSymmetric $ x) (Set.size . relation . fromSymmetric $ y)
         , compare (           relation . fromSymmetric $ x) (           relation . fromSymmetric $ y) ]
 
-instance Ord a => Undirected (SymmetricRelation a)
+-- | Construct the /empty graph/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'Algebra.Graph.Relation.Symmetric.isEmpty'     empty == True
+-- 'Algebra.Graph.Relation.Symmetric.hasVertex' x empty == False
+-- 'Algebra.Graph.Relation.Symmetric.vertexCount' empty == 0
+-- 'Algebra.Graph.Relation.Symmetric.edgeCount'   empty == 0
+-- @
+empty :: SymmetricRelation a
+empty = SymmetricRelation $ Relation Set.empty Set.empty
 
--- TODO: Optimise the implementation by caching the results of transitive closure.
+-- | Construct the graph comprising /a single isolated vertex/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'Algebra.Graph.Relation.Symmetric.isEmpty'     (vertex x) == False
+-- 'Algebra.Graph.Relation.Symmetric.hasVertex' x (vertex x) == True
+-- 'Algebra.Graph.Relation.Symmetric.vertexCount' (vertex x) == 1
+-- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (vertex x) == 0
+-- @
+vertex :: a -> SymmetricRelation a
+vertex x = SymmetricRelation $ Relation (Set.singleton x) Set.empty
+
+-- | /Overlay/ two graphs. This is a commutative, associative and idempotent
+-- operation with the identity 'empty'.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- 'Algebra.Graph.Relation.Symmetric.isEmpty'     (overlay x y) == 'Algebra.Graph.Relation.Symmetric.isEmpty'   x   && 'Algebra.Graph.Relation.Symmetric.isEmpty'   y
+-- 'Algebra.Graph.Relation.Symmetric.hasVertex' z (overlay x y) == 'Algebra.Graph.Relation.Symmetric.hasVertex' z x || 'Algebra.Graph.Relation.Symmetric.hasVertex' z y
+-- 'Algebra.Graph.Relation.Symmetric.vertexCount' (overlay x y) >= 'Algebra.Graph.Relation.Symmetric.vertexCount' x
+-- 'Algebra.Graph.Relation.Symmetric.vertexCount' (overlay x y) <= 'Algebra.Graph.Relation.Symmetric.vertexCount' x + 'Algebra.Graph.Relation.Symmetric.vertexCount' y
+-- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (overlay x y) >= 'Algebra.Graph.Relation.Symmetric.edgeCount' x
+-- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (overlay x y) <= 'Algebra.Graph.Relation.Symmetric.edgeCount' x   + 'Algebra.Graph.Relation.Symmetric.edgeCount' y
+-- 'Algebra.Graph.Relation.Symmetric.vertexCount' (overlay 1 2) == 2
+-- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (overlay 1 2) == 0
+-- @
+overlay :: Ord a => SymmetricRelation a -> SymmetricRelation a -> SymmetricRelation a
+overlay x y = SymmetricRelation $ Relation (domain (fromSymmetric x) `Set.union` domain (fromSymmetric y)) (relation (fromSymmetric x) `Set.union` relation (fromSymmetric y))
+
+-- | /Connect/ two graphs. This is an associative operation with the identity
+-- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
+-- number of edges in the resulting graph is quadratic with respect to the number
+-- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2 + n2 * n1)/.
+--
+-- @
+-- connect x y == connect y x
+-- 'Algebra.Graph.Relation.Symmetric.isEmpty'     (connect x y) == 'Algebra.Graph.Relation.Symmetric.isEmpty'   x   && 'Algebra.Graph.Relation.Symmetric.isEmpty'   y
+-- 'Algebra.Graph.Relation.Symmetric.hasVertex' z (connect x y) == 'Algebra.Graph.Relation.Symmetric.hasVertex' z x || 'Algebra.Graph.Relation.Symmetric.hasVertex' z y
+-- 'Algebra.Graph.Relation.Symmetric.vertexCount' (connect x y) >= 'Algebra.Graph.Relation.Symmetric.vertexCount' x
+-- 'Algebra.Graph.Relation.Symmetric.vertexCount' (connect x y) <= 'Algebra.Graph.Relation.Symmetric.vertexCount' x + 'Algebra.Graph.Relation.Symmetric.vertexCount' y
+-- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.Symmetric.edgeCount' x
+-- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.Symmetric.edgeCount' y
+-- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.Symmetric.vertexCount' x * 'Algebra.Graph.Relation.Symmetric.vertexCount' y
+-- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect x y) <= 'Algebra.Graph.Relation.Symmetric.vertexCount' x * 'Algebra.Graph.Relation.Symmetric.vertexCount' y + 'Algebra.Graph.Relation.Symmetric.edgeCount' x + 'Algebra.Graph.Relation.Symmetric.edgeCount' y
+-- 'Algebra.Graph.Relation.Symmetric.vertexCount' (connect 1 2) == 2
+-- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect 1 2) == 2
+-- @
+connect :: Ord a => SymmetricRelation a -> SymmetricRelation a -> SymmetricRelation a
+connect x y = SymmetricRelation $ Relation (domain (fromSymmetric x) `Set.union` domain (fromSymmetric y))
+    (relation (fromSymmetric x) `Set.union` relation (fromSymmetric y) `Set.union` (domain (fromSymmetric x) `setProduct` domain (fromSymmetric y)) `Set.union` (domain (fromSymmetric y) `setProduct` domain (fromSymmetric x)))
+
+instance (Ord a, Num a) => Num (SymmetricRelation a) where
+    fromInteger = vertex . fromInteger
+    x + y       = x `overlay` y
+    x * y       = x `connect` y
+    signum      = const empty
+    abs         = id
+    negate      = id
+
+-- | Check if the internal representation of a relation is consistent, i.e. if all
+-- pairs of elements in the 'relation' refer to existing elements in the 'domain'.
+-- It should be impossible to create an inconsistent 'Relation', and we use this
+-- function in testing.
+-- /Note: this function is for internal use only/.
+--
+-- @
+-- consistent 'Algebra.Graph.Relation.empty'         == True
+-- consistent ('Algebra.Graph.Relation.vertex' x)    == True
+-- consistent ('Algebra.Graph.Relation.overlay' x y) == True
+-- consistent ('Algebra.Graph.Relation.connect' x y) == True
+-- consistent ('Algebra.Graph.Relation.edge' x y)    == True
+-- consistent ('Algebra.Graph.Relation.edges' xs)    == True
+-- consistent ('Algebra.Graph.Relation.stars' xs)    == True
+-- @
+consistent :: Ord a => SymmetricRelation a -> Bool
+consistent (SymmetricRelation r) = referredToVertexSet (relation r) `Set.isSubsetOf` domain r
+
+-- | The set of elements that appear in a given set of pairs.
+-- /Note: this function is for internal use only/.
+referredToVertexSet :: Ord a => Set.Set (a, a) -> Set.Set a
+referredToVertexSet = Set.fromList . uncurry (++) . unzip . Set.toAscList
+
 {-| The 'TransitiveRelation' data type represents a /transitive binary relation/
 over a set of elements. Transitive relations satisfy all laws of the
 'Transitive' type class and, in particular, the /closure/ axiom:
@@ -157,17 +224,6 @@ instance Ord a => Eq (TransitiveRelation a) where
 instance (Ord a, Show a) => Show (TransitiveRelation a) where
     show = show . transitiveClosure . fromTransitive
 
--- TODO: To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
-instance Ord a => Graph (TransitiveRelation a) where
-    type Vertex (TransitiveRelation a) = a
-    empty       = TransitiveRelation empty
-    vertex      = TransitiveRelation . vertex
-    overlay x y = TransitiveRelation $ fromTransitive x `overlay` fromTransitive y
-    connect x y = TransitiveRelation $ fromTransitive x `connect` fromTransitive y
-
-instance Ord a => Transitive (TransitiveRelation a)
-
--- TODO: Optimise the implementation by caching the results of preorder closure.
 {-| The 'PreorderRelation' data type represents a
 /binary relation that is both reflexive and transitive/. Preorders satisfy all
 laws of the 'Preorder' type class and, in particular, the /self-loop/ axiom:
@@ -196,15 +252,3 @@ instance (Ord a, Show a) => Show (PreorderRelation a) where
 
 instance Ord a => Eq (PreorderRelation a) where
     x == y = closure (fromPreorder x) == closure (fromPreorder y)
-
--- TODO: To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
-instance Ord a => Graph (PreorderRelation a) where
-    type Vertex (PreorderRelation a) = a
-    empty       = PreorderRelation empty
-    vertex      = PreorderRelation . vertex
-    overlay x y = PreorderRelation $ fromPreorder x `overlay` fromPreorder y
-    connect x y = PreorderRelation $ fromPreorder x `connect` fromPreorder y
-
-instance Ord a => Reflexive  (PreorderRelation a)
-instance Ord a => Transitive (PreorderRelation a)
-instance Ord a => Preorder   (PreorderRelation a)

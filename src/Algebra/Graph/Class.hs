@@ -61,6 +61,7 @@ import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
 import qualified Algebra.Graph.Fold                  as F
 import qualified Algebra.Graph.AdjacencyIntMap       as AIM
 import qualified Algebra.Graph.Relation              as R
+import qualified Algebra.Graph.Relation.InternalDerived              as RID
 
 {-|
 The core type class for constructing algebraic graphs, characterised by the
@@ -169,6 +170,48 @@ instance Ord a => Graph (R.Relation a) where
     vertex  = R.vertex
     overlay = R.overlay
     connect = R.connect
+
+-- TODO: Optimise the implementation by caching the results of symmetric closure.
+instance Ord a => Graph (RID.ReflexiveRelation a) where
+    type Vertex (RID.ReflexiveRelation a) = a
+    empty       = RID.ReflexiveRelation R.empty
+    vertex      = RID.ReflexiveRelation . R.vertex
+    overlay x y = RID.ReflexiveRelation $ RID.fromReflexive x `R.overlay` RID.fromReflexive y
+    connect x y = RID.ReflexiveRelation $ RID.fromReflexive x `R.connect` RID.fromReflexive y
+
+instance Ord a => Reflexive (RID.ReflexiveRelation a)
+
+-- TODO: Optimise the implementation by caching the results of symmetric closure.
+instance Ord a => Graph (RID.SymmetricRelation a) where
+    type Vertex (RID.SymmetricRelation a) = a
+    empty   = RID.empty
+    vertex  = RID.vertex
+    overlay = RID.overlay
+    connect = RID.connect
+
+instance Ord a => Undirected (RID.SymmetricRelation a)
+
+-- TODO: Optimise the implementation by caching the results of symmetric closure.
+instance Ord a => Graph (RID.TransitiveRelation a) where
+    type Vertex (RID.TransitiveRelation a) = a
+    empty       = RID.TransitiveRelation R.empty
+    vertex      = RID.TransitiveRelation . R.vertex
+    overlay x y = RID.TransitiveRelation $ RID.fromTransitive x `R.overlay` RID.fromTransitive y
+    connect x y = RID.TransitiveRelation $ RID.fromTransitive x `R.connect` RID.fromTransitive y
+
+instance Ord a => Transitive (RID.TransitiveRelation a)
+
+-- TODO: To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
+instance Ord a => Graph (RID.PreorderRelation a) where
+    type Vertex (RID.PreorderRelation a) = a
+    empty       = RID.PreorderRelation R.empty
+    vertex      = RID.PreorderRelation . R.vertex
+    overlay x y = RID.PreorderRelation $ RID.fromPreorder x `R.overlay` RID.fromPreorder y
+    connect x y = RID.PreorderRelation $ RID.fromPreorder x `R.connect` RID.fromPreorder y
+
+instance Ord a => Reflexive  (RID.PreorderRelation a)
+instance Ord a => Transitive (RID.PreorderRelation a)
+instance Ord a => Preorder   (RID.PreorderRelation a)
 
 {-|
 The class of /undirected graphs/ that satisfy the following additional axiom.
