@@ -132,6 +132,14 @@ testTransformations = mconcat [ testRemoveVertex
                               , testGmap
                               , testInduce ]
 
+testSymmetricTransformations :: Testsuite -> IO ()
+testSymmetricTransformations = mconcat [ testRemoveVertex
+                              , testRemoveEdge
+                              , testReplaceVertex
+                              , testMergeVertices
+                              , testGmap
+                              , testInduce ]
+
 testShow :: Testsuite -> IO ()
 testShow (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "Show ============"

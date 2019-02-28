@@ -39,7 +39,7 @@ testSymmetricRelation = do
     testIsSubgraphOf             t
     testSymmetricToGraph         t
     testGraphFamilies            t
-    testTransformations          t
+    testSymmetricTransformations          t
 
     test "Axioms of undirected graphs" $ size10
         (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))

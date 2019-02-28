@@ -274,6 +274,7 @@ instance Ord a => GraphAPI (SR.SymmetricRelation a) where
     removeEdge        = SR.removeEdge
     replaceVertex     = SR.replaceVertex
     mergeVertices     = SR.mergeVertices
+    transpose         = id
     gmap              = SR.gmap
     induce            = SR.induce
     compose           = SR.compose
