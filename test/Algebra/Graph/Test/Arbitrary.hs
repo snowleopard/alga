@@ -97,7 +97,7 @@ instance (Arbitrary a, Ord a) => Arbitrary (ReflexiveRelation a) where
     arbitrary = ReflexiveRelation <$> arbitraryRelation
 
 instance (Arbitrary a, Ord a) => Arbitrary (SymmetricRelation a) where
-    arbitrary = SymmetricRelation <$> arbitraryRelation
+    arbitrary = SymmetricRelation . Relation.symmetricClosure <$> arbitraryRelation
 
 instance (Arbitrary a, Ord a) => Arbitrary (TransitiveRelation a) where
     arbitrary = TransitiveRelation <$> arbitraryRelation

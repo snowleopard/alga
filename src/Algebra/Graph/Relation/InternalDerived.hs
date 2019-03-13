@@ -23,10 +23,12 @@ module Algebra.Graph.Relation.InternalDerived (
 import Control.DeepSeq (NFData (..))
 
 import Algebra.Graph.Relation.Internal hiding (empty, vertex, overlay, connect, referredToVertexSet, consistent)
-import Algebra.Graph.Relation (reflexiveClosure, symmetricClosure,
-                               transitiveClosure, closure, domain, relation)
+import Algebra.Graph.Relation (reflexiveClosure,
+                               transitiveClosure, closure, domain, relation, transpose)
 import qualified Data.Set as Set
 import Data.Monoid (mconcat)
+import Data.List (nubBy)
+import Data.Tuple
 
 {-| The 'ReflexiveRelation' data type represents a /reflexive binary relation/
 over a set of elements. Reflexive relations satisfy all laws of the
@@ -50,7 +52,7 @@ instance (Ord a, Show a) => Show (ReflexiveRelation a) where
 
 {-|  The 'SymmetricRelation' data type represents a /symmetric binary relation/
 over a set of elements. Symmetric relations satisfy all laws of the
-'Undirected' type class and, in particular, the
+'Undirected' type class and, in addition, the
 commutativity of connect:
 
 @'connect' x y == 'connect' y x@
@@ -58,11 +60,7 @@ commutativity of connect:
 The 'Show' instance produces symmetrically closed expressions:
 
 @show (1     :: SymmetricRelation Int) == "vertex 1"
-show (1 * 2 :: SymmetricRelation Int) == "edges [(1,2),(2,1)]"@
-
-The 'Graph' instance respects the comutativity of connect.
-
-The 'Num' instance respects the comutativity of connect.
+show (1 * 2 :: SymmetricRelation Int) == "edge 1 2"@
 
 The total order on graphs is defined using /size-lexicographic/ comparison:
 
@@ -74,16 +72,17 @@ The total order on graphs is defined using /size-lexicographic/ comparison:
 Here are a few examples:
 
 @'vertex' 1 < 'vertex' 2
-'vertex' 3 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
-'vertex' 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 1
-'Algebra.Graph.AdjacencyMap.edge' 1 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
-'Algebra.Graph.AdjacencyMap.edge' 1 2 > 'Algebra.Graph.AdjacencyMap.edge' 1 1 + 'Algebra.Graph.AdjacencyMap.edge' 2 2
-'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 3@
+'vertex' 3 < 'Algebra.Graph.Relation.Symmetric.edge' 1 2
+'vertex' 1 < 'Algebra.Graph.Relation.Symmetric.edge' 1 1
+'Algebra.Graph.Relation.Symmetric.edge' 1 2 = 'Algebra.Graph.Relation.Symmetric.edge' 2 1
+'Algebra.Graph.Relation.Symmetric.edge' 1 1 < 'Algebra.Graph.Relation.Symmetric.edge' 1 2
+'Algebra.Graph.Relation.Symmetric.edge' 1 2 > 'Algebra.Graph.Relation.Symmetric.edge' 1 1 + 'Algebra.Graph.Relation.Symmetric.edge' 2 2
+'Algebra.Graph.Relation.Symmetric.edge' 1 2 < 'Algebra.Graph.Relation.Symmetric.edge' 1 3@
 
 Note that the resulting order refines the 'isSubgraphOf' relation and is
 compatible with 'overlay' and 'connect' operations:
 
-@'Algebra.Graph.AdjacencyMap.isSubgraphOf' x y ==> x <= y@
+@'Algebra.Graph.Relation.Symmetric.isSubgraphOf' x y ==> x <= y@
 
 @'empty' <= x
 x     <= x + y
@@ -93,10 +92,12 @@ newtype SymmetricRelation a = SymmetricRelation { fromSymmetric :: Relation a }
     deriving NFData
 
 instance Ord a => Eq (SymmetricRelation a) where
-    x == y = symmetricClosure (fromSymmetric x) == symmetricClosure (fromSymmetric y)
+    x == y = (fromSymmetric x) == (fromSymmetric y)
 
-instance (Ord a, Show a) => Show (SymmetricRelation a) where
-    show = show . symmetricClosure . fromSymmetric
+instance (Eq a, Ord a, Show a) => Show (SymmetricRelation a) where
+    show = show . filtered . fromSymmetric
+        where
+            filtered (Relation d r) = Relation d (Set.fromAscList $ nubBy (\x y -> x == swap y) (Set.toList r))
 
 instance Ord a => Ord (SymmetricRelation a) where
     compare x y = mconcat
@@ -166,7 +167,12 @@ overlay x y = SymmetricRelation $ Relation (domain (fromSymmetric x) `Set.union`
 -- @
 connect :: Ord a => SymmetricRelation a -> SymmetricRelation a -> SymmetricRelation a
 connect x y = SymmetricRelation $ Relation (domain (fromSymmetric x) `Set.union` domain (fromSymmetric y))
-    (relation (fromSymmetric x) `Set.union` relation (fromSymmetric y) `Set.union` (domain (fromSymmetric x) `setProduct` domain (fromSymmetric y)) `Set.union` (domain (fromSymmetric y) `setProduct` domain (fromSymmetric x)))
+    (relation (fromSymmetric x) 
+    `Set.union` relation (fromSymmetric y) 
+    `Set.union` (domain (fromSymmetric x) 
+    `setProduct` domain (fromSymmetric y)) 
+    `Set.union` (domain (fromSymmetric y) 
+    `setProduct` domain (fromSymmetric x)))
 
 instance (Ord a, Num a) => Num (SymmetricRelation a) where
     fromInteger = vertex . fromInteger
@@ -177,7 +183,7 @@ instance (Ord a, Num a) => Num (SymmetricRelation a) where
     negate      = id
 
 -- | Check if the internal representation of a relation is consistent, i.e. if all
--- pairs of elements in the 'relation' refer to existing elements in the 'domain'.
+-- pairs of elements in the 'relation' refer to existing elements in the 'domain' and that if all pair of edges have their symmetric.
 -- It should be impossible to create an inconsistent 'Relation', and we use this
 -- function in testing.
 -- /Note: this function is for internal use only/.
@@ -192,7 +198,7 @@ instance (Ord a, Num a) => Num (SymmetricRelation a) where
 -- consistent ('Algebra.Graph.Relation.stars' xs)    == True
 -- @
 consistent :: Ord a => SymmetricRelation a -> Bool
-consistent (SymmetricRelation r) = referredToVertexSet (relation r) `Set.isSubsetOf` domain r
+consistent (SymmetricRelation r) = (referredToVertexSet (relation r) `Set.isSubsetOf` domain r) && (r == transpose r)
 
 -- | The set of elements that appear in a given set of pairs.
 -- /Note: this function is for internal use only/.
