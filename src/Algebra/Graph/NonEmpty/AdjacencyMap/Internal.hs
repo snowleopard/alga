@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.NonEmpty.AdjacencyMap.Internal
@@ -22,6 +23,7 @@ import qualified Algebra.Graph.AdjacencyMap          as AM
 import qualified Algebra.Graph.AdjacencyMap.Internal as AM
 import qualified Data.Map.Strict                     as Map
 import qualified Data.Set                            as Set
+import GHC.Generics
 
 {-| The 'AdjacencyMap' data type represents a graph by a map of vertices to
 their adjacency sets. We define a 'Num' instance as a convenient notation for
@@ -115,7 +117,7 @@ newtype AdjacencyMap a = NAM {
     -- adjacencyMap ('Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 1) == Map.'Map.singleton' 1 (Set.'Set.singleton' 1)
     -- adjacencyMap ('Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 2) == Map.'Map.fromList' [(1,Set.'Set.singleton' 2), (2,Set.'Set.empty')]
     -- @
-    am :: AM.AdjacencyMap a } deriving (Eq, NFData, Ord)
+    am :: AM.AdjacencyMap a } deriving (Eq, Generic, NFData, Ord)
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap' for
 -- more details.
