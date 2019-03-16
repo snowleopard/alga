@@ -35,11 +35,11 @@ testSymmetricRelation = do
          consistent m
 
     testSymmetricShow            t
-    testSymmetricBasicPrimitives t
     testIsSubgraphOf             t
     testSymmetricToGraph         t
     testGraphFamilies            t
-    testSymmetricTransformations          t
+    testSymmetricTransformations t
+    testBasicPrimitives t
 
     test "Axioms of undirected graphs" $ size10
         (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))

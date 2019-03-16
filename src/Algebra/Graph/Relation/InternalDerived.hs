@@ -27,8 +27,6 @@ import Algebra.Graph.Relation (reflexiveClosure,
                                transitiveClosure, closure, domain, relation, transpose)
 import qualified Data.Set as Set
 import Data.Monoid (mconcat)
-import Data.List (nubBy)
-import Data.Tuple
 
 {-| The 'ReflexiveRelation' data type represents a /reflexive binary relation/
 over a set of elements. Reflexive relations satisfy all laws of the
@@ -94,16 +92,17 @@ newtype SymmetricRelation a = SymmetricRelation { fromSymmetric :: Relation a }
 instance Ord a => Eq (SymmetricRelation a) where
     x == y = (fromSymmetric x) == (fromSymmetric y)
 
-instance (Eq a, Ord a, Show a) => Show (SymmetricRelation a) where
+instance (Ord a, Show a) => Show (SymmetricRelation a) where
     show = show . filtered . fromSymmetric
         where
-            filtered (Relation d r) = Relation d (Set.fromAscList $ nubBy (\x y -> x == swap y) (Set.toList r))
+            filtered (Relation d r) = Relation d (Set.filter (uncurry (<=)) r)
 
 instance Ord a => Ord (SymmetricRelation a) where
     compare x y = mconcat
         [ compare (Set.size . domain . fromSymmetric $   x) (Set.size . domain . fromSymmetric $   y)
         , compare (           domain . fromSymmetric $   x) (           domain . fromSymmetric $   y)
-        , compare (Set.size . relation . fromSymmetric $ x) (Set.size . relation . fromSymmetric $ y)
+        , compare (Set.size . Set.filter (uncurry (<=)) . relation . fromSymmetric $ x) 
+                  (Set.size . Set.filter (uncurry (<=)) . relation . fromSymmetric $ y)
         , compare (           relation . fromSymmetric $ x) (           relation . fromSymmetric $ y) ]
 
 -- | Construct the /empty graph/.
@@ -145,7 +144,9 @@ vertex x = SymmetricRelation $ Relation (Set.singleton x) Set.empty
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Ord a => SymmetricRelation a -> SymmetricRelation a -> SymmetricRelation a
-overlay x y = SymmetricRelation $ Relation (domain (fromSymmetric x) `Set.union` domain (fromSymmetric y)) (relation (fromSymmetric x) `Set.union` relation (fromSymmetric y))
+overlay x y = SymmetricRelation $ Relation (domain (fromSymmetric x) 
+              `Set.union` domain (fromSymmetric y)) (relation (fromSymmetric x) 
+              `Set.union` relation (fromSymmetric y))
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
 -- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
@@ -169,10 +170,13 @@ connect :: Ord a => SymmetricRelation a -> SymmetricRelation a -> SymmetricRelat
 connect x y = SymmetricRelation $ Relation (domain (fromSymmetric x) `Set.union` domain (fromSymmetric y))
     (relation (fromSymmetric x) 
     `Set.union` relation (fromSymmetric y) 
-    `Set.union` (domain (fromSymmetric x) 
-    `setProduct` domain (fromSymmetric y)) 
-    `Set.union` (domain (fromSymmetric y) 
-    `setProduct` domain (fromSymmetric x)))
+    `Set.union` (
+        domain (fromSymmetric x) `setProduct` domain (fromSymmetric y)
+        ) 
+    `Set.union` (
+        domain (fromSymmetric y) `setProduct` domain (fromSymmetric x)
+        )
+    )
 
 instance (Ord a, Num a) => Num (SymmetricRelation a) where
     fromInteger = vertex . fromInteger

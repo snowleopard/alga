@@ -14,6 +14,7 @@ import Data.Graph.Test.Typed
 
 main :: IO ()
 main = do
+    testSymmetricRelation
     testAdjacencyIntMap
     testAdjacencyMap
     testExport
@@ -25,5 +26,4 @@ main = do
     testNonEmptyAdjacencyMap
     testNonEmptyGraph
     testRelation
-    testSymmetricRelation
     testTyped

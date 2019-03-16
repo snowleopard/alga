@@ -38,10 +38,9 @@ import qualified Algebra.Graph.Relation.Internal as RI hiding (empty, vertex, ov
 import Algebra.Graph.Relation.InternalDerived
 
 import qualified Data.Set as Set
-import Data.List (nubBy)
-import Data.Tuple
 import Data.Tree 
 import qualified Data.Tree as Tree
+import Data.Tuple (swap)
 
 -- | Construct a symmetric relation from a 'Relation'.
 -- Complexity: /O(1)/ time.
@@ -192,8 +191,8 @@ vertexCount = R.vertexCount . fromSymmetric
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-edgeCount :: SymmetricRelation a -> Int
-edgeCount = (`div` 2)  . R.edgeCount . fromSymmetric
+edgeCount :: Ord a => SymmetricRelation a -> Int
+edgeCount = length . edgeList
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -207,7 +206,7 @@ vertexList :: SymmetricRelation a -> [a]
 vertexList = R.vertexList . fromSymmetric
 
 -- | The sorted list of edges of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
+-- Complexity: /O(n + m²)/ time and /O(m)/ memory.
 --
 -- @
 -- edgeList 'empty'          == []
@@ -215,8 +214,8 @@ vertexList = R.vertexList . fromSymmetric
 -- edgeList ('edge' x y)     == [(x,y)]
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- @
-edgeList :: Eq a => SymmetricRelation a -> [(a, a)]
-edgeList = nubBy (\x y-> x == swap y) . R.edgeList . fromSymmetric
+edgeList :: Ord a => SymmetricRelation a -> [(a, a)]
+edgeList = filter (uncurry (<=)) . R.edgeList . fromSymmetric
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(1)/ time.
@@ -237,9 +236,8 @@ vertexSet = R.vertexSet . fromSymmetric
 -- edgeSet ('vertex' x) == Set.'Set.empty'
 -- edgeSet ('edge' x y) == Set.'Set.fromList' [(x,y)]
 -- @
-edgeSet :: Eq a => SymmetricRelation a -> Set.Set (a, a)
-edgeSet = Set.fromAscList . nubBy (\x y -> x == swap y) . Set.toList . 
-          R.edgeSet . fromSymmetric
+edgeSet :: Ord a => SymmetricRelation a -> Set.Set (a, a)
+edgeSet = Set.filter (uncurry (<=)) . R.edgeSet . fromSymmetric
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
