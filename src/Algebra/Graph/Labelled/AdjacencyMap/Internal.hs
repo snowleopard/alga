@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled.AdjdacencyMap.Internal
@@ -22,6 +23,7 @@ import Control.DeepSeq
 import Data.Map.Strict (Map)
 import Data.Monoid (Monoid, getSum, Sum (..))
 import Data.Set (Set, (\\))
+import GHC.Generics
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
@@ -37,7 +39,7 @@ newtype AdjacencyMap e a = AM {
     -- | The /adjacency map/ of an edge-labelled graph: each vertex is
     -- associated with a map from its direct successors to the corresponding
     -- edge labels.
-    adjacencyMap :: Map a (Map a e) } deriving (Eq, NFData)
+    adjacencyMap :: Map a (Map a e) } deriving (Eq, Generic, NFData)
 
 instance (Ord a, Show a, Ord e, Show e) => Show (AdjacencyMap e a) where
     showsPrec p (AM m)

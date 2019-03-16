@@ -18,12 +18,12 @@ module Algebra.Graph.NonEmpty.AdjacencyMap.Internal (
 
 import Control.DeepSeq
 import Data.List
+import GHC.Generics
 
 import qualified Algebra.Graph.AdjacencyMap          as AM
 import qualified Algebra.Graph.AdjacencyMap.Internal as AM
 import qualified Data.Map.Strict                     as Map
 import qualified Data.Set                            as Set
-import GHC.Generics
 
 {-| The 'AdjacencyMap' data type represents a graph by a map of vertices to
 their adjacency sets. We define a 'Num' instance as a convenient notation for
