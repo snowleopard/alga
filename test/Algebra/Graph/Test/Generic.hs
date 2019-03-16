@@ -58,6 +58,18 @@ testBasicPrimitives = mconcat [ testOrd
                               , testOverlays
                               , testConnects ]
 
+testSymmetricBasicPrimitives :: Testsuite -> IO ()
+testSymmetricBasicPrimitives = mconcat [ testOrd
+                              , testEmpty
+                              , testVertex
+                              , testEdge
+                              , testOverlay
+                              , testSymmetricConnect
+                              , testVertices
+                              , testSymmetricEdges
+                              , testOverlays
+                              , testConnects ]                              
+
 testToGraph :: Testsuite -> IO ()
 testToGraph = mconcat [ testToGraphDefault
                       , testFoldg
@@ -335,6 +347,39 @@ testConnect (Testsuite prefix (%)) = do
     test "edgeCount   (connect 1 2) == 1" $
           edgeCount  % connect 1 2  == 1
 
+testSymmetricConnect :: Testsuite -> IO ()
+testSymmetricConnect (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "connect ============"
+    test "isEmpty     (connect x y) == isEmpty   x   && isEmpty   y" $ \x y ->
+          isEmpty    % connect x y  == (isEmpty   x   && isEmpty   y)
+
+    test "hasVertex z (connect x y) == hasVertex z x || hasVertex z y" $ \x y z ->
+          hasVertex z % connect x y == (hasVertex z x || hasVertex z y)
+
+    test "vertexCount (connect x y) >= vertexCount x" $ \x y ->
+          vertexCount % connect x y >= vertexCount x
+
+    test "vertexCount (connect x y) <= vertexCount x + vertexCount y" $ \x y ->
+          vertexCount % connect x y <= vertexCount x + vertexCount y
+
+    test "edgeCount   (connect x y) >= edgeCount x" $ \x y ->
+          edgeCount  % connect x y  >= edgeCount x
+
+    test "edgeCount   (connect x y) >= edgeCount y" $ \x y ->
+          edgeCount  % connect x y  >= edgeCount y
+
+    test "edgeCount   (connect x y) >= vertexCount x * vertexCount y `div` 2" $ \x y ->
+          edgeCount  % connect x y  >= vertexCount x * vertexCount y `div` 2
+
+    test "edgeCount   (connect x y) <= vertexCount x * vertexCount y + edgeCount x + edgeCount y" $ \x y ->
+          edgeCount  % connect x y  <= vertexCount x * vertexCount y + edgeCount x + edgeCount y
+
+    test "vertexCount (connect 1 2) == 2" $
+          vertexCount % connect 1 2 == 2
+
+    test "edgeCount   (connect 1 2) == 1" $
+          edgeCount  % connect 1 2  == 1
+
 testVertices :: Testsuite -> IO ()
 testVertices (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "vertices ============"
@@ -373,9 +418,6 @@ testSymmetricEdges (Testsuite prefix (%)) = do
 
     test "edges [(x,y)]     == edge x y" $ \x y ->
           edges [(x,y)]     == id % edge x y
-
-    test "edgeCount . edges == length . nub" $ \xs ->
-          edgeCount % edges xs == (length . nubOrd) xs
 
 testOverlays :: Testsuite -> IO ()
 testOverlays (Testsuite prefix (%)) = do

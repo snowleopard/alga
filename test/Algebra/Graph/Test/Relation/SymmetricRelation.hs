@@ -34,12 +34,12 @@ testSymmetricRelation = do
     test "Consistency of arbitraryRelation" $ \(m :: SRI) ->
          consistent m
 
+    testSymmetricBasicPrimitives t
     testSymmetricShow            t
     testIsSubgraphOf             t
     testSymmetricToGraph         t
     testGraphFamilies            t
     testSymmetricTransformations t
-    testBasicPrimitives t
 
     test "Axioms of undirected graphs" $ size10
         (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))
