@@ -3,6 +3,7 @@
 ## 0.4
 
 * #171: Implement sparsification for King-Launchbury graph representation.
+* #178: Derive `Generic` for adjacency maps. 
 
 ## 0.3
 

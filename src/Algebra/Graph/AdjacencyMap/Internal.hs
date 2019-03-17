@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyMap.Internal
@@ -24,6 +25,7 @@ import Data.List
 import Data.Map.Strict (Map, keysSet, fromSet)
 import Data.Monoid
 import Data.Set (Set)
+import GHC.Generics
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
@@ -132,7 +134,7 @@ newtype AdjacencyMap a = AM {
     -- adjacencyMap ('Algebra.Graph.AdjacencyMap.edge' 1 1) == Map.'Map.singleton' 1 (Set.'Set.singleton' 1)
     -- adjacencyMap ('Algebra.Graph.AdjacencyMap.edge' 1 2) == Map.'Map.fromList' [(1,Set.'Set.singleton' 2), (2,Set.'Set.empty')]
     -- @
-    adjacencyMap :: Map a (Set a) } deriving Eq
+    adjacencyMap :: Map a (Set a) } deriving (Eq, Generic)
 
 instance Ord a => Ord (AdjacencyMap a) where
     compare (AM x) (AM y) = mconcat
