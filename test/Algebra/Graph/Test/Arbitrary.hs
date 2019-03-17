@@ -30,6 +30,8 @@ import Algebra.Graph.Fold (Fold)
 import Algebra.Graph.Label
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived
+import Algebra.Graph.Relation.Symmetric.Internal
+
 
 import qualified Algebra.Graph.AdjacencyIntMap       as AdjacencyIntMap
 import qualified Algebra.Graph.AdjacencyMap          as AdjacencyMap

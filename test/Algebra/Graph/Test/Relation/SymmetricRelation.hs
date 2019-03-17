@@ -14,7 +14,7 @@ module Algebra.Graph.Test.Relation.SymmetricRelation (
   ) where
 
 import Algebra.Graph.Relation.Symmetric
-import Algebra.Graph.Relation.InternalDerived
+import Algebra.Graph.Relation.Symmetric.Internal
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 

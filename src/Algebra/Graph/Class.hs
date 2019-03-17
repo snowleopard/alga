@@ -54,14 +54,16 @@ import Data.Tree
 
 import Algebra.Graph.Label (Dioid, one)
 
-import qualified Algebra.Graph                       as G
-import qualified Algebra.Graph.AdjacencyMap          as AM
-import qualified Algebra.Graph.Labelled              as LG
-import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
-import qualified Algebra.Graph.Fold                  as F
-import qualified Algebra.Graph.AdjacencyIntMap       as AIM
-import qualified Algebra.Graph.Relation              as R
-import qualified Algebra.Graph.Relation.InternalDerived              as RID
+import qualified Algebra.Graph                             as G
+import qualified Algebra.Graph.AdjacencyMap                as AM
+import qualified Algebra.Graph.Labelled                    as LG
+import qualified Algebra.Graph.Labelled.AdjacencyMap       as LAM
+import qualified Algebra.Graph.Fold                        as F
+import qualified Algebra.Graph.AdjacencyIntMap             as AIM
+import qualified Algebra.Graph.Relation                    as R
+import qualified Algebra.Graph.Relation.InternalDerived    as RID
+import qualified Algebra.Graph.Relation.Symmetric.Internal as RSI
+
 
 {-|
 The core type class for constructing algebraic graphs, characterised by the
@@ -171,7 +173,7 @@ instance Ord a => Graph (R.Relation a) where
     overlay = R.overlay
     connect = R.connect
 
--- TODO: Optimise the implementation by caching the results of symmetric closure.
+-- TODO: Optimise the implementation by caching the results of reflexive closure.
 instance Ord a => Graph (RID.ReflexiveRelation a) where
     type Vertex (RID.ReflexiveRelation a) = a
     empty       = RID.ReflexiveRelation R.empty
@@ -181,17 +183,16 @@ instance Ord a => Graph (RID.ReflexiveRelation a) where
 
 instance Ord a => Reflexive (RID.ReflexiveRelation a)
 
--- TODO: Optimise the implementation by caching the results of symmetric closure.
-instance Ord a => Graph (RID.SymmetricRelation a) where
-    type Vertex (RID.SymmetricRelation a) = a
-    empty   = RID.empty
-    vertex  = RID.vertex
-    overlay = RID.overlay
-    connect = RID.connect
+instance Ord a => Graph (RSI.SymmetricRelation a) where
+    type Vertex (RSI.SymmetricRelation a) = a
+    empty   = RSI.empty
+    vertex  = RSI.vertex
+    overlay = RSI.overlay
+    connect = RSI.connect
 
-instance Ord a => Undirected (RID.SymmetricRelation a)
+instance Ord a => Undirected (RSI.SymmetricRelation a)
 
--- TODO: Optimise the implementation by caching the results of symmetric closure.
+-- TODO: Optimise the implementation by caching the results of transitive closure.
 instance Ord a => Graph (RID.TransitiveRelation a) where
     type Vertex (RID.TransitiveRelation a) = a
     empty       = RID.TransitiveRelation R.empty

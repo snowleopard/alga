@@ -981,6 +981,11 @@ testSymmetricEdgeSet (Testsuite prefix (%)) = do
     test "edgeSet (vertex x) == Set.empty" $ \x ->
           edgeSet % vertex x == Set.empty
 
+    test "(edgeSet (edge x y) == Set.singleton (x,y)) || (edgeSet (edge x y) == Set.singleton (y,x))" $ \x y ->
+          (edgeSet % edge x y == Set.singleton (x,y))
+          ||
+          (edgeSet % edge x y == Set.singleton (y,x))
+
 testPreSet :: Testsuite -> IO ()
 testPreSet (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "preSet ============"

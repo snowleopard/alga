@@ -35,7 +35,7 @@ module Algebra.Graph.Relation.Symmetric (
 
 import qualified Algebra.Graph.Relation as R
 import qualified Algebra.Graph.Relation.Internal as RI hiding (empty, vertex, overlay, connect, referredToVertexSet)
-import Algebra.Graph.Relation.InternalDerived
+import Algebra.Graph.Relation.Symmetric.Internal
 
 import qualified Data.Set as Set
 import Data.Tree 
@@ -70,8 +70,8 @@ edge x y = SymmetricRelation $ RI.Relation (Set.fromList [x, y]) (Set.fromList [
 -- of the given list.
 --
 -- @
--- vertices []            == 'empty'
--- vertices [x]           == 'vertex' x
+-- vertices []              == 'empty'
+-- vertices [x]             == 'vertex' x
 -- 'hasVertex' x . vertices == 'elem' x
 -- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
@@ -83,9 +83,9 @@ vertices = SymmetricRelation . R.vertices
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- edges []          == 'empty'
--- edges [(x,y)]     == 'overlay' ('edge' x y) ('edge' y x)
--- 'edgeCount' . edges == 'length' . 'Data.List.nub' . 'Data.List.union' . '<map swap, id>'
+-- edges []            == 'empty'
+-- edges [(x,y)]       == 'overlay' ('edge' x y) ('edge' y x)
+-- 'edgeCount' . edges == 'length' . 'Data.List.nub' . 'uncurry' 'Data.List.union' . '<map swap, id>'
 -- @
 edges :: Ord a => [(a, a)] -> SymmetricRelation a
 edges es = SymmetricRelation $ RI.Relation (Set.fromList $ uncurry (++) $ unzip es) (Set.fromList es `Set.union` Set.map swap (Set.fromList es))
@@ -94,10 +94,10 @@ edges es = SymmetricRelation $ RI.Relation (Set.fromList $ uncurry (++) $ unzip 
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- overlays []        == 'empty'
--- overlays [x]       == x
--- overlays [x,y]     == 'overlay' x y
--- overlays           == 'foldr' 'overlay' 'empty'
+-- overlays []          == 'empty'
+-- overlays [x]         == x
+-- overlays [x,y]       == 'overlay' x y
+-- overlays             == 'foldr' 'overlay' 'empty'
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: Ord a => [SymmetricRelation a] -> SymmetricRelation a
@@ -107,10 +107,10 @@ overlays = SymmetricRelation . R.overlays . map fromSymmetric
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- connects []        == 'empty'
--- connects [x]       == x
--- connects [x,y]     == 'connect' x y
--- connects           == 'foldr' 'connect' 'empty'
+-- connects []          == 'empty'
+-- connects [x]         == x
+-- connects [x,y]       == 'connect' x y
+-- connects             == 'foldr' 'connect' 'empty'
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: Ord a => [SymmetricRelation a] -> SymmetricRelation a
@@ -121,12 +121,12 @@ connects = foldr connect empty
 -- Complexity: /O((n + m) * log(n))/ time.
 --
 -- @
--- isSubgraphOf 'empty'         x             ==  True
+-- isSubgraphOf 'empty'         x               ==  True
 -- isSubgraphOf ('vertex' x)    'empty'         ==  False
--- isSubgraphOf x             ('overlay' x y) ==  True
+-- isSubgraphOf x             ('overlay' x y)   ==  True
 -- isSubgraphOf ('overlay' x y) ('connect' x y) ==  True
 -- isSubgraphOf ('path' xs)     ('circuit' xs)  ==  True
--- isSubgraphOf x y                         ==> x <= y
+-- isSubgraphOf x y                             ==> x <= y
 -- @
 isSubgraphOf :: Ord a => SymmetricRelation a -> SymmetricRelation a -> Bool
 isSubgraphOf x y = R.isSubgraphOf (fromSymmetric x) (fromSymmetric y)
@@ -135,9 +135,9 @@ isSubgraphOf x y = R.isSubgraphOf (fromSymmetric x) (fromSymmetric y)
 -- Complexity: /O(1)/ time.
 --
 -- @
--- isEmpty 'empty'                       == True
--- isEmpty ('overlay' 'empty' 'empty')       == True
--- isEmpty ('vertex' x)                  == False
+-- isEmpty 'empty'                         == True
+-- isEmpty ('overlay' 'empty' 'empty')     == True
+-- isEmpty ('vertex' x)                    == False
 -- isEmpty ('removeVertex' x $ 'vertex' x) == True
 -- isEmpty ('removeEdge' x y $ 'edge' x y) == False
 -- @
@@ -165,7 +165,7 @@ hasVertex x = R.hasVertex x . fromSymmetric
 -- hasEdge x y ('edge' x y)       == True
 -- hasEdge y x ('edge' x y)       == True
 -- hasEdge x y . 'removeEdge' x y == 'const' False
--- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
+-- hasEdge x y                    == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> SymmetricRelation a -> Bool
 hasEdge x y = R.hasEdge x y . fromSymmetric
@@ -176,8 +176,8 @@ hasEdge x y = R.hasEdge x y . fromSymmetric
 -- @
 -- vertexCount 'empty'             ==  0
 -- vertexCount ('vertex' x)        ==  1
--- vertexCount                   ==  'length' . 'vertexList'
--- vertexCount x \< vertexCount y ==> x \< y
+-- vertexCount                     ==  'length' . 'vertexList'
+-- vertexCount x \< vertexCount y  ==> x \< y
 -- @
 vertexCount :: SymmetricRelation a -> Int
 vertexCount = R.vertexCount . fromSymmetric
@@ -189,7 +189,7 @@ vertexCount = R.vertexCount . fromSymmetric
 -- edgeCount 'empty'      == 0
 -- edgeCount ('vertex' x) == 0
 -- edgeCount ('edge' x y) == 1
--- edgeCount            == 'length' . 'edgeList'
+-- edgeCount              == 'length' . 'edgeList'
 -- @
 edgeCount :: Ord a => SymmetricRelation a -> Int
 edgeCount = length . edgeList
@@ -206,7 +206,7 @@ vertexList :: SymmetricRelation a -> [a]
 vertexList = R.vertexList . fromSymmetric
 
 -- | The sorted list of edges of a graph.
--- Complexity: /O(n + m²)/ time and /O(m)/ memory.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
 --
 -- @
 -- edgeList 'empty'          == []
@@ -215,7 +215,7 @@ vertexList = R.vertexList . fromSymmetric
 -- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
 -- @
 edgeList :: Ord a => SymmetricRelation a -> [(a, a)]
-edgeList = filter (uncurry (<=)) . R.edgeList . fromSymmetric
+edgeList = deduplicate . R.edgeList . fromSymmetric
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(1)/ time.
@@ -229,15 +229,15 @@ vertexSet :: SymmetricRelation a -> Set.Set a
 vertexSet = R.vertexSet . fromSymmetric
 
 -- | The set of edges of a given graph.
--- Complexity: /O(1)/ time.
+-- Complexity: /O(m)/ time.
 --
 -- @
 -- edgeSet 'empty'      == Set.'Set.empty'
 -- edgeSet ('vertex' x) == Set.'Set.empty'
--- edgeSet ('edge' x y) == Set.'Set.fromList' [(x,y)]
+-- (edgeSet ('edge' x y) == Set.'Set.singleton' (x,y)) || (edgeSet ('edge' x y) == Set.'Set.singleton' (y,x))
 -- @
 edgeSet :: Ord a => SymmetricRelation a -> Set.Set (a, a)
-edgeSet = Set.filter (uncurry (<=)) . R.edgeSet . fromSymmetric
+edgeSet = deduplicateSet . R.edgeSet . fromSymmetric
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -327,11 +327,11 @@ star x ys = connect (vertex x) (vertices ys)
 -- size of the input.
 --
 -- @
--- stars []                      == 'empty'
--- stars [(x, [])]               == 'vertex' x
--- stars [(x, [y])]              == 'edges' [(x,y)]
--- stars [(x, ys)]               == 'star' x ys
--- stars                         == 'overlays' . 'map' ('uncurry' 'star')
+-- stars []                        == 'empty'
+-- stars [(x, [])]                 == 'vertex' x
+-- stars [(x, [y])]                == 'edges' [(x,y)]
+-- stars [(x, ys)]                 == 'star' x ys
+-- stars                           == 'overlays' . 'map' ('uncurry' 'star')
 -- stars . 'adjacencyList'         == id
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
@@ -413,7 +413,7 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 --
 -- @
 -- mergeVertices ('const' False) x    == id
--- mergeVertices (== x) y           == 'replaceVertex' x y
+-- mergeVertices (== x) y             == 'replaceVertex' x y
 -- mergeVertices 'even' 1 (0 * 2)     == 1 * 1
 -- mergeVertices 'odd'  1 (3 + 4 * 5) == 4 * 1
 -- @
@@ -429,8 +429,8 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- gmap f 'empty'      == 'empty'
 -- gmap f ('vertex' x) == 'vertex' (f x)
 -- gmap f ('edge' x y) == 'edge' (f x) (f y)
--- gmap id           == id
--- gmap f . gmap g   == gmap (f . g)
+-- gmap id             == id
+-- gmap f . gmap g     == gmap (f . g)
 -- @
 gmap :: Ord b => (a -> b) -> SymmetricRelation a -> SymmetricRelation b
 gmap f = SymmetricRelation . R.gmap f . fromSymmetric
@@ -441,8 +441,8 @@ gmap f = SymmetricRelation . R.gmap f . fromSymmetric
 -- be evaluated.
 --
 -- @
--- induce ('const' True ) x      == x
--- induce ('const' False) x      == 'empty'
+-- induce ('const' True ) x    == x
+-- induce ('const' False) x    == 'empty'
 -- induce (/= x)               == 'removeVertex' x
 -- induce p . induce q         == induce (\\x -> p x && q x)
 -- 'isSubgraphOf' (induce p x) x == True
