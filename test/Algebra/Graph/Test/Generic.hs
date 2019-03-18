@@ -94,7 +94,7 @@ testSymmetricToGraph = mconcat [ testSymmetricToGraphDefault
                       , testFoldg
                       , testIsEmpty
                       , testHasVertex
-                      , testHasEdge
+                      , testSymmetricHasEdge
                       , testVertexCount
                       , testEdgeCount
                       , testVertexList
@@ -825,6 +825,21 @@ testHasEdge (Testsuite prefix (%)) = do
     test "hasEdge x y                  == elem (x,y) . edgeList" $ \x y z -> do
         (u, v) <- elements ((x, y) : edgeList z)
         return $ hasEdge u v z == elem (u, v) (edgeList % z)
+
+testSymmetricHasEdge :: Testsuite -> IO ()
+testSymmetricHasEdge (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "hasEdge ============"
+    test "hasEdge x y empty            == False" $ \x y ->
+          hasEdge x y % empty          == False
+
+    test "hasEdge x y (vertex z)       == False" $ \x y z ->
+          hasEdge x y % vertex z       == False
+
+    test "hasEdge x y (edge x y)       == True" $ \x y ->
+          hasEdge x y % edge x y       == True
+
+    test "hasEdge x y . removeEdge x y == const False" $ \x y z ->
+         (hasEdge x y . removeEdge x y) z == const False % z
 
 testVertexCount :: Testsuite -> IO ()
 testVertexCount (Testsuite prefix (%)) = do

@@ -26,7 +26,7 @@ import Algebra.Graph.Relation (domain, relation, transpose)
 import qualified Data.Set as Set
 import Data.Monoid (mconcat)
 
- {-|  The 'SymmetricRelation' data type represents a /symmetric binary relation/
+{-|  The 'SymmetricRelation' data type represents a /symmetric binary relation/
 over a set of elements. Symmetric relations satisfy all laws of the
 'Undirected' type class and, in addition, the
 commutativity of connect:
