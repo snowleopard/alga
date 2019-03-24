@@ -61,7 +61,6 @@ import qualified Algebra.Graph.Labelled.AdjacencyMap       as LAM
 import qualified Algebra.Graph.Fold                        as F
 import qualified Algebra.Graph.AdjacencyIntMap             as AIM
 import qualified Algebra.Graph.Relation                    as R
-import qualified Algebra.Graph.Relation.InternalDerived    as RID
 import qualified Algebra.Graph.Relation.Symmetric.Internal as RSI
 
 

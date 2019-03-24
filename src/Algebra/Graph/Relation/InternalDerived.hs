@@ -21,9 +21,10 @@ module Algebra.Graph.Relation.InternalDerived (
 
 import Control.DeepSeq (NFData (..))
 
+import Algebra.Graph.Class
 import Algebra.Graph.Relation.Internal hiding (empty, vertex, overlay, connect, referredToVertexSet, consistent)
-import Algebra.Graph.Relation (reflexiveClosure,
-                               transitiveClosure, closure)
+import qualified Algebra.Graph.Relation as R (reflexiveClosure, transitiveClosure, closure, 
+                                             connect, overlay, empty, vertex)
 
 {-| The 'ReflexiveRelation' data type represents a /reflexive binary relation/
 over a set of elements. Reflexive relations satisfy all laws of the
@@ -40,20 +41,20 @@ newtype ReflexiveRelation a = ReflexiveRelation { fromReflexive :: Relation a }
     deriving (Num, NFData)
 
 instance Ord a => Eq (ReflexiveRelation a) where
-    x == y = reflexiveClosure (fromReflexive x) == reflexiveClosure (fromReflexive y)
+    x == y = R.reflexiveClosure (fromReflexive x) == R.reflexiveClosure (fromReflexive y)
 
 instance (Ord a, Show a) => Show (ReflexiveRelation a) where
-    show = show . reflexiveClosure . fromReflexive
+    show = show . R.reflexiveClosure . fromReflexive
 
 -- TODO: Optimise the implementation by caching the results of reflexive closure.
-instance Ord a => Graph (RID.ReflexiveRelation a) where
-    type Vertex (RID.ReflexiveRelation a) = a
-    empty       = RID.ReflexiveRelation R.empty
-    vertex      = RID.ReflexiveRelation . R.vertex
-    overlay x y = RID.ReflexiveRelation $ RID.fromReflexive x `R.overlay` RID.fromReflexive y
-    connect x y = RID.ReflexiveRelation $ RID.fromReflexive x `R.connect` RID.fromReflexive y
+instance Ord a => Graph (ReflexiveRelation a) where
+    type Vertex (ReflexiveRelation a) = a
+    empty       = ReflexiveRelation R.empty
+    vertex      = ReflexiveRelation . R.vertex
+    overlay x y = ReflexiveRelation $ fromReflexive x `R.overlay` fromReflexive y
+    connect x y = ReflexiveRelation $ fromReflexive x `R.connect` fromReflexive y
 
-instance Ord a => Reflexive (RID.ReflexiveRelation a)
+instance Ord a => Reflexive (ReflexiveRelation a)
 
 {-| The 'TransitiveRelation' data type represents a /transitive binary relation/
 over a set of elements. Transitive relations satisfy all laws of the
@@ -74,20 +75,20 @@ newtype TransitiveRelation a = TransitiveRelation { fromTransitive :: Relation a
     deriving (Num, NFData)
 
 instance Ord a => Eq (TransitiveRelation a) where
-    x == y = transitiveClosure (fromTransitive x) == transitiveClosure (fromTransitive y)
+    x == y = R.transitiveClosure (fromTransitive x) == R.transitiveClosure (fromTransitive y)
 
 instance (Ord a, Show a) => Show (TransitiveRelation a) where
-    show = show . transitiveClosure . fromTransitive
+    show = show . R.transitiveClosure . fromTransitive
 
 -- TODO: Optimise the implementation by caching the results of transitive closure.
-instance Ord a => Graph (RID.TransitiveRelation a) where
-    type Vertex (RID.TransitiveRelation a) = a
-    empty       = RID.TransitiveRelation R.empty
-    vertex      = RID.TransitiveRelation . R.vertex
-    overlay x y = RID.TransitiveRelation $ RID.fromTransitive x `R.overlay` RID.fromTransitive y
-    connect x y = RID.TransitiveRelation $ RID.fromTransitive x `R.connect` RID.fromTransitive y
+instance Ord a => Graph (TransitiveRelation a) where
+    type Vertex (TransitiveRelation a) = a
+    empty       = TransitiveRelation R.empty
+    vertex      = TransitiveRelation . R.vertex
+    overlay x y = TransitiveRelation $ fromTransitive x `R.overlay` fromTransitive y
+    connect x y = TransitiveRelation $ fromTransitive x `R.connect` fromTransitive y
 
-instance Ord a => Transitive (RID.TransitiveRelation a)
+instance Ord a => Transitive (TransitiveRelation a)
 
 {-| The 'PreorderRelation' data type represents a
 /binary relation that is both reflexive and transitive/. Preorders satisfy all
@@ -113,20 +114,20 @@ newtype PreorderRelation a = PreorderRelation { fromPreorder :: Relation a }
     deriving (Num, NFData)
 
 instance (Ord a, Show a) => Show (PreorderRelation a) where
-    show = show . closure . fromPreorder
+    show = show . R.closure . fromPreorder
 
 instance Ord a => Eq (PreorderRelation a) where
-    x == y = closure (fromPreorder x) == closure (fromPreorder y)
+    x == y = R.closure (fromPreorder x) == R.closure (fromPreorder y)
 
 -- TODO: To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
-instance Ord a => Graph (RID.PreorderRelation a) where
-    type Vertex (RID.PreorderRelation a) = a
-    empty       = RID.PreorderRelation R.empty
-    vertex      = RID.PreorderRelation . R.vertex
-    overlay x y = RID.PreorderRelation $ RID.fromPreorder x `R.overlay` RID.fromPreorder y
-    connect x y = RID.PreorderRelation $ RID.fromPreorder x `R.connect` RID.fromPreorder y
+instance Ord a => Graph (PreorderRelation a) where
+    type Vertex (PreorderRelation a) = a
+    empty       = PreorderRelation R.empty
+    vertex      = PreorderRelation . R.vertex
+    overlay x y = PreorderRelation $ fromPreorder x `R.overlay` fromPreorder y
+    connect x y = PreorderRelation $ fromPreorder x `R.connect` fromPreorder y
 
-instance Ord a => Reflexive  (RID.PreorderRelation a)
-instance Ord a => Transitive (RID.PreorderRelation a)
-instance Ord a => Preorder   (RID.PreorderRelation a)
+instance Ord a => Reflexive  (PreorderRelation a)
+instance Ord a => Transitive (PreorderRelation a)
+instance Ord a => Preorder   (PreorderRelation a)
 
