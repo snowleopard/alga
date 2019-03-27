@@ -36,6 +36,7 @@ import qualified Algebra.Graph.AdjacencyIntMap       as AdjacencyIntMap
 import qualified Algebra.Graph.AdjacencyMap          as AdjacencyMap
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NAM
 import qualified Algebra.Graph.Class                 as C
+import qualified Algebra.Graph.Fold                  as Fold
 import qualified Algebra.Graph.Labelled              as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
 import qualified Algebra.Graph.NonEmpty              as NonEmpty
@@ -62,9 +63,19 @@ instance Arbitrary a => Arbitrary (Graph a) where
     shrink (Connect x y) = [Empty, x, y, Overlay x y]
                         ++ [Connect x' y' | (x', y') <- shrink (x, y) ]
 
--- TODO: Implement a custom shrink method.
-instance Arbitrary a => Arbitrary (Fold a) where
+instance (Eq a, Ord a, Arbitrary a) => Arbitrary (Fold a) where
     arbitrary = arbitraryGraph
+
+    shrink g = oneLessVertex ++ oneLessEdge
+      where
+         oneLessVertex =
+           let vertices = Fold.vertexList g
+           in  [ Fold.removeVertex v g | v <- vertices ]
+
+         oneLessEdge =
+           let edges = Fold.edgeList g
+           in  [ Fold.removeEdge v w g | (v, w) <- edges ]
+
 
 -- | Generate an arbitrary 'NonEmpty.Graph' value of a specified size.
 arbitraryNonEmptyGraph :: Arbitrary a => Gen (NonEmpty.Graph a)
@@ -90,9 +101,19 @@ instance Arbitrary a => Arbitrary (NonEmpty.Graph a) where
 arbitraryRelation :: (Arbitrary a, Ord a) => Gen (Relation a)
 arbitraryRelation = Relation.stars <$> arbitrary
 
--- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
     arbitrary = arbitraryRelation
+
+    shrink g = oneLessVertex ++ oneLessEdge
+      where
+         oneLessVertex =
+           let vertices = Relation.vertexList g
+           in  [ Relation.removeVertex v g | v <- vertices ]
+
+         oneLessEdge =
+           let edges = Relation.edgeList g
+           in  [ Relation.removeEdge v w g | (v, w) <- edges ]
+
 
 instance (Arbitrary a, Ord a) => Arbitrary (ReflexiveRelation a) where
     arbitrary = ReflexiveRelation <$> arbitraryRelation
