@@ -18,7 +18,8 @@ import Prelude ()
 import Prelude.Compat
 
 import Control.Monad
-import Data.List.NonEmpty (NonEmpty (..))
+import Data.List.NonEmpty (NonEmpty (..), toList)
+import Data.Maybe (catMaybes)
 import Data.Tree
 import Test.QuickCheck
 
@@ -35,6 +36,7 @@ import qualified Algebra.Graph.AdjacencyIntMap       as AdjacencyIntMap
 import qualified Algebra.Graph.AdjacencyMap          as AdjacencyMap
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NAM
 import qualified Algebra.Graph.Class                 as C
+import qualified Algebra.Graph.Fold                  as Fold
 import qualified Algebra.Graph.Labelled              as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
 import qualified Algebra.Graph.NonEmpty              as NonEmpty
@@ -61,9 +63,19 @@ instance Arbitrary a => Arbitrary (Graph a) where
     shrink (Connect x y) = [Empty, x, y, Overlay x y]
                         ++ [Connect x' y' | (x', y') <- shrink (x, y) ]
 
--- TODO: Implement a custom shrink method.
-instance Arbitrary a => Arbitrary (Fold a) where
+instance (Eq a, Ord a, Arbitrary a) => Arbitrary (Fold a) where
     arbitrary = arbitraryGraph
+
+    shrink g = oneLessVertex ++ oneLessEdge
+      where
+         oneLessVertex =
+           let vertices = Fold.vertexList g
+           in  [ Fold.removeVertex v g | v <- vertices ]
+
+         oneLessEdge =
+           let edges = Fold.edgeList g
+           in  [ Fold.removeEdge v w g | (v, w) <- edges ]
+
 
 -- | Generate an arbitrary 'NonEmpty.Graph' value of a specified size.
 arbitraryNonEmptyGraph :: Arbitrary a => Gen (NonEmpty.Graph a)
@@ -89,9 +101,19 @@ instance Arbitrary a => Arbitrary (NonEmpty.Graph a) where
 arbitraryRelation :: (Arbitrary a, Ord a) => Gen (Relation a)
 arbitraryRelation = Relation.stars <$> arbitrary
 
--- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
     arbitrary = arbitraryRelation
+
+    shrink g = oneLessVertex ++ oneLessEdge
+      where
+         oneLessVertex =
+           let vertices = Relation.vertexList g
+           in  [ Relation.removeVertex v g | v <- vertices ]
+
+         oneLessEdge =
+           let edges = Relation.edgeList g
+           in  [ Relation.removeEdge v w g | (v, w) <- edges ]
+
 
 instance (Arbitrary a, Ord a) => Arbitrary (ReflexiveRelation a) where
     arbitrary = ReflexiveRelation <$> arbitraryRelation
@@ -110,9 +132,18 @@ instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
 arbitraryAdjacencyMap :: (Arbitrary a, Ord a) => Gen (AdjacencyMap a)
 arbitraryAdjacencyMap = AdjacencyMap.stars <$> arbitrary
 
--- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
     arbitrary = arbitraryAdjacencyMap
+
+    shrink g = oneLessVertex ++ oneLessEdge
+      where
+         oneLessVertex =
+           let vertices = AdjacencyMap.vertexList g
+           in  [ AdjacencyMap.removeVertex v g | v <- vertices ]
+
+         oneLessEdge =
+           let edges = AdjacencyMap.edgeList g
+           in  [ AdjacencyMap.removeEdge v w g | (v, w) <- edges ]
 
 -- | Generate an arbitrary non-empty 'NAM.AdjacencyMap'. It is guaranteed that
 -- the resulting adjacency map is 'consistent'.
@@ -127,27 +158,54 @@ arbitraryNonEmptyAdjacencyMap = NAM.stars1 <$> nonEmpty
                 return ((x, []) :| []) -- There must be at least one vertex
             (x:xs) -> return (x :| xs)
 
--- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a) => Arbitrary (NAM.AdjacencyMap a) where
     arbitrary = arbitraryNonEmptyAdjacencyMap
+
+    shrink g = oneLessVertex ++ oneLessEdge
+      where
+         oneLessVertex =
+           let vertices = toList $ NAM.vertexList1 g
+           in catMaybes [ NAM.removeVertex1 v g | v <- vertices ]
+
+         oneLessEdge =
+           let edges = NAM.edgeList g
+           in  [ NAM.removeEdge v w g | (v, w) <- edges ]
 
 -- | Generate an arbitrary 'AdjacencyIntMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
 arbitraryAdjacencyIntMap :: Gen AdjacencyIntMap
 arbitraryAdjacencyIntMap = AdjacencyIntMap.stars <$> arbitrary
 
--- TODO: Implement a custom shrink method.
 instance Arbitrary AdjacencyIntMap where
     arbitrary = arbitraryAdjacencyIntMap
+
+    shrink g = oneLessVertex ++ oneLessEdge
+      where
+         oneLessVertex =
+           let vertices = AdjacencyIntMap.vertexList g
+           in  [ AdjacencyIntMap.removeVertex v g | v <- vertices ]
+
+         oneLessEdge =
+           let edges = AdjacencyIntMap.edgeList g
+           in  [ AdjacencyIntMap.removeEdge v w g | (v, w) <- edges ]
 
 -- | Generate an arbitrary labelled 'LAM.AdjacencyMap'. It is guaranteed
 -- that the resulting adjacency map is 'consistent'.
 arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Gen (LAM.AdjacencyMap e a)
 arbitraryLabelledAdjacencyMap = LAM.fromAdjacencyMaps <$> arbitrary
 
--- TODO: Implement a custom shrink method.
 instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Arbitrary (LAM.AdjacencyMap e a) where
     arbitrary = arbitraryLabelledAdjacencyMap
+
+    shrink g = oneLessVertex ++ oneLessEdge
+      where
+         oneLessVertex =
+           let vertices = LAM.vertexList g
+           in  [ LAM.removeVertex v g | v <- vertices ]
+
+         oneLessEdge =
+           let edges = LAM.edgeList g
+           in  [ LAM.removeEdge v w g | (_, v, w) <- edges ]
 
 -- | Generate an arbitrary labelled 'LAM.Graph' value of a specified size.
 arbitraryLabelledGraph :: (Arbitrary a, Arbitrary e) => Gen (LG.Graph e a)
@@ -168,7 +226,6 @@ instance (Arbitrary a, Arbitrary e, Monoid e) => Arbitrary (LG.Graph e a) where
     shrink (LG.Connect e x y) = [LG.Empty, x, y, LG.Connect mempty x y]
                              ++ [LG.Connect e x' y' | (x', y') <- shrink (x, y) ]
 
--- TODO: Implement a custom shrink method.
 instance Arbitrary a => Arbitrary (Tree a) where
     arbitrary = sized go
       where
@@ -182,9 +239,11 @@ instance Arbitrary a => Arbitrary (Tree a) where
             children <- replicateM subTrees (go subSize)
             return $ Node root children
 
+    shrink (Node r fs) = [Node r fs' | fs' <- shrink fs]
+
 -- TODO: Implement a custom shrink method.
 instance Arbitrary s => Arbitrary (Doc s) where
-    arbitrary = (mconcat . map literal) <$> arbitrary
+    arbitrary = mconcat . map literal <$> arbitrary
 
 instance (Arbitrary a, Num a, Ord a) => Arbitrary (Distance a) where
     arbitrary = (\x -> if x < 0 then distance infinite else distance (unsafeFinite x)) <$> arbitrary
