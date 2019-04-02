@@ -22,9 +22,8 @@ module Algebra.Graph.Relation.InternalDerived (
 import Control.DeepSeq (NFData (..))
 
 import Algebra.Graph.Class
-import Algebra.Graph.Relation.Internal hiding (empty, vertex, overlay, connect, referredToVertexSet, consistent)
-import qualified Algebra.Graph.Relation as R (reflexiveClosure, transitiveClosure, closure, 
-                                             connect, overlay, empty, vertex)
+import Algebra.Graph.Relation (Relation, reflexiveClosure,
+                              transitiveClosure, closure)
 
 {-| The 'ReflexiveRelation' data type represents a /reflexive binary relation/
 over a set of elements. Reflexive relations satisfy all laws of the
@@ -41,18 +40,18 @@ newtype ReflexiveRelation a = ReflexiveRelation { fromReflexive :: Relation a }
     deriving (Num, NFData)
 
 instance Ord a => Eq (ReflexiveRelation a) where
-    x == y = R.reflexiveClosure (fromReflexive x) == R.reflexiveClosure (fromReflexive y)
+    x == y = reflexiveClosure (fromReflexive x) == reflexiveClosure (fromReflexive y)
 
 instance (Ord a, Show a) => Show (ReflexiveRelation a) where
-    show = show . R.reflexiveClosure . fromReflexive
+    show = show . reflexiveClosure . fromReflexive
 
 -- TODO: Optimise the implementation by caching the results of reflexive closure.
 instance Ord a => Graph (ReflexiveRelation a) where
     type Vertex (ReflexiveRelation a) = a
-    empty       = ReflexiveRelation R.empty
-    vertex      = ReflexiveRelation . R.vertex
-    overlay x y = ReflexiveRelation $ fromReflexive x `R.overlay` fromReflexive y
-    connect x y = ReflexiveRelation $ fromReflexive x `R.connect` fromReflexive y
+    empty       = ReflexiveRelation empty
+    vertex      = ReflexiveRelation . vertex
+    overlay x y = ReflexiveRelation $ fromReflexive x `overlay` fromReflexive y
+    connect x y = ReflexiveRelation $ fromReflexive x `connect` fromReflexive y
 
 instance Ord a => Reflexive (ReflexiveRelation a)
 
@@ -75,18 +74,18 @@ newtype TransitiveRelation a = TransitiveRelation { fromTransitive :: Relation a
     deriving (Num, NFData)
 
 instance Ord a => Eq (TransitiveRelation a) where
-    x == y = R.transitiveClosure (fromTransitive x) == R.transitiveClosure (fromTransitive y)
+    x == y = transitiveClosure (fromTransitive x) == transitiveClosure (fromTransitive y)
 
 instance (Ord a, Show a) => Show (TransitiveRelation a) where
-    show = show . R.transitiveClosure . fromTransitive
+    show = show . transitiveClosure . fromTransitive
 
 -- TODO: Optimise the implementation by caching the results of transitive closure.
 instance Ord a => Graph (TransitiveRelation a) where
     type Vertex (TransitiveRelation a) = a
-    empty       = TransitiveRelation R.empty
-    vertex      = TransitiveRelation . R.vertex
-    overlay x y = TransitiveRelation $ fromTransitive x `R.overlay` fromTransitive y
-    connect x y = TransitiveRelation $ fromTransitive x `R.connect` fromTransitive y
+    empty       = TransitiveRelation empty
+    vertex      = TransitiveRelation . vertex
+    overlay x y = TransitiveRelation $ fromTransitive x `overlay` fromTransitive y
+    connect x y = TransitiveRelation $ fromTransitive x `connect` fromTransitive y
 
 instance Ord a => Transitive (TransitiveRelation a)
 
@@ -114,18 +113,18 @@ newtype PreorderRelation a = PreorderRelation { fromPreorder :: Relation a }
     deriving (Num, NFData)
 
 instance (Ord a, Show a) => Show (PreorderRelation a) where
-    show = show . R.closure . fromPreorder
+    show = show . closure . fromPreorder
 
 instance Ord a => Eq (PreorderRelation a) where
-    x == y = R.closure (fromPreorder x) == R.closure (fromPreorder y)
+    x == y = closure (fromPreorder x) == closure (fromPreorder y)
 
 -- TODO: To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Ord a => Graph (PreorderRelation a) where
     type Vertex (PreorderRelation a) = a
-    empty       = PreorderRelation R.empty
-    vertex      = PreorderRelation . R.vertex
-    overlay x y = PreorderRelation $ fromPreorder x `R.overlay` fromPreorder y
-    connect x y = PreorderRelation $ fromPreorder x `R.connect` fromPreorder y
+    empty       = PreorderRelation empty
+    vertex      = PreorderRelation . vertex
+    overlay x y = PreorderRelation $ fromPreorder x `overlay` fromPreorder y
+    connect x y = PreorderRelation $ fromPreorder x `connect` fromPreorder y
 
 instance Ord a => Reflexive  (PreorderRelation a)
 instance Ord a => Transitive (PreorderRelation a)

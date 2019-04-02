@@ -8,9 +8,7 @@
 --
 -- This module exposes the implementation of derived binary relation data types.
 -- The API is unstable and unsafe, and is exposed only for documentation. You
--- should use the non-internal modules "Algebra.Graph.Relation.Reflexive",
--- "Algebra.Graph.Relation.Symmetric", "Algebra.Graph.Relation.Transitive" and
--- "Algebra.Graph.Relation.Preorder" instead.
+-- should use the non-internal module "Algebra.Graph.Relation.Symmetric" instead.
 -----------------------------------------------------------------------------
 
 module Algebra.Graph.Relation.Symmetric.Internal (

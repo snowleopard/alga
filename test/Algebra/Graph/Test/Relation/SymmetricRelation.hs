@@ -36,9 +36,9 @@ testSymmetricRelation = do
 
     testSymmetricBasicPrimitives t
     testSymmetricShow            t
-    testIsSubgraphOf             t
+    testSymmetricIsSubgraphOf    t
     testSymmetricToGraph         t
-    testGraphFamilies            t
+    testSymmetricGraphFamilies   t
     testSymmetricTransformations t
 
     test "Axioms of undirected graphs" $ size10

@@ -62,13 +62,13 @@ testSymmetricBasicPrimitives :: Testsuite -> IO ()
 testSymmetricBasicPrimitives = mconcat [ testOrd
                               , testEmpty
                               , testVertex
-                              , testEdge
+                              , testSymmetricEdge
                               , testOverlay
                               , testSymmetricConnect
                               , testVertices
                               , testSymmetricEdges
                               , testOverlays
-                              , testConnects ]                              
+                              , testSymmetricConnects ]                              
 
 testToGraph :: Testsuite -> IO ()
 testToGraph = mconcat [ testToGraphDefault
@@ -121,6 +121,16 @@ testGraphFamilies = mconcat [ testPath
                             , testTree
                             , testForest ]
 
+testSymmetricGraphFamilies :: Testsuite -> IO ()
+testSymmetricGraphFamilies = mconcat [ testPath
+                                     , testCircuit
+                                     , testSymmetricClique
+                                     , testBiclique
+                                     , testStar
+                                     , testStars
+                                     , testTree
+                                     , testForest ]
+
 testTransformations :: Testsuite -> IO ()
 testTransformations = mconcat [ testRemoveVertex
                               , testRemoveEdge
@@ -132,7 +142,7 @@ testTransformations = mconcat [ testRemoveVertex
 
 testSymmetricTransformations :: Testsuite -> IO ()
 testSymmetricTransformations = mconcat [ testRemoveVertex
-                              , testRemoveEdge
+                              , testSymmetricRemoveEdge
                               , testReplaceVertex
                               , testMergeVertices
                               , testGmap
@@ -280,6 +290,27 @@ testEdge (Testsuite prefix (%)) = do
 
     test "edgeCount   (edge x y) == 1" $ \x y ->
           edgeCount %  edge x y  == 1
+
+    test "vertexCount (edge 1 1) == 1" $
+          vertexCount % edge 1 1 == 1
+
+    test "vertexCount (edge 1 2) == 2" $
+          vertexCount % edge 1 2 == 2
+
+testSymmetricEdge :: Testsuite -> IO ()
+testSymmetricEdge (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "edge ============"
+    test "edge x y               == connect (vertex x) (vertex y)" $ \x y ->
+          edge x y               == connect (vertex x) % vertex y
+
+    test "edge x y               == edge y x" $ \x y ->
+          edge x y               == id % edge y x
+
+    test "hasEdge x y (edge x y) == True" $ \x y ->
+          hasEdge x y % edge x y == True
+
+    test "edgeCount   (edge x y) == 1" $ \x y ->
+          edgeCount % edge x y   == 1
 
     test "vertexCount (edge 1 1) == 1" $
           vertexCount % edge 1 1 == 1
@@ -455,6 +486,27 @@ testConnects (Testsuite prefix (%)) = do
     test "isEmpty . connects == all isEmpty" $ size10 $ \xs ->
           isEmpty % connects xs == all isEmpty xs
 
+testSymmetricConnects :: Testsuite -> IO ()
+testSymmetricConnects (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "connects ============"
+    test "connects []        == empty" $
+          connects []        == id % empty
+
+    test "connects [x]       == x" $ \x ->
+          connects [x]       == id % x
+
+    test "connects [x,y]     == connect x y" $ \x y ->
+          connects [x,y]     == id % connect x y
+
+    test "connects           == foldr connect empty" $ size10 $ \xs ->
+          connects xs        == id % foldr connect empty xs
+
+    test "isEmpty . connects == all isEmpty" $ size10 $ \xs ->
+          isEmpty % connects xs == all isEmpty xs
+
+    test "connects           == connects . reverse" $ \xs ->
+          connects xs        == id % connects (reverse xs)
+
 testStars :: Testsuite -> IO ()
 testStars (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "stars ============"
@@ -536,6 +588,31 @@ testIsSubgraphOf (Testsuite prefix (%)) = do
     test "isSubgraphOf x y                         ==> x <= y" $ \x z ->
         let y = x + z -- Make sure we hit the precondition
         in isSubgraphOf x % y                      ==> x <= y
+
+testSymmetricIsSubgraphOf :: Testsuite -> IO ()
+testSymmetricIsSubgraphOf (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "isSubgraphOf ============"
+    test "isSubgraphOf empty         x             ==  True" $ \x ->
+          isSubgraphOf empty       % x             ==  True
+
+    test "isSubgraphOf (vertex x)    empty         ==  False" $ \x ->
+          isSubgraphOf (vertex x)  % empty         ==  False
+
+    test "isSubgraphOf x             (overlay x y) ==  True" $ \x y ->
+          isSubgraphOf x            % overlay x y  ==  True
+
+    test "isSubgraphOf (overlay x y) (connect x y) ==  True" $ \x y ->
+          isSubgraphOf (overlay x y) % connect x y ==  True
+
+    test "isSubgraphOf (path xs)     (circuit xs)  ==  True" $ \xs ->
+          isSubgraphOf (path xs)    % circuit xs   ==  True
+
+    test "isSubgraphOf x y                         ==> x <= y" $ \x z ->
+        let y = x + z -- Make sure we hit the precondition
+        in isSubgraphOf x % y                      ==> x <= y
+
+    test "isSubgraphOf (edge x y) (edge y x)       == True" $ \x y ->
+          isSubgraphOf (edge x y) % edge y x       == True
 
 testToGraphDefault :: Testsuite -> IO ()
 testToGraphDefault (Testsuite prefix (%)) = do
@@ -912,6 +989,9 @@ testSymmetricEdgeList (Testsuite prefix (%)) = do
     test "edgeList (vertex x)     == []" $ \x ->
           edgeList % vertex x     == []
 
+    test "edgeList (edge x y)     == [(min x y, max y x)]" $ \x y ->
+          edgeList % edge x y     == [(min x y, max y x)]
+
     test "edgeList (star 2 [3,1]) == [(1,2), (2,3)]" $
           edgeList % star 2 [3,1] == [(1,2), (2,3)]
 
@@ -1103,6 +1183,27 @@ testClique (Testsuite prefix (%)) = do
     test "clique (xs ++ ys) == connect (clique xs) (clique ys)" $ \xs ys ->
           clique (xs ++ ys) == connect (clique xs) % clique ys
 
+testSymmetricClique :: Testsuite -> IO ()
+testSymmetricClique (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "clique ============"
+    test "clique []         == empty" $
+          clique []         == id % empty
+
+    test "clique [x]        == vertex x" $ \x ->
+          clique [x]        == id % vertex x
+
+    test "clique [x,y]      == edge x y" $ \x y ->
+          clique [x,y]      == id % edge x y
+
+    test "clique [x,y,z]    == edges [(x,y), (x,z), (y,z)]" $ \x y z ->
+          clique [x,y,z]    == id % edges [(x,y), (x,z), (y,z)]
+
+    test "clique (xs ++ ys) == connect (clique xs) (clique ys)" $ \xs ys ->
+          clique (xs ++ ys) == connect (clique xs) % clique ys
+
+    test "clique            == clique . reverse" $ \xs->
+          clique xs         == id % clique (reverse xs)
+
 testBiclique :: Testsuite -> IO ()
 testBiclique (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "biclique ============"
@@ -1192,6 +1293,32 @@ testRemoveEdge (Testsuite prefix (%)) = do
 
     test "removeEdge x y . removeEdge x y == removeEdge x y" $ \x y z ->
          (removeEdge x y . removeEdge x y) z == removeEdge x y % z
+
+    test "removeEdge x y . removeVertex x == removeVertex x" $ \x y z ->
+         (removeEdge x y . removeVertex x) z == removeVertex x % z
+
+    test "removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2" $
+          removeEdge 1 1 % (1 * 1 * 2 * 2) == 1 * 2 * 2
+
+    test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
+          removeEdge 1 2 % (1 * 1 * 2 * 2) == 1 * 1 + 2 * 2
+
+    -- TODO: Ouch. Generic tests are becoming awkward. We need a better way.
+    when (prefix == "Fold." || prefix == "Graph.") $ do
+        test "size (removeEdge x y z)         <= 3 * size z" $ \x y z ->
+              size % (removeEdge x y z)       <= 3 * size z
+
+testSymmetricRemoveEdge :: Testsuite -> IO ()
+testSymmetricRemoveEdge (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "removeEdge ============"
+    test "removeEdge x y (edge x y)       == vertices [x,y]" $ \x y ->
+          removeEdge x y % edge x y       == vertices [x,y]
+
+    test "removeEdge x y . removeEdge x y == removeEdge x y" $ \x y z ->
+         (removeEdge x y . removeEdge x y) z == removeEdge x y % z
+
+    test "removeEdge x y   == removeEdge y x" $ \x y z ->
+          removeEdge x y z == removeEdge y x % z
 
     test "removeEdge x y . removeVertex x == removeVertex x" $ \x y z ->
          (removeEdge x y . removeVertex x) z == removeVertex x % z

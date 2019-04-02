@@ -56,7 +56,8 @@ toRelation = R.symmetricClosure . fromSymmetric
 -- Complexity: /O(1)/ time, memory and size.
 --
 -- @
--- edge x y                 == edges [(x,y),(y,x)]
+-- edge x y                 == connect (vertex x) (vertex y)
+-- edge x y                 == edge y x
 -- 'hasEdge' x y (edge x y) == True
 -- 'edgeCount'   (edge x y) == 1
 -- 'vertexCount' (edge 1 1) == 1
@@ -84,7 +85,7 @@ vertices = SymmetricRelation . R.vertices
 --
 -- @
 -- edges []            == 'empty'
--- edges [(x,y)]       == 'overlay' ('edge' x y) ('edge' y x)
+-- edges [(x,y)]       == 'edge x y'
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub' . 'uncurry' 'Data.List.union' . '<map swap, id>'
 -- @
 edges :: Ord a => [(a, a)] -> SymmetricRelation a
@@ -112,6 +113,7 @@ overlays = SymmetricRelation . R.overlays . map fromSymmetric
 -- connects [x,y]       == 'connect' x y
 -- connects             == 'foldr' 'connect' 'empty'
 -- 'isEmpty' . connects == 'all' 'isEmpty'
+-- connects             == connects . 'reverse
 -- @
 connects :: Ord a => [SymmetricRelation a] -> SymmetricRelation a
 connects = foldr connect empty
@@ -127,6 +129,7 @@ connects = foldr connect empty
 -- isSubgraphOf ('overlay' x y) ('connect' x y) ==  True
 -- isSubgraphOf ('path' xs)     ('circuit' xs)  ==  True
 -- isSubgraphOf x y                             ==> x <= y
+-- isSubgraphOf (edge x y) (edge y x)           == True
 -- @
 isSubgraphOf :: Ord a => SymmetricRelation a -> SymmetricRelation a -> Bool
 isSubgraphOf x y = R.isSubgraphOf (fromSymmetric x) (fromSymmetric y)
@@ -211,8 +214,8 @@ vertexList = R.vertexList . fromSymmetric
 -- @
 -- edgeList 'empty'          == []
 -- edgeList ('vertex' x)     == []
--- edgeList ('edge' x y)     == [(x,y)]
--- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
+-- edgeList (edge x y)       == [(min x y, max y x)]
+-- edgeList ('star' 2 [3,1]) == [(1,2), (2,3)]
 -- @
 edgeList :: Ord a => SymmetricRelation a -> [(a, a)]
 edgeList = deduplicate . R.edgeList . fromSymmetric
