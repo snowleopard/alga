@@ -43,19 +43,33 @@ import qualified Data.Tree as Tree
 import Data.Tuple (swap)
 
 -- | Construct a symmetric relation from a 'Relation'.
--- Complexity: /O(1)/ time.
-fromRelation :: R.Relation a -> SymmetricRelation a
-fromRelation = SymmetricRelation
+-- Complexity: /O(m*log(m))/ time.
+--
+-- @
+-- fromRelation ('Algebra.Graph.Relation.edge' 1 2) == 'edge 1 2'
+-- fromRelation . 'toRelation'                      == id
+-- 'vertexCount' . fromRelation                     == 'Algebra.Graph.Relation.vertexCount'
+-- (* 2) . 'edgeCount' . fromRelation               >= 'Algebra.Graph.Relation.edgeCount'
+-- @
+fromRelation :: Ord a => R.Relation a -> SymmetricRelation a
+fromRelation = SymmetricRelation . R.symmetricClosure
 
 -- | Extract the underlying relation.
--- Complexity: /O(m*log(m))/ time.
-toRelation :: Ord a => SymmetricRelation a -> R.Relation a
-toRelation = R.symmetricClosure . fromSymmetric
+-- Complexity: /O(1)/ time.
+--
+-- @
+-- toRelation ('edge' 1 2)                           == 'Algebra.Graph.Relation.edges' [(1,2), (2,1)]
+-- 'Algebra.Graph.Relation.vertexCount' . toRelation == 'vertexCount'
+-- 'Algebra.Graph.Relation.edgeCount' . toRelation   <= (* 2) . 'edgeCount'
+-- @
+toRelation :: SymmetricRelation a -> R.Relation a
+toRelation = fromSymmetric
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
 --
 -- @
+-- edge x y                 == edges [(x,y), (y,x)]
 -- edge x y                 == connect (vertex x) (vertex y)
 -- edge x y                 == edge y x
 -- 'hasEdge' x y (edge x y) == True
