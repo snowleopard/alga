@@ -1,6 +1,6 @@
-module Algebra.Graph.Labelled.AdjacencyMap.Algorithm where
+module Algebra.Graph.Labelled.Algorithm.Dijkstra where
 
-import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal as LAMI
+import Algebra.Graph.Labelled.AdjacencyMap.Internal (AdjacencyMap(..))
 import Data.List (minimumBy)
 import Data.Map.Strict (Map, (!), (\\))
 import qualified Data.Map.Strict as Map
@@ -8,9 +8,9 @@ import qualified Data.Map.Strict as Map
 infinity :: Int
 infinity = maxBound
 
-dijkstra :: (Ord a) => a -> LAMI.AdjacencyMap Int a -> Maybe (Map a Int)
+dijkstra :: (Ord a) => a -> AdjacencyMap Int a -> Maybe (Map a Int)
 dijkstra k m =
-  if Map.member k $ LAMI.adjacencyMap m
+  if Map.member k $ adjacencyMap m
     then Just $ recurseDijkstraStep (Map.singleton k 0, Map.empty)
     else Nothing
   where
@@ -21,7 +21,7 @@ dijkstra k m =
 dijkstraStep ::
      (Ord a)
   => (Map a Int, Map a Int)
-  -> LAMI.AdjacencyMap Int a
+  -> AdjacencyMap Int a
   -> (Map a Int, Map a Int)
 dijkstraStep wA@(w, a) m =
   case minValuedElemKey w of
@@ -36,22 +36,21 @@ mapUnionMin = Map.unionWith min'
       | otherwise = b
 
 addUnreachableVertices ::
-     (Ord a) => Map a Int -> LAMI.AdjacencyMap Int a -> Map a Int
+     (Ord a) => Map a Int -> AdjacencyMap Int a -> Map a Int
 addUnreachableVertices a m = mapUnionMin a allVertices
   where
-    allVertices = Map.map (const infinity) $ LAMI.adjacencyMap m
+    allVertices = Map.map (const infinity) $ adjacencyMap m
 
 dijkstraStepNonEmpty ::
      (Ord a)
   => (Map a Int, Map a Int)
-  -> LAMI.AdjacencyMap Int a
+  -> AdjacencyMap Int a
   -> (a, Int)
   -> (Map a Int, Map a Int)
 dijkstraStepNonEmpty (w, a) m (k, v) = (nW, nA)
   where
     nA = Map.insert k v a
-    nW =
-      mapUnionMin (Map.delete k w) (addWeight $ LAMI.adjacencyMap m ! k) \\ nA
+    nW = mapUnionMin (Map.delete k w) (addWeight $ adjacencyMap m ! k) \\ nA
     addWeight = Map.map (+ v)
 
 minValuedElemKey :: (Ord v) => Map k v -> Maybe (k, v)
