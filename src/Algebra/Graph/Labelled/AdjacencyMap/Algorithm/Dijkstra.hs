@@ -1,12 +1,13 @@
 module Algebra.Graph.Labelled.AdjacencyMap.Algorithm.Dijkstra where
 
+import Algebra.Graph.Label (Semiring(..), zero)
 import Algebra.Graph.Labelled.AdjacencyMap.Internal (AdjacencyMap(..))
 import Data.List (minimumBy)
 import Data.Map.Strict (Map, (!), (\\))
 import qualified Data.Map.Strict as Map
-import Algebra.Graph.Label (Semiring(..), Distance, infinite, distance)
 
-dijkstra :: (Ord a, Ord b, Num b) => a -> AdjacencyMap (Distance b) a -> Maybe (Map a (Distance b))
+dijkstra ::
+     (Ord a, Ord b, Semiring b) => a -> AdjacencyMap b a -> Maybe (Map a b)
 dijkstra k m =
   if Map.member k $ adjacencyMap m
     then Just $ recurseDijkstraStep (Map.singleton k one, Map.empty)
@@ -17,16 +18,16 @@ dijkstra k m =
       | otherwise = recurseDijkstraStep $ dijkstraStep (w, a) m
 
 dijkstraStep ::
-     (Ord a, Ord b, Num b)
-  => (Map a (Distance b), Map a (Distance b))
-  -> AdjacencyMap (Distance b) a
-  -> (Map a (Distance b), Map a (Distance b))
+     (Ord a, Ord b, Semiring b)
+  => (Map a b, Map a b)
+  -> AdjacencyMap b a
+  -> (Map a b, Map a b)
 dijkstraStep wA@(w, a) m =
   case minValuedElemKey w of
     Nothing -> (w, addUnreachableVertices a m)
     Just kV -> dijkstraStepNonEmpty wA m kV
 
-mapUnionMin :: (Ord a, Ord b) => Map a (Distance b) -> Map a (Distance b) -> Map a(Distance b)
+mapUnionMin :: (Ord a, Ord b) => Map a b -> Map a b -> Map a b
 mapUnionMin = Map.unionWith min2
   where
     min2 a b
@@ -34,17 +35,17 @@ mapUnionMin = Map.unionWith min2
       | otherwise = b
 
 addUnreachableVertices ::
-     (Ord a, Ord b) => Map a (Distance b) -> AdjacencyMap (Distance b) a -> Map a(Distance b)
+     (Ord a, Ord b, Monoid b) => Map a b -> AdjacencyMap b a -> Map a b
 addUnreachableVertices a m = mapUnionMin a allVertices
   where
-    allVertices = Map.map (const $ distance infinite) $ adjacencyMap m
+    allVertices = Map.map (const zero) $ adjacencyMap m
 
 dijkstraStepNonEmpty ::
-     (Ord a, Num b, Ord b)
-  => (Map a (Distance b), Map a (Distance b))
-  -> AdjacencyMap (Distance b) a
-  -> (a, Distance b)
-  -> (Map a (Distance b), Map a (Distance b))
+     (Ord a, Ord b, Semiring b)
+  => (Map a b, Map a b)
+  -> AdjacencyMap b a
+  -> (a, b)
+  -> (Map a b, Map a b)
 dijkstraStepNonEmpty (w, a) m (k, v) = (nW, nA)
   where
     nA = Map.insert k v a
