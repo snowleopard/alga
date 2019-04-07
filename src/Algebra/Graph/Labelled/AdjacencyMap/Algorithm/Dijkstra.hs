@@ -1,4 +1,4 @@
-module Algebra.Graph.Labelled.Algorithm.Dijkstra where
+module Algebra.Graph.Labelled.AdjacencyMap.Algorithm.Dijkstra where
 
 import Algebra.Graph.Labelled.AdjacencyMap.Internal (AdjacencyMap(..))
 import Data.List (minimumBy)

@@ -85,7 +85,7 @@ library
                         Algebra.Graph.Labelled,
                         Algebra.Graph.Labelled.AdjacencyMap,
                         Algebra.Graph.Labelled.AdjacencyMap.Internal,
-                        Algebra.Graph.Labelled.Algorithm.Dijkstra,
+                        Algebra.Graph.Labelled.AdjacencyMap.Algorithm.Dijkstra,
                         Algebra.Graph.Labelled.Example.Automaton,
                         Algebra.Graph.Labelled.Example.Network,
                         Algebra.Graph.NonEmpty,
