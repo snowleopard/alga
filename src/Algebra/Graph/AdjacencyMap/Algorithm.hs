@@ -15,7 +15,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap.Algorithm (
     -- * Algorithms
-    dfsForest, dfsForestFrom, dfs, bfsForest, reachable, topSort, isAcyclic, scc,
+    dfsForest, dfsForestFrom, dfs, bfsForest, bfsForestFrom, bfs, reachable, topSort, isAcyclic, scc,
 
     -- * Correctness properties
     isDfsForestOf, isTopSortOf
