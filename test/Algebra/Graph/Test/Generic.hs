@@ -33,7 +33,7 @@ import qualified Algebra.Graph.AdjacencyMap           as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
 import qualified Algebra.Graph.AdjacencyIntMap        as AIM
 import qualified Algebra.Graph.Relation               as R
-import qualified Algebra.Graph.Relation.Symmetric     as S
+import qualified Algebra.Graph.Relation.Symmetric     as S 
 import qualified Data.Set                             as Set
 import qualified Data.IntSet                          as IntSet
 
@@ -157,26 +157,26 @@ testSymmetricToRelation (Testsuite prefix (%)) = do
     test "toRelation (edge 1 2)                           == Algebra.Graph.Relation.edges [(1,2), (2,1)]" $
         S.toRelation (edge 1 2)                           == R.edges [(1,2), (2,1)]
 
-    test "Algebra.Graph.Relation.vertexCount . toRelation == vertexCount" $ \x ->
-        R.vertexCount (S.toRelation % x)                  == vertexCount x
-    
-    --test "Algebra.Graph.Relation.edgeCount . toRelation   <= edgeCount" $ \x ->
-    --    R.edgeCount (S.toRelation % x)                    <= 2 * (edgeCount % x)
+    test "Algebra.Graph.Relation.edgeCount . toRelation   <= (* 2) . edgeCount" $ \(x :: S.SymmetricRelation Int) ->
+        R.edgeCount (S.toRelation x)                      <= 2 * (edgeCount x)
+
+    test "Algebra.Graph.Relation.vertexCount . toRelation == vertexCount" $ \(x :: S.SymmetricRelation Int) ->
+        R.vertexCount (S.toRelation x)                    == vertexCount x
 
 testSymmetricFromRelation :: Testsuite -> IO ()
 testSymmetricFromRelation (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "FromRelation ============"
 
     test "fromRelation (Algebra.Graph.Relation.edge 1 2) == edge 1 2" $
-        (S.fromRelation . R.edge 1) % 2                  == edge 1 2
+        S.fromRelation (R.edge 1 2)                      == edge 1 2
 
-    test "fromRelation . toRelation                      == id" $ \x ->
-        S.fromRelation (S.toRelation % x)                == id % x
+    test "fromRelation . toRelation                      == id" $ \(x :: S.SymmetricRelation Int) ->
+        S.fromRelation (S.toRelation x)                  == id x
 
-    test "vertexCount . fromRelation                     == Algebra.Graph.Relation.vertexCount" $ \x ->
-        vertexCount (S.fromRelation % x)                 == id (R.vertexCount x)
+    test "vertexCount . fromRelation                     == Algebra.Graph.Relation.vertexCount" $ \(x :: R.Relation Int) ->
+        vertexCount (S.fromRelation x)                   == id (R.vertexCount x)
     
-    test "(* 2) . vertexCount . fromRelation             >= Algebra.Graph.Relation.edgeCount" $ \x ->
+    test "(* 2) . vertexCount . fromRelation             >= Algebra.Graph.Relation.edgeCount" $ \(x :: R.Relation Int) ->
         2 * (edgeCount (S.fromRelation x))               >= R.edgeCount x
 
 testShow :: Testsuite -> IO ()

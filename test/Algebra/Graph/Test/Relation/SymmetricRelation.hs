@@ -35,6 +35,8 @@ testSymmetricRelation = do
          consistent m
 
     testSymmetricBasicPrimitives t
+    testSymmetricToRelation      t
+    testSymmetricFromRelation    t
     testSymmetricShow            t
     testSymmetricIsSubgraphOf    t
     testSymmetricToGraph         t
