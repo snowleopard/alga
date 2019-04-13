@@ -1,4 +1,3 @@
--- | NOTE: Although any semiring can be used for the algorithm, It only makes sense to find the minium of something. Although semantically maximum can be used, certain abstraction over the comparision operator is required which is not available yet.
 module Algebra.Graph.Labelled.AdjacencyMap.Algorithm.Dijkstra where
 
 import Data.Map.Strict (Map, (!))
