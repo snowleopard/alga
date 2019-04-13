@@ -5,6 +5,24 @@ import Algebra.Graph.Label (Semiring(..), (<+>), zero)
 import qualified Data.Map.Strict as Map
 import Algebra.Graph.Labelled.AdjacencyMap.Internal (AdjacencyMap(..))
 
+-- | Psuedocode for Generic-Single-Source-Shortest-Distance (G,s)
+-- for i <- 1 to |Q|
+--   do d[i] <- r[i] <- 0 
+-- d[s] ← r[s] ← 1 
+-- S ← {s} 
+-- while S != []
+--   do q <- head(S)
+--      Dequeue(S)
+--      r0 <- r[q]
+--      r[q] <- 0
+--      for each e in E[q]
+--        do if d[n[e]] != d[n[e]] <+> (r0 <.> w[e])
+--             then d[n[e]] <- d[n[e]] <+> (r0 <.> w[e])
+--                  r[n[e]] <- r[n[e]] <+> (r0 <.> w[e])
+--                  if n[e] not in S
+--                    then Enqueue(S, n[e])
+-- d[s] ← 1
+
 dijkstra ::
      (Ord a, Eq b, Semiring b) => a -> AdjacencyMap b a -> (Map a b, Map a b, [a])
 dijkstra src adjMap = fDRQ
