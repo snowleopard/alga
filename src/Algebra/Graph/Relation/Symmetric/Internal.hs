@@ -12,7 +12,7 @@
 -----------------------------------------------------------------------------
 
 module Algebra.Graph.Relation.Symmetric.Internal (
-    -- * Implementation of derived binary relations
+    -- * Implementation of symmetric binary relations
     SymmetricRelation (..), empty, vertex, overlay, connect, consistent,
     referredToVertexSet, deduplicateSet, deduplicate
   ) where
@@ -31,10 +31,13 @@ commutativity of connect:
 
 @'connect' x y == 'connect' y x@
 
-The 'Show' instance produces symmetrically closed expressions:
+The 'Show' instance lists the vertices of an edge in non-decreasing order:
 
 @show (1     :: SymmetricRelation Int) == "vertex 1"
-show (1 * 2 :: SymmetricRelation Int) == "edge 1 2"@
+show (1 * 2 :: SymmetricRelation Int) == "edge 1 2"
+show (2 * 1 :: SymmetricRelation Int) == "edge 1 2"
+show (1 * 2 * 1 :: SymmetricRelation Int) == "edges [(1,1),(1,2)]"
+show (3 * 2 * 1 :: SymmetricRelation Int) == "edges [(1,2),(1,3),(2,3)]"@
 
 The total order on graphs is defined using /size-lexicographic/ comparison:
 
@@ -48,7 +51,7 @@ Here are a few examples:
 @'vertex' 1 < 'vertex' 2
 'vertex' 3 < 'Algebra.Graph.Relation.Symmetric.edge' 1 2
 'vertex' 1 < 'Algebra.Graph.Relation.Symmetric.edge' 1 1
-'Algebra.Graph.Relation.Symmetric.edge' 1 2 = 'Algebra.Graph.Relation.Symmetric.edge' 2 1
+'Algebra.Graph.Relation.Symmetric.edge' 1 2 == 'Algebra.Graph.Relation.Symmetric.edge' 2 1
 'Algebra.Graph.Relation.Symmetric.edge' 1 1 < 'Algebra.Graph.Relation.Symmetric.edge' 1 2
 'Algebra.Graph.Relation.Symmetric.edge' 1 2 < 'Algebra.Graph.Relation.Symmetric.edge' 1 1 + 'Algebra.Graph.Relation.Symmetric.edge' 2 2
 'Algebra.Graph.Relation.Symmetric.edge' 1 2 < 'Algebra.Graph.Relation.Symmetric.edge' 1 3@
@@ -159,20 +162,20 @@ instance (Ord a, Num a) => Num (SymmetricRelation a) where
     abs         = id
     negate      = id
 
--- | Check if the internal representation of a relation is consistent, i.e. if all
--- pairs of elements in the 'relation' refer to existing elements in the 'domain' and that if all pair of edges have their symmetric.
--- It should be impossible to create an inconsistent 'Relation', and we use this
+-- | Check if the internal representation of a symmetric relation is consistent, i.e. if all
+-- pairs of elements in the 'relation' refer to existing elements in the 'domain' and that if all pair of edges have their symmetric counterparts.
+-- It should be impossible to create an inconsistent 'SymmetricRelation', and we use this
 -- function in testing.
 -- /Note: this function is for internal use only/.
 --
 -- @
--- consistent 'Algebra.Graph.Relation.empty'         == True
--- consistent ('Algebra.Graph.Relation.vertex' x)    == True
--- consistent ('Algebra.Graph.Relation.overlay' x y) == True
--- consistent ('Algebra.Graph.Relation.connect' x y) == True
--- consistent ('Algebra.Graph.Relation.edge' x y)    == True
--- consistent ('Algebra.Graph.Relation.edges' xs)    == True
--- consistent ('Algebra.Graph.Relation.stars' xs)    == True
+-- consistent 'Algebra.Graph.Relation.Symmetric.empty'         == True
+-- consistent ('Algebra.Graph.Relation.Symmetric.vertex' x)    == True
+-- consistent ('Algebra.Graph.Relation.Symmetric.overlay' x y) == True
+-- consistent ('Algebra.Graph.Relation.Symmetric.connect' x y) == True
+-- consistent ('Algebra.Graph.Relation.Symmetric.edge' x y)    == True
+-- consistent ('Algebra.Graph.Relation.Symmetric.edges' xs)    == True
+-- consistent ('Algebra.Graph.Relation.Symmetric.stars' xs)    == True
 -- @
 consistent :: Ord a => SymmetricRelation a -> Bool
 consistent (SymmetricRelation r) = (referredToVertexSet (relation r) `Set.isSubsetOf` domain r) && (r == transpose r)
@@ -182,12 +185,12 @@ consistent (SymmetricRelation r) = (referredToVertexSet (relation r) `Set.isSubs
 referredToVertexSet :: Ord a => Set.Set (a, a) -> Set.Set a
 referredToVertexSet = Set.fromList . uncurry (++) . unzip . Set.toAscList
 
--- | Auxiliary function to deduplicate edges on Sets
+-- | Auxiliary function to deduplicate edges on sets.
 -- /Note: this function is for internal use only/.
 deduplicateSet :: Ord a => Set.Set (a, a) -> Set.Set (a, a)
 deduplicateSet = Set.filter (uncurry (<=))
 
--- | Auxiliary function to deduplicate edges on Lists
+-- | Auxiliary function to deduplicate edges on lists.
 -- /Note: this function is for internal use only/.
 deduplicate :: Ord a => [(a, a)] -> [(a, a)]
 deduplicate = filter (uncurry (<=))

@@ -557,8 +557,8 @@ instance Ord a => ToGraph (R.Relation a) where
 
 instance Ord a => ToGraph (SR.SymmetricRelation a) where
     type ToVertex (SR.SymmetricRelation a) = a
-    toGraph (SR.SymmetricRelation r)       = G.vertices (Set.toList $ R.domain   r) `G.overlay`
-                                             G.edges    (Set.toList $ R.relation r)
+    toGraph r                  = G.vertices (Set.toList . R.domain . SR.toRelation $ r) `G.overlay`
+                                 G.edges    (Set.toList $ R.relation . SR.toRelation $ r)
     isEmpty                    = SR.isEmpty
     hasVertex                  = SR.hasVertex
     hasEdge                    = SR.hasEdge

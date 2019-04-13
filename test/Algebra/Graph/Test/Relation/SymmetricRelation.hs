@@ -42,10 +42,12 @@ testSymmetricRelation = do
     testSymmetricToGraph         t
     testSymmetricGraphFamilies   t
     testSymmetricTransformations t
+    testSymmetricAPIConsistent   t
 
     test "Axioms of undirected graphs" $ size10
         (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))
 
+    putStrLn "\n============ SymmetricRelation.neighbours ============" 
     test "neighbours x empty      == Set.empty" $ \(x :: Int) ->
           neighbours x C.empty    == Set.empty
 

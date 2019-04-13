@@ -277,7 +277,6 @@ instance Ord a => GraphAPI (SR.SymmetricRelation a) where
     transpose         = id
     gmap              = SR.gmap
     induce            = SR.induce
-    compose           = SR.compose
 
 instance Ord a => GraphAPI (LG.Graph Any a) where
     vertices     = LG.vertices

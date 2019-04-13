@@ -28,14 +28,15 @@ import Algebra.Graph.ToGraph (ToGraph (..))
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API
 
-import qualified Algebra.Graph                        as G
-import qualified Algebra.Graph.AdjacencyMap           as AM
-import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
-import qualified Algebra.Graph.AdjacencyIntMap        as AIM
-import qualified Algebra.Graph.Relation               as R
-import qualified Algebra.Graph.Relation.Symmetric     as S 
-import qualified Data.Set                             as Set
-import qualified Data.IntSet                          as IntSet
+import qualified Algebra.Graph                             as G
+import qualified Algebra.Graph.AdjacencyMap                as AM
+import qualified Algebra.Graph.AdjacencyMap.Algorithm      as AM
+import qualified Algebra.Graph.AdjacencyIntMap             as AIM
+import qualified Algebra.Graph.Relation                    as R
+import qualified Algebra.Graph.Relation.Symmetric          as S
+import qualified Algebra.Graph.Relation.Symmetric.Internal as SI 
+import qualified Data.Set                                  as Set
+import qualified Data.IntSet                               as IntSet
 
 data Testsuite where
     Testsuite :: (Arbitrary g, GraphAPI g, Num g, Ord g, Show g, ToGraph g, ToVertex g ~ Int, Vertex g ~ Int)
@@ -150,6 +151,33 @@ testSymmetricTransformations = mconcat [ testRemoveVertex
                               , testGmap
                               , testInduce ]
 
+-- TODO: Change the way that 'x'/'y' is being forced to be of type 'SymmetricRelation Int'/'[(Int,Int)]'/'[(Int, [Int])]''
+testSymmetricAPIConsistent :: Testsuite -> IO ()
+testSymmetricAPIConsistent (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "API Consistency ============"
+
+    test "consistent 'Algebra.Graph.Relation.Symmetric.empty'         == True" $
+      SI.consistent (empty :: S.SymmetricRelation Int) == True
+
+    test "consistent ('Algebra.Graph.Relation.Symmetric.vertex' x)    == True" $ \x ->
+      SI.consistent (vertex % x) == True
+
+    test "consistent ('Algebra.Graph.Relation.Symmetric.overlay' x y) == True" $ \(x :: S.SymmetricRelation Int) (y :: S.SymmetricRelation Int) ->
+      SI.consistent (overlay x y) == True
+
+    test "consistent ('Algebra.Graph.Relation.Symmetric.connect' x y) == True" $ \(x :: S.SymmetricRelation Int) (y :: S.SymmetricRelation Int) ->
+      SI.consistent (connect x y) == True
+
+    test "consistent ('Algebra.Graph.Relation.Symmetric.edge' x y)    == True" $ \x y ->
+      SI.consistent (edge x % y) == True
+
+    test "consistent ('Algebra.Graph.Relation.Symmetric.edges' xs)    == True" $ \(xs :: [(Int, Int)]) ->
+      SI.consistent (edges xs) == True
+
+    test "consistent ('Algebra.Graph.Relation.Symmetric.stars' xs)    == True" $ \(xs :: [(Int, [Int])]) ->
+      SI.consistent (stars xs) == True
+
+-- TODO: Change the way that 'x' is being forced to be of type 'SymmetricRelation Int'
 testSymmetricToRelation :: Testsuite -> IO ()
 testSymmetricToRelation (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "ToRelation ============"
@@ -163,6 +191,7 @@ testSymmetricToRelation (Testsuite prefix (%)) = do
     test "Algebra.Graph.Relation.vertexCount . toRelation == vertexCount" $ \(x :: S.SymmetricRelation Int) ->
         R.vertexCount (S.toRelation x)                    == vertexCount x
 
+-- TODO: Change the way that 'x' is being forced to be of type 'SymmetricRelation Int'/'Relation Int'
 testSymmetricFromRelation :: Testsuite -> IO ()
 testSymmetricFromRelation (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "FromRelation ============"
@@ -483,6 +512,9 @@ testSymmetricEdges (Testsuite prefix (%)) = do
 
     test "edges [(x,y)]     == edge x y" $ \x y ->
           edges [(x,y)]     == id % edge x y
+
+    test "edges [(x,y), (y,x)] == edge x y" $ \x y ->
+          edges [(x,y), (y,x)] == id % edge x y
 
 testOverlays :: Testsuite -> IO ()
 testOverlays (Testsuite prefix (%)) = do
@@ -951,6 +983,10 @@ testSymmetricHasEdge (Testsuite prefix (%)) = do
 
     test "hasEdge x y . removeEdge x y == const False" $ \x y z ->
          (hasEdge x y . removeEdge x y) z == const False % z
+         
+    test "hasEdge x y                  == elem (min x y, max x y) . edgeList" $ \x y z -> do
+        (u, v) <- elements ((x, y) : edgeList z)
+        return $ hasEdge u v z == elem (min u v, max u v) (edgeList % z)
 
 testVertexCount :: Testsuite -> IO ()
 testVertexCount (Testsuite prefix (%)) = do
@@ -1110,10 +1146,8 @@ testSymmetricEdgeSet (Testsuite prefix (%)) = do
     test "edgeSet (vertex x) == Set.empty" $ \x ->
           edgeSet % vertex x == Set.empty
 
-    test "(edgeSet (edge x y) == Set.singleton (x,y)) || (edgeSet (edge x y) == Set.singleton (y,x))" $ \x y ->
-          (edgeSet % edge x y == Set.singleton (x,y))
-          ||
-          (edgeSet % edge x y == Set.singleton (y,x))
+    test "edgeSet ('edge' x y) == Set.'Set.singleton' (min x y, max x y)" $ \x y ->
+          edgeSet % edge x y   == Set.singleton (min x y, max x y)
 
 testPreSet :: Testsuite -> IO ()
 testPreSet (Testsuite prefix (%)) = do
@@ -1362,11 +1396,6 @@ testSymmetricRemoveEdge (Testsuite prefix (%)) = do
 
     test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
           removeEdge 1 2 % (1 * 1 * 2 * 2) == 1 * 1 + 2 * 2
-
-    -- TODO: Ouch. Generic tests are becoming awkward. We need a better way.
-    when (prefix == "Fold." || prefix == "Graph.") $ do
-        test "size (removeEdge x y z)         <= 3 * size z" $ \x y z ->
-              size % (removeEdge x y z)       <= 3 * size z
 
 testReplaceVertex :: Testsuite -> IO ()
 testReplaceVertex (Testsuite prefix (%)) = do

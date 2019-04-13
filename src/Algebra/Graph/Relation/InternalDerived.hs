@@ -45,7 +45,6 @@ instance Ord a => Eq (ReflexiveRelation a) where
 instance (Ord a, Show a) => Show (ReflexiveRelation a) where
     show = show . reflexiveClosure . fromReflexive
 
--- TODO: Optimise the implementation by caching the results of reflexive closure.
 instance Ord a => Graph (ReflexiveRelation a) where
     type Vertex (ReflexiveRelation a) = a
     empty       = ReflexiveRelation empty
@@ -55,6 +54,7 @@ instance Ord a => Graph (ReflexiveRelation a) where
 
 instance Ord a => Reflexive (ReflexiveRelation a)
 
+-- TODO: Optimise the implementation by caching the results of reflexive closure.
 {-| The 'TransitiveRelation' data type represents a /transitive binary relation/
 over a set of elements. Transitive relations satisfy all laws of the
 'Transitive' type class and, in particular, the /closure/ axiom:
@@ -89,6 +89,7 @@ instance Ord a => Graph (TransitiveRelation a) where
 
 instance Ord a => Transitive (TransitiveRelation a)
 
+-- TODO: Optimise the implementation by caching the results of preorder closure.
 {-| The 'PreorderRelation' data type represents a
 /binary relation that is both reflexive and transitive/. Preorders satisfy all
 laws of the 'Preorder' type class and, in particular, the /self-loop/ axiom:
