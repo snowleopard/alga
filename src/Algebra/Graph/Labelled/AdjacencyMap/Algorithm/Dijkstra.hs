@@ -1,10 +1,10 @@
 -- | NOTE: Although any semiring can be used for the algorithm, It only makes sense to find the minium of something. Although semantically maximum can be used, certain abstraction over the comparision operator is required which is not available yet.
 module Algebra.Graph.Labelled.AdjacencyMap.Algorithm.Dijkstra where
 
-import Algebra.Graph.Label (Semiring(..), (<+>), zero)
-import Algebra.Graph.Labelled.AdjacencyMap.Internal (AdjacencyMap(..))
 import Data.Map.Strict (Map, (!))
+import Algebra.Graph.Label (Semiring(..), (<+>), zero)
 import qualified Data.Map.Strict as Map
+import Algebra.Graph.Labelled.AdjacencyMap.Internal (AdjacencyMap(..))
 
 dijkstra ::
      (Ord a, Eq b, Semiring b) => a -> AdjacencyMap b a -> (Map a b, Map a b, [a])
