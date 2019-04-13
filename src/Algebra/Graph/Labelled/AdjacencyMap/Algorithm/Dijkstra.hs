@@ -22,6 +22,13 @@ import Algebra.Graph.Labelled.AdjacencyMap.Internal (AdjacencyMap(..))
 --                  if n[e] not in S
 --                    then Enqueue(S, n[e])
 -- d[s] ← 1
+--
+-- Brief:
+-- We use a queue S to maintain the set of vertices whose leaving edges are to be relaxed. S is initialized to [source].
+-- We maintain 2 attributes, namely, `d` and `r`.
+-- d[q] an estimate of the shortest distance from s to q
+-- r[q] is the total weight added to d[q] since the last time q was extracted for S.
+-- We update d and r till the queue is empty.
 
 dijkstra ::
      (Ord a, Eq b, Semiring b) => a -> AdjacencyMap b a -> (Map a b, Map a b, [a])
