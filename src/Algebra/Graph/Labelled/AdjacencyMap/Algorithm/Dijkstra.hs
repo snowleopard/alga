@@ -6,6 +6,14 @@ import Algebra.Graph.Labelled.AdjacencyMap.Internal (AdjacencyMap(..))
 import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as Map
 
+dijkstra ::
+     (Ord a, Eq b, Semiring b) => a -> AdjacencyMap b a -> (Map a b, Map a b, [a])
+dijkstra src adjMap = fDRQ
+  where
+    iDRQ = initialize src adjMap
+    mDRQ = recursiveUpdateByQ adjMap iDRQ
+    fDRQ = finalize src mDRQ
+
 initialize ::
      (Ord a, Semiring b) => a -> AdjacencyMap b a -> (Map a b, Map a b, [a])
 initialize src adjMap = (srcOne, srcOne, [src])
