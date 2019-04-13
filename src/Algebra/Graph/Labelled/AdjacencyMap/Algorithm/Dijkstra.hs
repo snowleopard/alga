@@ -1,62 +1,64 @@
 -- | NOTE: Although any semiring can be used for the algorithm, It only makes sense to find the minium of something. Although semantically maximum can be used, certain abstraction over the comparision operator is required which is not available yet.
 module Algebra.Graph.Labelled.AdjacencyMap.Algorithm.Dijkstra where
 
-import Algebra.Graph.Label (Semiring(..), zero)
+import Algebra.Graph.Label (Semiring(..), (<+>), zero)
 import Algebra.Graph.Labelled.AdjacencyMap.Internal (AdjacencyMap(..))
-import Data.List (minimumBy)
-import Data.Map.Strict (Map, (!), (\\))
+import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as Map
 
-dijkstra ::
-     (Ord a, Ord b, Semiring b) => a -> AdjacencyMap b a -> Maybe (Map a b)
-dijkstra k m =
-  if Map.member k $ adjacencyMap m
-    then Just $ recurseDijkstraStep (Map.singleton k one, Map.empty)
-    else Nothing
+initialize ::
+     (Ord a, Semiring b) => a -> AdjacencyMap b a -> (Map a b, Map a b, [a])
+initialize src adjMap = (srcOne, srcOne, [src])
   where
-    recurseDijkstraStep (w, a)
-      | w == Map.empty = a
-      | otherwise = recurseDijkstraStep $ dijkstraStep (w, a) m
+    allZero = Map.map (const zero) $ adjacencyMap adjMap
+    srcOne = Map.insert src one allZero
 
-dijkstraStep ::
-     (Ord a, Ord b, Semiring b)
-  => (Map a b, Map a b)
-  -> AdjacencyMap b a
-  -> (Map a b, Map a b)
-dijkstraStep wA@(w, a) m =
-  case minValuedElemKey w of
-    Nothing -> (w, addUnreachableVertices a m)
-    Just kV -> dijkstraStepNonEmpty wA m kV
+finalize ::
+     (Ord a, Semiring b)
+  => a
+  -> (Map a b, Map a b, [a])
+  -> (Map a b, Map a b, [a])
+finalize s (d, r, queue) = (Map.insert s one d, r, queue)
 
-mapUnionMin :: (Ord a, Ord b) => Map a b -> Map a b -> Map a b
-mapUnionMin = Map.unionWith min2
-  where
-    min2 a b
-      | a < b = a
-      | otherwise = b
+recursiveUpdateByQ ::
+     (Ord a, Eq b, Semiring b)
+  => AdjacencyMap b a
+  -> (Map a b, Map a b, [a])
+  -> (Map a b, Map a b, [a])
+recursiveUpdateByQ adjMap dRQ@(d, r, queue) =
+  case queue of
+    [] -> dRQ
+    (k:rest) -> recursiveUpdateByQ adjMap $ updateDRQByEdgeMap r' edgeMap cDRQ
+      where r' = r ! k
+            newR = Map.insert k zero r
+            edgeMap = adjacencyMap adjMap ! k
+            cDRQ = (d, newR, rest)
 
-addUnreachableVertices ::
-     (Ord a, Ord b, Monoid b) => Map a b -> AdjacencyMap b a -> Map a b
-addUnreachableVertices a m = mapUnionMin a allVertices
-  where
-    allVertices = Map.map (const zero) $ adjacencyMap m
+updateDRQByEdgeMap ::
+     (Ord a, Eq b, Semiring b)
+  => b
+  -> Map a b
+  -> (Map a b, Map a b, [a])
+  -> (Map a b, Map a b, [a])
+updateDRQByEdgeMap r' edgeMap pDRQ =
+  foldr (\k dRQ -> updateDRQByEdge r' (k, edgeMap ! k) dRQ) pDRQ $
+  Map.keys edgeMap
 
-dijkstraStepNonEmpty ::
-     (Ord a, Ord b, Semiring b)
-  => (Map a b, Map a b)
-  -> AdjacencyMap b a
+updateDRQByEdge ::
+     (Ord a, Eq b, Semiring b)
+  => b
   -> (a, b)
-  -> (Map a b, Map a b)
-dijkstraStepNonEmpty (w, a) m (k, v) = (nW, nA)
+  -> (Map a b, Map a b, [a])
+  -> (Map a b, Map a b, [a])
+updateDRQByEdge r' (k, w) dRQ@(d, r, queue) =
+  if pDK /= nDK
+    then (Map.insert k nDK d, Map.insert k nRK r, nQ)
+    else dRQ
   where
-    nA = Map.insert k v a
-    nW = mapUnionMin (Map.delete k w) (addWeight $ adjacencyMap m ! k) \\ nA
-    addWeight = Map.map (<.> v)
-
-minValuedElemKey :: (Ord v) => Map k v -> Maybe (k, v)
-minValuedElemKey m =
-  case Map.toList m of
-    [] -> Nothing
-    l -> Just $ minimumBy compareSnd l
-  where
-    compareSnd a b = compare (snd a) (snd b)
+    pDK = d ! k
+    nDK = pDK <+> (r' <.> w)
+    nRK = (r ! k) <+> (r' <.> w)
+    nQ =
+      if k `elem` queue
+        then queue
+        else queue ++ [k]
