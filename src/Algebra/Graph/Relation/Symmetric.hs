@@ -272,7 +272,7 @@ adjacencyList = R.adjacencyList . fromSymmetric
 -- @
 -- path []    == 'empty'
 -- path [x]   == 'vertex' x
--- path [x,y] == 'edges' [(x,y)]
+-- path [x,y] == 'edge' x y
 -- path       == path . 'reverse'
 -- @
 path :: Ord a => [a] -> SI.Relation a
@@ -286,7 +286,7 @@ path xs = case xs of []     -> SI.empty
 -- @
 -- circuit []      == 'empty'
 -- circuit [x]     == 'edge' x x
--- circuit [x,y]   == 'edges' [(x,y)]
+-- circuit [x,y]   == 'edge' x y
 -- circuit [x,y,z] == 'edges' [(x,y),(x,z),(y,z)]
 -- circuit         == circuit . 'reverse'
 -- @
@@ -300,7 +300,7 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- @
 -- clique []         == 'empty'
 -- clique [x]        == 'vertex' x
--- clique [x,y]      == 'edges' [(x,y)]
+-- clique [x,y]      == 'edge' x y
 -- clique [x,y,z]    == 'edges' [(x,y), (x,z), (y,z)]
 -- clique (xs ++ ys) == 'connect' (clique xs) (clique ys)
 -- clique            == clique . 'reverse'
@@ -327,7 +327,7 @@ biclique xs = SI.SR . R.symmetricClosure . R.biclique xs
 --
 -- @
 -- star x []    == 'vertex' x
--- star x [y]   == 'edges' [(x,y)]
+-- star x [y]   == 'edge' x y
 -- star x [y,z] == 'edges' [(x,y), (x,z)]
 -- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
@@ -343,7 +343,7 @@ star x ys = SI.connect (SI.vertex x) (vertices ys)
 -- @
 -- stars []                        == 'empty'
 -- stars [(x, [])]                 == 'vertex' x
--- stars [(x, [y])]                == 'edges' [(x,y)]
+-- stars [(x, [y])]                == 'edge' x y
 -- stars [(x, ys)]                 == 'star' x ys
 -- stars                           == 'overlays' . 'map' ('uncurry' 'star')
 -- stars . 'adjacencyList'         == id

@@ -62,7 +62,7 @@ testBasicPrimitives = mconcat [ testOrd
                               , testConnects ]
 
 testSymmetricBasicPrimitives :: Testsuite -> IO ()
-testSymmetricBasicPrimitives = mconcat [ testOrd
+testSymmetricBasicPrimitives = mconcat [ testSymmetricOrd
                               , testEmpty
                               , testVertex
                               , testSymmetricEdge
@@ -125,8 +125,8 @@ testGraphFamilies = mconcat [ testPath
                             , testForest ]
 
 testSymmetricGraphFamilies :: Testsuite -> IO ()
-testSymmetricGraphFamilies = mconcat [ testPath
-                                     , testCircuit
+testSymmetricGraphFamilies = mconcat [ testSymmetricPath
+                                     , testSymmetricCircuit
                                      , testSymmetricClique
                                      , testBiclique
                                      , testStar
@@ -260,13 +260,15 @@ testSymmetricShow (Testsuite prefix (%)) = do
     test "show (1 * 2    ) == \"edge 1 2\"" $
           show % (1 * 2)   ==  "edge 1 2"
 
-    test "show (1 * 2 * 3) == \"edges [(1,2),(1,3),(2,3)]\"" $
-          show % (1 * 2 * 3) == "edges [(1,2),(1,3),(2,3)]"
+    test "show (2 * 1    ) == \"edge 1 2\"" $
+          show % (2 * 1)   ==  "edge 1 2"
 
-    test "show (1 * 2 + 3) == \"overlay (vertex 3) (edge 1 2)\"" $
-          show % (1 * 2 + 3) == "overlay (vertex 3) (edge 1 2)"
+    test "show (1 * 2 * 1) == \"edges [(1,1),(1,2)]\"" $
+          show % (1 * 2 * 1) == "edges [(1,1),(1,2)]"
 
-    putStrLn ""
+    test "show (3 * 2 * 1) == \"edges [(1,2),(1,3),(2,3)]\"" $
+          show % (3 * 2 * 1) == "edges [(1,2),(1,3),(2,3)]"
+
     test "show (vertex (-1)                              ) == \"vertex (-1)\"" $
           show % vertex (-1)                               == "vertex (-1)"
 
@@ -293,6 +295,36 @@ testOrd (Testsuite prefix (%)) = do
 
     test "vertex 1 <  edge 1 1" $
           vertex 1 < id % edge 1 1
+
+    test "edge 1 1 <  edge 1 2" $
+          edge 1 1 < id % edge 1 2
+
+    test "edge 1 2 <  edge 1 1 + edge 2 2" $
+          edge 1 2 < id % edge 1 1 + edge 2 2
+
+    test "edge 1 2 <  edge 1 3" $
+          edge 1 2 < id % edge 1 3
+
+    test "x        <= x + y" $ \x y ->
+          id % x   <= x + y
+
+    test "x + y    <= x * y" $ \x y ->
+          id % x + y <= x * y
+
+testSymmetricOrd :: Testsuite -> IO ()
+testSymmetricOrd (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "Ord ============"
+    test "vertex 1 <  vertex 2" $
+          vertex 1 < id % vertex 2
+
+    test "vertex 3 <  edge 1 2" $
+          vertex 3 < id % edge 1 2
+
+    test "vertex 1 <  edge 1 1" $
+          vertex 1 < id % edge 1 1
+
+    test "edge 1 2 ==  edge 2 1" $
+          edge 1 2 == id % edge 2 1
 
     test "edge 1 1 <  edge 1 2" $
           edge 1 1 < id % edge 1 2
@@ -361,7 +393,7 @@ testSymmetricEdge :: Testsuite -> IO ()
 testSymmetricEdge (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "edge ============"
     test "edge x y               == edges [(x,y), (y,x)]" $ \x y ->
-          edge x y               == connect (vertex x) % vertex y
+          edge x y               == id % edges [(x,y), (y,x)]
 
     test "edge x y               == connect (vertex x) (vertex y)" $ \x y ->
           edge x y               == connect (vertex x) % vertex y
@@ -444,6 +476,9 @@ testConnect (Testsuite prefix (%)) = do
 testSymmetricConnect :: Testsuite -> IO ()
 testSymmetricConnect (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "connect ============"
+    test "connect x y               == connect y x" $ \x y ->
+          connect x y               == id % connect y x
+
     test "isEmpty     (connect x y) == isEmpty   x   && isEmpty   y" $ \x y ->
           isEmpty    % connect x y  == (isEmpty   x   && isEmpty   y)
 
@@ -981,6 +1016,9 @@ testSymmetricHasEdge (Testsuite prefix (%)) = do
     test "hasEdge x y (edge x y)       == True" $ \x y ->
           hasEdge x y % edge x y       == True
 
+    test "hasEdge y x (edge x y)       == True" $ \x y ->
+          hasEdge y x % edge x y       == True
+
     test "hasEdge x y . removeEdge x y == const False" $ \x y z ->
          (hasEdge x y . removeEdge x y) z == const False % z
          
@@ -1221,6 +1259,21 @@ testPath (Testsuite prefix (%)) = do
     test "path [x,y] == edge x y" $ \x y ->
           path [x,y] == id % edge x y
 
+testSymmetricPath :: Testsuite -> IO ()
+testSymmetricPath (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "path ============"
+    test "path []    == empty" $
+          path []    == id % empty
+
+    test "path [x]   == vertex x" $ \x ->
+          path [x]   == id % vertex x
+
+    test "path [x,y] == edge x y" $ \x y ->
+          path [x,y] == id % edge x y
+
+    test "path       == path . reverse" $ \xs ->
+          path xs    == id % path (reverse xs)
+
 testCircuit :: Testsuite -> IO ()
 testCircuit (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "circuit ============"
@@ -1232,6 +1285,24 @@ testCircuit (Testsuite prefix (%)) = do
 
     test "circuit [x,y] == edges [(x,y), (y,x)]" $ \x y ->
           circuit [x,y] == id % edges [(x,y), (y,x)]
+
+testSymmetricCircuit :: Testsuite -> IO ()
+testSymmetricCircuit (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "circuit ============"
+    test "circuit []    == empty" $
+          circuit []    == id % empty
+
+    test "circuit [x]   == edge x x" $ \x ->
+          circuit [x]   == id % edge x x
+
+    test "circuit [x,y] == edge x y" $ \x y ->
+          circuit [x,y] == id % edge x y
+
+    test "circuit [x,y,z] == edges [(x,y),(x,z),(y,z)]" $ \x y z ->
+          circuit [x,y,z] == id % edges [(x,y),(x,z),(y,z)]
+
+    test "circuit         == circuit . reverse" $ \xs ->
+          circuit xs      == id % circuit (reverse xs)
 
 testClique :: Testsuite -> IO ()
 testClique (Testsuite prefix (%)) = do

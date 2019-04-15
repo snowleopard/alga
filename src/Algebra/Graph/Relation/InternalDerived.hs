@@ -23,7 +23,7 @@ import Control.DeepSeq (NFData (..))
 
 import Algebra.Graph.Class
 import Algebra.Graph.Relation (Relation, reflexiveClosure,
-                              transitiveClosure, closure)
+                               transitiveClosure, closure)
 
 {-| The 'ReflexiveRelation' data type represents a /reflexive binary relation/
 over a set of elements. Reflexive relations satisfy all laws of the
@@ -54,7 +54,7 @@ instance Ord a => Graph (ReflexiveRelation a) where
 
 instance Ord a => Reflexive (ReflexiveRelation a)
 
--- TODO: Optimise the implementation by caching the results of reflexive closure.
+-- TODO: Optimise the implementation by caching the results of transitive closure.
 {-| The 'TransitiveRelation' data type represents a /transitive binary relation/
 over a set of elements. Transitive relations satisfy all laws of the
 'Transitive' type class and, in particular, the /closure/ axiom:
@@ -79,7 +79,7 @@ instance Ord a => Eq (TransitiveRelation a) where
 instance (Ord a, Show a) => Show (TransitiveRelation a) where
     show = show . transitiveClosure . fromTransitive
 
--- TODO: Optimise the implementation by caching the results of transitive closure.
+-- TODO: To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Ord a => Graph (TransitiveRelation a) where
     type Vertex (TransitiveRelation a) = a
     empty       = TransitiveRelation empty

@@ -134,7 +134,7 @@ overlay (SR x) (SR y) = SR $ RI.Relation
 -- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2 + n2 * n1)/.
 --
 -- @
--- connect x y == connect y x
+-- connect x y                                                  == connect y x
 -- 'Algebra.Graph.Relation.Symmetric.isEmpty'     (connect x y) == 'Algebra.Graph.Relation.Symmetric.isEmpty'   x   && 'Algebra.Graph.Relation.Symmetric.isEmpty'   y
 -- 'Algebra.Graph.Relation.Symmetric.hasVertex' z (connect x y) == 'Algebra.Graph.Relation.Symmetric.hasVertex' z x || 'Algebra.Graph.Relation.Symmetric.hasVertex' z y
 -- 'Algebra.Graph.Relation.Symmetric.vertexCount' (connect x y) >= 'Algebra.Graph.Relation.Symmetric.vertexCount' x
