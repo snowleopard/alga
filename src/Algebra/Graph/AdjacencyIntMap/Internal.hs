@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyIntMap.Internal
@@ -23,6 +24,7 @@ import Data.Monoid (getSum, Sum (..))
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)
 import Data.IntSet (IntSet)
 import Data.List
+import GHC.Generics
 
 import Control.DeepSeq (NFData (..))
 
@@ -133,7 +135,7 @@ newtype AdjacencyIntMap = AM {
     -- adjacencyIntMap ('Algebra.Graph.AdjacencyIntMap.edge' 1 1) == IntMap.'IntMap.singleton' 1 (IntSet.'IntSet.singleton' 1)
     -- adjacencyIntMap ('Algebra.Graph.AdjacencyIntMap.edge' 1 2) == IntMap.'IntMap.fromList' [(1,IntSet.'IntSet.singleton' 2), (2,IntSet.'IntSet.empty')]
     -- @
-    adjacencyIntMap :: IntMap IntSet } deriving Eq
+    adjacencyIntMap :: IntMap IntSet } deriving (Eq, Generic)
 
 instance Show AdjacencyIntMap where
     showsPrec p (AM m)
