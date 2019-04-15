@@ -13,18 +13,18 @@
 
 module Algebra.Graph.Relation.Symmetric.Internal (
     -- * Implementation of symmetric binary relations
-    SymmetricRelation (..), empty, vertex, overlay, connect, consistent,
+    Relation (..), empty, vertex, overlay, connect, consistent,
     referredToVertexSet, deduplicateSet, deduplicate
   ) where
 
 import Control.DeepSeq (NFData (..))
 
-import Algebra.Graph.Relation.Internal hiding (empty, vertex, overlay, connect, referredToVertexSet, consistent)
-import Algebra.Graph.Relation (domain, relation, transpose)
+import qualified Algebra.Graph.Relation.Internal as RI
+import qualified Algebra.Graph.Relation          as R
 import qualified Data.Set as Set
 import Data.Monoid (mconcat)
 
-{-|  The 'SymmetricRelation' data type represents a /symmetric binary relation/
+{-|  This 'Relation' data type represents a /symmetric binary relation/
 over a set of elements. Symmetric relations satisfy all laws of the
 'Undirected' type class and, in addition, the
 commutativity of connect:
@@ -33,11 +33,11 @@ commutativity of connect:
 
 The 'Show' instance lists the vertices of an edge in non-decreasing order:
 
-@show (1     :: SymmetricRelation Int) == "vertex 1"
-show (1 * 2 :: SymmetricRelation Int) == "edge 1 2"
-show (2 * 1 :: SymmetricRelation Int) == "edge 1 2"
-show (1 * 2 * 1 :: SymmetricRelation Int) == "edges [(1,1),(1,2)]"
-show (3 * 2 * 1 :: SymmetricRelation Int) == "edges [(1,2),(1,3),(2,3)]"@
+@show (1     :: Relation Int) == "vertex 1"
+show (1 * 2 :: Relation Int) == "edge 1 2"
+show (2 * 1 :: Relation Int) == "edge 1 2"
+show (1 * 2 * 1 :: Relation Int) == "edges [(1,1),(1,2)]"
+show (3 * 2 * 1 :: Relation Int) == "edges [(1,2),(1,3),(2,3)]"@
 
 The total order on graphs is defined using /size-lexicographic/ comparison:
 
@@ -65,24 +65,24 @@ compatible with 'overlay' and 'connect' operations:
 x     <= x + y
 x + y <= x * y@
 -}
-newtype SymmetricRelation a = SymmetricRelation { fromSymmetric :: Relation a }
+newtype Relation a = SR { fromSymmetric :: RI.Relation a }
     deriving NFData
 
-instance Ord a => Eq (SymmetricRelation a) where
+instance Ord a => Eq (Relation a) where
     x == y = fromSymmetric x == fromSymmetric y
 
-instance (Ord a, Show a) => Show (SymmetricRelation a) where
+instance (Ord a, Show a) => Show (Relation a) where
     show = show . filtered . fromSymmetric
         where
-            filtered (Relation d r) = Relation d (deduplicateSet r)
+            filtered (RI.Relation d r) = RI.Relation d (deduplicateSet r)
 
-instance Ord a => Ord (SymmetricRelation a) where
+instance Ord a => Ord (Relation a) where
     compare x y = mconcat
-        [ compare (Set.size . domain . fromSymmetric $   x) (Set.size . domain . fromSymmetric $   y)
-        , compare (           domain . fromSymmetric $   x) (           domain . fromSymmetric $   y)
-        , compare (Set.size . deduplicateSet . relation . fromSymmetric $ x) 
-                  (Set.size . deduplicateSet . relation . fromSymmetric $ y)
-        , compare (           relation . fromSymmetric $ x) (           relation . fromSymmetric $ y) ]
+        [ compare (Set.size . R.domain . fromSymmetric $   x) (Set.size . R.domain . fromSymmetric $   y)
+        , compare (           R.domain . fromSymmetric $   x) (           R.domain . fromSymmetric $   y)
+        , compare (Set.size . deduplicateSet . R.relation . fromSymmetric $ x) 
+                  (Set.size . deduplicateSet . R.relation . fromSymmetric $ y)
+        , compare (           R.relation . fromSymmetric $ x) (           R.relation . fromSymmetric $ y) ]
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
@@ -93,8 +93,8 @@ instance Ord a => Ord (SymmetricRelation a) where
 -- 'Algebra.Graph.Relation.Symmetric.vertexCount' empty == 0
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   empty == 0
 -- @
-empty :: SymmetricRelation a
-empty = SymmetricRelation $ Relation Set.empty Set.empty
+empty :: Relation a
+empty = SR $ RI.Relation Set.empty Set.empty
 
 -- | Construct the graph comprising /a single isolated vertex/.
 -- Complexity: /O(1)/ time and memory.
@@ -105,8 +105,8 @@ empty = SymmetricRelation $ Relation Set.empty Set.empty
 -- 'Algebra.Graph.Relation.Symmetric.vertexCount' (vertex x) == 1
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (vertex x) == 0
 -- @
-vertex :: a -> SymmetricRelation a
-vertex x = SymmetricRelation $ Relation (Set.singleton x) Set.empty
+vertex :: a -> Relation a
+vertex x = SR $ RI.Relation (Set.singleton x) Set.empty
 
 -- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
@@ -122,10 +122,10 @@ vertex x = SymmetricRelation $ Relation (Set.singleton x) Set.empty
 -- 'Algebra.Graph.Relation.Symmetric.vertexCount' (overlay 1 2) == 2
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (overlay 1 2) == 0
 -- @
-overlay :: Ord a => SymmetricRelation a -> SymmetricRelation a -> SymmetricRelation a
-overlay (SymmetricRelation x) (SymmetricRelation y) = SymmetricRelation $ Relation 
-                                                      (domain x   `Set.union` domain y)
-                                                      (relation x `Set.union` relation y)
+overlay :: Ord a => Relation a -> Relation a -> Relation a
+overlay (SR x) (SR y) = SR $ RI.Relation 
+                                        (R.domain x   `Set.union` R.domain y)
+                                        (R.relation x `Set.union` R.relation y)
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
 -- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
@@ -145,16 +145,16 @@ overlay (SymmetricRelation x) (SymmetricRelation y) = SymmetricRelation $ Relati
 -- 'Algebra.Graph.Relation.Symmetric.vertexCount' (connect 1 2) == 2
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect 1 2) == 1
 -- @
-connect :: Ord a => SymmetricRelation a -> SymmetricRelation a -> SymmetricRelation a
-connect (SymmetricRelation x) (SymmetricRelation y) = SymmetricRelation $ Relation 
-                                                      (domain x `Set.union` domain y)
-                                                      (relation x `Set.union` relation y 
-                                                      `Set.union` 
-                                                      (domain x `setProduct` domain y)
-                                                      `Set.union` 
-                                                      (domain y `setProduct` domain x))
+connect :: Ord a => Relation a -> Relation a -> Relation a
+connect (SR x) (SR y) = SR $ RI.Relation 
+                                         (R.domain x `Set.union` R.domain y)
+                                         (R.relation x `Set.union` R.relation y 
+                                         `Set.union` 
+                                         (R.domain x `RI.setProduct` R.domain y)
+                                         `Set.union` 
+                                         (R.domain y `RI.setProduct` R.domain x))
 
-instance (Ord a, Num a) => Num (SymmetricRelation a) where
+instance (Ord a, Num a) => Num (Relation a) where
     fromInteger = vertex . fromInteger
     x + y       = x `overlay` y
     x * y       = x `connect` y
@@ -164,7 +164,7 @@ instance (Ord a, Num a) => Num (SymmetricRelation a) where
 
 -- | Check if the internal representation of a symmetric relation is consistent, i.e. if all
 -- pairs of elements in the 'relation' refer to existing elements in the 'domain' and that if all pair of edges have their symmetric counterparts.
--- It should be impossible to create an inconsistent 'SymmetricRelation', and we use this
+-- It should be impossible to create an inconsistent 'Relation', and we use this
 -- function in testing.
 -- /Note: this function is for internal use only/.
 --
@@ -177,8 +177,8 @@ instance (Ord a, Num a) => Num (SymmetricRelation a) where
 -- consistent ('Algebra.Graph.Relation.Symmetric.edges' xs)    == True
 -- consistent ('Algebra.Graph.Relation.Symmetric.stars' xs)    == True
 -- @
-consistent :: Ord a => SymmetricRelation a -> Bool
-consistent (SymmetricRelation r) = (referredToVertexSet (relation r) `Set.isSubsetOf` domain r) && (r == transpose r)
+consistent :: Ord a => Relation a -> Bool
+consistent (SR r) = (referredToVertexSet (R.relation r) `Set.isSubsetOf` R.domain r) && (r == R.transpose r)
 
 -- | The set of elements that appear in a given set of pairs.
 -- /Note: this function is for internal use only/.

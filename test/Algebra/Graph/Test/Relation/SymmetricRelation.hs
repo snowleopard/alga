@@ -24,7 +24,7 @@ import qualified Data.Set            as Set
 t :: Testsuite
 t = testsuite "Relation.Symmetric." empty
 
-type SRI = SymmetricRelation Int
+type SRI = Relation Int
 
 testSymmetricRelation :: IO ()
 testSymmetricRelation = do
@@ -35,8 +35,8 @@ testSymmetricRelation = do
          consistent m
 
     testSymmetricBasicPrimitives t
-    testSymmetricToRelation      t
-    testSymmetricFromRelation    t
+    testSymmetricFromSymmetric   t
+    testSymmetricToSymmetric     t
     testSymmetricShow            t
     testSymmetricIsSubgraphOf    t
     testSymmetricToGraph         t
@@ -45,7 +45,7 @@ testSymmetricRelation = do
     testSymmetricAPIConsistent   t
 
     test "Axioms of undirected graphs" $ size10
-        (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))
+        (undirectedAxioms :: GraphTestsuite (Relation Int))
 
     putStrLn "\n============ SymmetricRelation.neighbours ============" 
     test "neighbours x empty      == Set.empty" $ \(x :: Int) ->

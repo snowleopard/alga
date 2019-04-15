@@ -32,8 +32,8 @@ import qualified Algebra.Graph                             as G
 import qualified Algebra.Graph.AdjacencyMap                as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm      as AM
 import qualified Algebra.Graph.AdjacencyIntMap             as AIM
-import qualified Algebra.Graph.Relation                    as R
-import qualified Algebra.Graph.Relation.Symmetric          as S
+import qualified Algebra.Graph.Relation                    as Relation
+import qualified Algebra.Graph.Relation.Symmetric          as Symmetric
 import qualified Algebra.Graph.Relation.Symmetric.Internal as SI 
 import qualified Data.Set                                  as Set
 import qualified Data.IntSet                               as IntSet
@@ -151,21 +151,21 @@ testSymmetricTransformations = mconcat [ testRemoveVertex
                               , testGmap
                               , testInduce ]
 
--- TODO: Change the way that 'x'/'y' is being forced to be of type 'SymmetricRelation Int'/'[(Int,Int)]'/'[(Int, [Int])]''
+-- TODO: Change the way that 'x'/'y' is being forced to be of type 'Symmetric.Relation Int'/'[(Int,Int)]'/'[(Int, [Int])]''
 testSymmetricAPIConsistent :: Testsuite -> IO ()
 testSymmetricAPIConsistent (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "API Consistency ============"
 
     test "consistent 'Algebra.Graph.Relation.Symmetric.empty'         == True" $
-      SI.consistent (empty :: S.SymmetricRelation Int) == True
+      SI.consistent (empty :: Symmetric.Relation Int) == True
 
     test "consistent ('Algebra.Graph.Relation.Symmetric.vertex' x)    == True" $ \x ->
       SI.consistent (vertex % x) == True
 
-    test "consistent ('Algebra.Graph.Relation.Symmetric.overlay' x y) == True" $ \(x :: S.SymmetricRelation Int) (y :: S.SymmetricRelation Int) ->
+    test "consistent ('Algebra.Graph.Relation.Symmetric.overlay' x y) == True" $ \(x :: Symmetric.Relation Int) (y :: Symmetric.Relation Int) ->
       SI.consistent (overlay x y) == True
 
-    test "consistent ('Algebra.Graph.Relation.Symmetric.connect' x y) == True" $ \(x :: S.SymmetricRelation Int) (y :: S.SymmetricRelation Int) ->
+    test "consistent ('Algebra.Graph.Relation.Symmetric.connect' x y) == True" $ \(x :: Symmetric.Relation Int) (y :: Symmetric.Relation Int) ->
       SI.consistent (connect x y) == True
 
     test "consistent ('Algebra.Graph.Relation.Symmetric.edge' x y)    == True" $ \x y ->
@@ -177,36 +177,36 @@ testSymmetricAPIConsistent (Testsuite prefix (%)) = do
     test "consistent ('Algebra.Graph.Relation.Symmetric.stars' xs)    == True" $ \(xs :: [(Int, [Int])]) ->
       SI.consistent (stars xs) == True
 
--- TODO: Change the way that 'x' is being forced to be of type 'SymmetricRelation Int'
-testSymmetricToRelation :: Testsuite -> IO ()
-testSymmetricToRelation (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "ToRelation ============"
+-- TODO: Change the way that 'x' is being forced to be of type 'Symmetric.Relation Int'
+testSymmetricFromSymmetric :: Testsuite -> IO ()
+testSymmetricFromSymmetric (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "FromSymmetric ============"
 
-    test "toRelation (edge 1 2)                           == Algebra.Graph.Relation.edges [(1,2), (2,1)]" $
-        S.toRelation (edge 1 % 2)                         == R.edges [(1,2), (2,1)]
+    test "fromSymmetric (edge 1 2)                           == Algebra.Graph.Relation.edges [(1,2), (2,1)]" $
+        Symmetric.fromSymmetric (edge 1 % 2)                 == Relation.edges [(1,2), (2,1)]
 
-    test "Algebra.Graph.Relation.edgeCount . toRelation   <= (* 2) . edgeCount" $ \(x :: S.SymmetricRelation Int) ->
-        R.edgeCount (S.toRelation x)                      <= 2 * edgeCount x
+    test "Algebra.Graph.Relation.edgeCount . fromSymmetric   <= (* 2) . edgeCount" $ \(x :: Symmetric.Relation Int) ->
+        Relation.edgeCount (Symmetric.fromSymmetric x)       <= 2 * edgeCount x
 
-    test "Algebra.Graph.Relation.vertexCount . toRelation == vertexCount" $ \(x :: S.SymmetricRelation Int) ->
-        R.vertexCount (S.toRelation x)                    == vertexCount x
+    test "Algebra.Graph.Relation.vertexCount . fromSymmetric == vertexCount" $ \(x :: Symmetric.Relation Int) ->
+        Relation.vertexCount (Symmetric.fromSymmetric x)     == vertexCount x
 
--- TODO: Change the way that 'x' is being forced to be of type 'SymmetricRelation Int'/'Relation Int'
-testSymmetricFromRelation :: Testsuite -> IO ()
-testSymmetricFromRelation (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "FromRelation ============"
+-- TODO: Change the way that 'x' is being forced to be of type 'Symmetric.Relation Int'/'Relation Int'
+testSymmetricToSymmetric :: Testsuite -> IO ()
+testSymmetricToSymmetric (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "ToSymmetric ============"
 
-    test "fromRelation (Algebra.Graph.Relation.edge 1 2) == edge 1 2" $
-        S.fromRelation (R.edge 1 % 2)                    == edge 1 2
+    test "toSymmetric (Algebra.Graph.Relation.edge 1 2)    == edge 1 2" $
+        Symmetric.toSymmetric (Relation.edge 1 % 2)        == edge 1 2
 
-    test "fromRelation . toRelation                      == id" $ \(x :: S.SymmetricRelation Int) ->
-        S.fromRelation (S.toRelation x)                  == id x
+    test "toSymmetric . fromSymmetric                      == id" $ \(x :: Symmetric.Relation Int) ->
+        Symmetric.toSymmetric (Symmetric.fromSymmetric x)  == id x
 
-    test "vertexCount . fromRelation                     == Algebra.Graph.Relation.vertexCount" $ \(x :: R.Relation Int) ->
-        vertexCount (S.fromRelation x)                   == R.vertexCount x
+    test "vertexCount . toSymmetric                        == Algebra.Graph.Relation.vertexCount" $ \(x :: Relation.Relation Int) ->
+        vertexCount (Symmetric.toSymmetric x)              == Relation.vertexCount x
     
-    test "(* 2) . vertexCount . fromRelation             >= Algebra.Graph.Relation.edgeCount" $ \(x :: R.Relation Int) ->
-          2 * edgeCount (S.fromRelation x)               >= R.edgeCount x
+    test "(* 2) . vertexCount . toSymmetric                >= Algebra.Graph.Relation.edgeCount" $ \(x :: Relation.Relation Int) ->
+          2 * edgeCount (Symmetric.toSymmetric x)          >= Relation.edgeCount x
 
 testShow :: Testsuite -> IO ()
 testShow (Testsuite prefix (%)) = do

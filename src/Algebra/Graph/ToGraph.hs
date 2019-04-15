@@ -555,10 +555,10 @@ instance Ord a => ToGraph (R.Relation a) where
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
 
-instance Ord a => ToGraph (SR.SymmetricRelation a) where
-    type ToVertex (SR.SymmetricRelation a) = a
-    toGraph r                  = G.vertices (Set.toList . R.domain . SR.toRelation $ r) `G.overlay`
-                                 G.edges    (Set.toList $ R.relation . SR.toRelation $ r)
+instance Ord a => ToGraph (SR.Relation a) where
+    type ToVertex (SR.Relation a) = a
+    toGraph r                  = G.vertices (Set.toList . R.domain . SR.fromSymmetric $ r) `G.overlay`
+                                 G.edges    (Set.toList $ R.relation . SR.fromSymmetric $ r)
     isEmpty                    = SR.isEmpty
     hasVertex                  = SR.hasVertex
     hasEdge                    = SR.hasEdge

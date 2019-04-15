@@ -172,14 +172,14 @@ instance Ord a => Graph (R.Relation a) where
     overlay = R.overlay
     connect = R.connect
 
-instance Ord a => Graph (RSI.SymmetricRelation a) where
-    type Vertex (RSI.SymmetricRelation a) = a
+instance Ord a => Graph (RSI.Relation a) where
+    type Vertex (RSI.Relation a) = a
     empty   = RSI.empty
     vertex  = RSI.vertex
     overlay = RSI.overlay
     connect = RSI.connect
 
-instance Ord a => Undirected (RSI.SymmetricRelation a)
+instance Ord a => Undirected (RSI.Relation a)
 
 {-|
 The class of /undirected graphs/ that satisfy the following additional axiom.

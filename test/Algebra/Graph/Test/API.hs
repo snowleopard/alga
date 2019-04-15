@@ -255,7 +255,7 @@ instance Ord a => GraphAPI (R.Relation a) where
     symmetricClosure  = R.symmetricClosure
     transitiveClosure = R.transitiveClosure
 
-instance Ord a => GraphAPI (SR.SymmetricRelation a) where
+instance Ord a => GraphAPI (SR.Relation a) where
     edge              = SR.edge
     vertices          = SR.vertices
     edges             = SR.edges
