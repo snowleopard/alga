@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.NonEmpty.AdjacencyMap.Internal
@@ -17,6 +18,7 @@ module Algebra.Graph.NonEmpty.AdjacencyMap.Internal (
 
 import Control.DeepSeq
 import Data.List
+import GHC.Generics
 
 import qualified Algebra.Graph.AdjacencyMap          as AM
 import qualified Algebra.Graph.AdjacencyMap.Internal as AM
@@ -115,7 +117,7 @@ newtype AdjacencyMap a = NAM {
     -- adjacencyMap ('Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 1) == Map.'Map.singleton' 1 (Set.'Set.singleton' 1)
     -- adjacencyMap ('Algebra.Graph.NonEmpty.AdjacencyMap.edge' 1 2) == Map.'Map.fromList' [(1,Set.'Set.singleton' 2), (2,Set.'Set.empty')]
     -- @
-    am :: AM.AdjacencyMap a } deriving (Eq, NFData, Ord)
+    am :: AM.AdjacencyMap a } deriving (Eq, Generic, NFData, Ord)
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap' for
 -- more details.
