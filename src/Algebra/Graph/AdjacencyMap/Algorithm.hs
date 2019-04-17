@@ -236,7 +236,7 @@ isTopSortOf xs m = go Set.empty xs
 
 -- | Compute the /breadth-first search/ forest of a graph that corresponds to
 -- searching from each of the graph vertices in the 'Ord' @a@ order.
---
+-- Complexity: /O(n^2 * log(n))/ time and O(n) memory.
 -- @
 -- bfsForest 'empty'                       == []
 -- 'forest' (bfsForest $ 'edge' 1 1)         == 'vertex' 1
@@ -257,18 +257,13 @@ isTopSortOf xs m = go Set.empty xs
 --                                                                             , Node {rootLabel = 7
 --                                                                                    , subForest = [] }]}]
 -- @
-bfsForest :: Ord a => AdjacencyMap a -> [Tree a]
-bfsForest g
-    | isEmpty g = []
-    | otherwise = headTree : (bfsForest . induce remove) g
-        where headTree = bfsTree ((head . vertexList) g) g
-              remove x = not $ elem x $ flatten headTree
+bfsForest :: Ord a => AdjacencyMap a -> Forest a
+bfsForest g = bfsForestFrom (vertexList g) g
 
 
 -- | Compute the /breadth-first search/ AdjacencyMap of a graph that corresponds to
 -- searching from a single vertex of the graph. 
--- This is just for internal use. Might move it to `*.Internal` then?
---
+-- Complexity: /O(n^2 * log(n))/ time and O(n) memory.
 bfsTreeAdjacencyMap :: Ord a => a -> AdjacencyMap a -> AdjacencyMap a
 bfsTreeAdjacencyMap s g = if (hasVertex s g) 
                           then bfsTreeAdjacencyMapUtil [s] (Set.singleton s) g 
@@ -277,8 +272,7 @@ bfsTreeAdjacencyMap s g = if (hasVertex s g)
 -- | Compute the /breadth-first search/ AdjacencyMap of a graph that corresponds to
 -- searching from the head of a queue (followed by other vertices to search from), 
 -- given a Set of seen vertices (vertices that shouldn't be visited).
--- This is just for internal use. Might move it to `*.Internal` then?
---
+-- Complexity: /O(n^2 * log(n))/ time and O(n) memory.
 bfsTreeAdjacencyMapUtil :: Ord a => [a] -> Set.Set a -> AdjacencyMap a -> AdjacencyMap a
 bfsTreeAdjacencyMapUtil [] _ _ = empty
 bfsTreeAdjacencyMapUtil queue@(v:qv) seen g = overlay (AM.AM $ Map.singleton v vSet) (bfsTreeAdjacencyMapUtil newQueue newSeen g)
@@ -291,13 +285,16 @@ bfsTreeAdjacencyMapUtil queue@(v:qv) seen g = overlay (AM.AM $ Map.singleton v v
 -- | Compute the /breadth-first search/ Tree of a graph that corresponds to
 -- searching from a single vertex of the graph. This is just for internal use. 
 -- Might move it to `*.Internal` then?
---
+-- Complexity: /O(n^2 * log(n))/ time and O(n) memory.
 bfsTree :: Ord a => a -> AdjacencyMap a -> Tree a
 bfsTree s g = unfoldTree neighbors s
-    where neighbors b = (b, Set.toAscList . postSet b $ bfs)
-          bfs = bfsTreeAdjacencyMap s g
+    where neighbors b = (b, Set.toAscList . postSet b $ bfsAM)
+          bfsAM = bfsTreeAdjacencyMap s g
 
-
+-- | Compute the /breadth-first search/ forest of a graph, searching from each of
+-- the given vertices in order. Note that the resulting forest does not
+-- necessarily span the whole graph, as some vertices may be unreachable.
+-- Complexity: /O(n^2 * log(n))/ time and O(n) memory.
 -- bfsForestFrom vs 'empty'                                      == []
 -- 'forest' (bfsForestFrom [1]   $ 'edge' 1 1)                   == 'vertex' 1
 -- 'forest' (bfsForestFrom [1]   $ 'edge' 1 2)                   == 'edge' 1 2
@@ -322,17 +319,48 @@ bfsTree s g = unfoldTree neighbors s
 bfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
 bfsForestFrom [] _ = []
 bfsForestFrom (v:vs) g
-    | hasVertex v g = headTree:bfsForestFrom vs (induce (\x -> not $ elem x removedVertices) g)
+    | hasVertex v g = headTree:bfsForestFrom vs (induce remove g)
     | otherwise = bfsForestFrom vs g
         where headTree = bfsTree v g
               removedVertices = flatten headTree
+              remove x = not $ elem x removedVertices
 
--- One of the next two should be deleted probably. bfs2 computes [[a]] while bfs computes [[[a]]].
-bfs2 :: Ord a => [a] -> AdjacencyMap a -> [[a]]
-bfs2 vs g = foldr (zipWith (++)) acc (map (++ repeat []) l)
-    where l = bfs vs g 
-          maxLength = maximum (map length l)
+-- -- | Compute the list of vertices visited by the /breadth-first search/ by level in a
+-- graph, when searching from each of the given vertices in order.
+-- Complexity: /O(n^2 * log(n))/ time and O(n) memory.
+-- @
+-- bfs vs    $ 'empty'                    == []
+-- bfs [1]   $ 'edge' 1 1                 == [[1]]
+-- bfs [1]   $ 'edge' 1 2                 == [[1],[2]]
+-- bfs [2]   $ 'edge' 1 2                 == [[2]]
+-- bfs [3]   $ 'edge' 1 2                 == []
+-- bfs [1,2] $ 'edge' 1 2                 == [[1],[2]]
+-- bfs [2,1] $ 'edge' 1 2                 == [[2,1]]
+-- bfs []    $ x                        == []
+-- bfs [1,4] $ 3 * (1 + 4) * (1 + 5)    == [[1,4],[5]]
+-- @
+bfs :: Ord a => [a] -> AdjacencyMap a -> [[a]]
+bfs vs g = foldr (zipWith (++)) acc (map (++ repeat []) l)
+    where l = bfsPerTree vs g 
+          maxLength = case l of
+            [] -> 0
+            _ -> maximum (map length l)
           acc = [ [] | _<-[1..maxLength]]
 
-bfs :: Ord a => [a] -> AdjacencyMap a -> [[[a]]]
-bfs vs = (map levels . bfsForestFrom vs)
+
+-- -- | Compute the list of vertices visited by the /breadth-first search/ in a graph.
+-- For every tree in the forest, a different list of vertices by level is given.
+-- Complexity: /O(n^2 * log(n))/ time and O(n) memory.
+-- @
+-- bfsPerTree vs    $ 'empty'                    == []
+-- bfsPerTree [1]   $ 'edge' 1 1                 == [[[1]]]
+-- bfsPerTree [1]   $ 'edge' 1 2                 == [[[1],[2]]]
+-- bfsPerTree [2]   $ 'edge' 1 2                 == [[[2]]]
+-- bfsPerTree [3]   $ 'edge' 1 2                 == []
+-- bfsPerTree [1,2] $ 'edge' 1 2                 == [[[1],[2]]]
+-- bfsPerTree [2,1] $ 'edge' 1 2                 == [[[2]],[[1]]]
+-- bfsPerTree []    $ x                        == []
+-- bfsPerTree [1,4] $ 3 * (1 + 4) * (1 + 5)    == [[[1],[5]],[[4]]]
+-- @
+bfsPerTree :: Ord a => [a] -> AdjacencyMap a -> [[[a]]]
+bfsPerTree vs = (map levels . bfsForestFrom vs)
