@@ -95,19 +95,19 @@ install:
   - ${CABAL} new-freeze -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dry
   - "cat \"cabal.project.freeze\" | sed -E 's/^(constraints: *| *)//' | sed 's/any.//'"
   - rm  "cabal.project.freeze"
+  - ${CABAL} new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all;
+  - ${CABAL} new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all;
+  - rm -rf .ghc.environment.* "."/dist
+  - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
 ##### Performance regression suite, added manually #####
-  - if [ "$DOBENCH" = "" ]; then
-        ${CABAL} new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all;
-        ${CABAL} new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all;
-    else
+  - if [ "$DOBENCH" != "" ]; then
         echo "Downloadin performance regression suite...";
         pwd;
+        cd ${DISTDIR};
         curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o compare.sh;
         chmod +x compare.sh;
     fi
 ##### Performance regression suite, added manually #####
-  - rm -rf .ghc.environment.* "."/dist
-  - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
 
 # Here starts the actual work to be performed for the package under test;
 # any command which exits with a non-zero exit code causes the build to fail.
