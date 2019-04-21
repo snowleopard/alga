@@ -52,11 +52,11 @@ matrix:
     - compiler: "ghc-8.6.4"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.6.4], sources: [hvr-ghc]}}
       env: DOBENCH="Graph"
-      script: timeout 45m $TRAVIS_BUILD_DIR/compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; );
+      script: timeout 45m compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; );
     - compiler: "ghc-8.6.4"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.6.4], sources: [hvr-ghc]}}
       env: DOBENCH="Graph.NonEmpty"
-      script: timeout 45m $TRAVIS_BUILD_DIR/compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ) "True" ;
+      script: timeout 45m compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ) "True" ;
 ##### Performance regression suite, added manually #####
 
 before_install:
@@ -97,9 +97,13 @@ install:
   - rm  "cabal.project.freeze"
 ##### Performance regression suite, added manually #####
   - if [ "$DOBENCH" = "" ]; then
-      ${CABAL} new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all
-      ${CABAL} new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all
-    else curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o $TRAVIS_BUILD_DIR/compare.sh; chmod +x compare.sh ;
+        ${CABAL} new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all
+        ${CABAL} new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all
+    else
+        echo "Downloadin performance regression suite..."
+        pwd
+        curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o compare.sh
+        chmod +x compare.sh
     fi
 ##### Performance regression suite, added manually #####
   - rm -rf .ghc.environment.* "."/dist
