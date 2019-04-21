@@ -29,8 +29,8 @@ import Algebra.Graph.AdjacencyIntMap.Internal
 import Algebra.Graph.Export
 import Algebra.Graph.Fold (Fold)
 import Algebra.Graph.Label
-import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.InternalDerived
+import Algebra.Graph.Relation.Symmetric.Internal
 
 import qualified Algebra.Graph.AdjacencyIntMap       as AdjacencyIntMap
 import qualified Algebra.Graph.AdjacencyMap          as AdjacencyMap
@@ -41,6 +41,7 @@ import qualified Algebra.Graph.Labelled              as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
 import qualified Algebra.Graph.NonEmpty              as NonEmpty
 import qualified Algebra.Graph.Relation              as Relation
+import qualified Algebra.Graph.Relation.Symmetric    as Symmetric
 
 -- | Generate an arbitrary 'C.Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
@@ -98,10 +99,11 @@ instance Arbitrary a => Arbitrary (NonEmpty.Graph a) where
         ++ [NonEmpty.Connect x' y' | (x', y') <- shrink (x, y) ]
 
 -- | Generate an arbitrary 'Relation'.
-arbitraryRelation :: (Arbitrary a, Ord a) => Gen (Relation a)
+arbitraryRelation :: (Arbitrary a, Ord a) => Gen (Relation.Relation a)
 arbitraryRelation = Relation.stars <$> arbitrary
 
-instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
+-- TODO: Implement a custom shrink method.
+instance (Arbitrary a, Ord a) => Arbitrary (Relation.Relation a) where
     arbitrary = arbitraryRelation
 
     shrink g = oneLessVertex ++ oneLessEdge
@@ -118,8 +120,8 @@ instance (Arbitrary a, Ord a) => Arbitrary (Relation a) where
 instance (Arbitrary a, Ord a) => Arbitrary (ReflexiveRelation a) where
     arbitrary = ReflexiveRelation <$> arbitraryRelation
 
-instance (Arbitrary a, Ord a) => Arbitrary (SymmetricRelation a) where
-    arbitrary = SymmetricRelation <$> arbitraryRelation
+instance (Arbitrary a, Ord a) => Arbitrary (Symmetric.Relation a) where
+    arbitrary = SR . Relation.symmetricClosure <$> arbitraryRelation
 
 instance (Arbitrary a, Ord a) => Arbitrary (TransitiveRelation a) where
     arbitrary = TransitiveRelation <$> arbitraryRelation

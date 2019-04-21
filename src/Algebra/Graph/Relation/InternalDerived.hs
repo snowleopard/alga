@@ -12,17 +12,17 @@
 -- "Algebra.Graph.Relation.Symmetric", "Algebra.Graph.Relation.Transitive" and
 -- "Algebra.Graph.Relation.Preorder" instead.
 -----------------------------------------------------------------------------
+
 module Algebra.Graph.Relation.InternalDerived (
     -- * Implementation of derived binary relations
-    ReflexiveRelation (..), SymmetricRelation (..), TransitiveRelation (..),
+    ReflexiveRelation (..), TransitiveRelation (..),
     PreorderRelation (..)
   ) where
-
 
 import Control.DeepSeq (NFData (..))
 
 import Algebra.Graph.Class
-import Algebra.Graph.Relation (Relation, reflexiveClosure, symmetricClosure,
+import Algebra.Graph.Relation (Relation, reflexiveClosure,
                                transitiveClosure, closure)
 
 {-| The 'ReflexiveRelation' data type represents a /reflexive binary relation/
@@ -53,38 +53,6 @@ instance Ord a => Graph (ReflexiveRelation a) where
     connect x y = ReflexiveRelation $ fromReflexive x `connect` fromReflexive y
 
 instance Ord a => Reflexive (ReflexiveRelation a)
-
--- TODO: Optimise the implementation by caching the results of symmetric closure.
-{-|  The 'SymmetricRelation' data type represents a /symmetric binary relation/
-over a set of elements. Symmetric relations satisfy all laws of the
-'Undirected' type class and, in particular, the
-commutativity of connect:
-
-@'connect' x y == 'connect' y x@
-
-The 'Show' instance produces symmetrically closed expressions:
-
-@show (1     :: SymmetricRelation Int) == "vertex 1"
-show (1 * 2 :: SymmetricRelation Int) == "edges [(1,2),(2,1)]"@
--}
-newtype SymmetricRelation a = SymmetricRelation { fromSymmetric :: Relation a }
-    deriving (Num, NFData)
-
-instance Ord a => Eq (SymmetricRelation a) where
-    x == y = symmetricClosure (fromSymmetric x) == symmetricClosure (fromSymmetric y)
-
-instance (Ord a, Show a) => Show (SymmetricRelation a) where
-    show = show . symmetricClosure . fromSymmetric
-
--- TODO: To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
-instance Ord a => Graph (SymmetricRelation a) where
-    type Vertex (SymmetricRelation a) = a
-    empty       = SymmetricRelation empty
-    vertex      = SymmetricRelation . vertex
-    overlay x y = SymmetricRelation $ fromSymmetric x `overlay` fromSymmetric y
-    connect x y = SymmetricRelation $ fromSymmetric x `connect` fromSymmetric y
-
-instance Ord a => Undirected (SymmetricRelation a)
 
 -- TODO: Optimise the implementation by caching the results of transitive closure.
 {-| The 'TransitiveRelation' data type represents a /transitive binary relation/
@@ -162,3 +130,4 @@ instance Ord a => Graph (PreorderRelation a) where
 instance Ord a => Reflexive  (PreorderRelation a)
 instance Ord a => Transitive (PreorderRelation a)
 instance Ord a => Preorder   (PreorderRelation a)
+

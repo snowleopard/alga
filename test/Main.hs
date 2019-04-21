@@ -9,6 +9,7 @@ import Algebra.Graph.Test.Internal
 import Algebra.Graph.Test.Labelled.AdjacencyMap
 import Algebra.Graph.Test.Labelled.Graph
 import Algebra.Graph.Test.Relation
+import Algebra.Graph.Test.Relation.SymmetricRelation
 import Data.Graph.Test.Typed
 
 main :: IO ()
@@ -24,4 +25,5 @@ main = do
     testNonEmptyAdjacencyMap
     testNonEmptyGraph
     testRelation
+    testSymmetricRelation
     testTyped

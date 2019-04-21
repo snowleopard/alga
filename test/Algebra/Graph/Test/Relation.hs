@@ -17,13 +17,11 @@ import Algebra.Graph.Relation
 import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.Preorder
 import Algebra.Graph.Relation.Reflexive
-import Algebra.Graph.Relation.Symmetric
 import Algebra.Graph.Relation.Transitive
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
 import qualified Algebra.Graph.Class as C
-import qualified Data.Set            as Set
 
 t :: Testsuite
 t = testsuite "Relation." empty
@@ -49,23 +47,6 @@ testRelation = do
     putStrLn "\n============ ReflexiveRelation ============"
     test "Axioms of reflexive graphs" $ size10
         (reflexiveAxioms :: GraphTestsuite (ReflexiveRelation Int))
-
-    putStrLn "\n============ SymmetricRelation ============"
-    test "Axioms of undirected graphs" $ size10
-        (undirectedAxioms :: GraphTestsuite (SymmetricRelation Int))
-
-    putStrLn "\n============ SymmetricRelation.neighbours ============"
-    test "neighbours x empty      == Set.empty" $ \(x :: Int) ->
-          neighbours x C.empty    == Set.empty
-
-    test "neighbours x (vertex x) == Set.empty" $ \(x :: Int) ->
-          neighbours x (C.vertex x) == Set.empty
-
-    test "neighbours x (edge x y) == Set.fromList [y]" $ \(x :: Int) y ->
-          neighbours x (C.edge x y) == Set.fromList [y]
-
-    test "neighbours y (edge x y) == Set.fromList [x]" $ \(x :: Int) y ->
-          neighbours y (C.edge x y) == Set.fromList [x]
 
     putStrLn "\n============ TransitiveRelation ============"
     test "Axioms of transitive graphs" $ size10

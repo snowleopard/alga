@@ -27,6 +27,7 @@ import qualified Algebra.Graph.Fold                  as Fold
 import qualified Algebra.Graph.HigherKinded.Class    as HClass
 import qualified Algebra.Graph.AdjacencyIntMap       as AIM
 import qualified Algebra.Graph.Relation              as R
+import qualified Algebra.Graph.Relation.Symmetric    as SR
 import qualified Data.Set                            as Set
 import qualified Data.IntSet                         as IntSet
 
@@ -253,6 +254,29 @@ instance Ord a => GraphAPI (R.Relation a) where
     reflexiveClosure  = R.reflexiveClosure
     symmetricClosure  = R.symmetricClosure
     transitiveClosure = R.transitiveClosure
+
+instance Ord a => GraphAPI (SR.Relation a) where
+    edge              = SR.edge
+    vertices          = SR.vertices
+    edges             = SR.edges
+    overlays          = SR.overlays
+    connects          = SR.connects
+    isSubgraphOf      = SR.isSubgraphOf
+    path              = SR.path
+    circuit           = SR.circuit
+    clique            = SR.clique
+    biclique          = SR.biclique
+    star              = SR.star
+    stars             = SR.stars
+    tree              = SR.tree
+    forest            = SR.forest
+    removeVertex      = SR.removeVertex
+    removeEdge        = SR.removeEdge
+    replaceVertex     = SR.replaceVertex
+    mergeVertices     = SR.mergeVertices
+    transpose         = id
+    gmap              = SR.gmap
+    induce            = SR.induce
 
 instance Ord a => GraphAPI (LG.Graph Any a) where
     vertices     = LG.vertices

@@ -96,6 +96,7 @@ library
                         Algebra.Graph.Relation.Preorder,
                         Algebra.Graph.Relation.Reflexive,
                         Algebra.Graph.Relation.Symmetric,
+                        Algebra.Graph.Relation.Symmetric.Internal,
                         Algebra.Graph.Relation.Transitive,
                         Algebra.Graph.ToGraph,
                         Data.Graph.Typed
@@ -148,6 +149,7 @@ test-suite test-alga
                         Algebra.Graph.Test.NonEmpty.AdjacencyMap,
                         Algebra.Graph.Test.NonEmpty.Graph,
                         Algebra.Graph.Test.Relation,
+                        Algebra.Graph.Test.Relation.SymmetricRelation,
                         Data.Graph.Test.Typed
     if impl(ghc >= 8.0.2)
         other-modules:  Algebra.Graph.Test.RewriteRules
