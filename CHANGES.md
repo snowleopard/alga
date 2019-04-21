@@ -2,8 +2,9 @@
 
 ## 0.4
 
+* #143: Allow newer QuickCheck.
 * #171: Implement sparsification for King-Launchbury graph representation.
-* #178: Derive `Generic` for adjacency maps. 
+* #178: Derive `Generic` for adjacency maps.
 
 ## 0.3
 

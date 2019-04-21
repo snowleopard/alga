@@ -160,7 +160,7 @@ test-suite test-alga
                         base-orphans >= 0.5.4   && < 0.9,
                         containers   >= 0.5.5.1 && < 0.8,
                         extra        >= 1.5     && < 2,
-                        QuickCheck   >= 2.9     && < 2.13
+                        QuickCheck   >= 2.9     && < 2.14
     if !impl(ghc >= 8.0)
         build-depends:  semigroups   >= 0.18.3  && < 0.18.4
     if impl(ghc >= 8.0.2)
