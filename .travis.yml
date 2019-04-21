@@ -95,8 +95,13 @@ install:
   - ${CABAL} new-freeze -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dry
   - "cat \"cabal.project.freeze\" | sed -E 's/^(constraints: *| *)//' | sed 's/any.//'"
   - rm  "cabal.project.freeze"
-  - ${CABAL} new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all
-  - ${CABAL} new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all
+##### Performance regression suite, added manually #####
+  - if [ "$DOBENCH" = "" ]; then
+      ${CABAL} new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all
+      ${CABAL} new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all
+    else curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o $TRAVIS_BUILD_DIR/compare.sh; chmod +x compare.sh ;
+    fi
+##### Performance regression suite, added manually #####
   - rm -rf .ghc.environment.* "."/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
 
@@ -122,14 +127,6 @@ script:
   # build & run tests, build benchmarks
   - ${CABAL} new-build -w ${HC} ${TEST} ${BENCH} all
   - if [ "x$TEST" = "x--enable-tests" ]; then ${CABAL} new-test -w ${HC} ${TEST} ${BENCH} all; fi
-
-##### Performance regression suite, added manually #####
-  - if [ "$DOBENCH" = "" ]; then
-      ${CABAL} new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all ;
-      ${CABAL} new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all ;
-    else curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o $TRAVIS_BUILD_DIR/compare.sh; chmod +x compare.sh ;
-    fi
-##### Performance regression suite, added manually #####
 
   # cabal check
   - (cd algebraic-graphs-* && ${CABAL} check)
