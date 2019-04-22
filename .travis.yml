@@ -104,7 +104,7 @@ install:
   - if [ "$DOBENCH" != "" ]; then
         echo "Downloading performance regression suite...";
         pwd;
-        curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/debug/compare.sh -o compare.sh;
+        curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o compare.sh;
         chmod +x compare.sh;
     fi
 ##### Performance regression suite, added manually #####
