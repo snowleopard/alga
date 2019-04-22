@@ -15,11 +15,13 @@ module Algebra.Graph.Test.API (
   ) where
 
 import Data.Monoid (Any)
+import Data.IntSet (IntSet)
+import Data.Set (Set)
 import Data.Tree
 
 import Algebra.Graph.Class (Graph (..))
 
-import qualified Algebra.Graph                       as Graph
+import qualified Algebra.Graph                       as G
 import qualified Algebra.Graph.AdjacencyMap          as AM
 import qualified Algebra.Graph.Labelled              as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
@@ -28,10 +30,15 @@ import qualified Algebra.Graph.HigherKinded.Class    as HClass
 import qualified Algebra.Graph.AdjacencyIntMap       as AIM
 import qualified Algebra.Graph.Relation              as R
 import qualified Algebra.Graph.Relation.Symmetric    as SR
-import qualified Data.Set                            as Set
-import qualified Data.IntSet                         as IntSet
+
+import qualified Algebra.Graph.AdjacencyMap.Internal       as AMI
+import qualified Algebra.Graph.AdjacencyIntMap.Internal    as AIMI
+import qualified Algebra.Graph.Relation.Internal           as RI
+import qualified Algebra.Graph.Relation.Symmetric.Internal as SRI
 
 class Graph g => GraphAPI g where
+    consistent           :: g -> Bool
+    consistent           = notImplemented
     edge                 :: Vertex g -> Vertex g -> g
     edge                 = notImplemented
     vertices             :: [Vertex g] -> g
@@ -42,14 +49,16 @@ class Graph g => GraphAPI g where
     overlays             = notImplemented
     connects             :: [g] -> g
     connects             = notImplemented
-    fromAdjacencySets    :: [(Vertex g, Set.Set (Vertex g))] -> g
+    fromAdjacencySets    :: [(Vertex g, Set (Vertex g))] -> g
     fromAdjacencySets    = notImplemented
-    fromAdjacencyIntSets :: [(Int, IntSet.IntSet)] -> g
+    fromAdjacencyIntSets :: [(Int, IntSet)] -> g
     fromAdjacencyIntSets = notImplemented
     isSubgraphOf         :: g -> g -> Bool
     isSubgraphOf         = notImplemented
     (===)                :: g -> g -> Bool
     (===)                = notImplemented
+    neighbours           :: Vertex g -> g -> Set (Vertex g)
+    neighbours           = notImplemented
     path                 :: [Vertex g] -> g
     path                 = notImplemented
     circuit              :: [Vertex g] -> g
@@ -109,6 +118,7 @@ notImplemented :: a
 notImplemented = error "Not implemented"
 
 instance Ord a => GraphAPI (AM.AdjacencyMap a) where
+    consistent        = AMI.consistent
     edge              = AM.edge
     vertices          = AM.vertices
     edges             = AM.edges
@@ -166,39 +176,40 @@ instance Ord a => GraphAPI (Fold.Fold a) where
     bind          = (>>=)
     simplify      = Fold.simplify
 
-instance Ord a => GraphAPI (Graph.Graph a) where
-    edge          = Graph.edge
-    vertices      = Graph.vertices
-    edges         = Graph.edges
-    overlays      = Graph.overlays
-    connects      = Graph.connects
-    isSubgraphOf  = Graph.isSubgraphOf
-    (===)         = (Graph.===)
-    path          = Graph.path
-    circuit       = Graph.circuit
-    clique        = Graph.clique
-    biclique      = Graph.biclique
-    star          = Graph.star
-    stars         = Graph.stars
-    tree          = Graph.tree
-    forest        = Graph.forest
-    mesh          = Graph.mesh
-    torus         = Graph.torus
-    deBruijn      = Graph.deBruijn
-    removeVertex  = Graph.removeVertex
-    removeEdge    = Graph.removeEdge
-    replaceVertex = Graph.replaceVertex
-    mergeVertices = Graph.mergeVertices
-    splitVertex   = Graph.splitVertex
-    transpose     = Graph.transpose
+instance Ord a => GraphAPI (G.Graph a) where
+    edge          = G.edge
+    vertices      = G.vertices
+    edges         = G.edges
+    overlays      = G.overlays
+    connects      = G.connects
+    isSubgraphOf  = G.isSubgraphOf
+    (===)         = (G.===)
+    path          = G.path
+    circuit       = G.circuit
+    clique        = G.clique
+    biclique      = G.biclique
+    star          = G.star
+    stars         = G.stars
+    tree          = G.tree
+    forest        = G.forest
+    mesh          = G.mesh
+    torus         = G.torus
+    deBruijn      = G.deBruijn
+    removeVertex  = G.removeVertex
+    removeEdge    = G.removeEdge
+    replaceVertex = G.replaceVertex
+    mergeVertices = G.mergeVertices
+    splitVertex   = G.splitVertex
+    transpose     = G.transpose
     gmap          = fmap
-    induce        = Graph.induce
-    compose       = Graph.compose
+    induce        = G.induce
+    compose       = G.compose
     bind          = (>>=)
-    simplify      = Graph.simplify
-    box           = Graph.box
+    simplify      = G.simplify
+    box           = G.box
 
 instance GraphAPI AIM.AdjacencyIntMap where
+    consistent           = AIMI.consistent
     edge                 = AIM.edge
     vertices             = AIM.vertices
     edges                = AIM.edges
@@ -228,6 +239,7 @@ instance GraphAPI AIM.AdjacencyIntMap where
     transitiveClosure    = AIM.transitiveClosure
 
 instance Ord a => GraphAPI (R.Relation a) where
+    consistent        = RI.consistent
     edge              = R.edge
     vertices          = R.vertices
     edges             = R.edges
@@ -256,12 +268,14 @@ instance Ord a => GraphAPI (R.Relation a) where
     transitiveClosure = R.transitiveClosure
 
 instance Ord a => GraphAPI (SR.Relation a) where
+    consistent        = SRI.consistent
     edge              = SR.edge
     vertices          = SR.vertices
     edges             = SR.edges
     overlays          = SR.overlays
     connects          = SR.connects
     isSubgraphOf      = SR.isSubgraphOf
+    neighbours        = SR.neighbours
     path              = SR.path
     circuit           = SR.circuit
     clique            = SR.clique

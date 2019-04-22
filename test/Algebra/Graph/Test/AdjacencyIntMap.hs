@@ -14,7 +14,6 @@ module Algebra.Graph.Test.AdjacencyIntMap (
   ) where
 
 import Algebra.Graph.AdjacencyIntMap
-import Algebra.Graph.AdjacencyIntMap.Internal
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
@@ -26,9 +25,7 @@ testAdjacencyIntMap = do
     putStrLn "\n============ AdjacencyIntMap ============"
     test "Axioms of graphs" (axioms :: GraphTestsuite AdjacencyIntMap)
 
-    test "Consistency of arbitraryAdjacencyMap" $ \m ->
-        consistent m
-
+    testConsistent           t
     testShow                 t
     testBasicPrimitives      t
     testFromAdjacencyIntSets t

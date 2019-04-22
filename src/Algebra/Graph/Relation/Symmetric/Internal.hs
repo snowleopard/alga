@@ -18,7 +18,7 @@ module Algebra.Graph.Relation.Symmetric.Internal (
   ) where
 
 import Algebra.Graph.Internal
-import Control.DeepSeq (NFData (..))
+import Control.DeepSeq
 import Data.Monoid (mconcat)
 import Data.Set (Set)
 
@@ -28,18 +28,22 @@ import qualified Algebra.Graph.Relation.Internal as RI
 import qualified Algebra.Graph.Relation          as R
 
 {-| This data type represents a /symmetric binary relation/ over a set of
-elements of type @a@. Symmetric relations satisfy all laws of the 'Undirected'
-type class, including the commutativity of 'connect':
+elements of type @a@. Symmetric relations satisfy all laws of the
+'Algebra.Graph.Class.Undirected' type class, including the commutativity of
+'connect':
 
 @'connect' x y == 'connect' y x@
 
 The 'Show' instance lists edge vertices in non-decreasing order:
 
-@show (1         :: Relation Int) == "vertex 1"
+@show (empty     :: Relation Int) == "empty"
+show (1         :: Relation Int) == "vertex 1"
+show (1 + 2     :: Relation Int) == "vertices [1,2]"
 show (1 * 2     :: Relation Int) == "edge 1 2"
 show (2 * 1     :: Relation Int) == "edge 1 2"
 show (1 * 2 * 1 :: Relation Int) == "edges [(1,1),(1,2)]"
-show (3 * 2 * 1 :: Relation Int) == "edges [(1,2),(1,3),(2,3)]"@
+show (3 * 2 * 1 :: Relation Int) == "edges [(1,2),(1,3),(2,3)]"
+show (1 * 2 + 3 :: Relation Int) == "overlay (vertex 3) (edge 1 2)"@
 
 The total order on graphs is defined using /size-lexicographic/ comparison:
 
@@ -71,17 +75,6 @@ x + y <= x * y@
 -}
 newtype Relation a = SR (RI.Relation a) deriving NFData
 
--- | Extract the underlying symmetric "Algebra.Graph.Relation".
--- Complexity: /O(1)/ time and memory.
---
--- @
--- fromSymmetric ('Algebra.Graph.Relation.Symmetric.edge' 1 2)    == 'Algebra.Graph.Relation.edges' [(1,2), (2,1)]
--- 'Algebra.Graph.Relation.vertexCount' . fromSymmetric == 'Algebra.Graph.Relation.Symmetric.vertexCount'
--- 'Algebra.Graph.Relation.edgeCount' . fromSymmetric   <= (*2) . 'Algebra.Graph.Relation.Symmetric.edgeCount'
--- @
-fromSymmetric :: Relation a -> RI.Relation a
-fromSymmetric (SR x) = x
-
 instance Ord a => Eq (Relation a) where
     x == y = fromSymmetric x == fromSymmetric y
 
@@ -105,6 +98,17 @@ instance (Ord a, Num a) => Num (Relation a) where
     signum      = const empty
     abs         = id
     negate      = id
+
+-- | Extract the underlying symmetric "Algebra.Graph.Relation".
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- fromSymmetric ('Algebra.Graph.Relation.Symmetric.edge' 1 2)    == 'Algebra.Graph.Relation.edges' [(1,2), (2,1)]
+-- 'Algebra.Graph.Relation.vertexCount' . fromSymmetric == 'Algebra.Graph.Relation.Symmetric.vertexCount'
+-- 'Algebra.Graph.Relation.edgeCount'   . fromSymmetric <= (*2) . 'Algebra.Graph.Relation.Symmetric.edgeCount'
+-- @
+fromSymmetric :: Relation a -> RI.Relation a
+fromSymmetric (SR x) = x
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.

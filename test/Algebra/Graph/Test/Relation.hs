@@ -14,7 +14,6 @@ module Algebra.Graph.Test.Relation (
   ) where
 
 import Algebra.Graph.Relation
-import Algebra.Graph.Relation.Internal
 import Algebra.Graph.Relation.Preorder
 import Algebra.Graph.Relation.Reflexive
 import Algebra.Graph.Relation.Transitive
@@ -33,9 +32,7 @@ testRelation = do
     putStrLn "\n============ Relation ============"
     test "Axioms of graphs" $ size10 (axioms :: GraphTestsuite RI)
 
-    test "Consistency of arbitraryRelation" $ \(m :: RI) ->
-        consistent m
-
+    testConsistent      t
     testShow            t
     testBasicPrimitives t
     testIsSubgraphOf    t

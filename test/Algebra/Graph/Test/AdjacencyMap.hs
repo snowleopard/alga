@@ -18,7 +18,6 @@ import Data.List.NonEmpty
 
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.AdjacencyMap.Algorithm
-import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
@@ -34,9 +33,7 @@ testAdjacencyMap = do
     putStrLn "\n============ AdjacencyMap ============"
     test "Axioms of graphs" (axioms :: GraphTestsuite AI)
 
-    test "Consistency of arbitraryAdjacencyMap" $ \(m :: AI) ->
-        consistent m
-
+    testConsistent        t
     testShow              t
     testBasicPrimitives   t
     testFromAdjacencySets t

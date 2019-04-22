@@ -53,7 +53,8 @@ import qualified Algebra.Graph.Relation.Internal as RI
 -- @
 -- toSymmetric ('Algebra.Graph.Relation.edge' 1 2)         == 'edge' 1 2
 -- toSymmetric . 'fromSymmetric'    == id
--- 'vertexCount' . toSymmetric      == 'Algebra.Graph.Relation.vertexCount'
+-- 'fromSymmetric'    . toSymmetric == 'Algebra.Graph.Relation.symmetricClosure'
+-- 'vertexCount'      . toSymmetric == 'Algebra.Graph.Relation.vertexCount'
 -- (*2) . 'edgeCount' . toSymmetric >= 'Algebra.Graph.Relation.edgeCount'
 -- @
 toSymmetric :: Ord a => R.Relation a -> Relation a

@@ -529,6 +529,7 @@ instance Ord a => ToGraph (NAM.AdjacencyMap a) where
     isTopSortOf x              = isTopSortOf x . NAM.am
 
 -- TODO: Get rid of "Relation.Internal" and move this instance to "Relation".
+-- | See "Algebra.Graph.Relation".
 instance Ord a => ToGraph (R.Relation a) where
     type ToVertex (R.Relation a) = a
     toGraph r                  = G.vertices (Set.toList $ R.domain   r) `G.overlay`
@@ -555,10 +556,13 @@ instance Ord a => ToGraph (R.Relation a) where
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
 
+-- TODO: This instance is probably wrong because of the way it treats edges.
+-- Find out a better way to integrate undirected graphs into 'ToGraph'.
+-- | See "Algebra.Graph.Symmetric.Relation". Warning: this instance is likely to
+-- be modified or removed in future.
 instance Ord a => ToGraph (SR.Relation a) where
     type ToVertex (SR.Relation a) = a
-    toGraph r                  = G.vertices (Set.toList . R.domain . SR.fromSymmetric $ r) `G.overlay`
-                                 G.edges    (Set.toList $ R.relation . SR.fromSymmetric $ r)
+    toGraph                    = toGraph . SR.fromSymmetric
     isEmpty                    = SR.isEmpty
     hasVertex                  = SR.hasVertex
     hasEdge                    = SR.hasEdge
@@ -570,13 +574,9 @@ instance Ord a => ToGraph (SR.Relation a) where
     edgeList                   = SR.edgeList
     edgeSet                    = SR.edgeSet
     adjacencyList              = SR.adjacencyList
-    adjacencyMap               = Map.fromAscList
-                               . map (fmap Set.fromAscList)
-                               . SR.adjacencyList
-    adjacencyIntMap            = IntMap.fromAscList
-                               . map (fmap IntSet.fromAscList)
-                               . SR.adjacencyList
+    adjacencyMap               = adjacencyMap . SR.fromSymmetric
+    adjacencyIntMap            = adjacencyIntMap . SR.fromSymmetric
     toAdjacencyMap             = AM.AM . adjacencyMap
     toAdjacencyIntMap          = AIM.AM . adjacencyIntMap
-    toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
-    toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
+    toAdjacencyMapTranspose    = toAdjacencyMap
+    toAdjacencyIntMapTranspose = toAdjacencyIntMap

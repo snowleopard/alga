@@ -22,21 +22,17 @@ import Data.Maybe
 import Data.Tree
 import Data.Tuple
 
-import Algebra.Graph (Graph (..))
 import Algebra.Graph.Class (Graph (..))
-import Algebra.Graph.ToGraph (ToGraph (..))
+import Algebra.Graph.ToGraph
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API
 
-import qualified Algebra.Graph                             as G
-import qualified Algebra.Graph.AdjacencyMap                as AM
-import qualified Algebra.Graph.AdjacencyMap.Algorithm      as AM
-import qualified Algebra.Graph.AdjacencyIntMap             as AIM
-import qualified Algebra.Graph.Relation                    as Relation
-import qualified Algebra.Graph.Relation.Symmetric          as Symmetric
-import qualified Algebra.Graph.Relation.Symmetric.Internal as SI
-import qualified Data.Set                                  as Set
-import qualified Data.IntSet                               as IntSet
+import qualified Algebra.Graph                        as G
+import qualified Algebra.Graph.AdjacencyMap           as AM
+import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
+import qualified Algebra.Graph.AdjacencyIntMap        as AIM
+import qualified Data.Set                             as Set
+import qualified Data.IntSet                          as IntSet
 
 data Testsuite where
     Testsuite :: (Arbitrary g, GraphAPI g, Num g, Ord g, Show g, ToGraph g, ToVertex g ~ Int, Vertex g ~ Int)
@@ -63,15 +59,15 @@ testBasicPrimitives = mconcat [ testOrd
 
 testSymmetricBasicPrimitives :: Testsuite -> IO ()
 testSymmetricBasicPrimitives = mconcat [ testSymmetricOrd
-                              , testEmpty
-                              , testVertex
-                              , testSymmetricEdge
-                              , testOverlay
-                              , testSymmetricConnect
-                              , testVertices
-                              , testSymmetricEdges
-                              , testOverlays
-                              , testSymmetricConnects ]
+                                       , testEmpty
+                                       , testVertex
+                                       , testSymmetricEdge
+                                       , testOverlay
+                                       , testSymmetricConnect
+                                       , testVertices
+                                       , testSymmetricEdges
+                                       , testOverlays
+                                       , testSymmetricConnects ]
 
 testToGraph :: Testsuite -> IO ()
 testToGraph = mconcat [ testToGraphDefault
@@ -94,18 +90,18 @@ testToGraph = mconcat [ testToGraphDefault
 
 testSymmetricToGraph :: Testsuite -> IO ()
 testSymmetricToGraph = mconcat [ testSymmetricToGraphDefault
-                      , testFoldg
-                      , testIsEmpty
-                      , testHasVertex
-                      , testSymmetricHasEdge
-                      , testVertexCount
-                      , testEdgeCount
-                      , testVertexList
-                      , testVertexSet
-                      , testVertexIntSet
-                      , testSymmetricEdgeList
-                      , testSymmetricEdgeSet
-                      , testSymmetricAdjacencyList ]
+                               , testIsEmpty
+                               , testHasVertex
+                               , testSymmetricHasEdge
+                               , testVertexCount
+                               , testEdgeCount
+                               , testVertexList
+                               , testVertexSet
+                               , testVertexIntSet
+                               , testSymmetricEdgeList
+                               , testSymmetricEdgeSet
+                               , testSymmetricAdjacencyList
+                               , testNeighbours ]
 
 testRelational :: Testsuite -> IO ()
 testRelational = mconcat [ testCompose
@@ -145,68 +141,38 @@ testTransformations = mconcat [ testRemoveVertex
 
 testSymmetricTransformations :: Testsuite -> IO ()
 testSymmetricTransformations = mconcat [ testRemoveVertex
-                              , testSymmetricRemoveEdge
-                              , testReplaceVertex
-                              , testMergeVertices
-                              , testGmap
-                              , testInduce ]
+                                       , testSymmetricRemoveEdge
+                                       , testReplaceVertex
+                                       , testMergeVertices
+                                       , testGmap
+                                       , testInduce ]
 
--- TODO: Change the way that 'x'/'y' is being forced to be of type 'Symmetric.Relation Int'/'[(Int,Int)]'/'[(Int, [Int])]''
-testSymmetricAPIConsistent :: Testsuite -> IO ()
-testSymmetricAPIConsistent (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "API Consistency ============"
+testConsistent :: Testsuite -> IO ()
+testConsistent (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "consistent ============"
+    test "Consistency of the Arbitrary instance" $ \x -> consistent % x
 
-    test "consistent 'Algebra.Graph.Relation.Symmetric.empty'         == True" $
-      SI.consistent (empty :: Symmetric.Relation Int) == True
+    putStrLn ""
+    test "consistent empty         == True" $
+          consistent % empty       == True
 
-    test "consistent ('Algebra.Graph.Relation.Symmetric.vertex' x)    == True" $ \x ->
-      SI.consistent (vertex % x) == True
+    test "consistent (vertex x)    == True" $ \x ->
+          consistent % (vertex x)  == True
 
-    test "consistent ('Algebra.Graph.Relation.Symmetric.overlay' x y) == True" $ \(x :: Symmetric.Relation Int) (y :: Symmetric.Relation Int) ->
-      SI.consistent (overlay x y) == True
+    test "consistent (overlay x y) == True" $ \x y ->
+          consistent % (overlay x y) == True
 
-    test "consistent ('Algebra.Graph.Relation.Symmetric.connect' x y) == True" $ \(x :: Symmetric.Relation Int) (y :: Symmetric.Relation Int) ->
-      SI.consistent (connect x y) == True
+    test "consistent (connect x y) == True" $ \x y ->
+          consistent % (connect x y) == True
 
-    test "consistent ('Algebra.Graph.Relation.Symmetric.edge' x y)    == True" $ \x y ->
-      SI.consistent (edge x % y) == True
+    test "consistent (edge x y)    == True" $ \x y ->
+          consistent % (edge x y)  == True
 
-    test "consistent ('Algebra.Graph.Relation.Symmetric.edges' xs)    == True" $ \(xs :: [(Int, Int)]) ->
-      SI.consistent (edges xs) == True
+    test "consistent (edges xs)    == True" $ \xs ->
+          consistent % (edges xs)  == True
 
-    test "consistent ('Algebra.Graph.Relation.Symmetric.stars' xs)    == True" $ \(xs :: [(Int, [Int])]) ->
-      SI.consistent (stars xs) == True
-
--- TODO: Change the way that 'x' is being forced to be of type 'Symmetric.Relation Int'
-testSymmetricFromSymmetric :: Testsuite -> IO ()
-testSymmetricFromSymmetric (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "FromSymmetric ============"
-
-    test "fromSymmetric (edge 1 2)                           == Algebra.Graph.Relation.edges [(1,2), (2,1)]" $
-        Symmetric.fromSymmetric (edge 1 % 2)                 == Relation.edges [(1,2), (2,1)]
-
-    test "Algebra.Graph.Relation.edgeCount . fromSymmetric   <= (* 2) . edgeCount" $ \(x :: Symmetric.Relation Int) ->
-        Relation.edgeCount (Symmetric.fromSymmetric x)       <= 2 * edgeCount x
-
-    test "Algebra.Graph.Relation.vertexCount . fromSymmetric == vertexCount" $ \(x :: Symmetric.Relation Int) ->
-        Relation.vertexCount (Symmetric.fromSymmetric x)     == vertexCount x
-
--- TODO: Change the way that 'x' is being forced to be of type 'Symmetric.Relation Int'/'Relation Int'
-testSymmetricToSymmetric :: Testsuite -> IO ()
-testSymmetricToSymmetric (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "ToSymmetric ============"
-
-    test "toSymmetric (Algebra.Graph.Relation.edge 1 2)    == edge 1 2" $
-        Symmetric.toSymmetric (Relation.edge 1 % 2)        == edge 1 2
-
-    test "toSymmetric . fromSymmetric                      == id" $ \(x :: Symmetric.Relation Int) ->
-        Symmetric.toSymmetric (Symmetric.fromSymmetric x)  == id x
-
-    test "vertexCount . toSymmetric                        == Algebra.Graph.Relation.vertexCount" $ \(x :: Relation.Relation Int) ->
-        vertexCount (Symmetric.toSymmetric x)              == Relation.vertexCount x
-
-    test "(* 2) . vertexCount . toSymmetric                >= Algebra.Graph.Relation.edgeCount" $ \(x :: Relation.Relation Int) ->
-          2 * edgeCount (Symmetric.toSymmetric x)          >= Relation.edgeCount x
+    test "consistent (stars xs)    == True" $ \xs ->
+          consistent % (stars xs)  == True
 
 testShow :: Testsuite -> IO ()
 testShow (Testsuite prefix (%)) = do
@@ -236,30 +202,19 @@ testShow (Testsuite prefix (%)) = do
     test "show (vertex (-1) + vertex (-2)              ) == \"vertices [-2,-1]\"" $
           show % (vertex (-1) + vertex (-2)              ) == "vertices [-2,-1]"
 
-    test "show (vertex (-1) * vertex (-2)              ) == \"edge (-1) (-2)\"" $
-          show % (vertex (-1) * vertex (-2)              ) == "edge (-1) (-2)"
+    test "show (vertex (-2) * vertex (-1)              ) == \"edge (-2) (-1)\"" $
+          show % (vertex (-2) * vertex (-1)              ) == "edge (-2) (-1)"
 
-    test "show (vertex (-1) * vertex (-2) * vertex (-3)) == \"edges [(-2,-3),(-1,-3),(-1,-2)]\"" $
-          show % (vertex (-1) * vertex (-2) * vertex (-3)) == "edges [(-2,-3),(-1,-3),(-1,-2)]"
+    test "show (vertex (-3) * vertex (-2) * vertex (-1)) == \"edges [(-3,-2),(-3,-1),(-2,-1)]\"" $
+          show % (vertex (-3) * vertex (-2) * vertex (-1)) == "edges [(-3,-2),(-3,-1),(-2,-1)]"
 
-    test "show (vertex (-1) * vertex (-2) + vertex (-3)) == \"overlay (vertex (-3)) (edge (-1) (-2))\"" $
-          show % (vertex (-1) * vertex (-2) + vertex (-3)) == "overlay (vertex (-3)) (edge (-1) (-2))"
+    test "show (vertex (-3) * vertex (-2) + vertex (-1)) == \"overlay (vertex (-1)) (edge (-3) (-2))\"" $
+          show % (vertex (-3) * vertex (-2) + vertex (-1)) == "overlay (vertex (-1)) (edge (-3) (-2))"
 
 testSymmetricShow :: Testsuite -> IO ()
-testSymmetricShow (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "Show ============"
-    test "show (empty    ) == \"empty\"" $
-          show % empty     ==  "empty"
-
-    test "show (1        ) == \"vertex 1\"" $
-          show % 1         ==  "vertex 1"
-
-    test "show (1 + 2    ) == \"vertices [1,2]\"" $
-          show % (1 + 2)   ==  "vertices [1,2]"
-
-    test "show (1 * 2    ) == \"edge 1 2\"" $
-          show % (1 * 2)   ==  "edge 1 2"
-
+testSymmetricShow t@(Testsuite _ (%)) = do
+    testShow t
+    putStrLn ""
     test "show (2 * 1    ) == \"edge 1 2\"" $
           show % (2 * 1)   ==  "edge 1 2"
 
@@ -268,21 +223,6 @@ testSymmetricShow (Testsuite prefix (%)) = do
 
     test "show (3 * 2 * 1) == \"edges [(1,2),(1,3),(2,3)]\"" $
           show % (3 * 2 * 1) == "edges [(1,2),(1,3),(2,3)]"
-
-    test "show (vertex (-1)                              ) == \"vertex (-1)\"" $
-          show % vertex (-1)                               == "vertex (-1)"
-
-    test "show (vertex (-1) + vertex (-2)                ) == \"vertices [-2,-1]\"" $
-          show % (vertex (-1) + vertex (-2)              ) == "vertices [-2,-1]"
-
-    test "show (vertex (-1) * vertex (-2)                ) == \"edge (-2) (-1)\"" $
-          show % (vertex (-1) * vertex (-2)              ) == "edge (-2) (-1)"
-
-    test "show (vertex (-1) * vertex (-2) * vertex (-3))   == \"edges [(-3,-2),(-3,-1),(-2,-1)]\"" $
-          show % (vertex (-1) * vertex (-2) * vertex (-3)) == "edges [(-3,-2),(-3,-1),(-2,-1)]"
-
-    test "show (vertex (-1) * vertex (-2) + vertex (-3))   == \"overlay (vertex (-3)) (edge (-2) (-1))\"" $
-          show % (vertex (-1) * vertex (-2) + vertex (-3)) == "overlay (vertex (-3)) (edge (-2) (-1))"
 
 testOrd :: Testsuite -> IO ()
 testOrd (Testsuite prefix (%)) = do
@@ -392,14 +332,14 @@ testEdge (Testsuite prefix (%)) = do
 testSymmetricEdge :: Testsuite -> IO ()
 testSymmetricEdge (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "edge ============"
-    test "edge x y               == edges [(x,y), (y,x)]" $ \x y ->
-          edge x y               == id % edges [(x,y), (y,x)]
-
     test "edge x y               == connect (vertex x) (vertex y)" $ \x y ->
           edge x y               == connect (vertex x) % vertex y
 
     test "edge x y               == edge y x" $ \x y ->
           edge x y               == id % edge y x
+
+    test "edge x y               == edges [(x,y), (y,x)]" $ \x y ->
+          edge x y               == id % edges [(x,y), (y,x)]
 
     test "hasEdge x y (edge x y) == True" $ \x y ->
           hasEdge x y % edge x y == True
@@ -542,11 +482,11 @@ testEdges (Testsuite prefix (%)) = do
 testSymmetricEdges :: Testsuite -> IO ()
 testSymmetricEdges (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "edges ============"
-    test "edges []          == empty" $
-          edges []          == id % empty
+    test "edges []             == empty" $
+          edges []             == id % empty
 
-    test "edges [(x,y)]     == edge x y" $ \x y ->
-          edges [(x,y)]     == id % edge x y
+    test "edges [(x,y)]        == edge x y" $ \x y ->
+          edges [(x,y)]        == id % edge x y
 
     test "edges [(x,y), (y,x)] == edge x y" $ \x y ->
           edges [(x,y), (y,x)] == id % edge x y
@@ -588,23 +528,8 @@ testConnects (Testsuite prefix (%)) = do
           isEmpty % connects xs == all isEmpty xs
 
 testSymmetricConnects :: Testsuite -> IO ()
-testSymmetricConnects (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "connects ============"
-    test "connects []        == empty" $
-          connects []        == id % empty
-
-    test "connects [x]       == x" $ \x ->
-          connects [x]       == id % x
-
-    test "connects [x,y]     == connect x y" $ \x y ->
-          connects [x,y]     == id % connect x y
-
-    test "connects           == foldr connect empty" $ size10 $ \xs ->
-          connects xs        == id % foldr connect empty xs
-
-    test "isEmpty . connects == all isEmpty" $ size10 $ \xs ->
-          isEmpty % connects xs == all isEmpty xs
-
+testSymmetricConnects t@(Testsuite _ (%)) = do
+    testConnects t
     test "connects           == connects . reverse" $ size10 $ \xs ->
           connects xs        == id % connects (reverse xs)
 
@@ -691,35 +616,16 @@ testIsSubgraphOf (Testsuite prefix (%)) = do
         in isSubgraphOf x % y                      ==> x <= y
 
 testSymmetricIsSubgraphOf :: Testsuite -> IO ()
-testSymmetricIsSubgraphOf (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "isSubgraphOf ============"
-    test "isSubgraphOf empty         x             ==  True" $ \x ->
-          isSubgraphOf empty       % x             ==  True
-
-    test "isSubgraphOf (vertex x)    empty         ==  False" $ \x ->
-          isSubgraphOf (vertex x)  % empty         ==  False
-
-    test "isSubgraphOf x             (overlay x y) ==  True" $ \x y ->
-          isSubgraphOf x            % overlay x y  ==  True
-
-    test "isSubgraphOf (overlay x y) (connect x y) ==  True" $ \x y ->
-          isSubgraphOf (overlay x y) % connect x y ==  True
-
-    test "isSubgraphOf (path xs)     (circuit xs)  ==  True" $ \xs ->
-          isSubgraphOf (path xs)    % circuit xs   ==  True
-
-    test "isSubgraphOf x y                         ==> x <= y" $ \x z ->
-        let y = x + z -- Make sure we hit the precondition
-        in isSubgraphOf x % y                      ==> x <= y
-
-    test "isSubgraphOf (edge x y) (edge y x)       == True" $ \x y ->
-          isSubgraphOf (edge x y) % edge y x       == True
+testSymmetricIsSubgraphOf t@(Testsuite _ (%)) = do
+    testIsSubgraphOf t
+    test "isSubgraphOf (edge x y) (edge y x)       ==  True" $ \x y ->
+          isSubgraphOf (edge x y) % edge y x       ==  True
 
 testToGraphDefault :: Testsuite -> IO ()
 testToGraphDefault (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "toGraph et al. ============"
     test "toGraph                    == foldg Empty Vertex Overlay Connect" $ \x ->
-          toGraph % x                == foldg Empty Vertex Overlay Connect x
+          toGraph % x                == foldg G.Empty G.Vertex G.Overlay G.Connect x
 
     test "foldg                      == Algebra.Graph.foldg . toGraph" $ \e (apply -> v) (applyFun2 -> o) (applyFun2 -> c) x ->
           foldg e v o c x            == (G.foldg (e :: Int) v o c . toGraph) % x
@@ -823,11 +729,12 @@ testToGraphDefault (Testsuite prefix (%)) = do
     test "isTopSortOf vs             == Algebra.Graph.AdjacencyMap.isTopSortOf vs . toAdjacencyMap" $ \vs x ->
           isTopSortOf vs x           == (AM.isTopSortOf vs . toAdjacencyMap) % x
 
+-- TODO: We currently do not test 'edgeSet'.
 testSymmetricToGraphDefault :: Testsuite -> IO ()
 testSymmetricToGraphDefault (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "toGraph et al. ============"
     test "toGraph                    == foldg Empty Vertex Overlay Connect" $ \x ->
-          toGraph % x                == foldg Empty Vertex Overlay Connect x
+          toGraph % x                == foldg G.Empty G.Vertex G.Overlay G.Connect x
 
     test "foldg                      == Algebra.Graph.foldg . toGraph" $ \e (apply -> v) (applyFun2 -> o) (applyFun2 -> c) x ->
           foldg e v o c x            == (G.foldg (e :: Int) v o c . toGraph) % x
@@ -1247,6 +1154,21 @@ testPostIntSet (Testsuite prefix (%)) = do
     test "postIntSet x (edge x y) == IntSet.fromList [y]" $ \x y ->
           postIntSet x % edge x y == IntSet.fromList [y]
 
+testNeighbours :: Testsuite -> IO ()
+testNeighbours (Testsuite prefix (%)) = do
+    putStrLn $ "\n============ " ++ prefix ++ "neighbours ============"
+    test "neighbours x empty      == Set.empty" $ \x ->
+          neighbours x % empty    == Set.empty
+
+    test "neighbours x (vertex x) == Set.empty" $ \x ->
+          neighbours x % vertex x == Set.empty
+
+    test "neighbours x (edge x y) == Set.fromList [y]" $ \x y ->
+          neighbours x % edge x y == Set.fromList [y]
+
+    test "neighbours y (edge x y) == Set.fromList [x]" $ \x y ->
+          neighbours y % edge x y == Set.fromList [x]
+
 testPath :: Testsuite -> IO ()
 testPath (Testsuite prefix (%)) = do
     putStrLn $ "\n============ " ++ prefix ++ "path ============"
@@ -1260,17 +1182,8 @@ testPath (Testsuite prefix (%)) = do
           path [x,y] == id % edge x y
 
 testSymmetricPath :: Testsuite -> IO ()
-testSymmetricPath (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "path ============"
-    test "path []    == empty" $
-          path []    == id % empty
-
-    test "path [x]   == vertex x" $ \x ->
-          path [x]   == id % vertex x
-
-    test "path [x,y] == edge x y" $ \x y ->
-          path [x,y] == id % edge x y
-
+testSymmetricPath t@(Testsuite _ (%)) = do
+    testPath t
     test "path       == path . reverse" $ \xs ->
           path xs    == id % path (reverse xs)
 
@@ -1287,19 +1200,10 @@ testCircuit (Testsuite prefix (%)) = do
           circuit [x,y] == id % edges [(x,y), (y,x)]
 
 testSymmetricCircuit :: Testsuite -> IO ()
-testSymmetricCircuit (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "circuit ============"
-    test "circuit []    == empty" $
-          circuit []    == id % empty
-
-    test "circuit [x]   == edge x x" $ \x ->
-          circuit [x]   == id % edge x x
-
-    test "circuit [x,y] == edge x y" $ \x y ->
-          circuit [x,y] == id % edge x y
-
-    test "circuit         == circuit . reverse" $ \xs ->
-          circuit xs      == id % circuit (reverse xs)
+testSymmetricCircuit t@(Testsuite _ (%)) = do
+    testCircuit t
+    test "circuit       == circuit . reverse" $ \xs ->
+          circuit xs    == id % circuit (reverse xs)
 
 testClique :: Testsuite -> IO ()
 testClique (Testsuite prefix (%)) = do
@@ -1320,23 +1224,8 @@ testClique (Testsuite prefix (%)) = do
           clique (xs ++ ys) == connect (clique xs) % clique ys
 
 testSymmetricClique :: Testsuite -> IO ()
-testSymmetricClique (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "clique ============"
-    test "clique []         == empty" $
-          clique []         == id % empty
-
-    test "clique [x]        == vertex x" $ \x ->
-          clique [x]        == id % vertex x
-
-    test "clique [x,y]      == edge x y" $ \x y ->
-          clique [x,y]      == id % edge x y
-
-    test "clique [x,y,z]    == edges [(x,y), (x,z), (y,z)]" $ \x y z ->
-          clique [x,y,z]    == id % edges [(x,y), (x,z), (y,z)]
-
-    test "clique (xs ++ ys) == connect (clique xs) (clique ys)" $ \xs ys ->
-          clique (xs ++ ys) == connect (clique xs) % clique ys
-
+testSymmetricClique t@(Testsuite _ (%)) = do
+    testClique t
     test "clique            == clique . reverse" $ \xs->
           clique xs         == id % clique (reverse xs)
 
@@ -1445,25 +1334,10 @@ testRemoveEdge (Testsuite prefix (%)) = do
               size % (removeEdge x y z)       <= 3 * size z
 
 testSymmetricRemoveEdge :: Testsuite -> IO ()
-testSymmetricRemoveEdge (Testsuite prefix (%)) = do
-    putStrLn $ "\n============ " ++ prefix ++ "removeEdge ============"
-    test "removeEdge x y (edge x y)       == vertices [x,y]" $ \x y ->
-          removeEdge x y % edge x y       == vertices [x,y]
-
-    test "removeEdge x y . removeEdge x y == removeEdge x y" $ \x y z ->
-         (removeEdge x y . removeEdge x y) z == removeEdge x y % z
-
-    test "removeEdge x y   == removeEdge y x" $ \x y z ->
-          removeEdge x y z == removeEdge y x % z
-
-    test "removeEdge x y . removeVertex x == removeVertex x" $ \x y z ->
-         (removeEdge x y . removeVertex x) z == removeVertex x % z
-
-    test "removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2" $
-          removeEdge 1 1 % (1 * 1 * 2 * 2) == 1 * 2 * 2
-
-    test "removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2" $
-          removeEdge 1 2 % (1 * 1 * 2 * 2) == 1 * 1 + 2 * 2
+testSymmetricRemoveEdge t@(Testsuite _ (%)) = do
+    testRemoveEdge t
+    test "removeEdge x y                  == removeEdge y x" $ \x y z ->
+          removeEdge x y z                == removeEdge y x % z
 
 testReplaceVertex :: Testsuite -> IO ()
 testReplaceVertex (Testsuite prefix (%)) = do
