@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Relation
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -47,7 +47,7 @@ testSymmetricRelation = do
     test "Axioms of undirected graphs" $ size10
         (undirectedAxioms :: GraphTestsuite (Relation Int))
 
-    putStrLn "\n============ SymmetricRelation.neighbours ============" 
+    putStrLn "\n============ SymmetricRelation.neighbours ============"
     test "neighbours x empty      == Set.empty" $ \(x :: Int) ->
           neighbours x C.empty    == Set.empty
 

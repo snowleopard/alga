@@ -6,36 +6,36 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : unstable
 --
--- This module exposes the implementation of derived binary relation data types.
+-- This module exposes the implementation of symmetric binary relation data type.
 -- The API is unstable and unsafe, and is exposed only for documentation. You
 -- should use the non-internal module "Algebra.Graph.Relation.Symmetric" instead.
 -----------------------------------------------------------------------------
 
 module Algebra.Graph.Relation.Symmetric.Internal (
     -- * Implementation of symmetric binary relations
-    Relation (..), empty, vertex, overlay, connect, consistent,
-    referredToVertexSet, deduplicateSet, deduplicate
+    Relation (..), fromSymmetric, empty, vertex, overlay, connect, consistent,
+    deduplicateEdges
   ) where
 
+import Algebra.Graph.Internal
 import Control.DeepSeq (NFData (..))
+
+import qualified Data.Set as Set
 
 import qualified Algebra.Graph.Relation.Internal as RI
 import qualified Algebra.Graph.Relation          as R
-import qualified Data.Set as Set
-import Data.Monoid (mconcat)
 
-{-|  This 'Relation' data type represents a /symmetric binary relation/
-over a set of elements. Symmetric relations satisfy all laws of the
-'Undirected' type class and, in addition, the
-commutativity of connect:
+{-| This data type represents a /symmetric binary relation/ over a set of
+elements of type @a@. Symmetric relations satisfy all laws of the 'Undirected'
+type class, including the commutativity of 'connect':
 
 @'connect' x y == 'connect' y x@
 
-The 'Show' instance lists the vertices of an edge in non-decreasing order:
+The 'Show' instance lists edge vertices in non-decreasing order:
 
-@show (1     :: Relation Int) == "vertex 1"
-show (1 * 2 :: Relation Int) == "edge 1 2"
-show (2 * 1 :: Relation Int) == "edge 1 2"
+@show (1         :: Relation Int) == "vertex 1"
+show (1 * 2     :: Relation Int) == "edge 1 2"
+show (2 * 1     :: Relation Int) == "edge 1 2"
 show (1 * 2 * 1 :: Relation Int) == "edges [(1,1),(1,2)]"
 show (3 * 2 * 1 :: Relation Int) == "edges [(1,2),(1,3),(2,3)]"@
 
@@ -51,13 +51,15 @@ Here are a few examples:
 @'vertex' 1 < 'vertex' 2
 'vertex' 3 < 'Algebra.Graph.Relation.Symmetric.edge' 1 2
 'vertex' 1 < 'Algebra.Graph.Relation.Symmetric.edge' 1 1
-'Algebra.Graph.Relation.Symmetric.edge' 1 2 == 'Algebra.Graph.Relation.Symmetric.edge' 2 1
 'Algebra.Graph.Relation.Symmetric.edge' 1 1 < 'Algebra.Graph.Relation.Symmetric.edge' 1 2
 'Algebra.Graph.Relation.Symmetric.edge' 1 2 < 'Algebra.Graph.Relation.Symmetric.edge' 1 1 + 'Algebra.Graph.Relation.Symmetric.edge' 2 2
-'Algebra.Graph.Relation.Symmetric.edge' 1 2 < 'Algebra.Graph.Relation.Symmetric.edge' 1 3@
+'Algebra.Graph.Relation.Symmetric.edge' 2 1 < 'Algebra.Graph.Relation.Symmetric.edge' 1 3@
 
-Note that the resulting order refines the 'isSubgraphOf' relation and is
-compatible with 'overlay' and 'connect' operations:
+@'Algebra.Graph.Relation.Symmetric.edge' 1 2 == 'Algebra.Graph.Relation.Symmetric.edge' 2 1@
+
+Note that the resulting order refines the
+'Algebra.Graph.Relation.Symmetric.isSubgraphOf' relation and is compatible with
+'overlay' and 'connect' operations:
 
 @'Algebra.Graph.Relation.Symmetric.isSubgraphOf' x y ==> x <= y@
 
@@ -65,24 +67,34 @@ compatible with 'overlay' and 'connect' operations:
 x     <= x + y
 x + y <= x * y@
 -}
-newtype Relation a = SR { fromSymmetric :: RI.Relation a }
-    deriving NFData
+newtype Relation a = SR (RI.Relation a) deriving NFData
+
+-- | Extract the underlying symmetric "Algebra.Graph.Relation".
+-- Complexity: /O(1)/ time.
+--
+-- @
+-- fromSymmetric ('Algebra.Graph.Relation.Symmetric.edge' 1 2)    == 'Algebra.Graph.Relation.edges' [(1,2), (2,1)]
+-- 'Algebra.Graph.Relation.vertexCount' . fromSymmetric == 'Algebra.Graph.Relation.Symmetric.vertexCount'
+-- 'Algebra.Graph.Relation.edgeCount' . fromSymmetric   <= (*2) . 'Algebra.Graph.Relation.Symmetric.edgeCount'
+-- @
+fromSymmetric :: Relation a -> RI.Relation a
+fromSymmetric (SR x) = x
 
 instance Ord a => Eq (Relation a) where
     x == y = fromSymmetric x == fromSymmetric y
 
 instance (Ord a, Show a) => Show (Relation a) where
     show = show . filtered . fromSymmetric
-        where
-            filtered (RI.Relation d r) = RI.Relation d (deduplicateSet r)
+      where
+        filtered (RI.Relation d r) = RI.Relation d (deduplicateEdges r)
 
 instance Ord a => Ord (Relation a) where
-    compare x y = mconcat
-        [ compare (Set.size . R.domain . fromSymmetric $   x) (Set.size . R.domain . fromSymmetric $   y)
-        , compare (           R.domain . fromSymmetric $   x) (           R.domain . fromSymmetric $   y)
-        , compare (Set.size . deduplicateSet . R.relation . fromSymmetric $ x) 
-                  (Set.size . deduplicateSet . R.relation . fromSymmetric $ y)
-        , compare (           R.relation . fromSymmetric $ x) (           R.relation . fromSymmetric $ y) ]
+    compare (SR x) (SR y) = mconcat
+        [ compare (Set.size $ R.domain x) (Set.size $ R.domain y)
+        , compare (           R.domain x) (           R.domain y)
+        , compare (Set.size . deduplicateEdges $ R.relation x)
+                  (Set.size . deduplicateEdges $ R.relation y)
+        , compare (R.relation x) (R.relation y) ]
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
@@ -123,36 +135,32 @@ vertex x = SR $ RI.Relation (Set.singleton x) Set.empty
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Ord a => Relation a -> Relation a -> Relation a
-overlay (SR x) (SR y) = SR $ RI.Relation 
-                                        (R.domain x   `Set.union` R.domain y)
-                                        (R.relation x `Set.union` R.relation y)
+overlay (SR x) (SR y) = SR $ RI.Relation (R.domain   x `Set.union` R.domain   y)
+                                         (R.relation x `Set.union` R.relation y)
 
--- | /Connect/ two graphs. This is an associative operation with the identity
--- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
+-- | /Connect/ two graphs. This is a commutative and associative operation with
+-- the identity 'empty', which distributes over 'overlay' and obeys the
+-- decomposition axiom.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
 -- number of edges in the resulting graph is quadratic with respect to the number
--- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2 + n2 * n1)/.
+-- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
 --
 -- @
--- connect x y                                                  == connect y x
+-- connect x y               == connect y x
 -- 'Algebra.Graph.Relation.Symmetric.isEmpty'     (connect x y) == 'Algebra.Graph.Relation.Symmetric.isEmpty'   x   && 'Algebra.Graph.Relation.Symmetric.isEmpty'   y
 -- 'Algebra.Graph.Relation.Symmetric.hasVertex' z (connect x y) == 'Algebra.Graph.Relation.Symmetric.hasVertex' z x || 'Algebra.Graph.Relation.Symmetric.hasVertex' z y
 -- 'Algebra.Graph.Relation.Symmetric.vertexCount' (connect x y) >= 'Algebra.Graph.Relation.Symmetric.vertexCount' x
 -- 'Algebra.Graph.Relation.Symmetric.vertexCount' (connect x y) <= 'Algebra.Graph.Relation.Symmetric.vertexCount' x + 'Algebra.Graph.Relation.Symmetric.vertexCount' y
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.Symmetric.edgeCount' x
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.Symmetric.edgeCount' y
--- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.Symmetric.vertexCount' x * 'Algebra.Graph.Relation.Symmetric.vertexCount' y `div` 2
+-- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect x y) >= 'Algebra.Graph.Relation.Symmetric.vertexCount' x * 'Algebra.Graph.Relation.Symmetric.vertexCount' y \`div\` 2
 -- 'Algebra.Graph.Relation.Symmetric.vertexCount' (connect 1 2) == 2
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (connect 1 2) == 1
 -- @
 connect :: Ord a => Relation a -> Relation a -> Relation a
-connect (SR x) (SR y) = SR $ RI.Relation 
-                                         (R.domain x `Set.union` R.domain y)
-                                         (R.relation x `Set.union` R.relation y 
-                                         `Set.union` 
-                                         (R.domain x `RI.setProduct` R.domain y)
-                                         `Set.union` 
-                                         (R.domain y `RI.setProduct` R.domain x))
+connect (SR x) (SR y) = SR $ RI.Relation (R.domain x `Set.union` R.domain y)
+    (Set.unions [R.relation x, R.relation y, R.domain x `setProduct` R.domain y
+                                           , R.domain y `setProduct` R.domain x ])
 
 instance (Ord a, Num a) => Num (Relation a) where
     fromInteger = vertex . fromInteger
@@ -162,10 +170,11 @@ instance (Ord a, Num a) => Num (Relation a) where
     abs         = id
     negate      = id
 
--- | Check if the internal representation of a symmetric relation is consistent, i.e. if all
--- pairs of elements in the 'relation' refer to existing elements in the 'domain' and that if all pair of edges have their symmetric counterparts.
--- It should be impossible to create an inconsistent 'Relation', and we use this
--- function in testing.
+-- | Check if the internal representation of a symmetric relation is consistent,
+-- i.e. if (i) all pairs of elements in the 'RI.relation' refer to existing
+-- elements in the 'RI.domain', and (ii) all edges have their symmetric
+-- counterparts. It should be impossible to create an inconsistent 'Relation',
+-- and we use this function in testing.
 -- /Note: this function is for internal use only/.
 --
 -- @
@@ -178,19 +187,13 @@ instance (Ord a, Num a) => Num (Relation a) where
 -- consistent ('Algebra.Graph.Relation.Symmetric.stars' xs)    == True
 -- @
 consistent :: Ord a => Relation a -> Bool
-consistent (SR r) = (referredToVertexSet (R.relation r) `Set.isSubsetOf` R.domain r) && (r == R.transpose r)
+consistent (SR r) =
+    RI.referredToVertexSet (R.relation r) `Set.isSubsetOf` R.domain r
+    &&
+    r == R.transpose r
 
--- | The set of elements that appear in a given set of pairs.
+-- | Deduplicate a set of undirected edges, keeping the edges whose vertices are
+-- in the non-decreasing order.
 -- /Note: this function is for internal use only/.
-referredToVertexSet :: Ord a => Set.Set (a, a) -> Set.Set a
-referredToVertexSet = Set.fromList . uncurry (++) . unzip . Set.toAscList
-
--- | Auxiliary function to deduplicate edges on sets.
--- /Note: this function is for internal use only/.
-deduplicateSet :: Ord a => Set.Set (a, a) -> Set.Set (a, a)
-deduplicateSet = Set.filter (uncurry (<=))
-
--- | Auxiliary function to deduplicate edges on lists.
--- /Note: this function is for internal use only/.
-deduplicate :: Ord a => [(a, a)] -> [(a, a)]
-deduplicate = filter (uncurry (<=))
+deduplicateEdges :: Ord a => Set.Set (a, a) -> Set.Set (a, a)
+deduplicateEdges = Set.filter (uncurry (<=))

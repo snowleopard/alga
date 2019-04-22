@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Generic
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -34,7 +34,7 @@ import qualified Algebra.Graph.AdjacencyMap.Algorithm      as AM
 import qualified Algebra.Graph.AdjacencyIntMap             as AIM
 import qualified Algebra.Graph.Relation                    as Relation
 import qualified Algebra.Graph.Relation.Symmetric          as Symmetric
-import qualified Algebra.Graph.Relation.Symmetric.Internal as SI 
+import qualified Algebra.Graph.Relation.Symmetric.Internal as SI
 import qualified Data.Set                                  as Set
 import qualified Data.IntSet                               as IntSet
 
@@ -71,7 +71,7 @@ testSymmetricBasicPrimitives = mconcat [ testSymmetricOrd
                               , testVertices
                               , testSymmetricEdges
                               , testOverlays
-                              , testSymmetricConnects ]                              
+                              , testSymmetricConnects ]
 
 testToGraph :: Testsuite -> IO ()
 testToGraph = mconcat [ testToGraphDefault
@@ -204,7 +204,7 @@ testSymmetricToSymmetric (Testsuite prefix (%)) = do
 
     test "vertexCount . toSymmetric                        == Algebra.Graph.Relation.vertexCount" $ \(x :: Relation.Relation Int) ->
         vertexCount (Symmetric.toSymmetric x)              == Relation.vertexCount x
-    
+
     test "(* 2) . vertexCount . toSymmetric                >= Algebra.Graph.Relation.edgeCount" $ \(x :: Relation.Relation Int) ->
           2 * edgeCount (Symmetric.toSymmetric x)          >= Relation.edgeCount x
 
@@ -323,17 +323,17 @@ testSymmetricOrd (Testsuite prefix (%)) = do
     test "vertex 1 <  edge 1 1" $
           vertex 1 < id % edge 1 1
 
-    test "edge 1 2 ==  edge 2 1" $
-          edge 1 2 == id % edge 2 1
-
     test "edge 1 1 <  edge 1 2" $
           edge 1 1 < id % edge 1 2
 
     test "edge 1 2 <  edge 1 1 + edge 2 2" $
           edge 1 2 < id % edge 1 1 + edge 2 2
 
-    test "edge 1 2 <  edge 1 3" $
-          edge 1 2 < id % edge 1 3
+    test "edge 2 1 <  edge 1 3" $
+          edge 2 1 < id % edge 1 3
+
+    test "edge 1 2 == edge 2 1" $
+          edge 1 2 == id % edge 2 1
 
     test "x        <= x + y" $ \x y ->
           id % x   <= x + y
@@ -605,7 +605,7 @@ testSymmetricConnects (Testsuite prefix (%)) = do
     test "isEmpty . connects == all isEmpty" $ size10 $ \xs ->
           isEmpty % connects xs == all isEmpty xs
 
-    test "connects           == connects . reverse" $ \xs ->
+    test "connects           == connects . reverse" $ size10 $ \xs ->
           connects xs        == id % connects (reverse xs)
 
 testStars :: Testsuite -> IO ()
@@ -1016,12 +1016,12 @@ testSymmetricHasEdge (Testsuite prefix (%)) = do
     test "hasEdge x y (edge x y)       == True" $ \x y ->
           hasEdge x y % edge x y       == True
 
-    test "hasEdge y x (edge x y)       == True" $ \x y ->
-          hasEdge y x % edge x y       == True
+    test "hasEdge x y (edge y x)       == True" $ \x y ->
+          hasEdge x y % edge y x       == True
 
     test "hasEdge x y . removeEdge x y == const False" $ \x y z ->
          (hasEdge x y . removeEdge x y) z == const False % z
-         
+
     test "hasEdge x y                  == elem (min x y, max x y) . edgeList" $ \x y z -> do
         (u, v) <- elements ((x, y) : edgeList z)
         return $ hasEdge u v z == elem (min u v, max u v) (edgeList % z)
@@ -1297,9 +1297,6 @@ testSymmetricCircuit (Testsuite prefix (%)) = do
 
     test "circuit [x,y] == edge x y" $ \x y ->
           circuit [x,y] == id % edge x y
-
-    test "circuit [x,y,z] == edges [(x,y),(x,z),(y,z)]" $ \x y z ->
-          circuit [x,y,z] == id % edges [(x,y),(x,z),(y,z)]
 
     test "circuit         == circuit . reverse" $ \xs ->
           circuit xs      == id % circuit (reverse xs)

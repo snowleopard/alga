@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Relation.InternalDerived
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : unstable
@@ -12,18 +12,15 @@
 -- "Algebra.Graph.Relation.Symmetric", "Algebra.Graph.Relation.Transitive" and
 -- "Algebra.Graph.Relation.Preorder" instead.
 -----------------------------------------------------------------------------
-
 module Algebra.Graph.Relation.InternalDerived (
     -- * Implementation of derived binary relations
-    ReflexiveRelation (..), TransitiveRelation (..),
-    PreorderRelation (..)
+    ReflexiveRelation (..), TransitiveRelation (..), PreorderRelation (..)
   ) where
 
 import Control.DeepSeq (NFData (..))
 
 import Algebra.Graph.Class
-import Algebra.Graph.Relation (Relation, reflexiveClosure,
-                               transitiveClosure, closure)
+import Algebra.Graph.Relation (Relation, reflexiveClosure, transitiveClosure, closure)
 
 {-| The 'ReflexiveRelation' data type represents a /reflexive binary relation/
 over a set of elements. Reflexive relations satisfy all laws of the
