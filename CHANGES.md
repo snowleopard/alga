@@ -2,6 +2,7 @@
 
 ## 0.4
 
+* #174: Add `Symmetric.Relation`.
 * #143: Allow newer QuickCheck.
 * #171: Implement sparsification for King-Launchbury graph representation.
 * #178: Derive `Generic` for adjacency maps.
