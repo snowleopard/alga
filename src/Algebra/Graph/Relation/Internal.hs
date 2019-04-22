@@ -118,10 +118,10 @@ x     <= x + y
 x + y <= x * y@
 -}
 data Relation a = Relation {
-    -- | The /domain/ of the relation.
+    -- | The /domain/ of the relation. Complexity: /O(1)/ time and memory.
     domain :: Set a,
     -- | The set of pairs of elements that are /related/. It is guaranteed that
-    -- each element belongs to the domain.
+    -- each element belongs to the domain. Complexity: /O(1)/ time and memory.
     relation :: Set (a, a)
   } deriving Eq
 

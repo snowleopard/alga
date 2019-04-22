@@ -13,12 +13,13 @@
 
 module Algebra.Graph.Relation.Symmetric.Internal (
     -- * Implementation of symmetric binary relations
-    Relation (..), fromSymmetric, empty, vertex, overlay, connect, consistent,
-    deduplicateEdges
+    Relation (..), fromSymmetric, empty, vertex, overlay, connect, edgeSet,
+    consistent
   ) where
 
 import Algebra.Graph.Internal
 import Control.DeepSeq (NFData (..))
+import Data.Set (Set)
 
 import qualified Data.Set as Set
 
@@ -70,7 +71,7 @@ x + y <= x * y@
 newtype Relation a = SR (RI.Relation a) deriving NFData
 
 -- | Extract the underlying symmetric "Algebra.Graph.Relation".
--- Complexity: /O(1)/ time.
+-- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- fromSymmetric ('Algebra.Graph.Relation.Symmetric.edge' 1 2)    == 'Algebra.Graph.Relation.edges' [(1,2), (2,1)]
@@ -84,17 +85,25 @@ instance Ord a => Eq (Relation a) where
     x == y = fromSymmetric x == fromSymmetric y
 
 instance (Ord a, Show a) => Show (Relation a) where
-    show = show . filtered . fromSymmetric
-      where
-        filtered (RI.Relation d r) = RI.Relation d (deduplicateEdges r)
+    show r@(SR (RI.Relation d _)) = show (RI.Relation d $ edgeSet r)
 
 instance Ord a => Ord (Relation a) where
-    compare (SR x) (SR y) = mconcat
-        [ compare (Set.size $ R.domain x) (Set.size $ R.domain y)
-        , compare (           R.domain x) (           R.domain y)
-        , compare (Set.size . deduplicateEdges $ R.relation x)
-                  (Set.size . deduplicateEdges $ R.relation y)
-        , compare (R.relation x) (R.relation y) ]
+    compare rx@(SR (RI.Relation vx _)) ry@(SR (RI.Relation vy _)) = mconcat
+        [ compare (Set.size vx) (Set.size vy)
+        , compare vx            vy
+        , compare (Set.size ex) (Set.size ey)
+        , compare ex            ey ]
+      where
+        ex = edgeSet rx
+        ey = edgeSet ry
+
+instance (Ord a, Num a) => Num (Relation a) where
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
@@ -162,13 +171,21 @@ connect (SR x) (SR y) = SR $ RI.Relation (R.domain x `Set.union` R.domain y)
     (Set.unions [R.relation x, R.relation y, R.domain x `setProduct` R.domain y
                                            , R.domain y `setProduct` R.domain x ])
 
-instance (Ord a, Num a) => Num (Relation a) where
-    fromInteger = vertex . fromInteger
-    x + y       = x `overlay` y
-    x * y       = x `connect` y
-    signum      = const empty
-    abs         = id
-    negate      = id
+-- | The set of edges of a given graph, where edge vertices appear in the
+-- non-decreasing order.
+-- Complexity: /O(m)/ time.
+--
+-- Note: If you need the set of edges where an edge appears in both directions,
+-- use @'Algebra.Graph.Relation.relation' . 'fromSymmetric'@. The latter is much
+-- faster than this function, and takes only /O(1)/ time and memory.
+--
+-- @
+-- edgeSet 'empty'      == Set.'Set.empty'
+-- edgeSet ('vertex' x) == Set.'Set.empty'
+-- edgeSet ('Algebra.Graph.Relation.Symmetric.edge' x y) == Set.'Set.singleton' (min x y, max x y)
+-- @
+edgeSet :: Ord a => Relation a -> Set (a, a)
+edgeSet (SR (RI.Relation _ r)) = Set.filter (uncurry (<=)) r
 
 -- | Check if the internal representation of a symmetric relation is consistent,
 -- i.e. if (i) all pairs of elements in the 'RI.relation' refer to existing
@@ -191,9 +208,3 @@ consistent (SR r) =
     RI.referredToVertexSet (R.relation r) `Set.isSubsetOf` R.domain r
     &&
     r == R.transpose r
-
--- | Deduplicate a set of undirected edges, keeping the edges whose vertices are
--- in the non-decreasing order.
--- /Note: this function is for internal use only/.
-deduplicateEdges :: Ord a => Set.Set (a, a) -> Set.Set (a, a)
-deduplicateEdges = Set.filter (uncurry (<=))

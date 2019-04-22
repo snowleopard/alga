@@ -38,11 +38,11 @@ module Algebra.Graph.Relation.Symmetric (
   ) where
 
 import Algebra.Graph.Relation.Symmetric.Internal
+import Data.Set (Set)
 import Data.Tree
-import Data.Tuple (swap)
+import Data.Tuple
 
-import qualified Data.Set  as Set
-import qualified Data.Tree as Tree
+import qualified Data.Set as Set
 
 import qualified Algebra.Graph.Relation          as R
 import qualified Algebra.Graph.Relation.Internal as RI
@@ -88,6 +88,7 @@ edge x y = SR $ RI.Relation (Set.fromList [x, y]) (Set.fromList [(x,y), (y,x)])
 vertices :: Ord a => [a] -> Relation a
 vertices = SR . R.vertices
 
+-- TODO: Optimise by avoiding multiple list traversal.
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
@@ -97,7 +98,8 @@ vertices = SR . R.vertices
 -- edges [(x,y), (y,x)] == 'edge' x y
 -- @
 edges :: Ord a => [(a, a)] -> Relation a
-edges es = SR $ RI.Relation (Set.fromList $ uncurry (++) $ unzip es) (Set.fromList es `Set.union` Set.map swap (Set.fromList es))
+edges es = SR $ RI.Relation
+    (Set.fromList $ uncurry (++) $ unzip es) (Set.fromList (es ++ map swap es))
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -216,13 +218,17 @@ edgeCount = length . edgeList
 vertexList :: Relation a -> [a]
 vertexList = R.vertexList . fromSymmetric
 
--- | The sorted list of edges of a graph.
+-- | The sorted list of edges of a graph, where edge vertices appear in the
+-- non-decreasing order.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- Note: If you need the sorted list of edges where an edge appears in both
+-- directions, use @'Algebra.Graph.Relation.edgeList' . 'fromSymmetric'@.
 --
 -- @
 -- edgeList 'empty'          == []
 -- edgeList ('vertex' x)     == []
--- edgeList (edge x y)     == [(min x y, max y x)]
+-- edgeList ('edge' x y)     == [(min x y, max y x)]
 -- edgeList ('star' 2 [3,1]) == [(1,2), (2,3)]
 -- @
 edgeList :: Ord a => Relation a -> [(a, a)]
@@ -236,19 +242,8 @@ edgeList = Set.toAscList . edgeSet
 -- vertexSet . 'vertex'   == Set.'Set.singleton'
 -- vertexSet . 'vertices' == Set.'Set.fromList'
 -- @
-vertexSet :: Relation a -> Set.Set a
+vertexSet :: Relation a -> Set a
 vertexSet = R.vertexSet . fromSymmetric
-
--- | The set of edges of a given graph.
--- Complexity: /O(m)/ time.
---
--- @
--- edgeSet 'empty'      == Set.'Set.empty'
--- edgeSet ('vertex' x) == Set.'Set.empty'
--- edgeSet ('edge' x y) == Set.'Set.singleton' (min x y, max x y)
--- @
-edgeSet :: Ord a => Relation a -> Set.Set (a, a)
-edgeSet = deduplicateEdges . R.edgeSet . fromSymmetric
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -360,7 +355,7 @@ stars as = SR $ RI.Relation (Set.fromList vs) (Set.fromList es)
 -- tree (Node x [Node y [], Node z []])                     == 'star' x [y,z]
 -- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges' [(1,2), (1,3), (3,4), (3,5)]
 -- @
-tree :: Ord a => Tree.Tree a -> Relation a
+tree :: Ord a => Tree a -> Relation a
 tree (Node x []) = vertex x
 tree (Node x f ) = star x (map rootLabel f)
     `overlay` forest (filter (not . null . subForest) f)
@@ -374,7 +369,7 @@ tree (Node x f ) = star x (map rootLabel f)
 -- forest [Node 1 [Node 2 [], Node 3 []], Node 4 [Node 5 []]] == 'edges' [(1,2), (1,3), (4,5)]
 -- forest                                                     == 'overlays' . 'map' 'tree'
 -- @
-forest :: Ord a => Tree.Forest a -> Relation a
+forest :: Ord a => Forest a -> Relation a
 forest = overlays . map tree
 
 -- | Remove a vertex from a given graph.
@@ -407,7 +402,7 @@ removeEdge x y r = SR $ RI.Relation d (Set.delete (y, x) $ Set.delete (x, y) rr)
     RI.Relation d rr = fromSymmetric r
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
--- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
+-- given 'Relation'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O((n + m) * log(n))/ time.
 --
 -- @
@@ -471,5 +466,5 @@ induce p = SR . R.induce p . fromSymmetric
 -- neighbours x ('Algebra.Graph.Class.edge' x y) == Set.'Set.fromList' [y]
 -- neighbours y ('Algebra.Graph.Class.edge' x y) == Set.'Set.fromList' [x]
 -- @
-neighbours :: Ord a => a -> Relation a -> Set.Set a
+neighbours :: Ord a => a -> Relation a -> Set a
 neighbours x = R.postSet x . fromSymmetric
