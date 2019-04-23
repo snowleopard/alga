@@ -1,8 +1,7 @@
-{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Relation.Internal
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : unstable
@@ -102,26 +101,27 @@ The total order on graphs is defined using /size-lexicographic/ comparison:
 Here are a few examples:
 
 @'vertex' 1 < 'vertex' 2
-'vertex' 3 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
-'vertex' 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 1
-'Algebra.Graph.AdjacencyMap.edge' 1 1 < 'Algebra.Graph.AdjacencyMap.edge' 1 2
-'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 1 + 'Algebra.Graph.AdjacencyMap.edge' 2 2
-'Algebra.Graph.AdjacencyMap.edge' 1 2 < 'Algebra.Graph.AdjacencyMap.edge' 1 3@
+'vertex' 3 < 'Algebra.Graph.Relation.edge' 1 2
+'vertex' 1 < 'Algebra.Graph.Relation.edge' 1 1
+'Algebra.Graph.Relation.edge' 1 1 < 'Algebra.Graph.Relation.edge' 1 2
+'Algebra.Graph.Relation.edge' 1 2 < 'Algebra.Graph.Relation.edge' 1 1 + 'Algebra.Graph.Relation.edge' 2 2
+'Algebra.Graph.Relation.edge' 1 2 < 'Algebra.Graph.Relation.edge' 1 3@
 
-Note that the resulting order refines the 'isSubgraphOf' relation and is
-compatible with 'overlay' and 'connect' operations:
+Note that the resulting order refines the
+'Algebra.Graph.Relation.isSubgraphOf' relation and is compatible with
+'overlay' and 'connect' operations:
 
-@'Algebra.Graph.AdjacencyMap.isSubgraphOf' x y ==> x <= y@
+@'Algebra.Graph.Relation.isSubgraphOf' x y ==> x <= y@
 
 @'empty' <= x
 x     <= x + y
 x + y <= x * y@
 -}
 data Relation a = Relation {
-    -- | The /domain/ of the relation.
+    -- | The /domain/ of the relation. Complexity: /O(1)/ time and memory.
     domain :: Set a,
     -- | The set of pairs of elements that are /related/. It is guaranteed that
-    -- each element belongs to the domain.
+    -- each element belongs to the domain. Complexity: /O(1)/ time and memory.
     relation :: Set (a, a)
   } deriving Eq
 

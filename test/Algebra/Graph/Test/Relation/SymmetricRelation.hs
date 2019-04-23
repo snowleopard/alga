@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Relation
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -14,48 +14,55 @@ module Algebra.Graph.Test.Relation.SymmetricRelation (
   ) where
 
 import Algebra.Graph.Relation.Symmetric
-import Algebra.Graph.Relation.Symmetric.Internal
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
-import qualified Algebra.Graph.Class as C
-import qualified Data.Set            as Set
+import qualified Algebra.Graph.Relation as R
 
 t :: Testsuite
-t = testsuite "Relation.Symmetric." empty
+t = testsuite "Symmetric.Relation." empty
 
+type RI  = R.Relation Int
 type SRI = Relation Int
 
 testSymmetricRelation :: IO ()
 testSymmetricRelation = do
-    putStrLn "\n============ SymmetricRelation ============"
-    test "Axioms of graphs" $ size10 (axioms :: GraphTestsuite SRI)
+    putStrLn "\n============ Symmetric.Relation ============"
+    test "Axioms of undirected graphs" $
+        size10 (undirectedAxioms :: GraphTestsuite SRI)
 
-    test "Consistency of arbitraryRelation" $ \(m :: SRI) ->
-         consistent m
+    testConsistent    t
+    testSymmetricShow t
+
+    putStrLn $ "\n============ Symmetric.Relation.toSymmetric ============"
+    test "toSymmetric (edge 1 2)         == edge 1 2" $
+          toSymmetric (R.edge 1 2)       == edge 1 (2 :: Int)
+
+    test "toSymmetric . fromSymmetric    == id" $ \(x :: SRI) ->
+          (toSymmetric . fromSymmetric) x == id x
+
+    test "fromSymmetric    . toSymmetric == symmetricClosure" $ \(x :: RI) ->
+          (fromSymmetric . toSymmetric) x == R.symmetricClosure x
+
+    test "vertexCount      . toSymmetric == vertexCount" $ \(x :: RI) ->
+          vertexCount (toSymmetric x) == R.vertexCount x
+
+    test "(*2) . edgeCount . toSymmetric >= edgeCount" $ \(x :: RI) ->
+          ((*2) . edgeCount . toSymmetric) x >= R.edgeCount x
+
+    putStrLn $ "\n============ Symmetric.Relation.fromSymmetric ============"
+    test "fromSymmetric (edge 1 2)    == edges [(1,2), (2,1)]" $
+          fromSymmetric (edge 1 2)    == R.edges [(1,2), (2,1 :: Int)]
+
+    test "vertexCount . fromSymmetric == vertexCount" $ \(x :: SRI) ->
+          (R.vertexCount . fromSymmetric) x == vertexCount x
+
+    test "edgeCount   . fromSymmetric <= (*2) . edgeCount" $ \(x :: SRI) ->
+          (R.edgeCount . fromSymmetric) x <= ((*2) . edgeCount) x
 
     testSymmetricBasicPrimitives t
-    testSymmetricFromSymmetric   t
-    testSymmetricToSymmetric     t
-    testSymmetricShow            t
     testSymmetricIsSubgraphOf    t
     testSymmetricToGraph         t
     testSymmetricGraphFamilies   t
     testSymmetricTransformations t
-    testSymmetricAPIConsistent   t
 
-    test "Axioms of undirected graphs" $ size10
-        (undirectedAxioms :: GraphTestsuite (Relation Int))
-
-    putStrLn "\n============ SymmetricRelation.neighbours ============" 
-    test "neighbours x empty      == Set.empty" $ \(x :: Int) ->
-          neighbours x C.empty    == Set.empty
-
-    test "neighbours x (vertex x) == Set.empty" $ \(x :: Int) ->
-          neighbours x (C.vertex x) == Set.empty
-
-    test "neighbours x (edge x y) == Set.fromList [y]" $ \(x :: Int) y ->
-          neighbours x (C.edge x y) == Set.fromList [y]
-
-    test "neighbours y (edge x y) == Set.fromList [x]" $ \(x :: Int) y ->
-          neighbours y (C.edge x y) == Set.fromList [x]
