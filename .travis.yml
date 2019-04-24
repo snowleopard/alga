@@ -52,11 +52,11 @@ matrix:
     - compiler: "ghc-8.6.4"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.6.4], sources: [hvr-ghc]}}
       env: DOBENCH="Graph"
-      script: cd ${DISTDIR}; timeout 45m ./compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; );
+      script: cd $ORIG; HC=${HC} timeout 45m ./compare.sh ${CABAL} ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; );
     - compiler: "ghc-8.6.4"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.6.4], sources: [hvr-ghc]}}
       env: DOBENCH="Graph.NonEmpty"
-      script: cd ${DISTDIR}; timeout 45m ./compare.sh Cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ) "True" ;
+      script: cd $ORIG; HC=${HC} timeout 45m ./compare.sh ${CABAL} ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ) "True" ;
 ##### Performance regression suite, added manually #####
 
 before_install:
@@ -100,10 +100,10 @@ install:
   - rm -rf .ghc.environment.* "."/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
 ##### Performance regression suite, added manually #####
+  - ORIG=$(pwd)
   - if [ "$DOBENCH" != "" ]; then
-        echo "Downloadin performance regression suite...";
+        echo "Downloading performance regression suite...";
         pwd;
-        cd ${DISTDIR};
         curl https://raw.githubusercontent.com/nobrakal/benchAlgaPr/master/compare.sh -o compare.sh;
         chmod +x compare.sh;
     fi
