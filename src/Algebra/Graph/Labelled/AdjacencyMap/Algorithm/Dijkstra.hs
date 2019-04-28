@@ -31,12 +31,13 @@ import Algebra.Graph.Labelled.AdjacencyMap.Internal (AdjacencyMap(..))
 -- We update d and r till the queue is empty.
 
 dijkstra ::
-     (Ord a, Eq b, Semiring b) => a -> AdjacencyMap b a -> (Map a b, Map a b, [a])
-dijkstra src adjMap = fDRQ
+     (Ord a, Eq b, Semiring b) => a -> AdjacencyMap b a -> Map a b
+dijkstra src adjMap = fst3 fDRQ
   where
     iDRQ = initialize src adjMap
     mDRQ = recursiveUpdateByQ adjMap iDRQ
     fDRQ = finalize src mDRQ
+    fst3 (x, _, _) = x
 
 initialize ::
      (Ord a, Semiring b) => a -> AdjacencyMap b a -> (Map a b, Map a b, [a])
