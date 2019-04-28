@@ -6,28 +6,39 @@ import qualified Data.Map.Strict as Map
 import Algebra.Graph.Labelled.AdjacencyMap.Internal (AdjacencyMap(..))
 
 -- | Psuedocode for Generic-Single-Source-Shortest-Distance (G,s)
--- for i <- 1 to |Q|
+-- for i <- 1 to Number of Vertices:
 --   do d[i] <- r[i] <- 0 
 -- d[s] ← r[s] ← 1 
--- S ← {s} 
--- while S != []
---   do q <- head(S)
---      Dequeue(S)
---      r0 <- r[q]
---      r[q] <- 0
---      for each e in E[q]
+-- q ← {s} 
+-- while q != []
+--   do p <- head(q)
+--      Dequeue(q)
+--      r0 <- r[p]
+--      r[p] <- 0
+--      for each e in E[p]
 --        do if d[n[e]] != d[n[e]] <+> (r0 <.> w[e])
 --             then d[n[e]] <- d[n[e]] <+> (r0 <.> w[e])
 --                  r[n[e]] <- r[n[e]] <+> (r0 <.> w[e])
---                  if n[e] not in S
---                    then Enqueue(S, n[e])
+--                  if n[e] not in q
+--                    then Enqueue(q, n[e])
 -- d[s] ← 1
 --
+-- Convensions used:
+-- if e is a -> b
+-- n[e] = b
+-- p[e] = a
+--
+-- if p is any vertex
+-- E[p] is the edge set of p
+--
+-- if e is any edge
+-- w[e] is the weight of the edge e
+--
 -- Brief:
--- We use a queue S to maintain the set of vertices whose leaving edges are to be relaxed. S is initialized to [source].
+-- We use a queue q to maintain the set of vertices whose leaving edges are to be relaxed. q is initialized to [source].
 -- We maintain 2 attributes, namely, `d` and `r`.
--- d[q] an estimate of the shortest distance from s to q
--- r[q] is the total weight added to d[q] since the last time q was extracted for S.
+-- d[p] an estimate of the shortest distance from s to p
+-- r[p] is the total weight added to d[q] since the last time p was extracted for q.
 -- We update d and r till the queue is empty.
 
 dijkstra ::
@@ -77,6 +88,7 @@ updateDRQByEdgeMap r' edgeMap pDRQ =
   foldr (\k dRQ -> updateDRQByEdge r' (k, edgeMap ! k) dRQ) pDRQ $
   Map.keys edgeMap
 
+-- | updateDRQByEdge updates the map d, r and the queue q 
 updateDRQByEdge ::
      (Ord a, Eq b, Semiring b)
   => b
