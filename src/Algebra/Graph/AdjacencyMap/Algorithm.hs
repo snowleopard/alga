@@ -237,7 +237,7 @@ isTopSortOf xs m = go Set.empty xs
 
 -- | Compute the /breadth-first search/ forest of a graph that corresponds to
 -- searching from each of the graph vertices in the 'Ord' @a@ order.
--- Complexity: /O(n + m * log(n))/ time and O(n+m) memory.
+-- Complexity: /O((n + m) * log(n))/ time and O(n+m) memory.
 -- @
 -- bfsForest 'empty'                       == []
 -- 'forest' (bfsForest $ 'edge' 1 1)         == 'vertex' 1
@@ -264,7 +264,7 @@ bfsForest g = bfsForestFrom (vertexList g) g
 
 -- | Compute the /breadth-first search/ AdjacencyMap of a graph that corresponds to
 -- searching from a single vertex of the graph. 
--- Complexity: /O(n + m * log(n))/ time and O(n+m) memory.
+-- Complexity: /O((n + m) * log(n))/ time and O(n+m) memory.
 bfsTreeAdjacencyMap :: Ord a => a -> AdjacencyMap a -> AdjacencyMap a
 bfsTreeAdjacencyMap2 s g = case (hasVertex s g) of
     True -> bfsTreeAdjacencyMapUtil2 (Seq.singleton s) initVisited g 
@@ -274,7 +274,7 @@ bfsTreeAdjacencyMap2 s g = case (hasVertex s g) of
 -- | Compute the /breadth-first search/ AdjacencyMap of a graph that corresponds to
 -- searching from the head of a queue (followed by other vertices to search from), 
 -- given a Set of seen vertices (vertices that shouldn't be visited).
--- Complexity: /O(n + m * log(n))/ time and O(n+m) memory.
+-- Complexity: /O((n + m) * log(n))/ time and O(n+m) memory.
 bfsTreeAdjacencyMapUtil :: Ord a => Seq.Seq a -> Map.Map a Bool -> AdjacencyMap a -> AdjacencyMap a
 bfsTreeAdjacencyMapUtil2 queue visited g
     | queue == Seq.empty = empty
@@ -288,7 +288,7 @@ bfsTreeAdjacencyMapUtil2 queue visited g
 -- | Compute the /breadth-first search/ intermediate values for `bfsTreeAdjacencyMapUtil`. Given a set of neighbors
 -- (source doesnt matter), a map of visisted nodes (Map a Bool) and a queue (Sequence), obtain the new queue, update
 -- map and set of vertices to add to the graph.
--- Complexity: /O(n + m * log(n))/ time and O(n+m) memory.
+-- Complexity: /O((n + m) * log(n))/ time and O(n+m) memory.
 bfsTreeNewParams :: (Ord a) => Set.Set a -> Map.Map a Bool -> Seq.Seq a -> (Seq.Seq a, Map.Map a Bool, Set.Set a)
 bfsTreeNewParams neighbors visited queue = (newQueue, newVisited, vSet )
             where vSet = Set.filter (\x -> (not . fromJust . Map.lookup x) visited) neighbors
@@ -299,7 +299,7 @@ bfsTreeNewParams neighbors visited queue = (newQueue, newVisited, vSet )
 -- | Compute the /breadth-first search/ Tree of a graph that corresponds to
 -- searching from a single vertex of the graph. This is just for internal use. 
 -- Might move it to `*.Internal` then?
--- Complexity: /O(n + m * log(n))/ time and O(n+m) memory.
+-- Complexity: /O((n + m) * log(n))/ time and O(n+m) memory.
 bfsTree :: Ord a => a -> AdjacencyMap a -> Tree a
 bfsTree s g = unfoldTree neighbors s
     where neighbors b = (b, Set.toAscList . postSet b $ bfsAM)
@@ -308,7 +308,7 @@ bfsTree s g = unfoldTree neighbors s
 -- | Compute the /breadth-first search/ forest of a graph, searching from each of
 -- the given vertices in order. Note that the resulting forest does not
 -- necessarily span the whole graph, as some vertices may be unreachable.
--- Complexity: /O(n + m * log(n))/ time and O(n+m) memory.
+-- Complexity: /O((n + m) * log(n))/ time and O(n+m) memory.
 -- bfsForestFrom vs 'empty'                                      == []
 -- 'forest' (bfsForestFrom [1]   $ 'edge' 1 1)                   == 'vertex' 1
 -- 'forest' (bfsForestFrom [1]   $ 'edge' 1 2)                   == 'edge' 1 2
@@ -341,7 +341,7 @@ bfsForestFrom (v:vs) g
 
 -- -- | Compute the list of vertices visited by the /breadth-first search/ by level in a
 -- graph, when searching from each of the given vertices in order.
--- Complexity: /O(n + m * log(n))/ time and O(n+m) memory.
+-- Complexity: /O((n + m) * log(n))/ time and O(n+m) memory.
 -- @
 -- bfs vs    $ 'empty'                    == []
 -- bfs [1]   $ 'edge' 1 1                 == [[1]]
@@ -364,7 +364,7 @@ bfs vs g = foldr (zipWith (++)) acc (map (++ repeat []) l)
 
 -- -- | Compute the list of vertices visited by the /breadth-first search/ in a graph.
 -- For every tree in the forest, a different list of vertices by level is given.
--- Complexity: /O(n + m * log(n))/ time and O(n+m) memory.
+-- Complexity: /O((n + m) * log(n))/ time and O(n+m) memory.
 -- @
 -- bfsPerTree vs    $ 'empty'                    == []
 -- bfsPerTree [1]   $ 'edge' 1 1                 == [[[1]]]
