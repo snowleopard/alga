@@ -266,8 +266,8 @@ bfsForest g = bfsForestFrom (vertexList g) g
 -- searching from a single vertex of the graph. 
 -- Complexity: /O((n + m) * log(n))/ time and O(n+m) memory.
 bfsTreeAdjacencyMap :: Ord a => a -> AdjacencyMap a -> AdjacencyMap a
-bfsTreeAdjacencyMap2 s g = case (hasVertex s g) of
-    True -> bfsTreeAdjacencyMapUtil2 (Seq.singleton s) initVisited g 
+bfsTreeAdjacencyMap s g = case (hasVertex s g) of
+    True -> bfsTreeAdjacencyMapUtil (Seq.singleton s) initVisited g 
         where initVisited = Map.unionsWith (||) $ ( Map.singleton s True):(map (\x -> Map.singleton x False) (vertexList g))
     _ -> empty
 
@@ -276,9 +276,9 @@ bfsTreeAdjacencyMap2 s g = case (hasVertex s g) of
 -- given a Set of seen vertices (vertices that shouldn't be visited).
 -- Complexity: /O((n + m) * log(n))/ time and O(n+m) memory.
 bfsTreeAdjacencyMapUtil :: Ord a => Seq.Seq a -> Map.Map a Bool -> AdjacencyMap a -> AdjacencyMap a
-bfsTreeAdjacencyMapUtil2 queue visited g
+bfsTreeAdjacencyMapUtil queue visited g
     | queue == Seq.empty = empty
-    | otherwise = overlay (AM.AM $ Map.singleton v vSet) (bfsTreeAdjacencyMapUtil2 newQueue newVisited g)
+    | otherwise = overlay (AM.AM $ Map.singleton v vSet) (bfsTreeAdjacencyMapUtil newQueue newVisited g)
         where
             v Seq.:< qv = Seq.viewl queue
             neighbors = postSet v g
