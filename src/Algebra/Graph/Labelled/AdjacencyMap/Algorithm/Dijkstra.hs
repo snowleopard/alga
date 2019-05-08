@@ -13,7 +13,6 @@ import qualified Data.Set as Set
 data DijkstraState a e = DijkstraState
   { heap :: Set (e, a)
   , distance :: Map a e
-  , path :: Map a (Maybe a)
   } deriving (Show)
 
 -- | /O(|V| + |E| * log|V|)/ `dijkstra` is the main function using both `initialize` and `exploreVertices`.
@@ -21,15 +20,15 @@ data DijkstraState a e = DijkstraState
 -- @
 -- dijkstra 'x' (fromList []) = Error as 'x' does not exist in the adjacency map
 --
--- dijkstra 'a' (fromList [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) = ([], {'a': 0, 'b': 1, 'c': 3}, {'a': Nothing, 'b': Just 'a', 'c': Just 'b'})
+-- dijkstra 'a' (fromList [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) = {'a': 0, 'b': 1, 'c': 3}
 -- @
 dijkstra ::
      (Ord a, Num e, Ord e)
   => a
   -> AdjacencyMap (Distance e) a
-  -> DijkstraState a (Distance e)
-dijkstra a am =
-  flip execState (DijkstraState Set.empty Map.empty Map.empty) $ do
+  -> Map a (Distance e)
+dijkstra a am = distance $
+  flip execState (DijkstraState Set.empty Map.empty) $ do
     initialize a am
     exploreVertices am
 
@@ -44,7 +43,6 @@ initialize a am =
   DijkstraState
     (Set.singleton (one, a))
     (Map.insert a one . Map.map (const zero) $ adjacencyMap am)
-    (Map.map (const Nothing) $ adjacencyMap am)
 
 -- | /O(|E| * log|V|)/ `exploreVertices` is an iterative function which explores all the vertices.
 exploreVertices ::
@@ -83,7 +81,6 @@ exploreEdge ::
 exploreEdge e v1 v2 = do
   curHeap <- gets heap
   curDistance <- gets distance
-  curPath <- gets path
   let curDV1 = curDistance ! v1
   let curDV2 = curDistance ! v2
   let newDV2 = curDV2 <+> (curDV1 <.> e)
@@ -92,4 +89,3 @@ exploreEdge e v1 v2 = do
     DijkstraState
       (Set.insert (newDV2, v2) curHeap)
       (Map.insert v2 newDV2 curDistance)
-      (Map.insert v2 (Just v1) curPath)
