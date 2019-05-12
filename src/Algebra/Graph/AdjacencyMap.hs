@@ -43,7 +43,6 @@ module Algebra.Graph.AdjacencyMap (
     compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure
     ) where
 
-import Data.Foldable (foldMap)
 import Data.Monoid
 import Data.Set (Set)
 import Data.Tree

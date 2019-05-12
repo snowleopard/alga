@@ -19,7 +19,6 @@ module Algebra.Graph.AdjacencyIntMap.Internal (
 import Prelude ()
 import Prelude.Compat hiding (null)
 
-import Data.Foldable (foldMap)
 import Data.Monoid (getSum, Sum (..))
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)
 import Data.IntSet (IntSet)

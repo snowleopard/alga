@@ -1,5 +1,9 @@
 # Change log
 
+## 0.5
+
+* #172: Stop supporting GHC 7.8.4.
+
 ## 0.4
 
 * #174: Add `Symmetric.Relation`.
