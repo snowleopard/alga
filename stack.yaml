@@ -1,9 +1,7 @@
-resolver: lts-6.35
+resolver: lts-13.17
 
 packages:
 - '.'
 
 extra-deps:
 - inspection-testing-0.4
-- QuickCheck-2.10
-
