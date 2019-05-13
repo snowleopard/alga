@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, OverloadedLists, TypeFamilies #-}
+{-# LANGUAGE OverloadedLists, TypeFamilies #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled.Example.Automaton
