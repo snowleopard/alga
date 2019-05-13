@@ -19,6 +19,7 @@ module Algebra.Graph.Relation.Symmetric.Internal (
 
 import Algebra.Graph.Internal
 import Control.DeepSeq
+import Data.Coerce
 import Data.Set (Set)
 
 import qualified Data.Set as Set
@@ -75,7 +76,7 @@ x + y <= x * y@
 newtype Relation a = SR (RI.Relation a) deriving NFData
 
 instance Ord a => Eq (Relation a) where
-    x == y = fromSymmetric x == fromSymmetric y
+    (==) = coerce ((==) :: RI.Relation a -> RI.Relation a -> Bool)
 
 instance (Ord a, Show a) => Show (Relation a) where
     show r@(SR (RI.Relation d _)) = show (RI.Relation d $ edgeSet r)
@@ -119,7 +120,7 @@ fromSymmetric (SR x) = x
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   empty == 0
 -- @
 empty :: Relation a
-empty = SR $ RI.Relation Set.empty Set.empty
+empty = coerce RI.empty
 
 -- | Construct the graph comprising /a single isolated vertex/.
 -- Complexity: /O(1)/ time and memory.
@@ -131,7 +132,7 @@ empty = SR $ RI.Relation Set.empty Set.empty
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (vertex x) == 0
 -- @
 vertex :: a -> Relation a
-vertex x = SR $ RI.Relation (Set.singleton x) Set.empty
+vertex = coerce RI.vertex
 
 -- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
@@ -148,8 +149,7 @@ vertex x = SR $ RI.Relation (Set.singleton x) Set.empty
 -- 'Algebra.Graph.Relation.Symmetric.edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Ord a => Relation a -> Relation a -> Relation a
-overlay (SR x) (SR y) = SR $ RI.Relation (R.domain   x `Set.union` R.domain   y)
-                                         (R.relation x `Set.union` R.relation y)
+overlay = coerce RI.overlay
 
 -- | /Connect/ two graphs. This is a commutative and associative operation with
 -- the identity 'empty', which distributes over 'overlay' and obeys the

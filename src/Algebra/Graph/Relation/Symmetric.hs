@@ -38,6 +38,7 @@ module Algebra.Graph.Relation.Symmetric (
   ) where
 
 import Algebra.Graph.Relation.Symmetric.Internal
+import Data.Coerce
 import Data.Set (Set)
 import Data.Tree
 import Data.Tuple
@@ -87,7 +88,7 @@ edge x y = SR $ RI.Relation (Set.fromList [x, y]) (Set.fromList [(x,y), (y,x)])
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: Ord a => [a] -> Relation a
-vertices = SR . R.vertices
+vertices = coerce R.vertices
 
 -- TODO: Optimise by avoiding multiple list traversal.
 -- | Construct the graph from a list of edges.
@@ -113,7 +114,7 @@ edges es = SR $ RI.Relation
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: Ord a => [Relation a] -> Relation a
-overlays = SR . R.overlays . map fromSymmetric
+overlays = coerce R.overlays
 
 -- | Connect a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -143,7 +144,7 @@ connects = foldr connect empty
 -- isSubgraphOf x y                         ==> x <= y
 -- @
 isSubgraphOf :: Ord a => Relation a -> Relation a -> Bool
-isSubgraphOf x y = R.isSubgraphOf (fromSymmetric x) (fromSymmetric y)
+isSubgraphOf = coerce R.isSubgraphOf
 
 -- | Check if a relation is empty.
 -- Complexity: /O(1)/ time.
@@ -156,7 +157,7 @@ isSubgraphOf x y = R.isSubgraphOf (fromSymmetric x) (fromSymmetric y)
 -- isEmpty ('removeEdge' x y $ 'edge' x y) == False
 -- @
 isEmpty :: Relation a -> Bool
-isEmpty = R.isEmpty . fromSymmetric
+isEmpty = coerce R.isEmpty
 
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(log(n))/ time.
@@ -168,7 +169,7 @@ isEmpty = R.isEmpty . fromSymmetric
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Ord a => a -> Relation a -> Bool
-hasVertex x = R.hasVertex x . fromSymmetric
+hasVertex = coerce R.hasVertex
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(log(n))/ time.
@@ -182,7 +183,7 @@ hasVertex x = R.hasVertex x . fromSymmetric
 -- hasEdge x y                  == 'elem' (min x y, max x y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> Relation a -> Bool
-hasEdge x y = R.hasEdge x y . fromSymmetric
+hasEdge = coerce R.hasEdge
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
@@ -194,7 +195,7 @@ hasEdge x y = R.hasEdge x y . fromSymmetric
 -- vertexCount x \< vertexCount y ==> x \< y
 -- @
 vertexCount :: Relation a -> Int
-vertexCount = R.vertexCount . fromSymmetric
+vertexCount = coerce R.vertexCount
 
 -- | The number of edges in a graph.
 -- Complexity: /O(1)/ time.
@@ -217,7 +218,7 @@ edgeCount = length . edgeList
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
 vertexList :: Relation a -> [a]
-vertexList = R.vertexList . fromSymmetric
+vertexList = coerce R.vertexList
 
 -- | The sorted list of edges of a graph, where edge vertices appear in the
 -- non-decreasing order.
@@ -244,7 +245,7 @@ edgeList = Set.toAscList . edgeSet
 -- vertexSet . 'vertices' == Set.'Set.fromList'
 -- @
 vertexSet :: Relation a -> Set a
-vertexSet = R.vertexSet . fromSymmetric
+vertexSet = coerce R.vertexSet
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -257,7 +258,7 @@ vertexSet = R.vertexSet . fromSymmetric
 -- 'stars' . adjacencyList        == id
 -- @
 adjacencyList :: Eq a => Relation a -> [(a, [a])]
-adjacencyList = R.adjacencyList . fromSymmetric
+adjacencyList = coerce R.adjacencyList
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -286,6 +287,7 @@ circuit :: Ord a => [a] -> Relation a
 circuit []     = empty
 circuit (x:xs) = path $ [x] ++ xs ++ [x]
 
+-- TODO: Optimise by avoiding the call to 'R.symmetricClosure'.
 -- | The /clique/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time + /O(m*log(m)) time from computing the symmetricClosure and /O(n + m)/ memory.
 --
@@ -300,6 +302,7 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 clique :: Ord a => [a] -> Relation a
 clique = SR . R.symmetricClosure . R.clique
 
+-- TODO: Optimise by avoiding the call to 'R.symmetricClosure'.
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(n * log(n) + m)/ time + /O(m*log(m)) time from computing the symmetricClosure and /O(n + m)/ memory.
 --
@@ -344,8 +347,8 @@ star x ys = connect (vertex x) (vertices ys)
 stars :: Ord a => [(a, [a])] -> Relation a
 stars as = SR $ RI.Relation (Set.fromList vs) (Set.fromList es)
   where
-    vs = concatMap (uncurry (:)) as
-    es = [ (x, y) | (x, ys) <- as, y <- ys ] ++ [ (y, x) | (x, ys) <- as, y <- ys ]
+    vs = concat [ x : ys           | (x, ys) <- as          ]
+    es = concat [ [(x, y), (y, x)] | (x, ys) <- as, y <- ys ]
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -384,7 +387,7 @@ forest = overlays . map tree
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Ord a => a -> Relation a -> Relation a
-removeVertex x = SR . R.removeVertex x . fromSymmetric
+removeVertex = coerce R.removeVertex
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(log(m))/ time.
@@ -412,7 +415,7 @@ removeEdge x y r = SR $ RI.Relation d (Set.delete (y, x) $ Set.delete (x, y) rr)
 -- replaceVertex x y            == 'mergeVertices' (== x) y
 -- @
 replaceVertex :: Ord a => a -> a -> Relation a -> Relation a
-replaceVertex u v = gmap $ \w -> if w == u then v else w
+replaceVertex = coerce R.replaceVertex
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
@@ -425,7 +428,7 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- mergeVertices 'odd'  1 (3 + 4 * 5) == 4 * 1
 -- @
 mergeVertices :: Ord a => (a -> Bool) -> a -> Relation a -> Relation a
-mergeVertices p v = gmap $ \u -> if p u then v else u
+mergeVertices = coerce R.mergeVertices
 
 -- | Transform a graph by applying a function to each of its vertices. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
@@ -440,7 +443,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- gmap f . gmap g   == gmap (f . g)
 -- @
 gmap :: Ord b => (a -> b) -> Relation a -> Relation b
-gmap f = SR . R.gmap f . fromSymmetric
+gmap = coerce R.gmap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -455,7 +458,7 @@ gmap f = SR . R.gmap f . fromSymmetric
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: (a -> Bool) -> Relation a -> Relation a
-induce p = SR . R.induce p . fromSymmetric
+induce = coerce R.induce
 
 -- | The set of /neighbours/ of an element @x@ is the set of elements that are
 -- related to it, i.e. @neighbours x == { a | aRx }@. In the context of undirected
@@ -468,4 +471,4 @@ induce p = SR . R.induce p . fromSymmetric
 -- neighbours y ('Algebra.Graph.Class.edge' x y) == Set.'Set.fromList' [x]
 -- @
 neighbours :: Ord a => a -> Relation a -> Set a
-neighbours x = R.postSet x . fromSymmetric
+neighbours = coerce R.postSet
