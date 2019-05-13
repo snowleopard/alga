@@ -17,6 +17,7 @@ module Algebra.Graph.NonEmpty.AdjacencyMap.Internal (
     ) where
 
 import Control.DeepSeq
+import Data.Coerce
 import Data.List
 import GHC.Generics
 
@@ -122,12 +123,12 @@ newtype AdjacencyMap a = NAM {
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap' for
 -- more details.
 instance (Ord a, Num a) => Num (AdjacencyMap a) where
-    fromInteger   = NAM . AM.vertex . fromInteger
-    NAM x + NAM y = NAM (AM.overlay x y)
-    NAM x * NAM y = NAM (AM.connect x y)
-    signum        = error "NonEmpty.AdjacencyMap.signum cannot be implemented."
-    abs           = id
-    negate        = id
+    fromInteger = NAM . AM.vertex . fromInteger
+    (+)         = coerce AM.overlay
+    (*)         = coerce AM.connect
+    signum      = error "NonEmpty.AdjacencyMap.signum cannot be implemented."
+    abs         = id
+    negate      = id
 
 instance (Ord a, Show a) => Show (AdjacencyMap a) where
     showsPrec p (NAM (AM.AM m))
