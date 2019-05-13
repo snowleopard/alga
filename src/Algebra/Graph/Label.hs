@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, OverloadedLists #-}
+{-# LANGUAGE CPP, DeriveFunctor, OverloadedLists #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Label
@@ -35,7 +35,7 @@ import Prelude.Compat
 import Control.Applicative
 import Control.Monad
 import Data.Maybe
-import Data.Monoid (Any (..), Monoid (..), Sum (..))
+import Data.Monoid (Any (..), Sum (..))
 import Data.Semigroup (Min (..), Max (..), Semigroup (..))
 import Data.Set (Set)
 import GHC.Exts (IsList (..))
@@ -326,7 +326,10 @@ instance Ord a => Semigroup (Minimum a) where
     (<>) = liftA2 min
 
 instance (Monoid a, Ord a) => Monoid (Minimum a) where
-    mempty = pure mempty 
+    mempty = pure mempty
+#if !MIN_VERSION_base(4,11,0)
+    mappend = (<>)
+#endif
 
 instance (Monoid a, Ord a) => Semiring (Minimum a) where
     one = noMinimum

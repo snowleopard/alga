@@ -20,7 +20,6 @@ import Prelude ()
 import Prelude.Compat hiding (null)
 
 import Control.DeepSeq
-import Data.Foldable (foldMap)
 import Data.List
 import Data.Map.Strict (Map, keysSet, fromSet)
 import Data.Monoid

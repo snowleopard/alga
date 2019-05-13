@@ -21,8 +21,6 @@ import Prelude.Compat
 import Data.Semigroup
 #endif
 
-import Control.Applicative (pure)
-
 import Algebra.Graph.Internal
 import Algebra.Graph.Test
 
