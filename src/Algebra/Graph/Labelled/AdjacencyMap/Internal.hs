@@ -21,7 +21,7 @@ import Prelude.Compat
 
 import Control.DeepSeq
 import Data.Map.Strict (Map)
-import Data.Monoid (Monoid, getSum, Sum (..))
+import Data.Monoid (Sum (..))
 import Data.Set (Set, (\\))
 import GHC.Generics
 

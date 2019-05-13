@@ -19,7 +19,6 @@ module Algebra.Graph.Relation.Symmetric.Internal (
 
 import Algebra.Graph.Internal
 import Control.DeepSeq
-import Data.Monoid (mconcat)
 import Data.Set (Set)
 
 import qualified Data.Set as Set

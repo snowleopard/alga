@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.HigherKinded.Class
@@ -122,11 +121,7 @@ denote the number of vertices in the graph, /m/ will denote the number of
 edges in the graph, and /s/ will denote the /size/ of the corresponding
 'Graph' expression.
 -}
-class (
-#if !MIN_VERSION_base(4,8,0)
-  Alternative g,
-#endif
-  MonadPlus g) => Graph g where
+class MonadPlus g => Graph g where
     -- | Connect two graphs.
     connect :: g a -> g a -> g a
 

@@ -2,6 +2,3 @@ resolver: lts-13.17
 
 packages:
 - '.'
-
-extra-deps:
-- inspection-testing-0.4

@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.NonEmpty

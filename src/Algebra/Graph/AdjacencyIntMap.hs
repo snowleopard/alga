@@ -42,7 +42,6 @@ module Algebra.Graph.AdjacencyIntMap (
     compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure
     ) where
 
-import Data.Foldable (foldMap)
 import Data.IntSet (IntSet)
 import Data.Monoid
 import Data.Set (Set)

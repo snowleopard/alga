@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, OverloadedLists, TypeFamilies #-}
+{-# LANGUAGE OverloadedLists, TypeFamilies #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled.Example.Automaton
@@ -24,17 +24,6 @@ import Algebra.Graph.Labelled
 import Algebra.Graph.ToGraph
 
 import qualified Data.Map as Map
-
-#if !MIN_VERSION_base(4,8,0)
-import Data.Set (Set)
-import qualified Data.Set as Set
-import GHC.Exts hiding (Any)
-
-instance Ord a => IsList (Set a) where
-    type Item (Set a) = a
-    fromList = Set.fromList
-    toList   = Set.toList
-#endif
 
 -- | The alphabet of actions for ordering coffee or tea.
 data Alphabet = Coffee -- ^ Order coffee

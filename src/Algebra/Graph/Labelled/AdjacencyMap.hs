@@ -41,10 +41,9 @@ module Algebra.Graph.Labelled.AdjacencyMap (
 import Prelude ()
 import Prelude.Compat
 
-import Data.Foldable (foldMap)
 import Data.Maybe
 import Data.Map (Map)
-import Data.Monoid (Monoid, Sum (..))
+import Data.Monoid (Sum (..))
 import Data.Set (Set)
 
 import Algebra.Graph.Label
