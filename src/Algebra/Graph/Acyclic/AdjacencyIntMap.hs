@@ -7,40 +7,32 @@
 
 module Algebra.Graph.Acyclic.AdjacencyIntMap where
 
-import Data.IntMap.Strict (IntMap)
-import qualified Data.IntMap.Strict as IntMap
-import Data.IntSet (IntSet)
-import qualified Data.IntSet as IntSet
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NAM
 import Data.Proxy (Proxy(..))
 import GHC.TypeLits
 
 data Edge (f :: Nat) (t :: Nat) =
   Edge
 
-newtype AdjacencyIntMap (edgesFollowRule :: Bool) =
-  AM (IntMap IntSet)
+newtype AdjacencyIntMap =
+  AM (NAM.AdjacencyMap Int)
   deriving (Show)
 
-empty :: AdjacencyIntMap 'True
-empty = AM IntMap.empty
+singleton :: Int -> AdjacencyIntMap
+singleton x = AM $ NAM.vertex x
 
-singleton :: Int -> AdjacencyIntMap 'True
-singleton x = AM $ IntMap.singleton x IntSet.empty
-
-addEdge ::
-     forall f t. (KnownNat f, KnownNat t)
+edge ::
+     forall f t. (KnownNat f, KnownNat t, (f <=? t) ~ 'True)
   => Edge f t
-  -> AdjacencyIntMap 'True
-  -> AdjacencyIntMap (f <=? t)
-addEdge _ (AM m) =
-  AM $ IntMap.insertWith IntSet.union fI (IntSet.singleton tI) m
+  -> AdjacencyIntMap
+edge _ = AM $ NAM.edge fI tI
   where
     fI = fromIntegral . natVal $ (Proxy :: Proxy f)
     tI = fromIntegral . natVal $ (Proxy :: Proxy t)
 
+overlay :: AdjacencyIntMap -> AdjacencyIntMap -> AdjacencyIntMap
+overlay (AM m1) (AM m2) = AM $ NAM.overlay m1 m2
+
 -- REPL testing
-graph :: AdjacencyIntMap 'True
-graph =
-  addEdge (Edge :: Edge 5 7) .
-  addEdge (Edge :: Edge 4 5) . addEdge (Edge :: Edge 3 4) $
-  empty
+graph :: AdjacencyIntMap
+graph = overlay (edge (Edge :: Edge 5 7)) (edge (Edge :: Edge 4 5))
