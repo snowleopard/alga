@@ -7,7 +7,7 @@
 
 module Algebra.Graph.Acyclic.AdjacencyIntMap where
 
-import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NAM
+import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import Data.Proxy (Proxy(..))
 import GHC.TypeLits
 
@@ -15,23 +15,41 @@ data Edge (f :: Nat) (t :: Nat) =
   Edge
 
 newtype AdjacencyIntMap =
-  AM (NAM.AdjacencyMap Int)
+  AM AIM.AdjacencyIntMap
   deriving (Show)
 
+empty :: AdjacencyIntMap
+empty = AM AIM.empty
+
 singleton :: Int -> AdjacencyIntMap
-singleton x = AM $ NAM.vertex x
+singleton x = AM $ AIM.vertex x
 
 edge ::
      forall f t. (KnownNat f, KnownNat t, (f <=? t) ~ 'True)
   => Edge f t
   -> AdjacencyIntMap
-edge _ = AM $ NAM.edge fI tI
+edge _ = AM $ AIM.edge fI tI
   where
     fI = fromIntegral . natVal $ (Proxy :: Proxy f)
     tI = fromIntegral . natVal $ (Proxy :: Proxy t)
 
 overlay :: AdjacencyIntMap -> AdjacencyIntMap -> AdjacencyIntMap
-overlay (AM m1) (AM m2) = AM $ NAM.overlay m1 m2
+overlay (AM m1) (AM m2) = AM $ AIM.overlay m1 m2
+
+edges ::
+     forall f t. (KnownNat f, KnownNat t, (f <=? t) ~ 'True)
+  => [Edge f t]
+  -> AdjacencyIntMap
+edges es = AM . AIM.edges $ map edgeTuple es
+
+edgeTuple ::
+     forall f t. (KnownNat f, KnownNat t, (f <=? t) ~ 'True)
+  => Edge f t
+  -> (Int, Int)
+edgeTuple _ = (fI, tI)
+  where
+    fI = fromIntegral . natVal $ (Proxy :: Proxy f)
+    tI = fromIntegral . natVal $ (Proxy :: Proxy t)
 
 -- REPL testing
 graph :: AdjacencyIntMap
