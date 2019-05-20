@@ -51,11 +51,21 @@ withDAG (DAG d) = put d
 dag :: State (DAG' a) () -> DAG a
 dag s = DAG $ execState s Nil
 
+view :: DAG a -> Maybe (Vertex a, DAG a)
+view (DAG Nil) = Nothing
+view (DAG (Cons v d)) = Just (v, DAG d)
+
 unsafeToAcyclic :: (Ord a) => AM.AdjacencyMap a -> DAG a
 unsafeToAcyclic am = dag . void $ execStateT (visitAll am) Map.empty
 
 scc :: (Ord a) => AM.AdjacencyMap a -> DAG (NonEmpty.AdjacencyMap a)
 scc am = unsafeToAcyclic $ AMA.scc am
+
+topSort :: Ord a => DAG a -> [(VID, a)]
+topSort d =
+  case view d of
+    Nothing -> []
+    Just (v, nD) -> (vid v, label v) : topSort nD
 
 visitAll ::
      (Ord a)
