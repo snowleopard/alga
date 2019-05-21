@@ -1,15 +1,91 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RebindableSyntax #-}
+
 module Algebra.Graph.Acyclic.AdjacencyMap where
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as AMA
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import Control.Monad (void)
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.State.Strict
+import Control.Monad.Indexed ((>>>=), ireturn)
+import Control.Monad.Indexed.State
+import Control.Monad.Indexed.Trans
 import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import Prelude hiding ((>>), (>>=), return)
 
+data Nat
+  = Z
+  | S Nat
+
+instance Show Nat where
+  show = show . toIntNat
+
+data Ordinal n where
+  OZ :: Ordinal ('S n)
+  OS :: Ordinal m -> Ordinal ('S m)
+
+instance Show (Ordinal n) where
+  show = show . toIntOrdinal
+
+data DAG n a where
+  Empty :: DAG 'Z a
+  Node :: a -> [Ordinal n] -> DAG n a -> DAG ('S n) a
+
+instance (Show a) => Show (DAG n a) where
+  show Empty = "Empty"
+  show (Node a es d) =
+    "Node(" ++ show a ++ ", " ++ show (map toIntOrdinal es) ++ ") > " ++ show d
+
+toIntOrdinal :: Ordinal n -> Int
+toIntOrdinal OZ = 0
+toIntOrdinal (OS x) = 1 + toIntOrdinal x
+
+toIntNat :: Nat -> Int
+toIntNat Z = 0
+toIntNat (S x) = 1 + toIntNat x
+
+getOrdinal :: DAG n a -> Ordinal n
+getOrdinal (Node _ _ Empty) = OZ
+getOrdinal (Node _ _ d) = OS $ getOrdinal d
+
+singleton :: a -> IxState (DAG n a) (DAG ('S n) a) (Ordinal ('S n))
+singleton a = edgeTo a []
+
+edgeTo :: a -> [Ordinal n] -> IxState (DAG n a) (DAG ('S n) a) (Ordinal ('S n))
+edgeTo a es = do
+  s <- iget
+  let nS = Node a es s
+  iput nS
+  return $ getOrdinal nS
+  where
+    (>>=) = (>>>=)
+    return = ireturn :: forall i a. a -> IxState i i a
+    f >> g = f >>= const g
+
+view :: DAG ('S n) a -> ((a, [Ordinal n]), DAG n a)
+view (Node a es d) = ((a, es), d)
+  {-
+visitOne ::
+     AM.AdjacencyMap a
+  -> a
+  -> IxStateT (Map a [Ordinal n]) (Either (IxState (DAG n a) (DAG ('S n) a)) (IxState (DAG n a) (DAG n a))) (Either (IxState (DAG n a) (DAG ('S n) a)) (IxState (DAG n a) (DAG n a))) (Either (Ordinal n) (Ordinal ('S n)))
+visitOne am a = do
+  vMap <- iget
+  let m = AM.adjacencyMap am
+  case Map.lookup a vMap of
+    Just x -> return (Left x)
+    Nothing
+      -- es <- isequence . map (visitOne am) . Set.toList $ (m ! a)
+     -> do
+      v <- ilift . Right $ edgeTo a []
+      iput $ Map.insert a v vMap
+      return (Right v)
+-}
+{-
 type VID = Int
 
 data Vertex a = Vertex
@@ -90,3 +166,5 @@ visitOne am a = do
       v <- lift $ edgeTo a es
       put $ Map.insert a v vMap
       return v
+
+-}
