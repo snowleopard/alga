@@ -68,6 +68,7 @@ edgeTo a es = do
 
 view :: DAG ('S n) a -> ((a, [Ordinal n]), DAG n a)
 view (Node a es d) = ((a, es), d)
+-- Ignore everything below
   {-
 visitOne ::
      AM.AdjacencyMap a
