@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
@@ -61,6 +61,7 @@ import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Semigroup ((<>))
 import Data.Tree
+import GHC.Generics
 
 import Algebra.Graph.Internal
 
@@ -180,7 +181,7 @@ data Graph a = Empty
              | Vertex a
              | Overlay (Graph a) (Graph a)
              | Connect (Graph a) (Graph a)
-             deriving (Show)
+             deriving (Show, Generic)
 
 {- Note [Functions for rewrite rules]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
