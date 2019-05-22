@@ -59,6 +59,10 @@ connect (AAM x) (AAM y) =
       (Map.keysSet $ AM.adjacencyMap x)
   ]
 
+-- reverse and Map.keys results in an ascending list
+topSort :: (Ord a) => AdjacencyMap a -> [a]
+topSort (AAM (AMI.AM m)) = reverse $ Map.keys m
+
 -- scc
 scc :: (Ord a) => AM.AdjacencyMap a -> AdjacencyMapP (NonEmpty.AdjacencyMap a)
 scc am = unsafeToAcyclic $ AMA.scc am
@@ -100,7 +104,9 @@ incrementOrd a b (AAM am) = AAM $ AM.gmap iF am
       | otherwise = (x, y)
 
 
-
+-- REPL testing
+x = (1 * 2) + (1 * 3) + (3 * 2)
+y = unsafeToAcyclic x
 
 
 
