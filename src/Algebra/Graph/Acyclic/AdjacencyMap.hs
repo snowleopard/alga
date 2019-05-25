@@ -8,6 +8,9 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
   -- * Internal Checks
   consistent, 
 
+  -- * Graph properties
+  edgeList, vertexList,
+
   -- * Basic graph construction primitives
   empty, vertex, overlayD, connectD, vertices,
 
@@ -32,9 +35,28 @@ wrapping around 'Algebra.Graph.AdjacencyMap.AdjacencyMap'. The
 idea is that the user of the library should not be given a way
 to produce a cyclic graph.
 
-In the following code examples, the arthemetic is used to represent
-the graph. There is no instance of 'Num' on the AdjacencyMap so it
-used to only to act as a representation of the graph.
+We define a 'Num' instance as a convenient notation for working
+with graphs:
+
+  > edgeList   0           == []
+  > vertexList 0           == [0]
+  > edgeList   (1 + 2)     == []
+  > vertexList (1 + 2)     == [1,2]
+  > edgeList   (1 * 2)     == [(1,2)]
+  > vertexList (1 * 2)     == [1,2]
+  > edgeList   (1 + 2 * 3) == [(2,3)]
+  > vertexList (1 + 2 * 3) == [1,2,3]
+  > edgeList   (1 * 2 + 3) == [(1,2)]
+  > vertexList (1 * 2 + 3) == [1,2,3]
+
+__Note:__ the 'Num' instance does not satisfy several "customary laws"
+of 'Num', which dictate that 'fromInteger' @0@ and 'fromInteger' @1@
+should act as additive and multiplicative identities, and 'negate' as
+additive inverse. Nevertheless, overloading 'fromInteger', '+' and '*'
+is very convenient when working with algebraic graphs; we hope that
+in future Haskell's Prelude will provide a more fine-grained class
+hierarchy for algebraic structures, which we would be able to utilise
+without violating any laws.
 -}
 newtype AdjacencyMap a = AAM
   { aam :: AM.AdjacencyMap a
@@ -49,7 +71,6 @@ newtype AdjacencyMap a = AAM
 -- consistent 'empty'         == True
 -- consistent (1 + 2)         == True
 -- consistent (1 * 2 + 2 * 3) == True
--- consistent (1 * 2 + 2 * 1) == False (Violates cyclic property)
 -- @
 consistent :: Ord a => AdjacencyMap a -> Bool
 consistent (AAM m) = AM.consistent m && AM.isAcyclic m
@@ -80,10 +101,10 @@ vertices xs = AAM $ AM.vertices xs
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- overlayD empty empty             == 'empty'
--- overlayD (1 * 2 + 1 * 3) (1 * 2) == (Left 1) * (Left 2) 
---                                   + (Left 1) * (Left 3)
---                                   + (Right 1) * (Right 2)
+-- edgeList $ overlayD empty empty             == []
+-- edgeList $ overlayD (1 * 2 + 1 * 3) (1 * 2) == [(Left 1,Left 2) 
+--                                                ,(Left 1,Left 3)
+--                                                ,(Right 1,Right 2)]
 -- @
 overlayD ::
      (Ord a, Ord b)
@@ -96,17 +117,17 @@ overlayD (AAM a) (AAM b) = AAM (AM.overlay (AM.gmap Left a) (AM.gmap Right b))
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- connectD empty empty     == 'empty'
--- connectD (1 + 2) (1 + 2) == (Left 1) * (Right 1) 
---                           + (Left 1) * (Right 2)
---                           + (Left 2) * (Right 1)
---                           + (Left 2) * (Right 2)
--- connectD (1 * 2) (1 * 2) == (Left 1) * (Right 1)
---                           + (Left 1) * (Right 2) 
---                           + (Left 2) * (Right 1) 
---                           + (Left 2) * (Right 2) 
---                           + (Left 1) * (Left 2) 
---                           + (Right 1) * (Right 2)
+-- edgeList $ connectD empty empty     == []
+-- edgeList $ connectD (1 + 2) (1 + 2) == [(Left 1,Right 1) 
+--                                        ,(Left 1,Right 2)
+--                                        ,(Left 2,Right 1)
+--                                        ,(Left 2,Right 2)]
+-- edgeList $ connectD (1 * 2) (1 * 2) == [(Left 1,Left 2) 
+--                                        ,(Left 1,Right 1)
+--                                        ,(Left 1,Right 2) 
+--                                        ,(Left 2,Right 1) 
+--                                        ,(Left 2,Right 2) 
+--                                        ,(Right 1,Right 2)]
 -- @
 connectD ::
      (Ord a, Ord b)
@@ -153,9 +174,11 @@ topSort (AAM am) = Typed.topSort (Typed.fromAdjacencyMap am)
 -- are the sizes of the given graphs.
 --
 -- @
--- box (1 * 2) (3 * 4) == (1, 3) * (1, 4) + (2, 3) * (2, 4) 
---                      + (1, 3) * (2, 3) + (1, 4) * (2, 4)
--- box (1 + 2) (3 + 4) == (1, 3) + (1, 4) + (2, 3) + (2, 4)
+-- edgeList $ box (1 * 2) (3 * 4) == [((1,3),(1,4))
+--                                   ,((1,3),(2,3))
+--                                   ,((1,4),(2,4))
+--                                   ,((2,3),(2,4))]
+-- edgeList $ box (1 + 2) (3 + 4) == [(1,3),(1,4),(2,3),(2,4)]
 -- @
 box :: (Ord a, Ord b) => AdjacencyMap a -> AdjacencyMap b -> AdjacencyMap (a, b)
 box (AAM x) (AAM y) = AAM $ AM.overlay (fO $ xy y x) (fO $ yx x y)
@@ -166,10 +189,28 @@ box (AAM x) (AAM y) = AAM $ AM.overlay (fO $ xy y x) (fO $ yx x y)
       Map.foldrWithKey (\k -> AM.overlay . Set.foldr AM.overlay k) AM.empty .
       AM.adjacencyMap
 
+-- | This is a signature for a 'Strict Partial Order'.
+-- A strict partial order is a binary relation 'R' that has three
+-- axioms, namely, irreflexive, transitive and asymmetric.
+--   > a 'R' a == False                    (Irreflexive)
+--   > a 'R' b and b 'R' c => a 'R' c      (Transitive)
+--   > a 'R' b == True => b 'R' a == False (Asymmetric)
+-- Some examples of a Strict Partial Order are (<) and (>).
 type PartialOrder a = a -> a -> Bool
 
 -- | Constructs an acyclic graph from any graph based on
 -- a strict partial order to produce an acyclic graph.
+-- The partial order defines the valid set of edges.
+-- For example, if the partial order is (<) then for any two
+-- vertices x and y (x > y), the only possible edge is (y, x).
+-- This will guarantee the production of an acyclic graph as no
+-- back edges are nor possible.
+--
+-- For example,
+-- 'fromGraph (<) (1 * 2 + 2 * 1) == 1 * 2' because
+-- '1 < 2 == True' and hence the edge is allowed.
+-- '2 < 1 == False' and hence the edge is filtered out.
+--
 -- @
 -- fromGraph (<) (2 * 1)         == 'empty'
 -- fromGraph (<) (1 * 2)         == 1 * 2
@@ -178,4 +219,42 @@ type PartialOrder a = a -> a -> Bool
 fromGraph :: Ord a => PartialOrder a -> Graph a -> AdjacencyMap a
 fromGraph o = AAM . aMF . foldg AM.empty AM.vertex AM.overlay AM.connect
   where
-    aMF = AM.AM . Map.mapWithKey (\k -> Set.filter (`o` k)) . AM.adjacencyMap
+    aMF = AM.AM . Map.mapWithKey (\k -> Set.filter (k `o`)) . AM.adjacencyMap
+
+-- | __Note:__ this does not satisfy the usual ring laws; see 
+-- 'AdjacencyMap' for more details.
+instance (Ord a, Num a) => Num (AdjacencyMap a) where
+  fromInteger = AAM . fromInteger
+  (AAM (AM.AM x)) + (AAM (AM.AM y)) =
+    AAM . AM.AM $
+    Map.unionWithKey (\k p q -> Set.filter (> k) $ Set.union p q) x y
+  x'@(AAM (AM.AM x)) * y'@(AAM (AM.AM y)) =
+    x' + y' +
+    (AAM . AM.AM $
+     Map.fromSet (\k -> Set.filter (> k) . Map.keysSet $ y) (Map.keysSet x))
+  signum = const empty
+  abs = id
+  negate = id
+
+-- | The sorted list of edges of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- edgeList 'empty'      == []
+-- edgeList ('vertex' x) == []
+-- edgeList (1 * 2)      == [(1,2)]
+-- edgeList (2 * 1)      == []
+-- @
+edgeList :: AdjacencyMap a -> [(a, a)]
+edgeList = AM.edgeList . aam
+
+-- | The sorted list of vertices of a given graph.
+-- Complexity: /O(n)/ time and memory.
+--
+-- @
+-- vertexList 'empty'      == []
+-- vertexList ('vertex' x) == [x]
+-- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
+-- @
+vertexList :: AdjacencyMap a -> [a]
+vertexList = AM.vertexList . aam
