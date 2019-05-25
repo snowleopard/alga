@@ -18,14 +18,14 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
   scc, fromGraph 
   ) where
 
-import Algebra.Graph
+import Algebra.Graph (Graph, foldg)
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
 import qualified Algebra.Graph.AdjacencyMap.Internal as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.Graph.Typed as Typed
 import qualified Data.Map.Strict as Map
-import Data.Set as Set
+import qualified Data.Set as Set
 
 {-| The 'AdjacencyMap' data type represents an acyclic graph by
 wrapping around 'Algebra.Graph.AdjacencyMap.AdjacencyMap'. The
