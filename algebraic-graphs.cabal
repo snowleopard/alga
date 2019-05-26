@@ -134,6 +134,7 @@ test-suite test-alga
     main-is:            Main.hs
     other-modules:      Algebra.Graph.Test,
                         Algebra.Graph.Test.API,
+                        Algebra.Graph.Test.Acyclic.AdjacencyMap,
                         Algebra.Graph.Test.AdjacencyIntMap,
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,

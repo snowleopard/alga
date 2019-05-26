@@ -1,12 +1,12 @@
 module Algebra.Graph.Acyclic.AdjacencyMap (
   -- * Data types and type aliases
-  PartialOrder, 
+  PartialOrder,
 
   -- * Data structure
-  AdjacencyMap, 
+  AdjacencyMap,
 
   -- * Internal Checks
-  consistent, 
+  consistent,
 
   -- * Graph properties
   edgeList, vertexList,
@@ -18,7 +18,7 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
   box, topSort, transitiveClosure,
 
   -- * Acyclic graph construction methods
-  scc, fromGraph 
+  scc, fromGraph
   ) where
 
 import Algebra.Graph (Graph, foldg)
@@ -60,7 +60,7 @@ without violating any laws.
 -}
 newtype AdjacencyMap a = AAM
   { aam :: AM.AdjacencyMap a
-  } deriving (Show)
+  } deriving (Show, Eq)
 
 -- | Check if the internal graph representation is consistent,
 -- i.e. that all edges refer to existing vertices and the graph
