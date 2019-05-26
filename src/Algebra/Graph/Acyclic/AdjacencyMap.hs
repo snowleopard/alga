@@ -101,8 +101,8 @@ vertices xs = AAM $ AM.vertices xs
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- edgeList $ overlayD empty empty             == []
--- edgeList $ overlayD (1 * 2 + 1 * 3) (1 * 2) == [(Left 1,Left 2) 
+-- edgeList (overlayD empty empty)             == []
+-- edgeList (overlayD (1 * 2 + 1 * 3) (1 * 2)) == [(Left 1,Left 2) 
 --                                                ,(Left 1,Left 3)
 --                                                ,(Right 1,Right 2)]
 -- @
@@ -117,12 +117,12 @@ overlayD (AAM a) (AAM b) = AAM (AM.overlay (AM.gmap Left a) (AM.gmap Right b))
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- edgeList $ connectD empty empty     == []
--- edgeList $ connectD (1 + 2) (1 + 2) == [(Left 1,Right 1) 
+-- edgeList (connectD empty empty)     == []
+-- edgeList (connectD (1 + 2) (1 + 2)) == [(Left 1,Right 1) 
 --                                        ,(Left 1,Right 2)
 --                                        ,(Left 2,Right 1)
 --                                        ,(Left 2,Right 2)]
--- edgeList $ connectD (1 * 2) (1 * 2) == [(Left 1,Left 2) 
+-- edgeList (connectD (1 * 2) (1 * 2)) == [(Left 1,Left 2) 
 --                                        ,(Left 1,Right 1)
 --                                        ,(Left 1,Right 2) 
 --                                        ,(Left 2,Right 1) 
@@ -174,11 +174,12 @@ topSort (AAM am) = Typed.topSort (Typed.fromAdjacencyMap am)
 -- are the sizes of the given graphs.
 --
 -- @
--- edgeList $ box (1 * 2) (3 * 4) == [((1,3),(1,4))
---                                   ,((1,3),(2,3))
---                                   ,((1,4),(2,4))
---                                   ,((2,3),(2,4))]
--- edgeList $ box (1 + 2) (3 + 4) == [(1,3),(1,4),(2,3),(2,4)]
+-- edgeList   (box (1 * 2) (3 * 4)) == [((1,3),(1,4))
+--                                     ,((1,3),(2,3))
+--                                     ,((1,4),(2,4))
+--                                     ,((2,3),(2,4))]
+-- edgeList   (box (1 + 2) (3 + 4)) == []
+-- vertexList (box (1 + 2) (3 + 4)) == [(1,3),(1,4),(2,3),(2,4)]
 -- @
 box :: (Ord a, Ord b) => AdjacencyMap a -> AdjacencyMap b -> AdjacencyMap (a, b)
 box (AAM x) (AAM y) = AAM $ AM.overlay (fO $ xy y x) (fO $ yx x y)
