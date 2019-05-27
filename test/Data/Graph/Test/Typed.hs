@@ -11,7 +11,7 @@
 module Data.Graph.Test.Typed (
     -- * Testsuite
     testTyped
-  ) where
+    ) where
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM

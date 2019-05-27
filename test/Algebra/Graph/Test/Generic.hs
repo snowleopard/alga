@@ -11,19 +11,12 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Generic where
 
-import Prelude ()
-import Prelude.Compat
-
 import Control.Monad (when)
-import Data.Orphans ()
-
 import Data.List (nub)
 import Data.Maybe
 import Data.Tree
 import Data.Tuple
 
-import Algebra.Graph.Class (Graph (..))
-import Algebra.Graph.ToGraph
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API
 
@@ -35,11 +28,11 @@ import qualified Data.Set                             as Set
 import qualified Data.IntSet                          as IntSet
 
 data Testsuite where
-    Testsuite :: (Arbitrary g, GraphAPI g, Num g, Ord g, Show g, ToGraph g, ToVertex g ~ Int, Vertex g ~ Int)
-              => String -> (forall r. (g -> r) -> g -> r) -> Testsuite
+    Testsuite :: (API g, Arbitrary (g Int), Num (g Int), Ord (g Int), Show (g Int))
+              => String -> (forall r. (g Int -> r) -> g Int -> r) -> Testsuite
 
-testsuite :: (Arbitrary g, GraphAPI g, Num g, Ord g, Show g, ToGraph g, ToVertex g ~ Int, Vertex g ~ Int)
-          => String -> g -> Testsuite
+testsuite :: (API g, Arbitrary (g Int), Num (g Int), Ord (g Int), Show (g Int))
+          => String -> g Int -> Testsuite
 testsuite prefix g = Testsuite prefix (\f x -> f (x `asTypeOf` g))
 
 size10 :: Testable prop => prop -> Property

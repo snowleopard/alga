@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyIntMap.Internal
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : unstable
@@ -14,18 +14,14 @@
 module Algebra.Graph.AdjacencyIntMap.Internal (
     -- * Adjacency map implementation
     AdjacencyIntMap (..), consistent
-  ) where
+    ) where
 
-import Prelude ()
-import Prelude.Compat hiding (null)
-
-import Data.Monoid (Sum (..))
+import Control.DeepSeq (NFData (..))
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)
 import Data.IntSet (IntSet)
 import Data.List
+import Data.Monoid (Sum (..))
 import GHC.Generics
-
-import Control.DeepSeq (NFData (..))
 
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.IntSet        as IntSet

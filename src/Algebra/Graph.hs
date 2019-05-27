@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -50,12 +50,9 @@ module Algebra.Graph (
     Context (..), context
     ) where
 
-import Prelude ()
-import Prelude.Compat
-
 import Control.Applicative (Alternative)
 import Control.DeepSeq (NFData (..))
-import Control.Monad.Compat
+import Control.Monad (MonadPlus (..))
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)

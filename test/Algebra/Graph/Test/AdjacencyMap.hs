@@ -12,7 +12,7 @@
 module Algebra.Graph.Test.AdjacencyMap (
     -- * Testsuite
     testAdjacencyMap
-  ) where
+    ) where
 
 import Data.List.NonEmpty
 

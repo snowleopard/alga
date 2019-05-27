@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled.AdjdacencyMap.Internal
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : unstable
@@ -15,9 +15,6 @@ module Algebra.Graph.Labelled.AdjacencyMap.Internal (
     -- * Labelled adjacency map implementation
     AdjacencyMap (..), consistent
     ) where
-
-import Prelude ()
-import Prelude.Compat
 
 import Control.DeepSeq
 import Data.Map.Strict (Map)

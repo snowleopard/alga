@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Arbitrary
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -12,10 +12,7 @@
 module Algebra.Graph.Test.Arbitrary (
     -- * Generators of arbitrary graph instances
     arbitraryGraph, arbitraryRelation, arbitraryAdjacencyMap, arbitraryAdjacencyIntMap
-  ) where
-
-import Prelude ()
-import Prelude.Compat
+    ) where
 
 import Control.Monad
 import Data.List.NonEmpty (NonEmpty (..), toList)
@@ -27,7 +24,6 @@ import Algebra.Graph
 import Algebra.Graph.AdjacencyMap.Internal
 import Algebra.Graph.AdjacencyIntMap.Internal
 import Algebra.Graph.Export
-import Algebra.Graph.Fold (Fold)
 import Algebra.Graph.Label
 import Algebra.Graph.Relation.InternalDerived
 import Algebra.Graph.Relation.Symmetric.Internal
@@ -36,7 +32,6 @@ import qualified Algebra.Graph.AdjacencyIntMap       as AdjacencyIntMap
 import qualified Algebra.Graph.AdjacencyMap          as AdjacencyMap
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NAM
 import qualified Algebra.Graph.Class                 as C
-import qualified Algebra.Graph.Fold                  as Fold
 import qualified Algebra.Graph.Labelled              as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
 import qualified Algebra.Graph.NonEmpty              as NonEmpty
@@ -63,20 +58,6 @@ instance Arbitrary a => Arbitrary (Graph a) where
                         ++ [Overlay x' y' | (x', y') <- shrink (x, y) ]
     shrink (Connect x y) = [Empty, x, y, Overlay x y]
                         ++ [Connect x' y' | (x', y') <- shrink (x, y) ]
-
-instance (Eq a, Ord a, Arbitrary a) => Arbitrary (Fold a) where
-    arbitrary = arbitraryGraph
-
-    shrink g = oneLessVertex ++ oneLessEdge
-      where
-         oneLessVertex =
-           let vertices = Fold.vertexList g
-           in  [ Fold.removeVertex v g | v <- vertices ]
-
-         oneLessEdge =
-           let edges = Fold.edgeList g
-           in  [ Fold.removeEdge v w g | (v, w) <- edges ]
-
 
 -- | Generate an arbitrary 'NonEmpty.Graph' value of a specified size.
 arbitraryNonEmptyGraph :: Arbitrary a => Gen (NonEmpty.Graph a)
