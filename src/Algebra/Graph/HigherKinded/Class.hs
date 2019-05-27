@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.HigherKinded.Class
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -59,8 +59,7 @@ import Control.Applicative (Alternative(empty, (<|>)))
 import Control.Monad.Compat (MonadPlus, mfilter)
 import Data.Tree
 
-import qualified Algebra.Graph      as G
-import qualified Algebra.Graph.Fold as F
+import qualified Algebra.Graph as G
 
 {-|
 The core type class for constructing algebraic graphs is defined by introducing
@@ -127,9 +126,6 @@ class MonadPlus g => Graph g where
 
 instance Graph G.Graph where
     connect = G.connect
-
-instance Graph F.Fold where
-    connect = F.connect
 
 -- | Construct the graph comprising a single isolated vertex. An alias for 'pure'.
 vertex :: Graph g => a -> g a

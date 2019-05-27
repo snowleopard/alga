@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.ToGraph
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -41,7 +41,13 @@
 -- of 'foldMap' and 'Data.Foldable.toList' violate this requirement, for example
 -- @[1] ++ [1] /= [1]@, and are therefore disallowed.
 -----------------------------------------------------------------------------
-module Algebra.Graph.ToGraph (ToGraph (..)) where
+module Algebra.Graph.ToGraph (
+    -- * Type class
+    ToGraph (..),
+
+    -- * Derived functions
+    adjacencyMap, adjacencyIntMap, adjacencyMapTranspose, adjacencyIntMapTranspose
+    ) where
 
 import Prelude ()
 import Prelude.Compat
@@ -103,19 +109,6 @@ class ToGraph t where
     -- @
     isEmpty :: t -> Bool
     isEmpty = foldg True (const False) (&&) (&&)
-
-    -- | The /size/ of a graph, i.e. the number of leaves of the expression
-    -- including 'empty' leaves.
-    --
-    -- __Note:__ The default implementation of this function violates the
-    -- requirement that the four arguments of 'foldg' should satisfy the laws
-    -- of algebraic graphs, since @1 + 1 /= 1@. Use this function with care.
-    --
-    -- @
-    -- size == 'foldg' 1 ('const' 1) (+) (+)
-    -- @
-    size :: t -> Int
-    size = foldg 1 (const 1) (+) (+)
 
     -- | Check if a graph contains a given vertex.
     --
@@ -233,44 +226,6 @@ class ToGraph t where
     -- @
     adjacencyList :: Ord (ToVertex t) => t -> [(ToVertex t, [ToVertex t])]
     adjacencyList = AM.adjacencyList . toAdjacencyMap
-
-    -- | The /adjacency map/ of a graph: each vertex is associated with a set
-    -- of its /direct successors/.
-    --
-    -- @
-    -- adjacencyMap == Algebra.Graph.AdjacencyMap.'Algebra.Graph.AdjacencyMap.adjacencyMap' . 'toAdjacencyMap'
-    -- @
-    adjacencyMap :: Ord (ToVertex t) => t -> Map (ToVertex t) (Set (ToVertex t))
-    adjacencyMap = AM.adjacencyMap . toAdjacencyMap
-
-    -- | The /adjacency map/ of a graph: each vertex is associated with a set
-    -- of its /direct successors/. Like 'adjacencyMap' but specialised for
-    -- graphs with vertices of type 'Int'.
-    --
-    -- @
-    -- adjacencyIntMap == Algebra.Graph.AdjacencyIntMap.'Algebra.Graph.AdjacencyIntMap.adjacencyIntMap' . 'toAdjacencyIntMap'
-    -- @
-    adjacencyIntMap :: ToVertex t ~ Int => t -> IntMap IntSet
-    adjacencyIntMap = AIM.adjacencyIntMap . toAdjacencyIntMap
-
-    -- | The transposed /adjacency map/ of a graph: each vertex is associated
-    -- with a set of its /direct predecessors/.
-    --
-    -- @
-    -- adjacencyMapTranspose == Algebra.Graph.AdjacencyMap.'Algebra.Graph.AdjacencyMap.adjacencyMap' . 'toAdjacencyMapTranspose'
-    -- @
-    adjacencyMapTranspose :: Ord (ToVertex t) => t -> Map (ToVertex t) (Set (ToVertex t))
-    adjacencyMapTranspose = AM.adjacencyMap . toAdjacencyMapTranspose
-
-    -- | The transposed /adjacency map/ of a graph: each vertex is associated
-    -- with a set of its /direct predecessors/. Like 'adjacencyMapTranspose' but
-    -- specialised for graphs with vertices of type 'Int'.
-    --
-    -- @
-    -- adjacencyIntMapTranspose == Algebra.Graph.AdjacencyIntMap.'Algebra.Graph.AdjacencyIntMap.adjacencyIntMap' . 'toAdjacencyIntMapTranspose'
-    -- @
-    adjacencyIntMapTranspose :: ToVertex t ~ Int => t -> IntMap IntSet
-    adjacencyIntMapTranspose = AIM.adjacencyIntMap . toAdjacencyIntMapTranspose
 
     -- | Compute the /depth-first search/ forest of a graph that corresponds to
     -- searching from each of the graph vertices in the 'Ord' @a@ order.
@@ -405,11 +360,6 @@ instance Ord a => ToGraph (AM.AdjacencyMap a) where
     adjacencyList              = AM.adjacencyList
     preSet                     = AM.preSet
     postSet                    = AM.postSet
-    adjacencyMap               = AM.adjacencyMap
-    adjacencyIntMap            = IntMap.fromAscList
-                               . map (fmap $ IntSet.fromAscList . Set.toAscList)
-                               . Map.toAscList
-                               . AM.adjacencyMap
     dfsForest                  = AM.dfsForest
     dfsForestFrom              = AM.dfsForestFrom
     dfs                        = AM.dfs
@@ -417,7 +367,11 @@ instance Ord a => ToGraph (AM.AdjacencyMap a) where
     topSort                    = AM.topSort
     isAcyclic                  = AM.isAcyclic
     toAdjacencyMap             = id
-    toAdjacencyIntMap          = AIM.AM . adjacencyIntMap
+    toAdjacencyIntMap          = AIM.AM
+                               . IntMap.fromAscList
+                               . map (fmap $ IntSet.fromAscList . Set.toAscList)
+                               . Map.toAscList
+                               . AM.adjacencyMap
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
     isDfsForestOf              = AM.isDfsForestOf
@@ -442,18 +396,17 @@ instance ToGraph AIM.AdjacencyIntMap where
     adjacencyList              = AIM.adjacencyList
     preIntSet                  = AIM.preIntSet
     postIntSet                 = AIM.postIntSet
-    adjacencyMap               = Map.fromAscList
-                               . map (fmap $ Set.fromAscList . IntSet.toAscList)
-                               . IntMap.toAscList
-                               . AIM.adjacencyIntMap
     dfsForest                  = AIM.dfsForest
     dfsForestFrom              = AIM.dfsForestFrom
     dfs                        = AIM.dfs
     reachable                  = AIM.reachable
     topSort                    = AIM.topSort
     isAcyclic                  = AIM.isAcyclic
-    adjacencyIntMap            = AIM.adjacencyIntMap
-    toAdjacencyMap             = AM.AM . adjacencyMap
+    toAdjacencyMap             = AM.AM
+                               . Map.fromAscList
+                               . map (fmap $ Set.fromAscList . IntSet.toAscList)
+                               . IntMap.toAscList
+                               . AIM.adjacencyIntMap
     toAdjacencyIntMap          = id
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
@@ -513,8 +466,6 @@ instance Ord a => ToGraph (NAM.AdjacencyMap a) where
     adjacencyList              = adjacencyList . NAM.am
     preSet                     = NAM.preSet
     postSet                    = NAM.postSet
-    adjacencyMap               = adjacencyMap . NAM.am
-    adjacencyIntMap            = adjacencyIntMap . NAM.am
     dfsForest                  = dfsForest . NAM.am
     dfsForestFrom xs           = dfsForestFrom xs . NAM.am
     dfs xs                     = dfs xs . NAM.am
@@ -545,14 +496,14 @@ instance Ord a => ToGraph (R.Relation a) where
     edgeList                   = R.edgeList
     edgeSet                    = R.edgeSet
     adjacencyList              = R.adjacencyList
-    adjacencyMap               = Map.fromAscList
+    toAdjacencyMap             = AM.AM
+                               . Map.fromAscList
                                . map (fmap Set.fromAscList)
                                . R.adjacencyList
-    adjacencyIntMap            = IntMap.fromAscList
+    toAdjacencyIntMap          = AIM.AM
+                               . IntMap.fromAscList
                                . map (fmap IntSet.fromAscList)
                                . R.adjacencyList
-    toAdjacencyMap             = AM.AM . adjacencyMap
-    toAdjacencyIntMap          = AIM.AM . adjacencyIntMap
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
 
@@ -574,9 +525,45 @@ instance Ord a => ToGraph (SR.Relation a) where
     edgeList                   = SR.edgeList
     edgeSet                    = SR.edgeSet
     adjacencyList              = SR.adjacencyList
-    adjacencyMap               = adjacencyMap . SR.fromSymmetric
-    adjacencyIntMap            = adjacencyIntMap . SR.fromSymmetric
-    toAdjacencyMap             = AM.AM . adjacencyMap
-    toAdjacencyIntMap          = AIM.AM . adjacencyIntMap
+    toAdjacencyMap             = AM.AM . adjacencyMap . SR.fromSymmetric
+    toAdjacencyIntMap          = AIM.AM . adjacencyIntMap . SR.fromSymmetric
     toAdjacencyMapTranspose    = toAdjacencyMap
     toAdjacencyIntMapTranspose = toAdjacencyIntMap
+
+-- | The /adjacency map/ of a graph: each vertex is associated with a set of its
+-- /direct successors/.
+--
+-- @
+-- adjacencyMap == Algebra.Graph.AdjacencyMap.'Algebra.Graph.AdjacencyMap.adjacencyMap' . 'toAdjacencyMap'
+-- @
+adjacencyMap :: ToGraph t => Ord (ToVertex t) => t -> Map (ToVertex t) (Set (ToVertex t))
+adjacencyMap = AM.adjacencyMap . toAdjacencyMap
+
+-- | The /adjacency map/ of a graph: each vertex is associated with a set of its
+-- /direct successors/. Like 'adjacencyMap' but specialised for graphs with
+-- vertices of type 'Int'.
+--
+-- @
+-- adjacencyIntMap == Algebra.Graph.AdjacencyIntMap.'Algebra.Graph.AdjacencyIntMap.adjacencyIntMap' . 'toAdjacencyIntMap'
+-- @
+adjacencyIntMap :: (ToGraph t, ToVertex t ~ Int) => t -> IntMap IntSet
+adjacencyIntMap = AIM.adjacencyIntMap . toAdjacencyIntMap
+
+-- | The transposed /adjacency map/ of a graph: each vertex is associated with a
+-- set of its /direct predecessors/.
+--
+-- @
+-- adjacencyMapTranspose == Algebra.Graph.AdjacencyMap.'Algebra.Graph.AdjacencyMap.adjacencyMap' . 'toAdjacencyMapTranspose'
+-- @
+adjacencyMapTranspose :: (ToGraph t, Ord (ToVertex t)) => t -> Map (ToVertex t) (Set (ToVertex t))
+adjacencyMapTranspose = AM.adjacencyMap . toAdjacencyMapTranspose
+
+-- | The transposed /adjacency map/ of a graph: each vertex is associated with a
+-- set of its /direct predecessors/. Like 'adjacencyMapTranspose' but
+-- specialised for graphs with vertices of type 'Int'.
+--
+-- @
+-- adjacencyIntMapTranspose == Algebra.Graph.AdjacencyIntMap.'Algebra.Graph.AdjacencyIntMap.adjacencyIntMap' . 'toAdjacencyIntMapTranspose'
+-- @
+adjacencyIntMapTranspose :: (ToGraph t, ToVertex t ~ Int) => t -> IntMap IntSet
+adjacencyIntMapTranspose = AIM.adjacencyIntMap . toAdjacencyIntMapTranspose

@@ -49,9 +49,7 @@ description:
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Class.html Algebra.Graph.Class>
     and
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-HigherKinded-Class.html Algebra.Graph.HigherKinded.Class>
-    can be used for polymorphic construction and manipulation of graphs. Also see
-    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Fold.html Algebra.Graph.Fold>
-    that defines the Boehm-Berarducci encoding of algebraic graphs.
+    can be used for polymorphic construction and manipulation of graphs.
     .
     This is an experimental library and the API is expected to remain unstable until version 1.0.0.
     Please consider contributing to the on-going
@@ -77,7 +75,6 @@ library
                         Algebra.Graph.Class,
                         Algebra.Graph.Export,
                         Algebra.Graph.Export.Dot,
-                        Algebra.Graph.Fold,
                         Algebra.Graph.HigherKinded.Class,
                         Algebra.Graph.Internal,
                         Algebra.Graph.Label,
@@ -137,7 +134,6 @@ test-suite test-alga
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,
                         Algebra.Graph.Test.Export,
-                        Algebra.Graph.Test.Fold,
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
                         Algebra.Graph.Test.Internal,
