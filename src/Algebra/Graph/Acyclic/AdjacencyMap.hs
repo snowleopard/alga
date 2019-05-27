@@ -213,7 +213,7 @@ type PartialOrder a = a -> a -> Bool
 -- '2 < 1 == False' and hence the edge is filtered out.
 --
 -- @
--- fromGraph (<) (2 * 1)         == 'empty'
+-- fromGraph (<) (2 * 1)         == 1 + 2
 -- fromGraph (<) (1 * 2)         == 1 * 2
 -- fromGraph (<) (1 * 2 + 2 * 1) == 1 * 2
 -- @

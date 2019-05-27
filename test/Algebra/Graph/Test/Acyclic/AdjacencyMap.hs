@@ -13,6 +13,7 @@ module Algebra.Graph.Test.Acyclic.AdjacencyMap (
 import Algebra.Graph.Acyclic.AdjacencyMap
 import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
+import Algebra.Graph ()
 
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.List as List
@@ -24,7 +25,6 @@ type AAI = AdjacencyMap Int
 
 testAcyclicAdjacencyMap :: IO ()
 testAcyclicAdjacencyMap = do
-  let empty = empty :: AdjacencyMap Int
   putStrLn "\n=====AcyclicAdjacencyMap Num instance====="
   test "edgeList 0 == []" $
         edgeList 0 == []
@@ -49,8 +49,8 @@ testAcyclicAdjacencyMap = do
 
   putStrLn "\n=====AcyclicAdjacencyMap consistency====="
 
-  test "consistent empty           == True" $
-        consistent empty           == True
+  test "consistent empty                       == True" $
+        consistent (empty :: AdjacencyMap Int) == True
   test "consistent (1 + 2)         == True" $
         consistent (1 + 2)         == True
   test "consistent (1 * 2 + 2 * 3) == True" $
@@ -62,19 +62,19 @@ testAcyclicAdjacencyMap = do
         vertex 1 == 1
 
   test "vertices []        == empty" $
-        vertices []        == empty
+        vertices []        == (empty :: AdjacencyMap Int)
   test "vertices [1]       == vertex 1" $
         vertices [1]       == vertex 1
   test "vertices [1, 2, 3] == 1 + 2 + 3" $
         vertices [1, 2, 3] == 1 + 2 + 3
 
-  test "edgeList (overlayD empty empty)             == []" $
-        edgeList (overlayD empty empty)             == []
+  test "edgeList (overlayD empty empty)                                             == []" $
+        edgeList (overlayD (empty :: AdjacencyMap Int) (empty :: AdjacencyMap Int)) == []
   test "edgeList (overlayD (1 * 2 + 1 * 3) (1 * 2)) == [(Left 1,Left 2),(Left 1,Left 3),(Right 1,Right 2)]" $
         edgeList (overlayD (1 * 2 + 1 * 3) (1 * 2)) == [(Left 1,Left 2),(Left 1,Left 3),(Right 1,Right 2)]
 
-  test "edgeList (connectD empty empty)    == []" $
-        edgeList (connectD empty empty)    == []
+  test "edgeList (connectD empty empty)                                             == []" $
+        edgeList (connectD (empty :: AdjacencyMap Int) (empty :: AdjacencyMap Int)) == []
   test "edgeList (connectD (1 + 2) (1 + 2)) == [(Left 1,Right 1),(Left 1,Right 2),(Left 2,Right 1),(Left 2,Right 2)]" $
         edgeList (connectD (1 + 2) (1 + 2)) == [(Left 1,Right 1),(Left 1,Right 2),(Left 2,Right 1),(Left 2,Right 2)]
   test "edgeList (connectD (1 * 2) (1 * 2)) == [(Left 1,Left 2),(Left 1,Right 1),(Left 1,Right 2),(Left 2,Right 1),(Left 2,Right 2),(Right 1,Right 2)]" $
@@ -89,8 +89,8 @@ testAcyclicAdjacencyMap = do
 
   putStrLn "\n=====AcyclicAdjacencyMap transitiveClosure====="
 
-  test "transitiveClosure empty             == empty" $
-        transitiveClosure empty             == empty
+  test "transitiveClosure empty                       == empty" $
+        transitiveClosure (empty :: AdjacencyMap Int) == (empty :: AdjacencyMap Int)
   test "transitiveClosure (vertex 5)        == vertex 5" $
         transitiveClosure (vertex 5)        == vertex 5
   test "transitiveClosure (1 * 2 + 2 * 3)     == 1 * 2 + 2 * 3 + 1 * 3" $
@@ -105,8 +105,8 @@ testAcyclicAdjacencyMap = do
 
   putStrLn "\n=====AcyclicAdjacencyMap fromGraph primitive====="
 
-  test "fromGraph (<) (2 * 1)         == empty" $
-        fromGraph (<) (2 * 1)         == empty
+  test "fromGraph (<) (2 * 1)         == 1 + 2" $
+        fromGraph (<) (2 * 1)         == 1 + 2
   test "fromGraph (<) (1 * 2)         == 1 * 2" $
         fromGraph (<) (1 * 2)         == 1 * 2
   test "fromGraph (<) (1 * 2 + 2 * 1) == 1 * 2" $
@@ -115,7 +115,7 @@ testAcyclicAdjacencyMap = do
   putStrLn "\n=====AcyclicAdjacencyMap properties====="
 
   test "edgeList empty      == []" $
-        edgeList empty      == []
+        edgeList (empty :: AdjacencyMap Int)      == []
   test "edgeList (vertex 5) == []" $
         edgeList (vertex 5) == []
   test "edgeList (1 * 2)      == [(1,2)]" $
@@ -124,7 +124,7 @@ testAcyclicAdjacencyMap = do
         edgeList (2 * 1)      == []
 
   test "vertexList empty      == []" $
-        vertexList empty      == []
+        vertexList (empty :: AdjacencyMap Int) == []
   test "vertexList (vertex 1) == [1]" $
         vertexList (vertex 1) == [1]
   test "vertexList (vertices ([1, 3, 2])) == List.sort [1, 3, 2] == [1,2,3]" $
