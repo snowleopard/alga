@@ -14,9 +14,6 @@ module Algebra.Graph.Test.Export (
     testExport
   ) where
 
-import Prelude ()
-import Prelude.Compat
-
 #if !MIN_VERSION_base(4,11,0)
 import Data.Semigroup
 #endif

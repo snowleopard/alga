@@ -49,8 +49,6 @@ module Algebra.Graph.ToGraph (
     adjacencyMap, adjacencyIntMap, adjacencyMapTranspose, adjacencyIntMapTranspose
     ) where
 
-import Prelude ()
-import Prelude.Compat
 import Data.IntMap (IntMap)
 import Data.IntSet (IntSet)
 import Data.Map    (Map)

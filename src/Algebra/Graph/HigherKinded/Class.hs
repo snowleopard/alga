@@ -52,11 +52,8 @@ module Algebra.Graph.HigherKinded.Class (
     removeVertex, replaceVertex, mergeVertices, splitVertex, induce
     ) where
 
-import Prelude ()
-import Prelude.Compat
-
 import Control.Applicative (Alternative(empty, (<|>)))
-import Control.Monad.Compat (MonadPlus, mfilter)
+import Control.Monad (MonadPlus, mfilter)
 import Data.Tree
 
 import qualified Algebra.Graph as G

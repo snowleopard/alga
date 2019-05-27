@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Graph
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -13,9 +13,6 @@ module Algebra.Graph.Test.Graph (
     -- * Testsuite
     testGraph
   ) where
-
-import Prelude ()
-import Prelude.Compat
 
 import Data.Either
 

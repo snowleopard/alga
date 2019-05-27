@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyMap.Internal
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : unstable
@@ -15,9 +15,6 @@ module Algebra.Graph.AdjacencyMap.Internal (
     -- * Adjacency map implementation
     AdjacencyMap (..), consistent, internalEdgeList, referredToVertexSet
   ) where
-
-import Prelude ()
-import Prelude.Compat hiding (null)
 
 import Control.DeepSeq
 import Data.List

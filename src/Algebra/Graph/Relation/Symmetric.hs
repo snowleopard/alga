@@ -37,7 +37,6 @@ module Algebra.Graph.Relation.Symmetric (
     removeVertex, removeEdge, replaceVertex, mergeVertices, gmap, induce,
   ) where
 
-import Algebra.Graph.Relation.Symmetric.Internal
 import Data.Coerce
 import Data.Set (Set)
 import Data.Tree
@@ -45,8 +44,10 @@ import Data.Tuple
 
 import qualified Data.Set as Set
 
+import Algebra.Graph.Relation.Symmetric.Internal
+
 import qualified Algebra.Graph.Relation          as R
-import qualified Algebra.Graph.Relation.Internal as RI
+import qualified Algebra.Graph.Relation.Internal as R
 
 -- | Construct a symmetric relation from a given "Algebra.Graph.Relation".
 -- Complexity: /O(m*log(m))/ time.
@@ -74,7 +75,7 @@ toSymmetric = SR . R.symmetricClosure
 -- 'vertexCount' (edge 1 2) == 2
 -- @
 edge :: Ord a => a -> a -> Relation a
-edge x y = SR $ RI.Relation (Set.fromList [x, y]) (Set.fromList [(x,y), (y,x)])
+edge x y = SR $ R.Relation (Set.fromList [x, y]) (Set.fromList [(x,y), (y,x)])
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -100,7 +101,7 @@ vertices = coerce R.vertices
 -- edges [(x,y), (y,x)] == 'edge' x y
 -- @
 edges :: Ord a => [(a, a)] -> Relation a
-edges es = SR $ RI.Relation
+edges es = SR $ R.Relation
     (Set.fromList $ uncurry (++) $ unzip es) (Set.fromList (es ++ map swap es))
 
 -- | Overlay a given list of graphs.
@@ -345,7 +346,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
 stars :: Ord a => [(a, [a])] -> Relation a
-stars as = SR $ RI.Relation (Set.fromList vs) (Set.fromList es)
+stars as = SR $ R.Relation (Set.fromList vs) (Set.fromList es)
   where
     vs = concat [ x : ys           | (x, ys) <- as          ]
     es = concat [ [(x, y), (y, x)] | (x, ys) <- as, y <- ys ]
@@ -401,9 +402,9 @@ removeVertex = coerce R.removeVertex
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Ord a => a -> a -> Relation a -> Relation a
-removeEdge x y r = SR $ RI.Relation d (Set.delete (y, x) $ Set.delete (x, y) rr)
+removeEdge x y r = SR $ R.Relation d (Set.delete (y, x) $ Set.delete (x, y) rr)
   where
-    RI.Relation d rr = fromSymmetric r
+    R.Relation d rr = fromSymmetric r
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Relation'. If @y@ already exists, @x@ and @y@ will be merged.

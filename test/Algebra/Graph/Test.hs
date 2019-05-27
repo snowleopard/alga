@@ -1,4 +1,15 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE CPP, RankNTypes #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module     : Algebra.Graph.Test
+-- Copyright  : (c) Andrey Mokhov 2016-2019
+-- License    : MIT (see the file LICENSE)
+-- Maintainer : andrey.mokhov@gmail.com
+-- Stability  : experimental
+--
+-- Basic testsuite infrastructure.
+-----------------------------------------------------------------------------
 module Algebra.Graph.Test (
     module Data.List,
     module Data.List.Extra,
@@ -19,6 +30,19 @@ import Test.QuickCheck.Test (isSuccess)
 
 import Algebra.Graph.Class
 import Algebra.Graph.Test.Arbitrary ()
+
+#if !MIN_VERSION_base(4,9,0)
+import Data.Monoid (Sum (..))
+import Control.Applicative (liftA2)
+import Data.Coerce
+
+instance Monoid a => Monoid (IO a) where
+    mempty  = pure mempty
+    mappend = liftA2 mappend
+
+instance Functor Sum where
+    fmap = coerce
+#endif
 
 test :: Testable a => String -> a -> IO ()
 test str p = do

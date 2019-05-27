@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled.AdjacencyMap
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -37,9 +37,6 @@ module Algebra.Graph.Labelled.AdjacencyMap (
     -- * Relational operations
     closure, reflexiveClosure, symmetricClosure, transitiveClosure
   ) where
-
-import Prelude ()
-import Prelude.Compat
 
 import Data.Maybe
 import Data.Map (Map)

@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstrainedClassMethods, RankNTypes, MultiParamTypeClasses #-}
+{-# LANGUAGE ConstrainedClassMethods, MultiParamTypeClasses #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.API
@@ -223,6 +223,7 @@ instance API AM.AdjacencyMap where
     foldg                      = T.foldg
     isSubgraphOf               = AM.isSubgraphOf
     isEmpty                    = AM.isEmpty
+    size                       = G.size . toGraph
     hasVertex                  = AM.hasVertex
     hasEdge                    = AM.hasEdge
     vertexCount                = AM.vertexCount
@@ -362,6 +363,7 @@ instance API (Mono AIM.AdjacencyIntMap) where
     foldg e v o c              = T.foldg e v o c . getMono
     isSubgraphOf               = coerce AIM.isSubgraphOf
     isEmpty                    = coerce AIM.isEmpty
+    size                       = G.size . toGraph
     hasVertex                  = coerce AIM.hasVertex
     hasEdge                    = coerce AIM.hasEdge
     vertexCount                = coerce AIM.vertexCount
@@ -429,6 +431,7 @@ instance API R.Relation where
     foldg                      = T.foldg
     isSubgraphOf               = R.isSubgraphOf
     isEmpty                    = R.isEmpty
+    size                       = G.size . toGraph
     hasVertex                  = R.hasVertex
     hasEdge                    = R.hasEdge
     vertexCount                = R.vertexCount
@@ -496,6 +499,7 @@ instance API SR.Relation where
     foldg                      = T.foldg
     isSubgraphOf               = SR.isSubgraphOf
     isEmpty                    = SR.isEmpty
+    size                       = G.size . toGraph
     hasVertex                  = SR.hasVertex
     hasEdge                    = SR.hasEdge
     vertexCount                = SR.vertexCount
@@ -614,6 +618,7 @@ instance API (LAM.AdjacencyMap Any) where
     foldg                      = T.foldg
     isSubgraphOf               = LAM.isSubgraphOf
     isEmpty                    = LAM.isEmpty
+    size                       = G.size . toGraph
     hasVertex                  = LAM.hasVertex
     hasEdge                    = LAM.hasEdge
     vertexCount                = LAM.vertexCount

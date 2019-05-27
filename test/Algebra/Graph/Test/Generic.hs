@@ -11,12 +11,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Generic where
 
-import Prelude ()
-import Prelude.Compat
-
 import Control.Monad (when)
-import Data.Orphans ()
-
 import Data.List (nub)
 import Data.Maybe
 import Data.Tree
