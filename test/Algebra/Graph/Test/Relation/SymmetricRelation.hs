@@ -11,7 +11,7 @@
 module Algebra.Graph.Test.Relation.SymmetricRelation (
     -- * Testsuite
     testSymmetricRelation
-  ) where
+    ) where
 
 import Algebra.Graph.Relation.Symmetric
 import Algebra.Graph.Test

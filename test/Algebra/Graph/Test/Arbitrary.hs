@@ -12,7 +12,7 @@
 module Algebra.Graph.Test.Arbitrary (
     -- * Generators of arbitrary graph instances
     arbitraryGraph, arbitraryRelation, arbitraryAdjacencyMap, arbitraryAdjacencyIntMap
-  ) where
+    ) where
 
 import Control.Monad
 import Data.List.NonEmpty (NonEmpty (..), toList)

@@ -36,7 +36,7 @@ module Algebra.Graph.Labelled.AdjacencyMap (
 
     -- * Relational operations
     closure, reflexiveClosure, symmetricClosure, transitiveClosure
-  ) where
+    ) where
 
 import Data.Maybe
 import Data.Map (Map)

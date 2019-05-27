@@ -36,7 +36,7 @@ module Algebra.Graph.Relation (
 
     -- * Relational operations
     compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure
-  ) where
+    ) where
 
 import Data.Tree
 import Data.Tuple

@@ -12,7 +12,7 @@
 module Algebra.Graph.Test.Graph (
     -- * Testsuite
     testGraph
-  ) where
+    ) where
 
 import Data.Either
 

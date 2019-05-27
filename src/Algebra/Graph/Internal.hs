@@ -25,7 +25,7 @@ module Algebra.Graph.Internal (
 
     -- * Utilities
     setProduct, setProductWith
-  ) where
+    ) where
 
 import Data.Foldable
 import Data.Semigroup

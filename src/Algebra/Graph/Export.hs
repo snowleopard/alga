@@ -23,7 +23,7 @@ module Algebra.Graph.Export (
 
     -- * Generic graph export
     export
-  ) where
+    ) where
 
 import Data.Foldable (fold)
 import Data.Semigroup

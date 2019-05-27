@@ -12,7 +12,7 @@
 module Algebra.Graph.Test.Internal (
     -- * Testsuite
     testInternal
-  ) where
+    ) where
 
 #if !MIN_VERSION_base(4,11,0)
 import Data.Semigroup

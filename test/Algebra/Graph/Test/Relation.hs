@@ -11,7 +11,7 @@
 module Algebra.Graph.Test.Relation (
     -- * Testsuite
     testRelation
-  ) where
+    ) where
 
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.Preorder

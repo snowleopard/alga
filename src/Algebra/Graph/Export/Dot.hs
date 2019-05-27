@@ -19,7 +19,7 @@ module Algebra.Graph.Export.Dot (
 
     -- * Export functions
     export, exportAsIs, exportViaShow
-  ) where
+    ) where
 
 import Data.List hiding (unlines)
 import Data.Monoid

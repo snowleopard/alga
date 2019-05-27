@@ -11,7 +11,7 @@
 module Algebra.Graph.Test.AdjacencyIntMap (
     -- * Testsuite
     testAdjacencyIntMap
-  ) where
+    ) where
 
 import Algebra.Graph.AdjacencyIntMap
 import Algebra.Graph.Test

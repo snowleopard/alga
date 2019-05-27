@@ -15,7 +15,7 @@ module Algebra.Graph.Relation.Symmetric.Internal (
     -- * Implementation of symmetric binary relations
     Relation (..), fromSymmetric, empty, vertex, overlay, connect, edgeSet,
     consistent
-  ) where
+    ) where
 
 import Algebra.Graph.Internal
 import Control.DeepSeq

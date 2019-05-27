@@ -14,7 +14,7 @@
 module Algebra.Graph.AdjacencyMap.Internal (
     -- * Adjacency map implementation
     AdjacencyMap (..), consistent, internalEdgeList, referredToVertexSet
-  ) where
+    ) where
 
 import Control.DeepSeq
 import Data.List

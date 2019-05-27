@@ -14,7 +14,7 @@
 module Algebra.Graph.AdjacencyIntMap.Internal (
     -- * Adjacency map implementation
     AdjacencyIntMap (..), consistent
-  ) where
+    ) where
 
 import Control.DeepSeq (NFData (..))
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)

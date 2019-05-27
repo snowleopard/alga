@@ -12,7 +12,7 @@
 module Algebra.Graph.Test.API (
     -- * Graph API
     API (..), Mono (..)
-  ) where
+    ) where
 
 import Data.Coerce
 import Data.Monoid (Any)

@@ -35,7 +35,7 @@ module Algebra.Graph.Relation.Symmetric (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, gmap, induce,
-  ) where
+    ) where
 
 import Data.Coerce
 import Data.Set (Set)
