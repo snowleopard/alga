@@ -15,8 +15,7 @@
 -- implemented fully polymorphically and require the use of an intermediate data
 -- type are not included. For example, to compute the number of vertices in a
 -- 'Graph' expression you will need to use a concrete data type, such as
--- "Algebra.Graph.Fold". Other useful 'Graph' instances are defined in
--- "Algebra.Graph", "Algebra.Graph.AdjacencyMap" and "Algebra.Graph.Relation".
+-- "Algebra.Graph.Graph" or "Algebra.Graph.AdjacencyMap".
 --
 -- See "Algebra.Graph.HigherKinded.Class" for the higher-kinded version of the
 -- core graph type class.
@@ -47,9 +46,6 @@ module Algebra.Graph.Class (
     path, circuit, clique, biclique, star, tree, forest
     ) where
 
-import Prelude ()
-import Prelude.Compat
-
 import Data.Tree
 
 import Algebra.Graph.Label (Dioid, one)
@@ -58,7 +54,6 @@ import qualified Algebra.Graph                       as G
 import qualified Algebra.Graph.AdjacencyMap          as AM
 import qualified Algebra.Graph.Labelled              as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
-import qualified Algebra.Graph.Fold                  as F
 import qualified Algebra.Graph.AdjacencyIntMap       as AIM
 import qualified Algebra.Graph.Relation              as R
 import qualified Algebra.Graph.Relation.Symmetric    as RS
@@ -135,13 +130,6 @@ instance Ord a => Graph (AM.AdjacencyMap a) where
     vertex  = AM.vertex
     overlay = AM.overlay
     connect = AM.connect
-
-instance Graph (F.Fold a) where
-    type Vertex (F.Fold a) = a
-    empty   = F.empty
-    vertex  = F.vertex
-    overlay = F.overlay
-    connect = F.connect
 
 instance Graph AIM.AdjacencyIntMap where
     type Vertex AIM.AdjacencyIntMap = Int

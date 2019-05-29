@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Labelled.AdjacencyMap
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -20,6 +20,7 @@ import Algebra.Graph.Label
 import Algebra.Graph.Labelled.AdjacencyMap
 import Algebra.Graph.Labelled.AdjacencyMap.Internal
 import Algebra.Graph.Test
+import Algebra.Graph.Test.API (toIntAPI, labelledAdjacencyMapAPI)
 import Algebra.Graph.Test.Generic
 import Algebra.Graph.ToGraph (reachable)
 
@@ -27,8 +28,11 @@ import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.Map                   as Map
 import qualified Data.Set                   as Set
 
-t :: Testsuite
-t = testsuite "Labelled.AdjacencyMap." (empty :: LAI)
+tPoly :: Testsuite (AdjacencyMap Any) Ord
+tPoly = ("Labelled.AdjacencyMap.", labelledAdjacencyMapAPI)
+
+t :: TestsuiteInt (AdjacencyMap Any)
+t = fmap toIntAPI tPoly
 
 type S = Sum Int
 type D = Distance Int
@@ -350,7 +354,7 @@ testLabelledAdjacencyMap = do
     test "transpose (edge e x y) == edge e y x" $ \e x y ->
           transpose (edge e x y) == (edge e y x :: LAS)
 
-    test "transpose . transpose == id" $ size10 $ \x ->
+    test "transpose . transpose  == id" $ size10 $ \x ->
          (transpose . transpose) x == (x :: LAS)
 
     putStrLn "\n============ Labelled.AdjacencyMap.gmap ============"

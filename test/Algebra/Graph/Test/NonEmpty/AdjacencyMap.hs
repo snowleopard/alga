@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.NonEmpty.AdjacencyMap
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -12,10 +12,7 @@
 module Algebra.Graph.Test.NonEmpty.AdjacencyMap (
     -- * Testsuite
     testNonEmptyAdjacencyMap
-  ) where
-
-import Prelude ()
-import Prelude.Compat
+    ) where
 
 #if !MIN_VERSION_base(4,11,0)
 import Data.Semigroup

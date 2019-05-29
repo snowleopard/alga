@@ -15,7 +15,7 @@
 module Algebra.Graph.Relation.InternalDerived (
     -- * Implementation of derived binary relations
     ReflexiveRelation (..), TransitiveRelation (..), PreorderRelation (..)
-  ) where
+    ) where
 
 import Control.DeepSeq (NFData (..))
 

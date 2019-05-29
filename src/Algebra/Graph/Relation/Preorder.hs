@@ -12,7 +12,7 @@
 module Algebra.Graph.Relation.Preorder (
     -- * Data structure
     PreorderRelation, fromRelation, toRelation
-  ) where
+    ) where
 
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.InternalDerived

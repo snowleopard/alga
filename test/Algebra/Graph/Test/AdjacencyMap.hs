@@ -12,19 +12,23 @@
 module Algebra.Graph.Test.AdjacencyMap (
     -- * Testsuite
     testAdjacencyMap
-  ) where
+    ) where
 
 import Data.List.NonEmpty
 
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.AdjacencyMap.Algorithm
 import Algebra.Graph.Test
+import Algebra.Graph.Test.API (toIntAPI, adjacencyMapAPI)
 import Algebra.Graph.Test.Generic
 
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 
-t :: Testsuite
-t = testsuite "AdjacencyMap." empty
+tPoly :: Testsuite AdjacencyMap Ord
+tPoly = ("AdjacencyMap.", adjacencyMapAPI)
+
+t :: TestsuiteInt AdjacencyMap
+t = fmap toIntAPI tPoly
 
 type AI = AdjacencyMap Int
 
@@ -42,6 +46,7 @@ testAdjacencyMap = do
     testGraphFamilies     t
     testTransformations   t
     testRelational        t
+    testBox               tPoly
     testDfsForest         t
     testDfsForestFrom     t
     testDfs               t

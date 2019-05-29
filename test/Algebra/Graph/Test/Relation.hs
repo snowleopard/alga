@@ -11,19 +11,23 @@
 module Algebra.Graph.Test.Relation (
     -- * Testsuite
     testRelation
-  ) where
+    ) where
 
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.Preorder
 import Algebra.Graph.Relation.Reflexive
 import Algebra.Graph.Relation.Transitive
 import Algebra.Graph.Test
+import Algebra.Graph.Test.API (toIntAPI, relationAPI)
 import Algebra.Graph.Test.Generic
 
 import qualified Algebra.Graph.Class as C
 
-t :: Testsuite
-t = testsuite "Relation." empty
+tPoly :: Testsuite Relation Ord
+tPoly = ("Relation.", relationAPI)
+
+t :: TestsuiteInt Relation
+t = fmap toIntAPI tPoly
 
 type RI = Relation Int
 

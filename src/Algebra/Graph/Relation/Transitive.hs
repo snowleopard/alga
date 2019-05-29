@@ -12,7 +12,7 @@
 module Algebra.Graph.Relation.Transitive (
     -- * Data structure
     TransitiveRelation, fromRelation, toRelation
-  ) where
+    ) where
 
 import Algebra.Graph.Relation
 import Algebra.Graph.Relation.InternalDerived

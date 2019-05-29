@@ -2,6 +2,13 @@
 
 ## 0.5
 
+* #206: Add `Algebra.Graph.AdjacencyMap.box`.
+* #205: Drop dependencies on `base-compat` and `base-orphans`.
+* #205: Remove `Algebra.Graph.Fold`.
+* #151: Remove `ToGraph.size`. Demote `ToGraph.adjacencyMap`,
+        `ToGraph.adjacencyIntMap`, `ToGraph.adjacencyMapTranspose` and
+        `ToGraph.adjacencyIntMapTranspose` to functions.
+* #204: Derive `Generic` and `NFData` for `Algebra.Graph` and `Algebra.Graph.Labelled`.
 * #172: Stop supporting GHC 7.8.4.
 
 ## 0.4

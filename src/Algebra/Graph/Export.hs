@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Export
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -23,14 +23,12 @@ module Algebra.Graph.Export (
 
     -- * Generic graph export
     export
-  ) where
-
-import Prelude ()
-import Prelude.Compat hiding (unlines)
+    ) where
 
 import Data.Foldable (fold)
 import Data.Semigroup
 import Data.String hiding (unlines)
+import Prelude hiding (unlines)
 
 import Algebra.Graph.ToGraph (ToGraph, ToVertex, toAdjacencyMap)
 import Algebra.Graph.AdjacencyMap (vertexList, edgeList)

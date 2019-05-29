@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Label
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -28,9 +28,6 @@ module Algebra.Graph.Label (
     -- * Combining edge labels
     Optimum (..), ShortestPath, AllShortestPaths, CountShortestPaths, WidestPath
     ) where
-
-import Prelude ()
-import Prelude.Compat
 
 import Control.Applicative
 import Control.Monad

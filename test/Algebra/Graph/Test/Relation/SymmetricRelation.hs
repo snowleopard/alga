@@ -11,16 +11,20 @@
 module Algebra.Graph.Test.Relation.SymmetricRelation (
     -- * Testsuite
     testSymmetricRelation
-  ) where
+    ) where
 
 import Algebra.Graph.Relation.Symmetric
 import Algebra.Graph.Test
+import Algebra.Graph.Test.API (toIntAPI, symmetricRelationAPI)
 import Algebra.Graph.Test.Generic
 
 import qualified Algebra.Graph.Relation as R
 
-t :: Testsuite
-t = testsuite "Symmetric.Relation." empty
+tPoly :: Testsuite Relation Ord
+tPoly = ("Symmetric.Relation.", symmetricRelationAPI)
+
+t :: TestsuiteInt Relation
+t = fmap toIntAPI tPoly
 
 type RI  = R.Relation Int
 type SRI = Relation Int

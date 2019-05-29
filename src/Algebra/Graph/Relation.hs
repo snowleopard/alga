@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Relation
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -36,18 +36,14 @@ module Algebra.Graph.Relation (
 
     -- * Relational operations
     compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure
-  ) where
-
-import Prelude ()
-import Prelude.Compat
+    ) where
 
 import Data.Tree
 import Data.Tuple
+import qualified Data.Set  as Set
+import qualified Data.Tree as Tree
 
 import Algebra.Graph.Relation.Internal
-
-import qualified Data.Set    as Set
-import qualified Data.Tree   as Tree
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.

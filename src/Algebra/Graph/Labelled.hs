@@ -1,8 +1,8 @@
-{-# LANGUAGE DeriveFunctor, FlexibleInstances #-}
+{-# LANGUAGE DeriveFunctor, DeriveGeneric, FlexibleInstances #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -43,12 +43,11 @@ module Algebra.Graph.Labelled (
     Context (..), context
     ) where
 
-import Prelude ()
-import Prelude.Compat
-
 import Data.Bifunctor
 import Data.Monoid (Any (..))
 import Data.Semigroup ((<>))
+import Control.DeepSeq (NFData (..))
+import GHC.Generics
 
 import Algebra.Graph.Internal (List (..))
 import Algebra.Graph.Label
@@ -65,7 +64,7 @@ import qualified GHC.Exts                            as Exts
 data Graph e a = Empty
                | Vertex a
                | Connect e (Graph e a) (Graph e a)
-               deriving (Functor, Show)
+               deriving (Functor, Show, Generic)
 
 instance (Eq e, Monoid e, Ord a) => Eq (Graph e a) where
     x == y = toAdjacencyMap x == toAdjacencyMap y
@@ -85,6 +84,11 @@ instance (Ord a, Num a, Dioid e) => Num (Graph e a) where
 
 instance Bifunctor Graph where
   bimap f g = foldg Empty (Vertex . g) (Connect . f)
+
+instance (NFData e, NFData a) => NFData (Graph e a) where
+    rnf Empty           = ()
+    rnf (Vertex  x    ) = rnf x
+    rnf (Connect e x y) = e `seq` rnf x `seq` rnf y
 
 -- TODO: This is a very inefficient implementation. Find a way to construct an
 -- adjacency map directly, without building intermediate representations for all

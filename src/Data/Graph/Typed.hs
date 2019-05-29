@@ -20,7 +20,7 @@ module Data.Graph.Typed (
 
     -- * Basic algorithms
     dfsForest, dfsForestFrom, dfs, topSort
-  ) where
+    ) where
 
 import Algebra.Graph.AdjacencyMap.Internal    as AM
 import Algebra.Graph.AdjacencyIntMap.Internal as AIM

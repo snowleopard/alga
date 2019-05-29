@@ -49,9 +49,7 @@ description:
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Class.html Algebra.Graph.Class>
     and
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-HigherKinded-Class.html Algebra.Graph.HigherKinded.Class>
-    can be used for polymorphic construction and manipulation of graphs. Also see
-    <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Fold.html Algebra.Graph.Fold>
-    that defines the Boehm-Berarducci encoding of algebraic graphs.
+    can be used for polymorphic construction and manipulation of graphs.
     .
     This is an experimental library and the API is expected to remain unstable until version 1.0.0.
     Please consider contributing to the on-going
@@ -78,7 +76,6 @@ library
                         Algebra.Graph.Class,
                         Algebra.Graph.Export,
                         Algebra.Graph.Export.Dot,
-                        Algebra.Graph.Fold,
                         Algebra.Graph.HigherKinded.Class,
                         Algebra.Graph.Internal,
                         Algebra.Graph.Label,
@@ -102,7 +99,6 @@ library
                         Data.Graph.Typed
     build-depends:      array       >= 0.4     && < 0.6,
                         base        >= 4.7     && < 5,
-                        base-compat >= 0.9.1   && < 0.11,
                         containers  >= 0.5.5.1 && < 0.8,
                         deepseq     >= 1.3.0.1 && < 1.5,
                         mtl         >= 2.1     && < 2.3
@@ -139,7 +135,6 @@ test-suite test-alga
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,
                         Algebra.Graph.Test.Export,
-                        Algebra.Graph.Test.Fold,
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
                         Algebra.Graph.Test.Internal,
@@ -155,8 +150,6 @@ test-suite test-alga
     build-depends:      algebraic-graphs,
                         array        >= 0.4     && < 0.6,
                         base         >= 4.7     && < 5,
-                        base-compat  >= 0.9.1   && < 0.11,
-                        base-orphans >= 0.5.4   && < 0.9,
                         containers   >= 0.5.5.1 && < 0.8,
                         extra        >= 1.4     && < 2,
                         QuickCheck   >= 2.10    && < 2.14
@@ -182,5 +175,7 @@ test-suite test-alga
                         TypeFamilies
     other-extensions:   ConstrainedClassMethods
                         ConstraintKinds
+                        CPP
+                        MultiParamTypeClasses
                         RankNTypes
                         ViewPatterns

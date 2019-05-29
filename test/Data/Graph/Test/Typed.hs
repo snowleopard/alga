@@ -11,7 +11,7 @@
 module Data.Graph.Test.Typed (
     -- * Testsuite
     testTyped
-  ) where
+    ) where
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
@@ -26,6 +26,7 @@ import qualified Data.IntSet as IntSet
 
 type AI = AM.AdjacencyMap Int
 
+-- TODO: Improve the alignment in the testsuite to match the documentation.
 (%) :: (GraphKL Int -> a) -> AM.AdjacencyMap Int -> a
 a % g = a $ fromAdjacencyMap g
 

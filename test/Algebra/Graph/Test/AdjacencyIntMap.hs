@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.AdjacencyIntMap
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -11,14 +11,15 @@
 module Algebra.Graph.Test.AdjacencyIntMap (
     -- * Testsuite
     testAdjacencyIntMap
-  ) where
+    ) where
 
 import Algebra.Graph.AdjacencyIntMap
 import Algebra.Graph.Test
+import Algebra.Graph.Test.API (Mono (..), adjacencyIntMapAPI)
 import Algebra.Graph.Test.Generic
 
-t :: Testsuite
-t = testsuite "AdjacencyIntMap." empty
+t :: TestsuiteInt (Mono AdjacencyIntMap)
+t = ("AdjacencyIntMap.", adjacencyIntMapAPI)
 
 testAdjacencyIntMap :: IO ()
 testAdjacencyIntMap = do
