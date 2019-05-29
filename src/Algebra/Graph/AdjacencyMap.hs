@@ -633,8 +633,7 @@ compose x y = fromAdjacencySets
     vs = vertexSet x `Set.union` vertexSet y
 
 -- | Compute the /Cartesian product/ of graphs.
--- Complexity: /O(s1 * s2)/ time, memory and size, where /s1/ and /s2/ are the
--- sizes of the given graphs.
+-- Complexity: /O(n * m * log(n)^2)/ time.
 --
 -- @
 -- box ('path' [0,1]) ('path' "ab") == 'edges' [ ((0,\'a\'), (0,\'b\'))
