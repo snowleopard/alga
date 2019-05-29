@@ -1,5 +1,7 @@
-{-# LANGUAGE ConstraintKinds, GADTs, RankNTypes, RecordWildCards #-}
+{-# LANGUAGE ConstraintKinds, CPP, GADTs, RankNTypes, RecordWildCards #-}
+#if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -Wno-missing-fields #-}
+#endif
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.API
