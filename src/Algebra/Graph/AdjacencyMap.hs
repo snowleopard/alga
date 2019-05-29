@@ -39,8 +39,11 @@ module Algebra.Graph.AdjacencyMap (
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
     induce,
 
+    -- * Graph composition
+    compose, box,
+
     -- * Relational operations
-    compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure
+    closure, reflexiveClosure, symmetricClosure, transitiveClosure
     ) where
 
 import Data.Monoid
@@ -628,6 +631,40 @@ compose x y = fromAdjacencySets
   where
     tx = transpose x
     vs = vertexSet x `Set.union` vertexSet y
+
+-- | Compute the /Cartesian product/ of graphs.
+-- Complexity: /O(n * m * log(n)^2)/ time.
+--
+-- @
+-- box ('path' [0,1]) ('path' "ab") == 'edges' [ ((0,\'a\'), (0,\'b\'))
+--                                       , ((0,\'a\'), (1,\'a\'))
+--                                       , ((0,\'b\'), (1,\'b\'))
+--                                       , ((1,\'a\'), (1,\'b\')) ]
+-- @
+-- Up to an isomorphism between the resulting vertex types, this operation
+-- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
+-- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
+-- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@.
+--
+-- @
+-- box x y               ~~ box y x
+-- box x (box y z)       ~~ box (box x y) z
+-- box x ('overlay' y z)   == 'overlay' (box x y) (box x z)
+-- box x ('vertex' ())     ~~ x
+-- box x 'empty'           ~~ 'empty'
+-- 'transpose'   (box x y) == box ('transpose' x) ('transpose' y)
+-- 'vertexCount' (box x y) == 'vertexCount' x * 'vertexCount' y
+-- 'edgeCount'   (box x y) <= 'vertexCount' x * 'edgeCount' y + 'edgeCount' x * 'vertexCount' y
+-- @
+box :: (Ord a, Ord b) => AdjacencyMap a -> AdjacencyMap b -> AdjacencyMap (a, b)
+box (AM x) (AM y) = overlay (AM $ Map.fromAscList xs) (AM $ Map.fromAscList ys)
+  where
+    xs = do (a, as) <- Map.toAscList x
+            b       <- Set.toAscList (Map.keysSet y)
+            return ((a, b), Set.mapMonotonic (,b) as)
+    ys = do a       <- Set.toAscList (Map.keysSet x)
+            (b, bs) <- Map.toAscList y
+            return ((a, b), Set.mapMonotonic (a,) bs)
 
 -- | Compute the /reflexive and transitive closure/ of a graph.
 -- Complexity: /O(n * m * log(n)^2)/ time.

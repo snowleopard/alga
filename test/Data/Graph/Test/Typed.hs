@@ -26,6 +26,7 @@ import qualified Data.IntSet as IntSet
 
 type AI = AM.AdjacencyMap Int
 
+-- TODO: Improve the alignment in the testsuite to match the documentation.
 (%) :: (GraphKL Int -> a) -> AM.AdjacencyMap Int -> a
 a % g = a $ fromAdjacencyMap g
 

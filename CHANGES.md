@@ -2,6 +2,7 @@
 
 ## 0.5
 
+* #206: Add `Algebra.Graph.AdjacencyMap.box`.
 * #205: Drop dependencies on `base-compat` and `base-orphans`.
 * #205: Remove `Algebra.Graph.Fold`.
 * #151: Remove `ToGraph.size`. Demote `ToGraph.adjacencyMap`,

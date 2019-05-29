@@ -15,11 +15,11 @@ module Algebra.Graph.Test.AdjacencyIntMap (
 
 import Algebra.Graph.AdjacencyIntMap
 import Algebra.Graph.Test
-import Algebra.Graph.Test.API (Mono (..))
+import Algebra.Graph.Test.API (Mono (..), adjacencyIntMapAPI)
 import Algebra.Graph.Test.Generic
 
-t :: Testsuite
-t = testsuite "AdjacencyIntMap." (Mono empty)
+t :: TestsuiteInt (Mono AdjacencyIntMap)
+t = ("AdjacencyIntMap.", adjacencyIntMapAPI)
 
 testAdjacencyIntMap :: IO ()
 testAdjacencyIntMap = do

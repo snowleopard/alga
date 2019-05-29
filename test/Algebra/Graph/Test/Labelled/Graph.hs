@@ -19,13 +19,17 @@ import Data.Monoid
 import Algebra.Graph.Label
 import Algebra.Graph.Labelled
 import Algebra.Graph.Test
+import Algebra.Graph.Test.API (toIntAPI, labelledGraphAPI)
 import Algebra.Graph.Test.Generic
 
 import qualified Algebra.Graph.ToGraph as T
 import qualified Data.Set              as Set
 
-t :: Testsuite
-t = testsuite "Labelled.Graph." (empty :: LAI)
+tPoly :: Testsuite (Graph Any) Ord
+tPoly = ("Labelled.Graph.", labelledGraphAPI)
+
+t :: TestsuiteInt (Graph Any)
+t = fmap toIntAPI tPoly
 
 type S = Sum Int
 type D = Distance Int
