@@ -1,24 +1,37 @@
-module Algebra.Graph.Acyclic.AdjacencyMap (
+module Algebra.Graph.Acyclic.AdjacencyMap
   -- * Data types and type aliases
-  PartialOrder,
-
+  ( PartialOrder
   -- * Data structure
-  AdjacencyMap,
-
+  , AdjacencyMap
   -- * Internal Checks
-  consistent,
-
+  , consistent
   -- * Graph properties
-  edgeList, vertexList,
-
+  , isEmpty
+  , edgeList
+  , vertexList
+  , edgeSet
+  , vertexSet
+  , vertexCount
+  , edgeCount
+  , adjacencyList
+  -- * Standard families of graphs
+  , path
+  -- * Graph transformation
+  , removeVertex
+  , removeEdge
   -- * Basic graph construction primitives
-  empty, vertex, overlayD, connectD, vertices,
-
+  , empty
+  , vertex
+  , overlayD
+  , connectD
+  , vertices
   -- * Additional functions on acyclic graphs
-  box, topSort, transitiveClosure,
-
+  , box
+  , topSort
+  , transitiveClosure
   -- * Acyclic graph construction methods
-  scc, fromGraph
+  , scc
+  , fromGraph
   ) where
 
 import Algebra.Graph (Graph, foldg)
@@ -29,6 +42,7 @@ import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.Graph.Typed as Typed
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import Data.Set (Set)
 
 {-| The 'AdjacencyMap' data type represents an acyclic graph by
 wrapping around 'Algebra.Graph.AdjacencyMap.AdjacencyMap'. The
@@ -60,7 +74,7 @@ without violating any laws.
 -}
 newtype AdjacencyMap a = AAM
   { aam :: AM.AdjacencyMap a
-  } deriving (Show, Eq)
+  } deriving (Show, Eq, Ord)
 
 -- | Check if the internal graph representation is consistent,
 -- i.e. that all edges refer to existing vertices and the graph
@@ -182,13 +196,31 @@ topSort (AAM am) = Typed.topSort (Typed.fromAdjacencyMap am)
 -- vertexList (box (1 + 2) (3 + 4)) == [(1,3),(1,4),(2,3),(2,4)]
 -- @
 box :: (Ord a, Ord b) => AdjacencyMap a -> AdjacencyMap b -> AdjacencyMap (a, b)
-box (AAM x) (AAM y) = AAM $ AM.overlay (fO $ xy y x) (fO $ yx x y)
-  where
-    xy q = AM.gmap (\x -> AM.gmap (x, ) q)
-    yx p = AM.gmap (\y -> AM.gmap (, y) p)
-    fO =
-      Map.foldrWithKey (\k -> AM.overlay . Set.foldr AM.overlay k) AM.empty .
-      AM.adjacencyMap
+box (AAM x) (AAM y) = AAM $ AM.box x y
+
+-- | Remove a vertex from a given acyclic graph.
+-- Complexity: /O(n*log(n))/ time.
+--
+-- @
+-- removeVertex x ('vertex' x)       == 'empty'
+-- removeVertex 1 ('vertex' 2)       == 'vertex' 2
+-- removeVertex 1 (1 * 2)            == 'vertex' 2
+-- removeVertex x . removeVertex x   == removeVertex x
+-- @
+removeVertex :: Ord a => a -> AdjacencyMap a -> AdjacencyMap a
+removeVertex x = AAM . AM.removeVertex x . aam
+
+-- | Remove an edge from a given acyclic graph.
+-- Complexity: /O(log(n))/ time.
+--
+-- @
+-- removeEdge 1 2 (1 * 2)             == (1 + 2)
+-- removeEdge x y . removeEdge x y    == removeEdge x y
+-- removeEdge x y . 'removeVertex' x  == 'removeVertex' x
+-- removeEdge 1 2 (1 * 2 + 3 * 4)     == 1 + 2 + 3 * 4
+-- @
+removeEdge :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
+removeEdge x y = AAM . AM.removeEdge x y . aam
 
 -- | This is a signature for a 'Strict Partial Order'.
 -- A strict partial order is a binary relation 'R' that has three
@@ -259,3 +291,83 @@ edgeList = AM.edgeList . aam
 -- @
 vertexList :: AdjacencyMap a -> [a]
 vertexList = AM.vertexList . aam
+
+-- | The number of vertices in a graph.
+-- Complexity: /O(1)/ time.
+--
+-- @
+-- vertexCount 'empty'             ==  0
+-- vertexCount ('vertex' x)        ==  1
+-- vertexCount                   ==  'length' . 'vertexList'
+-- vertexCount x \< vertexCount y ==> x \< y
+-- @
+vertexCount :: AdjacencyMap a -> Int
+vertexCount = AM.vertexCount . aam
+
+-- | The number of edges in a graph.
+-- Complexity: /O(n)/ time.
+--
+-- @
+-- edgeCount 'empty'      == 0
+-- edgeCount ('vertex' x) == 0
+-- edgeCount (1 * 2) == 1
+-- edgeCount            == 'length' . 'edgeList'
+-- @
+edgeCount :: AdjacencyMap a -> Int
+edgeCount = AM.edgeCount . aam
+
+-- | The set of vertices of a given graph.
+-- Complexity: /O(n)/ time and memory.
+--
+-- @
+-- vertexSet 'empty'      == Set.'Set.empty'
+-- vertexSet . 'vertex'   == Set.'Set.singleton'
+-- vertexSet . 'vertices' == Set.'Set.fromList'
+-- @
+vertexSet :: AdjacencyMap a -> Set a
+vertexSet = AM.vertexSet . aam
+
+-- | The set of edges of a given graph.
+-- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
+--
+-- @
+-- edgeSet 'empty'      == Set.'Set.empty'
+-- edgeSet ('vertex' x) == Set.'Set.empty'
+-- edgeSet (1 * 2) == Set.'Set.singleton' (1,2)
+-- @
+edgeSet :: Eq a => AdjacencyMap a -> Set (a, a)
+edgeSet = AM.edgeSet . aam
+
+-- | The sorted /adjacency list/ of a graph.
+-- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- @
+-- adjacencyList 'empty'          == []
+-- adjacencyList ('vertex' x)     == [(x, [])]
+-- adjacencyList (1 * 2)     == [(1, [2]), (2, [])]
+-- @
+adjacencyList :: AdjacencyMap a -> [(a, [a])]
+adjacencyList = AM.adjacencyList . aam
+
+-- | The /path/ on a list of vertices.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- path []        == 'empty'
+-- path [x]       == 'vertex' x
+-- path [1,2]     == 1 * 2
+-- @
+path :: Ord a => [a] -> AdjacencyMap a
+path xs = AAM $ AM.path xs
+
+-- | Check if a graph is empty.
+-- Complexity: /O(1)/ time.
+--
+-- @
+-- isEmpty 'empty'                       == True
+-- isEmpty ('vertex' x)                  == False
+-- isEmpty ('removeVertex' x $ 'vertex' x) == True
+-- isEmpty ('removeEdge' 1 2 $ 1 * 2) == False
+-- @
+isEmpty :: AdjacencyMap a -> Bool
+isEmpty = AM.isEmpty . aam

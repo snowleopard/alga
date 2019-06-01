@@ -31,6 +31,7 @@ import Data.Tree
 import Test.QuickCheck
 
 import qualified Algebra.Graph                                as G
+import qualified Algebra.Graph.Acyclic.AdjacencyMap           as AAM
 import qualified Algebra.Graph.AdjacencyIntMap                as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Internal       as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Algorithm      as AIM
@@ -144,6 +145,26 @@ data API g c where
         , consistent                 :: forall a. c a => g a -> Bool
         , fromAdjacencySets          :: forall a. c a => [(a, Set a)] -> g a
         , fromAdjacencyIntSets       :: [(Int, IntSet)] -> g Int } -> API g c
+
+-- | The API of 'AAM.AdjacencyMap'.
+adjacencyMapAPI :: API AAM.AdjacencyMap Ord
+adjacencyMapAPI = API
+    { empty                      = AAM.empty
+    , vertex                     = AAM.vertex
+    , vertices                   = AAM.vertices
+    , vertexCount                = AAM.vertexCount
+    , edgeCount                  = AAM.edgeCount
+    , vertexList                 = AAM.vertexList
+    , edgeList                   = AAM.edgeList
+    , vertexSet                  = AAM.vertexSet
+    , edgeSet                    = AAM.edgeSet
+    , adjacencyList              = AAM.adjacencyList
+    , topSort                    = AAM.topSort
+    , path                       = AAM.path
+    , removeVertex               = AAM.removeVertex
+    , removeEdge                 = AAM.removeEdge
+    , box                        = AAM.box
+    , consistent                 = AAM.consistent }
 
 -- | The API of 'AM.AdjacencyMap'.
 adjacencyMapAPI :: API AM.AdjacencyMap Ord
