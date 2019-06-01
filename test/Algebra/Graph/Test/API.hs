@@ -17,8 +17,9 @@ module Algebra.Graph.Test.API (
     API (..), Mono (..), toIntAPI,
 
     -- * APIs of various graph data types
-    adjacencyMapAPI, adjacencyIntMapAPI, graphAPI, relationAPI,
-    symmetricRelationAPI, labelledGraphAPI, labelledAdjacencyMapAPI
+    acyclicAdjacencyMapAPI, adjacencyMapAPI, adjacencyIntMapAPI,
+    graphAPI, relationAPI, symmetricRelationAPI, labelledGraphAPI,
+    labelledAdjacencyMapAPI
     ) where
 
 import Data.Coerce
@@ -147,24 +148,24 @@ data API g c where
         , fromAdjacencyIntSets       :: [(Int, IntSet)] -> g Int } -> API g c
 
 -- | The API of 'AAM.AdjacencyMap'.
-adjacencyMapAPI :: API AAM.AdjacencyMap Ord
-adjacencyMapAPI = API
-    { empty                      = AAM.empty
-    , vertex                     = AAM.vertex
-    , vertices                   = AAM.vertices
-    , vertexCount                = AAM.vertexCount
-    , edgeCount                  = AAM.edgeCount
-    , vertexList                 = AAM.vertexList
-    , edgeList                   = AAM.edgeList
-    , vertexSet                  = AAM.vertexSet
-    , edgeSet                    = AAM.edgeSet
-    , adjacencyList              = AAM.adjacencyList
-    , topSort                    = AAM.topSort
-    , path                       = AAM.path
-    , removeVertex               = AAM.removeVertex
-    , removeEdge                 = AAM.removeEdge
-    , box                        = AAM.box
-    , consistent                 = AAM.consistent }
+acyclicAdjacencyMapAPI :: API AAM.AdjacencyMap Ord
+acyclicAdjacencyMapAPI = API
+    { empty         = AAM.empty
+    , vertex        = AAM.vertex
+    , vertices      = AAM.vertices
+    , vertexCount   = AAM.vertexCount
+    , edgeCount     = AAM.edgeCount
+    , vertexList    = AAM.vertexList
+    , edgeList      = AAM.edgeList
+    , vertexSet     = AAM.vertexSet
+    , edgeSet       = AAM.edgeSet
+    , adjacencyList = AAM.adjacencyList
+    , topSort       = Just . AAM.topSort
+    , path          = AAM.path
+    , removeVertex  = AAM.removeVertex
+    , removeEdge    = AAM.removeEdge
+    , box           = AAM.box
+    , consistent    = AAM.consistent }
 
 -- | The API of 'AM.AdjacencyMap'.
 adjacencyMapAPI :: API AM.AdjacencyMap Ord

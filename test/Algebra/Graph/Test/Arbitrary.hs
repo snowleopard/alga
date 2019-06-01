@@ -28,6 +28,7 @@ import Algebra.Graph.Label
 import Algebra.Graph.Relation.InternalDerived
 import Algebra.Graph.Relation.Symmetric.Internal
 
+import qualified Algebra.Graph.Acyclic.AdjacencyMap  as AAM
 import qualified Algebra.Graph.AdjacencyIntMap       as AdjacencyIntMap
 import qualified Algebra.Graph.AdjacencyMap          as AdjacencyMap
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NAM
@@ -58,6 +59,20 @@ instance Arbitrary a => Arbitrary (Graph a) where
                         ++ [Overlay x' y' | (x', y') <- shrink (x, y) ]
     shrink (Connect x y) = [Empty, x, y, Overlay x y]
                         ++ [Connect x' y' | (x', y') <- shrink (x, y) ]
+
+-- An Arbitrary instance for Acyclic.AdjacencyMap
+instance (Ord a, Arbitrary a) => Arbitrary (AAM.AdjacencyMap a) where
+    arbitrary = AAM.fromGraph (<) <$> arbitrary
+
+    shrink g = oneLessVertex ++ oneLessEdge
+      where
+         oneLessVertex =
+           let vertices = AAM.vertexList g
+           in  [ AAM.removeVertex v g | v <- vertices ]
+
+         oneLessEdge =
+           let edges = AAM.edgeList g
+           in  [ AAM.removeEdge v w g | (v, w) <- edges ]
 
 -- | Generate an arbitrary 'NonEmpty.Graph' value of a specified size.
 arbitraryNonEmptyGraph :: Arbitrary a => Gen (NonEmpty.Graph a)

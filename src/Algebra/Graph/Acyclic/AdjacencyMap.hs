@@ -202,10 +202,10 @@ box (AAM x) (AAM y) = AAM $ AM.box x y
 -- Complexity: /O(n*log(n))/ time.
 --
 -- @
--- removeVertex x ('vertex' x)       == 'empty'
--- removeVertex 1 ('vertex' 2)       == 'vertex' 2
--- removeVertex 1 (1 * 2)            == 'vertex' 2
--- removeVertex x . removeVertex x   == removeVertex x
+-- removeVertex x ('vertex' x)     == 'empty'
+-- removeVertex 1 ('vertex' 2)     == 'vertex' 2
+-- removeVertex 1 (1 * 2)          == 'vertex' 2
+-- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Ord a => a -> AdjacencyMap a -> AdjacencyMap a
 removeVertex x = AAM . AM.removeVertex x . aam
@@ -342,9 +342,9 @@ edgeSet = AM.edgeSet . aam
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
 --
 -- @
--- adjacencyList 'empty'          == []
--- adjacencyList ('vertex' x)     == [(x, [])]
--- adjacencyList (1 * 2)     == [(1, [2]), (2, [])]
+-- adjacencyList 'empty'      == []
+-- adjacencyList ('vertex' x) == [(x, [])]
+-- adjacencyList (1 * 2)      == [(1, [2]), (2, [])]
 -- @
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
 adjacencyList = AM.adjacencyList . aam
@@ -353,9 +353,9 @@ adjacencyList = AM.adjacencyList . aam
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- path []        == 'empty'
--- path [x]       == 'vertex' x
--- path [1,2]     == 1 * 2
+-- path []    == 'empty'
+-- path [x]   == 'vertex' x
+-- path [1,2] == 1 * 2
 -- @
 path :: Ord a => [a] -> AdjacencyMap a
 path xs = AAM $ AM.path xs
@@ -364,10 +364,10 @@ path xs = AAM $ AM.path xs
 -- Complexity: /O(1)/ time.
 --
 -- @
--- isEmpty 'empty'                       == True
--- isEmpty ('vertex' x)                  == False
+-- isEmpty 'empty'                         == True
+-- isEmpty ('vertex' x)                    == False
 -- isEmpty ('removeVertex' x $ 'vertex' x) == True
--- isEmpty ('removeEdge' 1 2 $ 1 * 2) == False
+-- isEmpty ('removeEdge' 1 2 $ 1 * 2)      == False
 -- @
 isEmpty :: AdjacencyMap a -> Bool
 isEmpty = AM.isEmpty . aam
