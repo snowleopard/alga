@@ -65,7 +65,6 @@ import qualified Algebra.Graph.NonEmpty.AdjacencyMap          as NAM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap.Internal as NAM
 import qualified Algebra.Graph.AdjacencyIntMap                as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Algorithm      as AIM
-import qualified Algebra.Graph.AdjacencyIntMap.Internal       as AIM
 import qualified Algebra.Graph.Relation                       as R
 import qualified Algebra.Graph.Relation.Symmetric             as SR
 import qualified Data.IntMap                                  as IntMap
@@ -365,11 +364,7 @@ instance Ord a => ToGraph (AM.AdjacencyMap a) where
     topSort                    = AM.topSort
     isAcyclic                  = AM.isAcyclic
     toAdjacencyMap             = id
-    toAdjacencyIntMap          = AIM.AM
-                               . IntMap.fromAscList
-                               . map (fmap $ IntSet.fromAscList . Set.toAscList)
-                               . Map.toAscList
-                               . AM.adjacencyMap
+    toAdjacencyIntMap          = AIM.fromAdjacencyMap
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
     isDfsForestOf              = AM.isDfsForestOf
@@ -498,10 +493,7 @@ instance Ord a => ToGraph (R.Relation a) where
                                . Map.fromAscList
                                . map (fmap Set.fromAscList)
                                . R.adjacencyList
-    toAdjacencyIntMap          = AIM.AM
-                               . IntMap.fromAscList
-                               . map (fmap IntSet.fromAscList)
-                               . R.adjacencyList
+    toAdjacencyIntMap          = AIM.stars . R.adjacencyList
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
 
@@ -523,8 +515,8 @@ instance Ord a => ToGraph (SR.Relation a) where
     edgeList                   = SR.edgeList
     edgeSet                    = SR.edgeSet
     adjacencyList              = SR.adjacencyList
-    toAdjacencyMap             = AM.AM . adjacencyMap . SR.fromSymmetric
-    toAdjacencyIntMap          = AIM.AM . adjacencyIntMap . SR.fromSymmetric
+    toAdjacencyMap             = toAdjacencyMap . SR.fromSymmetric
+    toAdjacencyIntMap          = toAdjacencyIntMap . SR.fromSymmetric
     toAdjacencyMapTranspose    = toAdjacencyMap
     toAdjacencyIntMapTranspose = toAdjacencyIntMap
 

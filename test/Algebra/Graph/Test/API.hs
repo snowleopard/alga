@@ -32,7 +32,6 @@ import Test.QuickCheck
 
 import qualified Algebra.Graph                                as G
 import qualified Algebra.Graph.AdjacencyIntMap                as AIM
-import qualified Algebra.Graph.AdjacencyIntMap.Internal       as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Algorithm      as AIM
 import qualified Algebra.Graph.AdjacencyMap                   as AM
 import qualified Algebra.Graph.AdjacencyMap.Internal          as AM
