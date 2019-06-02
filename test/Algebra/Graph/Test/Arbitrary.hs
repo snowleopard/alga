@@ -64,15 +64,15 @@ instance Arbitrary a => Arbitrary (Graph a) where
 instance (Ord a, Arbitrary a) => Arbitrary (AAM.AdjacencyMap a) where
     arbitrary = AAM.fromGraph (<) <$> arbitrary
 
-    shrink g = oneLessVertex ++ oneLessEdge
+    shrink g = shrinkVertices ++ shrinkEdges
       where
-         oneLessVertex =
-           let vertices = AAM.vertexList g
-           in  [ AAM.removeVertex v g | v <- vertices ]
+        shrinkVertices = 
+          let vertices = AAM.vertexList g
+          in [ AAM.removeVertex x g | x <- vertices ]
 
-         oneLessEdge =
-           let edges = AAM.edgeList g
-           in  [ AAM.removeEdge v w g | (v, w) <- edges ]
+        shrinkEdges =
+          let edges = AAM.edgeList g
+          in [ AAM.removeEdge x y g | (x, y) <- edges ]
 
 -- | Generate an arbitrary 'NonEmpty.Graph' value of a specified size.
 arbitraryNonEmptyGraph :: Arbitrary a => Gen (NonEmpty.Graph a)
