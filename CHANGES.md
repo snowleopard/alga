@@ -2,6 +2,7 @@
 
 ## 0.5
 
+* #208: Drop `Internal` modules, add `fromAdjacencyMap` to `AdjacencyIntMap`.
 * #206: Add `Algebra.Graph.AdjacencyMap.box`.
 * #205: Drop dependencies on `base-compat` and `base-orphans`.
 * #205: Remove `Algebra.Graph.Fold`.
