@@ -9,6 +9,7 @@ import Algebra.Graph.Test.Labelled.AdjacencyMap
 import Algebra.Graph.Test.Labelled.Graph
 import Algebra.Graph.Test.Relation
 import Algebra.Graph.Test.Relation.SymmetricRelation
+import Algebra.Graph.Test.Bipartite.AdjacencyMap
 import Data.Graph.Test.Typed
 
 import Control.Monad
@@ -25,15 +26,16 @@ main :: IO ()
 main = do
     selected <- getArgs
     let go current = when (null selected || current `elem` selected)
-    go "AdjacencyIntMap"      testAdjacencyIntMap
-    go "AdjacencyMap"         testAdjacencyMap
-    go "Export"               testExport
-    go "Graph"                testGraph
-    go "Internal"             testInternal
-    go "LabelledAdjacencyMap" testLabelledAdjacencyMap
-    go "LabelledGraph"        testLabelledGraph
-    go "NonEmptyAdjacencyMap" testNonEmptyAdjacencyMap
-    go "NonEmptyGraph"        testNonEmptyGraph
-    go "Relation"             testRelation
-    go "SymmetricRelation"    testSymmetricRelation
-    go "Typed"                testTyped
+    go "AdjacencyIntMap"       testAdjacencyIntMap
+    go "AdjacencyMap"          testAdjacencyMap
+    go "Export"                testExport
+    go "Graph"                 testGraph
+    go "Internal"              testInternal
+    go "LabelledAdjacencyMap"  testLabelledAdjacencyMap
+    go "LabelledGraph"         testLabelledGraph
+    go "NonEmptyAdjacencyMap"  testNonEmptyAdjacencyMap
+    go "NonEmptyGraph"         testNonEmptyGraph
+    go "Relation"              testRelation
+    go "SymmetricRelation"     testSymmetricRelation
+    go "BipartiteAdjacencyMap" testBipartiteAdjacencyMap
+    go "Typed"                 testTyped
