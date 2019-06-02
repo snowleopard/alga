@@ -23,10 +23,24 @@ import qualified Data.List as List
 -- t = testsuite "AcyclicAdjacencyMap." empty
 
 type AAI = AdjacencyMap Int
+type AAE = AdjacencyMap (Either Int Int)
+type AAT = AdjacencyMap (Int, Int)
 type AI = AM.AdjacencyMap Int
 
 testAcyclicAdjacencyMap :: IO ()
 testAcyclicAdjacencyMap = do
+  putStrLn "\n=====AcyclicAdjacencyMap consistency====="
+
+  test "arbitraryAcyclicAdjacencyMap" $ \x -> consistent (x :: AAI)
+  test "empty" $                              consistent (empty :: AAI)
+  test "vertex" $ \x                       -> consistent (vertex x :: AAI)
+  test "overlayD" $ \x y                   -> consistent (overlayD x y :: AAE)
+  test "connectD" $ \x y                   -> consistent (connectD x y :: AAE)
+  test "vertices" $ \x                     -> consistent (vertices x :: AAI)
+  test "box" $ \x y                        -> consistent (box x y :: AAT)
+  test "transitiveClosure" $ \x            -> consistent (transitiveClosure x :: AAI)
+  test "fromGraph" $ \x                    -> consistent (fromGraph (<) x :: AAI)
+
   putStrLn "\n=====AcyclicAdjacencyMap Num instance====="
   test "edgeList    0                 == []" $
         edgeList   (0 :: AAI)         == []
@@ -48,15 +62,6 @@ testAcyclicAdjacencyMap = do
         edgeList   (1 * 2 + 3 :: AAI) == [(1,2)]
   test "vertexList (1 * 2 + 3)        == [1,2,3]" $
         vertexList (1 * 2 + 3 :: AAI) == [1,2,3]
-
-  putStrLn "\n=====AcyclicAdjacencyMap consistency====="
-
-  test "consistent empty                  == True" $
-        consistent (empty :: AAI)         == True
-  test "consistent (1 + 2)                == True" $
-        consistent (1 + 2 :: AAI)         == True
-  test "consistent (1 * 2 + 2 * 3)        == True" $
-        consistent (1 * 2 + 2 * 3 :: AAI) == True
 
   putStrLn "\n=====AcyclicAdjacencyMap construction primitives====="
 

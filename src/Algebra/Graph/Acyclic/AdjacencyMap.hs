@@ -14,8 +14,6 @@ module Algebra.Graph.Acyclic.AdjacencyMap
   , vertexCount
   , edgeCount
   , adjacencyList
-  -- * Standard families of graphs
-  , path
   -- * Graph transformation
   , removeVertex
   , removeEdge
@@ -348,17 +346,6 @@ edgeSet = AM.edgeSet . aam
 -- @
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
 adjacencyList = AM.adjacencyList . aam
-
--- | The /path/ on a list of vertices.
--- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
---
--- @
--- path []    == 'empty'
--- path [x]   == 'vertex' x
--- path [1,2] == 1 * 2
--- @
-path :: Ord a => [a] -> AdjacencyMap a
-path xs = AAM $ AM.path xs
 
 -- | Check if a graph is empty.
 -- Complexity: /O(1)/ time.

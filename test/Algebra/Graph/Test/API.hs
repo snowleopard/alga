@@ -161,7 +161,6 @@ acyclicAdjacencyMapAPI = API
     , edgeSet       = AAM.edgeSet
     , adjacencyList = AAM.adjacencyList
     , topSort       = Just . AAM.topSort
-    , path          = AAM.path
     , removeVertex  = AAM.removeVertex
     , removeEdge    = AAM.removeEdge
     , box           = AAM.box
