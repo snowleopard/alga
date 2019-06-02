@@ -61,7 +61,6 @@ import qualified Algebra.Graph.AdjacencyMap.Algorithm         as AM
 import qualified Algebra.Graph.Labelled                       as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap          as LAM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap          as NAM
-import qualified Algebra.Graph.NonEmpty.AdjacencyMap.Internal as NAM
 import qualified Algebra.Graph.AdjacencyIntMap                as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Algorithm      as AIM
 import qualified Algebra.Graph.Relation                       as R
@@ -440,32 +439,32 @@ instance (Eq e, Monoid e, Ord a) => ToGraph (LAM.AdjacencyMap e a) where
 -- | See "Algebra.Graph.NonEmpty.AdjacencyMap".
 instance Ord a => ToGraph (NAM.AdjacencyMap a) where
     type ToVertex (NAM.AdjacencyMap a) = a
-    toGraph                    = toGraph . NAM.am
+    toGraph                    = toGraph . toAdjacencyMap
     isEmpty _                  = False
     hasVertex                  = NAM.hasVertex
     hasEdge                    = NAM.hasEdge
     vertexCount                = NAM.vertexCount
     edgeCount                  = NAM.edgeCount
-    vertexList                 = vertexList . NAM.am
+    vertexList                 = vertexList . toAdjacencyMap
     vertexSet                  = NAM.vertexSet
-    vertexIntSet               = vertexIntSet . NAM.am
+    vertexIntSet               = vertexIntSet . toAdjacencyMap
     edgeList                   = NAM.edgeList
     edgeSet                    = NAM.edgeSet
-    adjacencyList              = adjacencyList . NAM.am
+    adjacencyList              = adjacencyList . toAdjacencyMap
     preSet                     = NAM.preSet
     postSet                    = NAM.postSet
-    dfsForest                  = dfsForest . NAM.am
-    dfsForestFrom xs           = dfsForestFrom xs . NAM.am
-    dfs xs                     = dfs xs . NAM.am
-    reachable x                = reachable x . NAM.am
-    topSort                    = topSort . NAM.am
-    isAcyclic                  = isAcyclic . NAM.am
-    toAdjacencyMap             = NAM.am
-    toAdjacencyIntMap          = toAdjacencyIntMap . NAM.am
-    toAdjacencyMapTranspose    = NAM.am . NAM.transpose
+    dfsForest                  = dfsForest . toAdjacencyMap
+    dfsForestFrom xs           = dfsForestFrom xs . toAdjacencyMap
+    dfs xs                     = dfs xs . toAdjacencyMap
+    reachable x                = reachable x . toAdjacencyMap
+    topSort                    = topSort . toAdjacencyMap
+    isAcyclic                  = isAcyclic . toAdjacencyMap
+    toAdjacencyMap             = NAM.fromNonEmpty
+    toAdjacencyIntMap          = toAdjacencyIntMap . toAdjacencyMap
+    toAdjacencyMapTranspose    = toAdjacencyMap . NAM.transpose
     toAdjacencyIntMapTranspose = toAdjacencyIntMap . NAM.transpose
-    isDfsForestOf f            = isDfsForestOf f . NAM.am
-    isTopSortOf x              = isTopSortOf x . NAM.am
+    isDfsForestOf f            = isDfsForestOf f . toAdjacencyMap
+    isTopSortOf x              = isTopSortOf x . toAdjacencyMap
 
 -- TODO: Get rid of "Relation.Internal" and move this instance to "Relation".
 -- | See "Algebra.Graph.Relation".

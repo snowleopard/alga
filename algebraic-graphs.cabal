@@ -83,7 +83,6 @@ library
                         Algebra.Graph.Labelled.Example.Network,
                         Algebra.Graph.NonEmpty,
                         Algebra.Graph.NonEmpty.AdjacencyMap,
-                        Algebra.Graph.NonEmpty.AdjacencyMap.Internal,
                         Algebra.Graph.Relation,
                         Algebra.Graph.Relation.Internal,
                         Algebra.Graph.Relation.InternalDerived,
