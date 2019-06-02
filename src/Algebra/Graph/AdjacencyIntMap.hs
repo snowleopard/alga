@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyIntMap
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -165,7 +165,7 @@ newtype AdjacencyIntMap = AM {
     adjacencyIntMap :: IntMap IntSet } deriving (Eq, Generic)
 
 instance Show AdjacencyIntMap where
-    showsPrec p (AM m)
+    showsPrec p am
         | null vs    = showString "empty"
         | null es    = showParen (p > 10) $ vshow vs
         | vs == used = showParen (p > 10) $ eshow es
@@ -173,14 +173,14 @@ instance Show AdjacencyIntMap where
                            showString "overlay (" . vshow (vs \\ used) .
                            showString ") (" . eshow es . showString ")"
       where
-        vs             = IntSet.toAscList (keysSet m)
-        es             = internalEdgeList m
+        vs             = vertexList am
+        es             = edgeList am
         vshow [x]      = showString "vertex "   . showsPrec 11 x
         vshow xs       = showString "vertices " . showsPrec 11 xs
         eshow [(x, y)] = showString "edge "     . showsPrec 11 x .
                          showString " "         . showsPrec 11 y
         eshow xs       = showString "edges "    . showsPrec 11 xs
-        used           = IntSet.toAscList (referredToVertexSet m)
+        used           = IntSet.toAscList (referredToVertexSet am)
 
 instance Ord AdjacencyIntMap where
     compare (AM x) (AM y) = mconcat
@@ -209,6 +209,7 @@ instance NFData AdjacencyIntMap where
 
 -- | Construct an 'AdjacencyIntMap' from an 'AM.AdjacencyMap' with vertices of
 -- type 'Int'.
+-- Complexity: /O(n + m)/ time and memory.
 --
 -- @
 -- fromAdjacencyMap == 'stars' . AdjacencyMap.'AM.adjacencyList'
@@ -861,7 +862,7 @@ transitiveClosure old
   where
     new = overlay old (old `compose` old)
 
--- | Check if the internal graph representation is consistent, i.e. that all
+-- | Check that the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices. It should be impossible to create an
 -- inconsistent adjacency map, and we use this function in testing.
 --
@@ -875,12 +876,8 @@ transitiveClosure old
 -- consistent ('stars' xs)    == True
 -- @
 consistent :: AdjacencyIntMap -> Bool
-consistent (AM m) = referredToVertexSet m `IntSet.isSubsetOf` keysSet m
+consistent am@(AM m) = referredToVertexSet am `IntSet.isSubsetOf` keysSet m
 
 -- The set of vertices that are referred to by the edges
-referredToVertexSet :: IntMap IntSet -> IntSet
-referredToVertexSet = IntSet.fromList . uncurry (++) . unzip . internalEdgeList
-
--- The list of edges in adjacency map
-internalEdgeList :: IntMap IntSet -> [(Int, Int)]
-internalEdgeList m = [ (x, y) | (x, ys) <- IntMap.toAscList m, y <- IntSet.toAscList ys ]
+referredToVertexSet :: AdjacencyIntMap -> IntSet
+referredToVertexSet = IntSet.fromList . uncurry (++) . unzip . edgeList

@@ -58,7 +58,6 @@ import Data.Tree
 import qualified Algebra.Graph                                as G
 import qualified Algebra.Graph.AdjacencyMap                   as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm         as AM
-import qualified Algebra.Graph.AdjacencyMap.Internal          as AM
 import qualified Algebra.Graph.Labelled                       as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap          as LAM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap          as NAM
@@ -395,11 +394,7 @@ instance ToGraph AIM.AdjacencyIntMap where
     reachable                  = AIM.reachable
     topSort                    = AIM.topSort
     isAcyclic                  = AIM.isAcyclic
-    toAdjacencyMap             = AM.AM
-                               . Map.fromAscList
-                               . map (fmap $ Set.fromAscList . IntSet.toAscList)
-                               . IntMap.toAscList
-                               . AIM.adjacencyIntMap
+    toAdjacencyMap             = AM.stars . AIM.adjacencyList
     toAdjacencyIntMap          = id
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
@@ -489,10 +484,7 @@ instance Ord a => ToGraph (R.Relation a) where
     edgeList                   = R.edgeList
     edgeSet                    = R.edgeSet
     adjacencyList              = R.adjacencyList
-    toAdjacencyMap             = AM.AM
-                               . Map.fromAscList
-                               . map (fmap Set.fromAscList)
-                               . R.adjacencyList
+    toAdjacencyMap             = AM.stars . R.adjacencyList
     toAdjacencyIntMap          = AIM.stars . R.adjacencyList
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap

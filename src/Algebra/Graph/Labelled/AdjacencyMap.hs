@@ -46,10 +46,9 @@ import Data.Set (Set)
 import Algebra.Graph.Label
 import Algebra.Graph.Labelled.AdjacencyMap.Internal
 
-import qualified Algebra.Graph.AdjacencyMap          as AM
-import qualified Algebra.Graph.AdjacencyMap.Internal as AMI
-import qualified Data.Map.Strict                     as Map
-import qualified Data.Set                            as Set
+import qualified Algebra.Graph.AdjacencyMap as AM
+import qualified Data.Map.Strict            as Map
+import qualified Data.Set                   as Set
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
@@ -391,14 +390,16 @@ preSet x (AM m) = Set.fromAscList
 postSet :: Ord a => a -> AdjacencyMap e a -> Set a
 postSet x = Map.keysSet . Map.findWithDefault Map.empty x . adjacencyMap
 
+-- TODO: Optimise.
 -- | Convert a graph to the corresponding unlabelled 'AM.AdjacencyMap' by
 -- forgetting labels on all non-'zero' edges.
+-- Complexity: /O((n + m) * log(n))/ time and memory.
 --
 -- @
 -- 'hasEdge' x y == 'AM.hasEdge' x y . skeleton
 -- @
-skeleton :: AdjacencyMap e a -> AM.AdjacencyMap a
-skeleton (AM m) = AMI.AM (Map.map Map.keysSet m)
+skeleton :: Ord a => AdjacencyMap e a -> AM.AdjacencyMap a
+skeleton (AM m) = AM.fromAdjacencySets $ Map.toAscList $ Map.map Map.keysSet m
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(n*log(n))/ time.

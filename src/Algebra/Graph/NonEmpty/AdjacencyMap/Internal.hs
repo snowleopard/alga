@@ -21,10 +21,9 @@ import Data.Coerce
 import Data.List
 import GHC.Generics
 
-import qualified Algebra.Graph.AdjacencyMap          as AM
-import qualified Algebra.Graph.AdjacencyMap.Internal as AM
-import qualified Data.Map.Strict                     as Map
-import qualified Data.Set                            as Set
+import qualified Algebra.Graph.AdjacencyMap as AM
+import qualified Data.Map.Strict            as Map
+import qualified Data.Set                   as Set
 
 {-| The 'AdjacencyMap' data type represents a graph by a map of vertices to
 their adjacency sets. We define a 'Num' instance as a convenient notation for
@@ -131,7 +130,7 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
     negate      = id
 
 instance (Ord a, Show a) => Show (AdjacencyMap a) where
-    showsPrec p (NAM (AM.AM m))
+    showsPrec p (NAM am)
         | null vs    = error "NonEmpty.AdjacencyMap.Show: Graph is empty"
         | null es    = showParen (p > 10) $ vshow vs
         | vs == used = showParen (p > 10) $ eshow es
@@ -139,14 +138,15 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
                            showString "overlay (" . vshow (vs \\ used) .
                            showString ") (" . eshow es . showString ")"
       where
+        m              = AM.adjacencyMap am
         vs             = Set.toAscList (Map.keysSet m)
-        es             = AM.internalEdgeList m
+        es             = AM.edgeList am
         vshow [x]      = showString "vertex "    . showsPrec 11 x
         vshow xs       = showString "vertices1 " . showsPrec 11 xs
         eshow [(x, y)] = showString "edge "      . showsPrec 11 x .
                          showString " "          . showsPrec 11 y
         eshow xs       = showString "edges1 "    . showsPrec 11 xs
-        used           = Set.toAscList (AM.referredToVertexSet m)
+        used           = Set.toAscList $ Set.fromList $ uncurry (++) $ unzip es
 
 -- | Check if the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices, and the graph is non-empty. It should be

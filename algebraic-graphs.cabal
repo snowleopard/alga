@@ -70,7 +70,6 @@ library
                         Algebra.Graph.AdjacencyIntMap.Algorithm,
                         Algebra.Graph.AdjacencyMap,
                         Algebra.Graph.AdjacencyMap.Algorithm,
-                        Algebra.Graph.AdjacencyMap.Internal,
                         Algebra.Graph.Class,
                         Algebra.Graph.Export,
                         Algebra.Graph.Export.Dot,
