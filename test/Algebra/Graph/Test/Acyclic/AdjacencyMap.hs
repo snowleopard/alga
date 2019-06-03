@@ -13,7 +13,7 @@ module Algebra.Graph.Test.Acyclic.AdjacencyMap (
 import Algebra.Graph.Acyclic.AdjacencyMap
 import Algebra.Graph.Test
 import Algebra.Graph ()
-import Data.List.NonEmpty
+import Data.List.NonEmpty hiding (transpose)
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
@@ -39,6 +39,7 @@ testAcyclicAdjacencyMap = do
   test "vertices" $ \x                     -> consistent (vertices x :: AAI)
   test "box" $ \x y                        -> consistent (box x y :: AAT)
   test "transitiveClosure" $ \x            -> consistent (transitiveClosure x :: AAI)
+  test "transpose" $ \x                    -> consistent (transpose x :: AAI)
   test "fromGraph" $ \x                    -> consistent (fromGraph (<) x :: AAI)
 
   putStrLn "\n=====AcyclicAdjacencyMap Num instance====="

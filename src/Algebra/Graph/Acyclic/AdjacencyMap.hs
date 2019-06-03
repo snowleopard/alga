@@ -1,35 +1,28 @@
-module Algebra.Graph.Acyclic.AdjacencyMap
+module Algebra.Graph.Acyclic.AdjacencyMap (
   -- * Data types and type aliases
-  ( PartialOrder
+  PartialOrder,
+
   -- * Data structure
-  , AdjacencyMap
+  AdjacencyMap,
+
   -- * Internal Checks
-  , consistent
+  consistent,
+
   -- * Graph properties
-  , isEmpty
-  , edgeList
-  , vertexList
-  , edgeSet
-  , vertexSet
-  , vertexCount
-  , edgeCount
-  , adjacencyList
+  isEmpty, edgeList, vertexList, edgeSet, vertexSet,
+  vertexCount, edgeCount, adjacencyList, hasEdge, hasVertex,
+
   -- * Graph transformation
-  , removeVertex
-  , removeEdge
+  removeVertex, removeEdge, transpose,
+
   -- * Basic graph construction primitives
-  , empty
-  , vertex
-  , overlayD
-  , connectD
-  , vertices
+  empty, vertex, overlayD, connectD, vertices,
+
   -- * Additional functions on acyclic graphs
-  , box
-  , topSort
-  , transitiveClosure
+  box, topSort, transitiveClosure,
+
   -- * Acyclic graph construction methods
-  , scc
-  , fromGraph
+  scc, fromGraph
   ) where
 
 import Algebra.Graph (Graph, foldg)
@@ -61,6 +54,13 @@ with graphs:
   > edgeList   (1 * 2 + 3) == [(1,2)]
   > vertexList (1 * 2 + 3) == [1,2,3]
 
+The default partial order for the 'Num' instance to restrict
+edges is (<), ie. Edges can only be formed from vertex
+numbered 'a' to a vertex numbered 'b' if and only if 'a' < 'b':
+  > edgeList (1 * 2) == [(1,2)]
+  > edgeList (2 * 1) == []
+  > (2 * 1) == (2 + 1)
+
 __Note:__ the 'Num' instance does not satisfy several "customary laws"
 of 'Num', which dictate that 'fromInteger' @0@ and 'fromInteger' @1@
 should act as additive and multiplicative identities, and 'negate' as
@@ -80,7 +80,7 @@ newtype AdjacencyMap a = AAM
 -- adjacency map.
 --
 -- @
--- consistent 'empty'         == True
+-- consistent 'empty'           == True
 -- consistent (1 + 2)         == True
 -- consistent (1 * 2 + 2 * 3) == True
 -- @
@@ -152,8 +152,8 @@ connectD (AAM a) (AAM b) = AAM (AM.connect (AM.gmap Left a) (AM.gmap Right b))
 -- Complexity: /O(n * m * log(n)^2)/ time.
 --
 -- @
--- transitiveClosure 'empty'             == 'empty'
--- transitiveClosure ('vertex' x)        == 'vertex' x
+-- transitiveClosure 'empty'               == 'empty'
+-- transitiveClosure ('vertex' x)          == 'vertex' x
 -- transitiveClosure (1 * 2 + 2 * 3)     == 1 * 2 + 2 * 3 + 1 * 3
 -- transitiveClosure . transitiveClosure == transitiveClosure
 -- @
@@ -200,8 +200,8 @@ box (AAM x) (AAM y) = AAM $ AM.box x y
 -- Complexity: /O(n*log(n))/ time.
 --
 -- @
--- removeVertex x ('vertex' x)     == 'empty'
--- removeVertex 1 ('vertex' 2)     == 'vertex' 2
+-- removeVertex x ('vertex' x)       == 'empty'
+-- removeVertex 1 ('vertex' 2)       == 'vertex' 2
 -- removeVertex 1 (1 * 2)          == 'vertex' 2
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
@@ -212,10 +212,10 @@ removeVertex x = AAM . AM.removeVertex x . aam
 -- Complexity: /O(log(n))/ time.
 --
 -- @
--- removeEdge 1 2 (1 * 2)             == (1 + 2)
--- removeEdge x y . removeEdge x y    == removeEdge x y
--- removeEdge x y . 'removeVertex' x  == 'removeVertex' x
--- removeEdge 1 2 (1 * 2 + 3 * 4)     == 1 + 2 + 3 * 4
+-- removeEdge 1 2 (1 * 2)          == (1 + 2)
+-- removeEdge x y . removeEdge x y == removeEdge x y
+-- removeEdge x y . 'removeVertex' x == 'removeVertex' x
+-- removeEdge 1 2 (1 * 2 + 3 * 4)  == 1 + 2 + 3 * 4
 -- @
 removeEdge :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
 removeEdge x y = AAM . AM.removeEdge x y . aam
@@ -225,7 +225,6 @@ removeEdge x y = AAM . AM.removeEdge x y . aam
 -- axioms, namely, irreflexive, transitive and asymmetric.
 --   > a 'R' a == False                    (Irreflexive)
 --   > a 'R' b and b 'R' c => a 'R' c      (Transitive)
---   > a 'R' b == True => b 'R' a == False (Asymmetric)
 -- Some examples of a Strict Partial Order are (<) and (>).
 type PartialOrder a = a -> a -> Bool
 
@@ -273,8 +272,8 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
 -- @
 -- edgeList 'empty'      == []
 -- edgeList ('vertex' x) == []
--- edgeList (1 * 2)      == [(1,2)]
--- edgeList (2 * 1)      == []
+-- edgeList (1 * 2)    == [(1,2)]
+-- edgeList (2 * 1)    == []
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList = AM.edgeList . aam
@@ -308,7 +307,7 @@ vertexCount = AM.vertexCount . aam
 -- @
 -- edgeCount 'empty'      == 0
 -- edgeCount ('vertex' x) == 0
--- edgeCount (1 * 2) == 1
+-- edgeCount (1 * 2)    == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: AdjacencyMap a -> Int
@@ -331,7 +330,7 @@ vertexSet = AM.vertexSet . aam
 -- @
 -- edgeSet 'empty'      == Set.'Set.empty'
 -- edgeSet ('vertex' x) == Set.'Set.empty'
--- edgeSet (1 * 2) == Set.'Set.singleton' (1,2)
+-- edgeSet (1 * 2)    == Set.'Set.singleton' (1,2)
 -- @
 edgeSet :: Eq a => AdjacencyMap a -> Set (a, a)
 edgeSet = AM.edgeSet . aam
@@ -342,7 +341,7 @@ edgeSet = AM.edgeSet . aam
 -- @
 -- adjacencyList 'empty'      == []
 -- adjacencyList ('vertex' x) == [(x, [])]
--- adjacencyList (1 * 2)      == [(1, [2]), (2, [])]
+-- adjacencyList (1 * 2)    == [(1, [2]), (2, [])]
 -- @
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
 adjacencyList = AM.adjacencyList . aam
@@ -351,10 +350,48 @@ adjacencyList = AM.adjacencyList . aam
 -- Complexity: /O(1)/ time.
 --
 -- @
--- isEmpty 'empty'                         == True
--- isEmpty ('vertex' x)                    == False
+-- isEmpty 'empty'                       == True
+-- isEmpty ('vertex' x)                  == False
 -- isEmpty ('removeVertex' x $ 'vertex' x) == True
--- isEmpty ('removeEdge' 1 2 $ 1 * 2)      == False
+-- isEmpty ('removeEdge' 1 2 $ 1 * 2)    == False
 -- @
 isEmpty :: AdjacencyMap a -> Bool
 isEmpty = AM.isEmpty . aam
+
+-- | Check if a graph contains a given vertex.
+-- Complexity: /O(log(n))/ time.
+--
+-- @
+-- hasVertex x 'empty'            == False
+-- hasVertex x ('vertex' x)       == True
+-- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x . 'removeVertex' x == 'const' False
+-- @
+hasVertex :: Ord a => a -> AdjacencyMap a -> Bool
+hasVertex x = AM.hasVertex x . aam
+
+-- | Check if a graph contains a given edge.
+-- Complexity: /O(log(n))/ time.
+--
+-- @
+-- hasEdge x y 'empty'            == False
+-- hasEdge x y ('vertex' z)       == False
+-- hasEdge 1 2 (1 * 2)          == True
+-- hasEdge x y . 'removeEdge' x y == 'const' False
+-- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
+-- @
+hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
+hasEdge u v = AM.hasEdge u v . aam
+
+-- | Transpose a given acyclic graph.
+-- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
+--
+-- @
+-- transpose 'empty'       == 'empty'
+-- transpose ('vertex' x)  == 'vertex' x
+-- transpose (1 * 2)     == (2 * 1)
+-- transpose . transpose == id
+-- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
+-- @
+transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
+transpose = AAM . AM.transpose . aam
