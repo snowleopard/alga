@@ -52,7 +52,7 @@ module Algebra.Graph.AdjacencyMap (
 
 import Control.DeepSeq
 import Data.List ((\\))
-import Data.Map.Strict (Map, keysSet, fromSet)
+import Data.Map.Strict (Map)
 import Data.Monoid
 import Data.Set (Set)
 import Data.Tree
@@ -168,15 +168,11 @@ newtype AdjacencyMap a = AM {
     adjacencyMap :: Map a (Set a) } deriving (Eq, Generic)
 
 instance Ord a => Ord (AdjacencyMap a) where
-    compare (AM x) (AM y) = mconcat
-        [ compare (vNum x) (vNum y)
-        , compare (vSet x) (vSet y)
-        , compare (eNum x) (eNum y)
-        , compare       x        y ]
-      where
-        vNum = Map.size
-        vSet = Map.keysSet
-        eNum = getSum . foldMap (Sum . Set.size)
+    compare x y = mconcat
+        [ compare (vertexCount x) (vertexCount  y)
+        , compare (vertexSet   x) (vertexSet    y)
+        , compare (edgeCount   x) (edgeCount    y)
+        , compare (edgeSet     x) (edgeSet      y) ]
 
 instance (Ord a, Show a) => Show (AdjacencyMap a) where
     showsPrec p am@(AM m)
@@ -199,13 +195,12 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap'
 -- for more details.
 instance (Ord a, Num a) => Num (AdjacencyMap a) where
-    fromInteger x = AM $ Map.singleton (fromInteger x) Set.empty
-    x + y  = AM $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
-    x * y  = AM $ Map.unionsWith Set.union [ adjacencyMap x, adjacencyMap y,
-        fromSet (const . keysSet $ adjacencyMap y) (keysSet $ adjacencyMap x) ]
-    signum = const (AM Map.empty)
-    abs    = id
-    negate = id
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
 
 instance NFData a => NFData (AdjacencyMap a) where
     rnf (AM a) = rnf a
@@ -265,7 +260,7 @@ edge x y | x == y    = AM $ Map.singleton x (Set.singleton y)
 -- 'edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-overlay x y = AM $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
+overlay (AM x) (AM y) = AM $ Map.unionWith Set.union x y
 {-# NOINLINE [1] overlay #-}
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
@@ -287,8 +282,8 @@ overlay x y = AM $ Map.unionWith Set.union (adjacencyMap x) (adjacencyMap y)
 -- 'edgeCount'   (connect 1 2) == 1
 -- @
 connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-connect x y = AM $ Map.unionsWith Set.union $ adjacencyMap x : adjacencyMap y :
-    [ Map.fromSet (const . Map.keysSet $ adjacencyMap y) (Map.keysSet $ adjacencyMap x) ]
+connect (AM x) (AM y) = AM $ Map.unionsWith Set.union $
+    [ x, y, Map.fromSet (const $ Map.keysSet y) (Map.keysSet x) ]
 {-# NOINLINE [1] connect #-}
 
 -- | Construct the graph comprising a given list of isolated vertices.
@@ -359,7 +354,7 @@ connects = foldr connect empty
 -- isSubgraphOf x y                         ==> x <= y
 -- @
 isSubgraphOf :: Ord a => AdjacencyMap a -> AdjacencyMap a -> Bool
-isSubgraphOf x y = Map.isSubmapOfBy Set.isSubsetOf (adjacencyMap x) (adjacencyMap y)
+isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy Set.isSubsetOf x y
 
 -- | Check if a graph is empty.
 -- Complexity: /O(1)/ time.
@@ -397,7 +392,7 @@ hasVertex x = Map.member x . adjacencyMap
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
-hasEdge u v a = case Map.lookup u (adjacencyMap a) of
+hasEdge u v (AM m) = case Map.lookup u m of
     Nothing -> False
     Just vs -> Set.member v vs
 
@@ -897,7 +892,7 @@ transitiveClosure old
 -- consistent ('stars' xs)    == True
 -- @
 consistent :: Ord a => AdjacencyMap a -> Bool
-consistent (AM m) = referredToVertexSet m `Set.isSubsetOf` keysSet m
+consistent (AM m) = referredToVertexSet m `Set.isSubsetOf` Map.keysSet m
 
 -- The set of vertices that are referred to by the edges of an adjacency map.
 referredToVertexSet :: Ord a => Map a (Set a) -> Set a

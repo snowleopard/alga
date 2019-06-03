@@ -170,10 +170,23 @@ instance (Ord a, Show a) => Show (Relation a) where
 
 instance Ord a => Ord (Relation a) where
     compare x y = mconcat
-        [ compare (Set.size $ domain   x) (Set.size $ domain   y)
-        , compare (           domain   x) (           domain   y)
-        , compare (Set.size $ relation x) (Set.size $ relation y)
-        , compare (           relation x) (           relation y) ]
+        [ compare (vertexCount x) (vertexCount  y)
+        , compare (vertexSet   x) (vertexSet    y)
+        , compare (edgeCount   x) (edgeCount    y)
+        , compare (edgeSet     x) (edgeSet      y) ]
+
+instance NFData a => NFData (Relation a) where
+    rnf (Relation d r) = rnf d `seq` rnf r `seq` ()
+
+-- | __Note:__ this does not satisfy the usual ring laws; see 'Relation' for
+-- more details.
+instance (Ord a, Num a) => Num (Relation a) where
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
@@ -237,19 +250,6 @@ overlay x y = Relation (domain x `union` domain y) (relation x `union` relation 
 connect :: Ord a => Relation a -> Relation a -> Relation a
 connect x y = Relation (domain x `union` domain y)
     (relation x `union` relation y `union` (domain x `setProduct` domain y))
-
-instance NFData a => NFData (Relation a) where
-    rnf (Relation d r) = rnf d `seq` rnf r `seq` ()
-
--- | __Note:__ this does not satisfy the usual ring laws; see 'Relation' for
--- more details.
-instance (Ord a, Num a) => Num (Relation a) where
-    fromInteger = vertex . fromInteger
-    (+)         = overlay
-    (*)         = connect
-    signum      = const empty
-    abs         = id
-    negate      = id
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.

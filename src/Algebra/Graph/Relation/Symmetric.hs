@@ -112,16 +112,11 @@ instance (Ord a, Show a) => Show (Relation a) where
         toRelation r = R.vertices (vertexList r) `R.overlay` R.edges (edgeList r)
 
 instance Ord a => Ord (Relation a) where
-    compare srx@(SR rx) sry@(SR ry) = mconcat
-        [ compare (Set.size vx) (Set.size vy)
-        , compare vx            vy
-        , compare (Set.size ex) (Set.size ey)
-        , compare ex            ey ]
-      where
-        vx = R.domain rx
-        vy = R.domain ry
-        ex = edgeSet srx
-        ey = edgeSet sry
+    compare x y = mconcat
+        [ compare (vertexCount x) (vertexCount  y)
+        , compare (vertexSet   x) (vertexSet    y)
+        , compare (edgeCount   x) (edgeCount    y)
+        , compare (edgeSet     x) (edgeSet      y) ]
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'Relation' for
 -- more details.

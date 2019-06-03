@@ -153,9 +153,9 @@ newtype AdjacencyMap a = NAM { am :: AM.AdjacencyMap a }
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap' for
 -- more details.
 instance (Ord a, Num a) => Num (AdjacencyMap a) where
-    fromInteger = NAM . AM.vertex . fromInteger
-    (+)         = coerce AM.overlay
-    (*)         = coerce AM.connect
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
     signum      = error "NonEmpty.AdjacencyMap.signum cannot be implemented."
     abs         = id
     negate      = id
@@ -688,7 +688,6 @@ transitiveClosure = coerce AM.transitiveClosure
 -- edges refer to existing vertices, and the graph is non-empty. It should be
 -- impossible to create an inconsistent adjacency map, and we use this function
 -- in testing.
--- /Note: this function is for internal use only/.
 --
 -- @
 -- consistent ('vertex' x)    == True
