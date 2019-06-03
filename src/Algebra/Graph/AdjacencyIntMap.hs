@@ -46,7 +46,7 @@ module Algebra.Graph.AdjacencyIntMap (
     consistent
     ) where
 
-import Control.DeepSeq (NFData (..))
+import Control.DeepSeq
 import Data.IntMap.Strict (IntMap, keysSet, fromSet)
 import Data.IntSet (IntSet)
 import Data.List ((\\))

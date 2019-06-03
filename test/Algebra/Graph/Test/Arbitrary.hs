@@ -23,8 +23,6 @@ import Test.QuickCheck
 import Algebra.Graph
 import Algebra.Graph.Export
 import Algebra.Graph.Label
-import Algebra.Graph.Relation.InternalDerived
-import Algebra.Graph.Relation.Symmetric.Internal
 
 import qualified Algebra.Graph.AdjacencyIntMap       as AIM
 import qualified Algebra.Graph.AdjacencyMap          as AM
@@ -34,7 +32,10 @@ import qualified Algebra.Graph.Labelled              as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
 import qualified Algebra.Graph.NonEmpty              as NonEmpty
 import qualified Algebra.Graph.Relation              as Relation
+import qualified Algebra.Graph.Relation.Preorder     as Preorder
+import qualified Algebra.Graph.Relation.Reflexive    as Reflexive
 import qualified Algebra.Graph.Relation.Symmetric    as Symmetric
+import qualified Algebra.Graph.Relation.Transitive   as Transitive
 
 -- | Generate an arbitrary 'C.Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
@@ -95,18 +96,21 @@ instance (Arbitrary a, Ord a) => Arbitrary (Relation.Relation a) where
            let edges = Relation.edgeList g
            in  [ Relation.removeEdge v w g | (v, w) <- edges ]
 
-
-instance (Arbitrary a, Ord a) => Arbitrary (ReflexiveRelation a) where
-    arbitrary = ReflexiveRelation <$> arbitraryRelation
+-- TODO: Simplify.
+instance (Arbitrary a, Ord a) => Arbitrary (Reflexive.ReflexiveRelation a) where
+    arbitrary = Reflexive.fromRelation . Relation.reflexiveClosure
+        <$> arbitraryRelation
 
 instance (Arbitrary a, Ord a) => Arbitrary (Symmetric.Relation a) where
-    arbitrary = SR . Relation.symmetricClosure <$> arbitraryRelation
+    arbitrary = Symmetric.toSymmetric <$> arbitraryRelation
 
-instance (Arbitrary a, Ord a) => Arbitrary (TransitiveRelation a) where
-    arbitrary = TransitiveRelation <$> arbitraryRelation
+instance (Arbitrary a, Ord a) => Arbitrary (Transitive.TransitiveRelation a) where
+    arbitrary = Transitive.fromRelation . Relation.transitiveClosure
+        <$> arbitraryRelation
 
-instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
-    arbitrary = PreorderRelation <$> arbitraryRelation
+instance (Arbitrary a, Ord a) => Arbitrary (Preorder.PreorderRelation a) where
+    arbitrary = Preorder.fromRelation . Relation.closure
+        <$> arbitraryRelation
 
 -- | Generate an arbitrary 'AdjacencyMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.

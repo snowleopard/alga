@@ -83,12 +83,9 @@ library
                         Algebra.Graph.NonEmpty,
                         Algebra.Graph.NonEmpty.AdjacencyMap,
                         Algebra.Graph.Relation,
-                        Algebra.Graph.Relation.Internal,
-                        Algebra.Graph.Relation.InternalDerived,
                         Algebra.Graph.Relation.Preorder,
                         Algebra.Graph.Relation.Reflexive,
                         Algebra.Graph.Relation.Symmetric,
-                        Algebra.Graph.Relation.Symmetric.Internal,
                         Algebra.Graph.Relation.Transitive,
                         Algebra.Graph.ToGraph,
                         Data.Graph.Typed

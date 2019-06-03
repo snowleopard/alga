@@ -35,15 +35,221 @@ module Algebra.Graph.Relation (
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
 
     -- * Relational operations
-    compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure
+    compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure,
+
+    -- * Miscellaneous
+    consistent
     ) where
 
+import Control.DeepSeq
+import Data.Set (Set, union)
 import Data.Tree
 import Data.Tuple
+
 import qualified Data.Set  as Set
 import qualified Data.Tree as Tree
 
-import Algebra.Graph.Relation.Internal
+import Algebra.Graph.Internal
+
+{-| The 'Relation' data type represents a graph as a /binary relation/. We
+define a 'Num' instance as a convenient notation for working with graphs:
+
+    > 0           == vertex 0
+    > 1 + 2       == overlay (vertex 1) (vertex 2)
+    > 1 * 2       == connect (vertex 1) (vertex 2)
+    > 1 + 2 * 3   == overlay (vertex 1) (connect (vertex 2) (vertex 3))
+    > 1 * (2 + 3) == connect (vertex 1) (overlay (vertex 2) (vertex 3))
+
+__Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
+which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
+additive and multiplicative identities, and 'negate' as additive inverse.
+Nevertheless, overloading 'fromInteger', '+' and '*' is very convenient when
+working with algebraic graphs; we hope that in future Haskell's Prelude will
+provide a more fine-grained class hierarchy for algebraic structures, which we
+would be able to utilise without violating any laws.
+
+The 'Show' instance is defined using basic graph construction primitives:
+
+@show (empty     :: Relation Int) == "empty"
+show (1         :: Relation Int) == "vertex 1"
+show (1 + 2     :: Relation Int) == "vertices [1,2]"
+show (1 * 2     :: Relation Int) == "edge 1 2"
+show (1 * 2 * 3 :: Relation Int) == "edges [(1,2),(1,3),(2,3)]"
+show (1 * 2 + 3 :: Relation Int) == "overlay (vertex 3) (edge 1 2)"@
+
+The 'Eq' instance satisfies all axioms of algebraic graphs:
+
+    * 'overlay' is commutative and associative:
+
+        >       x + y == y + x
+        > x + (y + z) == (x + y) + z
+
+    * 'connect' is associative and has 'empty' as the identity:
+
+        >   x * empty == x
+        >   empty * x == x
+        > x * (y * z) == (x * y) * z
+
+    * 'connect' distributes over 'overlay':
+
+        > x * (y + z) == x * y + x * z
+        > (x + y) * z == x * z + y * z
+
+    * 'connect' can be decomposed:
+
+        > x * y * z == x * y + x * z + y * z
+
+The following useful theorems can be proved from the above set of axioms.
+
+    * 'overlay' has 'empty' as the
+    identity and is idempotent:
+
+        >   x + empty == x
+        >   empty + x == x
+        >       x + x == x
+
+    * Absorption and saturation of 'connect':
+
+        > x * y + x + y == x * y
+        >     x * x * x == x * x
+
+When specifying the time and memory complexity of graph algorithms, /n/ and /m/
+will denote the number of vertices and edges in the graph, respectively.
+
+The total order on graphs is defined using /size-lexicographic/ comparison:
+
+* Compare the number of vertices. In case of a tie, continue.
+* Compare the sets of vertices. In case of a tie, continue.
+* Compare the number of edges. In case of a tie, continue.
+* Compare the sets of edges.
+
+Here are a few examples:
+
+@'vertex' 1 < 'vertex' 2
+'vertex' 3 < 'edge' 1 2
+'vertex' 1 < 'edge' 1 1
+'edge' 1 1 < 'edge' 1 2
+'edge' 1 2 < 'edge' 1 1 + 'edge' 2 2
+'edge' 1 2 < 'edge' 1 3@
+
+Note that the resulting order refines the
+'isSubgraphOf' relation and is compatible with
+'overlay' and 'connect' operations:
+
+@'isSubgraphOf' x y ==> x <= y@
+
+@'empty' <= x
+x     <= x + y
+x + y <= x * y@
+-}
+data Relation a = Relation {
+    -- | The /domain/ of the relation. Complexity: /O(1)/ time and memory.
+    domain :: Set a,
+    -- | The set of pairs of elements that are /related/. It is guaranteed that
+    -- each element belongs to the domain. Complexity: /O(1)/ time and memory.
+    relation :: Set (a, a)
+  } deriving Eq
+
+instance (Ord a, Show a) => Show (Relation a) where
+    showsPrec p (Relation d r)
+        | Set.null d = showString "empty"
+        | Set.null r = showParen (p > 10) $ vshow (Set.toAscList d)
+        | d == used  = showParen (p > 10) $ eshow (Set.toAscList r)
+        | otherwise  = showParen (p > 10) $
+                           showString "overlay (" .
+                           vshow (Set.toAscList $ Set.difference d used) .
+                           showString ") (" . eshow (Set.toAscList r) .
+                           showString ")"
+      where
+        vshow [x]      = showString "vertex "   . showsPrec 11 x
+        vshow xs       = showString "vertices " . showsPrec 11 xs
+        eshow [(x, y)] = showString "edge "     . showsPrec 11 x .
+                         showString " "         . showsPrec 11 y
+        eshow xs       = showString "edges "    . showsPrec 11 xs
+        used           = referredToVertexSet r
+
+instance Ord a => Ord (Relation a) where
+    compare x y = mconcat
+        [ compare (Set.size $ domain   x) (Set.size $ domain   y)
+        , compare (           domain   x) (           domain   y)
+        , compare (Set.size $ relation x) (Set.size $ relation y)
+        , compare (           relation x) (           relation y) ]
+
+-- | Construct the /empty graph/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'isEmpty'     empty == True
+-- 'hasVertex' x empty == False
+-- 'vertexCount' empty == 0
+-- 'edgeCount'   empty == 0
+-- @
+empty :: Relation a
+empty = Relation Set.empty Set.empty
+
+-- | Construct the graph comprising /a single isolated vertex/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'isEmpty'     (vertex x) == False
+-- 'hasVertex' x (vertex x) == True
+-- 'vertexCount' (vertex x) == 1
+-- 'edgeCount'   (vertex x) == 0
+-- @
+vertex :: a -> Relation a
+vertex x = Relation (Set.singleton x) Set.empty
+
+-- | /Overlay/ two graphs. This is a commutative, associative and idempotent
+-- operation with the identity 'empty'.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (overlay x y) >= 'vertexCount' x
+-- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (overlay x y) >= 'edgeCount' x
+-- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
+-- 'vertexCount' (overlay 1 2) == 2
+-- 'edgeCount'   (overlay 1 2) == 0
+-- @
+overlay :: Ord a => Relation a -> Relation a -> Relation a
+overlay x y = Relation (domain x `union` domain y) (relation x `union` relation y)
+
+-- | /Connect/ two graphs. This is an associative operation with the identity
+-- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
+-- number of edges in the resulting graph is quadratic with respect to the number
+-- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
+--
+-- @
+-- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (connect x y) >= 'vertexCount' x
+-- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (connect x y) >= 'edgeCount' x
+-- 'edgeCount'   (connect x y) >= 'edgeCount' y
+-- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y
+-- 'edgeCount'   (connect x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
+-- 'vertexCount' (connect 1 2) == 2
+-- 'edgeCount'   (connect 1 2) == 1
+-- @
+connect :: Ord a => Relation a -> Relation a -> Relation a
+connect x y = Relation (domain x `union` domain y)
+    (relation x `union` relation y `union` (domain x `setProduct` domain y))
+
+instance NFData a => NFData (Relation a) where
+    rnf (Relation d r) = rnf d `seq` rnf r `seq` ()
+
+-- | __Note:__ this does not satisfy the usual ring laws; see 'Relation' for
+-- more details.
+instance (Ord a, Num a) => Num (Relation a) where
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -586,3 +792,24 @@ transitiveClosure old
     | otherwise  = transitiveClosure new
   where
     new = overlay old (old `compose` old)
+
+-- | Check that the internal representation of a relation is consistent, i.e. if all
+-- pairs of elements in the 'relation' refer to existing elements in the 'domain'.
+-- It should be impossible to create an inconsistent 'Relation', and we use this
+-- function in testing.
+--
+-- @
+-- consistent 'empty'         == True
+-- consistent ('vertex' x)    == True
+-- consistent ('overlay' x y) == True
+-- consistent ('connect' x y) == True
+-- consistent ('edge' x y)    == True
+-- consistent ('edges' xs)    == True
+-- consistent ('stars' xs)    == True
+-- @
+consistent :: Ord a => Relation a -> Bool
+consistent (Relation d r) = referredToVertexSet r `Set.isSubsetOf` d
+
+-- The set of elements that appear in a given set of pairs.
+referredToVertexSet :: Ord a => Set (a, a) -> Set a
+referredToVertexSet = Set.fromList . uncurry (++) . unzip . Set.toAscList
