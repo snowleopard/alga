@@ -150,8 +150,8 @@ testTyped = do
     test "dfs []     % x                         == []" $ \x ->
           dfs []     % x                         == []
 
-    test "dfs [1, 4] % 3 * (1 + 4) * (1 + 5)     == [1, 5, 4]" $
-          dfs [1, 4] % (3 * (1 + 4) * (1 + 5))   == [1, 5, 4]
+    test "dfs [1, 4] % 3 * (1 + 4) * (1 + 5)     == [1,5,4]" $
+          dfs [1, 4] % (3 * (1 + 4) * (1 + 5))   == [1,5,4]
 
     test "isSubgraphOf (vertices $ dfs vs % x) x == True" $ \vs x ->
           AM.isSubgraphOf (AM.vertices $ dfs vs % x) x == True

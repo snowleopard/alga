@@ -24,7 +24,7 @@ import Data.Tuple
 
 import Algebra.Graph.NonEmpty.AdjacencyMap
 import Algebra.Graph.Test hiding (axioms, theorems)
-import Algebra.Graph.ToGraph (toAdjacencyMap, reachable)
+import Algebra.Graph.ToGraph (reachable)
 
 import qualified Algebra.Graph.AdjacencyMap          as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
@@ -116,11 +116,15 @@ testNonEmptyAdjacencyMap = do
           show (vertex (-1) * vertex (-2) + vertex (-3) :: AdjacencyMap Int) == "overlay (vertex (-3)) (edge (-1) (-2))"
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.toNonEmpty ============"
-    test "toNonEmpty empty              == Nothing" $
+    test "toNonEmpty empty          == Nothing" $
           toNonEmpty (AM.empty :: AM.AdjacencyMap Int) == Nothing
 
-    test "toNonEmpty (toAdjacencyMap x) == Just (x :: NonEmpty.AdjacencyMap a)" $ \x ->
-          toNonEmpty (toAdjacencyMap x) == Just (x :: G)
+    test "toNonEmpty . fromNonEmpty == Just" $ \(x :: G) ->
+         (toNonEmpty . fromNonEmpty) x == Just x
+
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.fromNonEmpty ============"
+    test "isEmpty . fromNonEmpty    == const False" $ \(x :: G) ->
+         (AM.isEmpty . fromNonEmpty) x == const False x
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.vertex ============"
     test "hasVertex x (vertex x) == True" $ \(x :: Int) ->

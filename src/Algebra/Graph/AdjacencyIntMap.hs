@@ -1,7 +1,8 @@
+{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyIntMap
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -18,7 +19,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyIntMap (
     -- * Data structure
-    AdjacencyIntMap, adjacencyIntMap,
+    AdjacencyIntMap, adjacencyIntMap, fromAdjacencyMap,
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
@@ -39,19 +40,181 @@ module Algebra.Graph.AdjacencyIntMap (
     induce,
 
     -- * Relational operations
-    compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure
+    compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure,
+
+    -- * Miscellaneous
+    consistent
     ) where
 
+import Control.DeepSeq
+import Data.IntMap.Strict (IntMap)
 import Data.IntSet (IntSet)
-import Data.Monoid
+import Data.List ((\\))
+import Data.Monoid (Sum (..))
 import Data.Set (Set)
 import Data.Tree
-
-import Algebra.Graph.AdjacencyIntMap.Internal
+import GHC.Generics
 
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.IntSet        as IntSet
+import qualified Data.Map.Strict    as Map
 import qualified Data.Set           as Set
+
+import qualified Algebra.Graph.AdjacencyMap as AM
+
+{-| The 'AdjacencyIntMap' data type represents a graph by a map of vertices to
+their adjacency sets. We define a 'Num' instance as a convenient notation for
+working with graphs:
+
+    > 0           == vertex 0
+    > 1 + 2       == overlay (vertex 1) (vertex 2)
+    > 1 * 2       == connect (vertex 1) (vertex 2)
+    > 1 + 2 * 3   == overlay (vertex 1) (connect (vertex 2) (vertex 3))
+    > 1 * (2 + 3) == connect (vertex 1) (overlay (vertex 2) (vertex 3))
+
+__Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
+which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
+additive and multiplicative identities, and 'negate' as additive inverse.
+Nevertheless, overloading 'fromInteger', '+' and '*' is very convenient when
+working with algebraic graphs; we hope that in future Haskell's Prelude will
+provide a more fine-grained class hierarchy for algebraic structures, which we
+would be able to utilise without violating any laws.
+
+The 'Show' instance is defined using basic graph construction primitives:
+
+@show (empty     :: AdjacencyIntMap Int) == "empty"
+show (1         :: AdjacencyIntMap Int) == "vertex 1"
+show (1 + 2     :: AdjacencyIntMap Int) == "vertices [1,2]"
+show (1 * 2     :: AdjacencyIntMap Int) == "edge 1 2"
+show (1 * 2 * 3 :: AdjacencyIntMap Int) == "edges [(1,2),(1,3),(2,3)]"
+show (1 * 2 + 3 :: AdjacencyIntMap Int) == "overlay (vertex 3) (edge 1 2)"@
+
+The 'Eq' instance satisfies all axioms of algebraic graphs:
+
+    * 'overlay' is commutative and associative:
+
+        >       x + y == y + x
+        > x + (y + z) == (x + y) + z
+
+    * 'connect' is associative and has 'empty' as the identity:
+
+        >   x * empty == x
+        >   empty * x == x
+        > x * (y * z) == (x * y) * z
+
+    * 'connect' distributes over 'overlay':
+
+        > x * (y + z) == x * y + x * z
+        > (x + y) * z == x * z + y * z
+
+    * 'connect' can be decomposed:
+
+        > x * y * z == x * y + x * z + y * z
+
+The following useful theorems can be proved from the above set of axioms.
+
+    * 'overlay' has 'empty' as the identity and is idempotent:
+
+        >   x + empty == x
+        >   empty + x == x
+        >       x + x == x
+
+    * Absorption and saturation of 'connect':
+
+        > x * y + x + y == x * y
+        >     x * x * x == x * x
+
+When specifying the time and memory complexity of graph algorithms, /n/ and /m/
+will denote the number of vertices and edges in the graph, respectively.
+
+The total order on graphs is defined using /size-lexicographic/ comparison:
+
+* Compare the number of vertices. In case of a tie, continue.
+* Compare the sets of vertices. In case of a tie, continue.
+* Compare the number of edges. In case of a tie, continue.
+* Compare the sets of edges.
+
+Here are a few examples:
+
+@'vertex' 1 < 'vertex' 2
+'vertex' 3 < 'edge' 1 2
+'vertex' 1 < 'edge' 1 1
+'edge' 1 1 < 'edge' 1 2
+'edge' 1 2 < 'edge' 1 1 + 'edge' 2 2
+'edge' 1 2 < 'edge' 1 3@
+
+Note that the resulting order refines the 'isSubgraphOf' relation and is
+compatible with 'overlay' and 'connect' operations:
+
+@'isSubgraphOf' x y ==> x <= y@
+
+@'empty' <= x
+x     <= x + y
+x + y <= x * y@
+-}
+newtype AdjacencyIntMap = AM {
+    -- | The /adjacency map/ of a graph: each vertex is associated with a set of
+    -- its direct successors. Complexity: /O(1)/ time and memory.
+    --
+    -- @
+    -- adjacencyIntMap 'empty'      == IntMap.'IntMap.empty'
+    -- adjacencyIntMap ('vertex' x) == IntMap.'IntMap.singleton' x IntSet.'IntSet.empty'
+    -- adjacencyIntMap ('edge' 1 1) == IntMap.'IntMap.singleton' 1 (IntSet.'IntSet.singleton' 1)
+    -- adjacencyIntMap ('edge' 1 2) == IntMap.'IntMap.fromList' [(1,IntSet.'IntSet.singleton' 2), (2,IntSet.'IntSet.empty')]
+    -- @
+    adjacencyIntMap :: IntMap IntSet } deriving (Eq, Generic)
+
+instance Show AdjacencyIntMap where
+    showsPrec p am@(AM m)
+        | null vs    = showString "empty"
+        | null es    = showParen (p > 10) $ vshow vs
+        | vs == used = showParen (p > 10) $ eshow es
+        | otherwise  = showParen (p > 10) $
+                           showString "overlay (" . vshow (vs \\ used) .
+                           showString ") (" . eshow es . showString ")"
+      where
+        vs             = vertexList am
+        es             = edgeList am
+        vshow [x]      = showString "vertex "   . showsPrec 11 x
+        vshow xs       = showString "vertices " . showsPrec 11 xs
+        eshow [(x, y)] = showString "edge "     . showsPrec 11 x .
+                         showString " "         . showsPrec 11 y
+        eshow xs       = showString "edges "    . showsPrec 11 xs
+        used           = IntSet.toAscList (referredToVertexSet m)
+
+instance Ord AdjacencyIntMap where
+    compare x y = mconcat
+        [ compare (vertexCount  x) (vertexCount  y)
+        , compare (vertexIntSet x) (vertexIntSet y)
+        , compare (edgeCount    x) (edgeCount    y)
+        , compare (edgeSet      x) (edgeSet      y) ]
+
+-- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyIntMap'
+-- for more details.
+instance Num AdjacencyIntMap where
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
+
+instance NFData AdjacencyIntMap where
+    rnf (AM a) = rnf a
+
+-- | Construct an 'AdjacencyIntMap' from an 'AM.AdjacencyMap' with vertices of
+-- type 'Int'.
+-- Complexity: /O(n + m)/ time and memory.
+--
+-- @
+-- fromAdjacencyMap == 'stars' . AdjacencyMap.'AM.adjacencyList'
+-- @
+fromAdjacencyMap :: AM.AdjacencyMap Int -> AdjacencyIntMap
+fromAdjacencyMap = AM
+                 . IntMap.fromAscList
+                 . map (fmap $ IntSet.fromAscList . Set.toAscList)
+                 . Map.toAscList
+                 . AM.adjacencyMap
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
@@ -108,14 +271,14 @@ edge x y | x == y    = AM $ IntMap.singleton x (IntSet.singleton y)
 -- 'edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: AdjacencyIntMap -> AdjacencyIntMap -> AdjacencyIntMap
-overlay x y = AM $ IntMap.unionWith IntSet.union (adjacencyIntMap x) (adjacencyIntMap y)
+overlay (AM x) (AM y) = AM $ IntMap.unionWith IntSet.union x y
 {-# NOINLINE [1] overlay #-}
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
 -- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
--- number of edges in the resulting graph is quadratic with respect to the number
--- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
+-- number of edges in the resulting graph is quadratic with respect to the
+-- number of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
 --
 -- @
 -- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
@@ -130,8 +293,8 @@ overlay x y = AM $ IntMap.unionWith IntSet.union (adjacencyIntMap x) (adjacencyI
 -- 'edgeCount'   (connect 1 2) == 1
 -- @
 connect :: AdjacencyIntMap -> AdjacencyIntMap -> AdjacencyIntMap
-connect x y = AM $ IntMap.unionsWith IntSet.union [ adjacencyIntMap x, adjacencyIntMap y,
-    IntMap.fromSet (const . IntMap.keysSet $ adjacencyIntMap y) (IntMap.keysSet $ adjacencyIntMap x) ]
+connect (AM x) (AM y) = AM $ IntMap.unionsWith IntSet.union
+    [ x, y, IntMap.fromSet (const $ IntMap.keysSet y) (IntMap.keysSet x) ]
 {-# NOINLINE [1] connect #-}
 
 -- | Construct the graph comprising a given list of isolated vertices.
@@ -202,7 +365,7 @@ connects  = foldr connect empty
 -- isSubgraphOf x y                         ==> x <= y
 -- @
 isSubgraphOf :: AdjacencyIntMap -> AdjacencyIntMap -> Bool
-isSubgraphOf x y = IntMap.isSubmapOfBy IntSet.isSubsetOf (adjacencyIntMap x) (adjacencyIntMap y)
+isSubgraphOf (AM x) (AM y) = IntMap.isSubmapOfBy IntSet.isSubsetOf x y
 
 -- | Check if a graph is empty.
 -- Complexity: /O(1)/ time.
@@ -240,7 +403,7 @@ hasVertex x = IntMap.member x . adjacencyIntMap
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Int -> Int -> AdjacencyIntMap -> Bool
-hasEdge u v a = case IntMap.lookup u (adjacencyIntMap a) of
+hasEdge u v (AM m) = case IntMap.lookup u m of
     Nothing -> False
     Just vs -> IntSet.member v vs
 
@@ -693,3 +856,24 @@ transitiveClosure old
     | otherwise  = transitiveClosure new
   where
     new = overlay old (old `compose` old)
+
+-- | Check that the internal graph representation is consistent, i.e. that all
+-- edges refer to existing vertices. It should be impossible to create an
+-- inconsistent adjacency map, and we use this function in testing.
+--
+-- @
+-- consistent 'empty'         == True
+-- consistent ('vertex' x)    == True
+-- consistent ('overlay' x y) == True
+-- consistent ('connect' x y) == True
+-- consistent ('edge' x y)    == True
+-- consistent ('edges' xs)    == True
+-- consistent ('stars' xs)    == True
+-- @
+consistent :: AdjacencyIntMap -> Bool
+consistent (AM m) = referredToVertexSet m `IntSet.isSubsetOf` IntMap.keysSet m
+
+-- The set of vertices that are referred to by the edges
+referredToVertexSet :: IntMap IntSet -> IntSet
+referredToVertexSet m = IntSet.fromList $ concat
+    [ [x, y] | (x, ys) <- IntMap.toAscList m, y <- IntSet.toAscList ys ]
