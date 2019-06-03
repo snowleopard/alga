@@ -277,7 +277,7 @@ overlay (AM x) (AM y) = AM $ IntMap.unionWith IntSet.union x y
 -- | /Connect/ two graphs. This is an associative operation with the identity
 -- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
--- number of stars in theadjacencyList graph is quadratic with respect to the
+-- number of edges in the resulting graph is quadratic with respect to the
 -- number of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
 --
 -- @
