@@ -1,5 +1,5 @@
 name:          algebraic-graphs
-version:       0.4
+version:       0.5
 synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
