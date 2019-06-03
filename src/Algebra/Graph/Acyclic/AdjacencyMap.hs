@@ -55,8 +55,10 @@ with graphs:
   > vertexList (1 * 2 + 3) == [1,2,3]
 
 The default partial order for the 'Num' instance to restrict
-edges is (<), ie. Edges can only be formed from vertex
-numbered 'a' to a vertex numbered 'b' if and only if 'a' < 'b':
+edges is (\<), ie. Edges can only be formed from vertex
+numbered /a/ to a vertex numbered /b/ if and only if 
+/a/ \< /b/:
+
   > edgeList (1 * 2) == [(1,2)]
   > edgeList (2 * 1) == []
   > (2 * 1) == (2 + 1)
@@ -220,26 +222,29 @@ removeVertex x = AAM . AM.removeVertex x . aam
 removeEdge :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
 removeEdge x y = AAM . AM.removeEdge x y . aam
 
--- | This is a signature for a 'Strict Partial Order'.
--- A strict partial order is a binary relation 'R' that has three
+-- | This is a signature for a __Strict Partial Order__.
+-- A strict partial order is a binary relation __/R/__ that has three
 -- axioms, namely, irreflexive, transitive and asymmetric.
---   > a 'R' a == False                    (Irreflexive)
---   > a 'R' b and b 'R' c => a 'R' c      (Transitive)
--- Some examples of a Strict Partial Order are (<) and (>).
+--
+--   > a 'R' a == False               (Irreflexive)
+--   > a 'R' b and b 'R' c => a 'R' c (Transitive)
+-- Some examples of a Strict Partial Order are 
+-- __\<__ and __\>__.
 type PartialOrder a = a -> a -> Bool
 
 -- | Constructs an acyclic graph from any graph based on
 -- a strict partial order to produce an acyclic graph.
 -- The partial order defines the valid set of edges.
--- For example, if the partial order is (<) then for any two
--- vertices x and y (x > y), the only possible edge is (y, x).
--- This will guarantee the production of an acyclic graph as no
--- back edges are nor possible.
+-- 
+-- If the partial order is \< then for any two
+-- vertices x and y (x \> y), the only possible edge is (y, x).
+-- This will guarantee the production of an acyclic graph since
+-- no back edges are possible.
 --
 -- For example,
--- 'fromGraph (<) (1 * 2 + 2 * 1) == 1 * 2' because
--- '1 < 2 == True' and hence the edge is allowed.
--- '2 < 1 == False' and hence the edge is filtered out.
+-- /fromGraph (\<) (1 \* 2 + 2 \* 1) == 1 \* 2/ because
+-- /1 \< 2 == True/ and hence the edge is allowed.
+-- /2 \< 1 == False/ and hence the edge is filtered out.
 --
 -- @
 -- fromGraph (<) (2 * 1)         == 1 + 2
