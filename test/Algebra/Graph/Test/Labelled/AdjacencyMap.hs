@@ -18,7 +18,6 @@ import Data.Monoid
 
 import Algebra.Graph.Label
 import Algebra.Graph.Labelled.AdjacencyMap
-import Algebra.Graph.Labelled.AdjacencyMap.Internal
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API (toIntAPI, labelledAdjacencyMapAPI)
 import Algebra.Graph.Test.Generic

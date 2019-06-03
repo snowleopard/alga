@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled.AdjacencyMap
@@ -35,20 +36,79 @@ module Algebra.Graph.Labelled.AdjacencyMap (
     emap, induce,
 
     -- * Relational operations
-    closure, reflexiveClosure, symmetricClosure, transitiveClosure
+    closure, reflexiveClosure, symmetricClosure, transitiveClosure,
+
+    -- * Miscellaneous
+    consistent
     ) where
 
+import Control.DeepSeq
 import Data.Maybe
 import Data.Map (Map)
 import Data.Monoid (Sum (..))
-import Data.Set (Set)
+import Data.Set (Set, (\\))
+import GHC.Generics
 
 import Algebra.Graph.Label
-import Algebra.Graph.Labelled.AdjacencyMap.Internal
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.Map.Strict            as Map
 import qualified Data.Set                   as Set
+
+-- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
+-- For example, 'AdjacencyMap' @Bool@ @a@ is isomorphic to unlabelled graphs
+-- defined in the top-level module "Algebra.Graph.AdjacencyMap", where @False@
+-- and @True@ denote the lack of and the existence of an unlabelled edge,
+-- respectively.
+newtype AdjacencyMap e a = AM {
+    -- | The /adjacency map/ of an edge-labelled graph: each vertex is
+    -- associated with a map from its direct successors to the corresponding
+    -- edge labels.
+    adjacencyMap :: Map a (Map a e) } deriving (Eq, Generic, NFData)
+
+instance (Ord a, Show a, Ord e, Show e) => Show (AdjacencyMap e a) where
+    showsPrec p lam@(AM m)
+        | Set.null vs = showString "empty"
+        | null es     = showParen (p > 10) $ vshow vs
+        | vs == used  = showParen (p > 10) $ eshow es
+        | otherwise   = showParen (p > 10) $
+                            showString "overlay (" . vshow (vs \\ used) .
+                            showString ") ("       . eshow es . showString ")"
+      where
+        vs   = vertexSet lam
+        es   = edgeList lam
+        used = referredToVertexSet m
+        vshow vs = case Set.toAscList vs of
+            [x] -> showString "vertex "   . showsPrec 11 x
+            xs  -> showString "vertices " . showsPrec 11 xs
+        eshow es = case es of
+            [(e, x, y)] -> showString "edge "  . showsPrec 11 e .
+                           showString " "      . showsPrec 11 x .
+                           showString " "      . showsPrec 11 y
+            xs          -> showString "edges " . showsPrec 11 xs
+
+instance (Ord e, Monoid e, Ord a) => Ord (AdjacencyMap e a) where
+    compare x y = mconcat
+        [ compare (vertexCount x) (vertexCount y)
+        , compare (vertexSet   x) (vertexSet   y)
+        , compare (edgeCount   x) (edgeCount   y)
+        , compare (eSet        x) (eSet        y)
+        , cmp ]
+      where
+        eSet = Set.map (\(_, x, y) -> (x, y)) . edgeSet
+        cmp | x == y               = EQ
+            | overlays [x, y] == y = LT
+            | otherwise            = compare x y
+
+-- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap'
+-- for more details.
+instance (Eq e, Dioid e, Num a, Ord a) => Num (AdjacencyMap e a) where
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect mempty
+    signum      = const empty
+    abs         = id
+    negate      = id
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
@@ -607,3 +667,16 @@ goWarshallFloydKleene (AM m) = AM $ foldr update m vs
         starkk  = star (get k k)
         go i ik = Map.fromAscList
             [ (j, e) | j <- vs, let e = get i j <+> ik <.> get k j, e /= zero ]
+
+-- | Check that the internal graph representation is consistent, i.e. that all
+-- edges refer to existing vertices, and there are no 'zero'-labelled edges. It
+-- should be impossible to create an inconsistent adjacency map, and we use this
+-- function in testing.
+consistent :: (Ord a, Eq e, Monoid e) => AdjacencyMap e a -> Bool
+consistent (AM m) = referredToVertexSet m `Set.isSubsetOf` Map.keysSet m
+    && and [ e /= zero | (_, es) <- Map.toAscList m, (_, e) <- Map.toAscList es ]
+
+-- The set of vertices that are referred to by the edges in an adjacency map
+referredToVertexSet :: Ord a => Map a (Map a e) -> Set a
+referredToVertexSet m = Set.fromList $ concat
+    [ [x, y] | (x, ys) <- Map.toAscList m, (y, _) <- Map.toAscList ys ]

@@ -179,7 +179,7 @@ instance Ord a => Ord (AdjacencyMap a) where
         eNum = getSum . foldMap (Sum . Set.size)
 
 instance (Ord a, Show a) => Show (AdjacencyMap a) where
-    showsPrec p am
+    showsPrec p am@(AM m)
         | null vs    = showString "empty"
         | null es    = showParen (p > 10) $ vshow vs
         | vs == used = showParen (p > 10) $ eshow es
@@ -194,7 +194,7 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
         eshow [(x, y)] = showString "edge "     . showsPrec 11 x .
                          showString " "         . showsPrec 11 y
         eshow xs       = showString "edges "    . showsPrec 11 xs
-        used           = Set.toAscList (referredToVertexSet am)
+        used           = Set.toAscList (referredToVertexSet m)
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap'
 -- for more details.
@@ -897,8 +897,9 @@ transitiveClosure old
 -- consistent ('stars' xs)    == True
 -- @
 consistent :: Ord a => AdjacencyMap a -> Bool
-consistent am@(AM m) = referredToVertexSet am `Set.isSubsetOf` keysSet m
+consistent (AM m) = referredToVertexSet m `Set.isSubsetOf` keysSet m
 
 -- The set of vertices that are referred to by the edges of an adjacency map.
-referredToVertexSet :: Ord a => AdjacencyMap a -> Set a
-referredToVertexSet = Set.fromList . uncurry (++) . unzip . edgeList
+referredToVertexSet :: Ord a => Map a (Set a) -> Set a
+referredToVertexSet m = Set.fromList $ concat
+    [ [x, y] | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]

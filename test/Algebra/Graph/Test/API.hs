@@ -37,7 +37,6 @@ import qualified Algebra.Graph.AdjacencyMap                   as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm         as AM
 import qualified Algebra.Graph.Labelled                       as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap          as LAM
-import qualified Algebra.Graph.Labelled.AdjacencyMap.Internal as LAM
 import qualified Algebra.Graph.Relation                       as R
 import qualified Algebra.Graph.Relation.Internal              as R
 import qualified Algebra.Graph.Relation.Symmetric             as SR

@@ -165,7 +165,7 @@ newtype AdjacencyIntMap = AM {
     adjacencyIntMap :: IntMap IntSet } deriving (Eq, Generic)
 
 instance Show AdjacencyIntMap where
-    showsPrec p am
+    showsPrec p am@(AM m)
         | null vs    = showString "empty"
         | null es    = showParen (p > 10) $ vshow vs
         | vs == used = showParen (p > 10) $ eshow es
@@ -180,7 +180,7 @@ instance Show AdjacencyIntMap where
         eshow [(x, y)] = showString "edge "     . showsPrec 11 x .
                          showString " "         . showsPrec 11 y
         eshow xs       = showString "edges "    . showsPrec 11 xs
-        used           = IntSet.toAscList (referredToVertexSet am)
+        used           = IntSet.toAscList (referredToVertexSet m)
 
 instance Ord AdjacencyIntMap where
     compare (AM x) (AM y) = mconcat
@@ -876,8 +876,9 @@ transitiveClosure old
 -- consistent ('stars' xs)    == True
 -- @
 consistent :: AdjacencyIntMap -> Bool
-consistent am@(AM m) = referredToVertexSet am `IntSet.isSubsetOf` keysSet m
+consistent (AM m) = referredToVertexSet m `IntSet.isSubsetOf` keysSet m
 
 -- The set of vertices that are referred to by the edges
-referredToVertexSet :: AdjacencyIntMap -> IntSet
-referredToVertexSet = IntSet.fromList . uncurry (++) . unzip . edgeList
+referredToVertexSet :: IntMap IntSet -> IntSet
+referredToVertexSet m = IntSet.fromList $ concat
+    [ [x, y] | (x, ys) <- IntMap.toAscList m, y <- IntSet.toAscList ys ]
