@@ -4,9 +4,9 @@
 
 * #208: Add `fromNonEmpty` to `NonEmpty.AdjacencyMap`.
 * #208: Add `fromAdjacencyMap` to `AdjacencyIntMap`.
-* #208: Drop `Internal` modules for `AdjacencyMap`, `AdjacencyIntMap`,
-        `NonEmpty.AdjacencyMap`, `Labelled.AdjacencyMap`, `Relation.Internal`,
-        `Relation.InternalDerived` and `Relation.Symmetric.Internal`.
+* #208: Drop `Internal` modules for `AdjacencyIntMap`, `AdjacencyMap`,
+        `Labelled.AdjacencyMap`, `NonEmpty.AdjacencyMap`, `Relation` and
+        `Relation.Symmetric`.
 * #206: Add `Algebra.Graph.AdjacencyMap.box`.
 * #205: Drop dependencies on `base-compat` and `base-orphans`.
 * #205: Remove `Algebra.Graph.Fold`.
