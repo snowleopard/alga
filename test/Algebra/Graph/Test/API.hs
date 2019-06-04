@@ -59,10 +59,10 @@ toIntAPI API{..} = API{..}
 -- | The complete graph API dictionary. A graph data type, such as 'G.Graph',
 -- typically implements only a part of the whole API.
 data API g c where
-    API :: ( Arbitrary (g Int), Num (g Int), Ord (g Int), Ord (g (Int, Int))
+    API :: ( Arbitrary (g Int), Arbitrary (g (Maybe Int)), Num (g Int), Ord (g Int), Ord (g (Int, Int))
            , Ord (g (Int, Char)), Ord (g [Int]), Ord (g [Char])
            , Ord (g (Int, (Int, Int))), Ord (g ((Int, Int), Int))
-           , Show (g Int)) =>
+           , Show (g Int), Show (g (Maybe Int))) =>
         { empty                      :: forall a. c a => g a
         , vertex                     :: forall a. c a => a -> g a
         , edge                       :: forall a. c a => a -> a -> g a
@@ -129,6 +129,7 @@ data API g c where
         , gmap                       :: forall a b. (c a, c b) => (a -> b) -> g a -> g b
         , bind                       :: forall a b. (c a, c b) => g a -> (a -> g b) -> g b
         , induce                     :: forall a. c a => (a -> Bool) -> g a -> g a
+        , induceJust                 :: forall a. c a => g (Maybe a) -> g a
         , simplify                   :: forall a. c a => g a -> g a
         , compose                    :: forall a. c a => g a -> g a -> g a
         , box                        :: forall a b. (c a, c b) => g a -> g b -> g (a, b)
@@ -202,6 +203,7 @@ adjacencyMapAPI = API
     , transpose                  = AM.transpose
     , gmap                       = AM.gmap
     , induce                     = AM.induce
+    , induceJust                 = AM.induceJust
     , compose                    = AM.compose
     , box                        = AM.box
     , closure                    = AM.closure
@@ -279,6 +281,7 @@ graphAPI = API
     , gmap                       = fmap
     , bind                       = (>>=)
     , induce                     = G.induce
+    , induceJust                 = G.induceJust
     , simplify                   = G.simplify
     , compose                    = G.compose
     , box                        = G.box }
@@ -415,6 +418,7 @@ relationAPI = API
     , transpose                  = R.transpose
     , gmap                       = R.gmap
     , induce                     = R.induce
+    , induceJust                 = R.induceJust
     , compose                    = R.compose
     , closure                    = R.closure
     , reflexiveClosure           = R.reflexiveClosure
@@ -485,6 +489,7 @@ symmetricRelationAPI = API
     , transpose                  = id
     , gmap                       = SR.gmap
     , induce                     = SR.induce
+    , induceJust                 = SR.induceJust
     , consistent                 = SR.consistent }
 
 -- | The API of 'LG.Graph'.
@@ -539,6 +544,7 @@ labelledGraphAPI = API
     , transpose                  = LG.transpose
     , gmap                       = fmap
     , induce                     = LG.induce
+    , induceJust                 = LG.induceJust
     , closure                    = LG.closure
     , reflexiveClosure           = LG.reflexiveClosure
     , symmetricClosure           = LG.symmetricClosure
@@ -596,6 +602,7 @@ labelledAdjacencyMapAPI = API
     , transpose                  = LAM.transpose
     , gmap                       = LAM.gmap
     , induce                     = LAM.induce
+    , induceJust                 = LAM.induceJust
     , closure                    = LAM.closure
     , reflexiveClosure           = LAM.reflexiveClosure
     , symmetricClosure           = LAM.symmetricClosure

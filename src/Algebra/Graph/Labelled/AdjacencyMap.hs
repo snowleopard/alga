@@ -33,7 +33,7 @@ module Algebra.Graph.Labelled.AdjacencyMap (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, replaceEdge, transpose, gmap,
-    emap, induce,
+    emap, induce, induceJust,
 
     -- * Relational operations
     closure, reflexiveClosure, symmetricClosure, transitiveClosure,
@@ -598,6 +598,19 @@ emap h = AM . trimZeroes . Map.map (Map.map h) . adjacencyMap
 induce :: (a -> Bool) -> AdjacencyMap e a -> AdjacencyMap e a
 induce p = AM . Map.map (Map.filterWithKey (\k _ -> p k)) .
     Map.filterWithKey (\k _ -> p k) . adjacencyMap
+
+-- | Construct the /induced subgraph/ of a given graph by removing the 
+-- vertices that are Nothing.
+-- Complexity: /O(n * log(n))/ time.
+-- @
+-- induceJust ('vertex' (Nothing :: Maybe Int))             == 'empty'
+-- induceJust (gmap Just x)                                 == x
+-- induceJust ('connect' (gmap Just x) ('vertex' Nothing))  == x
+-- @
+induceJust :: Ord a => AdjacencyMap e (Maybe a) -> AdjacencyMap e a
+induceJust = AM . Map.map catMaybesMap . catMaybesMap . adjacencyMap
+  where
+    catMaybesMap = Map.mapKeys fromJust . Map.delete Nothing
 
 -- | Compute the /reflexive and transitive closure/ of a graph over the
 -- underlying star semiring using the Warshall-Floyd-Kleene algorithm.

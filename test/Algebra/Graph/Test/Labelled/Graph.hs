@@ -380,7 +380,8 @@ testLabelledGraph = do
             g = (l*)
         in (emap g . emap h) x   == (emap (g . h) x :: LAS)
 
-    testInduce t
+    testInduce     t
+    testInduceJust tPoly
 
     putStrLn "\n============ Labelled.Graph.closure ============"
     test "closure empty         == empty" $

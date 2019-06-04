@@ -32,7 +32,8 @@ module Algebra.Graph.Relation (
     path, circuit, clique, biclique, star, stars, tree, forest,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
+    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, 
+    induce, induceJust,
 
     -- * Relational operations
     compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure,
@@ -45,9 +46,9 @@ import Control.DeepSeq
 import Data.Set (Set, union)
 import Data.Tree
 import Data.Tuple
-
-import qualified Data.Set  as Set
-import qualified Data.Tree as Tree
+import qualified Data.Maybe as Maybe
+import qualified Data.Set   as Set
+import qualified Data.Tree  as Tree
 
 import Algebra.Graph.Internal
 
@@ -705,6 +706,23 @@ induce :: (a -> Bool) -> Relation a -> Relation a
 induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
   where
     pp (x, y) = p x && p y
+
+-- | Construct the /induced subgraph/ of a given graph by removing the 
+-- vertices that are Nothing.
+-- Complexity: /O(n * log(n))/ time.
+-- @
+-- induceJust ('vertex' (Nothing :: Maybe Int))             == 'empty'
+-- induceJust (gmap Just x)                                 == x
+-- induceJust ('connect' (gmap Just x) ('vertex' Nothing))  == x
+-- @
+induceJust :: Ord a => Relation (Maybe a) -> Relation a
+induceJust (Relation d r) = Relation (catMaybesSet d) (catMaybesSet' r)
+  where 
+    catMaybesSet         = Set.map Maybe.fromJust . Set.delete Nothing
+    catMaybesSet'        = Set.map (\(x, y) -> (Maybe.fromJust x, Maybe.fromJust y)) . Set.filter p
+    p (Nothing, _)       = False
+    p (_,       Nothing) = False
+    p (_,       _)       = True
 
 -- | Left-to-right /relational composition/ of graphs: vertices @x@ and @z@ are
 -- connected in the resulting graph if there is a vertex @y@, such that @x@ is

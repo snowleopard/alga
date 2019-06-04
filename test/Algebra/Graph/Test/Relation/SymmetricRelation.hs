@@ -69,4 +69,5 @@ testSymmetricRelation = do
     testSymmetricToGraph         t
     testSymmetricGraphFamilies   t
     testSymmetricTransformations t
+    testInduceJust               tPoly
 
