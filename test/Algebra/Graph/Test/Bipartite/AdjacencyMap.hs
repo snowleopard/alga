@@ -8,7 +8,6 @@ import Algebra.Graph.Test
 
 import qualified Algebra.Graph                       as G
 import qualified Algebra.Graph.AdjacencyMap          as AM
-import qualified Algebra.Graph.AdjacencyMap.Internal as AIM
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
@@ -161,7 +160,7 @@ testBipartiteAdjacencyMap = do
         (toAdjacencyMap $ fromAdjacencyMap squareAM)     == fullSquareAM
     test "diagSquare"              $
         (toAdjacencyMap $ fromAdjacencyMap diagSquareAM) == fullSquareAM
-    test "arbitraryAdjacencyMap"   $ \x -> AIM.consistent $ toAdjacencyMap (x :: BAII)
+    test "arbitraryAdjacencyMap"   $ \x -> AM.consistent $ toAdjacencyMap (x :: BAII)
     test "arbitraryBiclique"       $ \x y ->
         (toAdjacencyMap $ fromAdjacencyMap $
             AM.biclique (map Left [1..(x :: Int)]) (map Right [1..(y :: Int)]))
