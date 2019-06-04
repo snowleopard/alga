@@ -30,7 +30,7 @@ hasEdge :: (Ord a, Ord b) => a -> b -> AdjacencyMap a b -> Bool
 hasEdge u v (BAM m _) = ((Set.member v) <$> (u `Map.lookup` m)) == Just True
 
 addReverseEdges :: (Ord a, Ord b) => AM.AdjacencyMap (Either a b) -> AM.AdjacencyMap (Either a b)
-addReverseEdges m = AM.edges $ (AM.edgeList m) ++ [ (v, u) | (u, v) <- AM.edgeList m ]
+addReverseEdges m = AM.overlay m $ AM.edges [ (v, u) | (u, v) <- AM.edgeList m ]
 
 fromAdjacencyMap :: (Ord a, Ord b) => AM.AdjacencyMap (Either a b) -> AdjacencyMap a b
 fromAdjacencyMap m = BAM (Map.fromAscList [ (u, setRights vs) | (Left  u, vs) <- Map.toAscList (AM.adjacencyMap $ addReverseEdges m)])
@@ -40,7 +40,11 @@ fromAdjacencyMap m = BAM (Map.fromAscList [ (u, setRights vs) | (Left  u, vs) <-
         setLefts  = Set.fromAscList . lefts  . Set.toAscList
 
 toAdjacencyMap :: (Ord a, Ord b) => AdjacencyMap a b -> AM.AdjacencyMap (Either a b)
-toAdjacencyMap (BAM lr _) = AM.edges [ (Left u, Right v) | (u, vs) <- Map.toAscList lr, v <- Set.toAscList vs ]
+toAdjacencyMap (BAM lr rl) = AM.overlays $
+       [ AM.edges [ (Left u, Right v) | (u, vs) <- Map.toAscList lr, v <- Set.toAscList vs ] ]
+    ++ [ AM.edges [ (Right u, Left v) | (u, vs) <- Map.toAscList rl, v <- Set.toAscList vs ] ]
+    ++ map (AM.vertex . Left)  (Map.keys lr)
+    ++ map (AM.vertex . Right) (Map.keys rl)
 
 fromGraph :: (Ord a, Ord b) => G.Graph (Either a b) -> AdjacencyMap a b
 fromGraph = fromAdjacencyMap . (G.foldg AM.empty AM.vertex AM.overlay AM.connect)
