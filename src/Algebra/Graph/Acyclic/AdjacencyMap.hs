@@ -412,8 +412,7 @@ induce = coerce AM.induce
 -- following the given predicate.
 induceEAM ::
      (Ord a) => ((a, a) -> Bool) -> AM.AdjacencyMap a -> AM.AdjacencyMap a
-induceEAM p m = rmEs eL m
+induceEAM p m = es m `AM.overlay` vs m
   where
-    eL = filter (not . p) $ AM.edgeList m
-    rmEs [] m = m
-    rmEs ((x, y):es) m = rmEs es (AM.removeEdge x y m)
+    es = AM.edges . filter p . AM.edgeList
+    vs = AM.vertices . AM.vertexList
