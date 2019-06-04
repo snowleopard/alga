@@ -90,12 +90,12 @@ consistent (AAM m) = AM.consistent m && AM.isAcyclic m
 -- | Construct the /empty acyclic graph/.
 -- Complexity: /O(1)/ time and memory.
 empty :: AdjacencyMap a
-empty = AAM AM.empty
+empty = coerce AM.empty
 
 -- | Construct the graph comprising /a single isolated vertex/.
 -- Complexity: /O(1)/ time and memory.
 vertex :: a -> AdjacencyMap a
-vertex x = AAM $ AM.vertex x
+vertex = coerce AM.vertex
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is
@@ -107,7 +107,7 @@ vertex x = AAM $ AM.vertex x
 -- vertices [1, 2, 3] == 1 + 2 + 3
 -- @
 vertices :: (Ord a) => [a] -> AdjacencyMap a
-vertices xs = AAM $ AM.vertices xs
+vertices = coerce AM.vertices
 
 -- | Perform a disjoint overlay of two different acyclic graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -170,7 +170,7 @@ transitiveClosure = coerce AM.transitiveClosure
 -- scc ('vertex' x) == 'vertex' (NonEmpty.'NonEmpty.vertex' x)
 -- @
 scc :: (Ord a) => AM.AdjacencyMap a -> AdjacencyMap (NonEmpty.AdjacencyMap a)
-scc = AAM . AM.scc
+scc = coerce AM.scc
 
 -- | Compute the /topological sort/ of a graph.
 -- 
@@ -194,7 +194,7 @@ topSort (AAM am) = Typed.topSort (Typed.fromAdjacencyMap am)
 -- vertexList (box (1 + 2) (3 + 4)) == [(1,3),(1,4),(2,3),(2,4)]
 -- @
 box :: (Ord a, Ord b) => AdjacencyMap a -> AdjacencyMap b -> AdjacencyMap (a, b)
-box (AAM x) (AAM y) = AAM $ AM.box x y
+box = coerce AM.box
 
 -- | Remove a vertex from a given acyclic graph.
 -- Complexity: /O(n*log(n))/ time.
@@ -206,7 +206,7 @@ box (AAM x) (AAM y) = AAM $ AM.box x y
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Ord a => a -> AdjacencyMap a -> AdjacencyMap a
-removeVertex x = coerce $ AM.removeVertex x
+removeVertex = coerce AM.removeVertex
 
 -- | Remove an edge from a given acyclic graph.
 -- Complexity: /O(log(n))/ time.
@@ -218,7 +218,7 @@ removeVertex x = coerce $ AM.removeVertex x
 -- removeEdge 1 2 (1 * 2 + 3 * 4)  == 1 + 2 + 3 * 4
 -- @
 removeEdge :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
-removeEdge x y = coerce $  AM.removeEdge x y
+removeEdge = coerce AM.removeEdge
 
 -- | This is a signature for a __Strict Partial Order__.
 -- A strict partial order is a binary relation __/R/__ that has three
@@ -273,7 +273,7 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
 -- edgeList (2 * 1)    == []
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
-edgeList = AM.edgeList . aam
+edgeList = coerce AM.edgeList
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -284,7 +284,7 @@ edgeList = AM.edgeList . aam
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
 vertexList :: AdjacencyMap a -> [a]
-vertexList = AM.vertexList . aam
+vertexList = coerce AM.vertexList
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
@@ -296,7 +296,7 @@ vertexList = AM.vertexList . aam
 -- vertexCount x \< vertexCount y ==> x \< y
 -- @
 vertexCount :: AdjacencyMap a -> Int
-vertexCount = AM.vertexCount . aam
+vertexCount = coerce AM.vertexCount
 
 -- | The number of edges in a graph.
 -- Complexity: /O(n)/ time.
@@ -308,7 +308,7 @@ vertexCount = AM.vertexCount . aam
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: AdjacencyMap a -> Int
-edgeCount = AM.edgeCount . aam
+edgeCount = coerce AM.edgeCount
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -319,7 +319,7 @@ edgeCount = AM.edgeCount . aam
 -- vertexSet . 'vertices' == Set.'Set.fromList'
 -- @
 vertexSet :: AdjacencyMap a -> Set a
-vertexSet = AM.vertexSet . aam
+vertexSet = coerce AM.vertexSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
@@ -330,7 +330,7 @@ vertexSet = AM.vertexSet . aam
 -- edgeSet (1 * 2)    == Set.'Set.singleton' (1,2)
 -- @
 edgeSet :: Eq a => AdjacencyMap a -> Set (a, a)
-edgeSet = AM.edgeSet . aam
+edgeSet = coerce AM.edgeSet
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -341,7 +341,7 @@ edgeSet = AM.edgeSet . aam
 -- adjacencyList (1 * 2)    == [(1, [2]), (2, [])]
 -- @
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
-adjacencyList = AM.adjacencyList . aam
+adjacencyList = coerce AM.adjacencyList
 
 -- | Check if a graph is empty.
 -- Complexity: /O(1)/ time.
@@ -353,7 +353,7 @@ adjacencyList = AM.adjacencyList . aam
 -- isEmpty ('removeEdge' 1 2 $ 1 * 2)    == False
 -- @
 isEmpty :: AdjacencyMap a -> Bool
-isEmpty = AM.isEmpty . aam
+isEmpty = coerce AM.isEmpty
 
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(log(n))/ time.
@@ -365,7 +365,7 @@ isEmpty = AM.isEmpty . aam
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Ord a => a -> AdjacencyMap a -> Bool
-hasVertex x = AM.hasVertex x . aam
+hasVertex = coerce AM.hasVertex
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(log(n))/ time.
@@ -378,7 +378,7 @@ hasVertex x = AM.hasVertex x . aam
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
-hasEdge u v = AM.hasEdge u v . aam
+hasEdge = coerce AM.hasEdge
 
 -- | Transpose a given acyclic graph.
 -- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
@@ -405,7 +405,7 @@ transpose = coerce AM.transpose
 -- induce p . induce q    == induce (\\x -> p x && q x)
 -- @
 induce :: (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
-induce p = coerce $ AM.induce p
+induce = coerce AM.induce
 
 -- Helper function, not to be exported.
 -- Induce a subgraph from AM.AdjacencyList removing edges not
