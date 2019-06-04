@@ -18,6 +18,7 @@ import Data.List.NonEmpty hiding (transpose)
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.List as List
+import qualified Data.Set as Set
 
 -- t :: Testsuite
 -- t = testsuite "AcyclicAdjacencyMap." empty
@@ -122,14 +123,82 @@ testAcyclicAdjacencyMap = do
 
   putStrLn "\n=====AcyclicAdjacencyMap properties====="
 
-  test "edgeList empty                           == []" $
-        edgeList (empty :: AAI)                  == []
-  test "edgeList (vertex 5)                      == []" $
-        edgeList (vertex 5 :: AAI)               == []
-  test "edgeList (1 * 2)                         == [(1,2)]" $
-        edgeList (1 * 2 :: AAI)                  == [(1,2)]
-  test "edgeList (2 * 1)                         == []" $
-        edgeList (2 * 1 :: AAI)                  == []
+  test "isEmpty empty                              == True" $
+        isEmpty (empty :: AAI)                     == True
+  test "isEmpty (vertex x)                         == False" $ \x ->
+        isEmpty (vertex x :: AAI)                  == False
+  test "isEmpty (removeVertex x $ vertex x)        == True" $ \x ->
+        isEmpty (removeVertex x $ vertex x :: AAI) == True
+  test "isEmpty (removeEdge 1 2 $ 1 * 2)           == False" $
+        isEmpty (removeEdge 1 2 $ 1 * 2 :: AAI)    == False
+
+  test "edgeSet empty             == Set.empty" $
+        edgeSet (empty :: AAI)    == Set.empty
+  test "edgeSet (vertex x)        == Set.empty" $ \x ->
+        edgeSet (vertex x :: AAI) == Set.empty
+  test "edgeSet (1 * 2)           == Set.singleton (1,2)" $
+        edgeSet (1 * 2 :: AAI)    == Set.singleton (1,2)
+
+  test "vertexSet empty               == Set.empty" $
+        vertexSet (empty :: AAI)      == Set.empty
+  test "vertexSet . vertex            == Set.singleton" $ \x ->
+        vertexSet (vertex x :: AAI)   == Set.singleton x
+  test "vertexSet . vertices          == Set.fromList" $ \x ->
+        vertexSet (vertices x :: AAI) == Set.fromList x
+
+  test "vertexCount empty                                     == 0" $
+        vertexCount (empty :: AAI)                            == 0
+  test "vertexCount (vertex x)                                == 1" $ \x ->
+        vertexCount (vertex x :: AAI)                         == 1
+  test "vertexCount                                           == length . vertexList" $ \x ->
+        vertexCount (x :: AAI)                                == (List.length . vertexList $ x)
+  test "vertexCount x < vertexCount y                         == > x < y" $ \x y ->
+        not (vertexCount (x :: AAI) < vertexCount y) || x < y
+
+  test "edgeCount empty             == 0" $
+        edgeCount (empty :: AAI)    == 0
+  test "edgeCount (vertex x)        == 0" $ \x ->
+        edgeCount (vertex x :: AAI) == 0
+  test "edgeCount (1 * 2)           == 1" $
+        edgeCount (1 * 2 :: AAI)    == 1
+  test "edgeCount                   == length . edgeList" $ \x ->
+        edgeCount (x :: AAI)        == (List.length . edgeList $ x)
+
+  test "adjacencyList empty             == []" $
+        adjacencyList (empty :: AAI)    == []
+  test "adjacencyList (vertex x)        == [(x, [])]" $ \x ->
+        adjacencyList (vertex x :: AAI) == [(x, [])]
+  test "adjacencyList (1 * 2)           == [(1, [2]), (2, [])]" $
+        adjacencyList (1 * 2 :: AAI)    == [(1, [2]), (2, [])]
+
+  test "hasEdge x y empty                           == False" $ \x y ->
+        hasEdge x y (empty :: AAI)                  == False
+  test "hasEdge x y (vertex z)                      == False" $ \x y z ->
+        hasEdge x y (vertex z :: AAI)               == False
+  test "hasEdge 1 2 (1 * 2)                         == True" $
+        hasEdge 1 2 (1 * 2 :: AAI)                  == True
+  test "hasEdge x y . removeEdge x y                == const False" $ \x y z ->
+        (hasEdge x y . removeEdge x y $ (z :: AAI)) == const False z
+  test "hasEdge x y                                 == elem (x,y) . edgeList" $ \x y z ->
+        (hasEdge x y $ (z :: AAI))                  == (elem (x,y) . edgeList $ z)
+
+  test "hasVertex x empty                           == False" $ \x ->
+        hasVertex x (empty :: AAI)                  == False
+  test "hasVertex x (vertex x)                      == True" $ \x ->
+        hasVertex x (vertex x :: AAI)               == True
+  test "hasVertex 1 (vertex 2)                      == False" $
+        hasVertex 1 (vertex 2 :: AAI)               == False
+  test "hasVertex x . removeVertex x                == const False" $ \x z ->
+        (hasVertex x . removeVertex x $ (z :: AAI)) == const False z
+
+  test "edgeList empty             == []" $
+        edgeList (empty :: AAI)    == []
+  test "edgeList (vertex 5)        == []" $
+        edgeList (vertex 5 :: AAI) == []
+  test "edgeList (1 * 2)           == [(1,2)]" $
+        edgeList (1 * 2 :: AAI)    == [(1,2)]
+  test "edgeList (2 * 1)           == []" $
+        edgeList (2 * 1 :: AAI)    == []
 
   test "vertexList empty                         == []" $
         vertexList (empty :: AAI)                == []
