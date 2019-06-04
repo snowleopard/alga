@@ -24,14 +24,9 @@ import Algebra.Graph
 import Algebra.Graph.Export
 import Algebra.Graph.Label
 
-<<<<<<< HEAD
 import qualified Algebra.Graph.Acyclic.AdjacencyMap  as AAM
 import qualified Algebra.Graph.AdjacencyIntMap       as AdjacencyIntMap
 import qualified Algebra.Graph.AdjacencyMap          as AdjacencyMap
-=======
-import qualified Algebra.Graph.AdjacencyIntMap       as AIM
-import qualified Algebra.Graph.AdjacencyMap          as AM
->>>>>>> 1f4f5e4d75f314a77499aa3379b7a6a1e3725eed
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NAM
 import qualified Algebra.Graph.Class                 as C
 import qualified Algebra.Graph.Labelled              as LG
