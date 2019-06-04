@@ -31,6 +31,7 @@ import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.Graph.Typed as Typed
 import Data.Set (Set)
+import Data.Coerce (coerce)
 
 {-| The 'AdjacencyMap' data type represents an acyclic graph by
 wrapping around 'Algebra.Graph.AdjacencyMap.AdjacencyMap'. The
@@ -157,7 +158,7 @@ connectD (AAM a) (AAM b) = AAM (AM.connect (AM.gmap Left a) (AM.gmap Right b))
 -- transitiveClosure . transitiveClosure == transitiveClosure
 -- @
 transitiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
-transitiveClosure (AAM x) = AAM (AM.transitiveClosure x)
+transitiveClosure = coerce AM.transitiveClosure
 
 -- | Compute the /condensation/ of a graph, where each vertex
 -- corresponds to a /strongly-connected component/ of the original
@@ -205,7 +206,7 @@ box (AAM x) (AAM y) = AAM $ AM.box x y
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Ord a => a -> AdjacencyMap a -> AdjacencyMap a
-removeVertex x = AAM . AM.removeVertex x . aam
+removeVertex x = coerce $ AM.removeVertex x
 
 -- | Remove an edge from a given acyclic graph.
 -- Complexity: /O(log(n))/ time.
@@ -217,7 +218,7 @@ removeVertex x = AAM . AM.removeVertex x . aam
 -- removeEdge 1 2 (1 * 2 + 3 * 4)  == 1 + 2 + 3 * 4
 -- @
 removeEdge :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
-removeEdge x y = AAM . AM.removeEdge x y . aam
+removeEdge x y = coerce $  AM.removeEdge x y
 
 -- | This is a signature for a __Strict Partial Order__.
 -- A strict partial order is a binary relation __/R/__ that has three
@@ -390,7 +391,7 @@ hasEdge u v = AM.hasEdge u v . aam
 -- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
-transpose = AAM . AM.transpose . aam
+transpose = coerce AM.transpose
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -404,7 +405,7 @@ transpose = AAM . AM.transpose . aam
 -- induce p . induce q    == induce (\\x -> p x && q x)
 -- @
 induce :: (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
-induce p = AAM . AM.induce p . aam
+induce p = coerce $ AM.induce p
 
 -- Helper function, not to be exported.
 -- Induce a subgraph from AM.AdjacencyList removing edges not
