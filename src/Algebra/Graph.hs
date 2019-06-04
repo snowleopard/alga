@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes, DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric, RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
@@ -51,7 +51,7 @@ module Algebra.Graph (
     ) where
 
 import Control.Applicative (Alternative)
-import Control.DeepSeq (NFData (..))
+import Control.DeepSeq
 import Control.Monad (MonadPlus (..))
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)

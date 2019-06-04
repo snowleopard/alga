@@ -11,7 +11,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Arbitrary (
     -- * Generators of arbitrary graph instances
-    arbitraryGraph, arbitraryRelation, arbitraryAdjacencyMap, arbitraryAdjacencyIntMap
+    arbitraryGraph, arbitraryRelation, arbitraryAdjacencyMap,
     ) where
 
 import Control.Monad
@@ -21,23 +21,27 @@ import Data.Tree
 import Test.QuickCheck
 
 import Algebra.Graph
-import Algebra.Graph.AdjacencyMap.Internal
-import Algebra.Graph.AdjacencyIntMap.Internal
 import Algebra.Graph.Export
 import Algebra.Graph.Label
-import Algebra.Graph.Relation.InternalDerived
-import Algebra.Graph.Relation.Symmetric.Internal
 
+<<<<<<< HEAD
 import qualified Algebra.Graph.Acyclic.AdjacencyMap  as AAM
 import qualified Algebra.Graph.AdjacencyIntMap       as AdjacencyIntMap
 import qualified Algebra.Graph.AdjacencyMap          as AdjacencyMap
+=======
+import qualified Algebra.Graph.AdjacencyIntMap       as AIM
+import qualified Algebra.Graph.AdjacencyMap          as AM
+>>>>>>> 1f4f5e4d75f314a77499aa3379b7a6a1e3725eed
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NAM
 import qualified Algebra.Graph.Class                 as C
 import qualified Algebra.Graph.Labelled              as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
 import qualified Algebra.Graph.NonEmpty              as NonEmpty
 import qualified Algebra.Graph.Relation              as Relation
+import qualified Algebra.Graph.Relation.Preorder     as Preorder
+import qualified Algebra.Graph.Relation.Reflexive    as Reflexive
 import qualified Algebra.Graph.Relation.Symmetric    as Symmetric
+import qualified Algebra.Graph.Relation.Transitive   as Transitive
 
 -- | Generate an arbitrary 'C.Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
@@ -102,46 +106,44 @@ arbitraryRelation = Relation.stars <$> arbitrary
 instance (Arbitrary a, Ord a) => Arbitrary (Relation.Relation a) where
     arbitrary = arbitraryRelation
 
-    shrink g = oneLessVertex ++ oneLessEdge
+    shrink g = shrinkVertices ++ shrinkEdges
       where
-         oneLessVertex =
+         shrinkVertices =
            let vertices = Relation.vertexList g
            in  [ Relation.removeVertex v g | v <- vertices ]
 
-         oneLessEdge =
+         shrinkEdges =
            let edges = Relation.edgeList g
            in  [ Relation.removeEdge v w g | (v, w) <- edges ]
 
-
-instance (Arbitrary a, Ord a) => Arbitrary (ReflexiveRelation a) where
-    arbitrary = ReflexiveRelation <$> arbitraryRelation
+-- TODO: Simplify.
+instance (Arbitrary a, Ord a) => Arbitrary (Reflexive.ReflexiveRelation a) where
+    arbitrary = Reflexive.fromRelation . Relation.reflexiveClosure
+        <$> arbitraryRelation
 
 instance (Arbitrary a, Ord a) => Arbitrary (Symmetric.Relation a) where
-    arbitrary = SR . Relation.symmetricClosure <$> arbitraryRelation
+    arbitrary = Symmetric.toSymmetric <$> arbitraryRelation
 
-instance (Arbitrary a, Ord a) => Arbitrary (TransitiveRelation a) where
-    arbitrary = TransitiveRelation <$> arbitraryRelation
+instance (Arbitrary a, Ord a) => Arbitrary (Transitive.TransitiveRelation a) where
+    arbitrary = Transitive.fromRelation . Relation.transitiveClosure
+        <$> arbitraryRelation
 
-instance (Arbitrary a, Ord a) => Arbitrary (PreorderRelation a) where
-    arbitrary = PreorderRelation <$> arbitraryRelation
+instance (Arbitrary a, Ord a) => Arbitrary (Preorder.PreorderRelation a) where
+    arbitrary = Preorder.fromRelation . Relation.closure
+        <$> arbitraryRelation
 
 -- | Generate an arbitrary 'AdjacencyMap'. It is guaranteed that the
 -- resulting adjacency map is 'consistent'.
-arbitraryAdjacencyMap :: (Arbitrary a, Ord a) => Gen (AdjacencyMap a)
-arbitraryAdjacencyMap = AdjacencyMap.stars <$> arbitrary
+arbitraryAdjacencyMap :: (Arbitrary a, Ord a) => Gen (AM.AdjacencyMap a)
+arbitraryAdjacencyMap = AM.stars <$> arbitrary
 
-instance (Arbitrary a, Ord a) => Arbitrary (AdjacencyMap a) where
+instance (Arbitrary a, Ord a) => Arbitrary (AM.AdjacencyMap a) where
     arbitrary = arbitraryAdjacencyMap
 
-    shrink g = oneLessVertex ++ oneLessEdge
+    shrink g = shrinkVertices ++ shrinkEdges
       where
-         oneLessVertex =
-           let vertices = AdjacencyMap.vertexList g
-           in  [ AdjacencyMap.removeVertex v g | v <- vertices ]
-
-         oneLessEdge =
-           let edges = AdjacencyMap.edgeList g
-           in  [ AdjacencyMap.removeEdge v w g | (v, w) <- edges ]
+         shrinkVertices = [ AM.removeVertex v g | v <- AM.vertexList g ]
+         shrinkEdges    = [ AM.removeEdge v w g | (v, w) <- AM.edgeList g ]
 
 -- | Generate an arbitrary non-empty 'NAM.AdjacencyMap'. It is guaranteed that
 -- the resulting adjacency map is 'consistent'.
@@ -159,33 +161,23 @@ arbitraryNonEmptyAdjacencyMap = NAM.stars1 <$> nonEmpty
 instance (Arbitrary a, Ord a) => Arbitrary (NAM.AdjacencyMap a) where
     arbitrary = arbitraryNonEmptyAdjacencyMap
 
-    shrink g = oneLessVertex ++ oneLessEdge
+    shrink g = shrinkVertices ++ shrinkEdges
       where
-         oneLessVertex =
+         shrinkVertices =
            let vertices = toList $ NAM.vertexList1 g
            in catMaybes [ NAM.removeVertex1 v g | v <- vertices ]
 
-         oneLessEdge =
+         shrinkEdges =
            let edges = NAM.edgeList g
            in  [ NAM.removeEdge v w g | (v, w) <- edges ]
 
--- | Generate an arbitrary 'AdjacencyIntMap'. It is guaranteed that the
--- resulting adjacency map is 'consistent'.
-arbitraryAdjacencyIntMap :: Gen AdjacencyIntMap
-arbitraryAdjacencyIntMap = AdjacencyIntMap.stars <$> arbitrary
+instance Arbitrary AIM.AdjacencyIntMap where
+    arbitrary = AIM.stars <$> arbitrary
 
-instance Arbitrary AdjacencyIntMap where
-    arbitrary = arbitraryAdjacencyIntMap
-
-    shrink g = oneLessVertex ++ oneLessEdge
+    shrink g = shrinkVertices ++ shrinkEdges
       where
-         oneLessVertex =
-           let vertices = AdjacencyIntMap.vertexList g
-           in  [ AdjacencyIntMap.removeVertex v g | v <- vertices ]
-
-         oneLessEdge =
-           let edges = AdjacencyIntMap.edgeList g
-           in  [ AdjacencyIntMap.removeEdge v w g | (v, w) <- edges ]
+         shrinkVertices = [ AIM.removeVertex x g | x <- AIM.vertexList g ]
+         shrinkEdges    = [ AIM.removeEdge x y g | (x, y) <- AIM.edgeList g ]
 
 -- | Generate an arbitrary labelled 'LAM.AdjacencyMap'. It is guaranteed
 -- that the resulting adjacency map is 'consistent'.
@@ -195,13 +187,13 @@ arbitraryLabelledAdjacencyMap = LAM.fromAdjacencyMaps <$> arbitrary
 instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Arbitrary (LAM.AdjacencyMap e a) where
     arbitrary = arbitraryLabelledAdjacencyMap
 
-    shrink g = oneLessVertex ++ oneLessEdge
+    shrink g = shrinkVertices ++ shrinkEdges
       where
-         oneLessVertex =
+         shrinkVertices =
            let vertices = LAM.vertexList g
            in  [ LAM.removeVertex v g | v <- vertices ]
 
-         oneLessEdge =
+         shrinkEdges =
            let edges = LAM.edgeList g
            in  [ LAM.removeEdge v w g | (_, v, w) <- edges ]
 

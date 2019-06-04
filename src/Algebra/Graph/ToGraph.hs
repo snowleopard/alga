@@ -58,14 +58,11 @@ import Data.Tree
 import qualified Algebra.Graph                                as G
 import qualified Algebra.Graph.AdjacencyMap                   as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm         as AM
-import qualified Algebra.Graph.AdjacencyMap.Internal          as AM
 import qualified Algebra.Graph.Labelled                       as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap          as LAM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap          as NAM
-import qualified Algebra.Graph.NonEmpty.AdjacencyMap.Internal as NAM
 import qualified Algebra.Graph.AdjacencyIntMap                as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Algorithm      as AIM
-import qualified Algebra.Graph.AdjacencyIntMap.Internal       as AIM
 import qualified Algebra.Graph.Relation                       as R
 import qualified Algebra.Graph.Relation.Symmetric             as SR
 import qualified Data.IntMap                                  as IntMap
@@ -365,11 +362,7 @@ instance Ord a => ToGraph (AM.AdjacencyMap a) where
     topSort                    = AM.topSort
     isAcyclic                  = AM.isAcyclic
     toAdjacencyMap             = id
-    toAdjacencyIntMap          = AIM.AM
-                               . IntMap.fromAscList
-                               . map (fmap $ IntSet.fromAscList . Set.toAscList)
-                               . Map.toAscList
-                               . AM.adjacencyMap
+    toAdjacencyIntMap          = AIM.fromAdjacencyMap
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
     isDfsForestOf              = AM.isDfsForestOf
@@ -400,11 +393,7 @@ instance ToGraph AIM.AdjacencyIntMap where
     reachable                  = AIM.reachable
     topSort                    = AIM.topSort
     isAcyclic                  = AIM.isAcyclic
-    toAdjacencyMap             = AM.AM
-                               . Map.fromAscList
-                               . map (fmap $ Set.fromAscList . IntSet.toAscList)
-                               . IntMap.toAscList
-                               . AIM.adjacencyIntMap
+    toAdjacencyMap             = AM.stars . AIM.adjacencyList
     toAdjacencyIntMap          = id
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
@@ -450,32 +439,32 @@ instance (Eq e, Monoid e, Ord a) => ToGraph (LAM.AdjacencyMap e a) where
 -- | See "Algebra.Graph.NonEmpty.AdjacencyMap".
 instance Ord a => ToGraph (NAM.AdjacencyMap a) where
     type ToVertex (NAM.AdjacencyMap a) = a
-    toGraph                    = toGraph . NAM.am
+    toGraph                    = toGraph . toAdjacencyMap
     isEmpty _                  = False
     hasVertex                  = NAM.hasVertex
     hasEdge                    = NAM.hasEdge
     vertexCount                = NAM.vertexCount
     edgeCount                  = NAM.edgeCount
-    vertexList                 = vertexList . NAM.am
+    vertexList                 = vertexList . toAdjacencyMap
     vertexSet                  = NAM.vertexSet
-    vertexIntSet               = vertexIntSet . NAM.am
+    vertexIntSet               = vertexIntSet . toAdjacencyMap
     edgeList                   = NAM.edgeList
     edgeSet                    = NAM.edgeSet
-    adjacencyList              = adjacencyList . NAM.am
+    adjacencyList              = adjacencyList . toAdjacencyMap
     preSet                     = NAM.preSet
     postSet                    = NAM.postSet
-    dfsForest                  = dfsForest . NAM.am
-    dfsForestFrom xs           = dfsForestFrom xs . NAM.am
-    dfs xs                     = dfs xs . NAM.am
-    reachable x                = reachable x . NAM.am
-    topSort                    = topSort . NAM.am
-    isAcyclic                  = isAcyclic . NAM.am
-    toAdjacencyMap             = NAM.am
-    toAdjacencyIntMap          = toAdjacencyIntMap . NAM.am
-    toAdjacencyMapTranspose    = NAM.am . NAM.transpose
+    dfsForest                  = dfsForest . toAdjacencyMap
+    dfsForestFrom xs           = dfsForestFrom xs . toAdjacencyMap
+    dfs xs                     = dfs xs . toAdjacencyMap
+    reachable x                = reachable x . toAdjacencyMap
+    topSort                    = topSort . toAdjacencyMap
+    isAcyclic                  = isAcyclic . toAdjacencyMap
+    toAdjacencyMap             = NAM.fromNonEmpty
+    toAdjacencyIntMap          = toAdjacencyIntMap . toAdjacencyMap
+    toAdjacencyMapTranspose    = toAdjacencyMap . NAM.transpose
     toAdjacencyIntMapTranspose = toAdjacencyIntMap . NAM.transpose
-    isDfsForestOf f            = isDfsForestOf f . NAM.am
-    isTopSortOf x              = isTopSortOf x . NAM.am
+    isDfsForestOf f            = isDfsForestOf f . toAdjacencyMap
+    isTopSortOf x              = isTopSortOf x . toAdjacencyMap
 
 -- TODO: Get rid of "Relation.Internal" and move this instance to "Relation".
 -- | See "Algebra.Graph.Relation".
@@ -494,14 +483,8 @@ instance Ord a => ToGraph (R.Relation a) where
     edgeList                   = R.edgeList
     edgeSet                    = R.edgeSet
     adjacencyList              = R.adjacencyList
-    toAdjacencyMap             = AM.AM
-                               . Map.fromAscList
-                               . map (fmap Set.fromAscList)
-                               . R.adjacencyList
-    toAdjacencyIntMap          = AIM.AM
-                               . IntMap.fromAscList
-                               . map (fmap IntSet.fromAscList)
-                               . R.adjacencyList
+    toAdjacencyMap             = AM.stars . R.adjacencyList
+    toAdjacencyIntMap          = AIM.stars . R.adjacencyList
     toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
     toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
 
@@ -523,8 +506,8 @@ instance Ord a => ToGraph (SR.Relation a) where
     edgeList                   = SR.edgeList
     edgeSet                    = SR.edgeSet
     adjacencyList              = SR.adjacencyList
-    toAdjacencyMap             = AM.AM . adjacencyMap . SR.fromSymmetric
-    toAdjacencyIntMap          = AIM.AM . adjacencyIntMap . SR.fromSymmetric
+    toAdjacencyMap             = toAdjacencyMap . SR.fromSymmetric
+    toAdjacencyIntMap          = toAdjacencyIntMap . SR.fromSymmetric
     toAdjacencyMapTranspose    = toAdjacencyMap
     toAdjacencyIntMapTranspose = toAdjacencyIntMap
 

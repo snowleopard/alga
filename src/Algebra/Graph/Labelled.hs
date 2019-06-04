@@ -46,7 +46,7 @@ module Algebra.Graph.Labelled (
 import Data.Bifunctor
 import Data.Monoid (Any (..))
 import Data.Semigroup ((<>))
-import Control.DeepSeq (NFData (..))
+import Control.DeepSeq
 import GHC.Generics
 
 import Algebra.Graph.Internal (List (..))
