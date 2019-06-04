@@ -13,7 +13,7 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
   vertexCount, edgeCount, adjacencyList, hasEdge, hasVertex,
 
   -- * Graph transformation
-  removeVertex, removeEdge, transpose,
+  removeVertex, removeEdge, transpose, induce,
 
   -- * Basic graph construction primitives
   empty, vertex, overlayD, connectD, vertices,
@@ -229,19 +229,6 @@ removeEdge x y = AAM . AM.removeEdge x y . aam
 -- __\<__ and __\>__.
 type PartialOrder a = a -> a -> Bool
 
--- A helper function.
--- This is not efficient but can be used till an efficient version
--- of induce is included in the main library.
-induceE :: (Ord a) => ((a, a) -> Bool) -> AdjacencyMap a -> AdjacencyMap a
-induceE p a = rmER p eL a
-  where
-    eL = edgeList a
-    rmER _ [] a = a
-    rmER p ((x, y):es) a =
-      if p (x, y)
-         then rmER p es a
-         else rmER p es (removeEdge x y a) 
-
 -- | Constructs an acyclic graph from any graph based on
 -- a strict partial order to produce an acyclic graph.
 -- The partial order defines the valid set of edges.
@@ -262,14 +249,15 @@ induceE p a = rmER p eL a
 -- fromGraph (<) (1 * 2 + 2 * 1) == 1 * 2
 -- @
 fromGraph :: Ord a => PartialOrder a -> Graph a -> AdjacencyMap a
-fromGraph o = induceE (uncurry o) . AAM . foldg AM.empty AM.vertex AM.overlay AM.connect
+fromGraph o =
+  AAM . induceEAM (uncurry o) . foldg AM.empty AM.vertex AM.overlay AM.connect
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 
 -- 'AdjacencyMap' for more details.
 instance (Ord a, Num a) => Num (AdjacencyMap a) where
   fromInteger = AAM . fromInteger
-  (AAM x) + (AAM y) = induceE (uncurry (<)) . AAM $ (x + y)
-  (AAM x) * (AAM y) = induceE (uncurry (<)) . AAM $ (x * y)
+  (AAM x) + (AAM y) = AAM $ induceEAM (uncurry (<)) (x + y)
+  (AAM x) * (AAM y) = AAM $ induceEAM (uncurry (<)) (x * y)
   signum = const empty
   abs = id
   negate = id
@@ -403,3 +391,28 @@ hasEdge u v = AM.hasEdge u v . aam
 -- @
 transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
 transpose = AAM . AM.transpose . aam
+
+-- | Construct the /induced subgraph/ of a given graph by removing the
+-- vertices that do not satisfy a given predicate.
+-- Complexity: /O(m)/ time, assuming that the predicate takes /O(1)/ to
+-- be evaluated.
+--
+-- @
+-- induce ('const' True ) x == x
+-- induce ('const' False) x == 'empty'
+-- induce (/= x)           == 'removeVertex' x
+-- induce p . induce q    == induce (\\x -> p x && q x)
+-- @
+induce :: (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
+induce p = AAM . AM.induce p . aam
+
+-- Helper function, not to be exported.
+-- Induce a subgraph from AM.AdjacencyList removing edges not
+-- following the given predicate.
+induceEAM ::
+     (Ord a) => ((a, a) -> Bool) -> AM.AdjacencyMap a -> AM.AdjacencyMap a
+induceEAM p m = rmEs eL m
+  where
+    eL = filter (not . p) $ AM.edgeList m
+    rmEs [] m = m
+    rmEs ((x, y):es) m = rmEs es (AM.removeEdge x y m)

@@ -25,8 +25,8 @@ import Algebra.Graph.Export
 import Algebra.Graph.Label
 
 import qualified Algebra.Graph.Acyclic.AdjacencyMap  as AAM
-import qualified Algebra.Graph.AdjacencyIntMap       as AdjacencyIntMap
-import qualified Algebra.Graph.AdjacencyMap          as AdjacencyMap
+import qualified Algebra.Graph.AdjacencyIntMap       as AIM
+import qualified Algebra.Graph.AdjacencyMap          as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NAM
 import qualified Algebra.Graph.Class                 as C
 import qualified Algebra.Graph.Labelled              as LG
