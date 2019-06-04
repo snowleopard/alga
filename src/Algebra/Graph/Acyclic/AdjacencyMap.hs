@@ -28,11 +28,8 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
 import Algebra.Graph (Graph, foldg)
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
-import qualified Algebra.Graph.AdjacencyMap.Internal as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.Graph.Typed as Typed
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
 import Data.Set (Set)
 
 {-| The 'AdjacencyMap' data type represents an acyclic graph by
@@ -232,6 +229,19 @@ removeEdge x y = AAM . AM.removeEdge x y . aam
 -- __\<__ and __\>__.
 type PartialOrder a = a -> a -> Bool
 
+-- A helper function.
+-- This is not efficient but can be used till an efficient version
+-- of induce is included in the main library.
+induceE :: (Ord a) => ((a, a) -> Bool) -> AdjacencyMap a -> AdjacencyMap a
+induceE p a = rmER p eL a
+  where
+    eL = edgeList a
+    rmER _ [] a = a
+    rmER p ((x, y):es) a =
+      if p (x, y)
+         then rmER p es a
+         else rmER p es (removeEdge x y a) 
+
 -- | Constructs an acyclic graph from any graph based on
 -- a strict partial order to produce an acyclic graph.
 -- The partial order defines the valid set of edges.
@@ -252,21 +262,14 @@ type PartialOrder a = a -> a -> Bool
 -- fromGraph (<) (1 * 2 + 2 * 1) == 1 * 2
 -- @
 fromGraph :: Ord a => PartialOrder a -> Graph a -> AdjacencyMap a
-fromGraph o = AAM . aMF . foldg AM.empty AM.vertex AM.overlay AM.connect
-  where
-    aMF = AM.AM . Map.mapWithKey (\k -> Set.filter (k `o`)) . AM.adjacencyMap
+fromGraph o = induceE (uncurry o) . AAM . foldg AM.empty AM.vertex AM.overlay AM.connect
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 
 -- 'AdjacencyMap' for more details.
 instance (Ord a, Num a) => Num (AdjacencyMap a) where
   fromInteger = AAM . fromInteger
-  (AAM (AM.AM x)) + (AAM (AM.AM y)) =
-    AAM . AM.AM $
-    Map.unionWithKey (\k p q -> Set.filter (> k) $ Set.union p q) x y
-  x'@(AAM (AM.AM x)) * y'@(AAM (AM.AM y)) =
-    x' + y' +
-    (AAM . AM.AM $
-     Map.fromSet (\k -> Set.filter (> k) . Map.keysSet $ y) (Map.keysSet x))
+  (AAM x) + (AAM y) = induceE (uncurry (<)) . AAM $ (x + y)
+  (AAM x) * (AAM y) = induceE (uncurry (<)) . AAM $ (x * y)
   signum = const empty
   abs = id
   negate = id
