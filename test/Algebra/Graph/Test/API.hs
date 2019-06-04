@@ -59,10 +59,10 @@ toIntAPI API{..} = API{..}
 -- | The complete graph API dictionary. A graph data type, such as 'G.Graph',
 -- typically implements only a part of the whole API.
 data API g c where
-    API :: ( Arbitrary (g Int), Arbitrary (g (Maybe Int)), Num (g Int), Ord (g Int), Ord (g (Int, Int))
+    API :: ( Arbitrary (g Int), Num (g Int), Ord (g Int), Ord (g (Int, Int))
            , Ord (g (Int, Char)), Ord (g [Int]), Ord (g [Char])
            , Ord (g (Int, (Int, Int))), Ord (g ((Int, Int), Int))
-           , Show (g Int), Show (g (Maybe Int))) =>
+           , Show (g Int)) =>
         { empty                      :: forall a. c a => g a
         , vertex                     :: forall a. c a => a -> g a
         , edge                       :: forall a. c a => a -> a -> g a
