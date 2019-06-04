@@ -1,5 +1,5 @@
 name:          algebraic-graphs
-version:       0.4
+version:       0.5
 synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
@@ -68,10 +68,8 @@ library
     exposed-modules:    Algebra.Graph,
                         Algebra.Graph.AdjacencyIntMap,
                         Algebra.Graph.AdjacencyIntMap.Algorithm,
-                        Algebra.Graph.AdjacencyIntMap.Internal,
                         Algebra.Graph.AdjacencyMap,
                         Algebra.Graph.AdjacencyMap.Algorithm,
-                        Algebra.Graph.AdjacencyMap.Internal,
                         Algebra.Graph.Bipartite.AdjacencyMap,
                         Algebra.Graph.Class,
                         Algebra.Graph.Export,
@@ -81,19 +79,14 @@ library
                         Algebra.Graph.Label,
                         Algebra.Graph.Labelled,
                         Algebra.Graph.Labelled.AdjacencyMap,
-                        Algebra.Graph.Labelled.AdjacencyMap.Internal,
                         Algebra.Graph.Labelled.Example.Automaton,
                         Algebra.Graph.Labelled.Example.Network,
                         Algebra.Graph.NonEmpty,
                         Algebra.Graph.NonEmpty.AdjacencyMap,
-                        Algebra.Graph.NonEmpty.AdjacencyMap.Internal,
                         Algebra.Graph.Relation,
-                        Algebra.Graph.Relation.Internal,
-                        Algebra.Graph.Relation.InternalDerived,
                         Algebra.Graph.Relation.Preorder,
                         Algebra.Graph.Relation.Reflexive,
                         Algebra.Graph.Relation.Symmetric,
-                        Algebra.Graph.Relation.Symmetric.Internal,
                         Algebra.Graph.Relation.Transitive,
                         Algebra.Graph.ToGraph,
                         Data.Graph.Typed

@@ -15,16 +15,22 @@ module Algebra.Graph.Test.AdjacencyIntMap (
 
 import Algebra.Graph.AdjacencyIntMap
 import Algebra.Graph.Test
-import Algebra.Graph.Test.API (Mono (..))
+import Algebra.Graph.Test.API (Mono (..), adjacencyIntMapAPI)
 import Algebra.Graph.Test.Generic
 
-t :: Testsuite
-t = testsuite "AdjacencyIntMap." (Mono empty)
+import qualified Algebra.Graph.AdjacencyMap as AdjacencyMap
+
+t :: TestsuiteInt (Mono AdjacencyIntMap)
+t = ("AdjacencyIntMap.", adjacencyIntMapAPI)
 
 testAdjacencyIntMap :: IO ()
 testAdjacencyIntMap = do
     putStrLn "\n============ AdjacencyIntMap ============"
     test "Axioms of graphs" (axioms :: GraphTestsuite AdjacencyIntMap)
+
+    putStrLn $ "\n============ AdjacencyIntMap.fromAdjacencyMap ============"
+    test "fromAdjacencyMap == stars . AdjacencyMap.adjacencyList" $ \x ->
+          fromAdjacencyMap x == (stars . AdjacencyMap.adjacencyList) x
 
     testConsistent           t
     testShow                 t

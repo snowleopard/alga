@@ -35,19 +35,98 @@ module Algebra.Graph.Relation.Symmetric (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, gmap, induce,
+
+    -- * Miscellaneous
+    consistent
     ) where
 
+import Control.DeepSeq
 import Data.Coerce
 import Data.Set (Set)
 import Data.Tree
-import Data.Tuple
 
 import qualified Data.Set as Set
 
-import Algebra.Graph.Relation.Symmetric.Internal
+import qualified Algebra.Graph.Relation as R
 
-import qualified Algebra.Graph.Relation          as R
-import qualified Algebra.Graph.Relation.Internal as R
+{-| This data type represents a /symmetric binary relation/ over a set of
+elements of type @a@. Symmetric relations satisfy all laws of the
+'Algebra.Graph.Class.Undirected' type class, including the commutativity of
+'connect':
+
+@'connect' x y == 'connect' y x@
+
+The 'Show' instance lists edge vertices in non-decreasing order:
+
+@show (empty     :: Relation Int) == "empty"
+show (1         :: Relation Int) == "vertex 1"
+show (1 + 2     :: Relation Int) == "vertices [1,2]"
+show (1 * 2     :: Relation Int) == "edge 1 2"
+show (2 * 1     :: Relation Int) == "edge 1 2"
+show (1 * 2 * 1 :: Relation Int) == "edges [(1,1),(1,2)]"
+show (3 * 2 * 1 :: Relation Int) == "edges [(1,2),(1,3),(2,3)]"
+show (1 * 2 + 3 :: Relation Int) == "overlay (vertex 3) (edge 1 2)"@
+
+The total order on graphs is defined using /size-lexicographic/ comparison:
+
+* Compare the number of vertices. In case of a tie, continue.
+* Compare the sets of vertices. In case of a tie, continue.
+* Compare the number of edges. In case of a tie, continue.
+* Compare the sets of edges.
+
+Here are a few examples:
+
+@'vertex' 1 < 'vertex' 2
+'vertex' 3 < 'edge' 1 2
+'vertex' 1 < 'edge' 1 1
+'edge' 1 1 < 'edge' 1 2
+'edge' 1 2 < 'edge' 1 1 + 'edge' 2 2
+'edge' 2 1 < 'edge' 1 3@
+
+@'edge' 1 2 == 'edge' 2 1@
+
+Note that the resulting order refines the 'isSubgraphOf' relation and is
+compatible with 'overlay' and 'connect' operations:
+
+@'isSubgraphOf' x y ==> x <= y@
+
+@'empty' <= x
+x     <= x + y
+x + y <= x * y@
+-}
+newtype Relation a = SR {
+    -- | Extract the underlying symmetric "Algebra.Graph.Relation".
+    -- Complexity: /O(1)/ time and memory.
+    --
+    -- @
+    -- fromSymmetric ('edge' 1 2)    == 'R.edges' [(1,2), (2,1)]
+    -- 'R.vertexCount' . fromSymmetric == 'vertexCount'
+    -- 'R.edgeCount'   . fromSymmetric <= (*2) . 'edgeCount'
+    -- @
+    fromSymmetric :: R.Relation a
+    } deriving (Eq, NFData)
+
+instance (Ord a, Show a) => Show (Relation a) where
+    show = show . toRelation
+      where
+        toRelation r = R.vertices (vertexList r) `R.overlay` R.edges (edgeList r)
+
+instance Ord a => Ord (Relation a) where
+    compare x y = mconcat
+        [ compare (vertexCount x) (vertexCount  y)
+        , compare (vertexSet   x) (vertexSet    y)
+        , compare (edgeCount   x) (edgeCount    y)
+        , compare (edgeSet     x) (edgeSet      y) ]
+
+-- | __Note:__ this does not satisfy the usual ring laws; see 'Relation' for
+-- more details.
+instance (Ord a, Num a) => Num (Relation a) where
+    fromInteger = vertex . fromInteger
+    (+)         = overlay
+    (*)         = connect
+    signum      = const empty
+    abs         = id
+    negate      = id
 
 -- | Construct a symmetric relation from a given "Algebra.Graph.Relation".
 -- Complexity: /O(m*log(m))/ time.
@@ -62,6 +141,69 @@ import qualified Algebra.Graph.Relation.Internal as R
 toSymmetric :: Ord a => R.Relation a -> Relation a
 toSymmetric = SR . R.symmetricClosure
 
+-- | Construct the /empty graph/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'isEmpty'     empty == True
+-- 'hasVertex' x empty == False
+-- 'vertexCount' empty == 0
+-- 'edgeCount'   empty == 0
+-- @
+empty :: Relation a
+empty = coerce R.empty
+
+-- | Construct the graph comprising /a single isolated vertex/.
+-- Complexity: /O(1)/ time and memory.
+--
+-- @
+-- 'isEmpty'     (vertex x) == False
+-- 'hasVertex' x (vertex x) == True
+-- 'vertexCount' (vertex x) == 1
+-- 'edgeCount'   (vertex x) == 0
+-- @
+vertex :: a -> Relation a
+vertex = coerce R.vertex
+
+-- | /Overlay/ two graphs. This is a commutative, associative and idempotent
+-- operation with the identity 'empty'.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- 'isEmpty'     (overlay x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (overlay x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (overlay x y) >= 'vertexCount' x
+-- 'vertexCount' (overlay x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (overlay x y) >= 'edgeCount' x
+-- 'edgeCount'   (overlay x y) <= 'edgeCount' x   + 'edgeCount' y
+-- 'vertexCount' (overlay 1 2) == 2
+-- 'edgeCount'   (overlay 1 2) == 0
+-- @
+overlay :: Ord a => Relation a -> Relation a -> Relation a
+overlay = coerce R.overlay
+
+-- | /Connect/ two graphs. This is a commutative and associative operation with
+-- the identity 'empty', which distributes over 'overlay' and obeys the
+-- decomposition axiom.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory. Note that the
+-- number of edges in the resulting graph is quadratic with respect to the number
+-- of vertices of the arguments: /m = O(m1 + m2 + n1 * n2)/.
+--
+-- @
+-- connect x y               == connect y x
+-- 'isEmpty'     (connect x y) == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex' z (connect x y) == 'hasVertex' z x || 'hasVertex' z y
+-- 'vertexCount' (connect x y) >= 'vertexCount' x
+-- 'vertexCount' (connect x y) <= 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (connect x y) >= 'edgeCount' x
+-- 'edgeCount'   (connect x y) >= 'edgeCount' y
+-- 'edgeCount'   (connect x y) >= 'vertexCount' x * 'vertexCount' y \`div\` 2
+-- 'vertexCount' (connect 1 2) == 2
+-- 'edgeCount'   (connect 1 2) == 1
+-- @
+connect :: Ord a => Relation a -> Relation a -> Relation a
+connect x y = coerce R.connect x y `overlay` biclique (vertexList y) (vertexList x)
+
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory and size.
 --
@@ -75,7 +217,7 @@ toSymmetric = SR . R.symmetricClosure
 -- 'vertexCount' (edge 1 2) == 2
 -- @
 edge :: Ord a => a -> a -> Relation a
-edge x y = SR $ R.Relation (Set.fromList [x, y]) (Set.fromList [(x,y), (y,x)])
+edge x y = SR $ R.edges [(x,y), (y,x)]
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -101,8 +243,7 @@ vertices = coerce R.vertices
 -- edges [(x,y), (y,x)] == 'edge' x y
 -- @
 edges :: Ord a => [(a, a)] -> Relation a
-edges es = SR $ R.Relation
-    (Set.fromList $ uncurry (++) $ unzip es) (Set.fromList (es ++ map swap es))
+edges = toSymmetric . R.edges
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -181,7 +322,7 @@ hasVertex = coerce R.hasVertex
 -- hasEdge x y ('edge' x y)       == True
 -- hasEdge x y ('edge' y x)       == True
 -- hasEdge x y . 'removeEdge' x y == 'const' False
--- hasEdge x y                  == 'elem' (min x y, max x y) . 'edgeList'
+-- hasEdge x y                  == 'elem' ('min' x y, 'max' x y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> Relation a -> Bool
 hasEdge = coerce R.hasEdge
@@ -231,7 +372,7 @@ vertexList = coerce R.vertexList
 -- @
 -- edgeList 'empty'          == []
 -- edgeList ('vertex' x)     == []
--- edgeList ('edge' x y)     == [(min x y, max y x)]
+-- edgeList ('edge' x y)     == [('min' x y, 'max' y x)]
 -- edgeList ('star' 2 [3,1]) == [(1,2), (2,3)]
 -- @
 edgeList :: Ord a => Relation a -> [(a, a)]
@@ -247,6 +388,22 @@ edgeList = Set.toAscList . edgeSet
 -- @
 vertexSet :: Relation a -> Set a
 vertexSet = coerce R.vertexSet
+
+-- | The set of edges of a given graph, where edge vertices appear in the
+-- non-decreasing order.
+-- Complexity: /O(m)/ time.
+--
+-- Note: If you need the set of edges where an edge appears in both directions,
+-- use @'R.relation' . 'fromSymmetric'@. The latter is much
+-- faster than this function, and takes only /O(1)/ time and memory.
+--
+-- @
+-- edgeSet 'empty'      == Set.'Set.empty'
+-- edgeSet ('vertex' x) == Set.'Set.empty'
+-- edgeSet ('edge' x y) == Set.'Set.singleton' ('min' x y, 'max' x y)
+-- @
+edgeSet :: Ord a => Relation a -> Set (a, a)
+edgeSet = Set.filter (uncurry (<=)) . R.edgeSet . fromSymmetric
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -271,9 +428,7 @@ adjacencyList = coerce R.adjacencyList
 -- path       == path . 'reverse'
 -- @
 path :: Ord a => [a] -> Relation a
-path xs = case xs of []     -> empty
-                     [x]    -> vertex x
-                     (_:ys) -> edges (zip xs ys)
+path = toSymmetric . R.path
 
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -285,12 +440,11 @@ path xs = case xs of []     -> empty
 -- circuit       == circuit . 'reverse'
 -- @
 circuit :: Ord a => [a] -> Relation a
-circuit []     = empty
-circuit (x:xs) = path $ [x] ++ xs ++ [x]
+circuit = toSymmetric . R.circuit
 
 -- TODO: Optimise by avoiding the call to 'R.symmetricClosure'.
 -- | The /clique/ on a list of vertices.
--- Complexity: /O((n + m) * log(n))/ time + /O(m*log(m)) time from computing the symmetricClosure and /O(n + m)/ memory.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
 -- clique []         == 'empty'
@@ -301,11 +455,11 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- clique            == clique . 'reverse'
 -- @
 clique :: Ord a => [a] -> Relation a
-clique = SR . R.symmetricClosure . R.clique
+clique = toSymmetric . R.clique
 
 -- TODO: Optimise by avoiding the call to 'R.symmetricClosure'.
 -- | The /biclique/ on two lists of vertices.
--- Complexity: /O(n * log(n) + m)/ time + /O(m*log(m)) time from computing the symmetricClosure and /O(n + m)/ memory.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
 -- biclique []      []      == 'empty'
@@ -315,7 +469,7 @@ clique = SR . R.symmetricClosure . R.clique
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: Ord a => [a] -> [a] -> Relation a
-biclique xs = SR . R.symmetricClosure . R.biclique xs
+biclique xs ys = toSymmetric (R.biclique xs ys)
 
 -- TODO: Optimise.
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
@@ -328,8 +482,7 @@ biclique xs = SR . R.symmetricClosure . R.biclique xs
 -- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: Ord a => a -> [a] -> Relation a
-star x [] = vertex x
-star x ys = connect (vertex x) (vertices ys)
+star x = toSymmetric . R.star x
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
 -- 'adjacencyList'.
@@ -346,10 +499,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
 stars :: Ord a => [(a, [a])] -> Relation a
-stars as = SR $ R.Relation (Set.fromList vs) (Set.fromList es)
-  where
-    vs = concat [ x : ys           | (x, ys) <- as          ]
-    es = concat [ [(x, y), (y, x)] | (x, ys) <- as, y <- ys ]
+stars = toSymmetric . R.stars
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -361,9 +511,7 @@ stars as = SR $ R.Relation (Set.fromList vs) (Set.fromList es)
 -- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges' [(1,2), (1,3), (3,4), (3,5)]
 -- @
 tree :: Ord a => Tree a -> Relation a
-tree (Node x []) = vertex x
-tree (Node x f ) = star x (map rootLabel f)
-    `overlay` forest (filter (not . null . subForest) f)
+tree = toSymmetric . R.tree
 
 -- | The /forest graph/ constructed from a given 'Tree.Forest' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -375,7 +523,7 @@ tree (Node x f ) = star x (map rootLabel f)
 -- forest                                                     == 'overlays' . 'map' 'tree'
 -- @
 forest :: Ord a => Forest a -> Relation a
-forest = overlays . map tree
+forest = toSymmetric . R.forest
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(n + m)/ time.
@@ -402,9 +550,7 @@ removeVertex = coerce R.removeVertex
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Ord a => a -> a -> Relation a -> Relation a
-removeEdge x y r = SR $ R.Relation d (Set.delete (y, x) $ Set.delete (x, y) rr)
-  where
-    R.Relation d rr = fromSymmetric r
+removeEdge x y = SR . R.removeEdge x y . R.removeEdge y x . fromSymmetric
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Relation'. If @y@ already exists, @x@ and @y@ will be merged.
@@ -466,10 +612,27 @@ induce = coerce R.induce
 -- graphs, this corresponds to the set of /adjacent/ vertices of vertex @x@.
 --
 -- @
--- neighbours x 'Algebra.Graph.Class.empty'      == Set.'Set.empty'
--- neighbours x ('Algebra.Graph.Class.vertex' x) == Set.'Set.empty'
--- neighbours x ('Algebra.Graph.Class.edge' x y) == Set.'Set.fromList' [y]
--- neighbours y ('Algebra.Graph.Class.edge' x y) == Set.'Set.fromList' [x]
+-- neighbours x 'empty'      == Set.'Set.empty'
+-- neighbours x ('vertex' x) == Set.'Set.empty'
+-- neighbours x ('edge' x y) == Set.'Set.fromList' [y]
+-- neighbours y ('edge' x y) == Set.'Set.fromList' [x]
 -- @
 neighbours :: Ord a => a -> Relation a -> Set a
 neighbours = coerce R.postSet
+
+-- | Check that the internal representation of a symmetric relation is
+-- consistent, i.e. that (i) that all edges refer to existing vertices, and (ii)
+-- all edges have their symmetric counterparts. It should be impossible to
+-- create an inconsistent 'Relation', and we use this function in testing.
+--
+-- @
+-- consistent 'empty'         == True
+-- consistent ('vertex' x)    == True
+-- consistent ('overlay' x y) == True
+-- consistent ('connect' x y) == True
+-- consistent ('edge' x y)    == True
+-- consistent ('edges' xs)    == True
+-- consistent ('stars' xs)    == True
+-- @
+consistent :: Ord a => Relation a -> Bool
+consistent (SR r) = R.consistent r && r == R.transpose r

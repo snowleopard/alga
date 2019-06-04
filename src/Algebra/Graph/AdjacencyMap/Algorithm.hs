@@ -28,7 +28,6 @@ import Data.Tree
 
 import Algebra.Graph.AdjacencyMap
 
-import qualified Algebra.Graph.AdjacencyMap.Internal as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.Graph                          as KL
 import qualified Data.Graph.Typed                    as Typed
@@ -175,7 +174,7 @@ scc m = gmap (component Map.!) $ removeSelfLoops $ gmap (leader Map.!) m
 
 -- Remove all self loops from a graph.
 removeSelfLoops :: Ord a => AdjacencyMap a -> AdjacencyMap a
-removeSelfLoops (AM.AM m) = AM.AM (Map.mapWithKey Set.delete m)
+removeSelfLoops m = foldr (\x -> removeEdge x x) m (vertexList m)
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong

@@ -26,6 +26,7 @@ import qualified Data.IntSet as IntSet
 
 type AI = AM.AdjacencyMap Int
 
+-- TODO: Improve the alignment in the testsuite to match the documentation.
 (%) :: (GraphKL Int -> a) -> AM.AdjacencyMap Int -> a
 a % g = a $ fromAdjacencyMap g
 
@@ -149,8 +150,8 @@ testTyped = do
     test "dfs []     % x                         == []" $ \x ->
           dfs []     % x                         == []
 
-    test "dfs [1, 4] % 3 * (1 + 4) * (1 + 5)     == [1, 5, 4]" $
-          dfs [1, 4] % (3 * (1 + 4) * (1 + 5))   == [1, 5, 4]
+    test "dfs [1, 4] % 3 * (1 + 4) * (1 + 5)     == [1,5,4]" $
+          dfs [1, 4] % (3 * (1 + 4) * (1 + 5))   == [1,5,4]
 
     test "isSubgraphOf (vertices $ dfs vs % x) x == True" $ \vs x ->
           AM.isSubgraphOf (AM.vertices $ dfs vs % x) x == True
