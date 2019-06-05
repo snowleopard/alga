@@ -39,8 +39,8 @@ testAcyclicAdjacencyMap = do
   test "box" $ \x y                        -> consistent (box x y :: AAT)
   test "transitiveClosure" $ \x            -> consistent (transitiveClosure x :: AAI)
   test "transpose" $ \x                    -> consistent (transpose x :: AAI)
-  test "fromGraph" $ \x                    -> consistent (fromGraph (<) x :: AAI)
-  test "fromGraph" $ \x                    -> consistent (fromGraph (>) x :: AAI)
+  test "fromGraph (<)" $ \x                -> consistent (fromGraph (<) x :: AAI)
+  test "fromGraph (>)" $ \x                -> consistent (fromGraph (>) x :: AAI)
 
   test "consistent (1 + 2)                == True" $
         consistent (1 + 2 :: AAI)         == True
