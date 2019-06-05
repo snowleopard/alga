@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns #-}
 -------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Acyclic.AdjacencyMap
@@ -12,16 +13,13 @@ module Algebra.Graph.Test.Acyclic.AdjacencyMap (
 
 import Algebra.Graph.Acyclic.AdjacencyMap
 import Algebra.Graph.Test
-import Algebra.Graph ()
 import Data.List.NonEmpty hiding (transpose)
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.List as List
 import qualified Data.Set as Set
-
--- t :: Testsuite
--- t = testsuite "AcyclicAdjacencyMap." empty
+import qualified Data.Tuple as Tuple
 
 type AAI = AdjacencyMap Int
 type AAE = AdjacencyMap (Either Int Int)
@@ -42,6 +40,11 @@ testAcyclicAdjacencyMap = do
   test "transitiveClosure" $ \x            -> consistent (transitiveClosure x :: AAI)
   test "transpose" $ \x                    -> consistent (transpose x :: AAI)
   test "fromGraph" $ \x                    -> consistent (fromGraph (<) x :: AAI)
+
+  test "consistent (1 + 2)                == True" $
+        consistent (1 + 2 :: AAI)         == True
+  test "consistent (1 * 2 + 2 * 3)        == True" $
+        consistent (1 * 2 + 2 * 3 :: AAI) == True
 
   putStrLn "\n=====AcyclicAdjacencyMap Num instance====="
   test "edgeList    0                 == []" $
@@ -67,27 +70,91 @@ testAcyclicAdjacencyMap = do
 
   putStrLn "\n=====AcyclicAdjacencyMap construction primitives====="
 
-  test "vertex 1 == 1" $
-        vertex 1 == (1 :: AAI)
+  test "isEmpty 'empty'                                  == True" $
+        isEmpty (empty :: AAI)                           == True
+  test "isEmpty ('overlayD' 'empty' 'empty')             == True" $
+        isEmpty (overlayD (empty :: AAI) (empty :: AAI)) == True
+  test "isEmpty ('vertex' x)                             == False" $ \x ->
+        isEmpty (vertex x :: AAI)                        == False
+  test "isEmpty ('removeVertex' x $ 'vertex' x)          == True" $ \x ->
+        isEmpty (removeVertex x $ vertex x :: AAI)              == True
+  test "isEmpty ('removeEdge' 1 2 $ 1 * 2)               == False" $
+        isEmpty (removeEdge 1 2 $ 1 * 2 :: AAI)          == False
 
-  test "vertices []        == empty" $
-        vertices []        == (empty :: AAI)
-  test "vertices [1]       == vertex 1" $
-        vertices [1]       == (vertex 1 :: AAI)
-  test "vertices [1, 2, 3] == 1 + 2 + 3" $
-        vertices [1, 2, 3] == (1 + 2 + 3 :: AAI)
+  test "'isEmpty'     (vertex x)        == False" $ \x ->
+         isEmpty      (vertex x :: AAI) == False
+  test "'hasVertex' x (vertex x)        == True" $ \x ->
+         hasVertex x  (vertex x :: AAI) == True
+  test "'vertexCount' (vertex x)        == 1" $ \x ->
+         vertexCount  (vertex x :: AAI) == 1
+  test "'edgeCount'   (vertex x)        == 0" $ \x ->
+         edgeCount    (vertex x :: AAI) == 0
 
-  test "edgeList (overlayD empty empty)                           == []" $
-        edgeList (overlayD (empty :: AAI) (empty :: AAI))         == []
-  test "edgeList (overlayD (1 * 2 + 1 * 3) (1 * 2))               == [(Left 1,Left 2),(Left 1,Left 3),(Right 1,Right 2)]" $
-        edgeList (overlayD (1 * 2 + 1 * 3 :: AAI) (1 * 2 :: AAI)) == [(Left 1,Left 2),(Left 1,Left 3),(Right 1,Right 2)]
+  test "vertices []                       == 'empty'" $
+        vertices []                       == (empty :: AAI)
+  test "vertices [x]                      == 'vertex' x" $ \x ->
+        vertices [x]                      == (vertex x :: AAI)
+  test "'hasVertex' x . vertices          == 'elem' x" $ \x y ->
+        (hasVertex x (vertices y :: AAI)) == elem x y
+  test "'vertexCount' . vertices          == 'length' . 'Data.List.nub'" $ \x ->
+        (vertexCount (vertices x :: AAI)) == (List.length . List.nub $ x)
+  test "'vertexSet'   . vertices          == Set.'Set.fromList'" $ \x ->
+        (vertexSet (vertices x :: AAI))   == Set.fromList x
 
-  test "edgeList (connectD empty empty)                   == []" $
-        edgeList (connectD (empty :: AAI) (empty :: AAI)) == []
-  test "edgeList (connectD (1 + 2) (1 + 2))               == [(Left 1,Right 1),(Left 1,Right 2),(Left 2,Right 1),(Left 2,Right 2)]" $
-        edgeList (connectD (1 + 2 :: AAI) (1 + 2 :: AAI)) == [(Left 1,Right 1),(Left 1,Right 2),(Left 2,Right 1),(Left 2,Right 2)]
-  test "edgeList (connectD (1 * 2) (1 * 2))               == [(Left 1,Left 2),(Left 1,Right 1),(Left 1,Right 2),(Left 2,Right 1),(Left 2,Right 2),(Right 1,Right 2)]" $
-        edgeList (connectD (1 * 2 :: AAI) (1 * 2 :: AAI)) == [(Left 1,Left 2),(Left 1,Right 1),(Left 1,Right 2),(Left 2,Right 1),(Left 2,Right 2),(Right 1,Right 2)]
+  test "'isEmpty' (overlayD x y)                  == 'isEmpty' x && 'isEmpty' y" $ \x y ->
+        isEmpty (overlayD x y :: AAE)             == (isEmpty x && isEmpty y)
+  test "'hasVertex' (Left z) (overlayD x y)       == 'hasVertex' z x" $ \x y z ->
+        hasVertex (Left z) (overlayD x y :: AAE)  == hasVertex z x
+  test "'hasVertex' (Right z) (overlayD x y)      == 'hasVertex' z y" $ \x y z ->
+        hasVertex (Right z) (overlayD x y :: AAE) == hasVertex z y
+  test "'vertexCount' (overlayD x y)              >= 'vertexCount' x" $ \x y ->
+        vertexCount (overlayD x y :: AAE)         >= vertexCount x
+  test "'vertexCount' (overlayD x y)              == 'vertexCount' x + 'vertexCount' y" $ \x y ->
+        vertexCount (overlayD x y :: AAE)         == vertexCount x + vertexCount y
+  test "'edgeCount' (overlayD x y)                >= 'edgeCount' x" $ \x y ->
+        edgeCount (overlayD x y :: AAE)           >= edgeCount x
+  test "'edgeCount' (overlayD x y)                == 'edgeCount' x   + 'edgeCount' y" $ \x y ->
+        edgeCount (overlayD x y :: AAE)           == edgeCount x   + edgeCount y
+  test "'vertexCount' (overlayD 1 2)              == 2" $
+        vertexCount (overlayD 1 2 :: AAE)         == 2
+  test "'edgeCount' (overlayD 1 2)                == 0" $
+        edgeCount (overlayD 1 2 :: AAE)           == 0
+
+  test "'isEmpty' (connectD x y)                  == 'isEmpty' x && 'isEmpty' y" $ \x y ->
+        isEmpty (connectD x y :: AAE)             == (isEmpty x && isEmpty y)
+  test "'hasVertex' (Left z) (connectD x y)       == 'hasVertex' z x" $ \x y z ->
+        hasVertex (Left z) (connectD x y :: AAE)  == hasVertex z x
+  test "'hasVertex' (Right z) (connectD x y)      == 'hasVertex' z y" $ \x y z ->
+        hasVertex (Right z) (connectD x y :: AAE) == hasVertex z y
+  test "'vertexCount' (connectD x y)              >= 'vertexCount' x" $ \x y ->
+        vertexCount (connectD x y :: AAE)         >= vertexCount x
+  test "'vertexCount' (connectD x y)              == 'vertexCount' x + 'vertexCount' y" $ \x y ->
+        vertexCount (connectD x y :: AAE)         == vertexCount x + vertexCount y
+  test "'edgeCount' (connectD x y)                >= 'edgeCount' x" $ \x y ->
+        edgeCount (connectD x y :: AAE)           >= edgeCount x
+  test "'edgeCount' (connectD x y)                >= 'edgeCount' y" $ \x y ->
+        edgeCount (connectD x y :: AAE)           >= edgeCount y
+  test "'edgeCount' (connectD x y)                >= 'vertexCount' x * 'vertexCount' y" $ \x y ->
+        edgeCount (connectD x y :: AAE)           >= vertexCount x * vertexCount y
+  test "'edgeCount' (connectD x y)                == 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y" $ \x y ->
+        edgeCount (connectD x y :: AAE)           == vertexCount x * vertexCount y + edgeCount x + edgeCount y
+  test "'vertexCount' (connectD 1 2)              == 2" $
+        vertexCount (connectD 1 2 :: AAE)         == 2
+  test "'edgeCount' (connectD 1 2)                == 1" $
+        edgeCount (connectD 1 2 :: AAE)           == 1
+
+  putStrLn "\n=====AcyclicAdjacencyMap transitiveClosure====="
+
+  test "transitiveClosure empty                           == empty" $
+        transitiveClosure (empty :: AAI)                  == empty
+  test "transitiveClosure (vertex x)                      == vertex x" $ \x ->
+        transitiveClosure (vertex x :: AAI)               == vertex x
+  test "transitiveClosure (1 * 2 + 2 * 3)                 == 1 * 2 + 2 * 3 + 1 * 3" $
+        transitiveClosure (1 * 2 + 2 * 3 :: AAI)          == 1 * 2 + 2 * 3 + 1 * 3
+  test "transitiveClosure . transitiveClosure             == transitiveClosure" $ \x ->
+       (transitiveClosure . transitiveClosure $ x :: AAI) == transitiveClosure x
+
+  putStrLn "\n=====AcyclicAdjacencyMap box====="
 
   test "edgeList (box (1 * 2) (3 * 4))                 == [((1,3),(1,4)),((1,3),(2,3)),((1,4),(2,4)),((2,3),(2,4))]" $
         edgeList (box (1 * 2 :: AAI) (3 * 4 :: AAI))   == [((1,3),(1,4)),((1,3),(2,3)),((1,4),(2,4)),((2,3),(2,4))]
@@ -96,21 +163,12 @@ testAcyclicAdjacencyMap = do
   test "vertexList (box (1 + 2) (3 + 4))               == [(1,3),(1,4),(2,3),(2,4)]" $
         vertexList (box (1 + 2 :: AAI) (3 + 4 :: AAI)) == [(1,3),(1,4),(2,3),(2,4)]
 
-  putStrLn "\n=====AcyclicAdjacencyMap transitiveClosure====="
-
-  test "transitiveClosure empty                  == empty" $
-        transitiveClosure (empty :: AAI)         == (empty :: AAI)
-  test "transitiveClosure (vertex 5)             == vertex 5" $
-        transitiveClosure (vertex 5 :: AAI)      == (vertex 5 :: AAI)
-  test "transitiveClosure (1 * 2 + 2 * 3)        == 1 * 2 + 2 * 3 + 1 * 3" $
-        transitiveClosure (1 * 2 + 2 * 3 :: AAI) == (1 * 2 + 2 * 3 + 1 * 3 :: AAI)
-
   putStrLn "\n=====AcyclicAdjacencyMap topsort====="
 
-  test "topSort (1)                    == [1]" $
-        topSort (1 :: AAI)             == [1]
-  test "topSort (1 * 2 + 3 * 1)        == [3,1,2]" $
-        topSort (1 * 2 + 3 * 1 :: AAI) == [3,1,2]
+  test "topSort (1)                == [1]" $
+        topSort (1 :: AAI)         == [1]
+  test "topSort (1 * 2 * 3)        == [1,2,3]" $
+        topSort (1 * 2 * 3 :: AAI) == [1,2,3]
 
   putStrLn "\n=====AcyclicAdjacencyMap fromGraph primitive====="
 
@@ -120,6 +178,44 @@ testAcyclicAdjacencyMap = do
         fromGraph (<) (1 * 2)         == (1 * 2 :: AAI)
   test "fromGraph (<) (1 * 2 + 2 * 1) == 1 * 2" $
         fromGraph (<) (1 * 2 + 2 * 1) == (1 * 2 :: AAI)
+
+  putStrLn "\n=====AcyclicAdjacencyMap graph transformation====="
+
+  test "removeVertex x ('vertex' x)                  == 'empty'" $ \x ->
+        removeVertex x (vertex x :: AAI)             == empty
+  test "removeVertex 1 ('vertex' 2)                  == 'vertex' 2" $
+        removeVertex 1 (vertex 2 :: AAI)             == vertex 2
+  test "removeVertex 1 (1 * 2)                       == 'vertex' 2" $
+        removeVertex 1 (1 * 2 :: AAI)                == vertex 2
+  test "removeVertex x . removeVertex x              == removeVertex x" $ \x y ->
+        (removeVertex x . removeVertex x $ y :: AAI) == removeVertex x y
+
+  test "removeEdge 1 2 (1 * 2)                       == (1 + 2)" $
+        removeEdge 1 2 (1 * 2 :: AAI)                == (1 + 2)
+  test "removeEdge x y . removeEdge x y              == removeEdge x y" $ \x y z ->
+        (removeEdge x y . removeEdge x y $ z :: AAI) == removeEdge x y z
+  test "removeEdge x y . 'removeVertex' x            == 'removeVertex' x" $ \x y z ->
+        (removeEdge x y . removeVertex x $ z :: AAI) == removeVertex x z
+  test "removeEdge 1 2 (1 * 2 + 3 * 4)               == 1 + 2 + 3 * 4" $
+        removeEdge 1 2 (1 * 2 + 3 * 4 :: AAI)        == 1 + 2 + 3 * 4
+
+  test "induce ('const' True) x          == x" $ \x ->
+        induce (const True) (x :: AAI)   == x
+  test "induce ('const' False) x         == 'empty'" $ \x ->
+        induce (const False) (x :: AAI)  == empty
+  test "induce (/= x)                    == 'removeVertex' x" $ \x y ->
+        induce (/= x) y                  == (removeVertex x y :: AAI)
+  test "induce p . induce q              == induce (\\x -> p x && q x)" $ \(apply -> p) (apply -> q) y ->
+        (induce p . induce q $ y :: AAI) == induce (\x -> p x && q x) y
+
+  test "transpose 'empty'                   == 'empty'" $
+        transpose empty                     == (empty :: AAI)
+  test "transpose ('vertex' x)              == 'vertex' x" $ \x ->
+        transpose (vertex x :: AAI)         == vertex x
+  test "transpose . transpose               == id" $ \x ->
+        (transpose . transpose $ x :: AAI)  == id x
+  test "'edgeList' . transpose              == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'" $ \x ->
+        (edgeList . transpose $ (x :: AAI)) == (List.sort . List.map Tuple.swap . edgeList $ x)
 
   putStrLn "\n=====AcyclicAdjacencyMap properties====="
 

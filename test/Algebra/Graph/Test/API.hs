@@ -145,24 +145,27 @@ data API g c where
 -- | The API of 'AAM.AdjacencyMap'.
 acyclicAdjacencyMapAPI :: API AAM.AdjacencyMap Ord
 acyclicAdjacencyMapAPI = API
-    { empty         = AAM.empty
-    , vertex        = AAM.vertex
-    , vertices      = AAM.vertices
-    , vertexCount   = AAM.vertexCount
-    , edgeCount     = AAM.edgeCount
-    , vertexList    = AAM.vertexList
-    , edgeList      = AAM.edgeList
-    , vertexSet     = AAM.vertexSet
-    , edgeSet       = AAM.edgeSet
-    , adjacencyList = AAM.adjacencyList
-    , topSort       = Just . AAM.topSort
-    , removeVertex  = AAM.removeVertex
-    , hasVertex     = AAM.hasVertex
-    , hasEdge       = AAM.hasEdge
-    , transpose     = AAM.transpose
-    , removeEdge    = AAM.removeEdge
-    , box           = AAM.box
-    , consistent    = AAM.consistent }
+    { empty                      = AAM.empty
+    , vertex                     = AAM.vertex
+    , vertices                   = AAM.vertices
+    , isEmpty                    = AAM.isEmpty
+    , hasVertex                  = AAM.hasVertex
+    , hasEdge                    = AAM.hasEdge
+    , vertexCount                = AAM.vertexCount
+    , edgeCount                  = AAM.edgeCount
+    , vertexList                 = AAM.vertexList
+    , edgeList                   = AAM.edgeList
+    , vertexSet                  = AAM.vertexSet
+    , edgeSet                    = AAM.edgeSet
+    , adjacencyList              = AAM.adjacencyList
+    , topSort                    = Just . AAM.topSort
+    , removeVertex               = AAM.removeVertex
+    , removeEdge                 = AAM.removeEdge
+    , transpose                  = AAM.transpose
+    , induce                     = AAM.induce
+    , box                        = AAM.box
+    , transitiveClosure          = AAM.transitiveClosure
+    , consistent                 = AAM.consistent }
 
 -- | The API of 'AM.AdjacencyMap'.
 adjacencyMapAPI :: API AM.AdjacencyMap Ord
