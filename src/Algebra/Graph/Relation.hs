@@ -711,9 +711,9 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
 -- vertices that are Nothing.
 -- Complexity: /O(n * log(n))/ time.
 -- @
--- induceJust ('vertex' (Nothing :: Maybe Int))             == 'empty'
--- induceJust (gmap Just x)                                 == x
--- induceJust ('connect' (gmap Just x) ('vertex' Nothing))  == x
+-- induceJust ('vertex' 'Nothing')                            == 'empty'
+-- induceJust (gmap Just x)                                   == x
+-- induceJust ('connect' (gmap Just x) ('vertex' 'Nothing'))  == x
 -- @
 induceJust :: Ord a => Relation (Maybe a) -> Relation a
 induceJust (Relation d r) = Relation (catMaybesSet d) (catMaybesSet' r)

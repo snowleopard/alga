@@ -512,12 +512,12 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) c
     c e x     y     = Connect e x y
 
 -- | Construct the /induced subgraph/ of a given graph by removing the 
--- vertices that are Nothing.
--- Complexity: /O(s)/ time, memory and size.
+-- vertices that are 'Nothing'.
+-- Complexity: /O(n * log(n))/ time.
 -- @
--- induceJust ('vertex' (Nothing :: Maybe Int))             == 'empty'
--- induceJust (gmap Just x)                                 == x
--- induceJust ('connect' (gmap Just x) ('vertex' Nothing))  == x
+-- induceJust ('vertex' 'Nothing')                            == 'empty'
+-- induceJust (gmap Just x)                                   == x
+-- induceJust ('connect' (gmap Just x) ('vertex' 'Nothing'))  == x
 -- @
 induceJust :: Graph e (Maybe a) -> Graph e a
 induceJust = foldg Empty (maybe Empty Vertex) c

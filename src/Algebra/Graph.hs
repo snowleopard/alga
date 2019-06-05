@@ -1014,9 +1014,9 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Co
 -- vertices that are Nothing.
 -- Complexity: /O(s)/ time, memory and size.
 -- @
--- induceJust ('vertex' (Nothing :: Maybe Int))             == 'empty'
--- induceJust (gmap Just x)                                 == x
--- induceJust ('connect' (gmap Just x) ('vertex' Nothing))  == x
+-- induceJust ('vertex' 'Nothing')                            == 'empty'
+-- induceJust (gmap Just x)                                   == x
+-- induceJust ('connect' (gmap Just x) ('vertex' 'Nothing'))  == x
 -- @
 induceJust :: Graph (Maybe a) -> Graph a
 induceJust = foldg Empty (maybe Empty Vertex) (k Overlay) (k Connect)

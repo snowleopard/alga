@@ -756,18 +756,20 @@ induce :: (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
 induce p = AM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjacencyMap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the 
--- vertices that are Nothing.
+-- vertices that are 'Nothing'.
 -- Complexity: /O(n * log(n))/ time.
 -- @
--- induceJust ('vertex' (Nothing :: Maybe Int))             == 'empty'
--- induceJust (gmap Just x)                                 == x
--- induceJust ('connect' (gmap Just x) ('vertex' Nothing))  == x
+-- induceJust ('vertex' 'Nothing')                            == 'empty'
+-- induceJust (gmap Just x)                                   == x
+-- induceJust ('connect' (gmap Just x) ('vertex' 'Nothing'))  == x
 -- @
 induceJust :: Ord a => AdjacencyMap (Maybe a) -> AdjacencyMap a
 induceJust = AM . Map.map catMaybesSet . catMaybesMap . adjacencyMap
     where 
       catMaybesSet = Set.map Maybe.fromJust . Set.delete Nothing
-      catMaybesMap = Map.mapKeys Maybe.fromJust . Map.delete Nothing
+      catMaybesMap = Map.traverseMaybeWithKey f
+      f (Just a) k   = Just k
+      f Nothing  _   = Nothing
 
 -- | Left-to-right /relational composition/ of graphs: vertices @x@ and @z@ are
 -- connected in the resulting graph if there is a vertex @y@, such that @x@ is
