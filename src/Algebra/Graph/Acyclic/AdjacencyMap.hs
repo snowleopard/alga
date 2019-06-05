@@ -90,6 +90,7 @@ newtype AdjacencyMap a = AAM
 -- consistent (transitiveClosure x) == True
 -- consistent (transpose x)         == True
 -- consistent (fromGraph (<) x)     == True
+-- consistent (fromGraph (>) x)     == True
 -- consistent (1 + 2)               == True
 -- consistent (1 * 2 + 2 * 3)       == True
 -- @

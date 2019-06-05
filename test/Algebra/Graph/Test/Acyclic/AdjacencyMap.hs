@@ -40,6 +40,7 @@ testAcyclicAdjacencyMap = do
   test "transitiveClosure" $ \x            -> consistent (transitiveClosure x :: AAI)
   test "transpose" $ \x                    -> consistent (transpose x :: AAI)
   test "fromGraph" $ \x                    -> consistent (fromGraph (<) x :: AAI)
+  test "fromGraph" $ \x                    -> consistent (fromGraph (>) x :: AAI)
 
   test "consistent (1 + 2)                == True" $
         consistent (1 + 2 :: AAI)         == True
@@ -77,7 +78,7 @@ testAcyclicAdjacencyMap = do
   test "isEmpty ('vertex' x)                             == False" $ \x ->
         isEmpty (vertex x :: AAI)                        == False
   test "isEmpty ('removeVertex' x $ 'vertex' x)          == True" $ \x ->
-        isEmpty (removeVertex x $ vertex x :: AAI)              == True
+        isEmpty (removeVertex x $ vertex x :: AAI)       == True
   test "isEmpty ('removeEdge' 1 2 $ 1 * 2)               == False" $
         isEmpty (removeEdge 1 2 $ 1 * 2 :: AAI)          == False
 
