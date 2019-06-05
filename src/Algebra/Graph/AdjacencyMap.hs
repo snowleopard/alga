@@ -757,7 +757,7 @@ induce p = AM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjac
 
 -- | Construct the /induced subgraph/ of a given graph by removing the 
 -- vertices that are 'Nothing'.
--- Complexity: /O(n * log(n))/ time.
+-- Complexity: /O(n)/ time.
 -- @
 -- induceJust ('vertex' 'Nothing')                            == 'empty'
 -- induceJust (gmap Just x)                                   == x
@@ -766,8 +766,8 @@ induce p = AM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjac
 induceJust :: Ord a => AdjacencyMap (Maybe a) -> AdjacencyMap a
 induceJust = AM . Map.map catMaybesSet . catMaybesMap . adjacencyMap
     where 
-      catMaybesSet = Set.map Maybe.fromJust . Set.delete Nothing
-      catMaybesMap = Map.mapKeys Maybe.fromJust . Map.delete Nothing
+      catMaybesSet = Set.mapMonotonic Maybe.fromJust . Set.delete Nothing
+      catMaybesMap = Map.mapKeysMonotonic Maybe.fromJust . Map.delete Nothing
 
 -- | Left-to-right /relational composition/ of graphs: vertices @x@ and @z@ are
 -- connected in the resulting graph if there is a vertex @y@, such that @x@ is

@@ -709,7 +709,7 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
 
 -- | Construct the /induced subgraph/ of a given graph by removing the 
 -- vertices that are 'Nothing'.
--- Complexity: /O(n * log(n))/ time.
+-- Complexity: /O(n)/ time.
 -- @
 -- induceJust ('vertex' 'Nothing')                            == 'empty'
 -- induceJust (gmap Just x)                                   == x
@@ -718,8 +718,8 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
 induceJust :: Ord a => Relation (Maybe a) -> Relation a
 induceJust (Relation d r) = Relation (catMaybesSet d) (catMaybesSet' r)
   where 
-    catMaybesSet         = Set.map Maybe.fromJust . Set.delete Nothing
-    catMaybesSet'        = Set.map (\(x, y) -> (Maybe.fromJust x, Maybe.fromJust y)) . Set.filter p
+    catMaybesSet         = Set.mapMonotonic Maybe.fromJust . Set.delete Nothing
+    catMaybesSet'        = Set.mapMonotonic (\(x, y) -> (Maybe.fromJust x, Maybe.fromJust y)) . Set.filter p
     p (Nothing, _)       = False
     p (_,       Nothing) = False
     p (_,       _)       = True

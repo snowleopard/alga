@@ -610,7 +610,7 @@ induce = coerce R.induce
 
 -- | Construct the /induced subgraph/ of a given graph by removing the 
 -- vertices that are 'Nothing'.
--- Complexity: /O(n * log(n))/ time.
+-- Complexity: /O(n)/ time.
 -- @
 -- induceJust ('vertex' 'Nothing')                            == 'empty'
 -- induceJust (gmap Just x)                                   == x

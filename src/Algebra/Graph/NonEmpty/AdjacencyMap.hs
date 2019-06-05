@@ -632,7 +632,7 @@ induce1 = fmap toNonEmpty . coerce AM.induce
 -- | Construct the /induced subgraph/ of a given graph by removing the 
 -- vertices that are 'Nothing'. Returns 'Nothing' if the 
 -- resulting graph is empty.
--- Complexity: /O(n * log(n))/ time.
+-- Complexity: /O(n)/ time.
 -- @
 -- induceJust1 ('vertex' 'Nothing')                            == 'Nothing'
 -- induceJust1 (gmap Just x)                                   == Just x
