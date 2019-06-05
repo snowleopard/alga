@@ -609,7 +609,7 @@ induce :: (a -> Bool) -> Relation a -> Relation a
 induce = coerce R.induce
 
 -- | Construct the /induced subgraph/ of a given graph by removing the 
--- vertices that are Nothing.
+-- vertices that are 'Nothing'.
 -- Complexity: /O(n * log(n))/ time.
 -- @
 -- induceJust ('vertex' 'Nothing')                            == 'empty'

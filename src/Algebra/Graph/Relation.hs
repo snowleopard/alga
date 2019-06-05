@@ -708,7 +708,7 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
     pp (x, y) = p x && p y
 
 -- | Construct the /induced subgraph/ of a given graph by removing the 
--- vertices that are Nothing.
+-- vertices that are 'Nothing'.
 -- Complexity: /O(n * log(n))/ time.
 -- @
 -- induceJust ('vertex' 'Nothing')                            == 'empty'

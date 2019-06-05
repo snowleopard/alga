@@ -47,7 +47,7 @@ module Algebra.Graph.NonEmpty (
 
     -- * Graph transformation
     removeVertex1, removeEdge, replaceVertex, mergeVertices, splitVertex1,
-    transpose, induce1, simplify, sparsify, sparsifyKL,
+    transpose, induce1, induceJust1, simplify, sparsify, sparsifyKL,
 
     -- * Graph composition
     box
@@ -842,6 +842,23 @@ induce1 p = foldg1
   (\x -> if p x then Just (Vertex x) else Nothing)
   (k Overlay)
   (k Connect)
+  where
+    k _ Nothing a = a
+    k _ a Nothing = a
+    k f (Just a) (Just b) = Just $ f a b
+
+
+-- | Construct the /induced subgraph/ of a given graph by removing the 
+-- vertices that are 'Nothing'. Returns 'Nothing' if the 
+-- resulting graph is empty.
+-- Complexity: /O(s)/ time, memory and size.
+-- @
+-- induceJust1 ('vertex' 'Nothing')                            == `Nothing`
+-- induceJust1 (fmap Just x)                                   == Just x
+-- induceJust1 ('connect' (fmap Just x) ('vertex' 'Nothing'))  == Just x
+-- @
+induceJust1 :: Graph (Maybe a) -> Maybe (Graph a)
+induceJust1 = foldg1 (fmap Vertex) (k Overlay) (k Connect)
   where
     k _ Nothing a = a
     k _ a Nothing = a

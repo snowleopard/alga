@@ -767,9 +767,7 @@ induceJust :: Ord a => AdjacencyMap (Maybe a) -> AdjacencyMap a
 induceJust = AM . Map.map catMaybesSet . catMaybesMap . adjacencyMap
     where 
       catMaybesSet = Set.map Maybe.fromJust . Set.delete Nothing
-      catMaybesMap = Map.traverseMaybeWithKey f
-      f (Just a) k   = Just k
-      f Nothing  _   = Nothing
+      catMaybesMap = Map.mapKeys Maybe.fromJust . Map.delete Nothing
 
 -- | Left-to-right /relational composition/ of graphs: vertices @x@ and @z@ are
 -- connected in the resulting graph if there is a vertex @y@, such that @x@ is

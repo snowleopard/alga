@@ -1011,7 +1011,7 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Co
 {-# INLINE [1] induce #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the 
--- vertices that are Nothing.
+-- vertices that are 'Nothing'.
 -- Complexity: /O(s)/ time, memory and size.
 -- @
 -- induceJust ('vertex' 'Nothing')                            == 'empty'
