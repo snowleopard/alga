@@ -1,3 +1,13 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module     : Algebra.Graph.Test.AdjacencyMap
+-- Copyright  : (c) Andrey Mokhov 2016-2018
+-- License    : MIT (see the file LICENSE)
+-- Maintainer : andrey.mokhov@gmail.com
+-- Stability  : experimental
+--
+-- Testsuite for "Algebra.Graph.Bipartite.AdjacencyMap".
+-----------------------------------------------------------------------------
 module Algebra.Graph.Test.Bipartite.AdjacencyMap (
     -- * Testsuite
     testBipartiteAdjacencyMap
@@ -84,6 +94,8 @@ testBipartiteAdjacencyMap = do
             == expectedBicliqueMap x y &&
         (rightToLeft $ fromAdjacencyMap $ AM.biclique (map Left [1..x]) (map Right [1..y]))
             == expectedBicliqueMap y x
+    test "edges"                   $ \xs ->
+        consistent $ fromAdjacencyMap $ AM.edges (xs :: [(Either a b)])
 
     putStrLn "\n============ Bipartite.AdjacencyMap.fromGraph ============"
     test "empty"                   $
