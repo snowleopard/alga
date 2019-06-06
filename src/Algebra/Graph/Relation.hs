@@ -46,6 +46,7 @@ import Control.DeepSeq
 import Data.Set (Set, union)
 import Data.Tree
 import Data.Tuple
+
 import qualified Data.Maybe as Maybe
 import qualified Data.Set   as Set
 import qualified Data.Tree  as Tree
