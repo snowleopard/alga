@@ -3,7 +3,7 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
   AdjacencyMap, aam,
 
   -- * Basic graph construction primitives
-  empty, vertex, overlayD, connectD, vertices,
+  empty, vertex, disjointOverlay, disjointConnect, vertices,
 
   -- * Graph properties
   isEmpty, edgeList, vertexList, edgeSet, vertexSet,
@@ -83,8 +83,8 @@ newtype AdjacencyMap a = AAM
 -- @
 -- consistent 'empty'                 == True
 -- consistent (vertex x)            == True
--- consistent (overlayD x y)        == True
--- consistent (connectD x y)        == True
+-- consistent (disjointOverlay x y)        == True
+-- consistent (disjointConnect x y)        == True
 -- consistent (vertices x)          == True
 -- consistent (box x y)             == True
 -- consistent (transitiveClosure x) == True
@@ -102,7 +102,7 @@ consistent (AAM m) = AM.consistent m && AM.isAcyclic m
 --
 -- @
 -- isEmpty 'empty'                           == True
--- isEmpty ('overlayD' 'empty' 'empty')          == True
+-- isEmpty ('disjointOverlay' 'empty' 'empty')          == True
 -- isEmpty ('vertex' x)                      == False
 -- isEmpty ('removeVertex' x $ 'vertex' x)     == True
 -- isEmpty ('removeEdge' 1 2 $ 1 * 2)        == False
@@ -140,45 +140,45 @@ vertices = coerce AM.vertices
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- 'isEmpty' (overlayD x y)             == 'isEmpty' x && 'isEmpty' y
--- 'hasVertex' (Left z) (overlayD x y)  == 'hasVertex' z x
--- 'hasVertex' (Right z) (overlayD x y) == 'hasVertex' z y
--- 'vertexCount' (overlayD x y)         >= 'vertexCount' x
--- 'vertexCount' (overlayD x y)         == 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (overlayD x y)         >= 'edgeCount' x
--- 'edgeCount'   (overlayD x y)         == 'edgeCount' x + 'edgeCount' y
--- 'vertexCount' (overlayD 1 2)         == 2
--- 'edgeCount'   (overlayD 1 2)         == 0
+-- 'isEmpty' (disjointOverlay x y)             == 'isEmpty' x && 'isEmpty' y
+-- 'hasVertex' (Left z) (disjointOverlay x y)  == 'hasVertex' z x
+-- 'hasVertex' (Right z) (disjointOverlay x y) == 'hasVertex' z y
+-- 'vertexCount' (disjointOverlay x y)         >= 'vertexCount' x
+-- 'vertexCount' (disjointOverlay x y)         == 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (disjointOverlay x y)         >= 'edgeCount' x
+-- 'edgeCount'   (disjointOverlay x y)         == 'edgeCount' x + 'edgeCount' y
+-- 'vertexCount' (disjointOverlay 1 2)         == 2
+-- 'edgeCount'   (disjointOverlay 1 2)         == 0
 -- @
-overlayD ::
+disjointOverlay ::
      (Ord a, Ord b)
   => AdjacencyMap a
   -> AdjacencyMap b
   -> AdjacencyMap (Either a b)
-overlayD (AAM a) (AAM b) = AAM (AM.overlay (AM.gmap Left a) (AM.gmap Right b))
+disjointOverlay (AAM a) (AAM b) = AAM (AM.overlay (AM.gmap Left a) (AM.gmap Right b))
 
 -- | Perform a disjoint connect of two different acyclic graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- 'isEmpty'     (connectD x y)           == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex'   (Left z) (connectD x y)  == 'hasVertex' z x
--- 'hasVertex'   (Right z) (connectD x y) == 'hasVertex' z y
--- 'vertexCount' (connectD x y)           >= 'vertexCount' x
--- 'vertexCount' (connectD x y)           == 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (connectD x y)           >= 'edgeCount' x
--- 'edgeCount'   (connectD x y)           >= 'edgeCount' y
--- 'edgeCount'   (connectD x y)           >= 'vertexCount' x * 'vertexCount' y
--- 'edgeCount'   (connectD x y)           == 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
--- 'vertexCount' (connectD 1 2)           == 2
--- 'edgeCount'   (connectD 1 2)           == 1
+-- 'isEmpty'     (disjointConnect x y)           == 'isEmpty'   x   && 'isEmpty'   y
+-- 'hasVertex'   (Left z) (disjointConnect x y)  == 'hasVertex' z x
+-- 'hasVertex'   (Right z) (disjointConnect x y) == 'hasVertex' z y
+-- 'vertexCount' (disjointConnect x y)           >= 'vertexCount' x
+-- 'vertexCount' (disjointConnect x y)           == 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (disjointConnect x y)           >= 'edgeCount' x
+-- 'edgeCount'   (disjointConnect x y)           >= 'edgeCount' y
+-- 'edgeCount'   (disjointConnect x y)           >= 'vertexCount' x * 'vertexCount' y
+-- 'edgeCount'   (disjointConnect x y)           == 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
+-- 'vertexCount' (disjointConnect 1 2)           == 2
+-- 'edgeCount'   (disjointConnect 1 2)           == 1
 -- @
-connectD ::
+disjointConnect ::
      (Ord a, Ord b)
   => AdjacencyMap a
   -> AdjacencyMap b
   -> AdjacencyMap (Either a b)
-connectD (AAM a) (AAM b) = AAM (AM.connect (AM.gmap Left a) (AM.gmap Right b))
+disjointConnect (AAM a) (AAM b) = AAM (AM.connect (AM.gmap Left a) (AM.gmap Right b))
 
 -- | Compute the /transitive closure/ of a graph.
 -- Complexity: /O(n * m * log(n)^2)/ time.

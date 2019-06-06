@@ -33,8 +33,8 @@ testAcyclicAdjacencyMap = do
   test "arbitraryAcyclicAdjacencyMap" $ \x -> consistent (x :: AAI)
   test "empty" $                              consistent (empty :: AAI)
   test "vertex" $ \x                       -> consistent (vertex x :: AAI)
-  test "overlayD" $ \x y                   -> consistent (overlayD x y :: AAE)
-  test "connectD" $ \x y                   -> consistent (connectD x y :: AAE)
+  test "disjointOverlay" $ \x y            -> consistent (disjointOverlay x y :: AAE)
+  test "disjointConnect" $ \x y            -> consistent (disjointConnect x y :: AAE)
   test "vertices" $ \x                     -> consistent (vertices x :: AAI)
   test "box" $ \x y                        -> consistent (box x y :: AAT)
   test "transitiveClosure" $ \x            -> consistent (transitiveClosure x :: AAI)
@@ -73,8 +73,8 @@ testAcyclicAdjacencyMap = do
 
   test "isEmpty 'empty'                                  == True" $
         isEmpty (empty :: AAI)                           == True
-  test "isEmpty ('overlayD' 'empty' 'empty')             == True" $
-        isEmpty (overlayD (empty :: AAI) (empty :: AAI)) == True
+  test "isEmpty ('disjointOverlay' 'empty' 'empty')             == True" $
+        isEmpty (disjointOverlay (empty :: AAI) (empty :: AAI)) == True
   test "isEmpty ('vertex' x)                             == False" $ \x ->
         isEmpty (vertex x :: AAI)                        == False
   test "isEmpty ('removeVertex' x $ 'vertex' x)          == True" $ \x ->
@@ -102,47 +102,47 @@ testAcyclicAdjacencyMap = do
   test "'vertexSet'   . vertices          == Set.'Set.fromList'" $ \x ->
         (vertexSet (vertices x :: AAI))   == Set.fromList x
 
-  test "'isEmpty' (overlayD x y)                  == 'isEmpty' x && 'isEmpty' y" $ \x y ->
-        isEmpty (overlayD x y :: AAE)             == (isEmpty x && isEmpty y)
-  test "'hasVertex' (Left z) (overlayD x y)       == 'hasVertex' z x" $ \x y z ->
-        hasVertex (Left z) (overlayD x y :: AAE)  == hasVertex z x
-  test "'hasVertex' (Right z) (overlayD x y)      == 'hasVertex' z y" $ \x y z ->
-        hasVertex (Right z) (overlayD x y :: AAE) == hasVertex z y
-  test "'vertexCount' (overlayD x y)              >= 'vertexCount' x" $ \x y ->
-        vertexCount (overlayD x y :: AAE)         >= vertexCount x
-  test "'vertexCount' (overlayD x y)              == 'vertexCount' x + 'vertexCount' y" $ \x y ->
-        vertexCount (overlayD x y :: AAE)         == vertexCount x + vertexCount y
-  test "'edgeCount' (overlayD x y)                >= 'edgeCount' x" $ \x y ->
-        edgeCount (overlayD x y :: AAE)           >= edgeCount x
-  test "'edgeCount' (overlayD x y)                == 'edgeCount' x   + 'edgeCount' y" $ \x y ->
-        edgeCount (overlayD x y :: AAE)           == edgeCount x   + edgeCount y
-  test "'vertexCount' (overlayD 1 2)              == 2" $
-        vertexCount (overlayD 1 2 :: AAE)         == 2
-  test "'edgeCount' (overlayD 1 2)                == 0" $
-        edgeCount (overlayD 1 2 :: AAE)           == 0
+  test "'isEmpty' (disjointOverlay x y)                  == 'isEmpty' x && 'isEmpty' y" $ \x y ->
+        isEmpty (disjointOverlay x y :: AAE)             == (isEmpty x && isEmpty y)
+  test "'hasVertex' (Left z) (disjointOverlay x y)       == 'hasVertex' z x" $ \x y z ->
+        hasVertex (Left z) (disjointOverlay x y :: AAE)  == hasVertex z x
+  test "'hasVertex' (Right z) (disjointOverlay x y)      == 'hasVertex' z y" $ \x y z ->
+        hasVertex (Right z) (disjointOverlay x y :: AAE) == hasVertex z y
+  test "'vertexCount' (disjointOverlay x y)              >= 'vertexCount' x" $ \x y ->
+        vertexCount (disjointOverlay x y :: AAE)         >= vertexCount x
+  test "'vertexCount' (disjointOverlay x y)              == 'vertexCount' x + 'vertexCount' y" $ \x y ->
+        vertexCount (disjointOverlay x y :: AAE)         == vertexCount x + vertexCount y
+  test "'edgeCount' (disjointOverlay x y)                >= 'edgeCount' x" $ \x y ->
+        edgeCount (disjointOverlay x y :: AAE)           >= edgeCount x
+  test "'edgeCount' (disjointOverlay x y)                == 'edgeCount' x   + 'edgeCount' y" $ \x y ->
+        edgeCount (disjointOverlay x y :: AAE)           == edgeCount x   + edgeCount y
+  test "'vertexCount' (disjointOverlay 1 2)              == 2" $
+        vertexCount (disjointOverlay 1 2 :: AAE)         == 2
+  test "'edgeCount' (disjointOverlay 1 2)                == 0" $
+        edgeCount (disjointOverlay 1 2 :: AAE)           == 0
 
-  test "'isEmpty' (connectD x y)                  == 'isEmpty' x && 'isEmpty' y" $ \x y ->
-        isEmpty (connectD x y :: AAE)             == (isEmpty x && isEmpty y)
-  test "'hasVertex' (Left z) (connectD x y)       == 'hasVertex' z x" $ \x y z ->
-        hasVertex (Left z) (connectD x y :: AAE)  == hasVertex z x
-  test "'hasVertex' (Right z) (connectD x y)      == 'hasVertex' z y" $ \x y z ->
-        hasVertex (Right z) (connectD x y :: AAE) == hasVertex z y
-  test "'vertexCount' (connectD x y)              >= 'vertexCount' x" $ \x y ->
-        vertexCount (connectD x y :: AAE)         >= vertexCount x
-  test "'vertexCount' (connectD x y)              == 'vertexCount' x + 'vertexCount' y" $ \x y ->
-        vertexCount (connectD x y :: AAE)         == vertexCount x + vertexCount y
-  test "'edgeCount' (connectD x y)                >= 'edgeCount' x" $ \x y ->
-        edgeCount (connectD x y :: AAE)           >= edgeCount x
-  test "'edgeCount' (connectD x y)                >= 'edgeCount' y" $ \x y ->
-        edgeCount (connectD x y :: AAE)           >= edgeCount y
-  test "'edgeCount' (connectD x y)                >= 'vertexCount' x * 'vertexCount' y" $ \x y ->
-        edgeCount (connectD x y :: AAE)           >= vertexCount x * vertexCount y
-  test "'edgeCount' (connectD x y)                == 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y" $ \x y ->
-        edgeCount (connectD x y :: AAE)           == vertexCount x * vertexCount y + edgeCount x + edgeCount y
-  test "'vertexCount' (connectD 1 2)              == 2" $
-        vertexCount (connectD 1 2 :: AAE)         == 2
-  test "'edgeCount' (connectD 1 2)                == 1" $
-        edgeCount (connectD 1 2 :: AAE)           == 1
+  test "'isEmpty' (disjointConnect x y)                  == 'isEmpty' x && 'isEmpty' y" $ \x y ->
+        isEmpty (disjointConnect x y :: AAE)             == (isEmpty x && isEmpty y)
+  test "'hasVertex' (Left z) (disjointConnect x y)       == 'hasVertex' z x" $ \x y z ->
+        hasVertex (Left z) (disjointConnect x y :: AAE)  == hasVertex z x
+  test "'hasVertex' (Right z) (disjointConnect x y)      == 'hasVertex' z y" $ \x y z ->
+        hasVertex (Right z) (disjointConnect x y :: AAE) == hasVertex z y
+  test "'vertexCount' (disjointConnect x y)              >= 'vertexCount' x" $ \x y ->
+        vertexCount (disjointConnect x y :: AAE)         >= vertexCount x
+  test "'vertexCount' (disjointConnect x y)              == 'vertexCount' x + 'vertexCount' y" $ \x y ->
+        vertexCount (disjointConnect x y :: AAE)         == vertexCount x + vertexCount y
+  test "'edgeCount' (disjointConnect x y)                >= 'edgeCount' x" $ \x y ->
+        edgeCount (disjointConnect x y :: AAE)           >= edgeCount x
+  test "'edgeCount' (disjointConnect x y)                >= 'edgeCount' y" $ \x y ->
+        edgeCount (disjointConnect x y :: AAE)           >= edgeCount y
+  test "'edgeCount' (disjointConnect x y)                >= 'vertexCount' x * 'vertexCount' y" $ \x y ->
+        edgeCount (disjointConnect x y :: AAE)           >= vertexCount x * vertexCount y
+  test "'edgeCount' (disjointConnect x y)                == 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y" $ \x y ->
+        edgeCount (disjointConnect x y :: AAE)           == vertexCount x * vertexCount y + edgeCount x + edgeCount y
+  test "'vertexCount' (disjointConnect 1 2)              == 2" $
+        vertexCount (disjointConnect 1 2 :: AAE)         == 2
+  test "'edgeCount' (disjointConnect 1 2)                == 1" $
+        edgeCount (disjointConnect 1 2 :: AAE)           == 1
 
   putStrLn "\n=====AcyclicAdjacencyMap transitiveClosure====="
 
