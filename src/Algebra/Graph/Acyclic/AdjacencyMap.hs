@@ -1,13 +1,13 @@
 module Algebra.Graph.Acyclic.AdjacencyMap (
   -- * Data structure
-  AdjacencyMap, aam,
+  AdjacencyMap,
 
   -- * Basic graph construction primitives
-  empty, vertex, disjointOverlay, disjointConnect, vertices,
+  empty, vertex, vertices, disjointOverlay, disjointConnect,
 
   -- * Graph properties
-  isEmpty, edgeList, vertexList, edgeSet, vertexSet,
-  vertexCount, edgeCount, adjacencyList, hasEdge, hasVertex,
+  isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
+  edgeList, adjacencyList, vertexSet, edgeSet,
 
   -- * Graph transformation
   removeVertex, removeEdge, transpose, induce,
@@ -82,15 +82,15 @@ newtype AdjacencyMap a = AAM
 --
 -- @
 -- consistent 'empty'                 == True
--- consistent (vertex x)            == True
--- consistent (disjointOverlay x y)        == True
--- consistent (disjointConnect x y)        == True
--- consistent (vertices x)          == True
--- consistent (box x y)             == True
--- consistent (transitiveClosure x) == True
--- consistent (transpose x)         == True
--- consistent (fromGraph (<) x)     == True
--- consistent (fromGraph (>) x)     == True
+-- consistent ('vertex' x)            == True
+-- consistent ('disjointOverlay' x y) == True
+-- consistent ('disjointConnect' x y) == True
+-- consistent ('vertices' x)          == True
+-- consistent ('box' x y)             == True
+-- consistent ('transitiveClosure' x) == True
+-- consistent ('transpose' x)         == True
+-- consistent ('fromGraph' (<) x)     == True
+-- consistent ('fromGraph' (>) x)     == True
 -- consistent (1 + 2)               == True
 -- consistent (1 * 2 + 2 * 3)       == True
 -- @
@@ -101,11 +101,11 @@ consistent (AAM m) = AM.consistent m && AM.isAcyclic m
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- isEmpty 'empty'                           == True
--- isEmpty ('disjointOverlay' 'empty' 'empty')          == True
--- isEmpty ('vertex' x)                      == False
--- isEmpty ('removeVertex' x $ 'vertex' x)     == True
--- isEmpty ('removeEdge' 1 2 $ 1 * 2)        == False
+-- isEmpty 'empty'                         == True
+-- isEmpty ('disjointOverlay' 'empty' 'empty') == True
+-- isEmpty ('vertex' x)                    == False
+-- isEmpty ('removeVertex' x $ 'vertex' x)   == True
+-- isEmpty ('removeEdge' 1 2 $ 1 * 2)      == False
 -- @
 empty :: AdjacencyMap a
 empty = coerce AM.empty
@@ -127,11 +127,11 @@ vertex = coerce AM.vertex
 -- the length of the given list.
 --
 -- @
--- vertices []              == 'empty'
--- vertices [x]             == 'vertex' x
--- 'hasVertex' x . vertices   == 'elem' x
--- 'vertexCount' . vertices   == 'length' . 'Data.List.nub'
--- 'vertexSet'   . vertices   == Set.'Set.fromList'
+-- vertices []            == 'empty'
+-- vertices [x]           == 'vertex' x
+-- 'hasVertex' x . vertices == 'elem' x
+-- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
+-- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: (Ord a) => [a] -> AdjacencyMap a
 vertices = coerce AM.vertices
@@ -140,15 +140,15 @@ vertices = coerce AM.vertices
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- 'isEmpty' (disjointOverlay x y)             == 'isEmpty' x && 'isEmpty' y
--- 'hasVertex' (Left z) (disjointOverlay x y)  == 'hasVertex' z x
--- 'hasVertex' (Right z) (disjointOverlay x y) == 'hasVertex' z y
--- 'vertexCount' (disjointOverlay x y)         >= 'vertexCount' x
--- 'vertexCount' (disjointOverlay x y)         == 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'   (disjointOverlay x y)         >= 'edgeCount' x
--- 'edgeCount'   (disjointOverlay x y)         == 'edgeCount' x + 'edgeCount' y
--- 'vertexCount' (disjointOverlay 1 2)         == 2
--- 'edgeCount'   (disjointOverlay 1 2)         == 0
+-- 'isEmpty'     (disjointOverlay x y)           == 'isEmpty' x && 'isEmpty' y
+-- 'hasVertex'   ('Left' z) (disjointOverlay x y)  == 'hasVertex' z x
+-- 'hasVertex'   ('Right' z) (disjointOverlay x y) == 'hasVertex' z y
+-- 'vertexCount' (disjointOverlay x y)           >= 'vertexCount' x
+-- 'vertexCount' (disjointOverlay x y)           == 'vertexCount' x + 'vertexCount' y
+-- 'edgeCount'   (disjointOverlay x y)           >= 'edgeCount' x
+-- 'edgeCount'   (disjointOverlay x y)           == 'edgeCount' x + 'edgeCount' y
+-- 'vertexCount' (disjointOverlay 1 2)           == 2
+-- 'edgeCount'   (disjointOverlay 1 2)           == 0
 -- @
 disjointOverlay ::
      (Ord a, Ord b)
@@ -162,8 +162,8 @@ disjointOverlay (AAM a) (AAM b) = AAM (AM.overlay (AM.gmap Left a) (AM.gmap Righ
 --
 -- @
 -- 'isEmpty'     (disjointConnect x y)           == 'isEmpty'   x   && 'isEmpty'   y
--- 'hasVertex'   (Left z) (disjointConnect x y)  == 'hasVertex' z x
--- 'hasVertex'   (Right z) (disjointConnect x y) == 'hasVertex' z y
+-- 'hasVertex'   ('Left' z) (disjointConnect x y)  == 'hasVertex' z x
+-- 'hasVertex'   ('Right' z) (disjointConnect x y) == 'hasVertex' z y
 -- 'vertexCount' (disjointConnect x y)           >= 'vertexCount' x
 -- 'vertexCount' (disjointConnect x y)           == 'vertexCount' x + 'vertexCount' y
 -- 'edgeCount'   (disjointConnect x y)           >= 'edgeCount' x
@@ -198,8 +198,16 @@ transitiveClosure = coerce AM.transitiveClosure
 -- of type "Algebra.Graph.NonEmpty.AdjacencyMap".
 --
 -- @
--- scc 'empty'      == 'empty'
--- scc ('vertex' x) == 'vertex' (NonEmpty.'NonEmpty.vertex' x)
+-- scc        AdjacencyMap.'AM.empty'            == 'empty'
+-- scc        (AdjacencyMap.'AM.vertex' x)       == 'vertex' (NonEmpty.'NonEmpty.vertex' x)
+-- scc        (AdjacencyMap.'AM.edge' 1 1)       == 'vertex' (NonEmpty.'NonEmpty.edge' 1 1)
+-- 'vertexList' (scc (AdjacencyMap.'AM.edge' 1 2)) == [NonEmpty.'NonEmpty.vertex' 1,NonEmpty.'NonEmpty.vertex' 2]
+-- 'edgeList'   (scc (AdjacencyMap.'AM.edge' 1 2)) == [(NonEmpty.'NonEmpty.vertex' 1,NonEmpty.'NonEmpty.vertex' 2)]
+-- scc        (AdjacencyMap.'AM.circuit' (1:xs)) == vertex (NonEmpty.'NonEmpty.circuit1' (1 :| xs))
+-- 'vertexList' (scc (3 * 1 * 4 * 1 * 5))     == [NonEmpty.'NonEmpty.vertex' 3,NonEmpty.'NonEmpty.vertex' 5,NonEmpty.'NonEmpty.clique1' [1,4,1]]
+-- 'edgeList'   (scc (3 * 1 * 4 * 1 * 5))     == [ (NonEmpty.'NonEmpty.vertex' 3,NonEmpty.'NonEmpty.vertex' 5)
+--                                             , (NonEmpty.'NonEmpty.vertex' 3,NonEmpty.'NonEmpty.clique1' [1,4,1])
+--                                             , (NonEmpty.'NonEmpty.clique1' [1,4,1],NonEmpty.'NonEmpty.vertex' 5)]
 -- @
 scc :: (Ord a) => AM.AdjacencyMap a -> AdjacencyMap (NonEmpty.AdjacencyMap a)
 scc = coerce AM.scc
@@ -218,12 +226,12 @@ topSort (AAM am) = Typed.topSort (Typed.fromAdjacencyMap am)
 -- are the sizes of the given graphs.
 --
 -- @
--- edgeList   (box (1 * 2) (3 * 4)) == [((1,3),(1,4))
---                                     ,((1,3),(2,3))
---                                     ,((1,4),(2,4))
---                                     ,((2,3),(2,4))]
--- edgeList   (box (1 + 2) (3 + 4)) == []
--- vertexList (box (1 + 2) (3 + 4)) == [(1,3),(1,4),(2,3),(2,4)]
+-- 'edgeList'   (box (1 * 2) (3 * 4)) == [ ((1,3),(1,4))
+--                                     , ((1,3),(2,3))
+--                                     , ((1,4),(2,4))
+--                                     , ((2,3),(2,4))]
+-- 'edgeList'   (box (1 + 2) (3 + 4)) == []
+-- 'vertexList' (box (1 + 2) (3 + 4)) == [(1,3),(1,4),(2,3),(2,4)]
 -- @
 box :: (Ord a, Ord b) => AdjacencyMap a -> AdjacencyMap b -> AdjacencyMap (a, b)
 box = coerce AM.box
@@ -244,10 +252,10 @@ removeVertex = coerce AM.removeVertex
 -- Complexity: /O(log(n))/ time.
 --
 -- @
--- removeEdge 1 2 (1 * 2)            == (1 + 2)
--- removeEdge x y . removeEdge x y   == removeEdge x y
--- removeEdge x y . 'removeVertex' x   == 'removeVertex' x
--- removeEdge 1 2 (1 * 2 + 3 * 4)    == 1 + 2 + 3 * 4
+-- removeEdge 1 2 (1 * 2)          == (1 + 2)
+-- removeEdge x y . removeEdge x y == removeEdge x y
+-- removeEdge x y . 'removeVertex' x == 'removeVertex' x
+-- removeEdge 1 2 (1 * 2 + 3 * 4)  == 1 + 2 + 3 * 4
 -- @
 removeEdge :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
 removeEdge = coerce AM.removeEdge
@@ -299,10 +307,10 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
 --
 -- @
--- edgeList 'empty'        == []
--- edgeList ('vertex' x)   == []
--- edgeList (1 * 2)      == [(1,2)]
--- edgeList (2 * 1)      == []
+-- edgeList 'empty'      == []
+-- edgeList ('vertex' x) == []
+-- edgeList (1 * 2)    == [(1,2)]
+-- edgeList (2 * 1)    == []
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList = coerce AM.edgeList
@@ -322,10 +330,10 @@ vertexList = coerce AM.vertexList
 -- Complexity: /O(1)/ time.
 --
 -- @
--- vertexCount 'empty'              ==  0
--- vertexCount ('vertex' x)         ==  1
--- vertexCount                    ==  'length' . 'vertexList'
--- vertexCount x \< vertexCount y  ==> x \< y
+-- vertexCount 'empty'             ==  0
+-- vertexCount ('vertex' x)        ==  1
+-- vertexCount                   ==  'length' . 'vertexList'
+-- vertexCount x \< vertexCount y ==> x \< y
 -- @
 vertexCount :: AdjacencyMap a -> Int
 vertexCount = coerce AM.vertexCount
@@ -334,10 +342,10 @@ vertexCount = coerce AM.vertexCount
 -- Complexity: /O(n)/ time.
 --
 -- @
--- edgeCount 'empty'        == 0
--- edgeCount ('vertex' x)   == 0
--- edgeCount (1 * 2)      == 1
--- edgeCount              == 'length' . 'edgeList'
+-- edgeCount 'empty'      == 0
+-- edgeCount ('vertex' x) == 0
+-- edgeCount (1 * 2)    == 1
+-- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: AdjacencyMap a -> Int
 edgeCount = coerce AM.edgeCount
@@ -357,9 +365,9 @@ vertexSet = coerce AM.vertexSet
 -- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
 --
 -- @
--- edgeSet 'empty'        == Set.'Set.empty'
--- edgeSet ('vertex' x)   == Set.'Set.empty'
--- edgeSet (1 * 2)      == Set.'Set.singleton' (1,2)
+-- edgeSet 'empty'      == Set.'Set.empty'
+-- edgeSet ('vertex' x) == Set.'Set.empty'
+-- edgeSet (1 * 2)    == Set.'Set.singleton' (1,2)
 -- @
 edgeSet :: Eq a => AdjacencyMap a -> Set (a, a)
 edgeSet = coerce AM.edgeSet
@@ -368,9 +376,9 @@ edgeSet = coerce AM.edgeSet
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
 --
 -- @
--- adjacencyList 'empty'        == []
--- adjacencyList ('vertex' x)   == [(x, [])]
--- adjacencyList (1 * 2)      == [(1, [2]), (2, [])]
+-- adjacencyList 'empty'      == []
+-- adjacencyList ('vertex' x) == [(x, [])]
+-- adjacencyList (1 * 2)    == [(1, [2]), (2, [])]
 -- @
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
 adjacencyList = coerce AM.adjacencyList
@@ -379,10 +387,10 @@ adjacencyList = coerce AM.adjacencyList
 -- Complexity: /O(1)/ time.
 --
 -- @
--- isEmpty 'empty'                         == True
--- isEmpty ('vertex' x)                    == False
--- isEmpty ('removeVertex' x $ 'vertex' x)   == True
--- isEmpty ('removeEdge' 1 2 $ 1 * 2)      == False
+-- isEmpty 'empty'                       == True
+-- isEmpty ('vertex' x)                  == False
+-- isEmpty ('removeVertex' x $ 'vertex' x) == True
+-- isEmpty ('removeEdge' 1 2 $ 1 * 2)    == False
 -- @
 isEmpty :: AdjacencyMap a -> Bool
 isEmpty = coerce AM.isEmpty
@@ -403,11 +411,11 @@ hasVertex = coerce AM.hasVertex
 -- Complexity: /O(log(n))/ time.
 --
 -- @
--- hasEdge x y 'empty'              == False
--- hasEdge x y ('vertex' z)         == False
--- hasEdge 1 2 (1 * 2)            == True
--- hasEdge x y . 'removeEdge' x y   == 'const' False
--- hasEdge x y                    == 'elem' (x,y) . 'edgeList'
+-- hasEdge x y 'empty'            == False
+-- hasEdge x y ('vertex' z)       == False
+-- hasEdge 1 2 (1 * 2)          == True
+-- hasEdge x y . 'removeEdge' x y == 'const' False
+-- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
 hasEdge = coerce AM.hasEdge
@@ -416,10 +424,10 @@ hasEdge = coerce AM.hasEdge
 -- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
 --
 -- @
--- transpose 'empty'         == 'empty'
--- transpose ('vertex' x)    == 'vertex' x
--- transpose . transpose   == id
--- 'edgeList' . transpose    == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
+-- transpose 'empty'       == 'empty'
+-- transpose ('vertex' x)  == 'vertex' x
+-- transpose . transpose == id
+-- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
 transpose = coerce AM.transpose
@@ -430,10 +438,10 @@ transpose = coerce AM.transpose
 -- be evaluated.
 --
 -- @
--- induce ('const' True ) x   == x
--- induce ('const' False) x   == 'empty'
--- induce (/= x)            == 'removeVertex' x
--- induce p . induce q      == induce (\x -> p x && q x)
+-- induce ('const' True ) x == x
+-- induce ('const' False) x == 'empty'
+-- induce (/= x)          == 'removeVertex' x
+-- induce p . induce q    == induce (\x -> p x && q x)
 -- @
 induce :: (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
 induce = coerce AM.induce
