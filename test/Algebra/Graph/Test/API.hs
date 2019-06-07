@@ -17,7 +17,7 @@ module Algebra.Graph.Test.API (
     API (..), Mono (..), toIntAPI,
 
     -- * APIs of various graph data types
-    acyclicAdjacencyMapAPI, adjacencyMapAPI, adjacencyIntMapAPI,
+    adjacencyMapAPI, adjacencyIntMapAPI,
     graphAPI, relationAPI, symmetricRelationAPI, labelledGraphAPI,
     labelledAdjacencyMapAPI
     ) where
@@ -32,7 +32,6 @@ import Data.Tree
 import Test.QuickCheck
 
 import qualified Algebra.Graph                                as G
-import qualified Algebra.Graph.Acyclic.AdjacencyMap           as AAM
 import qualified Algebra.Graph.AdjacencyIntMap                as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Algorithm      as AIM
 import qualified Algebra.Graph.AdjacencyMap                   as AM
@@ -141,31 +140,6 @@ data API g c where
         , consistent                 :: forall a. c a => g a -> Bool
         , fromAdjacencySets          :: forall a. c a => [(a, Set a)] -> g a
         , fromAdjacencyIntSets       :: [(Int, IntSet)] -> g Int } -> API g c
-
--- | The API of 'AAM.AdjacencyMap'.
-acyclicAdjacencyMapAPI :: API AAM.AdjacencyMap Ord
-acyclicAdjacencyMapAPI = API
-    { empty                      = AAM.empty
-    , vertex                     = AAM.vertex
-    , vertices                   = AAM.vertices
-    , isEmpty                    = AAM.isEmpty
-    , hasVertex                  = AAM.hasVertex
-    , hasEdge                    = AAM.hasEdge
-    , vertexCount                = AAM.vertexCount
-    , edgeCount                  = AAM.edgeCount
-    , vertexList                 = AAM.vertexList
-    , edgeList                   = AAM.edgeList
-    , vertexSet                  = AAM.vertexSet
-    , edgeSet                    = AAM.edgeSet
-    , adjacencyList              = AAM.adjacencyList
-    , topSort                    = Just . AAM.topSort
-    , removeVertex               = AAM.removeVertex
-    , removeEdge                 = AAM.removeEdge
-    , transpose                  = AAM.transpose
-    , induce                     = AAM.induce
-    , box                        = AAM.box
-    , transitiveClosure          = AAM.transitiveClosure
-    , consistent                 = AAM.consistent }
 
 -- | The API of 'AM.AdjacencyMap'.
 adjacencyMapAPI :: API AM.AdjacencyMap Ord

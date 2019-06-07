@@ -26,8 +26,19 @@ type AAE = AdjacencyMap (Either Int Int)
 type AAT = AdjacencyMap (Int, Int)
 type AI = AM.AdjacencyMap Int
 
+-- TODO: Switch to using generic tests.
 testAcyclicAdjacencyMap :: IO ()
 testAcyclicAdjacencyMap = do
+
+  putStrLn "\n=====AcyclicAdjacencyMap toAcyclic====="
+
+  test "fromAcyclic (1 * 2 + 3 * 4)                 == AM.edges [(1,2), (3,4)]" $
+        fromAcyclic (1 * 2 + 3 * 4 :: AAI)          == AM.edges [(1,2), (3,4)]
+  test "AM.vertexCount  . fromAcyclic               == vertexCount" $ \x ->
+        (AM.vertexCount . fromAcyclic $ (x :: AAI)) == vertexCount x
+  test "AM.edgeCount    . fromAcyclic               == edgeCount" $ \x ->
+        (AM.edgeCount   . fromAcyclic $ (x :: AAI)) == edgeCount x
+
   putStrLn "\n=====AcyclicAdjacencyMap consistency====="
 
   test "arbitraryAcyclicAdjacencyMap" $ \x -> consistent (x :: AAI)

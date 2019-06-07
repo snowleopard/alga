@@ -1,6 +1,6 @@
 module Algebra.Graph.Acyclic.AdjacencyMap (
   -- * Data structure
-  AdjacencyMap,
+  AdjacencyMap, fromAcyclic,
 
   -- * Basic graph construction primitives
   empty, vertex, vertices, disjointOverlay, disjointConnect,
@@ -71,8 +71,17 @@ in future Haskell's Prelude will provide a more fine-grained class
 hierarchy for algebraic structures, which we would be able to utilise
 without violating any laws.
 -}
-newtype AdjacencyMap a = AAM
-  { aam :: AM.AdjacencyMap a
+-- TODO: Replace the current Show instance with a proper one.
+newtype AdjacencyMap a = AAM { 
+  -- | Extract the underlying acyclic "Algebra.Graph.AdjacencyMap".
+  -- Complexity: /O(1)/ time and memory.
+  --
+  -- @
+  -- fromAcyclic (1 * 2 + 3 * 4) == AdacencyMap.'AM.edges' [(1,2), (3,4)]
+  -- 'AM.vertexCount' . fromAcyclic   == 'vertexCount'
+  -- 'AM.edgeCount'   . fromAcyclic   == 'edgeCount'
+  -- @
+  fromAcyclic :: AM.AdjacencyMap a
   } deriving (Show, Eq, Ord)
 
 -- | Check if the internal graph representation is consistent,
