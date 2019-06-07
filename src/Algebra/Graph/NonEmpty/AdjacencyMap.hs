@@ -629,14 +629,15 @@ gmap = coerce AM.gmap
 induce1 :: (a -> Bool) -> AdjacencyMap a -> Maybe (AdjacencyMap a)
 induce1 = fmap toNonEmpty . coerce AM.induce
 
--- | Construct the /induced subgraph/ of a given graph by removing the 
--- vertices that are 'Nothing'. Returns 'Nothing' if the 
--- resulting graph is empty.
--- Complexity: /O(n)/ time.
+-- | Construct the /induced subgraph/ of a given graph by removing the vertices
+-- that are 'Nothing'. Returns 'Nothing' if the resulting graph is empty.
+-- Complexity: /O(n + m)/ time.
+--
 -- @
--- induceJust1 ('vertex' 'Nothing')                            == 'Nothing'
--- induceJust1 (gmap Just x)                                   == Just x
--- induceJust1 ('connect' (gmap Just x) ('vertex' 'Nothing'))  == Just x
+-- induceJust1 ('vertex' 'Nothing')                               == 'Nothing'
+-- induceJust1 ('edge' ('Just' x) 'Nothing')                        == 'Just' ('vertex' x)
+-- induceJust1 . 'gmap' 'Just'                                    == 'Just'
+-- induceJust1 . 'gmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce1' p
 -- @
 induceJust1 :: Ord a => AdjacencyMap (Maybe a) -> Maybe (AdjacencyMap a)
 induceJust1 m = toNonEmpty (AM.induceJust (coerce m))

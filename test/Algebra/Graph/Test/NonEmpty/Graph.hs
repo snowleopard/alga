@@ -625,12 +625,17 @@ testNonEmptyGraph = do
          (induce1 p >=> induce1 q) y == induce1 (\x -> p x && q x) y
 
     putStrLn $ "\n============ NonEmpty.Graph.induceJust1 ============"
-    test "induceJust1 (vertex Nothing)                         == Nothing" $
-          induceJust1 (vertex (Nothing :: Maybe Int))          == Nothing
-    test "induceJust1 (fmap Just x)                            == Just x" $ \(x :: G) ->
-          induceJust1 (fmap Just x)                            == Just x
-    test "induceJust1 (fmap Just x)                            == Just x" $ \(x :: G) ->
-          induceJust1 (connect (fmap Just x) (vertex Nothing)) == Just x
+    test "induceJust1 (vertex Nothing)                               == Nothing" $
+          induceJust1 (vertex (Nothing :: Maybe Int))                == Nothing
+
+    test "induceJust1 (edge (Just x) Nothing)                        == Just (vertex x)" $ \(x :: G) ->
+          induceJust1 (edge (Just x) Nothing)                        == Just (vertex x)
+
+    test "induceJust1 . fmap Just                                    == Just" $ \(x :: G) ->
+         (induceJust1 . fmap Just) x                                 == Just x
+
+    test "induceJust1 . fmap (\\x -> if p x then Just x else Nothing) == induce1 p" $ \(x :: G) (apply -> p) ->
+         (induceJust1 . fmap (\x -> if p x then Just x else Nothing)) x == induce1 p x
 
     putStrLn $ "\n============ NonEmpty.Graph.simplify ============"
     test "simplify             ==  id" $ \(x :: G) ->

@@ -599,13 +599,15 @@ induce :: (a -> Bool) -> AdjacencyMap e a -> AdjacencyMap e a
 induce p = AM . Map.map (Map.filterWithKey (\k _ -> p k)) .
     Map.filterWithKey (\k _ -> p k) . adjacencyMap
 
--- | Construct the /induced subgraph/ of a given graph by removing the 
--- vertices that are 'Nothing'.
--- Complexity: /O(n)/ time.
+-- | Construct the /induced subgraph/ of a given graph by removing the vertices
+-- that are 'Nothing'.
+-- Complexity: /O(n + m)/ time.
+--
 -- @
--- induceJust ('vertex' 'Nothing')                            == 'empty'
--- induceJust (gmap Just x)                                   == x
--- induceJust ('connect' (gmap Just x) ('vertex' 'Nothing'))  == x
+-- induceJust ('vertex' 'Nothing')                               == 'empty'
+-- induceJust ('edge' ('Just' x) 'Nothing')                        == 'vertex' x
+-- induceJust . 'gmap' 'Just'                                    == 'id'
+-- induceJust . 'gmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce' p
 -- @
 induceJust :: Ord a => AdjacencyMap e (Maybe a) -> AdjacencyMap e a
 induceJust = AM . Map.map catMaybesMap . catMaybesMap . adjacencyMap
