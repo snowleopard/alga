@@ -31,7 +31,7 @@ module Algebra.Graph.Labelled (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, replaceEdge, transpose, emap,
-    induce,
+    induce, induceJust,
 
     -- * Relational operations
     closure, reflexiveClosure, symmetricClosure, transitiveClosure,
@@ -506,6 +506,21 @@ emap f = foldg Empty Vertex (Connect . f)
 -- @
 induce :: (a -> Bool) -> Graph e a -> Graph e a
 induce p = foldg Empty (\x -> if p x then Vertex x else Empty) c
+  where
+    c _ x     Empty = x -- Constant folding to get rid of Empty leaves
+    c _ Empty y     = y
+    c e x     y     = Connect e x y
+
+-- | Construct the /induced subgraph/ of a given graph by removing the 
+-- vertices that are 'Nothing'.
+-- Complexity: /O(s)/ time, memory and size.
+-- @
+-- induceJust ('vertex' 'Nothing')                            == 'empty'
+-- induceJust (gmap Just x)                                   == x
+-- induceJust ('connect' (gmap Just x) ('vertex' 'Nothing'))  == x
+-- @
+induceJust :: Graph e (Maybe a) -> Graph e a
+induceJust = foldg Empty (maybe Empty Vertex) c
   where
     c _ x     Empty = x -- Constant folding to get rid of Empty leaves
     c _ Empty y     = y

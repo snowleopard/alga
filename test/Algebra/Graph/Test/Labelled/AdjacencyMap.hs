@@ -406,6 +406,7 @@ testLabelledAdjacencyMap = do
         in (emap g . emap h) x   == (emap (g . h) x :: LAS)
 
     testInduce t
+    testInduceJust tPoly
 
     putStrLn "\n============ Labelled.AdjacencyMap.closure ============"
     test "closure empty         == empty" $

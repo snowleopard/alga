@@ -5,6 +5,7 @@ The Alga library was originally developed by
 but over time many contributors helped make it much better, including (among others):
 
 * [Alexandre Moine](mailto:alexandre@moine.me) [@nobrakal](https://github.com/nobrakal)
+* [Piotr Gawryś](mailto:pgawrys2@gmail.com) [@Avasil](https://github.com/Avasil)
 
 If you are not on this list, it's not because your contributions are not appreciated, but 
 because I didn't want to add your name and contact details without your consent. Please fix this

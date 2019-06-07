@@ -42,7 +42,7 @@ module Algebra.Graph.NonEmpty.AdjacencyMap (
 
     -- * Graph transformation
     removeVertex1, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
-    induce1,
+    induce1, induceJust1,
 
     -- * Graph closure
     closure, reflexiveClosure, symmetricClosure, transitiveClosure,
@@ -628,6 +628,18 @@ gmap = coerce AM.gmap
 -- @
 induce1 :: (a -> Bool) -> AdjacencyMap a -> Maybe (AdjacencyMap a)
 induce1 = fmap toNonEmpty . coerce AM.induce
+
+-- | Construct the /induced subgraph/ of a given graph by removing the 
+-- vertices that are 'Nothing'. Returns 'Nothing' if the 
+-- resulting graph is empty.
+-- Complexity: /O(n)/ time.
+-- @
+-- induceJust1 ('vertex' 'Nothing')                            == 'Nothing'
+-- induceJust1 (gmap Just x)                                   == Just x
+-- induceJust1 ('connect' (gmap Just x) ('vertex' 'Nothing'))  == Just x
+-- @
+induceJust1 :: Ord a => AdjacencyMap (Maybe a) -> Maybe (AdjacencyMap a)
+induceJust1 m = toNonEmpty (AM.induceJust (coerce m))
 
 -- | Compute the /reflexive and transitive closure/ of a graph.
 -- Complexity: /O(n * m * log(n)^2)/ time.

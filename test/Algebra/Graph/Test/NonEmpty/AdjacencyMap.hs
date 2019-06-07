@@ -547,6 +547,14 @@ testNonEmptyAdjacencyMap = do
     test "induce1 p >=> induce1 q == induce1 (\\x -> p x && q x)" $ \(apply -> p) (apply -> q) (y :: G) ->
          (induce1 p >=> induce1 q) y == induce1 (\x -> p x && q x) y
 
+    putStrLn $ "\n============ NonEmpty.AdjacencyMap.induceJust1 ============"
+    test "induceJust1 (vertex Nothing)                         == Nothing" $
+          induceJust1 (vertex (Nothing :: Maybe Int))          == Nothing
+    test "induceJust1 (gmap Just x)                            == Just x" $ \(x :: G) ->
+          induceJust1 (gmap Just x)                            == Just x
+    test "induceJust1 (gmap Just x)                            == Just x" $ \(x :: G) ->
+          induceJust1 (connect (gmap Just x) (vertex Nothing)) == Just x
+
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.closure ============"
     test "closure (vertex x)      == edge x x" $ \(x :: Int) ->
           closure (vertex x)      == edge x x

@@ -1515,6 +1515,16 @@ testInduce (prefix, API{..}) = do
     test "isSubgraphOf (induce p x) x == True" $ \(apply -> p) x ->
           isSubgraphOf (induce p x) x == True
 
+testInduceJust :: Testsuite g Ord -> IO ()
+testInduceJust (prefix, API{..}) = do
+    putStrLn $ "\n============ " ++ prefix ++ "induceJust ============"
+    test "induceJust (vertex Nothing)                          == empty" $
+          induceJust (vertex (Nothing :: Maybe Int))           == empty
+    test "induceJust (gmap Just x)                             == x" $ \(x :: g Int) ->
+          induceJust (gmap Just x)                             == x
+    test "induceJust (gmap Just x)                             == x" $ \(x :: g Int) ->
+          induceJust (connect (gmap Just x) (vertex Nothing))  == x
+
 testCompose :: TestsuiteInt g -> IO ()
 testCompose (prefix, API{..}) = do
     putStrLn $ "\n============ " ++ prefix ++ "compose ============"

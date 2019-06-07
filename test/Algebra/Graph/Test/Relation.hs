@@ -44,6 +44,7 @@ testRelation = do
     testGraphFamilies   t
     testTransformations t
     testRelational      t
+    testInduceJust      tPoly
 
     putStrLn "\n============ ReflexiveRelation ============"
     test "Axioms of reflexive graphs" $ size10
