@@ -17,9 +17,8 @@ module Algebra.Graph.Test.API (
     API (..), Mono (..), toIntAPI,
 
     -- * APIs of various graph data types
-    adjacencyMapAPI, adjacencyIntMapAPI,
-    graphAPI, relationAPI, symmetricRelationAPI, labelledGraphAPI,
-    labelledAdjacencyMapAPI
+    adjacencyMapAPI, adjacencyIntMapAPI, graphAPI, relationAPI,
+    symmetricRelationAPI, labelledGraphAPI, labelledAdjacencyMapAPI
     ) where
 
 import Data.Coerce
