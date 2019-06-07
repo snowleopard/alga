@@ -825,7 +825,7 @@ transpose = foldg1 vertex overlay (flip connect)
 "transpose/clique1"   forall xs. transpose (clique1 xs) = clique1 (NonEmpty.reverse xs)
  #-}
 
--- TODO: Implement via 'induceJust1'.
+-- TODO: Implement via 'induceJust1' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate. Returns @Nothing@ if the
 -- resulting graph is empty.

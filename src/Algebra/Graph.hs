@@ -990,6 +990,7 @@ transpose :: Graph a -> Graph a
 transpose = foldg Empty Vertex Overlay (flip Connect)
 {-# INLINE transpose #-}
 
+-- TODO: Implement via 'induceJust' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
