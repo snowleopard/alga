@@ -825,6 +825,7 @@ transpose = foldg1 vertex overlay (flip connect)
 "transpose/clique1"   forall xs. transpose (clique1 xs) = clique1 (NonEmpty.reverse xs)
  #-}
 
+-- TODO: Implement via 'induceJust1' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate. Returns @Nothing@ if the
 -- resulting graph is empty.
@@ -839,30 +840,28 @@ transpose = foldg1 vertex overlay (flip connect)
 -- @
 induce1 :: (a -> Bool) -> Graph a -> Maybe (Graph a)
 induce1 p = foldg1
-  (\x -> if p x then Just (Vertex x) else Nothing)
-  (k Overlay)
-  (k Connect)
+    (\x -> if p x then Just (Vertex x) else Nothing) (k Overlay) (k Connect)
   where
-    k _ Nothing a = a
-    k _ a Nothing = a
-    k f (Just a) (Just b) = Just $ f a b
+    k _ Nothing  a        = a
+    k _ a        Nothing  = a
+    k f (Just a) (Just b) = Just (f a b)
 
-
--- | Construct the /induced subgraph/ of a given graph by removing the 
--- vertices that are 'Nothing'. Returns 'Nothing' if the 
--- resulting graph is empty.
+-- | Construct the /induced subgraph/ of a given graph by removing the vertices
+-- that are 'Nothing'. Returns 'Nothing' if the resulting graph is empty.
 -- Complexity: /O(s)/ time, memory and size.
+--
 -- @
--- induceJust1 ('vertex' 'Nothing')                            == `Nothing`
--- induceJust1 (fmap Just x)                                   == Just x
--- induceJust1 ('connect' (fmap Just x) ('vertex' 'Nothing'))  == Just x
+-- induceJust1 ('vertex' 'Nothing')                               == 'Nothing'
+-- induceJust1 ('edge' ('Just' x) 'Nothing')                        == 'Just' ('vertex' x)
+-- induceJust1 . 'fmap' 'Just'                                    == 'Just'
+-- induceJust1 . 'fmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce1' p
 -- @
 induceJust1 :: Graph (Maybe a) -> Maybe (Graph a)
 induceJust1 = foldg1 (fmap Vertex) (k Overlay) (k Connect)
   where
-    k _ Nothing a = a
-    k _ a Nothing = a
-    k f (Just a) (Just b) = Just $ f a b
+    k _ Nothing  a        = a
+    k _ a        Nothing  = a
+    k f (Just a) (Just b) = Just (f a b)
 
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given expression according to the laws of the algebra.

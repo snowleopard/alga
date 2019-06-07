@@ -32,7 +32,7 @@ module Algebra.Graph.Relation (
     path, circuit, clique, biclique, star, stars, tree, forest,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, 
+    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
     induce, induceJust,
 
     -- * Relational operations
@@ -693,7 +693,7 @@ gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) 
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(m)/ time, assuming that the predicate takes /O(1)/ to
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
 -- be evaluated.
 --
 -- @
@@ -708,19 +708,22 @@ induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
   where
     pp (x, y) = p x && p y
 
--- | Construct the /induced subgraph/ of a given graph by removing the 
--- vertices that are 'Nothing'.
--- Complexity: /O(n)/ time.
+-- | Construct the /induced subgraph/ of a given graph by removing the vertices
+-- that are 'Nothing'.
+-- Complexity: /O(n + m)/ time.
+--
 -- @
--- induceJust ('vertex' 'Nothing')                            == 'empty'
--- induceJust (gmap Just x)                                   == x
--- induceJust ('connect' (gmap Just x) ('vertex' 'Nothing'))  == x
+-- induceJust ('vertex' 'Nothing')                               == 'empty'
+-- induceJust ('edge' ('Just' x) 'Nothing')                        == 'vertex' x
+-- induceJust . 'gmap' 'Just'                                    == 'id'
+-- induceJust . 'gmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce' p
 -- @
 induceJust :: Ord a => Relation (Maybe a) -> Relation a
-induceJust (Relation d r) = Relation (catMaybesSet d) (catMaybesSet' r)
-  where 
+induceJust (Relation d r) = Relation (catMaybesSet d) (catMaybesSet2 r)
+  where
     catMaybesSet         = Set.mapMonotonic Maybe.fromJust . Set.delete Nothing
-    catMaybesSet'        = Set.mapMonotonic (\(x, y) -> (Maybe.fromJust x, Maybe.fromJust y)) . Set.filter p
+    catMaybesSet2        = Set.mapMonotonic (\(x, y) -> (Maybe.fromJust x, Maybe.fromJust y))
+                         . Set.filter p
     p (Nothing, _)       = False
     p (_,       Nothing) = False
     p (_,       _)       = True

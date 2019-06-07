@@ -548,12 +548,17 @@ testNonEmptyAdjacencyMap = do
          (induce1 p >=> induce1 q) y == induce1 (\x -> p x && q x) y
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.induceJust1 ============"
-    test "induceJust1 (vertex Nothing)                         == Nothing" $
-          induceJust1 (vertex (Nothing :: Maybe Int))          == Nothing
-    test "induceJust1 (gmap Just x)                            == Just x" $ \(x :: G) ->
-          induceJust1 (gmap Just x)                            == Just x
-    test "induceJust1 (gmap Just x)                            == Just x" $ \(x :: G) ->
-          induceJust1 (connect (gmap Just x) (vertex Nothing)) == Just x
+    test "induceJust1 (vertex Nothing)                               == Nothing" $
+          induceJust1 (vertex (Nothing :: Maybe Int))                == Nothing
+
+    test "induceJust1 (edge (Just x) Nothing)                        == Just (vertex x)" $ \(x :: G) ->
+          induceJust1 (edge (Just x) Nothing)                        == Just (vertex x)
+
+    test "induceJust1 . gmap Just                                    == Just" $ \(x :: G) ->
+         (induceJust1 . gmap Just) x                                 == Just x
+
+    test "induceJust1 . gmap (\\x -> if p x then Just x else Nothing) == induce1 p" $ \(x :: G) (apply -> p) ->
+         (induceJust1 . gmap (\x -> if p x then Just x else Nothing)) x == induce1 p x
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.closure ============"
     test "closure (vertex x)      == edge x x" $ \(x :: Int) ->

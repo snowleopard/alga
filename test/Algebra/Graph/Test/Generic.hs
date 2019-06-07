@@ -1518,12 +1518,14 @@ testInduce (prefix, API{..}) = do
 testInduceJust :: Testsuite g Ord -> IO ()
 testInduceJust (prefix, API{..}) = do
     putStrLn $ "\n============ " ++ prefix ++ "induceJust ============"
-    test "induceJust (vertex Nothing)                          == empty" $
-          induceJust (vertex (Nothing :: Maybe Int))           == empty
-    test "induceJust (gmap Just x)                             == x" $ \(x :: g Int) ->
-          induceJust (gmap Just x)                             == x
-    test "induceJust (gmap Just x)                             == x" $ \(x :: g Int) ->
-          induceJust (connect (gmap Just x) (vertex Nothing))  == x
+    test "induceJust (vertex Nothing)                               == empty" $
+          induceJust (vertex (Nothing :: Maybe Int))                == empty
+    test "induceJust (edge (Just x) Nothing)                        == vertex x" $ \x ->
+          induceJust (edge (Just x) (Nothing :: Maybe Int))         == vertex x
+    test "induceJust . gmap Just                                    == id" $ \(x :: g Int) ->
+         (induceJust . gmap Just) x                                 == id x
+    test "induceJust . gmap (\\x -> if p x then Just x else Nothing) == induce p" $ \(x :: g Int) (apply -> p) ->
+         (induceJust . gmap (\x -> if p x then Just x else Nothing)) x == induce p x
 
 testCompose :: TestsuiteInt g -> IO ()
 testCompose (prefix, API{..}) = do

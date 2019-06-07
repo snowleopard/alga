@@ -492,6 +492,7 @@ transpose = foldg empty vertex (fmap flip connect)
 emap :: (e -> f) -> Graph e a -> Graph f a
 emap f = foldg Empty Vertex (Connect . f)
 
+-- TODO: Implement via 'induceJust' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
@@ -511,13 +512,15 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) c
     c _ Empty y     = y
     c e x     y     = Connect e x y
 
--- | Construct the /induced subgraph/ of a given graph by removing the 
--- vertices that are 'Nothing'.
+-- | Construct the /induced subgraph/ of a given graph by removing the vertices
+-- that are 'Nothing'.
 -- Complexity: /O(s)/ time, memory and size.
+--
 -- @
--- induceJust ('vertex' 'Nothing')                            == 'empty'
--- induceJust (gmap Just x)                                   == x
--- induceJust ('connect' (gmap Just x) ('vertex' 'Nothing'))  == x
+-- induceJust ('vertex' 'Nothing')                               == 'empty'
+-- induceJust ('edge' ('Just' x) 'Nothing')                        == 'vertex' x
+-- induceJust . 'fmap' 'Just'                                    == 'id'
+-- induceJust . 'fmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce' p
 -- @
 induceJust :: Graph e (Maybe a) -> Graph e a
 induceJust = foldg Empty (maybe Empty Vertex) c

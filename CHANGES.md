@@ -2,6 +2,7 @@
 
 ## 0.5
 
+* #202, #209, #211: Add `induceJust` and `induceJust1`.
 * #208: Add `fromNonEmpty` to `NonEmpty.AdjacencyMap`.
 * #208: Add `fromAdjacencyMap` to `AdjacencyIntMap`.
 * #208: Drop `Internal` modules for `AdjacencyIntMap`, `AdjacencyMap`,
