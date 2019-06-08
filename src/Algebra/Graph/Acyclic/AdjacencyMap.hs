@@ -1,3 +1,17 @@
+-----------------------------------------------------------------
+-- |
+-- Module     : Algebra.Graph.Acyclic.AdjacencyMap
+-- License    : MIT (see the file LICENSE)
+-- Stability  : experimental
+--
+-- __Alga__ is a library for algebraic construction and manipulation
+-- of graphs in Haskell. See <https://github.com/snowleopard/alga-paper this paper> 
+-- for the motivation behind the library, the underlying theory,
+-- and implementation details.
+--
+-- This module defines the 'AdjacencyMap' data type and for acyclic
+-- graphs, as well as associated operations and algorithms. 
+-----------------------------------------------------------------
 module Algebra.Graph.Acyclic.AdjacencyMap (
   -- * Data structure
   AdjacencyMap, fromAcyclic,
@@ -72,7 +86,7 @@ hierarchy for algebraic structures, which we would be able to utilise
 without violating any laws.
 
 The 'Show' instance is defined using toAcyclic and the consutruction
-primitives of AdjacencyMap.AdjacencyMap.
+primitives of 'AM.AdjacencyMap'.
 @
 show empty       == "fromMaybe empty . toAcyclic $ empty"
 show 1           == "fromMaybe empty . toAcyclic $ vertex 1"
@@ -88,7 +102,7 @@ newtype AdjacencyMap a = AAM {
   -- Complexity: /O(1)/ time and memory.
   --
   -- @
-  -- fromAcyclic (1 * 2 + 3 * 4) == AdacencyMap.'AM.edges' [(1,2), (3,4)]
+  -- fromAcyclic (1 * 2 + 3 * 4) == AdjacencyMap.'AM.edges' [(1,2), (3,4)]
   -- 'AM.vertexCount' . fromAcyclic   == 'vertexCount'
   -- 'AM.edgeCount'   . fromAcyclic   == 'edgeCount'
   -- @
