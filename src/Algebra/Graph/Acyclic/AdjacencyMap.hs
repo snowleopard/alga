@@ -86,7 +86,8 @@ hierarchy for algebraic structures, which we would be able to utilise
 without violating any laws.
 
 The 'Show' instance is defined using toAcyclic and the consutruction
-primitives of 'AM.AdjacencyMap'.
+primitives of 'AM.AdjacencyMap':
+
 @
 show empty       == "fromMaybe empty . toAcyclic $ empty"
 show 1           == "fromMaybe empty . toAcyclic $ vertex 1"
