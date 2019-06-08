@@ -30,7 +30,29 @@ type AI = AM.AdjacencyMap Int
 testAcyclicAdjacencyMap :: IO ()
 testAcyclicAdjacencyMap = do
 
+  putStrLn "\n=====AcyclicAdjacencyMap Show====="
+
+  test "show empty              == \"fromMaybe empty . toAcyclic $ empty\"" $
+        show (empty :: AAI)     == "fromMaybe empty . toAcyclic $ empty"
+  test "show 1                  == \"fromMaybe empty . toAcyclic $ vertex 1\"" $
+        show (1 :: AAI)         == "fromMaybe empty . toAcyclic $ vertex 1"
+  test "show (1 + 2)            == \"fromMaybe empty . toAcyclic $ vertices [1,2]\"" $
+        show (1 + 2 :: AAI)     == "fromMaybe empty . toAcyclic $ vertices [1,2]"
+  test "show (1 * 2)            == \"fromMaybe empty . toAcyclic $ edge 1 2\"" $
+        show (1 * 2 :: AAI)     == "fromMaybe empty . toAcyclic $ edge 1 2"
+  test "show (1 * 2 * 3)        == \"fromMaybe empty . toAcyclic $ edges [(1,2),(1,3),(2,3)]\"" $
+        show (1 * 2 * 3 :: AAI) == "fromMaybe empty . toAcyclic $ edges [(1,2),(1,3),(2,3)]"
+  test "show (1 * 2 + 3)        == \"fromMaybe empty . toAcyclic $ overlay (vertex 3) (edge 1 2)\"" $
+        show (1 * 2 + 3 :: AAI) == "fromMaybe empty . toAcyclic $ overlay (vertex 3) (edge 1 2)"
+
   putStrLn "\n=====AcyclicAdjacencyMap toAcyclic====="
+
+  test "toAcyclic (AdjacencyMap.'AM.path' [1, 2, 1]) == Nothing" $
+        toAcyclic (AM.path [1, 2, 1] :: AI)          == Nothing
+  test "toAcyclic (AdjacencyMap.'AM.path' [1, 2, 3]) == Just (1 * 2 + 2 * 3)" $
+        toAcyclic (AM.path [1, 2, 3] :: AI)          == Just (1 * 2 + 2 * 3)
+
+  putStrLn "\n=====AcyclicAdjacencyMap fromAcyclic====="
 
   test "fromAcyclic (1 * 2 + 3 * 4)                 == AM.edges [(1,2), (3,4)]" $
         fromAcyclic (1 * 2 + 3 * 4 :: AAI)          == AM.edges [(1,2), (3,4)]

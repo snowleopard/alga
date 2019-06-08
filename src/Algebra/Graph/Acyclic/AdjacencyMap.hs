@@ -22,7 +22,7 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
   topSort,
 
   -- * Acyclic graph construction methods
-  scc, fromGraph, PartialOrder,
+  scc, fromGraph, PartialOrder, toAcyclic,
 
   -- * Miscellaneous
   consistent,
@@ -70,8 +70,19 @@ is very convenient when working with algebraic graphs; we hope that
 in future Haskell's Prelude will provide a more fine-grained class
 hierarchy for algebraic structures, which we would be able to utilise
 without violating any laws.
+
+The 'Show' instance is defined using toAcyclic and the consutruction
+primitives of AdjacencyMap.AdjacencyMap.
+@
+show empty       == "fromMaybe empty . toAcyclic $ empty"
+show 1           == "fromMaybe empty . toAcyclic $ vertex 1"
+show (1 + 2)     == "fromMaybe empty . toAcyclic $ vertices [1,2]"
+show (1 * 2)     == "fromMaybe empty . toAcyclic $ edge 1 2"
+show (1 * 2 * 3) == "fromMaybe empty . toAcyclic $ edges [(1,2),(1,3),(2,3)]"
+show (1 * 2 + 3) == "fromMaybe empty . toAcyclic $ overlay (vertex 3) (edge 1 2)"
+@
 -}
--- TODO: Replace the current Show instance with a proper one.
+-- TODO: Improve the Show instance.
 newtype AdjacencyMap a = AAM { 
   -- | Extract the underlying acyclic "Algebra.Graph.AdjacencyMap".
   -- Complexity: /O(1)/ time and memory.
@@ -82,7 +93,20 @@ newtype AdjacencyMap a = AAM {
   -- 'AM.edgeCount'   . fromAcyclic   == 'edgeCount'
   -- @
   fromAcyclic :: AM.AdjacencyMap a
-  } deriving (Show, Eq, Ord)
+  } deriving (Eq, Ord)
+
+instance (Ord a, Show a) => Show (AdjacencyMap a) where
+  show x = "fromMaybe empty . toAcyclic $ " ++ show (fromAcyclic x)
+
+-- | __Note:__ this does not satisfy the usual ring laws; see 
+-- 'AdjacencyMap' for more details.
+instance (Ord a, Num a) => Num (AdjacencyMap a) where
+  fromInteger = AAM . fromInteger
+  (AAM x) + (AAM y) = AAM $ induceEAM (uncurry (<)) (x + y)
+  (AAM x) * (AAM y) = AAM $ induceEAM (uncurry (<)) (x * y)
+  signum = const empty
+  abs = id
+  negate = id
 
 -- | Check if the internal graph representation is consistent,
 -- i.e. that all edges refer to existing vertices and the graph
@@ -302,16 +326,6 @@ fromGraph :: Ord a => PartialOrder a -> Graph a -> AdjacencyMap a
 fromGraph o =
   AAM . induceEAM (uncurry o) . foldg AM.empty AM.vertex AM.overlay AM.connect
 
--- | __Note:__ this does not satisfy the usual ring laws; see 
--- 'AdjacencyMap' for more details.
-instance (Ord a, Num a) => Num (AdjacencyMap a) where
-  fromInteger = AAM . fromInteger
-  (AAM x) + (AAM y) = AAM $ induceEAM (uncurry (<)) (x + y)
-  (AAM x) * (AAM y) = AAM $ induceEAM (uncurry (<)) (x * y)
-  signum = const empty
-  abs = id
-  negate = id
-
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
 --
@@ -454,6 +468,17 @@ transpose = coerce AM.transpose
 -- @
 induce :: (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
 induce = coerce AM.induce
+
+-- | If possible, construct a graph of type Acyclic.AdjacencyMap 
+-- from a graph of type AdjacencyMap. If the input graph is contains
+-- cycles then return Nothing.
+--
+-- @
+-- toAcyclic (AdjacencyMap.'AM.path' [1, 2, 1]) == Nothing
+-- toAcyclic (AdjacencyMap.'AM.path' [1, 2, 3]) == Just (1 * 2 + 2 * 3)
+-- @
+toAcyclic :: (Ord a) => AM.AdjacencyMap a -> Maybe (AdjacencyMap a)
+toAcyclic x = if AM.isAcyclic x then Just (AAM x) else Nothing
 
 -- Helper function, not to be exported.
 -- Induce a subgraph from AM.AdjacencyList removing edges not
