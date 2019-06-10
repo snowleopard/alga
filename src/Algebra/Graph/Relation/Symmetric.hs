@@ -34,10 +34,11 @@ module Algebra.Graph.Relation.Symmetric (
     path, circuit, clique, biclique, star, stars, tree, forest,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, gmap, induce,
+    removeVertex, removeEdge, replaceVertex, mergeVertices, gmap, induce, induceJust,
 
     -- * Miscellaneous
     consistent
+
     ) where
 
 import Control.DeepSeq
@@ -594,7 +595,7 @@ gmap = coerce R.gmap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(m)/ time, assuming that the predicate takes /O(1)/ to
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
 -- be evaluated.
 --
 -- @
@@ -606,6 +607,19 @@ gmap = coerce R.gmap
 -- @
 induce :: (a -> Bool) -> Relation a -> Relation a
 induce = coerce R.induce
+
+-- | Construct the /induced subgraph/ of a given graph by removing the vertices
+-- that are 'Nothing'.
+-- Complexity: /O(n + m)/ time.
+--
+-- @
+-- induceJust ('vertex' 'Nothing')                               == 'empty'
+-- induceJust ('edge' ('Just' x) 'Nothing')                        == 'vertex' x
+-- induceJust . 'gmap' 'Just'                                    == 'id'
+-- induceJust . 'gmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce' p
+-- @
+induceJust :: Ord a => Relation (Maybe a) -> Relation a
+induceJust = coerce R.induceJust
 
 -- | The set of /neighbours/ of an element @x@ is the set of elements that are
 -- related to it, i.e. @neighbours x == { a | aRx }@. In the context of undirected

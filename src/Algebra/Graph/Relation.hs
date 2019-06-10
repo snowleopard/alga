@@ -32,7 +32,8 @@ module Algebra.Graph.Relation (
     path, circuit, clique, biclique, star, stars, tree, forest,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap, induce,
+    removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
+    induce, induceJust,
 
     -- * Relational operations
     compose, closure, reflexiveClosure, symmetricClosure, transitiveClosure,
@@ -46,8 +47,9 @@ import Data.Set (Set, union)
 import Data.Tree
 import Data.Tuple
 
-import qualified Data.Set  as Set
-import qualified Data.Tree as Tree
+import qualified Data.Maybe as Maybe
+import qualified Data.Set   as Set
+import qualified Data.Tree  as Tree
 
 import Algebra.Graph.Internal
 
@@ -691,7 +693,7 @@ gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) 
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(m)/ time, assuming that the predicate takes /O(1)/ to
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
 -- be evaluated.
 --
 -- @
@@ -705,6 +707,26 @@ induce :: (a -> Bool) -> Relation a -> Relation a
 induce p (Relation d r) = Relation (Set.filter p d) (Set.filter pp r)
   where
     pp (x, y) = p x && p y
+
+-- | Construct the /induced subgraph/ of a given graph by removing the vertices
+-- that are 'Nothing'.
+-- Complexity: /O(n + m)/ time.
+--
+-- @
+-- induceJust ('vertex' 'Nothing')                               == 'empty'
+-- induceJust ('edge' ('Just' x) 'Nothing')                        == 'vertex' x
+-- induceJust . 'gmap' 'Just'                                    == 'id'
+-- induceJust . 'gmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce' p
+-- @
+induceJust :: Ord a => Relation (Maybe a) -> Relation a
+induceJust (Relation d r) = Relation (catMaybesSet d) (catMaybesSet2 r)
+  where
+    catMaybesSet         = Set.mapMonotonic Maybe.fromJust . Set.delete Nothing
+    catMaybesSet2        = Set.mapMonotonic (\(x, y) -> (Maybe.fromJust x, Maybe.fromJust y))
+                         . Set.filter p
+    p (Nothing, _)       = False
+    p (_,       Nothing) = False
+    p (_,       _)       = True
 
 -- | Left-to-right /relational composition/ of graphs: vertices @x@ and @z@ are
 -- connected in the resulting graph if there is a vertex @y@, such that @x@ is

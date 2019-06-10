@@ -41,7 +41,7 @@ module Algebra.Graph (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, splitVertex,
-    transpose, induce, simplify, sparsify, sparsifyKL,
+    transpose, induce, induceJust, simplify, sparsify, sparsifyKL,
 
     -- * Graph composition
     compose, box,
@@ -55,7 +55,7 @@ import Control.DeepSeq
 import Control.Monad (MonadPlus (..))
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, maybe)
 import Data.Semigroup ((<>))
 import Data.Tree
 import GHC.Generics
@@ -990,6 +990,7 @@ transpose :: Graph a -> Graph a
 transpose = foldg Empty Vertex Overlay (flip Connect)
 {-# INLINE transpose #-}
 
+-- TODO: Implement via 'induceJust' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
@@ -1009,6 +1010,24 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Co
     k _ Empty y     = y
     k f x     y     = f x y
 {-# INLINE [1] induce #-}
+
+-- | Construct the /induced subgraph/ of a given graph by removing the vertices
+-- that are 'Nothing'.
+-- Complexity: /O(s)/ time, memory and size.
+--
+-- @
+-- induceJust ('vertex' 'Nothing')                               == 'empty'
+-- induceJust ('edge' ('Just' x) 'Nothing')                        == 'vertex' x
+-- induceJust . 'fmap' 'Just'                                    == 'id'
+-- induceJust . 'fmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce' p
+-- @
+induceJust :: Graph (Maybe a) -> Graph a
+induceJust = foldg Empty (maybe Empty Vertex) (k Overlay) (k Connect)
+  where
+    k _ x     Empty = x -- Constant folding to get rid of Empty leaves
+    k _ Empty y     = y
+    k f x     y     = f x y
+{-# INLINE [1] induceJust #-}
 
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given expression according to the laws of the algebra.

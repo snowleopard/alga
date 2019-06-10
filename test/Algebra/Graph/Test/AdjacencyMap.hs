@@ -55,6 +55,7 @@ testAdjacencyMap = do
     testIsAcyclic         t
     testIsDfsForestOf     t
     testIsTopSortOf       t
+    testInduceJust        tPoly
 
     putStrLn "\n============ AdjacencyMap.scc ============"
     test "scc empty               == empty" $

@@ -38,7 +38,7 @@ module Algebra.Graph.AdjacencyMap (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
-    induce,
+    induce, induceJust,
 
     -- * Graph composition
     compose, box,
@@ -59,6 +59,7 @@ import Data.Tree
 import GHC.Generics
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe      as Maybe
 import qualified Data.Set        as Set
 
 {-| The 'AdjacencyMap' data type represents a graph by a map of vertices to
@@ -753,6 +754,22 @@ gmap f = AM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 -- @
 induce :: (a -> Bool) -> AdjacencyMap a -> AdjacencyMap a
 induce p = AM . Map.map (Set.filter p) . Map.filterWithKey (\k _ -> p k) . adjacencyMap
+
+-- | Construct the /induced subgraph/ of a given graph by removing the vertices
+-- that are 'Nothing'.
+-- Complexity: /O(n + m)/ time.
+--
+-- @
+-- induceJust ('vertex' 'Nothing')                               == 'empty'
+-- induceJust ('edge' ('Just' x) 'Nothing')                        == 'vertex' x
+-- induceJust . 'gmap' 'Just'                                    == 'id'
+-- induceJust . 'gmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce' p
+-- @
+induceJust :: Ord a => AdjacencyMap (Maybe a) -> AdjacencyMap a
+induceJust = AM . Map.map catMaybesSet . catMaybesMap . adjacencyMap
+    where
+      catMaybesSet = Set.mapMonotonic     Maybe.fromJust . Set.delete Nothing
+      catMaybesMap = Map.mapKeysMonotonic Maybe.fromJust . Map.delete Nothing
 
 -- | Left-to-right /relational composition/ of graphs: vertices @x@ and @z@ are
 -- connected in the resulting graph if there is a vertex @y@, such that @x@ is

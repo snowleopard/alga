@@ -44,6 +44,7 @@ testGraph = do
     testSize            t
     testGraphFamilies   t
     testTransformations t
+    testInduceJust      tPoly
 
     ----------------------------------------------------------------
     -- Generic relational composition tests, plus an additional one
