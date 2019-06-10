@@ -52,11 +52,11 @@ data AdjacencyMap a b = BAM {
     -- memory
     --
     -- @
-    -- leftToRight ('fromGraph' 'Algebra.Graph.empty') == Map.'Map.empty'
-    -- leftToRight ('fromGraph' ('Algebra.Graph.vertex' (Left 1))) == Map.'Map.singleton' 1 Set.'Set.empty'
-    -- leftToRight ('fromGraph' ('Algebra.Graph.vertex' (Right 1))) == Map.'Map.empty'
-    -- leftToRight ('fromGraph' ('Algebra.Graph.edge' (Left 1) (Right 2))) == Map.'Map.singleton' 1 (Set.'Set.singleton' 2)
-    -- leftToRight ('fromGraph' ('Algebra.Graph.edge' (Left 1) (Right 1))) == Map.'Map.singleton' 1 (Set.'Set.singleton' 1)
+    -- leftToRight ('fromGraph' 'Algebra.Graph.empty')                                          == Map.'Map.empty'
+    -- leftToRight ('fromGraph' ('Algebra.Graph.vertex' (Left 1)))                              == Map.'Map.singleton' 1 Set.'Set.empty'
+    -- leftToRight ('fromGraph' ('Algebra.Graph.vertex' (Right 1)))                             == Map.'Map.empty'
+    -- leftToRight ('fromGraph' ('Algebra.Graph.edge' (Left 1) (Right 2)))                      == Map.'Map.singleton' 1 (Set.'Set.singleton' 2)
+    -- leftToRight ('fromGraph' ('Algebra.Graph.edge' (Left 1) (Right 1)))                      == Map.'Map.singleton' 1 (Set.'Set.singleton' 1)
     -- leftToRight ('fromGraph' ('Algebra.Graph.edges' [(Left 1, Right 1), (Left 1, Right 2)])) == Map.'Map.singleton' 1 (Set.'Set.fromAscList' [1, 2])
     -- @
     leftToRight :: Map.Map a (Set.Set b),
@@ -64,11 +64,11 @@ data AdjacencyMap a b = BAM {
     -- | The inverse map for 'leftToRight'. Complexity: /O(1)/ time and memory.
     --
     -- @
-    -- rightToLeft ('fromGraph' 'Algebra.Graph.empty') == Map.'Map.empty'
-    -- rightToLeft ('fromGraph' ('Algebra.Graph.vertex' (Left 1))) == Map.'Map.empty'
-    -- rightToLeft ('fromGraph' ('Algebra.Graph.vertex' (Right 1))) == Map.'Map.singleton' 2 Set.'Set.empty'
-    -- rightToLeft ('fromGraph' ('Algebra.Graph.edge' (Left 1) (Right 2))) == Map.'Map.singleton' 2 (Set.'Set.singleton' 1)
-    -- rightToLeft ('fromGraph' ('Algebra.Graph.edge' (Left 1) (Right 1))) == Map.'Map.singleton' 1 (Set.'Set.singleton' 1)
+    -- rightToLeft ('fromGraph' 'Algebra.Graph.empty')                                          == Map.'Map.empty'
+    -- rightToLeft ('fromGraph' ('Algebra.Graph.vertex' (Left 1)))                              == Map.'Map.empty'
+    -- rightToLeft ('fromGraph' ('Algebra.Graph.vertex' (Right 1)))                             == Map.'Map.singleton' 2 Set.'Set.empty'
+    -- rightToLeft ('fromGraph' ('Algebra.Graph.edge' (Left 1) (Right 2)))                      == Map.'Map.singleton' 2 (Set.'Set.singleton' 1)
+    -- rightToLeft ('fromGraph' ('Algebra.Graph.edge' (Left 1) (Right 1)))                      == Map.'Map.singleton' 1 (Set.'Set.singleton' 1)
     -- rightToLeft ('fromGraph' ('Algebra.Graph.edges' [(Left 1, Right 1), (Left 1, Right 2)])) == Map.'Map.fromAscList' [(1, Set.'Set.singleton' 1), (2, Set.'Set.singleton' 1)]
     -- @
     rightToLeft :: Map.Map b (Set.Set a)
@@ -80,13 +80,12 @@ data AdjacencyMap a b = BAM {
 -- Complexity: /O(m log m)/
 --
 -- @
--- consistent ('fromGraph' 'Algebra.Graph.empty')         == True
--- consistent ('fromGraph' ('Algebra.Graph.vertex' x))    == True
--- consistent ('fromGraph' ('Algebra.Graph.overlay' x y)) == True
--- consistent ('fromGraph' ('Algebra.Graph.connect' x y)) == True
--- consistent ('fromGraph' ('Algebra.Graph.edge' x y))    == True
--- consistent ('fromGraph' ('Algebra.Graph.edges' xs))    == True
--- consistent ('fromGraph' ('Algebra.Graph.stars' xs))    == True
+-- consistent ('fromGraph' 'Algebra.Graph.empty')      == True
+-- consistent ('fromGraph' ('Algebra.Graph.vertex' x)) == True
+-- consistent ('fromGraph' ('Algebra.Graph.edge' x y)) == True
+-- consistent ('fromGraph' ('Algebra.Graph.edges' xs)) == True
+-- consistent ('fromGraph' g)          == True
+-- consistent ('fromAdjacencyMap' am)  == True
 -- @
 consistent :: (Ord a, Ord b) => AdjacencyMap a b -> Bool
 consistent (BAM lr rl) = internalEdgeList lr == sort (map swap $ internalEdgeList rl)
@@ -101,10 +100,11 @@ internalEdgeList lr = [ (u, v) | (u, vs) <- Map.toAscList lr, v <- Set.toAscList
 -- Complexity: /O(log(n))/ time.
 --
 -- @
--- hasEdge x y ('fromGraph' 'Algebra.Graph.empty')                     == False
--- hasEdge (Left x) (Right y) ('fromGraph' ('Algebra.Graph.edge' x y)) == True
--- hasEdge 1 1 ('fromGraph' ('Algebra.Graph.edge' (Left 1) (Right 1))) == True
--- hasEdge 1 2 ('fromGraph' ('Algebra.Graph.edge' (Left 1) (Left 2)))  == False
+-- hasEdge x y ('fromGraph' 'Algebra.Graph.empty')                                 == False
+-- hasEdge x y ('fromGraph' ('Algebra.Graph.edge' (Left x) (Right y)))             == True
+-- hasEdge 1 2 ('fromGraph' ('Algebra.Graph.edge' (Left 1) (Left 2)))              == False
+-- hasEdge 2 3 ('fromGraph' ('Algebra.Graph.edge' (Left 1) (Right 2)))             == False
+-- hasEdge x y ('fromGraph' ('Algebra.Graph.Overlay' g ('Algebra.Graph.edge' (Left x) (Right y)))) == True
 -- @
 hasEdge :: (Ord a, Ord b) => a -> b -> AdjacencyMap a b -> Bool
 hasEdge u v (BAM m _) = ((Set.member v) <$> (u `Map.lookup` m)) == Just True
@@ -122,13 +122,10 @@ addReverseEdges m = AM.overlay m $ AM.edges [ (v, u) | (u, v) <- AM.edgeList m ]
 -- Complexity: /O(m log n)/
 --
 -- @
--- 'leftToRight' (fromAdjacencyMap ('Algebra.Graph.AdjacencyMap.empty'))                   == Map.'Map.empty'
--- 'leftToRight' (fromAdjacencyMap ('Algebra.Graph.AdjacencyMap.edge' (Left 1) (Right 2))) == Map.'Map.singleton' 1 (Set.singleton 2)
--- 'leftToRight' (fromAdjacencyMap ('Algebra.Graph.AdjacencyMap.edge' (Left 1) (Left 2)))  == Map.'Map.empty'
--- 'hasEdge' x y (fromAdjacencyMap ('Algebra.Graph.AdjacencyMap.empty'))                   == False
--- 'hasEdge' 1 2 (fromAdjacencyMap ('Algebra.Graph.AdjacencyMap.edge' (Left 1) (Left 2)    == False
--- 'hasEdge' 1 2 (fromAdjacencyMap ('Algebra.Graph.AdjacencyMap.edge' (Left 1) (Right 2)   == True
--- 'hasEdge' 2 1 (fromAdjacencyMap ('Algebra.Graph.AdjacencyMap.edge' (Left 1) (Right 2)   == False
+-- 'leftToRight' (fromAdjacencyMap ('Algebra.Graph.AdjacencyMap.empty'))                                        == Map.'Map.empty'
+-- 'leftToRight' (fromAdjacencyMap ('Algebra.Graph.AdjacencyMap.edge' (Left 1) (Right 2)))                      == Map.'Map.singleton' 1 (Set.'Set.singleton' 2)
+-- 'leftToRight' (fromAdjacencyMap ('Algebra.Graph.AdjacencyMap.edge' (Left 1) (Left 2)))                       == Map.'Map.empty'
+-- 'rightToLeft' (fromAdjacencyMap ('Algebra.Graph.AdjacencyMap.edges' [(Left 1, Right 1), (Left 1, Right 2)])) == Map.'Map.fromAscList' [(1, Set.'Set.singleton' 1), (2, Set.'Set.singleton' 1)]
 -- @
 fromAdjacencyMap :: (Ord a, Ord b) => AM.AdjacencyMap (Either a b) -> AdjacencyMap a b
 fromAdjacencyMap m = BAM (Map.fromAscList [ (u, setRights vs) | (Left  u, vs) <- Map.toAscList (AM.adjacencyMap $ addReverseEdges m)])
@@ -143,8 +140,8 @@ fromAdjacencyMap m = BAM (Map.fromAscList [ (u, setRights vs) | (Left  u, vs) <-
 --
 -- @
 -- toAdjacencyMap (fromGraph 'Algebra.Graph.empty')                     == 'Algebra.Graph.AdjacencyMap.empty'
--- toAdjacencyMap (fromGraph ('Algebra.Graph.edge' (Left 1) (Right 2))) == 'Algebra.Graph.AdjacencyMap.edge' (Left 1) (Right 2)
--- toAdjacencyMap (fromGraph ('Algebra.Graph.edge' (Left 1) (Left 2)))  == 'Algebra.Graph.AdjacencyMap.empty'
+-- toAdjacencyMap (fromGraph ('Algebra.Graph.vertex' $ Left 1))         == 'Algebra.Graph.AdjacencyMap.vertex' 1
+-- toAdjacencyMap (fromGraph ('Algebra.Graph.edge' (Left 1) (Right 2))) == 'Algebra.Graph.AdjacencyMap.edges' [(Left 1, Right 2), (Right 2, Left 1)]
 -- @
 toAdjacencyMap :: (Ord a, Ord b) => AdjacencyMap a b -> AM.AdjacencyMap (Either a b)
 toAdjacencyMap (BAM lr rl) = AM.overlays $
@@ -159,13 +156,10 @@ toAdjacencyMap (BAM lr rl) = AM.overlays $
 -- Complexity: /O(m log n)/
 --
 -- @
--- 'leftToRight' (fromGraph ('Algebra.Graph.Graph.empty'))                   == Map.'Map.empty'
--- 'leftToRight' (fromGraph ('Algebra.Graph.Graph.edge' (Left 1) (Right 2))) == Map.'Map.singleton' 1 (Set.singleton 2)
--- 'leftToRight' (fromGraph ('Algebra.Graph.Graph.edge' (Left 1) (Left 2)))  == Map.'Map.empty'
--- 'hasEdge' x y (fromGraph ('Algebra.Graph.Graph.empty'))                   == False
--- 'hasEdge' 1 2 (fromGraph ('Algebra.Graph.Graph.edge' (Left 1) (Left 2)    == False
--- 'hasEdge' 1 2 (fromGraph ('Algebra.Graph.Graph.edge' (Left 1) (Right 2)   == True
--- 'hasEdge' 2 1 (fromGraph ('Algebra.Graph.Graph.edge' (Left 1) (Right 2)   == False
+-- 'leftToRight' (fromGraph ('Algebra.Graph.empty'))                                        == Map.'Map.empty'
+-- 'leftToRight' (fromGraph ('Algebra.Graph.edge' (Left 1) (Right 2)))                      == Map.'Map.singleton' 1 (Set.'Set.singleton' 2)
+-- 'leftToRight' (fromGraph ('Algebra.Graph.edge' (Left 1) (Left 2)))                       == Map.'Map.empty'
+-- 'rightToLeft' (fromGraph ('Algebra.Graph.edges' [(Left 1, Right 1), (Left 1, Right 2)])) == Map.'Map.fromAscList' [(1, Set.'Set.singleton' 1), (2, Set.'Set.singleton' 1)]
 -- @
 fromGraph :: (Ord a, Ord b) => G.Graph (Either a b) -> AdjacencyMap a b
 fromGraph = fromAdjacencyMap . (G.foldg AM.empty AM.vertex AM.overlay AM.connect)
