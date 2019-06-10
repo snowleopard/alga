@@ -4,6 +4,7 @@ The Alga library was originally developed by
 
 but over time many contributors helped make it much better, including (among others):
 
+* [Adithya Obilisetty](mailto:adi.obilisetty@gmail.com) [@adithyaov](https://github.com/adithyaov)
 * [Alexandre Moine](mailto:alexandre@moine.me) [@nobrakal](https://github.com/nobrakal)
 * [Armando Santos](mailto:armandoifsantos@gmail.com) [@bolt12](https://github.com/bolt12)
 * [Piotr Gawryś](mailto:pgawrys2@gmail.com) [@Avasil](https://github.com/Avasil)
