@@ -38,6 +38,9 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
   -- * Acyclic graph construction methods
   scc, fromGraph, PartialOrder, toAcyclic,
 
+  -- * Monadic construction of acyclic graphs
+  vertexFrom, AcyclicMonad, runAcyclicMonad,
+
   -- * Miscellaneous
   consistent,
   ) where
@@ -46,6 +49,8 @@ import Algebra.Graph (Graph, foldg)
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
+import Control.Monad.State.Strict (State)
+import qualified Control.Monad.State.Strict as S
 import qualified Data.Graph.Typed as Typed
 import Data.Set (Set)
 import Data.Coerce (coerce)
@@ -504,3 +509,29 @@ induceEAM p m = es m `AM.overlay` vs m
   where
     es = AM.edges . filter p . AM.edgeList
     vs = AM.vertices . AM.vertexList
+
+newtype AcyclicMonad a b =
+  AcyclicMonad (State (AM.AdjacencyMap a) b) deriving (Functor, Applicative, Monad)
+
+newtype Enc a = Enc a
+
+vertexFrom :: (Ord a) => a -> [Enc a] -> AcyclicMonad a (Enc a)
+vertexFrom x xs = do
+  am <- get
+  if AM.hasVertex x am
+    then return (Enc x)
+    else put (AM.overlay am (mkEdges x xs)) >> return (Enc x)
+  where
+    mkEdges x [] = AM.vertex x
+    mkEdges x xs = AM.edges . map (\(Enc b) -> (x, b)) $ xs
+    get = AcyclicMonad S.get
+    put = AcyclicMonad . S.put
+  
+runAcyclicMonad :: AcyclicMonad a () -> AdjacencyMap a
+runAcyclicMonad (AcyclicMonad s) = AAM (S.execState s AM.empty)
+
+
+
+
+
+
