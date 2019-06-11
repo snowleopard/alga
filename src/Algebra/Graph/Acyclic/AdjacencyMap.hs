@@ -510,11 +510,18 @@ induceEAM p m = es m `AM.overlay` vs m
     es = AM.edges . filter p . AM.edgeList
     vs = AM.vertices . AM.vertexList
 
+-- | AcyclicMonad is the type that handles an acyclic computations.
+-- One can use 'vertexFrom' to create computations of this type and
+-- use 'runAcyclicMonad' to get the final acyclic 'AdjacencyMap'.
 newtype AcyclicMonad a b =
   AcyclicMonad (State (AM.AdjacencyMap a) b) deriving (Functor, Applicative, Monad)
 
+-- This type isn't exported. It is used for additional safety in
+-- 'AcyclicMonad'.
 newtype Enc a = Enc a
 
+-- This is the basic primitive for defining a vertex in the
+-- 'AcyclicMonad'.
 vertexFrom :: (Ord a) => a -> [Enc a] -> AcyclicMonad a (Enc a)
 vertexFrom x xs = do
   am <- get
@@ -527,6 +534,8 @@ vertexFrom x xs = do
     get = AcyclicMonad S.get
     put = AcyclicMonad . S.put
   
+-- | runAcyclicMonad runs the given acyclic computation resulting in
+-- the acyclic 'AdjacencyMap'.
 runAcyclicMonad :: AcyclicMonad a () -> AdjacencyMap a
 runAcyclicMonad (AcyclicMonad s) = AAM (S.execState s AM.empty)
 
