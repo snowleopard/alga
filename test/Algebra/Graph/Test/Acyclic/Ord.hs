@@ -23,6 +23,18 @@ type AAI = AdjacencyMap Int
 testAcyclicOrd :: IO ()
 testAcyclicOrd = do
 
+  putStrLn "\n=====AcyclicOrd consistency====="
+
+  test "edge" $ \x y                       -> consistent (edge x y :: AAI)
+  test "overlay" $ \x y                    -> consistent (overlay x y :: AAI)
+  test "connect" $ \x y                    -> consistent (connect x y :: AAI)
+  test "edges" $ \x                        -> consistent (edges x :: AAI)
+  test "overlays" $ \x                     -> consistent (overlays x :: AAI)
+  test "connects" $ \x                     -> consistent (connects x :: AAI)
+  test "replaceVertex" $ \x y z            -> consistent (replaceVertex x y z :: AAI)
+  test "mergeVertices" $ \(apply -> p) v x -> consistent (mergeVertices p v x :: AAI) 
+  test "gmap" $ \(apply -> f) x            -> consistent (gmap f (x :: AAI) :: AAI) 
+
   putStrLn "\n=====AcyclicOrd edge====="
 
   test "edge x y                      == connect (vertex x) (vertex y)" $ \x y ->
