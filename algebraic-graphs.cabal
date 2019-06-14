@@ -67,6 +67,7 @@ library
     hs-source-dirs:     src
     exposed-modules:    Algebra.Graph,
                         Algebra.Graph.Acyclic.AdjacencyMap,
+                        Algebra.Graph.Acyclic.Ord,
                         Algebra.Graph.AdjacencyIntMap,
                         Algebra.Graph.AdjacencyIntMap.Algorithm,
                         Algebra.Graph.AdjacencyMap,
@@ -124,6 +125,7 @@ test-suite test-alga
     other-modules:      Algebra.Graph.Test,
                         Algebra.Graph.Test.API,
                         Algebra.Graph.Test.Acyclic.AdjacencyMap,
+                        Algebra.Graph.Test.Acyclic.Ord,
                         Algebra.Graph.Test.AdjacencyIntMap,
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,

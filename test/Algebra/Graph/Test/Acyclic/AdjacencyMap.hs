@@ -13,6 +13,7 @@ module Algebra.Graph.Test.Acyclic.AdjacencyMap (
 
 import Algebra.Graph.Acyclic.AdjacencyMap
 import Algebra.Graph.Test
+import Algebra.Graph.ToGraph (ToGraph (toGraph))
 import Data.List.NonEmpty hiding (transpose)
 
 import qualified Algebra.Graph.AdjacencyMap as AM
@@ -52,6 +53,17 @@ testAcyclicAdjacencyMap = do
   test "toAcyclic (AdjacencyMap.'AM.path' [1, 2, 3]) == Just (1 * 2 + 2 * 3)" $
         toAcyclic (AM.path [1, 2, 3] :: AI)          == Just (1 * 2 + 2 * 3)
 
+  putStrLn "\n=====AcyclicAdjacencyMap toAcyclicOrd====="
+
+  test "toAcyclicOrd (2 * 1)               == 1 + 2" $
+        toAcyclicOrd (2 * 1 :: AI)         == 1 + 2
+  test "toAcyclicOrd (1 * 2)               == 1 * 2" $
+        toAcyclicOrd (1 * 2 :: AI)         == 1 * 2
+  test "toAcyclicOrd (1 * 2 + 2 * 1)       == 1 * 2" $
+        toAcyclicOrd (1 * 2 + 2 * 1 :: AI) == 1 * 2
+  test "toAcyclicOrd                       == fromGraph (<) . toGraph" $ \x ->
+        toAcyclicOrd (x :: AI)             == (fromGraph (<) . toGraph $ x)
+  
   putStrLn "\n=====AcyclicAdjacencyMap fromAcyclic====="
 
   test "fromAcyclic (1 * 2 + 3 * 4)                 == AM.edges [(1,2), (3,4)]" $

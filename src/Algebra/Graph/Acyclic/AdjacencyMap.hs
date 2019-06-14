@@ -36,7 +36,7 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
   topSort,
 
   -- * Acyclic graph construction methods
-  scc, fromGraph, PartialOrder, toAcyclic,
+  scc, fromGraph, PartialOrder, toAcyclic, toAcyclicOrd,
 
   -- * Miscellaneous
   consistent,
@@ -504,3 +504,26 @@ induceEAM p m = es m `AM.overlay` vs m
   where
     es = AM.edges . filter p . AM.edgeList
     vs = AM.vertices . AM.vertexList
+
+-- | Constructs an acyclic graph from any graph based on
+-- a order of vertices to produce an acyclic graph.
+-- The internal order defines the valid set of edges.
+-- 
+-- The order for valid edges is \<, ie. for any two
+-- vertices x and y (x \> y), the only possible edge is (y, x).
+-- This will guarantee the production of an acyclic graph since
+-- no back edges are possible.
+--
+-- For example,
+-- /toAcyclicOrd (1 \* 2 + 2 \* 1) == 1 \* 2/ because
+-- /1 \< 2 == True/ and hence the edge is allowed.
+-- /2 \< 1 == False/ and hence the edge is filtered out.
+--
+-- @
+-- toAcyclicOrd (2 * 1)         == 1 + 2
+-- toAcyclicOrd (1 * 2)         == 1 * 2
+-- toAcyclicOrd (1 * 2 + 2 * 1) == 1 * 2
+-- toAcyclicOrd                 == fromGraph (<) . toGraph
+-- @
+toAcyclicOrd :: Ord a => AM.AdjacencyMap a -> AdjacencyMap a
+toAcyclicOrd = AAM . induceEAM (uncurry (<)) 
