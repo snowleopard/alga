@@ -14,7 +14,7 @@
 -- edges are formed and hence making an acyclic graph is impossible.
 ----------------------------------------------------------------
 module Algebra.Graph.Acyclic.Ord (
-    -- * Basic ord based graph construction primitives
+    -- * Graph construction primitives
     edge, overlay, connect, edges, overlays, connects,
 
     -- * Graph transformation
