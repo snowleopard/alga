@@ -165,8 +165,8 @@ testAcyclicOrd = do
         gmap f (empty :: AAI)                        == (empty :: AAI)
   test "gmap f (vertex x)                            == vertex (f x)" $ \(apply -> f) x ->
         gmap f (vertex x :: AAI)                     == (vertex (f x) :: AAI)
-  test "edgeList (gmap f (edge x y))                 <= vertexList (edge (f x) (f y))" $ \(apply -> f) x y ->
-        edgeList (gmap f (edge x y :: AAI))          <= edgeList (edge (f x) (f y) :: AAI)
+  test "edgeCount (gmap f (edge x y))                <= edgeCount (edge (f x) (f y))" $ \(apply -> f) x y ->
+        edgeCount (gmap f (edge x y :: AAI))         <= edgeCount (edge (f x) (f y) :: AAI)
   test "vertexList (gmap f (edge x y))               == vertexList (edge (f x) (f y))" $ \(apply -> f) x y ->
         vertexList (gmap f (edge x y :: AAI))        == vertexList (edge (f x) (f y) :: AAI)
   test "gmap id                                      == id" $ \x ->

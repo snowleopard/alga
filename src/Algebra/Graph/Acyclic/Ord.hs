@@ -155,7 +155,7 @@ mergeVertices p v = gmap $ \u -> if p u then v else u
 -- gmap f 'empty'                   == 'empty'
 -- gmap f ('vertex' x)              == 'vertex' (f x)
 -- 'vertexList' (gmap f ('edge' x y)) == 'vertexList' ('edge' (f x) (f y))
--- 'edgeList'   (gmap f ('edge' x y)) <= 'edgeList' ('edge' (f x) (f y))
+-- 'edgeCount'  (gmap f ('edge' x y)) <= 'edgeCount' ('edge' (f x) (f y))
 -- gmap 'id'                        == 'id'
 -- 'vertexList' . gmap f . gmap g   == 'vertexList' . gmap (f . g)
 -- 'edgeCount' (gmap f (gmap g x))  <= 'edgeCount' (gmap (f . g) x)
