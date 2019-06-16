@@ -11,7 +11,7 @@
 -- This module defines functions which guarantee Acyclic graph by
 -- establishing an invariant on the edges.
 -- An edge (x, y) exists if and only if x < y. This way no back
--- edges are formed and hence making an acyclic graph is impossible.
+-- edges are formed and hence making a cyclic graph is impossible.
 ----------------------------------------------------------------
 module Algebra.Graph.Acyclic.Ord (
     -- * Graph construction primitives
