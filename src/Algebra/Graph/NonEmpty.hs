@@ -50,13 +50,17 @@ module Algebra.Graph.NonEmpty (
     transpose, induce1, induceJust1, simplify, sparsify, sparsifyKL,
 
     -- * Graph composition
-    box
+    box,
+
+    -- * Graph connectedness
+    components, isConnected,
     ) where
 
 import Control.DeepSeq
 import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup ((<>))
+import Control.Applicative ((<|>))
 
 import Algebra.Graph.Internal
 
@@ -974,3 +978,54 @@ sparsifyKL n graph = KL.buildG (1, next - 1) ((n + 1, n + 2) : Exts.toList (res 
         m <- get
         put (m + 1)
         (\xs ys -> Exts.fromList [(s,m), (m,t)] <> xs <> ys) <$> s `x` m <*> m `y` t
+
+
+components :: Ord a => G.Graph a -> Set.Set (Graph a)
+components = ccs where
+  underList :: Ord a => ([a] -> [a]) -> (Set.Set a -> Set.Set a)
+  underList = (Set.fromList .) . (. Set.toList)
+
+  toMaybe :: Bool -> a -> Maybe a
+  toMaybe False _ = Nothing
+  toMaybe True  x = Just x
+
+  rewrite :: (a -> Maybe a) -> (a -> a)
+  rewrite f x = case f x of
+    Nothing -> x
+    Just x' -> rewrite f x'
+
+  rewrites2 :: (a -> a -> Maybe a) -> ([a] -> [a])
+  rewrites2 f = rewrite rewrites2'
+      where
+        rewrites2' (x1 : x2 : xs) =
+          ((: xs) <$> f x1 x2) <|>
+          ((x2 :) <$> rewrites2' (x1 : xs)) <|>
+          ((x1 :) <$> rewrites2' (x2 : xs))
+        rewrites2' _ = Nothing
+
+  nonEmptyCCs :: Ord a => G.Graph a -> Maybe (NonEmpty.NonEmpty (Graph a))
+  nonEmptyCCs = NonEmpty.nonEmpty . Set.toList . ccs
+
+  ccs :: Ord a => G.Graph a -> Set.Set (Graph a)
+  ccs G.Empty = Set.empty
+  ccs (G.Vertex x) = Set.singleton $ Vertex x
+  ccs (G.Overlay a b) = underList
+    (rewrites2 $ \g1 g2 -> toMaybe (T.sharesVertex g1 g2) (overlay g1 g2))
+    (ccs a <> ccs b)
+  ccs (G.Connect a b) = case nonEmptyCCs a of
+    Nothing -> ccs b
+    Just ca -> case nonEmptyCCs b of
+      Nothing -> Set.fromList $ NonEmpty.toList ca
+      Just cb -> Set.singleton $ overlays1 $ connect <$> ca <*> cb
+
+
+-- | Does the graph have exactly one connected component?
+-- @
+-- isConnected empty == False
+-- isConnected $ vertex x == True
+-- isConnected $ vertex x + vertex y == False
+-- @
+isConnected :: Ord a => G.Graph a -> Bool
+isConnected g = case Set.toList $ components g of
+  [_] -> True
+  _   -> False
