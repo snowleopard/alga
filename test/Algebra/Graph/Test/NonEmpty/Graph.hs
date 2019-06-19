@@ -720,3 +720,21 @@ testNonEmptyGraph = do
 
     test "edgeCount   (box x y)               <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
           edgeCount   (box x y)               <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
+
+    putStrLn "\n============ NonEmpty.Graph.components ============"
+    test "G.edgeSet x                         == Set.unions (edgeSet <$> (Set.toList $ components x))" $ \(x :: GG) ->
+          G.edgeSet x                         == Set.unions (edgeSet <$> (Set.toList $ components x))
+
+    test "G.vertexSet x                       == Set.unions (vertexSet <$> (Set.toList $ components x))" $ \(x :: GG) ->
+          G.vertexSet x                       == Set.unions (vertexSet <$> (Set.toList $ components x))
+
+    test "all (isConnected . toGraph) $ components x" $ \(x :: GG) ->
+          all (isConnected . toGraph) $ components x
+
+    test "all (\\c -> Set.singleton c          == components (toGraph c)) $ components x" $ \(x :: GG) ->
+          all (\c -> Set.singleton c          == components (toGraph c)) $ components x
+
+    let pairs xs = [(x, y) | x <- xs, y <- xs, x /= y]
+
+    test "all (\\(c1, c2) -> Set.disjoint (vertexSet c1) (vertexSet c2)) . pairs . Set.toList $ components x" $ \(x :: GG) ->
+          all (\(c1, c2) -> Set.disjoint (vertexSet c1) (vertexSet c2)) . pairs . Set.toList $ components x
