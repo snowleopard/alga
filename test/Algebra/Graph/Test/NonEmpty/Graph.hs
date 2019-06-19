@@ -35,6 +35,7 @@ import qualified Data.List.NonEmpty     as NonEmpty
 import qualified Data.Set               as Set
 
 type G = NonEmpty.Graph Int
+type GG = G.Graph Int
 
 axioms :: G -> G -> G -> Property
 axioms x y z = conjoin
@@ -116,7 +117,7 @@ testNonEmptyGraph = do
 
     putStrLn $ "\n============ NonEmpty.Graph.toNonEmpty ============"
     test "toNonEmpty empty       == Nothing" $
-          toNonEmpty (G.empty :: G.Graph Int) == Nothing
+          toNonEmpty (G.empty :: GG) == Nothing
 
     test "toNonEmpty (toGraph x) == Just (x :: NonEmpty.Graph a)" $ \x ->
           toNonEmpty (toGraph x) == Just (x :: G)
@@ -179,7 +180,7 @@ testNonEmptyGraph = do
     test "               overlay1 empty x == x" $ \(x :: G) ->
                          overlay1 G.empty x == x
 
-    test "x /= empty ==> overlay1 x     y == overlay (fromJust $ toNonEmpty x) y" $ \(x :: G.Graph Int) (y :: G) ->
+    test "x /= empty ==> overlay1 x     y == overlay (fromJust $ toNonEmpty x) y" $ \(x :: GG) (y :: G) ->
           x /= G.empty ==> overlay1 x   y == overlay (fromJust $ toNonEmpty x) y
 
 
