@@ -998,9 +998,9 @@ components = ccs where
   rewrites2 f = rewrite rewrites2'
       where
         rewrites2' (x1 : x2 : xs) =
-          ((: xs) <$> f x1 x2) <|>
-          ((x2 :) <$> rewrites2' (x1 : xs)) <|>
-          ((x1 :) <$> rewrites2' (x2 : xs))
+          (: xs) <$> f x1 x2              <|>
+          (x2 :) <$> rewrites2' (x1 : xs) <|>
+          (x1 :) <$> rewrites2' (x2 : xs)
         rewrites2' _ = Nothing
 
   nonEmptyCCs :: Ord a => G.Graph a -> Maybe (NonEmpty.NonEmpty (Graph a))

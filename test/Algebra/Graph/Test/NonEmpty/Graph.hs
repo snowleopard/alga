@@ -731,8 +731,8 @@ testNonEmptyGraph = do
     test "all (isConnected . toGraph) $ components x" $ \(x :: GG) ->
           all (isConnected . toGraph) $ components x
 
-    test "all (\\c -> Set.singleton c          == components (toGraph c)) $ components x" $ \(x :: GG) ->
-          all (\c -> Set.singleton c          == components (toGraph c)) $ components x
+    test "all (\\c -> Set.singleton c == components (toGraph c)) $ components x" $ \(x :: GG) ->
+          all (\c -> Set.singleton c == components (toGraph c)) $ components x
 
     let pairs xs = [(x, y) | x <- xs, y <- xs, x /= y]
 
