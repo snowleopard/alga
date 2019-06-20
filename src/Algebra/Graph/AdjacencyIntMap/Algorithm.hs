@@ -1,3 +1,5 @@
+{-# language LambdaCase #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyIntMap.Algorithm
@@ -120,18 +122,16 @@ bfsForest :: AdjacencyIntMap -> Forest Int
 bfsForest g = bfsForestFrom (vertexList g) g
 
 bfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
-bfsForestFrom vs g = go IntSet.empty vs where
-  go _ [] = []
-  go seen (v:vs) -- ensure that vertex is in graph or is not already in forest 
-    | not (hasVertex v g) || IntSet.member v seen = go seen vs
-    | otherwise = case runState (unfoldTreeM_BF walk v) (IntSet.insert v seen) of
-        (tree,seen') -> tree : go seen' vs
+bfsForestFrom vs g = reverse $ evalState (foldM bff [] vs) IntSet.empty where
+  bff trees v = (not (hasVertex v g) ||) <$> visited v >>= \case
+                  True -> return trees -- vertex in graph or already seen
+                  False -> discover v >> (:trees) <$> unfoldTreeM_BF walk v
   walk v = (v,) <$> adjacentM v
-  adjacentM = filterM visitM . adjacent
-  adjacent v = IntSet.toList (postIntSet v g)
-  visitM u = do visited <- gets (IntSet.member u)
-                unless visited $ modify' (IntSet.insert u)
-                return $ not visited
+  adjacentM v = filterM discover $ IntSet.toList (postIntSet v g)
+  visited = gets . IntSet.member
+  discover v = do seen <- visited v
+                  unless seen $ modify' (IntSet.insert v)
+                  return $ not seen
 
 bfs :: [Int] -> AdjacencyIntMap -> [Int]
 bfs vs = concatMap flatten . bfsForestFrom vs

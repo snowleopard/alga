@@ -1,3 +1,5 @@
+{-# language LambdaCase #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyMap.Algorithm
@@ -123,18 +125,16 @@ bfsForest :: Ord a => AdjacencyMap a -> Forest a
 bfsForest g = bfsForestFrom (vertexList g) g
 
 bfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
-bfsForestFrom vs g = go Set.empty vs where
-  go _ [] = []
-  go seen (v:vs) -- ensure that vertex is in graph or is not already in forest 
-    | not (hasVertex v g) || Set.member v seen = go seen vs
-    | otherwise = case runState (unfoldTreeM_BF walk v) (Set.insert v seen) of
-        (tree,seen') -> tree : go seen' vs
+bfsForestFrom vs g = reverse $ evalState (foldM bff [] vs) Set.empty where
+  bff trees v = (not (hasVertex v g) ||) <$> visited v >>= \case
+                  True -> return trees -- vertex in graph or already seen
+                  False -> discover v >> (:trees) <$> unfoldTreeM_BF walk v
   walk v = (v,) <$> adjacentM v
-  adjacentM = filterM visitM . adjacent
-  adjacent v = Set.toList (postSet v g)
-  visitM u = do visited <- gets (Set.member u)
-                unless visited $ modify' (Set.insert u)
-                return $ not visited
+  adjacentM v = filterM discover $ Set.toList (postSet v g)
+  visited = gets . Set.member  
+  discover v = do seen <- visited v
+                  unless seen $ modify' (Set.insert v)
+                  return $ not seen
 
 bfs :: Ord a => [a] -> AdjacencyMap a -> [a]
 bfs vs = concatMap flatten . bfsForestFrom vs
