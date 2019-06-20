@@ -29,6 +29,7 @@ import Algebra.Graph.Test hiding (axioms, theorems)
 import Algebra.Graph.ToGraph (reachable, toGraph)
 
 import qualified Algebra.Graph          as G
+import qualified Algebra.Graph.ToGraph  as T
 import qualified Algebra.Graph.NonEmpty as NonEmpty
 import qualified Data.Graph             as KL
 import qualified Data.List.NonEmpty     as NonEmpty
@@ -737,4 +738,4 @@ testNonEmptyGraph = do
     let pairs xs = [(x, y) | x <- xs, y <- xs, x /= y]
 
     test "all (\\(c1, c2) -> Set.disjoint (vertexSet c1) (vertexSet c2)) . pairs . Set.toList $ components x" $ \(x :: GG) ->
-          all (\(c1, c2) -> Set.disjoint (vertexSet c1) (vertexSet c2)) . pairs . Set.toList $ components x
+          all (\(c1, c2) -> not $ T.sharesVertex c1 c2) . pairs . Set.toList $ components x

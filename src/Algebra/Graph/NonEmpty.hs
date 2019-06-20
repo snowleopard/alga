@@ -990,9 +990,7 @@ components = ccs where
   toMaybe True  x = Just x
 
   rewrite :: (a -> Maybe a) -> (a -> a)
-  rewrite f x = case f x of
-    Nothing -> x
-    Just x' -> rewrite f x'
+  rewrite f x = maybe x (rewrite f) (f x)
 
   rewrites2 :: (a -> a -> Maybe a) -> ([a] -> [a])
   rewrites2 f = rewrite rewrites2'
