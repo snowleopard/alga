@@ -1,4 +1,6 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, PartialTypeSignatures #-}
+
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.NonEmpty
@@ -60,7 +62,8 @@ import Control.DeepSeq
 import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup ((<>))
-import Control.Applicative ((<|>))
+import Data.Array ((!))
+import Data.Traversable (for)
 
 import Algebra.Graph.Internal
 
@@ -68,6 +71,8 @@ import qualified Algebra.Graph                 as G
 import qualified Algebra.Graph.ToGraph         as T
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
+import qualified Data.Array                    as Array
+import qualified Data.Equivalence.Monad        as EQ
 import qualified Data.Graph                    as KL
 import qualified Data.IntSet                   as IntSet
 import qualified Data.List.NonEmpty            as NonEmpty
@@ -985,21 +990,37 @@ components = ccs where
   underList :: Ord a => ([a] -> [a]) -> (Set.Set a -> Set.Set a)
   underList = (Set.fromList .) . (. Set.toList)
 
-  toMaybe :: Bool -> a -> Maybe a
-  toMaybe False _ = Nothing
-  toMaybe True  x = Just x
+  pairs :: Eq a => [a] -> [(a, a)]
+  pairs [] = []
+  pairs (x: xs) = ((x,) <$> xs) ++ pairs xs
 
-  rewrite :: (a -> Maybe a) -> (a -> a)
-  rewrite f x = maybe x (rewrite f) (f x)
+  mergeEquivalent :: (Ord a) => (a -> a -> Bool) -> (a -> a -> a) -> ([a] -> [a])
+  mergeEquivalent (===) (+) xs = let
+      len = length xs
+      -- https://github.com/quchen/articles/blob/master/2018-11-22_zipWith_const.md
+      indices = zipWith const [0..] xs -- Because just [0..len] generates [0] when xs == []!
+      arr = Array.listArray (0, len) xs
+      combis = pairs indices
 
-  rewrites2 :: (a -> a -> Maybe a) -> ([a] -> [a])
-  rewrites2 f = rewrite rewrites2'
-    where
-      rewrites2' (x1 : x2 : xs) =
-        (: xs) <$> f x1 x2              <|>
-        (x2 :) <$> rewrites2' (x1 : xs) <|>
-        (x1 :) <$> rewrites2' (x2 : xs)
-      rewrites2' _ = Nothing
+      update :: IntSet.IntSet -> (Int, Int) -> EQ.EquivM _ _ Int IntSet.IntSet
+      update = \s (i1, i2) -> do
+        eq <- EQ.equivalent i1 i2
+        if eq
+          then pure s
+          else do
+            x1 <- EQ.classDesc i1
+            x2 <- EQ.classDesc i2
+            if (x1 === x2)
+              then do
+                EQ.equate i1 i2
+                pure $ IntSet.delete i1 s
+              else
+                pure s
+
+    in EQ.runEquivM (arr !) (+) $ do
+      s <- foldM update (IntSet.fromList indices) combis
+      classes <- for (IntSet.toList s) EQ.classDesc
+      pure classes
 
   nonEmptyCCs :: Ord a => G.Graph a -> Maybe (NonEmpty.NonEmpty (Graph a))
   nonEmptyCCs = NonEmpty.nonEmpty . Set.toList . ccs
@@ -1008,7 +1029,7 @@ components = ccs where
   ccs G.Empty = Set.empty
   ccs (G.Vertex x) = Set.singleton $ Vertex x
   ccs (G.Overlay a b) = underList
-    (rewrites2 $ \g1 g2 -> toMaybe (T.sharesVertex g1 g2) (overlay g1 g2))
+    (mergeEquivalent T.sharesVertex overlay)
     (ccs a <> ccs b)
   ccs (G.Connect a b) = case nonEmptyCCs a of
     Nothing -> ccs b
