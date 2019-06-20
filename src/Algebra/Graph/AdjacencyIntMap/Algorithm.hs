@@ -16,12 +16,13 @@
 module Algebra.Graph.AdjacencyIntMap.Algorithm (
     -- * Algorithms
     dfsForest, dfsForestFrom, dfs, reachable, topSort, isAcyclic,
-
+    bfsForest, bfsForestFrom, bfs, 
     -- * Correctness properties
     isDfsForestOf, isTopSortOf
     ) where
 
 import Control.Monad
+import Control.Monad.State
 import Data.Maybe
 import Data.Tree
 
@@ -114,6 +115,26 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- @
 reachable :: Int -> AdjacencyIntMap -> [Int]
 reachable x = dfs [x]
+
+bfsForest :: AdjacencyIntMap -> Forest Int
+bfsForest g = bfsForestFrom (vertexList g) g
+
+bfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
+bfsForestFrom vs g = go IntSet.empty vs where
+  go _ [] = []
+  go seen (v:vs) -- ensure that vertex is in graph or is not already in forest 
+    | not (hasVertex v g) || IntSet.member v seen = go seen vs
+    | otherwise = case runState (unfoldTreeM_BF walk v) (IntSet.insert v seen) of
+        (tree,seen') -> tree : go seen' vs
+  walk v = (v,) <$> adjacentM v
+  adjacentM = filterM visitM . adjacent
+  adjacent v = IntSet.toList (postIntSet v g)
+  visitM u = do visited <- gets (IntSet.member u)
+                unless visited $ modify' (IntSet.insert u)
+                return $ not visited
+
+bfs :: [Int] -> AdjacencyIntMap -> [Int]
+bfs vs = concatMap flatten . bfsForestFrom vs
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.
