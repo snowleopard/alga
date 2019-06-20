@@ -53,6 +53,7 @@ import qualified Data.IntSet        as IntSet
 --                                          , Node { rootLabel = 3
 --                                                 , subForest = [ Node { rootLabel = 4
 --                                                                      , subForest = [] }]}]
+-- 'forest' (dfsForest ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [1..5]
 -- @
 dfsForest :: AdjacencyIntMap -> Forest Int
 dfsForest = Typed.dfsForest . Typed.fromAdjacencyIntMap
@@ -118,13 +119,34 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 reachable :: Int -> AdjacencyIntMap -> [Int]
 reachable x = dfs [x]
 
+-- | Compute the forest of a graph's vertices in breadth first order.
+--
+-- @
+-- bfsForest 'empty'                         == []
+-- 'forest' (bfsForest $ 'edge' 1 1)           == 'vertex' 1
+-- 'forest' (bfsForest $ 'edge' 1 2)           == 'edge' 1 2
+-- 'forest' (bfsForest $ 'edge' 2 1)           == 'vertices' [1,2]
+-- 'isSubgraphOf' ('forest' $ bfsForest x) x   == True
+-- bfsForest . 'forest' . bfsForest          == bfsForest
+-- 'forest' (bfsForest ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [1,2,3] + 'path' [1,5,4]
+-- @
 bfsForest :: AdjacencyIntMap -> Forest Int
 bfsForest g = bfsForestFrom (vertexList g) g
 
+-- | Like 'bfsForest', but the traversal is seeded by a list of vertices,
+-- which may not include all of the given graph's vertices. Seed vertices not
+-- in the graph are ignored.
+--
+-- @
+-- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2) == 'vertices' [1,2]
+-- 'forest' (bfsForestFrom [2]   $ 'edge' 2 1) == 'vertex' 2
+-- 'forest' (bfsForestFrom [3]   $ 'edge' 1 2) == empty
+-- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [3,2,1] + 'path' [3,4,5]
+-- @
 bfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
 bfsForestFrom vs g = reverse $ evalState (foldM bff [] vs) IntSet.empty where
   bff trees v = (not (hasVertex v g) ||) <$> visited v >>= \case
-                  True -> return trees -- vertex in graph or already seen
+                  True -> return trees -- vertex not in graph or already discovered
                   False -> discover v >> (:trees) <$> unfoldTreeM_BF walk v
   walk v = (v,) <$> adjacentM v
   adjacentM v = filterM discover $ IntSet.toList (postIntSet v g)
@@ -133,6 +155,11 @@ bfsForestFrom vs g = reverse $ evalState (foldM bff [] vs) IntSet.empty where
                   unless seen $ modify' (IntSet.insert v)
                   return $ not seen
 
+-- | Like 'bfsForestFrom' with the resulting forest is flattened to a list of vertices.
+--
+-- @
+-- bfs [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5])) == [3,2,1,4,5]
+-- @
 bfs :: [Int] -> AdjacencyIntMap -> [Int]
 bfs vs = concatMap flatten . bfsForestFrom vs
 
