@@ -62,7 +62,6 @@ import Control.DeepSeq
 import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup ((<>))
-import Data.Array ((!))
 import Data.Traversable (for)
 
 import Algebra.Graph.Internal
@@ -71,7 +70,6 @@ import qualified Algebra.Graph                 as G
 import qualified Algebra.Graph.ToGraph         as T
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
-import qualified Data.Array                    as Array
 import qualified Data.Equivalence.Monad        as EQ
 import qualified Data.Graph                    as KL
 import qualified Data.IntSet                   as IntSet
@@ -1002,10 +1000,8 @@ components = G.foldg
 
   mergeEquivalent :: (Ord a) => (a -> a -> Bool) -> (a -> a -> a) -> ([a] -> [a])
   mergeEquivalent (===) (+) xs = let
-      len = length xs
       -- https://github.com/quchen/articles/blob/master/2018-11-22_zipWith_const.md
       indices = zipWith const [0..] xs -- Because just [0..len] generates [0] when xs == []!
-      arr = Array.listArray (0, len) xs
       combis = pairs indices
 
       update :: IntSet.IntSet -> (Int, Int) -> EQ.EquivM _ _ Int IntSet.IntSet
@@ -1023,7 +1019,7 @@ components = G.foldg
               else
                 pure s
 
-    in EQ.runEquivM (arr !) (+) $ do
+    in EQ.runEquivM (xs !!) (+) $ do
       s <- foldM update (IntSet.fromList indices) combis
       classes <- for (IntSet.toList s) EQ.classDesc
       pure classes
