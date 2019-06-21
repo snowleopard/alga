@@ -1,3 +1,5 @@
+{-# language LambdaCase #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Data.Graph.Typed
@@ -19,11 +21,15 @@ module Data.Graph.Typed (
     GraphKL(..), fromAdjacencyMap, fromAdjacencyIntMap,
 
     -- * Basic algorithms
-    dfsForest, dfsForestFrom, dfs, topSort
+    dfsForest, dfsForestFrom, dfs, topSort, bfsForestFrom, bfs
     ) where
 
-import Data.Tree
+import Control.Monad
+import Control.Monad.ST
+import Data.Array.ST
+import Data.Array.Unboxed
 import Data.Maybe
+import Data.Tree
 
 import qualified Data.Graph as KL
 
@@ -181,3 +187,22 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- @
 topSort :: GraphKL a -> [a]
 topSort (GraphKL g r _) = map r (KL.topSort g)
+
+bfsForestFrom :: [a] -> GraphKL a -> Forest a
+bfsForestFrom vs (GraphKL g fromV getV) = map (fmap fromV) $ reverse $ runST $ do
+  table  <- newArray (bounds g) False :: ST s (STUArray s Int Bool)
+  let visited = readArray table
+      discover v = do seen <- readArray table v
+                      unless seen $ writeArray table v True
+                      return $ not seen
+      adjacentM v = filterM discover $ g ! v
+      walk v = (v,) <$> adjacentM v
+      bff trees v = case getV v of
+        Nothing -> return trees
+        Just v -> visited v >>= \case
+          True -> return trees
+          False ->  discover v >> (:trees) <$> unfoldTreeM_BF walk v
+  foldM bff [] vs
+    
+bfs :: [a] -> GraphKL a -> [a]
+bfs vs g = bfsForestFrom vs g >>= flatten
