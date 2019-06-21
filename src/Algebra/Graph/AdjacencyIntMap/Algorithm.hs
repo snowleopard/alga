@@ -145,17 +145,16 @@ bfsForest g = bfsForestFrom (vertexList g) g
 -- @
 bfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
 bfsForestFrom vs g = reverse $ evalState (foldM bff [] vs) IntSet.empty where
-  bff trees v = (not (hasVertex v g) ||) <$> visited v >>= \case
-                  True -> return trees -- vertex not in graph or already discovered
-                  False -> discover v >> (:trees) <$> unfoldTreeM_BF walk v
+  bff trees v = (hasVertex v g &&) <$> discovered v >>= \case
+                  False -> return trees
+                  True -> (:trees) <$> unfoldTreeM_BF walk v
   walk v = (v,) <$> adjacentM v
-  adjacentM v = filterM discover $ IntSet.toList (postIntSet v g)
-  visited = gets . IntSet.member
-  discover v = do seen <- visited v
-                  unless seen $ modify' (IntSet.insert v)
-                  return $ not seen
+  adjacentM v = filterM discovered $ IntSet.toList (postIntSet v g)
+  discovered v = do seen <- gets (IntSet.member v)
+                    unless seen $ modify' (IntSet.insert v)
+                    return $ not seen
 
--- | Like 'bfsForestFrom' with the resulting forest is flattened to a list of vertices.
+-- | Like 'bfsForestFrom' with the resulting forest flattened to a list of vertices.
 --
 -- @
 -- bfs [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5])) == [3,2,1,4,5]

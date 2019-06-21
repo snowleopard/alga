@@ -1,4 +1,4 @@
-{-# language LambdaCase #-}
+{-# language LambdaCase, ViewPatterns #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -191,18 +191,16 @@ topSort (GraphKL g r _) = map r (KL.topSort g)
 bfsForestFrom :: [a] -> GraphKL a -> Forest a
 bfsForestFrom vs (GraphKL g fromV getV) = map (fmap fromV) $ reverse $ runST $ do
   table  <- newArray (bounds g) False :: ST s (STUArray s Int Bool)
-  let visited = readArray table
-      discover v = do seen <- readArray table v
-                      unless seen $ writeArray table v True
-                      return $ not seen
-      adjacentM v = filterM discover $ g ! v
+  let discovered v = do seen <- readArray table v
+                        unless seen $ writeArray table v True
+                        return $ not seen
+      adjacentM v = filterM discovered $ g ! v
       walk v = (v,) <$> adjacentM v
-      bff trees v = case getV v of
-        Nothing -> return trees
-        Just v -> visited v >>= \case
-          True -> return trees
-          False ->  discover v >> (:trees) <$> unfoldTreeM_BF walk v
+      bff trees (getV -> Just v) = discovered v >>= \case
+        False -> return trees
+        True -> (:trees) <$> unfoldTreeM_BF walk v
+      bff trees _ = return trees
   foldM bff [] vs
     
 bfs :: [a] -> GraphKL a -> [a]
-bfs vs g = bfsForestFrom vs g >>= flatten
+bfs vs = bfsForestFrom vs >=> flatten
