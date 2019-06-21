@@ -16,8 +16,8 @@ module Algebra.Graph.Test.Bipartite.AdjacencyMap (
 import Algebra.Graph.Bipartite.AdjacencyMap
 import Algebra.Graph.Test
 
-import qualified Algebra.Graph                       as G
-import qualified Algebra.Graph.AdjacencyMap          as AM
+import qualified Algebra.Graph              as G
+import qualified Algebra.Graph.AdjacencyMap as AM
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
@@ -27,6 +27,7 @@ import Data.List (nub)
 type GII  = G.Graph (Either Int Int)
 type AII  = AM.AdjacencyMap (Either Int Int)
 type BAII = AdjacencyMap Int Int
+type BAIS = AdjacencyMap Int String
 
 testBipartiteAdjacencyMap :: IO ()
 testBipartiteAdjacencyMap = do
@@ -234,14 +235,18 @@ testBipartiteAdjacencyMap = do
         vertex (Right 1) == (rightVertex 1 :: BAII)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.edge ============"
-    test "leftAdjacencyMap (edge x y) == Map.singleton x (Set.singleton y)" $ \x y ->
-        leftAdjacencyMap (edge x y :: BAII)  == Map.singleton x (Set.singleton y)
-    test "rightAdjacencyMap (edge x y)== Map.singleton y (Set.singleton x)" $ \x y ->
-        rightAdjacencyMap (edge x y :: BAII) == Map.singleton y (Set.singleton x)
-    test "hasEdge x y (edge x y)      == True" $ \x y ->
+    test "leftAdjacencyMap (edge x y)    == Map.singleton x (Set.singleton y)" $ \x y ->
+        leftAdjacencyMap (edge x y :: BAII)    == Map.singleton x (Set.singleton y)
+    test "rightAdjacencyMap (edge x y)   == Map.singleton y (Set.singleton x)" $ \x y ->
+        rightAdjacencyMap (edge x y :: BAII)   == Map.singleton y (Set.singleton x)
+    test "hasEdge x y (edge x y)         == True" $ \x y ->
         hasEdge x y (edge x y :: BAII)
-    test "hasEdge y x (edge x y)      == (x == y)" $ \x y ->
-        hasEdge y x (edge x y :: BAII)       == (x == y)
+    test "hasEdge y x (edge x y)         == (x == y)" $ \x y ->
+        hasEdge y x (edge x y :: BAII)         == (x == y)
+    test "leftAdjacencyMap (edge 1 \"a\")  == Map.singleton 1 (Set.singleton \"a\")" $
+        leftAdjacencyMap (edge 1 "a" :: BAIS)  == Map.singleton 1 (Set.singleton "a")
+    test "rightAdjacencyMap (edge 1 \"a\") == Map.singleton \"a\" (Set.singleton 1)" $
+        rightAdjacencyMap (edge 1 "a" :: BAIS) == Map.singleton "a" (Set.singleton 1)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.overlay ============"
     test "overlay (leftVertex 1) (rightVertex 2) == vertices [1] [2]" $
@@ -268,6 +273,8 @@ testBipartiteAdjacencyMap = do
         connect (leftVertex 1) (rightVertex 2) == (edge 1 2 :: BAII)
     test "connect (leftVertex 1) (rightVertex 1) == edge 1 1" $
         connect (leftVertex 1) (rightVertex 1) == (edge 1 1 :: BAII)
+    test "connect (leftVertex 1) (leftVertex 2)  == vertices [1, 2] []" $
+        connect (leftVertex 1) (leftVertex 2) == (vertices [1, 2] [] :: BAII)
     test "connect (vertices [1] [4]) (vertices [2] [3]) == edges [(1, 3), (2, 4)]" $
         connect (vertices [1] [4] :: BAII) (vertices [2] [3] :: BAII) == edges [(1, 3), (2, 4)]
     test "isEmpty     (connect x y) == isEmpty x && isEmpty y" $ \x y ->
