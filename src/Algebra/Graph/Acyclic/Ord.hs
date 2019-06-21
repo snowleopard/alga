@@ -1,6 +1,6 @@
 -----------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph..Acyclic.Ord
+-- Module     : Algebra.Graph.Acyclic.Ord
 -- License    : MIT (see the file LICENSE)
 -- Stability  : experimental
 --
@@ -23,6 +23,7 @@ module Algebra.Graph.Acyclic.Ord (
 
 import Algebra.Graph.Acyclic.AdjacencyMap
 import qualified Algebra.Graph.AdjacencyMap as AM
+import Data.Function (on)
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
@@ -55,7 +56,7 @@ edge x y = toAcyclicOrd (AM.edge x y)
 -- 'edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-overlay x y = toAcyclicOrd $ AM.overlay (fromAcyclic x) (fromAcyclic y)
+overlay x y = toAcyclicOrd $ (AM.overlay `on` fromAcyclic) x y
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
 -- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
@@ -76,7 +77,7 @@ overlay x y = toAcyclicOrd $ AM.overlay (fromAcyclic x) (fromAcyclic y)
 -- 'edgeCount'   (connect 2 1) == 0
 -- @
 connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-connect x y = toAcyclicOrd $ AM.connect (fromAcyclic x) (fromAcyclic y)
+connect x y = toAcyclicOrd $ (AM.connect `on` fromAcyclic) x y
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.

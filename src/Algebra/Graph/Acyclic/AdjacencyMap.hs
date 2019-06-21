@@ -506,13 +506,21 @@ induceEAM p m = es m `AM.overlay` vs m
     vs = AM.vertices . AM.vertexList
 
 -- | Constructs an acyclic graph from any graph based on
--- a order of vertices to produce an acyclic graph.
+-- the order of vertices to produce an acyclic graph.
 -- The internal order defines the valid set of edges.
 -- 
 -- The order for valid edges is \<, ie. for any two
 -- vertices x and y (x \> y), the only possible edge is (y, x).
 -- This will guarantee the production of an acyclic graph since
 -- no back edges are possible.
+--
+-- Topological orderings are also closely related to the concept
+-- of a linear extension of a partial order in mathematics.
+-- Please look at <https://en.wikipedia.org/wiki/Topological_sorting#Relation_to_partial_orders Relation to partial orders> for
+-- additional information. 
+-- In this case the partial order is the order of the vertices
+-- itself. And hence, the topological ordering for such graphs
+-- is simply its `vertexList`.
 --
 -- For example,
 -- /toAcyclicOrd (1 \* 2 + 2 \* 1) == 1 \* 2/ because
