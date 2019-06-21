@@ -986,7 +986,13 @@ sparsifyKL n graph = KL.buildG (1, next - 1) ((n + 1, n + 2) : Exts.toList (res 
 
 
 components :: Ord a => G.Graph a -> Set.Set (Graph a)
-components = ccs where
+components = G.foldg
+    Set.empty
+    (Set.singleton . Vertex)
+    (underList (mergeEquivalent T.sharesVertex overlay) ... Set.union)
+    connectCCs
+  where
+  -- TODO: move some of these definitions to src/Algebra/Graph/Internal.hs?
   underList :: Ord a => ([a] -> [a]) -> (Set.Set a -> Set.Set a)
   underList = (Set.fromList .) . (. Set.toList)
 
@@ -1022,19 +1028,14 @@ components = ccs where
       classes <- for (IntSet.toList s) EQ.classDesc
       pure classes
 
-  nonEmptyCCs :: Ord a => G.Graph a -> Maybe (NonEmpty.NonEmpty (Graph a))
-  nonEmptyCCs = NonEmpty.nonEmpty . Set.toList . ccs
+  nonEmptySet :: Set.Set a -> Maybe (NonEmpty a)
+  nonEmptySet = NonEmpty.nonEmpty . Set.toList
 
-  ccs :: Ord a => G.Graph a -> Set.Set (Graph a)
-  ccs G.Empty = Set.empty
-  ccs (G.Vertex x) = Set.singleton $ Vertex x
-  ccs (G.Overlay a b) = underList
-    (mergeEquivalent T.sharesVertex overlay)
-    (ccs a <> ccs b)
-  ccs (G.Connect a b) = case nonEmptyCCs a of
-    Nothing -> ccs b
-    Just ca -> case nonEmptyCCs b of
-      Nothing -> Set.fromList $ NonEmpty.toList ca
+  connectCCs :: Set.Set (Graph a) -> Set.Set (Graph a) -> Set.Set (Graph a)
+  connectCCs a b = case nonEmptySet a of
+    Nothing -> b
+    Just ca -> case nonEmptySet b of
+      Nothing -> a
       Just cb -> Set.singleton $ overlays1 $ connect <$> ca <*> cb
 
 
