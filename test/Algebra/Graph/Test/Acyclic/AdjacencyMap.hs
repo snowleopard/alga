@@ -86,6 +86,7 @@ testAcyclicAdjacencyMap = do
   test "transpose" $ \x                    -> consistent (transpose x :: AAI)
   test "fromGraph (<)" $ \x                -> consistent (fromGraph (<) x :: AAI)
   test "fromGraph (>)" $ \x                -> consistent (fromGraph (>) x :: AAI)
+  test "toAcyclicOrd" $ \x                 -> consistent (toAcyclicOrd x :: AAI)
 
   test "consistent (1 + 2)                == True" $
         consistent (1 + 2 :: AAI)         == True
