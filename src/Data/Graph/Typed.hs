@@ -203,4 +203,4 @@ bfsForestFrom vs (GraphKL g fromV getV) = map (fmap fromV) $ reverse $ runST $ d
   foldM bff [] vs
     
 bfs :: [a] -> GraphKL a -> [a]
-bfs vs = bfsForestFrom vs >=> flatten
+bfs vs = bfsForestFrom vs >=> concat . levels

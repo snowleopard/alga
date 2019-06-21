@@ -148,12 +148,13 @@ bfsForest g = bfsForestFrom (vertexList g) g
 -- @
 bfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
 bfsForestFrom vs g = reverse $ evalState (foldM bff [] vs) Set.empty where
-  bff trees v = (hasVertex v g &&) <$> discovered v >>= \case
-                  False -> return trees -- vertex not in graph or already discovered
+  bff trees v | not (hasVertex v g) = return trees
+              | otherwise = discovered v >>= \case
+                  False -> return trees
                   True -> (:trees) <$> unfoldTreeM_BF walk v
   walk v = (v,) <$> adjacentM v
   adjacentM v = filterM discovered $ Set.toList (postSet v g)
-  discovered v = do seen <- gets (Set.member v) 
+  discovered v = do seen <- gets (Set.member v)
                     unless seen $ modify' (Set.insert v)
                     return $ not seen
 
@@ -163,7 +164,7 @@ bfsForestFrom vs g = reverse $ evalState (foldM bff [] vs) Set.empty where
 -- bfs [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5])) == [3,2,1,4,5]
 -- @
 bfs :: Ord a => [a] -> AdjacencyMap a -> [a]
-bfs vs = bfsForestFrom vs >=> flatten
+bfs vs = bfsForestFrom vs >=> concat . levels
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.

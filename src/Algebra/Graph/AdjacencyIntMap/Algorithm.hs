@@ -145,7 +145,8 @@ bfsForest g = bfsForestFrom (vertexList g) g
 -- @
 bfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
 bfsForestFrom vs g = reverse $ evalState (foldM bff [] vs) IntSet.empty where
-  bff trees v = (hasVertex v g &&) <$> discovered v >>= \case
+  bff trees v | not (hasVertex v g) = return trees
+              | otherwise = discovered v >>= \case
                   False -> return trees
                   True -> (:trees) <$> unfoldTreeM_BF walk v
   walk v = (v,) <$> adjacentM v
@@ -160,7 +161,7 @@ bfsForestFrom vs g = reverse $ evalState (foldM bff [] vs) IntSet.empty where
 -- bfs [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5])) == [3,2,1,4,5]
 -- @
 bfs :: [Int] -> AdjacencyIntMap -> [Int]
-bfs vs = concatMap flatten . bfsForestFrom vs
+bfs vs =  bfsForestFrom vs >=> concat . levels
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.
