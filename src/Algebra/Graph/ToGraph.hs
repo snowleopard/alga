@@ -71,6 +71,8 @@ import qualified Data.IntSet                                  as IntSet
 import qualified Data.Map                                     as Map
 import qualified Data.Set                                     as Set
 
+import Algebra.Graph.Internal
+
 -- | The 'ToGraph' type class captures data types that can be converted to
 -- algebraic graphs. Instances of this type class should satisfy the laws
 -- specified by the default method definitions.
@@ -168,8 +170,7 @@ class ToGraph t where
     -- sharesVertex x empty  == False
     -- @
     sharesVertex :: Ord (ToVertex t) => t -> t -> Bool
-    sharesVertex = not ... (Set.disjoint `on` vertexSet) where
-      (...) = (.) . (.)
+    sharesVertex = not ... (Set.disjoint `on` vertexSet)
 
     -- | The set of vertices of a graph. Like 'vertexSet' but specialised for
     -- graphs with vertices of type 'Int'.
