@@ -43,116 +43,116 @@ testBipartiteAdjacencyMap = do
         consistent (edge x y :: BAII)
     test "consistent (edges es)                                                    == True" $ \es ->
         consistent (edges es :: BAII)
-    test "consistent $ toBipartite am                                              == True" $ \am ->
+    test "consistent (toBipartite am)                                              == True" $ \am ->
         consistent $ toBipartite (am :: AII)
-    test "consistent $ fromGraph g                                                 == True" $ \g ->
+    test "consistent (fromGraph g)                                                 == True" $ \g ->
         consistent $ fromGraph (g :: GII)
-    test "consistent $ fromGraph $ G.biclique (map Left [1..x]) (map Right [1..y]) == True" $ \x y ->
+    test "consistent (fromGraph (G.biclique (map Left [1..x]) (map Right [1..y]))) == True" $ \x y ->
         consistent $ fromGraph $ G.biclique (map Left [1..(x :: Int)]) (map Right [1..(y :: Int)])
-    test "consistent $ swap bam                                                    == True" $ \bam ->
+    test "consistent (swap bam)                                                    == True" $ \bam ->
         consistent $ swap (bam :: BAII)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.toBipartite ============"
-    test "leftAdjacencyMap $ toBipartite AM.empty                                                                                                   == Map.empty" $
+    test "leftAdjacencyMap (toBipartite empty)                                                                                                   == Map.empty" $
         (leftAdjacencyMap $ toBipartite (AM.empty :: AII)) == Map.empty
-    test "rightAdjacencyMap $ toBipartite AM.empty                                                                                                  == Map.empty" $
+    test "rightAdjacencyMap (toBipartite empty)                                                                                                  == Map.empty" $
         (rightAdjacencyMap $ toBipartite (AM.empty :: AII)) == Map.empty
-    test "leftAdjacencyMap $ toBipartite $ AM.vertex $ Left 1                                                                                       == Map.singleton 1 Set.empty" $
+    test "leftAdjacencyMap (toBipartite (vertex (Left 1)))                                                                                       == Map.singleton 1 Set.empty" $
         (leftAdjacencyMap $ toBipartite (AM.vertex (Left 1) :: AII)) == Map.singleton 1 Set.empty
-    test "rightAdjacencyMap $ toBipartite $ AM.vertex $ Left 1                                                                                      == Map.empty" $
+    test "rightAdjacencyMap (toBipartite (vertex (Left 1)))                                                                                      == Map.empty" $
         (rightAdjacencyMap $ toBipartite (AM.vertex (Left 1) :: AII)) == Map.empty
-    test "leftAdjacencyMap $ toBipartite $ AM.vertex $ Right 1                                                                                      == Map.empty" $
+    test "leftAdjacencyMap (toBipartite (vertex (Right 1)))                                                                                      == Map.empty" $
         (leftAdjacencyMap $ toBipartite (AM.vertex (Right 1) :: AII)) == Map.empty
-    test "rightAdjacencyMap $ toBipartite $ AM.vertex $ Right 1                                                                                     == Map.singleton 1 Set.empty" $
+    test "rightAdjacencyMap (toBipartite (vertex (Right 1)))                                                                                     == Map.singleton 1 Set.empty" $
         (rightAdjacencyMap $ toBipartite (AM.vertex (Right 1) :: AII)) == Map.singleton 1 Set.empty
-    test "leftAdjacencyMap $ toBipartite $ AM.edge (Left 1) (Right 2)                                                                               == Map.singleton 1 (Set.singleton 2)" $
+    test "leftAdjacencyMap (toBipartite (edge (Left 1) (Right 2)))                                                                               == Map.singleton 1 (Set.singleton 2)" $
         (leftAdjacencyMap $ toBipartite (AM.edge (Left 1) (Right 2) :: AII)) == Map.singleton 1 (Set.singleton 2)
-    test "rightAdjacencyMap $ toBipartite $ AM.edge (Left 1) (Right 2)                                                                              == Map.singleton 2 (Set.singleton 1)" $
+    test "rightAdjacencyMap (toBipartite (edge (Left 1) (Right 2)))                                                                              == Map.singleton 2 (Set.singleton 1)" $
         (rightAdjacencyMap $ toBipartite (AM.edge (Left 1) (Right 2) :: AII)) == Map.singleton 2 (Set.singleton 1)
-    test "leftAdjacencyMap $ toBipartite $ AM.edges [(Left 1, Right 2), (Right 2, Left 1)]                                                          == Map.singleton 1 (Set.singleton 2)" $
+    test "leftAdjacencyMap (toBipartite (edges [(Left 1, Right 2), (Right 2, Left 1)]))                                                          == Map.singleton 1 (Set.singleton 2)" $
         (leftAdjacencyMap $ toBipartite (AM.edges [(Left 1, Right 2), (Right 2, Left 1)] :: AII))
           == Map.singleton 1 (Set.singleton 2)
-    test "rightAdjacencyMap $ toBipartite $ AM.edges [(Left 1, Right 2), (Right 2, Left 1)]                                                         == Map.singleton 2 (Set.singleton 1)" $
+    test "rightAdjacencyMap (toBipartite (edges [(Left 1, Right 2), (Right 2, Left 1)]))                                                         == Map.singleton 2 (Set.singleton 1)" $
         (rightAdjacencyMap $ toBipartite (AM.edges [(Left 1, Right 2), (Right 2, Left 1)] :: AII))
           == Map.singleton 2 (Set.singleton 1)
-    test "leftAdjacencyMap $ toBipartite $ AM.edge (Left 1) (Right 1)                                                                               == Map.singleton 1 (Set.singleton 2)" $
+    test "leftAdjacencyMap (toBipartite (edge (Left 1) (Right 1)))                                                                               == Map.singleton 1 (Set.singleton 2)" $
         (leftAdjacencyMap $ toBipartite (AM.edge (Left 1) (Right 1) :: AII)) == Map.singleton 1 (Set.singleton 1)
-    test "rightAdjacencyMap $ toBipartite $ AM.edge (Left 1) (Right 2)                                                                              == Map.singleton 2 (Set.singleton 1)" $
+    test "rightAdjacencyMap (toBipartite (edge (Left 1) (Right 2)))                                                                              == Map.singleton 2 (Set.singleton 1)" $
         (rightAdjacencyMap $ toBipartite (AM.edge (Left 1) (Right 1) :: AII)) == Map.singleton 1 (Set.singleton 1)
-    test "leftAdjacencyMap $ toBipartite $ AM.edges [(Left 1, Right 1), (Right 1, Left 1)]                                                          == Map.singleton 1 (Set.singleton 1)" $
+    test "leftAdjacencyMap (toBipartite (edges [(Left 1, Right 1), (Right 1, Left 1)]))                                                          == Map.singleton 1 (Set.singleton 1)" $
         (leftAdjacencyMap $ toBipartite (AM.edges [(Left 1, Right 1), (Right 1, Left 1)] :: AII))
           == Map.singleton 1 (Set.singleton 1)
-    test "rightAdjacencyMap $ toBipartite $ AM.edges [(Left 1, Right 2), (Right 2, Left 1)]                                                         == Map.singleton 1 (Set.singleton 1)" $
+    test "rightAdjacencyMap (toBipartite (edges [(Left 1, Right 2), (Right 2, Left 1)]))                                                         == Map.singleton 1 (Set.singleton 1)" $
         (rightAdjacencyMap $ toBipartite (AM.edges [(Left 1, Right 1), (Right 1, Left 1)] :: AII))
           == Map.singleton 1 (Set.singleton 1)
-    test "leftAdjacencyMap $ toBipartite $ AM.edges [(Left 1, Right 1), (Left 1, Right 2)]                                                          == Map.singleton 1 (Set.fromAscList [1, 2])" $
+    test "leftAdjacencyMap (toBipartite (edges [(Left 1, Right 1), (Left 1, Right 2)]))                                                          == Map.singleton 1 (Set.fromAscList [1, 2])" $
         (leftAdjacencyMap $ toBipartite (AM.edges [(Left 1, Right 1), (Left 1, Right 2)] :: AII))
             == Map.singleton 1 (Set.fromAscList [1, 2])
-    test "rightAdjacencyMap $ toBipartite $ AM.edges [(Left 1, Right 1), (Left 1, Right 2)]                                                         == Map.fromAscList [(1, Set.singleton 1), (2, Set.singleton 1)]" $
+    test "rightAdjacencyMap (toBipartite (edges [(Left 1, Right 1), (Left 1, Right 2)]))                                                         == Map.fromAscList [(1, Set.singleton 1), (2, Set.singleton 1)]" $
         (rightAdjacencyMap $ toBipartite (AM.edges [(Left 1, Right 1), (Left 1, Right 2)] :: AII))
             == Map.fromAscList [(1, Set.singleton 1), (2, Set.singleton 1)]
-    test "leftAdjacencyMap $ toBipartite $ AM.edges [(Left 1, Right 2), (Left 1, Right 4), (Right 2, Left 3), (Left 3, Right 4), (Left 1, Left 3)]  == <correct result>" $
+    test "leftAdjacencyMap (toBipartite (edges [(Left 1, Right 2), (Left 1, Right 4), (Right 2, Left 3), (Left 3, Right 4), (Left 1, Left 3)]))  == <correct result>" $
         (leftAdjacencyMap $ toBipartite (AM.edges [(Left 1, Right 2), (Left 1, Right 4), (Right 2, Left 3), (Left 3, Right 4), (Left 1, Left 3)] :: AII))
             == Map.fromAscList [(1, Set.fromAscList [2, 4]), (3, Set.fromAscList [2, 4])]
-    test "rightAdjacencyMap $ toBipartite $ AM.edges [(Left 1, Right 2), (Left 1, Right 4), (Right 2, Left 3), (Left 3, Right 4), (Left 1, Left 3)] == <correct result>" $
+    test "rightAdjacencyMap (toBipartite (edges [(Left 1, Right 2), (Left 1, Right 4), (Right 2, Left 3), (Left 3, Right 4), (Left 1, Left 3)])) == <correct result>" $
         (rightAdjacencyMap $ toBipartite (AM.edges ([(Left 1, Right 2), (Left 1, Right 4), (Right 2, Left 3), (Left 3, Right 4), (Left 1, Left 3)]) :: AII))
             == Map.fromAscList [(2, Set.fromAscList [1, 3]), (4, Set.fromAscList [1, 3])]
-    test "leftAdjacencyMap $ toBipartite $ AM.biclique (map Left [1..x]) (map Right [1..y])                                                         == <correct result>" $ \x y ->
+    test "leftAdjacencyMap (toBipartite (biclique (map Left [1..x]) (map Right [1..y])))                                                         == <correct result>" $ \x y ->
         (leftAdjacencyMap $ toBipartite $ AM.biclique (map Left [1..(x :: Int)]) (map Right [1..(y :: Int)]))
             == expectedBicliqueMap x y
-    test "rightAdjacencyMap $ toBipartite $ AM.biclique (map Left [1..x]) (map Right [1..y])                                                        == <correct result>" $ \x y ->
+    test "rightAdjacencyMap (toBipartite (biclique (map Left [1..x]) (map Right [1..y])))                                                        == <correct result>" $ \x y ->
         (rightAdjacencyMap $ toBipartite $ AM.biclique (map Left [1..(x :: Int)]) (map Right [1..(y :: Int)]))
             == expectedBicliqueMap y x
 
     putStrLn "\n============ Bipartite.AdjacencyMap.fromGraph ============"
-    test "leftAdjacencyMap $ fromGraph G.empty                                                                                                   == Map.empty" $
+    test "leftAdjacencyMap (fromGraph empty)                                                                                                   == Map.empty" $
         (leftAdjacencyMap $ fromGraph (G.empty :: GII)) == Map.empty
-    test "rightAdjacencyMap $ fromGraph G.empty                                                                                                  == Map.empty" $
+    test "rightAdjacencyMap (fromGraph empty)                                                                                                  == Map.empty" $
         (rightAdjacencyMap $ fromGraph (G.empty :: GII)) == Map.empty
-    test "leftAdjacencyMap $ fromGraph $ G.Vertex $ Left 1                                                                                       == Map.singleton 1 Set.empty" $
+    test "leftAdjacencyMap (fromGraph (Vertex (Left 1)))                                                                                       == Map.singleton 1 Set.empty" $
         (leftAdjacencyMap $ fromGraph (G.Vertex (Left 1) :: GII)) == Map.singleton 1 Set.empty
-    test "rightAdjacencyMap $ fromGraph $ G.Vertex $ Left 1                                                                                      == Map.empty" $
+    test "rightAdjacencyMap (fromGraph (Vertex (Left 1)))                                                                                      == Map.empty" $
         (rightAdjacencyMap $ fromGraph (G.Vertex (Left 1) :: GII)) == Map.empty
-    test "leftAdjacencyMap $ fromGraph $ G.Vertex $ Right 1                                                                                      == Map.empty" $
+    test "leftAdjacencyMap (fromGraph (Vertex (Right 1)))                                                                                      == Map.empty" $
         (leftAdjacencyMap $ fromGraph (G.Vertex (Right 1) :: GII)) == Map.empty
-    test "rightAdjacencyMap $ fromGraph $ G.Vertex $ Right 1                                                                                     == Map.singleton 1 Set.empty" $
+    test "rightAdjacencyMap (fromGraph (Vertex (Right 1)))                                                                                     == Map.singleton 1 Set.empty" $
         (rightAdjacencyMap $ fromGraph (G.Vertex (Right 1) :: GII)) == Map.singleton 1 Set.empty
-    test "leftAdjacencyMap $ fromGraph $ G.edge (Left 1) (Right 2)                                                                               == Map.singleton 1 (Set.singleton 2)" $
+    test "leftAdjacencyMap (fromGraph (edge (Left 1) (Right 2)))                                                                               == Map.singleton 1 (Set.singleton 2)" $
         (leftAdjacencyMap $ fromGraph (G.edge (Left 1) (Right 2) :: GII)) == Map.singleton 1 (Set.singleton 2)
-    test "rightAdjacencyMap $ fromGraph $ G.edge (Left 1) (Right 2)                                                                              == Map.singleton 2 (Set.singleton 1)" $
+    test "rightAdjacencyMap (fromGraph (edge (Left 1) (Right 2)))                                                                              == Map.singleton 2 (Set.singleton 1)" $
         (rightAdjacencyMap $ fromGraph (G.edge (Left 1) (Right 2) :: GII)) == Map.singleton 2 (Set.singleton 1)
-    test "leftAdjacencyMap $ fromGraph $ G.edges [(Left 1, Right 2), (Right 2, Left 1)]                                                          == Map.singleton 1 (Set.singleton 2)" $
+    test "leftAdjacencyMap (fromGraph (edges [(Left 1, Right 2), (Right 2, Left 1)]))                                                          == Map.singleton 1 (Set.singleton 2)" $
         (leftAdjacencyMap $ fromGraph (G.edges [(Left 1, Right 2), (Right 2, Left 1)] :: GII))
           == Map.singleton 1 (Set.singleton 2)
-    test "rightAdjacencyMap $ fromGraph $ G.edges [(Left 1, Right 2), (Right 2, Left 1)]                                                         == Map.singleton 2 (Set.singleton 1)" $
+    test "rightAdjacencyMap (fromGraph (edges [(Left 1, Right 2), (Right 2, Left 1)]))                                                         == Map.singleton 2 (Set.singleton 1)" $
         (rightAdjacencyMap $ fromGraph (G.edges [(Left 1, Right 2), (Right 2, Left 1)] :: GII))
           == Map.singleton 2 (Set.singleton 1)
-    test "leftAdjacencyMap $ fromGraph $ G.edge (Left 1) (Right 1)                                                                               == Map.singleton 1 (Set.singleton 2)" $
+    test "leftAdjacencyMap (fromGraph (edge (Left 1) (Right 1)))                                                                               == Map.singleton 1 (Set.singleton 2)" $
         (leftAdjacencyMap $ fromGraph (G.edge (Left 1) (Right 1) :: GII)) == Map.singleton 1 (Set.singleton 1)
-    test "rightAdjacencyMap $ fromGraph $ G.edge (Left 1) (Right 2)                                                                              == Map.singleton 2 (Set.singleton 1)" $
+    test "rightAdjacencyMap (fromGraph (edge (Left 1) (Right 2)))                                                                              == Map.singleton 2 (Set.singleton 1)" $
         (rightAdjacencyMap $ fromGraph (G.edge (Left 1) (Right 1) :: GII)) == Map.singleton 1 (Set.singleton 1)
-    test "leftAdjacencyMap $ fromGraph $ G.edges [(Left 1, Right 1), (Right 1, Left 1)]                                                          == Map.singleton 1 (Set.singleton 1)" $
+    test "leftAdjacencyMap (fromGraph (edges [(Left 1, Right 1), (Right 1, Left 1)]))                                                          == Map.singleton 1 (Set.singleton 1)" $
         (leftAdjacencyMap $ fromGraph (G.edges [(Left 1, Right 1), (Right 1, Left 1)] :: GII))
           == Map.singleton 1 (Set.singleton 1)
-    test "rightAdjacencyMap $ fromGraph $ G.edges [(Left 1, Right 2), (Right 2, Left 1)]                                                         == Map.singleton 1 (Set.singleton 1)" $
+    test "rightAdjacencyMap (fromGraph (edges [(Left 1, Right 2), (Right 2, Left 1)]))                                                         == Map.singleton 1 (Set.singleton 1)" $
         (rightAdjacencyMap $ fromGraph (G.edges [(Left 1, Right 1), (Right 1, Left 1)] :: GII))
           == Map.singleton 1 (Set.singleton 1)
-    test "leftAdjacencyMap $ fromGraph $ G.edges [(Left 1, Right 1), (Left 1, Right 2)]                                                          == Map.singleton 1 (Set.fromAscList [1, 2])" $
+    test "leftAdjacencyMap (fromGraph (edges [(Left 1, Right 1), (Left 1, Right 2)]))                                                          == Map.singleton 1 (Set.fromAscList [1, 2])" $
         (leftAdjacencyMap $ fromGraph (G.edges [(Left 1, Right 1), (Left 1, Right 2)] :: GII))
             == Map.singleton 1 (Set.fromAscList [1, 2])
-    test "rightAdjacencyMap $ fromGraph $ G.edges [(Left 1, Right 1), (Left 1, Right 2)]                                                         == Map.fromAscList [(1, Set.singleton 1), (2, Set.singleton 1)]" $
+    test "rightAdjacencyMap (fromGraph (edges [(Left 1, Right 1), (Left 1, Right 2)]))                                                         == Map.fromAscList [(1, Set.singleton 1), (2, Set.singleton 1)]" $
         (rightAdjacencyMap $ fromGraph (G.edges [(Left 1, Right 1), (Left 1, Right 2)] :: GII))
             == Map.fromAscList [(1, Set.singleton 1), (2, Set.singleton 1)]
-    test "leftAdjacencyMap $ fromGraph $ G.edges [(Left 1, Right 2), (Left 1, Right 4), (Right 2, Left 3), (Left 3, Right 4), (Left 1, Left 3)]  == <correct result>" $
+    test "leftAdjacencyMap (fromGraph (edges [(Left 1, Right 2), (Left 1, Right 4), (Right 2, Left 3), (Left 3, Right 4), (Left 1, Left 3)]))  == <correct result>" $
         (leftAdjacencyMap $ fromGraph $ (G.edges [(Left 1, Right 2), (Left 1, Right 4), (Right 2, Left 3), (Left 3, Right 4), (Left 1, Left 3)] :: GII))
             == Map.fromAscList [(1, Set.fromAscList [2, 4]), (3, Set.fromAscList [2, 4])]
-    test "rightAdjacencyMap $ fromGraph $ G.edges [(Left 1, Right 2), (Left 1, Right 4), (Right 2, Left 3), (Left 3, Right 4), (Left 1, Left 3)] == <correct result>" $
+    test "rightAdjacencyMap (fromGraph (edges [(Left 1, Right 2), (Left 1, Right 4), (Right 2, Left 3), (Left 3, Right 4), (Left 1, Left 3)])) == <correct result>" $
         (rightAdjacencyMap $ fromGraph $ (G.edges [(Left 1, Right 2), (Left 1, Right 4), (Right 2, Left 3), (Left 3, Right 4), (Left 1, Left 3)] :: GII))
             == Map.fromAscList [(2, Set.fromAscList [1, 3]), (4, Set.fromAscList [1, 3])]
-    test "leftAdjacencyMap $ fromGraph $ G.biclique (map Left [1..x]) (map Right [1..y])                                                         == <correct result>" $ \x y ->
+    test "leftAdjacencyMap (fromGraph (biclique (map Left [1..x]) (map Right [1..y])))                                                         == <correct result>" $ \x y ->
         (leftAdjacencyMap $ fromGraph $ G.biclique (map Left [1..(x :: Int)]) (map Right [1..(y :: Int)]))
             == expectedBicliqueMap x y
-    test "rightAdjacencyMap $ fromGraph $ G.biclique (map Left [1..x]) (map Right [1..y])                                                        == <correct result>" $ \x y ->
+    test "rightAdjacencyMap (fromGraph (biclique (map Left [1..x]) (map Right [1..y])))                                                        == <correct result>" $ \x y ->
         (rightAdjacencyMap $ fromGraph $ G.biclique (map Left [1..(x :: Int)]) (map Right [1..(y :: Int)]))
             == expectedBicliqueMap y x
 
@@ -165,28 +165,28 @@ testBipartiteAdjacencyMap = do
         fromBipartite (rightVertex 1 :: BAII) == (AM.vertex (Right 1))
     test "fromBipartite (edge x y)                                                       == AM.edges [(Left x, Right y), (Right y, Left x)]" $ \x y ->
         fromBipartite (edge x y :: BAII) == AM.edges [(Left x, Right y), (Right y, Left x)]
-    test "fromBipartite $ toBipartite (AM.edges [(Left x, Right y), (Right y, Left x)])  == AM.edges [(Left x, Right y), (Right y, Left x)]" $ \x y ->
+    test "fromBipartite (toBipartite (AM.edges [(Left x, Right y), (Right y, Left x)]))  == AM.edges [(Left x, Right y), (Right y, Left x)]" $ \x y ->
         (fromBipartite $ toBipartite (AM.edges [(Left x, Right y), (Right y, Left x)] :: AII)) == AM.edges [(Left x, Right y), (Right y, Left x)]
     test "fromBipartite (edges [(1, 1), (1, 2)])  == <correct result>" $
         fromBipartite (edges [(1, 1), (1, 2)] :: BAII)
             == (AM.edges [(Left 1, Right 1), (Left 1, Right 2), (Right 1, Left 1), (Right 2, Left 1)])
-    test "AM.consistent $ fromBipartite bam                                              == True" $ \bam ->
+    test "AM.consistent (fromBipartite bam)                                              == True" $ \bam ->
         AM.consistent $ fromBipartite (bam :: BAII)
-    test "fromBipartite $ toBipartite $ AM.biclique (map Left [1..x]) (map Right [1..y]) == <correct result>" $ \x y ->
+    test "fromBipartite (toBipartite (AM.biclique (map Left [1..x]) (map Right [1..y]))) == <correct result>" $ \x y ->
         (fromBipartite $ toBipartite $ AM.biclique (map Left [1..(x :: Int)]) (map Right [1..(y :: Int)]))
          == AM.overlay (AM.biclique (map Left [1..(x :: Int)]) (map Right [1..(y :: Int)]))
                        (AM.biclique (map Right [1..(y :: Int)]) (map Left [1..(x :: Int)]))
 
     putStrLn "\n============ Bipartite.AdjacencyMap.hasEdge ============"
-    test "hasEdge x y $ fromGraph G.empty                                   == False" $ \x y ->
+    test "hasEdge x y (fromGraph empty)                                 == False" $ \x y ->
         not $ hasEdge (x :: Int) (y :: Int) $ fromGraph G.empty
-    test "hasEdge x y $ fromGraph $ G.edge (Left x) (Right y)               == True" $ \x y ->
+    test "hasEdge x y (fromGraph (edge (Left x) (Right y)))             == True" $ \x y ->
         hasEdge (x :: Int) (y :: Int) $ fromGraph $ G.edge (Left x) (Right y)
-    test "hasEdge 1 2 $ fromGraph $ G.edge (Left 1) (Left 2)                == False" $
+    test "hasEdge 1 2 (fromGraph (edge (Left 1) (Left 2)))              == False" $
         not $ hasEdge 1 1 $ fromGraph $ (G.edge (Left 1) (Left 2) :: GII)
-    test "hasEdge 2 3 $ fromGraph $ G.edge (Left 1) (Right 2)               == False" $
+    test "hasEdge 2 3 (fromGraph (edge (Left 1) (Right 2)))             == False" $
         not $ hasEdge 2 3 $ fromGraph (G.edges [(Left 1, Right 2)] :: GII)
-    test "hasEdge x y $ fromGraph $ G.Overlay g $ G.edge (Left x) (Right y) == True" $ \g x y ->
+    test "hasEdge x y (fromGraph (Overlay g (edge (Left x) (Right y)))) == True" $ \g x y ->
         hasEdge x y $ fromGraph $ G.Overlay g $ G.edge (Left (x :: Int)) (Right (y :: Int))
 
     putStrLn "\n============ Bipartite.AdjacencyMap.empty ============"
