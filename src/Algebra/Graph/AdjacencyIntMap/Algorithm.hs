@@ -81,10 +81,8 @@ dfsForest g = dfsForestFrom (vertexList g) g
 --                                                            , subForest = [] }]
 -- @
 dfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
-dfsForestFrom vs g = prune $ evalState (dff vs) IntSet.empty where
-  dff (v:vs) | not (hasVertex v g) = dff vs
-             | otherwise = (:) <$> unfoldTreeM walk v <*> dff vs
-  dff _ = return []                              
+dfsForestFrom vs g = prune $ evalState dff IntSet.empty where
+  dff = unfoldForestM walk [ v | v <- vs, hasVertex v g ]
   prune ts = [ Node t (prune xs) | Node (Just t) xs <- ts ]
   walk v = discovered v >>= \case
     False -> pure (Nothing,[])
@@ -156,16 +154,17 @@ bfsForest g = bfsForestFrom (vertexList g) g
 -- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [3,2,1] + 'path' [3,4,5]
 -- @
 bfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
-bfsForestFrom vs g = evalState (bff vs) IntSet.empty where
-  bff (v:vs) = (hasVertex v g &&) <$> discovered v >>= \case
-    False -> bff vs
-    True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
-  bff _ = return []
-  walk v = (v,) <$> adjacentM v
-  adjacentM v = filterM discovered $ IntSet.toList (postIntSet v g)
-  discovered v = do seen <- gets (IntSet.member v)
-                    unless seen $ modify' (IntSet.insert v)
-                    return $ not seen
+bfsForestFrom vs g = evalState (bff [ v | v <- vs, hasVertex v g]) IntSet.empty
+  where
+    bff [] = return []
+    bff (v:vs) = discovered v >>= \case
+      False -> bff vs
+      True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
+    walk v = (v,) <$> adjacentM v
+    adjacentM v = filterM discovered $ IntSet.toList (postIntSet v g)
+    discovered v = do unseen <- gets (not . IntSet.member v)
+                      when unseen $ modify' (IntSet.insert v)
+                      return unseen
 
 -- | Like 'bfsForestFrom' with the resulting forest flattened to a list of vertices.
 --
@@ -173,7 +172,7 @@ bfsForestFrom vs g = evalState (bff vs) IntSet.empty where
 -- bfs [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5])) == [3,2,1,4,5]
 -- @
 bfs :: [Int] -> AdjacencyIntMap -> [Int]
-bfs vs =  bfsForestFrom vs >=> concat . levels
+bfs vs = bfsForestFrom vs >=> concat . levels
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.

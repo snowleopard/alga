@@ -161,16 +161,17 @@ bfsForest g = bfsForestFrom (vertexList g) g
 -- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [3,2,1] + 'path' [3,4,5]
 -- @
 bfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
-bfsForestFrom vs g = evalState (bff vs) Set.empty where
-  bff (v:vs) = (hasVertex v g &&) <$> discovered v >>= \case
-    False -> bff vs
-    True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
-  bff _ = return []
-  walk v = (v,) <$> adjacentM v
-  adjacentM v = filterM discovered $ Set.toList (postSet v g)
-  discovered v = do seen <- gets (Set.member v)
-                    unless seen $ modify' (Set.insert v)
-                    return $ not seen
+bfsForestFrom vs g = evalState (bff [ v | v <- vs, hasVertex v g]) Set.empty
+  where
+    bff [] = return []
+    bff (v:vs) = discovered v >>= \case
+      False -> bff vs
+      True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
+    walk v = (v,) <$> adjacentM v
+    adjacentM v = filterM discovered $ Set.toList (postSet v g)
+    discovered v = do seen <- gets (Set.member v)
+                      unless seen $ modify' (Set.insert v)
+                      return $ not seen
 
 -- | Like 'bfsForestFrom' with the resulting forest flattened to a list of vertices.
 --
