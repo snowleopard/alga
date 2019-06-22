@@ -170,9 +170,9 @@ bfsForestFrom vs g = evalState (bff [ v | v <- vs, hasVertex v g]) Set.empty
       True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
     walk v = (v,) <$> adjacentM v
     adjacentM v = filterM discovered $ Set.toList (postSet v g)
-    discovered v = do unseen <- gets (not . Set.member v)
-                      when unseen $ modify' (Set.insert v)
-                      return unseen
+    discovered v = do new <- gets (not . Set.member v)
+                      when new $ modify' (Set.insert v)
+                      return new
 
 -- | Like 'bfsForestFrom' with the resulting forest flattened to a list of vertices.
 -- Complexity: /O(n+(L+m)*log n)/ time and /O(n+m)/ space.

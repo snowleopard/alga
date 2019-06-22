@@ -89,9 +89,9 @@ dfsForestFrom vs g = prune $ evalState dff IntSet.empty where
     True -> (Just v,) <$> adjacentM v
   adjacentM v = filterM undiscovered $ IntSet.toList (postIntSet v g)
   undiscovered v = gets (not . IntSet.member v)
-  discovered v = do unseen <- undiscovered v
-                    when unseen $ modify' (IntSet.insert v)
-                    return unseen
+  discovered v = do new <- undiscovered v
+                    when new $ modify' (IntSet.insert v)
+                    return new
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a graph,
 -- when searching from each of the given vertices in order.
@@ -164,9 +164,9 @@ bfsForestFrom vs g = evalState (bff [ v | v <- vs, hasVertex v g]) IntSet.empty
       True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
     walk v = (v,) <$> adjacentM v
     adjacentM v = filterM discovered $ IntSet.toList (postIntSet v g)
-    discovered v = do unseen <- gets (not . IntSet.member v)
-                      when unseen $ modify' (IntSet.insert v)
-                      return unseen
+    discovered v = do new <- gets (not . IntSet.member v)
+                      when new $ modify' (IntSet.insert v)
+                      return new
 
 -- | Like 'bfsForestFrom' with the resulting forest flattened to a list of vertices. Complexity:
 -- /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
