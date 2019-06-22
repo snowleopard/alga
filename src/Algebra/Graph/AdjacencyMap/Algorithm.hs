@@ -84,19 +84,20 @@ dfsForest g = dfsForestFrom (vertexList g) g
 --                                                            , subForest = [] }]
 -- @
 dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
-dfsForestFrom vs g = prune $ evalState (dff vs) Set.empty where
-  dff (v:vs) | not (hasVertex v g) = dff vs
-             | otherwise = (:) <$> unfoldTreeM walk v <*> dff vs
-  dff _ = return []                              
-  prune ts = [ Node t (prune xs) | Node (Just t) xs <- ts ]
-  walk v = discovered v >>= \case
-    False -> pure (Nothing,[])
-    True -> (Just v,) <$> adjacentM v
-  adjacentM v = filterM discovered' $ Set.toList (postSet v g)
-  discovered' v = gets (not . Set.member v)
-  discovered v = do unseen <- gets (not . Set.member v)
-                    when unseen $ modify' (Set.insert v)
-                    return unseen
+dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
+--  = prune $ evalState (dff vs) Set.empty where
+--  dff (v:vs) | not (hasVertex v g) = dff vs
+--             | otherwise = (:) <$> unfoldTreeM walk v <*> dff vs
+--  dff _ = return []                              
+--  prune ts = [ Node t (prune xs) | Node (Just t) xs <- ts ]
+--  walk v = discovered v >>= \case
+--    False -> pure (Nothing,[])
+--    True -> (Just v,) <$> adjacentM v
+--  adjacentM v = filterM discovered' $ Set.toList (postSet v g)
+--  discovered' v = gets (not . Set.member v)
+--  discovered v = do unseen <- gets (not . Set.member v)
+--                    when unseen $ modify' (Set.insert v)
+--                    return unseen
 
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a

@@ -89,9 +89,9 @@ dfsForestFrom vs g = prune $ evalState (dff vs) IntSet.empty where
   walk v = discovered v >>= \case
     False -> pure (Nothing,[])
     True -> (Just v,) <$> adjacentM v
-  adjacentM v = filterM discovered' $ IntSet.toList (postIntSet v g)
-  discovered' v = gets (not . IntSet.member v)
-  discovered v = do unseen <- gets (not . IntSet.member v)
+  adjacentM v = filterM undiscovered $ IntSet.toList (postIntSet v g)
+  undiscovered v = gets (not . IntSet.member v)
+  discovered v = do unseen <- undiscovered v
                     when unseen $ modify' (IntSet.insert v)
                     return unseen
 
