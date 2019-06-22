@@ -30,6 +30,7 @@ main = do
     go "AcyclicAdjacencyMap"   testAcyclicAdjacencyMap
     go "AdjacencyIntMap"       testAdjacencyIntMap
     go "AdjacencyMap"          testAdjacencyMap
+    go "BipartiteAdjacencyMap" testBipartiteAdjacencyMap
     go "Export"                testExport
     go "Graph"                 testGraph
     go "Internal"              testInternal
@@ -39,5 +40,4 @@ main = do
     go "NonEmptyGraph"         testNonEmptyGraph
     go "Relation"              testRelation
     go "SymmetricRelation"     testSymmetricRelation
-    go "BipartiteAdjacencyMap" testBipartiteAdjacencyMap
     go "Typed"                 testTyped
