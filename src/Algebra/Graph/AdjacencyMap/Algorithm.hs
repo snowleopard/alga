@@ -24,7 +24,7 @@ module Algebra.Graph.AdjacencyMap.Algorithm (
     ) where
 
 import Control.Monad
-import Control.Monad.State
+import Control.Monad.State.Strict
 import Data.Foldable (toList)
 import Data.Maybe
 import Data.Tree
@@ -84,7 +84,20 @@ dfsForest g = dfsForestFrom (vertexList g) g
 --                                                            , subForest = [] }]
 -- @
 dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
-dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
+dfsForestFrom vs g = prune $ evalState (dff vs) Set.empty where
+  dff (v:vs) | not (hasVertex v g) = dff vs
+             | otherwise = (:) <$> unfoldTreeM walk v <*> dff vs
+  dff _ = return []                              
+  prune ts = [ Node t (prune xs) | Node (Just t) xs <- ts ]
+  walk v = discovered v >>= \case
+    False -> pure (Nothing,[])
+    True -> (Just v,) <$> adjacentM v
+  adjacentM v = filterM discovered' $ Set.toList (postSet v g)
+  discovered' v = gets (not . Set.member v)
+  discovered v = do unseen <- gets (not . Set.member v)
+                    when unseen $ modify' (Set.insert v)
+                    return unseen
+
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a
 -- graph, when searching from each of the given vertices in order.
@@ -102,7 +115,7 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
 -- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
 -- @
 dfs :: Ord a => [a] -> AdjacencyMap a -> [a]
-dfs vs = concatMap flatten . dfsForestFrom vs
+dfs vs = dfsForestFrom vs >=> flatten
 
 -- | Compute the list of vertices that are /reachable/ from a given source
 -- vertex in a graph. The vertices in the resulting list appear in the
@@ -147,11 +160,11 @@ bfsForest g = bfsForestFrom (vertexList g) g
 -- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [3,2,1] + 'path' [3,4,5]
 -- @
 bfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
-bfsForestFrom vs g = reverse $ evalState (foldM bff [] vs) Set.empty where
-  bff trees v | not (hasVertex v g) = return trees
-              | otherwise = discovered v >>= \case
-                  False -> return trees
-                  True -> (:trees) <$> unfoldTreeM_BF walk v
+bfsForestFrom vs g = evalState (bff vs) Set.empty where
+  bff (v:vs) = (hasVertex v g &&) <$> discovered v >>= \case
+    False -> bff vs
+    True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
+  bff _ = return []
   walk v = (v,) <$> adjacentM v
   adjacentM v = filterM discovered $ Set.toList (postSet v g)
   discovered v = do seen <- gets (Set.member v)

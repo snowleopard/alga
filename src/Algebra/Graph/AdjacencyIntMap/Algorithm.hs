@@ -24,7 +24,7 @@ module Algebra.Graph.AdjacencyIntMap.Algorithm (
     ) where
 
 import Control.Monad
-import Control.Monad.State
+import Control.Monad.State.Strict
 import Data.Maybe
 import Data.Tree
 
@@ -56,7 +56,7 @@ import qualified Data.IntSet        as IntSet
 -- 'forest' (dfsForest ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [1..5]
 -- @
 dfsForest :: AdjacencyIntMap -> Forest Int
-dfsForest = Typed.dfsForest . Typed.fromAdjacencyIntMap
+dfsForest g = dfsForestFrom (vertexList g) g
 
 -- | Compute the /depth-first search/ forest of a graph, searching from each of
 -- the given vertices in order. Note that the resulting forest does not
@@ -81,7 +81,19 @@ dfsForest = Typed.dfsForest . Typed.fromAdjacencyIntMap
 --                                                            , subForest = [] }]
 -- @
 dfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
-dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyIntMap
+dfsForestFrom vs g = prune $ evalState (dff vs) IntSet.empty where
+  dff (v:vs) | not (hasVertex v g) = dff vs
+             | otherwise = (:) <$> unfoldTreeM walk v <*> dff vs
+  dff _ = return []                              
+  prune ts = [ Node t (prune xs) | Node (Just t) xs <- ts ]
+  walk v = discovered v >>= \case
+    False -> pure (Nothing,[])
+    True -> (Just v,) <$> adjacentM v
+  adjacentM v = filterM discovered' $ IntSet.toList (postIntSet v g)
+  discovered' v = gets (not . IntSet.member v)
+  discovered v = do unseen <- gets (not . IntSet.member v)
+                    when unseen $ modify' (IntSet.insert v)
+                    return unseen
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a graph,
 -- when searching from each of the given vertices in order.
@@ -99,7 +111,7 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyIntMap
 -- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
 -- @
 dfs :: [Int] -> AdjacencyIntMap -> [Int]
-dfs vs = concatMap flatten . dfsForestFrom vs
+dfs vs = dfsForestFrom vs >=> flatten
 
 -- | Compute the list of vertices that are /reachable/ from a given source
 -- vertex in a graph. The vertices in the resulting list appear in the
@@ -144,11 +156,11 @@ bfsForest g = bfsForestFrom (vertexList g) g
 -- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [3,2,1] + 'path' [3,4,5]
 -- @
 bfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
-bfsForestFrom vs g = reverse $ evalState (foldM bff [] vs) IntSet.empty where
-  bff trees v | not (hasVertex v g) = return trees
-              | otherwise = discovered v >>= \case
-                  False -> return trees
-                  True -> (:trees) <$> unfoldTreeM_BF walk v
+bfsForestFrom vs g = evalState (bff vs) IntSet.empty where
+  bff (v:vs) = (hasVertex v g &&) <$> discovered v >>= \case
+    False -> bff vs
+    True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
+  bff _ = return []
   walk v = (v,) <$> adjacentM v
   adjacentM v = filterM discovered $ IntSet.toList (postIntSet v g)
   discovered v = do seen <- gets (IntSet.member v)
