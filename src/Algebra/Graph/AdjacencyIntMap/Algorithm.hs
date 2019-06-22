@@ -129,7 +129,8 @@ dfs vs = dfsForestFrom vs >=> flatten
 reachable :: Int -> AdjacencyIntMap -> [Int]
 reachable x = dfs [x]
 
--- | Compute the forest of a graph's vertices in breadth first order.
+-- | Compute the forest of a graph's vertices in breadth first order. Complexity:
+-- /O((n+m)*log n)/ time and /O(n+m)/ space.
 --
 -- @
 -- bfsForest 'empty'                         == []
@@ -145,7 +146,8 @@ bfsForest g = bfsForestFrom (vertexList g) g
 
 -- | Like 'bfsForest', but the traversal is seeded by a list of vertices,
 -- which may not include all of the given graph's vertices. Seed vertices not
--- in the graph are ignored.
+-- in the graph are ignored. Let /L/ be the number of seed vertices. Complexity:
+-- /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
 --
 -- @
 -- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2) == 'vertices' [1,2]
@@ -166,7 +168,8 @@ bfsForestFrom vs g = evalState (bff [ v | v <- vs, hasVertex v g]) IntSet.empty
                       when unseen $ modify' (IntSet.insert v)
                       return unseen
 
--- | Like 'bfsForestFrom' with the resulting forest flattened to a list of vertices.
+-- | Like 'bfsForestFrom' with the resulting forest flattened to a list of vertices. Complexity:
+-- /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
 --
 -- @
 -- bfs [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5])) == [3,2,1,4,5]

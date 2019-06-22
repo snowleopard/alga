@@ -136,7 +136,8 @@ dfs vs = dfsForestFrom vs >=> flatten
 reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = dfs [x]
 
--- | Compute the forest of a graph's vertices in breadth first order.
+-- | Compute the forest of a graph's vertices in breadth first order. Complexity:
+-- /O((n+m)*log n)/ time and /O(n+m)/ space.
 --
 -- @
 -- bfsForest 'empty'                         == []
@@ -150,9 +151,9 @@ reachable x = dfs [x]
 bfsForest :: Ord a => AdjacencyMap a -> Forest a
 bfsForest g = bfsForestFrom (vertexList g) g
 
--- | Like 'bfsForest', but the traversal is seeded by a list of vertices,
--- which may not include all of the given graph's vertices. Seed vertices not
--- in the graph are ignored.
+-- | Like 'bfsForest', but the traversal is seeded by a list of vertices. Seed vertices not
+-- in the graph are ignored. Let /L/ be the number of seed vertices. Complexity:
+-- /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
 --
 -- @
 -- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2) == 'vertices' [1,2]
@@ -169,11 +170,12 @@ bfsForestFrom vs g = evalState (bff [ v | v <- vs, hasVertex v g]) Set.empty
       True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
     walk v = (v,) <$> adjacentM v
     adjacentM v = filterM discovered $ Set.toList (postSet v g)
-    discovered v = do seen <- gets (Set.member v)
-                      unless seen $ modify' (Set.insert v)
-                      return $ not seen
+    discovered v = do unseen <- gets (not . Set.member v)
+                      when unseen $ modify' (Set.insert v)
+                      return unseen
 
 -- | Like 'bfsForestFrom' with the resulting forest flattened to a list of vertices.
+-- Complexity: /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
 --
 -- @
 -- bfs [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5])) == [3,2,1,4,5]
