@@ -60,7 +60,7 @@ graphs:
 
 @
 0                         == rightVertex 0
-'swap' 1                  == leftVertex 1
+'swap' 1                    == leftVertex 1
 'swap' 1 + 2                == vertices [1] [2]
 ('swap' 1) * 2              == edge 1 2
 ('swap' 1) + 2 * ('swap' 3)   == overlay (leftVertex 1) (edge 3 2)
@@ -389,6 +389,7 @@ connects = foldr connect empty
 -- swap . 'vertices'   == flip 'vertices'
 -- swap ('edge' 1 "a") == 'edge' "a" 1
 -- swap . 'edges'      == 'edges' . map Data.Tuple.'Data.Tuple.swap'
+-- swap . swap       == id
 -- @
 swap :: AdjacencyMap a b -> AdjacencyMap b a
 swap (BAM lr rl) = BAM rl lr
@@ -655,12 +656,13 @@ edgeSet = Set.fromAscList . edgeList
 -- 'rightAdjacencyMap' map.
 --
 -- @
--- consistent 'empty'            == True
--- consistent ('vertex' x)       == True
--- consistent ('edge' x y)       == True
--- consistent ('edges' xs)       == True
--- consistent ('fromGraph' g)    == True
--- consistent ('toBipartite' am) == True
+-- consistent 'empty'           == True
+-- consistent ('vertex' x)      == True
+-- consistent ('edge' x y)      == True
+-- consistent ('edges' x)       == True
+-- consistent ('fromGraph' x)   == True
+-- consistent ('toBipartite' x) == True
+-- consistent ('swap' x)        == True
 -- @
 consistent :: (Ord a, Ord b) => AdjacencyMap a b -> Bool
 consistent (BAM lr rl) = internalEdgeList lr == sort (map Data.Tuple.swap $ internalEdgeList rl)

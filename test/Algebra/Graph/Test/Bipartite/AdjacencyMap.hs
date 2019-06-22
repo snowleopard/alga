@@ -49,6 +49,8 @@ testBipartiteAdjacencyMap = do
         consistent $ fromGraph (g :: GII)
     test "consistent $ fromGraph $ G.biclique (map Left [1..x]) (map Right [1..y]) == True" $ \x y ->
         consistent $ fromGraph $ G.biclique (map Left [1..(x :: Int)]) (map Right [1..(y :: Int)])
+    test "consistent $ swap bam                                                    == True" $ \bam ->
+        consistent $ swap (bam :: BAII)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.toBipartite ============"
     test "leftAdjacencyMap $ toBipartite AM.empty                                                                                                   == Map.empty" $
@@ -448,6 +450,8 @@ testBipartiteAdjacencyMap = do
         swap (edge 1 "a" :: BAIS)     == edge "a" 1
     test "swap (edges es)       == (edges . map Data.Tuple.swap) es" $ \es ->
         swap (edges es :: BAII)       == (edges . map Data.Tuple.swap) es
+    test "swap (swap bam)       == bam" $ \bam ->
+        swap (swap bam :: BAII)       == bam
 
     putStrLn "\n============ Bipartite.AdjacencyMap.leftVertexList ============"
     test "leftVertexList empty                     == []" $
