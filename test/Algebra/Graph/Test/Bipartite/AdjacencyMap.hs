@@ -41,16 +41,16 @@ testBipartiteAdjacencyMap = do
         consistent (vertex x :: BAII)
     test "consistent (edge x y)                                                    == True" $ \x y ->
         consistent (edge x y :: BAII)
-    test "consistent (edges es)                                                    == True" $ \es ->
-        consistent (edges es :: BAII)
-    test "consistent (toBipartite am)                                              == True" $ \am ->
-        consistent $ toBipartite (am :: AII)
-    test "consistent (fromGraph g)                                                 == True" $ \g ->
-        consistent $ fromGraph (g :: GII)
+    test "consistent (edges x)                                                     == True" $ \x ->
+        consistent (edges x :: BAII)
+    test "consistent (fromGraph x)                                                 == True" $ \x ->
+        consistent $ fromGraph (x :: GII)
+    test "consistent (toBipartite x)                                               == True" $ \x ->
+        consistent $ toBipartite (x :: AII)
+    test "consistent (swap x)                                                      == True" $ \x ->
+        consistent $ swap (x :: BAII)
     test "consistent (fromGraph (G.biclique (map Left [1..x]) (map Right [1..y]))) == True" $ \x y ->
         consistent $ fromGraph $ G.biclique (map Left [1..(x :: Int)]) (map Right [1..(y :: Int)])
-    test "consistent (swap bam)                                                    == True" $ \bam ->
-        consistent $ swap (bam :: BAII)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.toBipartite ============"
     test "leftAdjacencyMap (toBipartite empty)                                                                                                   == Map.empty" $
@@ -170,8 +170,8 @@ testBipartiteAdjacencyMap = do
     test "fromBipartite (edges [(1, 1), (1, 2)])  == <correct result>" $
         fromBipartite (edges [(1, 1), (1, 2)] :: BAII)
             == (AM.edges [(Left 1, Right 1), (Left 1, Right 2), (Right 1, Left 1), (Right 2, Left 1)])
-    test "AM.consistent (fromBipartite bam)                                              == True" $ \bam ->
-        AM.consistent $ fromBipartite (bam :: BAII)
+    test "AM.consistent (fromBipartite x)                                                == True" $ \x ->
+        AM.consistent $ fromBipartite (x :: BAII)
     test "fromBipartite (toBipartite (AM.biclique (map Left [1..x]) (map Right [1..y]))) == <correct result>" $ \x y ->
         (fromBipartite $ toBipartite $ AM.biclique (map Left [1..(x :: Int)]) (map Right [1..(y :: Int)]))
          == AM.overlay (AM.biclique (map Left [1..(x :: Int)]) (map Right [1..(y :: Int)]))
@@ -186,8 +186,8 @@ testBipartiteAdjacencyMap = do
         not $ hasEdge 1 1 $ fromGraph $ (G.edge (Left 1) (Left 2) :: GII)
     test "hasEdge 2 3 (fromGraph (edge (Left 1) (Right 2)))             == False" $
         not $ hasEdge 2 3 $ fromGraph (G.edges [(Left 1, Right 2)] :: GII)
-    test "hasEdge x y (fromGraph (Overlay g (edge (Left x) (Right y)))) == True" $ \g x y ->
-        hasEdge x y $ fromGraph $ G.Overlay g $ G.edge (Left (x :: Int)) (Right (y :: Int))
+    test "hasEdge x y (fromGraph (Overlay z (edge (Left x) (Right y)))) == True" $ \z x y ->
+        hasEdge x y $ fromGraph $ G.Overlay z $ G.edge (Left (x :: Int)) (Right (y :: Int))
 
     putStrLn "\n============ Bipartite.AdjacencyMap.empty ============"
     test "isEmpty empty     == True" $
@@ -270,8 +270,8 @@ testBipartiteAdjacencyMap = do
         edgeCount   (overlay (x :: BAII) (y :: BAII)) >= edgeCount x
     test "edgeCount   (overlay x y)              <= edgeCount x   + edgeCount y" $ \x y ->
         edgeCount   (overlay (x :: BAII) (y :: BAII)) <= edgeCount x   + edgeCount y
-    test "hasEdge x y (overlay (edge x y) g)     == True" $ \x y g ->
-        hasEdge x y (overlay (edge x y) g :: BAII)
+    test "hasEdge x y (overlay (edge x y) z)     == True" $ \x y z ->
+        hasEdge x y (overlay (edge x y) z :: BAII)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.connect ============"
     test "connect (leftVertex 1) (rightVertex 2) == edge 1 2" $
@@ -318,8 +318,8 @@ testBipartiteAdjacencyMap = do
         rightAdjacencyMap (edges [(1, 1), (1, 2)] :: BAII) == Map.fromAscList [(1, Set.singleton 1), (2, Set.singleton 1)]
     test "edges [(x, y)]                             == edge x y" $ \x y ->
         edges [(x, y)]                               == (edge x y :: BAII)
-    test "(edgeCount . edges) es                     == (length . nub) es" $ \es ->
-        (edgeCount . edges) es                       == (length . nub) (es :: [(Int, Int)])
+    test "(edgeCount . edges) x                      == (length . nub) x" $ \x ->
+        (edgeCount . edges) x                        == (length . nub) (x :: [(Int, Int)])
     test "hasEdge x y (edges [(x, y)])               == True" $ \x y ->
         hasEdge x y (edges [(x, y)] :: BAII)
 
@@ -354,8 +354,8 @@ testBipartiteAdjacencyMap = do
         isEmpty (overlay empty empty :: BAII)
     test "isEmpty (vertex x)            == False" $ \x ->
         not $ isEmpty (vertex x :: BAII)
-    test "isEmpty g                     == (g == empty)" $ \g ->
-        isEmpty (g :: BAII) == (g == empty)
+    test "isEmpty x                     == (x == empty)" $ \x ->
+        isEmpty (x :: BAII) == (x == empty)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.leftVertexCount ============"
     test "leftVertexCount empty                    == 0" $
@@ -366,8 +366,8 @@ testBipartiteAdjacencyMap = do
         leftVertexCount (rightVertex (-2) :: BAII)       == 0
     test "leftVertexCount (edges [(1, 1), (1, 2)]) == 1" $
         leftVertexCount (edges [(1, 1), (1, 2)] :: BAII) == 1
-    test "leftVertexCount (edges es)               == (length . nub . map fst) es" $ \es ->
-        leftVertexCount (edges es :: BAII)               == (length . nub . map fst) es
+    test "leftVertexCount (edges x)                == (length . nub . map fst) x" $ \x ->
+        leftVertexCount (edges x :: BAII)               == (length . nub . map fst) x
 
     putStrLn "\n============ Bipartite.AdjacencyMap.rightVertexCount ============"
     test "rightVertexCount empty                    == 0" $
@@ -378,8 +378,8 @@ testBipartiteAdjacencyMap = do
         rightVertexCount (leftVertex 1 :: BAII)           == 0
     test "rightVertexCount (edges [(1, 1), (1, 2)]) == 2" $
         rightVertexCount (edges [(1, 1), (1, 2)] :: BAII) == 2
-    test "rightVertexCount (edges es)               == (length . nub . map snd) es" $ \es ->
-        rightVertexCount (edges es :: BAII)               == (length . nub . map snd) es
+    test "rightVertexCount (edges x)                == (length . nub . map snd) x" $ \x ->
+        rightVertexCount (edges x :: BAII)                == (length . nub . map snd) x
 
     putStrLn "\n============ Bipartite.AdjacencyMap.vertexCount ============"
     test "vertexCount empty                    == 0" $
@@ -390,8 +390,8 @@ testBipartiteAdjacencyMap = do
         vertexCount (rightVertex 1 :: BAII)          == 1
     test "vertexCount (edges [(1, 1), (1, 2)]) == 3" $
         vertexCount (edges [(1, 1), (1, 2)] :: BAII) == 3
-    test "vertexCount g                        == leftVertexCount g + rightVertexCount g" $ \g ->
-        vertexCount (g :: BAII)                      == leftVertexCount g + rightVertexCount g
+    test "vertexCount x                        == leftVertexCount x + rightVertexCount x" $ \x ->
+        vertexCount (x :: BAII)                      == leftVertexCount x + rightVertexCount x
 
     putStrLn "\n============ Bipartite.AdjacencyMap.edgeCount ============"
     test "edgeCount empty      == 0" $
@@ -402,8 +402,8 @@ testBipartiteAdjacencyMap = do
         edgeCount (edge 1 2 :: BAII) == 1
     test "edgeCount (edge 1 1) == 1" $
         edgeCount (edge 1 1 :: BAII) == 1
-    test "edgeCount (edges es) == (length . nub) es" $ \ es ->
-        edgeCount (edges es :: BAII) == (length . nub) es
+    test "edgeCount (edges x) == (length . nub) x" $ \ x ->
+        edgeCount (edges x :: BAII)  == (length . nub) x
 
     putStrLn "\n============ Bipartite.AdjacencyMap.hasLeftVertex ============"
     test "hasLeftVertex x empty           == False" $ \x ->
@@ -434,10 +434,10 @@ testBipartiteAdjacencyMap = do
         not $ hasVertex (Right x) (leftVertex x :: BAII)
     test "hasVertex (Left 1) (leftVertex 2)   == False" $
         not $ hasVertex (Left 1) (leftVertex 2 :: BAII)
-    test "hasVertex (Left x) g                == hasLeftVertex x g" $ \x g ->
-        hasVertex (Left x) (g :: BAII)  == hasLeftVertex x g
-    test "hasVertex (Right x) g               == hasRightVertex x g" $ \x g ->
-        hasVertex (Right x) (g :: BAII) == hasRightVertex x g
+    test "hasVertex (Left x) y                == hasLeftVertex x y" $ \x y ->
+        hasVertex (Left x) (y :: BAII)  == hasLeftVertex x y
+    test "hasVertex (Right x) y               == hasRightVertex x y" $ \x y ->
+        hasVertex (Right x) (y :: BAII) == hasRightVertex x y
 
     putStrLn "\n============ Bipartite.AdjacencyMap.swap ============"
     test "swap empty            == empty" $
@@ -448,10 +448,10 @@ testBipartiteAdjacencyMap = do
         swap (vertices ls rs :: BAII) == (flip vertices) ls rs
     test "swap (edge 1 \"a\")     == edge \"a\" 1" $
         swap (edge 1 "a" :: BAIS)     == edge "a" 1
-    test "swap (edges es)       == (edges . map Data.Tuple.swap) es" $ \es ->
-        swap (edges es :: BAII)       == (edges . map Data.Tuple.swap) es
-    test "swap (swap bam)       == bam" $ \bam ->
-        swap (swap bam :: BAII)       == bam
+    test "swap (edges x)        == (edges . map Data.Tuple.swap) x" $ \x ->
+        swap (edges x :: BAII)       == (edges . map Data.Tuple.swap) x
+    test "swap (swap x)        == x" $ \x ->
+        swap (swap x :: BAII)       == x
 
     putStrLn "\n============ Bipartite.AdjacencyMap.leftVertexList ============"
     test "leftVertexList empty                     == []" $
@@ -462,8 +462,8 @@ testBipartiteAdjacencyMap = do
         leftVertexList (rightVertex 1 :: BAII)                      == []
     test "(leftVertexList . (flip vertices) []) vs == (nub . sort) vs" $ \vs ->
         (leftVertexList . ((flip vertices) [] :: [Int] -> BAII)) vs == (nub . sort) vs
-    test "isSorted (leftVertexList g)              == True" $ \g ->
-        isSorted $ leftVertexList (g :: BAII)
+    test "isSorted (leftVertexList x)              == True" $ \x ->
+        isSorted $ leftVertexList (x :: BAII)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.rightVertexList ============"
     test "rightVertexList empty              == []" $
@@ -474,8 +474,8 @@ testBipartiteAdjacencyMap = do
         rightVertexList (rightVertex 1 :: BAII)               == [1]
     test "(rightVertexList . vertices []) vs == (nub . sort) vs" $ \vs ->
         (rightVertexList . (vertices [] :: [Int] -> BAII)) vs == (nub . sort) vs
-    test "isSorted (rightVertexList g)       == True" $ \g ->
-        isSorted $ rightVertexList (g :: BAII)
+    test "isSorted (rightVertexList x)       == True" $ \x ->
+        isSorted $ rightVertexList (x :: BAII)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.vertexList ============"
     test "vertexList empty                             == []" $
@@ -484,22 +484,22 @@ testBipartiteAdjacencyMap = do
         vertexList (vertex x :: BAII)                        == [x]
     test "vertexList (vertices (lefts vs) (rights vs)) == nub (sort vs)" $ \vs ->
         vertexList (vertices (lefts vs) (rights vs) :: BAII) == (nub (sort vs))
-    test "isSorted (vertexList g)                      == True" $ \g ->
-        isSorted $ vertexList (g :: BAII)
+    test "isSorted (vertexList x)                      == True" $ \x ->
+        isSorted $ vertexList (x :: BAII)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.edgeList ============"
     test "edgeList empty           == []" $
-        edgeList (empty :: BAII)                == []
+        edgeList (empty :: BAII)               == []
     test "edgeList (leftVertex 1)  == []" $
-        edgeList (leftVertex 1 :: BAII)         == []
+        edgeList (leftVertex 1 :: BAII)        == []
     test "edgeList (rightVertex 1) == []" $
-        edgeList (rightVertex 1 :: BAII)        == []
+        edgeList (rightVertex 1 :: BAII)       == []
     test "edgeList (edge 1 1)      == [(1, 1)]" $
-        edgeList (edge 1 1 :: BAII)             == [(1, 1)]
+        edgeList (edge 1 1 :: BAII)            == [(1, 1)]
     test "edgeList (edge 1 2)      == [(1, 2)]" $
-        edgeList (edge 1 2 :: BAII)             == [(1, 2)]
-    test "(edgeList . edges) es    == (nub . sort) es" $ \es ->
-        (edgeList . edges) (es :: [(Int, Int)]) == (nub . sort) es
+        edgeList (edge 1 2 :: BAII)            == [(1, 2)]
+    test "(edgeList . edges) x     == (nub . sort) x" $ \x ->
+        (edgeList . edges) (x :: [(Int, Int)]) == (nub . sort) x
 
     putStrLn "\n============ Bipartite.AdjacencyMap.leftVertexSet ============"
     test "leftVertexList empty                     == []" $
@@ -510,8 +510,8 @@ testBipartiteAdjacencyMap = do
         leftVertexList (rightVertex 1 :: BAII)                      == []
     test "(leftVertexList . (flip vertices) []) vs == (nub . sort) vs" $ \vs ->
         (leftVertexList . ((flip vertices) [] :: [Int] -> BAII)) vs == (nub . sort) vs
-    test "isSorted (leftVertexList g)              == True" $ \g ->
-        isSorted $ leftVertexList (g :: BAII)
+    test "isSorted (leftVertexList x)              == True" $ \x ->
+        isSorted $ leftVertexList (x :: BAII)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.rightVertexSet ============"
     test "rightVertexSet empty              == Set.empty" $
@@ -544,8 +544,8 @@ testBipartiteAdjacencyMap = do
         edgeSet (edge 1 1 :: BAII)      == Set.singleton (1, 1)
     test "edgeSet (edge 1 2)      == Set.singleton (1, 2)" $
         edgeSet (edge 1 2 :: BAII)      == Set.singleton (1, 2)
-    test "edgeSet (edges es)      == Set.fromList es" $ \es ->
-        edgeSet (edges es :: BAII)      == Set.fromList es
+    test "edgeSet (edges x)       == Set.fromList x" $ \x ->
+        edgeSet (edges x :: BAII)       == Set.fromList x
 
     putStrLn "\n============ Num (Bipartite.AdjacencyMap a b) ============"
     test "0                         == rightVertex 0" $
