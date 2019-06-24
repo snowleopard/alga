@@ -137,7 +137,7 @@ reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = dfs [x]
 
 -- | Compute the forest of a graph's vertices in breadth first order. Complexity:
--- /O((n+m)*log n)/ time and /O(n+m)/ space.
+-- /O(n+m*log n)/ time and /O(n+m)/ space.
 --
 -- @
 -- bfsForest 'empty'                         == []
@@ -162,17 +162,19 @@ bfsForest g = bfsForestFrom (vertexList g) g
 -- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [3,2,1] + 'path' [3,4,5]
 -- @
 bfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
-bfsForestFrom vs g = evalState (bff [ v | v <- vs, hasVertex v g]) Set.empty
-  where
-    bff [] = return []
-    bff (v:vs) = discovered v >>= \case
-      False -> bff vs
-      True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
-    walk v = (v,) <$> adjacentM v
-    adjacentM v = filterM discovered $ Set.toList (postSet v g)
-    discovered v = do new <- gets (not . Set.member v)
-                      when new $ modify' (Set.insert v)
-                      return new
+bfsForestFrom vs g = bfsForestFrom' [ v | v <- vs, hasVertex v g ] g
+
+bfsForestFrom' :: Ord a => [a] -> AdjacencyMap a -> Forest a
+bfsForestFrom' vs g = evalState (bff vs) Set.empty where
+  bff [] = return []
+  bff (v:vs) = discovered v >>= \case
+    False -> bff vs
+    True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
+  walk v = (v,) <$> adjacentM v
+  adjacentM v = filterM discovered $ Set.toList (postSet v g)
+  discovered v = do new <- gets (not . Set.member v)
+                    when new $ modify' (Set.insert v)
+                    return new
 
 -- | Like 'bfsForestFrom' with the resulting forest flattened to a list of vertices.
 -- Complexity: /O(n+(L+m)*log n)/ time and /O(n+m)/ space.

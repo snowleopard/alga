@@ -81,9 +81,12 @@ dfsForest g = dfsForestFrom (vertexList g) g
 --                                                            , subForest = [] }]
 -- @
 dfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
-dfsForestFrom vs g = prune $ evalState dff IntSet.empty where
-  dff = unfoldForestM walk [ v | v <- vs, hasVertex v g ]
+dfsForestFrom vs g = dfsForestFrom' [ v | v <- vs, hasVertex v g ] g
+
+dfsForestFrom' :: [Int] -> AdjacencyIntMap -> Forest Int
+dfsForestFrom' vs g = prune $ evalState dff IntSet.empty where
   prune ts = [ Node t (prune xs) | Node (Just t) xs <- ts ]
+  dff = unfoldForestM walk vs
   walk v = discovered v >>= \case
     False -> pure (Nothing,[])
     True -> (Just v,) <$> adjacentM v
@@ -130,7 +133,7 @@ reachable :: Int -> AdjacencyIntMap -> [Int]
 reachable x = dfs [x]
 
 -- | Compute the forest of a graph's vertices in breadth first order. Complexity:
--- /O((n+m)*log n)/ time and /O(n+m)/ space.
+-- /O(n+m*log n)/ time and /O(n+m)/ space.
 --
 -- @
 -- bfsForest 'empty'                         == []
@@ -142,7 +145,7 @@ reachable x = dfs [x]
 -- 'forest' (bfsForest ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [1,2,3] + 'path' [1,5,4]
 -- @
 bfsForest :: AdjacencyIntMap -> Forest Int
-bfsForest g = bfsForestFrom (vertexList g) g
+bfsForest g = bfsForestFrom' (vertexList g) g
 
 -- | Like 'bfsForest', but the traversal is seeded by a list of vertices,
 -- which may not include all of the given graph's vertices. Seed vertices not
@@ -156,17 +159,19 @@ bfsForest g = bfsForestFrom (vertexList g) g
 -- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [3,2,1] + 'path' [3,4,5]
 -- @
 bfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
-bfsForestFrom vs g = evalState (bff [ v | v <- vs, hasVertex v g]) IntSet.empty
-  where
-    bff [] = return []
-    bff (v:vs) = discovered v >>= \case
-      False -> bff vs
-      True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
-    walk v = (v,) <$> adjacentM v
-    adjacentM v = filterM discovered $ IntSet.toList (postIntSet v g)
-    discovered v = do new <- gets (not . IntSet.member v)
-                      when new $ modify' (IntSet.insert v)
-                      return new
+bfsForestFrom vs g = bfsForestFrom' [ v | v <- vs, hasVertex v g] g
+
+bfsForestFrom' :: [Int] -> AdjacencyIntMap -> Forest Int
+bfsForestFrom' vs g = evalState (bff vs) IntSet.empty where
+  bff [] = return []
+  bff (v:vs) = discovered v >>= \case
+    False -> bff vs
+    True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
+  walk v = (v,) <$> adjacentM v
+  adjacentM v = filterM discovered $ IntSet.toList (postIntSet v g)
+  discovered v = do new <- gets (not . IntSet.member v)
+                    when new $ modify' (IntSet.insert v)
+                    return new
 
 -- | Like 'bfsForestFrom' with the resulting forest flattened to a list of vertices. Complexity:
 -- /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
