@@ -149,7 +149,7 @@ reachable x = dfs [x]
 -- 'forest' (bfsForest ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [1,2,3] + 'path' [1,5,4]
 -- @
 bfsForest :: Ord a => AdjacencyMap a -> Forest a
-bfsForest g = bfsForestFrom (vertexList g) g
+bfsForest g = bfsForestFrom' (vertexList g) g
 
 -- | Like 'bfsForest', but the traversal is seeded by a list of vertices. Seed vertices not
 -- in the graph are ignored. Let /L/ be the number of seed vertices. Complexity:
