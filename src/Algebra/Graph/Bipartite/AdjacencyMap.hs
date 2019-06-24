@@ -78,15 +78,15 @@ would be able to utilise without violating any laws.
 The 'Show' instance is defined using basic graph construction primitives:
 
 @
-show (empty)                       == "empty"
-show 1                             == "rightVertex 1"
-show ('swap' 2)                      == "leftVertex 2"
-show (1 + 2)                       == "vertices [] [1,2]"
-show ('swap' (1 + 2))                == "vertices [1,2] []"
-show (('swap' 1) * 2)                == "edge 1 2"
-show (('swap' 1) * 2 * ('swap' 3))     == "edges [(1,2),(3,2)]"
-show (('swap' 1) * 2 + ('swap' 3))     == "overlay (leftVertex 3) (edge 1 2)"
-show (('swap' 1) * 2 + ('swap' 3) + 4) == "overlay (vertices [3] [4]) (edge 1 2)"
+show (empty)                   == "empty"
+show 1                         == "rightVertex 1"
+show ('swap' 2)                  == "leftVertex 2"
+show (1 + 2)                   == "vertices [] [1,2]"
+show ('swap' (1 + 2))            == "vertices [1,2] []"
+show ('swap' 1 * 2)              == "edge 1 2"
+show ('swap' 1 * 2 * 'swap' 3)     == "edges [(1,2),(3,2)]"
+show ('swap' 1 * 2 + 'swap' 3)     == "overlay (leftVertex 3) (edge 1 2)"
+show ('swap' 1 * 2 + 'swap' 3 + 4) == "overlay (vertices [3] [4]) (edge 1 2)"
 @
 
 The 'Eq' instance satisfies all axioms of algebraic graphs:
@@ -159,8 +159,8 @@ data AdjacencyMap a b = BAM {
     -- @
     -- rightAdjacencyMap 'empty'                    == Map.'Map.empty'
     -- rightAdjacencyMap ('leftVertex' 1)           == Map.'Map.empty'
-    -- rightAdjacencyMap ('rightVertex' 1)          == Map.'Map.singleton' 2 Set.'Set.empty'
-    -- rightAdjacencyMap ('edge' 1 1)               == Map.'Map.singleton' 1 (Set.'Set.singleton' "a")
+    -- rightAdjacencyMap ('rightVertex' 1)          == Map.'Map.singleton' 1 Set.'Set.empty'
+    -- rightAdjacencyMap ('edge' 1 1)               == Map.'Map.singleton' 1 (Set.'Set.singleton' 1)
     -- rightAdjacencyMap ('edge' 1 "a")             == Map.'Map.singleton' "a" (Set.'Set.singleton' 1)
     -- rightAdjacencyMap ('edges' [(1, 1), (1, 2)]) == Map.'Map.fromAscList' [(1, Set.'Set.singleton' 1), (2, Set.'Set.singleton' 1)]
     -- @
@@ -330,11 +330,11 @@ connect (BAM lr1 rl1) (BAM lr2 rl2) = BAM lr rl
 -- length of two lists.
 --
 -- @
--- vertices [] []                               == 'empty'
--- vertices [x] []                              == 'leftVertex' x
--- vertices [] [x]                              == 'rightVertex' x
--- 'hasLeftVertex' x . ('flip' ('const' [])) vertices == 'elem' x
--- 'hasRightVertex' x . 'const' [] vertices         == 'elem' x
+-- vertices [] []                      == 'empty'
+-- vertices [x] []                     == 'leftVertex' x
+-- vertices [] [x]                     == 'rightVertex' x
+-- 'hasLeftVertex'  x (vertices ys zs) == 'elem' x ys
+-- 'hasRightVertex' x (vertices ys zs) == 'elem' x zs
 -- @
 vertices :: (Ord a, Ord b) => [a] -> [b] -> AdjacencyMap a b
 vertices ls rs = BAM (Map.fromList $ map ((flip (,)) Set.empty) ls) (Map.fromList $ map ((flip (,)) Set.empty) rs)
@@ -406,11 +406,12 @@ swap (BAM lr rl) = BAM rl lr
 -- toBipartite (Algebra.Graph.AdjacencyMap.'Algebra.Graph.AdjacencyMap.edge' (Left 1) (Right "a")) == 'edge' 1 "a"
 -- @
 toBipartite :: (Ord a, Ord b) => AM.AdjacencyMap (Either a b) -> AdjacencyMap a b
-toBipartite m = BAM (Map.fromAscList [ (u, setRights vs) | (Left  u, vs) <- Map.toAscList (AM.adjacencyMap $ AM.symmetricClosure m)])
-                         (Map.fromAscList [ (u, setLefts  vs) | (Right u, vs) <- Map.toAscList (AM.adjacencyMap $ AM.symmetricClosure m)])
+toBipartite m = BAM (Map.fromAscList [ (u, setRights vs) | (Left  u, vs) <- symmetricList])
+                    (Map.fromAscList [ (u, setLefts  vs) | (Right u, vs) <- symmetricList])
     where
-        setRights = Set.fromAscList . rights . Set.toAscList
-        setLefts  = Set.fromAscList . lefts  . Set.toAscList
+        setRights     = Set.fromAscList . rights . Set.toAscList
+        setLefts      = Set.fromAscList . lefts  . Set.toAscList
+        symmetricList = Map.toAscList $ AM.adjacencyMap $ AM.symmetricClosure m
 
 -- | Construct an 'Algrebra.Graph.AdjacencyMap' from a bipartite
 -- 'AdjacencyMap'.
@@ -422,11 +423,9 @@ toBipartite m = BAM (Map.fromAscList [ (u, setRights vs) | (Left  u, vs) <- Map.
 -- fromBipartite ('edge' 1 2)     == 'Algebra.Graph.AdjacencyMap.edges' [(Left 1, Right 2), (Right 2, Left 1)]
 -- @
 fromBipartite :: (Ord a, Ord b) => AdjacencyMap a b -> AM.AdjacencyMap (Either a b)
-fromBipartite (BAM lr rl) = AM.overlays $
-       [ AM.edges [ (Left u, Right v) | (u, vs) <- Map.toAscList lr, v <- Set.toAscList vs ]
-       , AM.edges [ (Right u, Left v) | (u, vs) <- Map.toAscList rl, v <- Set.toAscList vs ]
-       , AM.vertices $ Left  <$> Map.keys lr
-       , AM.vertices $ Right <$> Map.keys rl ]
+fromBipartite (BAM lr rl) = AM.fromAdjacencySets $
+    [ (Left  u, Set.map Right vs) | (u, vs) <- Map.toAscList lr ] ++
+    [ (Right v, Set.map Left  us) | (v, us) <- Map.toAscList rl ]
 
 -- | Construct a bipartite 'AdjacencyMap' from a 'Algebra.Graph.Graph' with
 -- given part identifiers, adding all needed edges to make the graph undirected
