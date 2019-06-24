@@ -520,7 +520,7 @@ induceEAM p m = es m `AM.overlay` vs m
 -- additional information. 
 -- In this case the partial order is the order of the vertices
 -- itself. And hence, the topological ordering for such graphs
--- is simply its `vertexList`.
+-- is simply its 'vertexList'.
 --
 -- For example,
 -- /toAcyclicOrd (1 \* 2 + 2 \* 1) == 1 \* 2/ because
