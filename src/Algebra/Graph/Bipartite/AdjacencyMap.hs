@@ -48,8 +48,9 @@ import qualified Data.Set        as Set
 import qualified Data.Tuple
 
 {-| The 'Bipartite.AdjacencyMap' data type represents an __undirected__
-bipartite graph by two maps of vertices into their adjacency sets. The two type
-parameteters define the types of identifiers of the vertices of each part.
+bipartite graph with constant time access to maps of vertices into their
+adjacency sets. The two type parameteters define the types of identifiers of
+the vertices of each part.
 
 __Note:__ even if the identifiers and their types for two vertices of
 different parts are equal, these vertices are considered to be different.
