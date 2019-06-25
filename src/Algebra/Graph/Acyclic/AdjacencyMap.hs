@@ -514,6 +514,11 @@ induceEAM p m = es m `AM.overlay` vs m
 -- This will guarantee the production of an acyclic graph since
 -- no back edges are possible.
 --
+-- For example,
+-- /toAcyclicOrd (1 \* 2 + 2 \* 1) == 1 \* 2/ because
+-- /1 \< 2 == True/ and hence the edge is allowed.
+-- /2 \< 1 == False/ and hence the edge is filtered out.
+--
 -- Topological orderings are also closely related to the concept
 -- of a linear extension of a partial order in mathematics.
 -- Please look at <https://en.wikipedia.org/wiki/Topological_sorting#Relation_to_partial_orders Relation to partial orders> for
@@ -521,11 +526,6 @@ induceEAM p m = es m `AM.overlay` vs m
 -- In this case the partial order is the order of the vertices
 -- itself. And hence, the topological ordering for such graphs
 -- is simply its 'vertexList'.
---
--- For example,
--- /toAcyclicOrd (1 \* 2 + 2 \* 1) == 1 \* 2/ because
--- /1 \< 2 == True/ and hence the edge is allowed.
--- /2 \< 1 == False/ and hence the edge is filtered out.
 --
 -- @
 -- toAcyclicOrd (2 * 1)         == 1 + 2
