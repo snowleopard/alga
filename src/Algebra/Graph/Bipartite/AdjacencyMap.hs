@@ -205,7 +205,7 @@ instance (Ord a, Ord b, Show a, Show b) => Show (AdjacencyMap a b) where
                          showString " " . showsPrec 11 y
         eshow es       = showString "edges " . showsPrec 11 es
         lused = Set.toAscList $ Set.fromAscList [ u | (u, _) <- edgeList bam ]
-        rused = Set.toAscList $ Set.fromAscList [ v | (_, v) <- edgeList bam ]
+        rused = Set.toAscList $ Set.fromList    [ v | (_, v) <- edgeList bam ]
         used = (map Left lused) ++ (map Right rused)
 
 -- | Construct the /empty graph/.

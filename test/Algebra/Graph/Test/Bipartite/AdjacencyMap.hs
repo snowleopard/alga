@@ -590,8 +590,8 @@ testBipartiteAdjacencyMap = do
         (swap 1) * (2 + (swap 3) :: BAII) == connect (leftVertex 1) (vertices [3] [2])
 
     putStrLn "\n============ Eq (Bipartite.AdjacencyMap a b) ============"
-    test "(x == y) == ((leftAdjacencyMap x == rightAdjacencyMap x) && (leftAdjacencyMap y == rightAdjacencyMap y))" $ \(x :: BAII) (y :: BAII) ->
-        (x == y) == ((leftAdjacencyMap x == rightAdjacencyMap x) && (leftAdjacencyMap y == rightAdjacencyMap y))
+    test "(x == y) == ((leftAdjacencyMap x == leftAdjacencyMap y) && (rightAdjacencyMap x == rightAdjacencyMap y))" $ \(x :: BAII) (y :: BAII) ->
+        (x == y) == ((leftAdjacencyMap x == leftAdjacencyMap y) && (rightAdjacencyMap x == rightAdjacencyMap y))
     test "      x + y == y + x" $ \(x :: BAII) (y :: BAII) ->
         x + y == y + x
     test "x + (y + z) == (x + y) + z" $ \(x :: BAII) (y :: BAII) (z :: BAII) ->
@@ -626,24 +626,26 @@ testBipartiteAdjacencyMap = do
         x * x * x == x * x
 
     putStrLn "\n============ Show (Bipartite.AdjacencyMap a b) ============"
-    test "show (empty)                   == \"empty\"" $
-        show (empty :: BAII)                   == "empty"
-    test "show 1                         == \"rightVertex 1\"" $
-        show (1 :: BAII)                       == "rightVertex 1"
-    test "show (swap 2)                  == \"leftVertex 2\"" $
-        show (swap 2 :: BAII)                  == "leftVertex 2"
-    test "show 1 + 2                     == \"vertices [] [1,2]\"" $
-        show (1 + 2 :: BAII)                   == "vertices [] [1,2]"
-    test "show (swap (1 + 2))            == \"vertices [1,2] []\"" $
-        show (swap (1 + 2) :: BAII)            == "vertices [1,2] []"
-    test "show (swap 1 * 2)              == \"edge 1 2\"" $
-        show (swap 1 * 2 :: BAII)              == "edge 1 2"
-    test "show (swap 1 * 2 * swap 3)     == \"edges [(1,2),(3,2)]\"" $
-        show (swap 1 * 2 * swap 3 :: BAII)     == "edges [(1,2),(3,2)]"
-    test "show (swap 1 * 2 + swap 3)     == \"overlay (leftVertex 3) (edge 1 2)\"" $
-        show (swap 1 * 2 + swap 3 :: BAII)     == "overlay (leftVertex 3) (edge 1 2)"
-    test "show (swap 1 * 2 + swap 3 + 4) == \"overlay (vertices [3] [4]) (edge 1 2)\"" $
-        show (swap 1 * 2 + swap 3 + 4 :: BAII) == "overlay (vertices [3] [4]) (edge 1 2)"
+    test "show (empty)                      == \"empty\"" $
+        show (empty :: BAII)                       == "empty"
+    test "show 1                            == \"rightVertex 1\"" $
+        show (1 :: BAII)                           == "rightVertex 1"
+    test "show (swap 2)                     == \"leftVertex 2\"" $
+        show (swap 2 :: BAII)                      == "leftVertex 2"
+    test "show 1 + 2                        == \"vertices [] [1,2]\"" $
+        show (1 + 2 :: BAII)                       == "vertices [] [1,2]"
+    test "show (swap (1 + 2))               == \"vertices [1,2] []\"" $
+        show (swap (1 + 2) :: BAII)                == "vertices [1,2] []"
+    test "show (swap 1 * 2)                 == \"edge 1 2\"" $
+        show (swap 1 * 2 :: BAII)                  == "edge 1 2"
+    test "show (swap 1 * 2 * swap 3)        == \"edges [(1,2),(3,2)]\"" $
+        show (swap 1 * 2 * swap 3 :: BAII)         == "edges [(1,2),(3,2)]"
+    test "show (swap 1 * 2 + swap 3)        == \"overlay (leftVertex 3) (edge 1 2)\"" $
+        show (swap 1 * 2 + swap 3 :: BAII)         == "overlay (leftVertex 3) (edge 1 2)"
+    test "show (swap 1 * 2 + swap 3 + 4)    == \"overlay (vertices [3] [4]) (edge 1 2)\"" $
+        show (swap 1 * 2 + swap 3 + 4 :: BAII)     == "overlay (vertices [3] [4]) (edge 1 2)"
+    test "show ((3 + swap 2) * (2 + swap 0) == \"edges [(2,2),(3,0)]\"" $
+        show ((3 + swap 2) * (2 + swap 0) :: BAII) == "edges [(0,3),(2,2)]"
 
 expectedBicliqueMap :: Int -> Int -> Map.Map Int (Set.Set Int)
 expectedBicliqueMap n m = Map.fromAscList [ (u, Set.fromAscList [1..m]) | u <- [1..n] ]
