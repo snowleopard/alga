@@ -24,7 +24,7 @@ module Algebra.Graph.Internal (
     foldr1Safe, maybeF,
 
     -- * Utilities
-    setProduct, setProductWith
+    setProduct, setProductWith, (...)
     ) where
 
 import Data.Foldable
@@ -139,3 +139,7 @@ setProduct x y = Set.fromDistinctAscList [ (a, b) | a <- Set.toAscList x, b <- S
 -- resulting pair.
 setProductWith :: Ord c => (a -> b -> c) -> Set a -> Set b -> Set c
 setProductWith f x y = Set.fromList [ f a b | a <- Set.toAscList x, b <- Set.toAscList y ]
+
+-- | Blackbird combinator.
+(...) :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+(...) = (.) . (.)

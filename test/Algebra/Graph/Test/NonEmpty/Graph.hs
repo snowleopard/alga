@@ -29,12 +29,14 @@ import Algebra.Graph.Test hiding (axioms, theorems)
 import Algebra.Graph.ToGraph (reachable, toGraph)
 
 import qualified Algebra.Graph          as G
+import qualified Algebra.Graph.ToGraph  as T
 import qualified Algebra.Graph.NonEmpty as NonEmpty
 import qualified Data.Graph             as KL
 import qualified Data.List.NonEmpty     as NonEmpty
 import qualified Data.Set               as Set
 
 type G = NonEmpty.Graph Int
+type GG = G.Graph Int
 
 axioms :: G -> G -> G -> Property
 axioms x y z = conjoin
@@ -116,7 +118,7 @@ testNonEmptyGraph = do
 
     putStrLn $ "\n============ NonEmpty.Graph.toNonEmpty ============"
     test "toNonEmpty empty       == Nothing" $
-          toNonEmpty (G.empty :: G.Graph Int) == Nothing
+          toNonEmpty (G.empty :: GG) == Nothing
 
     test "toNonEmpty (toGraph x) == Just (x :: NonEmpty.Graph a)" $ \x ->
           toNonEmpty (toGraph x) == Just (x :: G)
@@ -179,7 +181,7 @@ testNonEmptyGraph = do
     test "               overlay1 empty x == x" $ \(x :: G) ->
                          overlay1 G.empty x == x
 
-    test "x /= empty ==> overlay1 x     y == overlay (fromJust $ toNonEmpty x) y" $ \(x :: G.Graph Int) (y :: G) ->
+    test "x /= empty ==> overlay1 x     y == overlay (fromJust $ toNonEmpty x) y" $ \(x :: GG) (y :: G) ->
           x /= G.empty ==> overlay1 x   y == overlay (fromJust $ toNonEmpty x) y
 
 
@@ -719,3 +721,21 @@ testNonEmptyGraph = do
 
     test "edgeCount   (box x y)               <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ mapSize (min 10) $ \(x :: G) (y :: G) ->
           edgeCount   (box x y)               <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
+
+    putStrLn "\n============ NonEmpty.Graph.components ============"
+    test "G.edgeSet x                         == Set.unions (edgeSet <$> (Set.toList $ components x))" $ \(x :: GG) ->
+          G.edgeSet x                         == Set.unions (edgeSet <$> (Set.toList $ components x))
+
+    test "G.vertexSet x                       == Set.unions (vertexSet <$> (Set.toList $ components x))" $ \(x :: GG) ->
+          G.vertexSet x                       == Set.unions (vertexSet <$> (Set.toList $ components x))
+
+    test "all (isConnected . toGraph) $ components x" $ \(x :: GG) ->
+          all (isConnected . toGraph) $ components x
+
+    test "all (\\c -> Set.singleton c == components (toGraph c)) $ components x" $ \(x :: GG) ->
+          all (\c -> Set.singleton c == components (toGraph c)) $ components x
+
+    let pairs xs = [(x, y) | x <- xs, y <- xs, x /= y]
+
+    test "all (\\(c1, c2) -> Set.disjoint (vertexSet c1) (vertexSet c2)) . pairs . Set.toList $ components x" $ \(x :: GG) ->
+          all (\(c1, c2) -> not $ T.sharesVertex c1 c2) . pairs . Set.toList $ components x

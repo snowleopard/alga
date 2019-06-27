@@ -1,4 +1,6 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, PartialTypeSignatures #-}
+
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.NonEmpty
@@ -50,13 +52,17 @@ module Algebra.Graph.NonEmpty (
     transpose, induce1, induceJust1, simplify, sparsify, sparsifyKL,
 
     -- * Graph composition
-    box
+    box,
+
+    -- * Graph connectedness
+    components, isConnected,
     ) where
 
 import Control.DeepSeq
 import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup ((<>))
+import Data.Traversable (for)
 
 import Algebra.Graph.Internal
 
@@ -64,6 +70,7 @@ import qualified Algebra.Graph                 as G
 import qualified Algebra.Graph.ToGraph         as T
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
+import qualified Data.Equivalence.Monad        as EQ
 import qualified Data.Graph                    as KL
 import qualified Data.IntSet                   as IntSet
 import qualified Data.List.NonEmpty            as NonEmpty
@@ -974,3 +981,67 @@ sparsifyKL n graph = KL.buildG (1, next - 1) ((n + 1, n + 2) : Exts.toList (res 
         m <- get
         put (m + 1)
         (\xs ys -> Exts.fromList [(s,m), (m,t)] <> xs <> ys) <$> s `x` m <*> m `y` t
+
+
+components :: Ord a => G.Graph a -> Set.Set (Graph a)
+components = G.foldg
+    Set.empty
+    (Set.singleton . Vertex)
+    (underList (mergeEquivalent T.sharesVertex overlay) ... Set.union)
+    connectCCs
+  where
+  -- TODO: move some of these definitions to src/Algebra/Graph/Internal.hs?
+  underList :: Ord a => ([a] -> [a]) -> (Set.Set a -> Set.Set a)
+  underList = (Set.fromList .) . (. Set.toList)
+
+  pairs :: Eq a => [a] -> [(a, a)]
+  pairs [] = []
+  pairs (x: xs) = ((x,) <$> xs) ++ pairs xs
+
+  mergeEquivalent :: (Ord a) => (a -> a -> Bool) -> (a -> a -> a) -> ([a] -> [a])
+  mergeEquivalent (===) (+) xs = let
+      -- https://github.com/quchen/articles/blob/master/2018-11-22_zipWith_const.md
+      indices = zipWith const [0..] xs -- Because just [0..len] generates [0] when xs == []!
+      combis = pairs indices
+
+      update :: IntSet.IntSet -> (Int, Int) -> EQ.EquivM _ _ Int IntSet.IntSet
+      update = \s (i1, i2) -> do
+        eq <- EQ.equivalent i1 i2
+        if eq
+          then pure s
+          else do
+            x1 <- EQ.classDesc i1
+            x2 <- EQ.classDesc i2
+            if (x1 === x2)
+              then do
+                EQ.equate i1 i2
+                pure $ IntSet.delete i1 s
+              else
+                pure s
+
+    in EQ.runEquivM (xs !!) (+) $ do
+      s <- foldM update (IntSet.fromList indices) combis
+      classes <- for (IntSet.toList s) EQ.classDesc
+      pure classes
+
+  nonEmptySet :: Set.Set a -> Maybe (NonEmpty a)
+  nonEmptySet = NonEmpty.nonEmpty . Set.toList
+
+  connectCCs :: Set.Set (Graph a) -> Set.Set (Graph a) -> Set.Set (Graph a)
+  connectCCs a b = case nonEmptySet a of
+    Nothing -> b
+    Just ca -> case nonEmptySet b of
+      Nothing -> a
+      Just cb -> Set.singleton $ overlays1 $ connect <$> ca <*> cb
+
+
+-- | Does the graph have exactly one connected component?
+-- @
+-- isConnected empty == False
+-- isConnected $ vertex x == True
+-- isConnected $ vertex x + vertex y == False
+-- @
+isConnected :: Ord a => G.Graph a -> Bool
+isConnected g = case Set.toList $ components g of
+  [_] -> True
+  _   -> False

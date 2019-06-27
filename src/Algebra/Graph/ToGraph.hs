@@ -53,6 +53,7 @@ import Data.IntMap (IntMap)
 import Data.IntSet (IntSet)
 import Data.Map    (Map)
 import Data.Set    (Set)
+import Data.Function (on)
 import Data.Tree
 
 import qualified Algebra.Graph                                as G
@@ -69,6 +70,8 @@ import qualified Data.IntMap                                  as IntMap
 import qualified Data.IntSet                                  as IntSet
 import qualified Data.Map                                     as Map
 import qualified Data.Set                                     as Set
+
+import Algebra.Graph.Internal
 
 -- | The 'ToGraph' type class captures data types that can be converted to
 -- algebraic graphs. Instances of this type class should satisfy the laws
@@ -160,6 +163,14 @@ class ToGraph t where
     -- @
     vertexSet :: Ord (ToVertex t) => t -> Set (ToVertex t)
     vertexSet = foldg Set.empty Set.singleton Set.union Set.union
+
+    -- | Check if two graphs share any vertices
+    --
+    -- @
+    -- sharesVertex x empty  == False
+    -- @
+    sharesVertex :: Ord (ToVertex t) => t -> t -> Bool
+    sharesVertex = not ... (Set.disjoint `on` vertexSet)
 
     -- | The set of vertices of a graph. Like 'vertexSet' but specialised for
     -- graphs with vertices of type 'Int'.
