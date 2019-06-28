@@ -26,9 +26,11 @@ import qualified Data.Tuple
 
 import Data.Either (lefts, rights)
 import Data.List   (nub)
+import Data.Maybe  (isJust)
 
 type GII  = G.Graph (Either Int Int)
 type AII  = AM.AdjacencyMap (Either Int Int)
+type AI   = AM.AdjacencyMap Int
 type BAII = AdjacencyMap Int Int
 type BAIS = AdjacencyMap Int String
 
@@ -647,8 +649,46 @@ testBipartiteAdjacencyMap = do
     test "show ((3 + swap 2) * (2 + swap 0) == \"edges [(2,2),(3,0)]\"" $
         show ((3 + swap 2) * (2 + swap 0) :: BAII) == "edges [(0,3),(2,2)]"
 
+    putStrLn "\n============ Bipartite.AdjacencyMap.detectParts ============"
+    test "detectParts empty                                      == Just empty" $
+        detectParts (AM.empty :: AI) == Just empty
+    test "isJust (detectParts (vertex 1))                        == True" $
+        isJust (detectParts (AM.vertex 1 :: AI))
+    test "isJust (detectParts (edge 1 2))                        == True" $
+        isJust (detectParts (AM.edge 1 2 :: AI))
+    test "isJust (detectParts (edge 0 -1))                       == True" $
+        isJust (detectParts (AM.edge 0 (-1) :: AI))
+    test "isJust (detectParts (edges [(1, 2), (1, 3)]))          == True" $
+        isJust (detectParts (AM.edges [(1, 2), (1, 3)] :: AI))
+    test "isJust (detectParts (edges [(1, 2), (1, 3), (2, 3)]))  == False" $
+        not $ isJust (detectParts (AM.edges [(1, 2), (1, 3), (2, 3)] :: AI))
+    test "isJust (detectParts ((1 + 2) * (3 + 4) * (5 + 6)))     == False" $
+        not $ isJust (detectParts ((1 + 2) * (3 + 4) * (5 + 6) :: AI))
+    test "isJust (detectParts ((1 + 2) * (3 + 4) + (3 + 4) * 5)) == True" $
+        isJust (detectParts ((1 + 2) * (3 + 4) + (3 + 4) * 5 :: AI))
+    test "isJust (detectParts (clique [1..x]))                   == x < 3" $ \(x :: Int) ->
+        isJust (detectParts (AM.clique [1..x])) == (x < 3)
+    test "isJust (detectParts (star x ys))                       == not (elem x ys)" $ \(x :: Int) (ys :: [Int]) ->
+        isJust (detectParts (AM.star x ys))     == (not $ elem x ys)
+    test "isJust (detectParts (biclique xs ys))                  == True" $ \(xs :: [Int]) (ys :: [Int]) ->
+        isJust (detectParts (AM.biclique (map Left xs) (map Right ys)))
+    test "isJust (detectParts (fromBipartite (toBipartite x)))   == True" $ \(x :: AII) ->
+        isJust (detectParts (fromBipartite (toBipartite x)))
+    test "isJust (detectParts (1 * 2 * 3))                       == False" $
+        not $ isJust (detectParts (1 * 2 * 3 :: AI))
+    test "isJust (detectParts ((1 + 2) * (3 + 4)))               == True" $
+        isJust (detectParts ((1 + 2) * (3 + 4) :: AI))
+    test "((all ((flip Set.member) $ edgeSet $ symmetricClosure x) . edgeSet) <$> detectParts x) /= Just False" $ \(x :: AI) ->
+        ((all ((flip Set.member) $ AM.edgeSet $ AM.symmetricClosure x) . edgeSet) <$> detectParts x) /= Just False
+    test "(Set.map $ fromEither) <$> (vertexSet <$> (detectParts (fromBipartite (toBipartite x)))) == Just (vertexSet x)" $ \(x :: AII) ->
+        ((Set.map $ fromEither) <$> (vertexSet <$> (detectParts (fromBipartite (toBipartite x))))) == Just (AM.vertexSet x)
+
 expectedBicliqueMap :: Int -> Int -> Map.Map Int (Set.Set Int)
 expectedBicliqueMap n m = Map.fromAscList [ (u, Set.fromAscList [1..m]) | u <- [1..n] ]
 
 isSorted :: Ord a => [a] -> Bool
 isSorted xs = and $ zipWith (<=) xs $ tail xs
+
+fromEither :: Either a a -> a
+fromEither (Left  x) = x
+fromEither (Right y) = y

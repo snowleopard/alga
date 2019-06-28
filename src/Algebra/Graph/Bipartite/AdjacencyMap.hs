@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 ----------------------------------------------------------------------------
 -- |
@@ -34,10 +35,16 @@ module Algebra.Graph.Bipartite.AdjacencyMap (
 
     -- * Miscellaneous
     consistent,
+
+    -- * Testing bipartiteness
+    detectParts,
     ) where
 
-import Data.Either (lefts, rights)
-import Data.List   (sort, (\\))
+import Control.Applicative ((<|>))
+import Control.Monad       (foldM)
+import Data.Either         (lefts, rights)
+import Data.List           (sort, (\\))
+import Data.Maybe          (fromJust)
 import GHC.Generics
 
 import qualified Algebra.Graph              as G
@@ -665,3 +672,67 @@ edgeSet = Set.fromAscList . edgeList
 -- @
 consistent :: (Ord a, Ord b) => AdjacencyMap a b -> Bool
 consistent (BAM lr rl) = internalEdgeList lr == sort (map Data.Tuple.swap $ internalEdgeList rl)
+
+
+data PartId = LeftPart | RightPart
+    deriving (Eq, Show)
+
+
+otherPart :: PartId -> PartId
+otherPart LeftPart  = RightPart
+otherPart RightPart = LeftPart
+
+
+-- | Test bipartiteness of given graph. In case of success, return an
+-- `AdjacencyMap` with the same set of edges and the vertices marked with the
+-- part they belong to.
+--
+-- /Note/: as `AdjacencyMap` only represents __undirected__ bipartite graphs,
+-- all edges in the input graph are assumed to be bidirected and all edges in
+-- the output `AdjacencyMap` are bidirected.
+--
+-- It is advised to use 'leftVertexList' and 'rightVertexList' to obtain the
+-- partition of the vertices and 'hasLeftVertex' and 'hasRightVertex' to check
+-- whether a vertex belong to a part.
+--
+-- Complexity: /O((n + m) log(n))/.
+--
+-- @
+-- detectParts 'Algebra.Graph.AdjacencyMap.empty'                             == Just 'empty'
+-- 'Data.Maybe.isJust' (detectParts ('Algebra.Graph.AdjacencyMap.vertex' x))               == True
+-- 'Data.Maybe.isJust' (detectParts ('Algebra.Graph.AdjacencyMap.edge' x y))               == True
+-- 'Data.Maybe.isJust' (detectParts ('Algebra.Graph.AdjacencyMap.edges' [(1, 2), (1, 3)])) == True
+-- 'Data.Maybe.isJust' (detectParts ('Algebra.Graph.AdjacencyMap.clique' x))               == x < 3
+-- 'Data.Maybe.isJust' (detectParts ('Algebra.Graph.AdjacencyMap.star' x ys))              == not (x `elem` ys)
+-- 'Data.Maybe.isJust' (detectParts ('Algebra.Graph.AdjacencyMap.biclique' xs ys))         == True
+-- 'Data.Maybe.isJust' ('fromBipartite' ('toBipartite' am))       == True
+-- 'Data.Maybe.isJust' (detectParts (1 * 2 * 3))              == False
+-- 'Data.Maybe.isJust' (detectParts ((1 + 2) * (3 + 4)))      == True
+-- @
+detectParts :: Ord a => AM.AdjacencyMap a -> Maybe (AdjacencyMap a a)
+detectParts g = let s = AM.symmetricClosure g
+                 in build s <$> (foldM (runDfs s) Map.empty $ AM.vertexList s)
+    where
+        dfs :: Ord a => PartId -> AM.AdjacencyMap a -> Map.Map a PartId -> a -> Maybe (Map.Map a PartId)
+        dfs p g m v = foldM (action p g) (Map.insert v p m) $ neighbours v g
+
+        action :: Ord a => PartId -> AM.AdjacencyMap a -> Map.Map a PartId -> a -> Maybe (Map.Map a PartId)
+        action p g m v = case v `Map.lookup` m of
+                              Nothing -> dfs (otherPart p) g m v
+                              Just q  -> if q /= p then Just m else Nothing
+
+        runDfs :: Ord a => AM.AdjacencyMap a -> Map.Map a PartId -> a -> Maybe (Map.Map a PartId)
+        runDfs g m v = (m <$ Map.lookup v m) <|> dfs LeftPart g m v
+
+        neighbours :: Ord a => a -> AM.AdjacencyMap a -> Set.Set a
+        neighbours v g = fromJust $ v `Map.lookup` AM.adjacencyMap g
+
+        build :: Ord a => AM.AdjacencyMap a -> Map.Map a PartId -> AdjacencyMap a a
+        build g m = toBipartite $ AM.gmap (toEither m) g
+
+        toEither :: Ord a => Map.Map a PartId -> a -> Either a a
+        toEither m v = case fromJust (v `Map.lookup` m) of
+                            LeftPart  -> Left  v
+                            RightPart -> Right v
+
+
