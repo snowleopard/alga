@@ -24,19 +24,20 @@ import Algebra.Graph
 import Algebra.Graph.Export
 import Algebra.Graph.Label
 
-import qualified Algebra.Graph.Acyclic.AdjacencyMap  as AAM
-import qualified Algebra.Graph.AdjacencyIntMap       as AIM
-import qualified Algebra.Graph.AdjacencyMap          as AM
-import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NAM
-import qualified Algebra.Graph.Class                 as C
-import qualified Algebra.Graph.Labelled              as LG
-import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
-import qualified Algebra.Graph.NonEmpty              as NonEmpty
-import qualified Algebra.Graph.Relation              as Relation
-import qualified Algebra.Graph.Relation.Preorder     as Preorder
-import qualified Algebra.Graph.Relation.Reflexive    as Reflexive
-import qualified Algebra.Graph.Relation.Symmetric    as Symmetric
-import qualified Algebra.Graph.Relation.Transitive   as Transitive
+import qualified Algebra.Graph.Acyclic.AdjacencyMap   as AAM
+import qualified Algebra.Graph.AdjacencyIntMap        as AIM
+import qualified Algebra.Graph.AdjacencyMap           as AM
+import qualified Algebra.Graph.Bipartite.AdjacencyMap as BAM
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap  as NAM
+import qualified Algebra.Graph.Class                  as C
+import qualified Algebra.Graph.Labelled               as LG
+import qualified Algebra.Graph.Labelled.AdjacencyMap  as LAM
+import qualified Algebra.Graph.NonEmpty               as NonEmpty
+import qualified Algebra.Graph.Relation               as Relation
+import qualified Algebra.Graph.Relation.Preorder      as Preorder
+import qualified Algebra.Graph.Relation.Reflexive     as Reflexive
+import qualified Algebra.Graph.Relation.Symmetric     as Symmetric
+import qualified Algebra.Graph.Relation.Transitive    as Transitive
 
 -- | Generate an arbitrary 'C.Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
@@ -232,3 +233,7 @@ instance Arbitrary s => Arbitrary (Doc s) where
 
 instance (Arbitrary a, Num a, Ord a) => Arbitrary (Distance a) where
     arbitrary = (\x -> if x < 0 then distance infinite else distance (unsafeFinite x)) <$> arbitrary
+
+instance (Arbitrary a, Arbitrary b, Ord a, Ord b) => Arbitrary (BAM.AdjacencyMap a b) where
+    arbitrary = BAM.toBipartite <$> arbitrary
+    shrink = map BAM.toBipartite . shrink . BAM.fromBipartite
