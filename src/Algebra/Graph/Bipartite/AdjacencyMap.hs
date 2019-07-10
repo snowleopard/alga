@@ -33,26 +33,24 @@ module Algebra.Graph.Bipartite.AdjacencyMap (
     rightVertexCount, vertexCount, edgeCount, leftVertexList, rightVertexList,
     vertexList, edgeList, leftVertexSet, rightVertexSet, vertexSet, edgeSet,
 
+    -- * Testing bipartiteness
+    OddCycle, detectParts,
+
     -- * Miscellaneous
     consistent,
-
-    -- * Testing bipartiteness
-    detectParts_Maybe, detectParts_PartMonad, detectParts_Either
     ) where
 
-import Control.Applicative       ((<|>))
-import Control.Monad             (msum, mzero, guard, foldM)
+import Control.Monad             (mzero, guard)
 import Control.Monad.Trans.Maybe (MaybeT(..))
-import Control.Monad.State       (State, runState, modify', get)
+import Control.Monad.State       (State, runState, evalState, modify, get)
 import Data.Either               (lefts, rights)
+import Data.Foldable             (asum)
 import Data.List                 (sort, (\\))
-import Data.List.NonEmpty        (NonEmpty((:|)), (<|))
-import Data.Maybe                (fromJust, isJust)
+import Data.Maybe                (fromJust)
 import GHC.Generics
 
 import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
-import qualified Data.List.NonEmpty         as NE
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
@@ -661,6 +659,107 @@ vertexSet = Set.fromAscList . vertexList
 edgeSet :: (Ord a, Ord b) => AdjacencyMap a b -> Set.Set (a, b)
 edgeSet = Set.fromAscList . edgeList
 
+data Part = LeftPart | RightPart
+    deriving (Show, Eq)
+
+otherPart :: Part -> Part
+otherPart LeftPart  = RightPart
+otherPart RightPart = LeftPart
+
+type PartMap a = Map.Map a Part
+type PartMonad a = MaybeT (State (PartMap a)) a
+
+-- | An odd cycle.
+type OddCycle a = [a]
+
+neighbours :: Ord a => a -> AM.AdjacencyMap a -> [a]
+neighbours v = Set.toAscList . fromJust . Map.lookup v . AM.adjacencyMap
+
+partMonad :: Ord a => AM.AdjacencyMap a -> PartMonad a
+partMonad g = asum $ map (runDfs g) $ AM.vertexList g
+    where
+        {-# INLINE action #-}
+        action :: Ord a => AM.AdjacencyMap a -> Part -> a -> PartMonad a
+        action g p v = do m <- get
+                          case v `Map.lookup` m of
+                               Nothing -> dfs g p v
+                               Just q  -> if q /= p
+                                          then return v
+                                          else mzero
+
+        dfs :: Ord a => AM.AdjacencyMap a -> Part -> a -> PartMonad a
+        dfs g p v = do modify $ Map.insert v p
+                       let q = otherPart p
+                       asum $ map (action g q) $ neighbours v g
+
+        runDfs :: Ord a => AM.AdjacencyMap a -> a -> PartMonad a
+        runDfs g v = do m <- get
+                        guard $ v `Map.notMember` m
+                        dfs g LeftPart v
+
+type OddCycleMonad a = MaybeT (State (Set.Set a)) (OddCycle a)
+
+oddCycle :: Ord a => a -> AM.AdjacencyMap a -> OddCycle a
+oddCycle v g = fromJust $ evalState (runMaybeT $ dfs g LeftPart v v) Set.empty
+    where
+        {-# INLINE action #-}
+        action :: Ord a => AM.AdjacencyMap a -> Part -> a -> a -> OddCycleMonad a
+        action g p s v | v == s && p /= LeftPart = return [v]
+                       | otherwise               = ((:) v) <$> dfs g p s v
+
+        dfs :: Ord a => AM.AdjacencyMap a -> Part -> a -> a -> OddCycleMonad a
+        dfs g p s v = do vis <- get
+                         guard $ v `Set.notMember` vis
+                         modify $ Set.insert v
+                         let q = otherPart p
+                         asum $ map (action g q s) $ neighbours v g
+
+-- | Test bipartiteness of given graph. In case of success, return an
+-- 'AdjacencyMap' with the same set of edges and each vertex marked with the
+-- part it belongs to. In case of failure, return any odd cycle in the graph.
+--
+-- The returned partition is lexicographicaly minimal. That is, consider the
+-- string of part identifiers for each vertex in ascending order. Then,
+-- considering that the identifier of the left part is less then the identifier
+-- of the right part, this string is lexicographically minimal of all such
+-- strings for all partitions.
+--
+-- /Note/: as 'AdjacencyMap' only represents __undirected__ bipartite graphs,
+-- all edges in the input graph are assumed to be bidirected and all edges in
+-- the output 'AdjacencyMap' are bidirected.
+--
+-- It is advised to use 'leftVertexList' and 'rightVertexList' to obtain the
+-- partition of the vertices and 'hasLeftVertex' and 'hasRightVertex' to check
+-- whether a vertex belongs to a part.
+--
+-- Complexity: /O((n + m) log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- detectParts 'Algebra.Graph.AdjacencyMap.empty'                                      == Right 'empty'
+-- detectParts ('Algebra.Graph.AdjacencyMap.vertex' x)                                 == Right ('leftVertex' x)
+-- detectParts (1 * (2 + 3))                              == Right ('edges' [(1, 2), (1, 3)])
+-- detectParts ((1 + 3) * (2 + 4) + 6 * 5)                == Right ('swap' (1 + 3) * (2 + 4) + 5 * 6)
+-- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.edge' x y))                       == True
+-- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.clique' x))                       == x < 3
+-- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.star' x ys))                      == True
+-- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.biclique' xs ys))                 == True
+-- 'Data.Either.isRight' (detectParts ('fromBipartite' ('toBipartite' am))) == True
+-- 'Data.Either.isRight' (detectParts (1 * 2 * 3))                      == False
+-- @
+detectParts :: Ord a => AM.AdjacencyMap a -> Either (OddCycle a) (AdjacencyMap a a)
+detectParts g = let s = AM.symmetricClosure g
+                 in case runState (runMaybeT $ partMonad s) Map.empty of
+                         (Nothing, m) -> Right $ build m g
+                         (Just c,  _) -> Left  $ oddCycle c s
+    where
+        build :: Ord a => PartMap a -> AM.AdjacencyMap a -> AdjacencyMap a a
+        build m g = toBipartite $ AM.gmap (toEither m) g
+
+        toEither :: Ord a => PartMap a -> a -> Either a a
+        toEither m v = case fromJust (v `Map.lookup` m) of
+                            LeftPart  -> Left  v
+                            RightPart -> Right v
+
 -- | Check that the internal graph representation is consistent, i.e. that all
 -- edges that are present in the 'leftAdjacencyMap' are present in the
 -- 'rightAdjacencyMap' map.
@@ -676,150 +775,3 @@ edgeSet = Set.fromAscList . edgeList
 -- @
 consistent :: (Ord a, Ord b) => AdjacencyMap a b -> Bool
 consistent (BAM lr rl) = internalEdgeList lr == sort (map Data.Tuple.swap $ internalEdgeList rl)
-
-data Part = LeftPart | RightPart
-    deriving (Show, Eq)
-
-
-otherPart :: Part -> Part
-otherPart LeftPart  = RightPart
-otherPart RightPart = LeftPart
-
-
-detectParts_Maybe :: Ord a => AM.AdjacencyMap a -> Maybe (AdjacencyMap a a)
-detectParts_Maybe g = let s = AM.symmetricClosure g
-                       in build s <$> (foldM (runDfs s) Map.empty $ AM.vertexList s)
-    where
-        dfs :: Ord a => Part -> AM.AdjacencyMap a -> Map.Map a Part -> a -> Maybe (Map.Map a Part)
-        dfs p g m v = foldM (action p g) (Map.insert v p m) $ neighbours v g
-
-        action :: Ord a => Part -> AM.AdjacencyMap a -> Map.Map a Part -> a -> Maybe (Map.Map a Part)
-        action p g m v = case v `Map.lookup` m of
-                              Nothing -> dfs (otherPart p) g m v
-                              Just q  -> if q /= p then Just m else Nothing
-
-        runDfs :: Ord a => AM.AdjacencyMap a -> Map.Map a Part -> a -> Maybe (Map.Map a Part)
-        runDfs g m v = (m <$ Map.lookup v m) <|> dfs LeftPart g m v
-
-        neighbours :: Ord a => a -> AM.AdjacencyMap a -> Set.Set a
-        neighbours v g = fromJust $ v `Map.lookup` AM.adjacencyMap g
-
-        build :: Ord a => AM.AdjacencyMap a -> Map.Map a Part -> AdjacencyMap a a
-        build g m = toBipartite $ AM.gmap (toEither m) g
-
-        toEither :: Ord a => Map.Map a Part -> a -> Either a a
-        toEither m v = case fromJust (v `Map.lookup` m) of
-                            LeftPart  -> Left  v
-                            RightPart -> Right v
-
-
-type OddCycle a = [a]
-type PartMap a = Map.Map a (Part, NE.NonEmpty a)
-type PartMonad a = MaybeT (State (PartMap a)) [a]
-
-
-partMonad :: Ord a => AM.AdjacencyMap a -> PartMonad a
-partMonad g = let s = AM.symmetricClosure g
-               in msum $ map (runDfs s) $ AM.vertexList s
-    where
-        {-# INLINE action #-}
-        action :: Ord a => AM.AdjacencyMap a -> Part -> NE.NonEmpty a -> a -> a -> PartMonad a
-        action g p l u v = do m <- get
-                              case v `Map.lookup` m of
-                                   Just pv -> maybeOddCycle pv (otherPart p, l)
-                                   Nothing -> dfs g p (v <| l) v
-
-        dfs :: Ord a => AM.AdjacencyMap a -> Part -> NE.NonEmpty a -> a -> PartMonad a
-        dfs g p l v = do modify' $ Map.insert v (p, l)
-                         msum $ map (action g (otherPart p) l v) $ neighbours v g
-
-        runDfs :: Ord a => AM.AdjacencyMap a -> a -> PartMonad a
-        runDfs g v = do m <- get
-                        guard $ v `Map.notMember` m
-                        dfs g LeftPart (v :| []) v
-
-        neighbours :: Ord a => a -> AM.AdjacencyMap a -> [a]
-        neighbours v = Set.toAscList . fromJust . Map.lookup v . AM.adjacencyMap
-
-        maybeOddCycle :: Ord a => (Part, NE.NonEmpty a) -> (Part, NE.NonEmpty a) -> PartMonad a
-        maybeOddCycle (p, lu) (q, lv) | p == q    = return $ oddCycle lu lv
-                                      | otherwise = mzero
-
-        oddCycle :: Ord a => NE.NonEmpty a -> NE.NonEmpty a -> [a]
-        oddCycle x y = cropHeads (NE.reverse x) (NE.reverse y)
-
-        cropHeads :: Ord a => NE.NonEmpty a -> NE.NonEmpty a -> [a]
-        cropHeads (_:|[]) ys = NE.toList ys
-        cropHeads xs (_:|[]) = NE.toList xs
-        cropHeads xs@(_:|x':xt) (_:|y':yt) | x' == y'  = cropHeads (x':|xt) (y':|yt)
-                                           | otherwise = (NE.toList xs) ++ reverse (NE.toList $ y':|yt)
-
-
-detectParts_PartMonad :: Ord a => AM.AdjacencyMap a -> Either (OddCycle a) (AdjacencyMap a a)
-detectParts_PartMonad g = case runState (runMaybeT $ partMonad g) Map.empty of
-                               (Nothing, m) -> Right $ build m g
-                               (Just c, _)  -> Left c
-    where
-        build :: Ord a => PartMap a -> AM.AdjacencyMap a -> AdjacencyMap a a
-        build m g = toBipartite $ AM.gmap (toEither m) g
-
-        toEither :: Ord a => PartMap a -> a -> Either a a
-        toEither m v = case (fst . fromJust) (v `Map.lookup` m) of
-                            LeftPart  -> Left  v
-                            RightPart -> Right v
-
-
-detectParts_Either :: Ord a => AM.AdjacencyMap a -> Either (OddCycle a) (AdjacencyMap a a)
-detectParts_Either g = let s = AM.symmetricClosure g
-                        in build s <$> (foldM (runDfs s) Map.empty $ AM.vertexList s)
-    where
-        dfs :: Ord a => Part
-                     -> NE.NonEmpty a
-                     -> AM.AdjacencyMap a
-                     -> PartMap a
-                     -> a
-                     -> Either [a] (PartMap a)
-        dfs p l g m v = foldM (action p l g) (Map.insert v (p, l) m) $ neighbours v g
-
-        action :: Ord a => Part 
-                        -> NE.NonEmpty a
-                        -> AM.AdjacencyMap a
-                        -> PartMap a
-                        -> a
-                        -> Either [a] (PartMap a)
-        action p l g m v = case v `Map.lookup` m of
-                                Nothing       -> dfs (otherPart p) (v <| l) g m v
-                                Just (q, l')  -> if q /= p
-                                                 then Right m
-                                                 else Left $ oddCycle l l'
-
-        runDfs :: Ord a => AM.AdjacencyMap a
-                        -> PartMap a
-                        -> a
-                        -> Either [a] (PartMap a)
-        runDfs g m v = case Map.lookup v m of
-                            Just _  -> Right m
-                            Nothing -> dfs LeftPart (v :| []) g m v
-
-        -- neighbours :: Ord a => a -> AM.AdjacencyMap a -> Set.Set a
-        -- neighbours v g = fromJust $ v `Map.lookup` AM.adjacencyMap g
-
-        neighbours :: Ord a => a -> AM.AdjacencyMap a -> [a]
-        neighbours v = Set.toAscList . fromJust . Map.lookup v . AM.adjacencyMap
-
-        build :: Ord a => AM.AdjacencyMap a -> PartMap a -> AdjacencyMap a a
-        build g m = toBipartite $ AM.gmap (toEither m) g
-
-        toEither :: Ord a => PartMap a -> a -> Either a a
-        toEither m v = case fromJust (v `Map.lookup` m) of
-                            (LeftPart,  _) -> Left  v
-                            (RightPart, _) -> Right v
-
-        oddCycle :: Ord a => NE.NonEmpty a -> NE.NonEmpty a -> [a]
-        oddCycle x y = cropHeads (NE.reverse x) (NE.reverse y)
-
-        cropHeads :: Ord a => NE.NonEmpty a -> NE.NonEmpty a -> [a]
-        cropHeads (_:|[]) ys = NE.toList ys
-        cropHeads xs (_:|[]) = NE.toList xs
-        cropHeads xs@(_:|x':xt) (_ :| y':yt) | x' == y'  = cropHeads (x':|xt) (y':|yt)
-                                             | otherwise = (NE.toList xs) ++ reverse (NE.toList $ y':|yt)
