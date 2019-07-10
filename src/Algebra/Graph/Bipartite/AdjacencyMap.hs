@@ -46,14 +46,16 @@ import Control.Monad.State       (State, runState, evalState, modify, get)
 import Data.Either               (lefts, rights)
 import Data.Foldable             (asum)
 import Data.List                 (sort, (\\))
+import Data.List.NonEmpty        (NonEmpty((:|)))
 import Data.Maybe                (fromJust)
 import GHC.Generics
 
 import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
 
-import qualified Data.Map.Strict as Map
-import qualified Data.Set        as Set
+import qualified Data.List.NonEmpty as NE
+import qualified Data.Map.Strict    as Map
+import qualified Data.Set           as Set
 import qualified Data.Tuple
 
 {-| The 'Bipartite.AdjacencyMap' data type represents an __undirected__
@@ -667,52 +669,50 @@ otherPart LeftPart  = RightPart
 otherPart RightPart = LeftPart
 
 type PartMap a = Map.Map a Part
-type PartMonad a = MaybeT (State (PartMap a)) a
+type PartMonad a r = MaybeT (State (PartMap a)) r
 
 -- | An odd cycle.
-type OddCycle a = [a]
+type OddCycle a = [a] -- TODO: Make this representation type-safe
 
 neighbours :: Ord a => a -> AM.AdjacencyMap a -> [a]
 neighbours v = Set.toAscList . fromJust . Map.lookup v . AM.adjacencyMap
 
-partMonad :: Ord a => AM.AdjacencyMap a -> PartMonad a
+partMonad :: Ord a => AM.AdjacencyMap a -> PartMonad a (a, a, a)
 partMonad g = asum $ map (runDfs g) $ AM.vertexList g
     where
         {-# INLINE action #-}
-        action :: Ord a => AM.AdjacencyMap a -> Part -> a -> PartMonad a
-        action g p v = do m <- get
-                          case v `Map.lookup` m of
-                               Nothing -> dfs g p v
-                               Just q  -> if q /= p
-                                          then return v
-                                          else mzero
+        action :: Ord a => AM.AdjacencyMap a -> Part -> a -> a -> PartMonad a (a, a)
+        action g p u v = do m <- get
+                            case v `Map.lookup` m of
+                                 Nothing -> dfs g p v
+                                 Just q  -> if q /= p
+                                            then return (u, v)
+                                            else mzero
 
-        dfs :: Ord a => AM.AdjacencyMap a -> Part -> a -> PartMonad a
+        dfs :: Ord a => AM.AdjacencyMap a -> Part -> a -> PartMonad a (a, a)
         dfs g p v = do modify $ Map.insert v p
                        let q = otherPart p
-                       asum $ map (action g q) $ neighbours v g
+                       asum $ map (action g q v) $ neighbours v g
 
-        runDfs :: Ord a => AM.AdjacencyMap a -> a -> PartMonad a
-        runDfs g v = do m <- get
-                        guard $ v `Map.notMember` m
-                        dfs g LeftPart v
+        runDfs :: Ord a => AM.AdjacencyMap a -> a -> PartMonad a (a, a, a)
+        runDfs g v = mod v <$> do m <- get
+                                  guard $ v `Map.notMember` m
+                                  dfs g LeftPart v
 
-type OddCycleMonad a = MaybeT (State (Set.Set a)) (OddCycle a)
+        mod :: a -> (b, c) -> (a, b, c)
+        mod x (y, z) = (x, y, z)
 
-oddCycle :: Ord a => a -> AM.AdjacencyMap a -> OddCycle a
-oddCycle v g = fromJust $ evalState (runMaybeT $ dfs g LeftPart v v) Set.empty
+type PathMonad a = MaybeT (State (Set.Set a)) [a]
+
+findPath :: Ord a => a -> a -> AM.AdjacencyMap a -> Maybe [a]
+findPath u v g = evalState (runMaybeT $ dfs g v u) Set.empty
     where
-        {-# INLINE action #-}
-        action :: Ord a => AM.AdjacencyMap a -> Part -> a -> a -> OddCycleMonad a
-        action g p s v | v == s && p /= LeftPart = return [v]
-                       | otherwise               = ((:) v) <$> dfs g p s v
-
-        dfs :: Ord a => AM.AdjacencyMap a -> Part -> a -> a -> OddCycleMonad a
-        dfs g p s v = do vis <- get
-                         guard $ v `Set.notMember` vis
-                         modify $ Set.insert v
-                         let q = otherPart p
-                         asum $ map (action g q s) $ neighbours v g
+        dfs :: Ord a => AM.AdjacencyMap a -> a -> a -> PathMonad a
+        dfs g t v | v == t = return [v]
+                  | otherwise = ((:) v) <$> do vis <- get
+                                               guard $ v `Set.notMember` vis
+                                               modify $ Set.insert v
+                                               asum $ map (dfs g t) $ neighbours v g
 
 -- | Test bipartiteness of given graph. In case of success, return an
 -- 'AdjacencyMap' with the same set of edges and each vertex marked with the
@@ -759,6 +759,17 @@ detectParts g = let s = AM.symmetricClosure g
         toEither m v = case fromJust (v `Map.lookup` m) of
                             LeftPart  -> Left  v
                             RightPart -> Right v
+
+        oddCycle :: Ord a => (a, a, a) -> AM.AdjacencyMap a -> [a]
+        oddCycle (u, v, w) s = let xs = fromJust $ findPath u v s
+                                   ys = fromJust $ findPath u w s
+                                in cropHeads (NE.fromList xs) (NE.fromList ys)
+
+        cropHeads :: Ord a => NE.NonEmpty a -> NE.NonEmpty a -> [a]
+        cropHeads (_:|[]) ys = NE.toList ys
+        cropHeads xs (_:|[]) = NE.toList xs
+        cropHeads xs@(_:|x':xt) (_:|y':yt) | x' == y'  = cropHeads (x':|xt) (y':|yt)
+                                           | otherwise = (NE.toList xs) ++ reverse (NE.toList (y':|yt))
 
 -- | Check that the internal graph representation is consistent, i.e. that all
 -- edges that are present in the 'leftAdjacencyMap' are present in the
