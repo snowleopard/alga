@@ -68,6 +68,7 @@ library
     exposed-modules:    Algebra.Graph,
                         Algebra.Graph.Acyclic.AdjacencyMap,
                         Algebra.Graph.Acyclic.Ord,
+                        Algebra.Graph.Acyclic.Labelled.AdjacencyMap,
                         Algebra.Graph.AdjacencyIntMap,
                         Algebra.Graph.AdjacencyIntMap.Algorithm,
                         Algebra.Graph.AdjacencyMap,
