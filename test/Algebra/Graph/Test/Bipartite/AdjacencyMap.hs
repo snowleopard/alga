@@ -37,22 +37,24 @@ type BAIS = AdjacencyMap Int String
 testBipartiteAdjacencyMap :: IO ()
 testBipartiteAdjacencyMap = do
     putStrLn "\n============ Bipartite.AdjacencyMap.consistent ============"
-    test "consistent empty                                                         == True" $
+    test "consistent empty            == True" $
         consistent (empty :: BAII)
-    test "consistent (vertex x)                                                    == True" $ \x ->
+    test "consistent (vertex x)       == True" $ \x ->
         consistent (vertex x :: BAII)
-    test "consistent (edge x y)                                                    == True" $ \(x :: Int) (y :: Int) ->
+    test "consistent (edge x y)       == True" $ \(x :: Int) (y :: Int) ->
         consistent (edge x y)
-    test "consistent (edges x)                                                     == True" $ \(x :: [(Int, Int)]) ->
+    test "consistent (edges x)        == True" $ \(x :: [(Int, Int)]) ->
         consistent (edges x)
-    test "consistent (fromGraph x)                                                 == True" $ \(x :: GII) ->
+    test "consistent (fromGraph x)    == True" $ \(x :: GII) ->
         consistent $ fromGraph x
-    test "consistent (toBipartite x)                                               == True" $ \(x :: AII) ->
+    test "consistent (toBipartite x)  == True" $ \(x :: AII) ->
         consistent $ toBipartite x
-    test "consistent (swap x)                                                      == True" $ \(x :: BAII) ->
+    test "consistent (swap x)         == True" $ \(x :: BAII) ->
         consistent $ swap x
-    test "consistent (fromGraph (G.biclique (map Left [1..x]) (map Right [1..y]))) == True" $ \(x :: Int) (y :: Int) ->
-        consistent $ fromGraph $ G.biclique (map Left [1..x]) (map Right [1..y])
+    test "consistent (biclique xs ys) == True" $ \(xs :: [Int]) (ys :: [Int]) ->
+        consistent $ biclique xs ys
+    test "consistent (circuit xs)     == True" $ \(xs :: [(Int, Int)]) ->
+        consistent $ circuit xs
 
     putStrLn "\n============ Bipartite.AdjacencyMap.toBipartite ============"
     test "leftAdjacencyMap (toBipartite empty)                                                                                                   == Map.empty" $
@@ -649,35 +651,65 @@ testBipartiteAdjacencyMap = do
     test "show ((3 + swap 2) * (2 + swap 0)) == \"edges [(2,2),(3,0)]\"" $
         show ((3 + swap 2) * (2 + swap 0) :: BAII) == "edges [(0,3),(2,2)]"
 
+    putStrLn "\n============ Bipartite.AdjacencyMap.circuit ============"
+    test "circuit []                       == empty" $
+        circuit []                       == (empty :: BAII)
+    test "circuit [(x, y)]                 == edge x y" $ \(x :: Int) (y :: Int) ->
+        circuit [(x, y)]                 == edge x y
+    test "circuit [(x, y), (z, w)]         == connect (vertices [x, z] []) (vertices [] [y, w])" $ \(x :: Int) (y :: Int) (z :: Int) (w :: Int) ->
+        circuit [(x, y), (z, w)]         == connect (vertices [x, z] []) (vertices [] [y, w])
+    test "circuit [(1, 2), (3, 4), (5, 6)] == swap 1 * (2 + 6) + swap 3 * (2 + 4) + swap 5 * (4 + 6)" $
+        circuit [(1, 2), (3, 4), (5, 6)] == (swap 1 * (2 + 6) + swap 3 * (2 + 4) + swap 5 * (4 + 6) :: BAII)
+    test "circuit (reverse x)              == swap (circuit (map swap x))" $ \(x :: [(Int, Int)]) ->
+        circuit (reverse x)              == swap (circuit (map Data.Tuple.swap x))
+
+    putStrLn "\n============ Bipartite.AdjacencyMap.biclique ============"
+    test "biclique [] [] == empty" $
+        biclique [] [] == (empty :: BAII)
+    test "biclique xs [] == vertices xs []" $ \(xs :: [Int]) ->
+        biclique xs [] == (vertices xs [] :: BAII)
+    test "biclique [] ys == vertices [] ys" $ \(ys :: [Int]) ->
+        biclique [] ys == (vertices [] ys :: BAII)
+    test "biclique xs ys == connect (vertices xs []) (vertices [] ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
+        biclique xs ys == connect (vertices xs []) (vertices [] ys)
+
     putStrLn "\n============ Bipartite.AdjacencyMap.detectParts ============"
-    test "detectParts empty                                             == Right empty" $
-        detectParts (AM.empty :: AI)                        == Right empty
-    test "detectParts (vertex 1)                                        == Right (leftVertex 1)" $
-        detectParts (AM.vertex 1 :: AI)                     == Right (leftVertex 1)
-    test "detectParts (edge 1 1)                                        == Left [1]" $
-        detectParts (AM.edge 1 1 :: AI)                     == Left [1]
-    test "detectParts (edge 1 2)                                        == Right (edge 1 2)" $
-        detectParts (AM.edge 1 2 :: AI)                     == Right (edge 1 2)
-    test "detectParts (edge 0 (-1))                                     == Right (edge (-1) 0)" $
-        detectParts (AM.edge 0 (-1) :: AI)                  == Right (edge (-1) 0)
-    test "detectParts (1 * (2 + 3))                                     == Right (edges [(1, 2), (1, 3)])" $
-        detectParts (1 * (2 + 3) :: AI)                     == Right (edges [(1, 2), (1, 3)])
-    test "detectParts ((1 + 3) * (2 + 4) + 6 * 5)                       == Right (swap (1 + 3) * (2 + 4) + swap 5 * 6" $
-        detectParts ((1 + 3) * (2 + 4) + 6 * 5 :: AI)       == Right (swap (1 + 3) * (2 * 4) + swap 5 * 6)
-    test "isRight (detectParts ((1 + 2) * (3 + 4) * (5 + 6)))           == False" $
-        not $ isRight (detectParts ((1 + 2) * (3 + 4) * (5 + 6) :: AI))
-    test "detectParts ((1 + 2) * (3 + 4) + (3 + 4) * 5)                 == Right (swap (1 + 2) * (3 + 4) + swap 5 * (3 + 4))" $
-        detectParts ((1 + 2) * (3 + 4) + (3 + 4) * 5 :: AI) == Right (swap (1 + 2) * (3 + 4) + swap 5 * (3 + 4))
-    test "isRight (detectParts (clique [1..x]))                         == x < 3" $ \(x :: Int) ->
-        isRight (detectParts (AM.clique [1..x]))            == (x < 3)
-    test "isRight (detectParts (star x ys))                             == not (elem x ys)" $ \(x :: Int) (ys :: [Int]) ->
-        isRight (detectParts (AM.star x ys))                == (not $ elem x ys)
-    test "isRight (detectParts (biclique (map Left xs) (map Right ys))) == True" $ \(xs :: [Int]) (ys :: [Int]) ->
-        isRight (detectParts (AM.biclique (map Left xs) (map Right ys)))
-    test "isRight (detectParts (fromBipartite (toBipartite x)))         == True" $ \(x :: AII) ->
+    test "detectParts empty                                       == Right empty" $
+        detectParts (AM.empty :: AI)                               == Right empty
+    test "detectParts (vertex 1)                                  == Right (leftVertex 1)" $
+        detectParts (AM.vertex 1 :: AI)                            == Right (leftVertex 1)
+    test "detectParts (edge 1 1)                                  == Left [1]" $
+        detectParts (AM.edge 1 1 :: AI)                            == Left [1]
+    test "detectParts (edge 1 2)                                  == Right (edge 1 2)" $
+        detectParts (AM.edge 1 2 :: AI)                            == Right (edge 1 2)
+    test "detectParts (edge 0 (-1))                               == Right (edge (-1) 0)" $
+        detectParts (AM.edge 0 (-1) :: AI)                         == Right (edge (-1) 0)
+    test "detectParts (1 * (2 + 3))                               == Right (edges [(1, 2), (1, 3)])" $
+        detectParts (1 * (2 + 3) :: AI)                            == Right (edges [(1, 2), (1, 3)])
+    test "detectParts ((1 + 3) * (2 + 4) + 6 * 5)                 == Right (swap (1 + 3) * (2 + 4) + swap 5 * 6" $
+        detectParts ((1 + 3) * (2 + 4) + 6 * 5 :: AI)              == Right (swap (1 + 3) * (2 * 4) + swap 5 * 6)
+    test "detectParts ((1 + 2) * (3 + 4) * (5 + 6))               == Left [1, 3, 2, 4, 5]" $
+        detectParts ((1 + 2) * (3 + 4) * (5 + 6) :: AI)            == Left [1, 3, 2, 4, 5]
+    test "detectParts ((1 + 2) * (3 + 4) + (3 + 4) * 5)           == Right (swap (1 + 2) * (3 + 4) + swap 5 * (3 + 4))" $
+        detectParts ((1 + 2) * (3 + 4) + (3 + 4) * 5 :: AI)        == Right (swap (1 + 2) * (3 + 4) + swap 5 * (3 + 4))
+    test "detectParts (1 * 2 * 3)                                 == Left [2, 3, 1]" $
+        detectParts (1 * 2 * 3 :: AI)                              == Left [1, 2, 3]
+    test "detectParts ((1 * 3 * 4) + 2 * (1 + 2))                 == Left [2]" $
+        detectParts ((1 * 3 * 4) + 2 * (1 + 2) :: AI)              == Left [2]
+    test "detectParts (clique [1..10])                            == Left [1, 2, 3]" $
+        detectParts (AM.clique [1..10] :: AI)                      == Left [1, 2, 3]
+    test "detectParts (circuit [1..11])                           == Left [1..11]" $
+        detectParts (AM.circuit [1..11] :: AI)                     == Left [1..11]
+    test "detectParts (circuit [1..10])                           == Right (circuit [(2 * x - 1, 2 * x) | x <- [1..5]])" $
+        detectParts (AM.circuit [1..10] :: AI)                     == Right (circuit [(2 * x - 1, 2 * x) | x <- [1..5]])
+    test "detectParts (biclique [] xs)                            == Right (vertices xs [])" $ \(xs :: [Int]) ->
+        detectParts (AM.biclique [] xs :: AI)                      == Right (vertices xs [])
+    test "detectParts (biclique (map Left (x:xs)) (map Right ys)) == Right (biclique (map Left (x:xs)) (map Right ys))" $ \(x :: Int) (xs :: [Int]) (ys :: [Int]) ->
+        detectParts (AM.biclique (map Left (x:xs)) (map Right ys)) == Right (biclique (map Left (x:xs)) (map Right ys))
+    test "isRight (detectParts (star x ys))                       == not (elem x ys)" $ \(x :: Int) (ys :: [Int]) ->
+        isRight (detectParts (AM.star x ys))                       == (not $ elem x ys)
+    test "isRight (detectParts (fromBipartite (toBipartite x)))   == True" $ \(x :: AII) ->
         isRight (detectParts (fromBipartite (toBipartite x)))
-    test "detectParts (1 * 2 * 3)                                       == Left [2, 3, 1]" $
-        detectParts (1 * 2 * 3 :: AI)                       == Left [2, 3, 1]
     test "((all ((flip Set.member) $ edgeSet $ symmetricClosure x) . edgeSet) <$> detectParts x) /= Right False" $ \(x :: AI) ->
         ((all ((flip Set.member) $ AM.edgeSet $ AM.symmetricClosure x) . edgeSet) <$> detectParts x) /= Right False
     test "(Set.map $ fromEither) <$> (vertexSet <$> (detectParts (fromBipartite (toBipartite x)))) == Right (vertexSet x)" $ \(x :: AII) ->
