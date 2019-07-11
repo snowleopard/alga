@@ -42,18 +42,16 @@ module Algebra.Graph.Bipartite.AdjacencyMap (
 
 import Control.Monad             (mzero, guard)
 import Control.Monad.Trans.Maybe (MaybeT(..))
-import Control.Monad.State       (State, runState, evalState, modify, get)
+import Control.Monad.State       (State, runState, modify, get)
 import Data.Either               (lefts, rights)
 import Data.Foldable             (asum)
 import Data.List                 (sort, (\\))
-import Data.List.NonEmpty        (NonEmpty((:|)))
 import Data.Maybe                (fromJust)
 import GHC.Generics
 
 import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
 
-import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict    as Map
 import qualified Data.Set           as Set
 import qualified Data.Tuple
@@ -669,50 +667,35 @@ otherPart LeftPart  = RightPart
 otherPart RightPart = LeftPart
 
 type PartMap a = Map.Map a Part
-type PartMonad a r = MaybeT (State (PartMap a)) r
+type PartMonad a = MaybeT (State (PartMap a)) [a]
 
--- | An odd cycle.
+-- | An odd cycle. For example, @[1, 2, 3]@ represents the cycle 1 → 2 → 3 → 1.
 type OddCycle a = [a] -- TODO: Make this representation type-safe
 
 neighbours :: Ord a => a -> AM.AdjacencyMap a -> [a]
-neighbours v = Set.toAscList . fromJust . Map.lookup v . AM.adjacencyMap
+neighbours v = Set.toAscList . AM.postSet v
 
-partMonad :: Ord a => AM.AdjacencyMap a -> PartMonad a (a, a, a)
+partMonad :: Ord a => AM.AdjacencyMap a -> PartMonad a
 partMonad g = asum $ map (runDfs g) $ AM.vertexList g
     where
         {-# INLINE action #-}
-        action :: Ord a => AM.AdjacencyMap a -> Part -> a -> a -> PartMonad a (a, a)
-        action g p u v = do m <- get
-                            case v `Map.lookup` m of
-                                 Nothing -> dfs g p v
-                                 Just q  -> if q /= p
-                                            then return (u, v)
-                                            else mzero
+        action :: Ord a => AM.AdjacencyMap a -> Part -> a -> PartMonad a
+        action g p v = do m <- get
+                          case v `Map.lookup` m of
+                               Nothing -> ((:) v) <$> dfs g p v
+                               Just q  -> if q /= p
+                                          then return [v]
+                                          else mzero
 
-        dfs :: Ord a => AM.AdjacencyMap a -> Part -> a -> PartMonad a (a, a)
+        dfs :: Ord a => AM.AdjacencyMap a -> Part -> a -> PartMonad a
         dfs g p v = do modify $ Map.insert v p
                        let q = otherPart p
-                       asum $ map (action g q v) $ neighbours v g
+                       asum $ map (action g q) $ neighbours v g
 
-        runDfs :: Ord a => AM.AdjacencyMap a -> a -> PartMonad a (a, a, a)
-        runDfs g v = mod v <$> do m <- get
-                                  guard $ v `Map.notMember` m
-                                  dfs g LeftPart v
-
-        mod :: a -> (b, c) -> (a, b, c)
-        mod x (y, z) = (x, y, z)
-
-type PathMonad a = MaybeT (State (Set.Set a)) [a]
-
-findPath :: Ord a => a -> a -> AM.AdjacencyMap a -> Maybe [a]
-findPath u v g = evalState (runMaybeT $ dfs g v u) Set.empty
-    where
-        dfs :: Ord a => AM.AdjacencyMap a -> a -> a -> PathMonad a
-        dfs g t v | v == t = return [v]
-                  | otherwise = ((:) v) <$> do vis <- get
-                                               guard $ v `Set.notMember` vis
-                                               modify $ Set.insert v
-                                               asum $ map (dfs g t) $ neighbours v g
+        runDfs :: Ord a => AM.AdjacencyMap a -> a -> PartMonad a
+        runDfs g v = ((:) v) <$> do m <- get
+                                    guard $ v `Map.notMember` m
+                                    dfs g LeftPart v
 
 -- | Test bipartiteness of given graph. In case of success, return an
 -- 'AdjacencyMap' with the same set of edges and each vertex marked with the
@@ -735,22 +718,23 @@ findPath u v g = evalState (runMaybeT $ dfs g v u) Set.empty
 -- Complexity: /O((n + m) log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- detectParts 'Algebra.Graph.AdjacencyMap.empty'                                      == Right 'empty'
--- detectParts ('Algebra.Graph.AdjacencyMap.vertex' x)                                 == Right ('leftVertex' x)
--- detectParts (1 * (2 + 3))                              == Right ('edges' [(1, 2), (1, 3)])
--- detectParts ((1 + 3) * (2 + 4) + 6 * 5)                == Right ('swap' (1 + 3) * (2 + 4) + 5 * 6)
--- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.edge' x y))                       == True
--- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.clique' x))                       == x < 3
--- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.star' x ys))                      == True
--- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.biclique' xs ys))                 == True
--- 'Data.Either.isRight' (detectParts ('fromBipartite' ('toBipartite' am))) == True
--- 'Data.Either.isRight' (detectParts (1 * 2 * 3))                      == False
+-- detectParts 'Algebra.Graph.AdjacencyMap.empty'                                             == Right 'empty'
+-- detectParts ('Algebra.Graph.AdjacencyMap.vertex' x)                                        == Right ('leftVertex' x)
+-- detectParts (1 * (2 + 3))                                     == Right ('edges' [(1, 2), (1, 3)])
+-- detectParts ((1 + 3) * (2 + 4) + 6 * 5)                       == Right ('swap' (1 + 3) * (2 + 4) + 5 * 6)
+-- detectParts ('Algebra.Graph.AdjacencyMap.edge' 1 1)                                        == Left [1]
+-- detectParts ('Algebra.Graph.AdjacencyMap.edge' 1 2)                                        == Right ('edge' 1 2)
+-- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.clique' x))                              == x < 3
+-- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.star' x ys))                             == not (elem x ys)
+-- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.biclique' (map Left xs) (map Right ys))) == True
+-- 'Data.Either.isRight' (detectParts ('fromBipartite' ('toBipartite' am)))        == True
+-- detectParts (1 * 2 * 3)                                       == Left [2, 3, 1]
 -- @
 detectParts :: Ord a => AM.AdjacencyMap a -> Either (OddCycle a) (AdjacencyMap a a)
 detectParts g = let s = AM.symmetricClosure g
                  in case runState (runMaybeT $ partMonad s) Map.empty of
                          (Nothing, m) -> Right $ build m g
-                         (Just c,  _) -> Left  $ oddCycle c s
+                         (Just c,  _) -> Left  $ oddCycle c
     where
         build :: Ord a => PartMap a -> AM.AdjacencyMap a -> AdjacencyMap a a
         build m g = toBipartite $ AM.gmap (toEither m) g
@@ -760,16 +744,14 @@ detectParts g = let s = AM.symmetricClosure g
                             LeftPart  -> Left  v
                             RightPart -> Right v
 
-        oddCycle :: Ord a => (a, a, a) -> AM.AdjacencyMap a -> [a]
-        oddCycle (u, v, w) s = let xs = fromJust $ findPath u v s
-                                   ys = fromJust $ findPath u w s
-                                in cropHeads (NE.fromList xs) (NE.fromList ys)
+        oddCycle :: Ord a => [a] -> [a]
+        oddCycle c = dropUntil (last c) c
 
-        cropHeads :: Ord a => NE.NonEmpty a -> NE.NonEmpty a -> [a]
-        cropHeads (_:|[]) ys = NE.toList ys
-        cropHeads xs (_:|[]) = NE.toList xs
-        cropHeads xs@(_:|x':xt) (_:|y':yt) | x' == y'  = cropHeads (x':|xt) (y':|yt)
-                                           | otherwise = (NE.toList xs) ++ reverse (NE.toList (y':|yt))
+        dropUntil :: Ord a => a -> [a] -> [a]
+        dropUntil _ []     = []
+        dropUntil x (y:yt) | y == x    = yt
+                           | otherwise = dropUntil x yt
+
 
 -- | Check that the internal graph representation is consistent, i.e. that all
 -- edges that are present in the 'leftAdjacencyMap' are present in the
