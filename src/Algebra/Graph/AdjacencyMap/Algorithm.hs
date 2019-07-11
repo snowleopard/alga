@@ -118,9 +118,9 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
 dfs :: Ord a => [a] -> AdjacencyMap a -> [a]
 dfs vs = dfsForestFrom vs >=> flatten
 
--- | Compute the list of vertices that are /reachable/ from a given source
--- vertex in a graph. The vertices in the resulting list appear in the
--- /depth-first order/.
+-- | Compute the list of vertices that are /reachable/ from a given
+-- source vertex in a graph. The vertices in the resulting list appear
+-- in the /depth-first order/.
 --
 -- @
 -- reachable x $ 'empty'                       == []
@@ -151,9 +151,10 @@ reachable x = dfs [x]
 bfsForest :: Ord a => AdjacencyMap a -> Forest a
 bfsForest g = bfsForestFrom' (vertexList g) g
 
--- | Like 'bfsForest', but the traversal is seeded by a list of vertices. Seed vertices not
--- in the graph are ignored. Let /L/ be the number of seed vertices. Complexity:
--- /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
+-- | Like 'bfsForest', but the traversal is seeded by a list of
+-- vertices. Seed vertices not in the graph are ignored. Let /L/ be
+-- the number of seed vertices. Complexity: /O(n+(L+m)*log n)/ time
+-- and /O(n+m)/ space.
 --
 -- @
 -- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2) == 'vertices' [1,2]
@@ -176,8 +177,9 @@ bfsForestFrom' vs g = evalState (bff vs) Set.empty where
                     when new $ modify' (Set.insert v)
                     return new
 
--- | Like 'bfsForestFrom' with the resulting forest flattened to a list of vertices.
--- Complexity: /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
+-- | Like 'bfsForestFrom' with the resulting forest flattened to a
+-- list of vertices. Complexity: /O(n+(L+m)*log n)/ time and /O(n+m)/
+-- space.
 --
 -- @
 -- bfs [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5])) == [3,2,1,4,5]

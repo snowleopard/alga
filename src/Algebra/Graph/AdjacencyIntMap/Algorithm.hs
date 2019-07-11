@@ -53,10 +53,9 @@ import qualified Data.IntSet        as IntSet
 --                                          , Node { rootLabel = 3
 --                                                 , subForest = [ Node { rootLabel = 4
 --                                                                      , subForest = [] }]}]
--- 'forest' (dfsForest ('circuit' [1..5] + 'circuit' [5,4,3,2,1])) == 'path' [1..5]
 -- @
 dfsForest :: AdjacencyIntMap -> Forest Int
-dfsForest g = dfsForestFrom' (vertexList g) g
+dfsForest = Typed.dfsForest . Typed.fromAdjacencyIntMap
 
 -- | Compute the /depth-first search/ forest of a graph, searching from each of
 -- the given vertices in order. Note that the resulting forest does not
@@ -81,20 +80,7 @@ dfsForest g = dfsForestFrom' (vertexList g) g
 --                                                            , subForest = [] }]
 -- @
 dfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
-dfsForestFrom vs g = dfsForestFrom' [ v | v <- vs, hasVertex v g ] g
-
-dfsForestFrom' :: [Int] -> AdjacencyIntMap -> Forest Int
-dfsForestFrom' vs g = prune $ evalState dff IntSet.empty where
-  prune ts = [ Node t (prune xs) | Node (Just t) xs <- ts ]
-  dff = unfoldForestM walk vs
-  walk v = discovered v >>= \case
-    False -> pure (Nothing,[])
-    True -> (Just v,) <$> adjacentM v
-  adjacentM v = filterM undiscovered $ IntSet.toList (postIntSet v g)
-  undiscovered v = gets (not . IntSet.member v)
-  discovered v = do new <- undiscovered v
-                    when new $ modify' (IntSet.insert v)
-                    return new
+dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyIntMap
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a graph,
 -- when searching from each of the given vertices in order.
@@ -112,7 +98,7 @@ dfsForestFrom' vs g = prune $ evalState dff IntSet.empty where
 -- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
 -- @
 dfs :: [Int] -> AdjacencyIntMap -> [Int]
-dfs vs = dfsForestFrom vs >=> flatten
+dfs vs = concatMap flatten . dfsForestFrom vs
 
 -- | Compute the list of vertices that are /reachable/ from a given source
 -- vertex in a graph. The vertices in the resulting list appear in the
@@ -132,7 +118,7 @@ dfs vs = dfsForestFrom vs >=> flatten
 reachable :: Int -> AdjacencyIntMap -> [Int]
 reachable x = dfs [x]
 
--- | Compute the forest of a graph's vertices in breadth first order. 
+-- | Compute the forest of a graph's vertices in breadth first order.
 -- Complexity: /O(n+m*log n)/ time and /O(n+m)/ space.
 --
 -- @
@@ -147,8 +133,8 @@ reachable x = dfs [x]
 bfsForest :: AdjacencyIntMap -> Forest Int
 bfsForest g = bfsForestFrom' (vertexList g) g
 
--- | Like 'bfsForest', but the traversal is seeded by a list of vertices.
--- Let /L/ be the number of seed vertices. Complexity:
+-- | Like 'bfsForest', but the traversal is seeded by a list of
+-- vertices.  Let /L/ be the number of seed vertices. Complexity:
 -- /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
 --
 -- @
@@ -172,10 +158,12 @@ bfsForestFrom' vs g = evalState (bff vs) IntSet.empty where
                     when new $ modify' (IntSet.insert v)
                     return new
 
--- | Like 'bfsForestFrom' with the resulting forest flattened to a list of 
--- vertices. Complexity: /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
--- @
--- bfs [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5])) == [3,2,1,4,5]
+-- | Like 'bfsForestFrom' with the resulting forest flattened to a
+-- list of vertices. Complexity: /O(n+(L+m)*log n)/ time and /O(n+m)/
+-- space.
+-- 
+-- @ bfs [3] ('circuit' [1..5] + 'transpose' ('circuit'
+-- [1..5])) == [3,2,1,4,5]
 -- @
 bfs :: [Int] -> AdjacencyIntMap -> [Int]
 bfs vs = bfsForestFrom vs >=> concat . levels
