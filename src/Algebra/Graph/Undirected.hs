@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric, RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Undirected.UndirectedGraph
+-- Module     : Algebra.Graph.Undirected
 -- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -158,7 +158,7 @@ Here are a few examples:
 'vertex' 1 < 'edge' 1 1
 'edge' 1 1 < 'edge' 1 2
 'edge' 1 2 < 'edge' 1 1 + 'edge' 2 2
-'edge' 1 2 < 'edge' 1 3@
+'edge' 1 2 < 'edge' 1 3
 'edge' 1 2 == 'edge' 2 1
 
 Note that the resulting order refines the 'isSubgraphOf' relation and is
@@ -170,7 +170,7 @@ compatible with 'overlay' and 'connect' operations:
 x     <= x + y
 x + y <= x * y@
 -}
-newtype Graph a = UndirectedGraph { graph :: G.Graph a }
+newtype Graph a = UG (G.Graph a)
              deriving (Generic, NFData)
 
 instance (Show a, Ord a) => Show (Graph a) where
@@ -203,13 +203,16 @@ instance Ord a => Ord (Graph a) where
 
 -- TODO: Find a more efficient equality check.
 -- TODO: Implement toUndirectedAdjacencyMap.
--- Check if two graphs are equal by converting them to their adjacency maps.
+-- Check if two graphs are equal by converting them to their symmetric
+-- relations.
 eqR :: Ord a => Graph a -> Graph a -> Bool
 eqR x y = toSymmetricRelation x == toSymmetricRelation y
 {-# NOINLINE [1] eqR #-}
 {-# RULES "eqR/Int" eqR = eqIntR #-}
 
 -- Like 'eqR' but specialised for graphs with vertices of type 'Int'.
+-- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- here for when 'UndirectedAdjacencyIntMap' is implemented.
 eqIntR :: Graph Int -> Graph Int -> Bool
 eqIntR x y = toSymmetricRelation x == toSymmetricRelation y
 
@@ -222,6 +225,8 @@ ordR x y = compare (toSymmetricRelation x) (toSymmetricRelation y)
 {-# RULES "ordR/Int" ordR = ordIntR #-}
 
 -- Like 'ordR' but specialised for graphs with vertices of type 'Int'.
+-- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- here for when 'UndirectedAdjacencyIntMap' is implemented.
 ordIntR :: Graph Int -> Graph Int -> Ordering
 ordIntR x y = compare (toSymmetricRelation x) (toSymmetricRelation y)
 
@@ -249,6 +254,20 @@ instance MonadPlus Graph where
     mzero = empty
     mplus = overlay
 
+-- Help GHC with type inference (direct use of 'coerce' does not compile).
+coerce0 :: G.Graph a -> Graph a 
+coerce0 = coerce
+
+-- Help GHC with type inference (direct use of 'coerce' does not
+-- compile).
+coerce1 :: (a -> G.Graph b) -> (a -> Graph b)
+coerce1 = coerce
+
+-- Help GHC with type inference (direct use of 'coerce' does not
+-- compile).
+coerce2 :: (a -> a -> G.Graph b) -> (a -> a -> Graph b)
+coerce2 = coerce
+
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time, memory and size.
 --
@@ -260,7 +279,7 @@ instance MonadPlus Graph where
 -- 'size'        empty == 1
 -- @
 empty :: Graph a
-empty = UndirectedGraph G.empty
+empty = coerce0 G.empty
 {-# INLINE empty #-}
 
 -- | Construct the graph comprising /a single isolated vertex/. 
@@ -274,7 +293,7 @@ empty = UndirectedGraph G.empty
 -- 'size'        (vertex x) == 1
 -- @
 vertex :: a -> Graph a
-vertex = coerce . G.vertex
+vertex = coerce1 G.vertex
 {-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
@@ -290,7 +309,7 @@ vertex = coerce . G.vertex
 -- 'vertexCount' (edge 1 2) == 2
 -- @
 edge :: a -> a -> Graph a
-edge x y = connect (vertex x) (vertex y)
+edge = coerce2 G.edge
 
 -- | /Overlay/ two graphs. This is a
 -- commutative, associative and idempotent operation with the identity 'empty'.
@@ -308,7 +327,7 @@ edge x y = connect (vertex x) (vertex y)
 -- 'edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Graph a -> Graph a -> Graph a
-overlay g1 g2 = coerce (G.Overlay (graph g1) (graph g2))
+overlay (UG g1) (UG g2) = coerce (G.Overlay g1 g2)
 {-# INLINE overlay #-}
 
 -- | /Connect/ two graphs. This is a commutative and
@@ -333,7 +352,7 @@ overlay g1 g2 = coerce (G.Overlay (graph g1) (graph g2))
 -- 'edgeCount'   (connect 1 2) == 1
 -- @
 connect :: Graph a -> Graph a -> Graph a
-connect g1 g2 = coerce (G.Connect (graph g1) (graph g2))
+connect (UG g1) (UG g2) = coerce (G.Connect g1 g2)
 {-# INLINE connect #-}
 
 -- | Construct the graph comprising a given list of isolated vertices.
@@ -408,7 +427,7 @@ connects = fromMaybe empty . foldr1Safe connect
 -- foldg False (== x)        (||)    (||)           == 'hasVertex' x
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
-foldg e v o c = go . graph
+foldg e v o c (UG g) = go g
   where
     go G.Empty         = e
     go (G.Vertex  x  ) = v x
@@ -420,13 +439,13 @@ foldg e v o c = go . graph
     -- foldg e v o c (Connect x y) = c (foldg e v o c y) (foldg e v o c x)
 {-# RULES
 "foldg/Empty"   forall e v o c.
-    foldg e v o c (UndirectedGraph G.Empty) = e
+    foldg e v o c (UG G.Empty) = e
 "foldg/Vertex"  forall e v o c x.
-    foldg e v o c (UndirectedGraph (G.Vertex x)) = v x
+    foldg e v o c (UG (G.Vertex x)) = v x
 "foldg/Overlay" forall e v o c x y.
-    foldg e v o c (UndirectedGraph (G.Overlay x y)) = o (foldg e v o c (UndirectedGraph x)) (foldg e v o c (UndirectedGraph y))
+    foldg e v o c (UG (G.Overlay x y)) = o (foldg e v o c (UG x)) (foldg e v o c (UG y))
 "foldg/Connect" forall e v o c x y.
-    foldg e v o c (UndirectedGraph (G.Connect x y)) = c (foldg e v o c (UndirectedGraph x)) (foldg e v o c (UndirectedGraph y))
+    foldg e v o c (UG (G.Connect x y)) = c (foldg e v o c (UG x)) (foldg e v o c (UG y))
 
 "foldg/overlays" forall e v o c xs.
     foldg e v o c (overlays xs) = fromMaybe e (foldr (maybeF o . foldg e v o c) Nothing xs)
@@ -511,7 +530,7 @@ hasVertex x = foldg False (==x) (||) (||)
 -- hasEdge x y                  == 'elem' (min x y, max x y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = hit (graph g) == Edge || hit' (graph g) == Edge
+hasEdge s t (UG g) = hit g == Edge || hit' g == Edge
   where
     hit G.Empty         = Miss
     hit (G.Vertex x   ) = if x == s then Tail else Miss
@@ -521,7 +540,7 @@ hasEdge s t g = hit (graph g) == Edge || hit' (graph g) == Edge
         Edge -> Edge
     hit (G.Connect x y) = case hit x of
         Miss -> hit y
-        Tail -> if hasVertex t (UndirectedGraph y) then Edge else Tail
+        Tail -> if hasVertex t (UG y) then Edge else Tail
         Edge -> Edge
     hit' G.Empty         = Miss
     hit' (G.Vertex x   ) = if x == t then Tail else Miss
@@ -531,7 +550,7 @@ hasEdge s t g = hit (graph g) == Edge || hit' (graph g) == Edge
         Edge -> Edge
     hit' (G.Connect x y) = case hit' x of
         Miss -> hit' y
-        Tail -> if hasVertex s (UndirectedGraph y) then Edge else Tail
+        Tail -> if hasVertex s (UG y) then Edge else Tail
         Edge -> Edge
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
