@@ -21,15 +21,11 @@ module Data.Graph.Typed (
     GraphKL(..), fromAdjacencyMap, fromAdjacencyIntMap,
 
     -- * Basic algorithms
-    dfsForest, dfsForestFrom, dfs, topSort, bfsForestFrom, bfs
+    dfsForest, dfsForestFrom, dfs, topSort
     ) where
 
-import Control.Monad
-import Control.Monad.ST
-import Data.Array.ST
-import Data.Array.Unboxed
-import Data.Maybe
 import Data.Tree
+import Data.Maybe
 
 import qualified Data.Graph as KL
 
@@ -188,19 +184,3 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 topSort :: GraphKL a -> [a]
 topSort (GraphKL g r _) = map r (KL.topSort g)
 
-bfsForestFrom :: [a] -> GraphKL a -> Forest a
-bfsForestFrom vs (GraphKL g fromV getV) = map (fmap fromV) $ reverse $ runST $ do
-  table  <- newArray (bounds g) False :: ST s (STUArray s Int Bool)
-  let discovered v = do seen <- readArray table v
-                        unless seen $ writeArray table v True
-                        return $ not seen
-      adjacentM v = filterM discovered $ g ! v
-      walk v = (v,) <$> adjacentM v
-      bff trees (getV -> Just v) = discovered v >>= \case
-        False -> return trees
-        True -> (:trees) <$> unfoldTreeM_BF walk v
-      bff trees _ = return trees
-  foldM bff [] vs
-    
-bfs :: [a] -> GraphKL a -> [a]
-bfs vs = bfsForestFrom vs >=> concat . levels

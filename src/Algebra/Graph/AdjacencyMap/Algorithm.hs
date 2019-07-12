@@ -116,7 +116,7 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
 -- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
 -- @
 dfs :: Ord a => [a] -> AdjacencyMap a -> [a]
-dfs vs = dfsForestFrom vs >=> flatten
+dfs vs = concatMap flatten . dfsForestFrom vs
 
 -- | Compute the list of vertices that are /reachable/ from a given
 -- source vertex in a graph. The vertices in the resulting list appear
