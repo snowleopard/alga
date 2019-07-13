@@ -1727,6 +1727,8 @@ testDfsForest (prefix, API{..}) = do
                                                    , Node { rootLabel = 3
                                                    , subForest = [ Node { rootLabel = 4
                                                                         , subForest = [] }]}]
+    test "forest (dfsForest $ circuit [1..5] + circuit [5,4..1]) == path [1,2,3,4,5]" $
+          forest (dfsForest $ circuit [1..5] + circuit [5,4..1]) == path [1,2,3,4,5]
 
 testDfsForestFrom :: TestsuiteInt g -> IO ()
 testDfsForestFrom (prefix, API{..}) = do
@@ -1770,6 +1772,9 @@ testDfsForestFrom (prefix, API{..}) = do
                                                                                           , subForest = [] }]}
                                                               , Node { rootLabel = 4
                                                                      , subForest = [] }]
+    test "forest (dfsForestFrom [3] $ circuit [1..5] + circuit [5,4..1]) == path [3,2,1,5,4]" $
+          forest (dfsForestFrom [3] $ circuit [1..5] + circuit [5,4..1]) == path [3,2,1,5,4]
+   
 
 testDfs :: TestsuiteInt g -> IO ()
 testDfs (prefix, API{..}) = do
@@ -1804,6 +1809,9 @@ testDfs (prefix, API{..}) = do
     test "isSubgraphOf (vertices $ dfs vs x) x == True" $ \vs x ->
           isSubgraphOf (vertices $ dfs vs x) x == True
 
+    test "dfs [3] (circuit [1..5] + circuit [5,4..1]) == [3,2,1,5,4]" $
+          dfs [3] (circuit [1..5] + circuit [5,4..1]) == [3,2,1,5,4]
+
 testBfsForest :: TestsuiteInt g -> IO ()
 testBfsForest (prefix, API{..}) = do
     putStrLn $ "\n============ " ++ prefix ++ "bfsForest ============"
@@ -1837,8 +1845,8 @@ testBfsForest (prefix, API{..}) = do
                                                    , subForest = [ Node { rootLabel = 4
                                                                         , subForest = [] }]}]
           
-    test "bfsForest (circuit [1..5] + (circuit [5,4,3,2,1])) == <correct result>" $
-          bfsForest (circuit [1..5] + (circuit [5,4,3,2,1])) ==
+    test "bfsForest (circuit [1..5] + (circuit [5,4..1])) == <correct result>" $
+          bfsForest (circuit [1..5] + (circuit [5,4..1])) ==
           [ Node { rootLabel = 1
                  , subForest = [ Node { rootLabel = 2
                                       , subForest = [ Node { rootLabel = 3
@@ -1887,8 +1895,8 @@ testBfsForestFrom (prefix, API{..}) = do
                                                               , Node { rootLabel = 4
                                                                      , subForest = [] }]
           
-    test "bfsForestFrom [3] (circuit [1..5] + (circuit [5,4,3,2,1])) == <correct result>" $
-          bfsForestFrom [3] (circuit [1..5] + (circuit [5,4,3,2,1])) ==
+    test "bfsForestFrom [3] (circuit [1..5] + (circuit [5,4..1])) == <correct result>" $
+          bfsForestFrom [3] (circuit [1..5] + (circuit [5,4..1])) ==
           [ Node { rootLabel = 3
                  , subForest = [ Node { rootLabel = 2
                                       , subForest = [ Node { rootLabel = 1
@@ -1907,38 +1915,38 @@ testBfs (prefix, API{..}) = do
     test "bfs []    $ g                        == []" $ \g ->
           bfs []      g                        == []
 
-    test "bfs [1]   $ edge 1 1                 == [1]" $
-          bfs [1]    (edge 1 1)                == [1]
+    test "bfs [1]   $ edge 1 1                 == [[1]]" $
+          bfs [1]    (edge 1 1)                == [[1]]
 
-    test "bfs [1]   $ edge 1 2                 == [1,2]" $
-          bfs [1]    (edge 1 2)                == [1,2]
+    test "bfs [1]   $ edge 1 2                 == [[1],[2]]" $
+          bfs [1]    (edge 1 2)                == [[1],[2]]
 
-    test "bfs [2]   $ edge 1 2                 == [2]" $
-          bfs [2]    (edge 1 2)                == [2]
+    test "bfs [2]   $ edge 1 2                 == [[2]]" $
+          bfs [2]    (edge 1 2)                == [[2]]
 
     test "bfs [3]   $ edge 1 2                 == []" $
           bfs [3]    (edge 1 2)                == []
 
-    test "bfs [1,2] $ edge 1 2                 == [1,2]" $
-          bfs [1,2]  (edge 1 2)                == [1,2]
+    test "bfs [1,2] $ edge 1 2                 == [[1],[2]]" $
+          bfs [1,2]  (edge 1 2)                == [[1],[2]]
 
-    test "bfs [2,1] $ edge 1 2                 == [2,1]" $
-          bfs [2,1]  (edge 1 2)                == [2,1]
+    test "bfs [2,1] $ edge 1 2                 == [[2],[1]]" $
+          bfs [2,1]  (edge 1 2)                == [[2],[1]]
 
-    test "bfs [1,2] ((1*2) + (3*4) + (5*6))    == [1,2]" $
-          bfs [1,2] ((1*2) + (3*4) + (5*6))    == [1,2]
+    test "bfs [1,2] ((1*2) + (3*4) + (5*6))    == [[1],[2]]" $
+          bfs [1,2] ((1*2) + (3*4) + (5*6))    == [[1],[2]]
 
-    test "bfs [1,3] ((1*2) + (3*4) + (5*6))    == [1,2,3,4]" $
-          bfs [1,3] ((1*2) + (3*4) + (5*6))    == [1,2,3,4]
+    test "bfs [1,3] ((1*2) + (3*4) + (5*6))    == [[1],[2],[3],[4]]" $
+          bfs [1,3] ((1*2) + (3*4) + (5*6))    == [[1],[2],[3],[4]]
 
-    test "bfs [3] $ 3 * (1 + 4) * (1 + 5)    == [3,1,4,5]" $
-          bfs [3]  (3 * (1 + 4) * (1 + 5))   == [3,1,4,5]
+    test "bfs [3] $ 3 * (1 + 4) * (1 + 5)    == [[3],[1,4,5]]" $
+          bfs [3]  (3 * (1 + 4) * (1 + 5))   == [[3],[1,4,5]]
 
-    test "bfs [3] (circuit [1..5] + (circuit [5,4,3,2,1])) == [3,2,4,1,5]" $
-          bfs [3] (circuit [1..5] + (circuit [5,4,3,2,1])) == [3,2,4,1,5]
+    test "bfs [3] (circuit [1..5] + (circuit [5,4..1])) == [[3],[2,4],[1,5]]" $
+          bfs [3] (circuit [1..5] + (circuit [5,4..1])) == [[3],[2,4],[1,5]]
 
-    test "isSubgraphOf (vertices $ bfs vs x) x == True" $ \vs x ->
-          isSubgraphOf (vertices $ bfs vs x) x == True
+    test "isSubgraphOf (vertices $ concat $ bfs vs x) x == True" $ \vs x ->
+          isSubgraphOf (vertices $ concat $ bfs vs x) x == True
 
 testReachable :: TestsuiteInt g -> IO ()
 testReachable (prefix, API{..}) = do

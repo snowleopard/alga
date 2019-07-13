@@ -102,7 +102,7 @@ data API g c where
         , dfs                        :: forall a. c a => [a] -> g a -> [a]
         , bfsForest                  :: forall a. c a => g a -> Forest a
         , bfsForestFrom              :: forall a. c a => [a] -> g a -> Forest a
-        , bfs                        :: forall a. c a => [a] -> g a -> [a]
+        , bfs                        :: forall a. c a => [a] -> g a -> [[a]]
         , reachable                  :: forall a. c a => a -> g a -> [a]
         , topSort                    :: forall a. c a => g a -> Maybe [a]
         , isAcyclic                  :: forall a. c a => g a -> Bool
