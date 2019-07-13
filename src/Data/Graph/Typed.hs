@@ -1,5 +1,3 @@
-{-# language LambdaCase, ViewPatterns #-}
-
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Data.Graph.Typed

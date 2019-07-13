@@ -17,8 +17,9 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap.Algorithm (
     -- * Algorithms
-    dfsForest, dfsForestFrom, dfs, reachable, topSort, isAcyclic, scc,
-    bfsForest, bfsForestFrom, bfs, 
+    bfsForest, bfsForestFrom, bfs, dfsForest, dfsForestFrom, dfs, reachable,
+    topSort, isAcyclic, scc,
+    
     -- * Correctness properties
     isDfsForestOf, isTopSortOf
     ) where
@@ -56,7 +57,6 @@ import qualified Data.Set                            as Set
 --                                          , Node { rootLabel = 3
 --                                                 , subForest = [ Node { rootLabel = 4
 --                                                                      , subForest = [] }]}]
--- 'forest' (dfsForest ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [1..5]
 -- @
 dfsForest :: Ord a => AdjacencyMap a -> Forest a
 dfsForest g = dfsForestFrom (vertexList g) g
@@ -85,20 +85,6 @@ dfsForest g = dfsForestFrom (vertexList g) g
 -- @
 dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
 dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
---  = prune $ evalState (dff vs) Set.empty where
---  dff (v:vs) | not (hasVertex v g) = dff vs
---             | otherwise = (:) <$> unfoldTreeM walk v <*> dff vs
---  dff _ = return []                              
---  prune ts = [ Node t (prune xs) | Node (Just t) xs <- ts ]
---  walk v = discovered v >>= \case
---    False -> pure (Nothing,[])
---    True -> (Just v,) <$> adjacentM v
---  adjacentM v = filterM discovered' $ Set.toList (postSet v g)
---  discovered' v = gets (not . Set.member v)
---  discovered v = do unseen <- gets (not . Set.member v)
---                    when unseen $ modify' (Set.insert v)
---                    return unseen
-
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a
 -- graph, when searching from each of the given vertices in order.
@@ -146,7 +132,7 @@ reachable x = dfs [x]
 -- 'forest' (bfsForest $ 'edge' 2 1)           == 'vertices' [1,2]
 -- 'isSubgraphOf' ('forest' $ bfsForest x) x   == True
 -- bfsForest . 'forest' . bfsForest          == bfsForest
--- 'forest' (bfsForest ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [1,2,3] + 'path' [1,5,4]
+-- 'forest' (bfsForest ('circuit' [1..5] + 'circuit' [5,4,3,2,1])) == 'path' [1,2,3] + 'path' [1,5,4]
 -- @
 bfsForest :: Ord a => AdjacencyMap a -> Forest a
 bfsForest g = bfsForestFrom' (vertexList g) g
@@ -158,9 +144,9 @@ bfsForest g = bfsForestFrom' (vertexList g) g
 --
 -- @
 -- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2) == 'vertices' [1,2]
--- 'forest' (bfsForestFrom [2]   $ 'edge' 2 1) == 'vertex' 2
+-- 'forest' (bfsForestFrom [2]   $ 'edge' 1 2) == 'vertex' 2
 -- 'forest' (bfsForestFrom [3]   $ 'edge' 1 2) == empty
--- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [3,2,1] + 'path' [3,4,5]
+-- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'circuit' [5,4,3,2,1])) == 'path' [3,2,1] + 'path' [3,4,5]
 -- @
 bfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
 bfsForestFrom vs g = bfsForestFrom' [ v | v <- vs, hasVertex v g ] g
@@ -178,11 +164,11 @@ bfsForestFrom' vs g = evalState (bff vs) Set.empty where
                     return new
 
 -- | Like 'bfsForestFrom' with the resulting forest flattened to a
--- list of vertices. Complexity: /O(n+(L+m)*log n)/ time and /O(n+m)/
--- space.
+-- list of vertices. Let /L/ be the number of seed
+-- vertices. Complexity: /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
 --
 -- @
--- bfs [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5])) == [3,2,1,4,5]
+-- bfs [3] ('circuit' [1..5] + ('circuit' [5,4,3,2,1])) == [3,2,4,1,5]
 -- @
 bfs :: Ord a => [a] -> AdjacencyMap a -> [a]
 bfs vs = bfsForestFrom vs >=> concat . levels

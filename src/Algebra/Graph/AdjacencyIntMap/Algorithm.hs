@@ -17,8 +17,9 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyIntMap.Algorithm (
     -- * Algorithms
-    dfsForest, dfsForestFrom, dfs, reachable, topSort, isAcyclic,
-    bfsForest, bfsForestFrom, bfs, 
+    bfsForest, bfsForestFrom, bfs, dfsForest, dfsForestFrom, dfs, reachable,
+    topSort, isAcyclic,
+    
     -- * Correctness properties
     isDfsForestOf, isTopSortOf
     ) where
@@ -128,7 +129,7 @@ reachable x = dfs [x]
 -- 'forest' (bfsForest $ 'edge' 2 1)           == 'vertices' [1,2]
 -- 'isSubgraphOf' ('forest' $ bfsForest x) x   == True
 -- bfsForest . 'forest' . bfsForest          == bfsForest
--- 'forest' (bfsForest ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [1,2,3] + 'path' [1,5,4]
+-- 'forest' (bfsForest ('circuit' [1..5] + ('circuit' [5,4,3,2,1]))) == 'path' [1,2,3] + 'path' [1,5,4]
 -- @
 bfsForest :: AdjacencyIntMap -> Forest Int
 bfsForest g = bfsForestFrom' (vertexList g) g
@@ -141,7 +142,7 @@ bfsForest g = bfsForestFrom' (vertexList g) g
 -- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2) == 'vertices' [1,2]
 -- 'forest' (bfsForestFrom [2]   $ 'edge' 2 1) == 'vertex' 2
 -- 'forest' (bfsForestFrom [3]   $ 'edge' 1 2) == empty
--- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'transpose' ('circuit' [1..5]))) == 'path' [3,2,1] + 'path' [3,4,5]
+-- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + ('circuit' [5,4,3,2,1]))) == 'path' [3,2,1] + 'path' [3,4,5]
 -- @
 bfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
 bfsForestFrom vs g = bfsForestFrom' [ v | v <- vs, hasVertex v g] g
@@ -159,11 +160,11 @@ bfsForestFrom' vs g = evalState (bff vs) IntSet.empty where
                     return new
 
 -- | Like 'bfsForestFrom' with the resulting forest flattened to a
--- list of vertices. Complexity: /O(n+(L+m)*log n)/ time and /O(n+m)/
--- space.
+-- list of vertices. Let /L/ be the number of seed
+-- vertices. Complexity: /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
 -- 
--- @ bfs [3] ('circuit' [1..5] + 'transpose' ('circuit'
--- [1..5])) == [3,2,1,4,5]
+-- @ bfs [3] ('circuit' [1..5] + 'circuit' [5,4,3,2,1]) == [3,2,1,4,5]
+-- 
 -- @
 bfs :: [Int] -> AdjacencyIntMap -> [Int]
 bfs vs = bfsForestFrom vs >=> concat . levels

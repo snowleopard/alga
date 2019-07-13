@@ -1836,8 +1836,9 @@ testBfsForest (prefix, API{..}) = do
                                                    , Node { rootLabel = 3
                                                    , subForest = [ Node { rootLabel = 4
                                                                         , subForest = [] }]}]
-    test "bfsForest (circuit [1..5] + transpose (circuit [1..5])) == <correct result>" $
-          bfsForest (circuit [1..5] + transpose (circuit [1..5])) ==
+          
+    test "bfsForest (circuit [1..5] + (circuit [5,4,3,2,1])) == <correct result>" $
+          bfsForest (circuit [1..5] + (circuit [5,4,3,2,1])) ==
           [ Node { rootLabel = 1
                  , subForest = [ Node { rootLabel = 2
                                       , subForest = [ Node { rootLabel = 3
@@ -1886,8 +1887,8 @@ testBfsForestFrom (prefix, API{..}) = do
                                                               , Node { rootLabel = 4
                                                                      , subForest = [] }]
           
-    test "bfsForestFrom [3] (circuit [1..5] + transpose (circuit [1..5])) == <correct result>" $
-          bfsForestFrom [3] (circuit [1..5] + transpose (circuit [1..5])) ==
+    test "bfsForestFrom [3] (circuit [1..5] + (circuit [5,4,3,2,1])) == <correct result>" $
+          bfsForestFrom [3] (circuit [1..5] + (circuit [5,4,3,2,1])) ==
           [ Node { rootLabel = 3
                  , subForest = [ Node { rootLabel = 2
                                       , subForest = [ Node { rootLabel = 1
@@ -1932,6 +1933,9 @@ testBfs (prefix, API{..}) = do
 
     test "bfs [3] $ 3 * (1 + 4) * (1 + 5)    == [3,1,4,5]" $
           bfs [3]  (3 * (1 + 4) * (1 + 5))   == [3,1,4,5]
+
+    test "bfs [3] (circuit [1..5] + (circuit [5,4,3,2,1])) == [3,2,4,1,5]" $
+          bfs [3] (circuit [1..5] + (circuit [5,4,3,2,1])) == [3,2,4,1,5]
 
     test "isSubgraphOf (vertices $ bfs vs x) x == True" $ \vs x ->
           isSubgraphOf (vertices $ bfs vs x) x == True
