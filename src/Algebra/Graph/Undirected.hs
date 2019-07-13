@@ -51,8 +51,6 @@ import Control.Applicative (Alternative)
 import Control.DeepSeq
 import Control.Monad (MonadPlus (..))
 import Data.Maybe (fromMaybe)
-import Data.Tuple
-import Data.List (nubBy)
 import Data.Coerce
 import GHC.Generics
 
@@ -398,8 +396,8 @@ vertices = coerce1 G.vertices
 -- edges [(x,y)]     == 'edge' x y
 -- edges [(x,y), (y,x)] == 'edge' x y
 -- @
-edges :: Eq a => [(a, a)] -> Graph a
-edges = coerce1 G.edges . nubBy (\x y -> x == swap y)
+edges :: [(a, a)] -> Graph a
+edges = coerce1 G.edges
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -579,7 +577,7 @@ vertexIntCountR = IntSet.size . vertexIntSetR
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: Ord a => Graph a -> Int
-edgeCount = coerce4 G.edgeCount
+edgeCount = length . edgeList
 {-# INLINE [1] edgeCount #-}
 {-# RULES "edgeCount/Int" edgeCount = edgeCountIntR #-}
 
@@ -587,7 +585,7 @@ edgeCount = coerce4 G.edgeCount
 -- NOTE: This is not specialised to vertices of type 'Int'. But it's still
 -- here for when 'UndirectedAdjacencyIntMap' is implemented.
 edgeCountIntR :: Graph Int -> Int
-edgeCountIntR = coerce4 G.edgeCount
+edgeCountIntR = length . edgeList
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
