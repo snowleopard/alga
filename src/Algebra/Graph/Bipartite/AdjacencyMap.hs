@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ExplicitForAll #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 ----------------------------------------------------------------------------
@@ -26,7 +27,7 @@ module Algebra.Graph.Bipartite.AdjacencyMap (
     vertices, edges, overlays, connects, swap,
 
     -- * Conversion functions
-    toBipartite, fromBipartite, fromGraph,
+    toBipartite, toBipartiteWith, fromBipartite, fromGraph,
 
     -- * Graph properties
     isEmpty, hasEdge, hasLeftVertex, hasRightVertex, hasVertex, leftVertexCount,
@@ -43,7 +44,7 @@ module Algebra.Graph.Bipartite.AdjacencyMap (
     consistent,
     ) where
 
-import Control.Monad             (mzero, guard)
+import Control.Monad             (guard)
 import Control.Monad.Trans.Maybe (MaybeT(..))
 import Control.Monad.State       (State, runState, modify, get)
 import Data.Either               (lefts, rights)
@@ -425,6 +426,20 @@ toBipartite m = BAM (Map.fromAscList [ (u, setRights vs) | (Left  u, vs) <- symm
         setLefts      = Set.fromAscList . lefts  . Set.toAscList
         symmetricList = Map.toAscList $ AM.adjacencyMap $ AM.symmetricClosure m
 
+-- | Construct a bipartite 'AdjacencyMap' from "Algebra.Graph.AdjacencyMap"
+-- with part identifiers obtained from a given function, adding all neeeded
+-- edges to make the graph undirected and removing all edges inside one part.
+-- Complexity: /O(m log(n))/
+--
+-- @
+-- toBipartiteWith f Algebra.Graph.AdjacencyMap.'Algebra.Graph.AdjacencyMap.empty' == 'empty'
+-- toBipartiteWith Left  x  == 'empty'
+-- toBipartiteWith Right x  == 'empty'
+-- toBipartiteWith f        == 'toBiparitite' . Algebra.Graph.AdjacencyMap.'Algebra.Graph.AdjacencyMap.gmap' f
+-- @
+toBipartiteWith :: (Ord a, Ord b, Ord c) => (a -> Either b c) -> AM.AdjacencyMap a -> AdjacencyMap b c
+toBipartiteWith f = toBipartite . AM.gmap f
+
 -- | Construct an 'Algrebra.Graph.AdjacencyMap' from a bipartite
 -- 'AdjacencyMap'.
 -- Complexity: /O(m log(n))/.
@@ -668,15 +683,15 @@ edgeSet = Set.fromAscList . edgeList
 -- @
 -- circuit []                       == 'empty'
 -- circuit [(x, y)]                 == 'edge' x y
--- circuit [(x, y), (z, w)]         == 'connect' ('vertices' [x, z] []) ('vertices' [] [y, w])
+-- circuit [(x, y), (z, w)]         == 'biclique' [x, z] [y, w]
 -- circuit [(1, 2), (3, 4), (5, 6)] == swap 1 * (2 + 6) + swap 3 * (2 + 4) + swap 5 * (6 + 2)
 -- circuit . 'reverse'              == 'swap' . circuit . 'map' 'Data.Tuple.swap'
 -- @
 circuit :: (Ord a, Ord b) => [(a, b)] -> AdjacencyMap a b
-circuit l = overlay (edges l) (edges (zipWith (,) (map fst l) (rotateSnd l)))
+circuit [] = empty
+circuit xs = edges $ xs ++ zip (drop 1 $ cycle as) bs
     where
-        rotateSnd :: [(a, b)] -> [b]
-        rotateSnd l = (snd (last l)):(map snd (init l))
+        (as, bs) = unzip xs
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
@@ -688,10 +703,10 @@ circuit l = overlay (edges l) (edges (zipWith (,) (map fst l) (rotateSnd l)))
 -- biclique xs ys == 'connect' ('vertices' xs []) ('vertices' [] ys)
 -- @
 biclique :: (Ord a, Ord b) => [a] -> [b] -> AdjacencyMap a b
-biclique xs ys = let sxs = sort xs
-                     sys = sort ys
-                  in BAM (Map.fromAscList $ zipWith (,) sxs $ repeat (Set.fromAscList sys))
-                         (Map.fromAscList $ zipWith (,) sys $ repeat (Set.fromAscList sxs))
+biclique xs ys = let sxs = Set.fromList xs
+                     sys = Set.fromList ys
+                  in BAM (Map.fromSet (const sys) sxs)
+                         (Map.fromSet (const sxs) sys)
 
 data Part = LeftPart | RightPart
     deriving (Show, Eq)
@@ -708,28 +723,6 @@ type OddCycle a = [a] -- TODO: Make this representation type-safe
 
 neighbours :: Ord a => a -> AM.AdjacencyMap a -> [a]
 neighbours v = Set.toAscList . AM.postSet v
-
-partMonad :: Ord a => AM.AdjacencyMap a -> PartMonad a
-partMonad g = asum $ map (runDfs g) $ AM.vertexList g
-    where
-        {-# INLINE action #-}
-        action :: Ord a => AM.AdjacencyMap a -> Part -> a -> PartMonad a
-        action g p v = do m <- get
-                          case v `Map.lookup` m of
-                               Nothing -> ((:) v) <$> dfs g p v
-                               Just q  -> if q /= p
-                                          then return [v]
-                                          else mzero
-
-        dfs :: Ord a => AM.AdjacencyMap a -> Part -> a -> PartMonad a
-        dfs g p v = do modify $ Map.insert v p
-                       let q = otherPart p
-                       asum $ map (action g q) $ neighbours v g
-
-        runDfs :: Ord a => AM.AdjacencyMap a -> a -> PartMonad a
-        runDfs g v = ((:) v) <$> do m <- get
-                                    guard $ v `Map.notMember` m
-                                    dfs g LeftPart v
 
 -- | Test bipartiteness of given graph. In case of success, return an
 -- 'AdjacencyMap' with the same set of edges and each vertex marked with the
@@ -774,25 +767,45 @@ partMonad g = asum $ map (runDfs g) $ AM.vertexList g
 -- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.star' x ys))                       == not (elem x ys)
 -- 'Data.Either.isRight' (detectParts ('fromBipartite' ('toBipartite' x)))   == True
 -- @
-detectParts :: Ord a => AM.AdjacencyMap a -> Either (OddCycle a) (AdjacencyMap a a)
-detectParts g = let s = AM.symmetricClosure g
-                 in case runState (runMaybeT $ partMonad s) Map.empty of
-                         (Nothing, m) -> Right $ build m g
-                         (Just c,  _) -> Left  $ oddCycle c
+detectParts :: forall a. Ord a => AM.AdjacencyMap a -> Either (OddCycle a) (AdjacencyMap a a)
+detectParts x = case runState (runMaybeT $ dfs) Map.empty of
+                     (Nothing, m) -> Right $ toBipartiteWith (toEither m) g
+                     (Just c,  _) -> Left  $ oddCycle c
     where
-        build :: Ord a => PartMap a -> AM.AdjacencyMap a -> AdjacencyMap a a
-        build m g = toBipartite $ AM.gmap (toEither m) g
+        g :: AM.AdjacencyMap a
+        g = AM.symmetricClosure x
 
-        toEither :: Ord a => PartMap a -> a -> Either a a
+        dfs :: PartMonad a
+        dfs = asum [ processVertex v | v <- AM.vertexList g ]
+
+        {-# INLINE onEdge #-}
+        onEdge :: Part -> a -> PartMonad a
+        onEdge p v = do m <- get
+                        case v `Map.lookup` m of
+                             Nothing -> inVertex p v
+                             Just q  -> do guard (p /= q)
+                                           return [v]
+
+        inVertex :: Part -> a -> PartMonad a
+        inVertex p v = ((:) v) <$> do modify (Map.insert v p)
+                                      let q = otherPart p
+                                      asum [ onEdge q u | u <- neighbours v g ]
+
+        processVertex :: a -> PartMonad a
+        processVertex v = do m <- get
+                             guard (v `Map.notMember` m)
+                             inVertex LeftPart v
+
+        toEither :: PartMap a -> a -> Either a a
         toEither m v = case fromJust (v `Map.lookup` m) of
                             LeftPart  -> Left  v
                             RightPart -> Right v
 
-        oddCycle :: Ord a => [a] -> [a]
+        oddCycle :: [a] -> [a]
         oddCycle c = init $ dropUntil (last c) c
 
-        dropUntil :: Ord a => a -> [a] -> [a]
-        dropUntil _ []     = []
+        dropUntil :: a -> [a] -> [a]
+        dropUntil _ []        = []
         dropUntil x ys@(y:yt) | y == x    = ys
                               | otherwise = dropUntil x yt
 

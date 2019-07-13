@@ -108,6 +108,18 @@ testBipartiteAdjacencyMap = do
         (rightAdjacencyMap $ toBipartite $ AM.biclique (map Left [1..x]) (map Right [1..y]))
             == expectedBicliqueMap y x
 
+    putStrLn "\n============ Bipartite.AdjacencyMap.toBipartiteWith ============"
+    test "toBipartiteWith parity empty           == empty" $
+        toBipartiteWith parity AM.empty                 == empty
+    test "toBipartiteWith Left g                 == vertices (vertexList g) []" $ \(g :: AI) ->
+        toBipartiteWith Left g                          == (vertices (AM.vertexList g) [] :: BAII)
+    test "toBipartiteWith Right g                == vertices [] (vertexList g)" $ \(g :: AI) ->
+        toBipartiteWith Right g                         == (vertices [] (AM.vertexList g) :: BAII)
+    test "toBipartiteWith parity (clique [1..3]) == biclique [1, 3] [2]" $
+        toBipartiteWith parity (AM.clique [1..3] :: AI) == biclique [1, 3] [2]
+    test "toBipartiteWith parity (edge 1 1)      == leftVertex 1" $
+        toBipartiteWith parity (AM.edge 1 1)            == leftVertex 1
+
     putStrLn "\n============ Bipartite.AdjacencyMap.fromGraph ============"
     test "leftAdjacencyMap (fromGraph empty)                                                                                                   == Map.empty" $
         (leftAdjacencyMap $ fromGraph (G.empty :: GII)) == Map.empty
@@ -656,8 +668,8 @@ testBipartiteAdjacencyMap = do
         circuit []                       == (empty :: BAII)
     test "circuit [(x, y)]                 == edge x y" $ \(x :: Int) (y :: Int) ->
         circuit [(x, y)]                 == edge x y
-    test "circuit [(x, y), (z, w)]         == connect (vertices [x, z] []) (vertices [] [y, w])" $ \(x :: Int) (y :: Int) (z :: Int) (w :: Int) ->
-        circuit [(x, y), (z, w)]         == connect (vertices [x, z] []) (vertices [] [y, w])
+    test "circuit [(x, y), (z, w)]         == biclique [x, z] [y, w]" $ \(x :: Int) (y :: Int) (z :: Int) (w :: Int) ->
+        circuit [(x, y), (z, w)]         == biclique [x, z] [y, w]
     test "circuit [(1, 2), (3, 4), (5, 6)] == swap 1 * (2 + 6) + swap 3 * (2 + 4) + swap 5 * (4 + 6)" $
         circuit [(1, 2), (3, 4), (5, 6)] == (swap 1 * (2 + 6) + swap 3 * (2 + 4) + swap 5 * (4 + 6) :: BAII)
     test "circuit (reverse x)              == swap (circuit (map swap x))" $ \(x :: [(Int, Int)]) ->
@@ -730,3 +742,7 @@ isSorted xs = and $ zipWith (<=) xs $ tail xs
 fromEither :: Either a a -> a
 fromEither (Left  x) = x
 fromEither (Right y) = y
+
+parity :: Int -> Either Int Int
+parity x | x `mod` 2 == 1 = Left  x
+         | otherwise      = Right x
