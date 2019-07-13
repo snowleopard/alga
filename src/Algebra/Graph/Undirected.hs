@@ -22,6 +22,9 @@
 --
 -----------------------------------------------------------------------------
 module Algebra.Graph.Undirected (
+    -- * Algebraic data type for graphs
+    Graph,
+
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
 
@@ -47,9 +50,7 @@ module Algebra.Graph.Undirected (
 import Control.Applicative (Alternative)
 import Control.DeepSeq
 import Control.Monad (MonadPlus (..))
-import Data.Foldable (toList)
-import Data.Maybe (fromMaybe, maybe)
-import Data.Tree
+import Data.Maybe (fromMaybe)
 import Data.Tuple
 import Data.List (nubBy)
 import Data.Coerce
@@ -254,19 +255,36 @@ instance MonadPlus Graph where
     mzero = empty
     mplus = overlay
 
--- Help GHC with type inference (direct use of 'coerce' does not compile).
+-- Help GHC with type inference (direct use of 'coerce' does not 
+-- compile).
 coerce0 :: G.Graph a -> Graph a 
 coerce0 = coerce
 
 -- Help GHC with type inference (direct use of 'coerce' does not
 -- compile).
-coerce1 :: (a -> G.Graph b) -> (a -> Graph b)
+coerce1 :: (Coercible a b) => (a -> G.Graph c) -> (b -> Graph c)
 coerce1 = coerce
 
 -- Help GHC with type inference (direct use of 'coerce' does not
 -- compile).
-coerce2 :: (a -> a -> G.Graph b) -> (a -> a -> Graph b)
+coerce2 :: (Coercible a b, Coercible c d) => (a -> c -> G.Graph e) -> (b -> d -> Graph e)
 coerce2 = coerce
+
+-- Help GHC with type inference (direct use of 'coerce' does not
+-- compile).
+coerce3 :: (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> G.Graph a -> b) 
+        -> (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b) 
+coerce3 = coerce
+
+-- Help GHC with type inference (direct use of 'coerce' does not 
+-- compile).
+coerce4 :: (Coercible b c) => (G.Graph a -> b) -> (Graph a -> c)
+coerce4 = coerce
+
+-- Help GHC with type inference (direct use of 'coerce' does not 
+-- compile).
+coerce5 :: (Coercible b c) => (a -> G.Graph a -> b) -> (a -> Graph a -> c)
+coerce5 = coerce
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -327,7 +345,7 @@ edge = coerce2 G.edge
 -- 'edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Graph a -> Graph a -> Graph a
-overlay (UG g1) (UG g2) = coerce (G.Overlay g1 g2)
+overlay = coerce2 G.overlay 
 {-# INLINE overlay #-}
 
 -- | /Connect/ two graphs. This is a commutative and
@@ -352,7 +370,7 @@ overlay (UG g1) (UG g2) = coerce (G.Overlay g1 g2)
 -- 'edgeCount'   (connect 1 2) == 1
 -- @
 connect :: Graph a -> Graph a -> Graph a
-connect (UG g1) (UG g2) = coerce (G.Connect g1 g2)
+connect = coerce2 G.connect
 {-# INLINE connect #-}
 
 -- | Construct the graph comprising a given list of isolated vertices.
@@ -367,7 +385,7 @@ connect (UG g1) (UG g2) = coerce (G.Connect g1 g2)
 -- 'vertexSet'   . vertices == Set . 'Set.fromList'
 -- @
 vertices :: [a] -> Graph a
-vertices = overlays . map vertex
+vertices = coerce1 G.vertices
 {-# INLINE vertices #-}
 
 -- TODO: Use a faster nubBy implementation with 'Data.Set'
@@ -381,7 +399,7 @@ vertices = overlays . map vertex
 -- edges [(x,y), (y,x)] == 'edge' x y
 -- @
 edges :: Eq a => [(a, a)] -> Graph a
-edges = overlays . map (uncurry edge) . nubBy (\x y -> x == swap y)
+edges = coerce1 G.edges . nubBy (\x y -> x == swap y)
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -395,7 +413,7 @@ edges = overlays . map (uncurry edge) . nubBy (\x y -> x == swap y)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays = fromMaybe empty . foldr1Safe overlay
+overlays = coerce1 G.overlays
 {-# INLINE [1] overlays #-}
 
 -- | Connect a given list of graphs.
@@ -410,7 +428,7 @@ overlays = fromMaybe empty . foldr1Safe overlay
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects = fromMaybe empty . foldr1Safe connect
+connects = coerce1 G.connects
 {-# INLINE [1] connects #-}
 
 -- | Generalised 'Graph' folding: recursively collapse an 'Graph' by applying
@@ -427,12 +445,7 @@ connects = fromMaybe empty . foldr1Safe connect
 -- foldg False (== x)        (||)    (||)           == 'hasVertex' x
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
-foldg e v o c (UG g) = go g
-  where
-    go G.Empty         = e
-    go (G.Vertex  x  ) = v x
-    go (G.Overlay x y) = o (go x) (go y)
-    go (G.Connect x y) = c (go x) (go y)
+foldg = coerce3 G.foldg
 {-# INLINE [0] foldg #-}
 
 -- TODO: Add rule (?) 
@@ -473,6 +486,8 @@ isSubgraphOf x y = SR.isSubgraphOf (toSymmetricRelation x) (toSymmetricRelation 
 {-# RULES "isSubgraphOf/Int" isSubgraphOf = isSubgraphOfIntR #-}
 
 -- Like 'isSubgraphOf' but specialised for graphs with vertices of type 'Int'.
+-- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- here for when 'UndirectedAdjacencyIntMap' is implemented.
 isSubgraphOfIntR :: Graph Int -> Graph Int -> Bool
 isSubgraphOfIntR x y = SR.isSubgraphOf (toSymmetricRelation x) (toSymmetricRelation y)
 
@@ -487,7 +502,7 @@ isSubgraphOfIntR x y = SR.isSubgraphOf (toSymmetricRelation x) (toSymmetricRelat
 -- isEmpty ('removeEdge' x y $ 'edge' x y) == False
 -- @
 isEmpty :: Graph a -> Bool
-isEmpty = foldg True (const False) (&&) (&&)
+isEmpty = coerce4 G.isEmpty
 
 -- | The /size/ of a graph, i.e. the number of leaves of the expression
 -- including 'empty' leaves.
@@ -502,7 +517,7 @@ isEmpty = foldg True (const False) (&&) (&&)
 -- size x             >= 'vertexCount' x
 -- @
 size :: Graph a -> Int
-size = foldg 1 (const 1) (+) (+)
+size = coerce4 G.size
 
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
@@ -514,10 +529,10 @@ size = foldg 1 (const 1) (+) (+)
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Eq a => a -> Graph a -> Bool
-hasVertex x = foldg False (==x) (||) (||)
+hasVertex = coerce5 G.hasVertex
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 
--- TODO: Optimize somehow.
+-- TODO: Optimize this further.
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
 --
@@ -530,28 +545,7 @@ hasVertex x = foldg False (==x) (||) (||)
 -- hasEdge x y                  == 'elem' (min x y, max x y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t (UG g) = hit g == Edge || hit' g == Edge
-  where
-    hit G.Empty         = Miss
-    hit (G.Vertex x   ) = if x == s then Tail else Miss
-    hit (G.Overlay x y) = case hit x of
-        Miss -> hit y
-        Tail -> max Tail (hit y)
-        Edge -> Edge
-    hit (G.Connect x y) = case hit x of
-        Miss -> hit y
-        Tail -> if hasVertex t (UG y) then Edge else Tail
-        Edge -> Edge
-    hit' G.Empty         = Miss
-    hit' (G.Vertex x   ) = if x == t then Tail else Miss
-    hit' (G.Overlay x y) = case hit' x of
-        Miss -> hit' y
-        Tail -> max Tail (hit' y)
-        Edge -> Edge
-    hit' (G.Connect x y) = case hit' x of
-        Miss -> hit' y
-        Tail -> if hasVertex s (UG y) then Edge else Tail
-        Edge -> Edge
+hasEdge s t (UG g) = G.hasEdge s t g || G.hasEdge t s g 
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
@@ -564,11 +558,13 @@ hasEdge s t (UG g) = hit g == Edge || hit' g == Edge
 -- vertexCount x \< vertexCount y ==> x \< y
 -- @
 vertexCount :: Ord a => Graph a -> Int
-vertexCount = Set.size . vertexSet
+vertexCount = coerce4 G.vertexCount
 {-# INLINE [1] vertexCount #-}
 {-# RULES "vertexCount/Int" vertexCount = vertexIntCountR #-}
 
 -- Like 'vertexCount' but specialised for graphs with vertices of type 'Int'.
+-- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- here for when 'UndirectedAdjacencyIntMap' is implemented.
 vertexIntCountR :: Graph Int -> Int
 vertexIntCountR = IntSet.size . vertexIntSetR
 
@@ -583,13 +579,15 @@ vertexIntCountR = IntSet.size . vertexIntSetR
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: Ord a => Graph a -> Int
-edgeCount = SR.edgeCount . toSymmetricRelation
+edgeCount = coerce4 G.edgeCount
 {-# INLINE [1] edgeCount #-}
 {-# RULES "edgeCount/Int" edgeCount = edgeCountIntR #-}
 
 -- Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
+-- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- here for when 'UndirectedAdjacencyIntMap' is implemented.
 edgeCountIntR :: Graph Int -> Int
-edgeCountIntR = SR.edgeCount . toSymmetricRelation
+edgeCountIntR = coerce4 G.edgeCount
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -616,7 +614,7 @@ vertexIntListR = IntSet.toList . vertexIntSetR
 -- edgeList 'empty'          == []
 -- edgeList ('vertex' x)     == []
 -- edgeList ('edge' x y)     == [(min x y, max y x)]
--- edgeList ('star' 2 [3,1]) == [(2,1), (2,3)]
+-- edgeList ('star' 2 [3,1]) == [(1,2), (2,3)]
 -- @
 edgeList :: Ord a => Graph a -> [(a, a)]
 edgeList = SR.edgeList . toSymmetricRelation
@@ -624,6 +622,8 @@ edgeList = SR.edgeList . toSymmetricRelation
 {-# RULES "edgeList/Int" edgeList = edgeIntListR #-}
 
 -- Like 'edgeList' but specialised for graphs with vertices of type 'Int'.
+-- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- here for when 'UndirectedAdjacencyIntMap' is implemented.
 edgeIntListR :: Graph Int -> [(Int, Int)]
 edgeIntListR = SR.edgeList . toSymmetricRelation
 
@@ -636,7 +636,7 @@ edgeIntListR = SR.edgeList . toSymmetricRelation
 -- vertexSet . 'vertices' == Set.'Set.fromList'
 -- @
 vertexSet :: Ord a => Graph a -> Set.Set a
-vertexSet = foldg Set.empty Set.singleton Set.union Set.union
+vertexSet = coerce4 G.vertexSet
 
 -- Like 'vertexSet' but specialised for graphs with vertices of type 'Int'.
 vertexIntSetR :: Graph Int -> IntSet.IntSet
@@ -656,6 +656,8 @@ edgeSet = SR.edgeSet . toSymmetricRelation
 {-# RULES "edgeSet/Int" edgeSet = edgeIntSetR #-}
 
 -- Like 'edgeSet' but specialised for graphs with vertices of type 'Int'.
+-- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- here for when 'UndirectedAdjacencyIntMap' is implemented.
 edgeIntSetR :: Graph Int -> Set.Set (Int,Int)
 edgeIntSetR = SR.edgeSet . toSymmetricRelation
 
@@ -682,12 +684,6 @@ adjacencyList = SR.adjacencyList . toSymmetricRelation
 toSymmetricRelation :: Ord a => Graph a -> SR.Relation a
 toSymmetricRelation = foldg SR.empty SR.vertex SR.overlay SR.connect
 
--- TODO: Change this to a specialised version when
--- 'UndirectedAdjacencyIntMap' is implemented.
--- Like @toAdjacencyMap@ but specialised for graphs with vertices of type 'Int'.
--- toSymmetricIntRelation :: Graph Int -> SR.Relation a
--- toSymmetricIntRelation = toSymmetricRelation
-
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
@@ -698,11 +694,8 @@ toSymmetricRelation = foldg SR.empty SR.vertex SR.overlay SR.connect
 -- path [x,y]     == 'edge' x y
 -- path . 'reverse' == path 
 -- @
-path :: Eq a => [a] -> Graph a
-path xs = case xs of []     -> empty
-                     [x]    -> vertex x
-                     (_:ys) -> edges (zip xs ys)
-
+path :: [a] -> Graph a
+path = coerce1 G.path 
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
@@ -713,9 +706,8 @@ path xs = case xs of []     -> empty
 -- circuit [x,y]     == 'edge' (x,y)
 -- circuit . 'reverse' == circuit
 -- @
-circuit :: Eq a => [a] -> Graph a
-circuit []     = empty
-circuit (x:xs) = path $ [x] ++ xs ++ [x]
+circuit :: [a] -> Graph a
+circuit = coerce1 G.circuit
 
 -- | The /clique/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -730,7 +722,7 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- clique . 'reverse'  == clique
 -- @
 clique :: [a] -> Graph a
-clique = connects . map vertex
+clique = coerce1 G.clique
 {-# INLINE [1] clique #-}
 
 -- | The /biclique/ on two lists of vertices.
@@ -745,9 +737,7 @@ clique = connects . map vertex
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: [a] -> [a] -> Graph a
-biclique xs [] = vertices xs
-biclique [] ys = vertices ys
-biclique xs ys = connect (vertices xs) (vertices ys)
+biclique = coerce2 G.biclique
 
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -760,8 +750,7 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 -- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: a -> [a] -> Graph a
-star x [] = vertex x
-star x ys = connect (vertex x) (vertices ys)
+star = coerce2 G.star
 {-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
@@ -779,7 +768,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
 stars :: [(a, [a])] -> Graph a
-stars = overlays . map (uncurry star)
+stars = coerce1 G.stars
 {-# INLINE stars #-}
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
@@ -793,9 +782,7 @@ stars = overlays . map (uncurry star)
 -- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges' [(1,2), (1,3), (3,4), (3,5)]
 -- @
 tree :: Tree.Tree a -> Graph a
-tree (Node x []) = vertex x
-tree (Node x f ) = star x (map rootLabel f)
-         `overlay` forest (filter (not . null . subForest) f)
+tree = coerce1 G.tree
 
 -- | The /forest graph/ constructed from a given 'Tree.Forest' data structure.
 -- Complexity: /O(F)/ time, memory and size, where /F/ is the size of the
@@ -808,7 +795,7 @@ tree (Node x f ) = star x (map rootLabel f)
 -- forest                                                     == 'overlays' . 'map' 'tree'
 -- @
 forest :: Tree.Forest a -> Graph a
-forest = overlays . map tree
+forest = coerce1 G.forest
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
@@ -821,7 +808,7 @@ forest = overlays . map tree
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Eq a => a -> Graph a -> Graph a
-removeVertex v = induce (/= v)
+removeVertex = coerce5 G.removeVertex
 {-# SPECIALISE removeVertex :: Int -> Graph Int ->
   Graph Int #-}
 
@@ -837,18 +824,9 @@ removeVertex v = induce (/= v)
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
-removeEdge s t = filterContext s (/=s) (/=t) . filterContext s (/=t) (/=s)
+removeEdge s t = coerce (G.removeEdge s t . G.removeEdge t s) 
 {-# SPECIALISE removeEdge :: Int -> Int -> Graph Int ->
   Graph Int #-}
-
--- TODO: Export
--- Filter vertices in a subgraph context.
-filterContext :: Eq a => a -> (a -> Bool) -> (a -> Bool) -> Graph a -> Graph a
-filterContext s i o g = maybe g go $ context (==s) g
-  where
-    go (Context is os) = induce (/=s) g `overlay` star s (filter i is)
-                                        `overlay` star s (filter o os)
-{-# SPECIALISE filterContext :: Int -> (Int -> Bool) -> (Int -> Bool) -> Graph Int -> Graph Int #-}
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
@@ -860,7 +838,7 @@ filterContext s i o g = maybe g go $ context (==s) g
 -- replaceVertex x y            == 'mergeVertices' (== x) y
 -- @
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
-replaceVertex u v = fmap $ \w -> if w == u then v else w
+replaceVertex u v = coerce (G.replaceVertex u v)
 {-# SPECIALISE replaceVertex :: Int -> Int -> Graph Int -> Graph Int #-}
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
@@ -874,7 +852,7 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 -- mergeVertices 'odd'  1 (3 + 4 * 5) == 4 * 1
 -- @
 mergeVertices :: (a -> Bool) -> a -> Graph a -> Graph a
-mergeVertices p v = fmap $ \w -> if p w then v else w
+mergeVertices p v = coerce (G.mergeVertices p v)
 
 -- TODO: Implement via 'induceJust' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
@@ -890,37 +868,5 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: (a -> Bool) -> Graph a -> Graph a
-induce p = foldg empty (\x -> if p x then vertex x else empty) (k overlay) (k connect) 
-  where
-    k _ x     empty = x -- Constant folding to get rid of Empty leaves
-    k _ empty y     = y
-    k f x     y     = f x y
+induce = coerce2 G.induce
 {-# INLINE [1] induce #-}
-
--- 'Focus' on a specified subgraph.
-focus :: (a -> Bool) -> Graph a -> Focus a
-focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
-
--- | The 'Context' of a subgraph comprises its 'inputs' and 'outputs', i.e. all
--- the vertices that are connected to the subgraph's vertices. Note that inputs
--- and outputs can belong to the subgraph itself. In general, there are no
--- guarantees on the order of vertices in 'inputs' and 'outputs'; furthermore,
--- there may be repetitions.
-data Context a = Context { inputs :: [a], outputs :: [a] }
-    deriving (Eq, Show)
-
--- | Extract the 'Context' of a subgraph specified by a given predicate. Returns
--- @Nothing@ if the specified subgraph is empty.
---
--- @
--- context ('const' False) x                   == Nothing
--- context (== 1)        ('edge' 1 2)          == Just ('Context' [   ] [2  ])
--- context (== 2)        ('edge' 1 2)          == Just ('Context' [1  ] [   ])
--- context ('const' True ) ('edge' 1 2)          == Just ('Context' [1  ] [2  ])
--- context (== 4)        (3 * 1 * 4 * 1 * 5) == Just ('Context' [3,1] [1,5])
--- @
-context :: (a -> Bool) -> Graph a -> Maybe (Context a)
-context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
-            | otherwise = Nothing
-  where
-    f = focus p g
