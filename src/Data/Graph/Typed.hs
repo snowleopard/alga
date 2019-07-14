@@ -181,4 +181,3 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- @
 topSort :: GraphKL a -> [a]
 topSort (GraphKL g r _) = map r (KL.topSort g)
-

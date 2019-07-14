@@ -54,9 +54,10 @@ bfsForest :: Ord a => AdjacencyMap a -> Forest a
 bfsForest g = bfsForestFrom' (vertexList g) g
 
 -- | Like 'bfsForest', but the traversal is seeded by a list of
--- vertices. Seed vertices not in the graph are ignored. Let /s/ be
--- the number of seed vertices. Complexity: /O(n+(s+m)*log n)/ time
--- and /O(n+m)/ space.
+-- vertices. Vertices not in the graph are ignored.
+--
+-- Let /L/ be the number of seed vertices. Complexity: /O(n+(L+m)*logn)/
+-- time and /O(n+m)/ space.
 --
 -- @
 -- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2) == 'vertices' [1,2]
@@ -79,12 +80,17 @@ bfsForestFrom' vs g = evalState (bff vs) Set.empty where
                     when new $ modify' (Set.insert v)
                     return new
 
--- | Like 'bfsForestFrom' with the resulting forest flattened to a
--- list of vertices. Let /s/ be the number of seed
--- vertices. Complexity: /O(n+(s+m)*log n)/ time and /O(n+m)/ space.
+-- | Like 'bfsForestFrom' with the resulting forest converted to a
+--   level structure.  Flattening the result via @'concat' . 'bfs' vs@
+--   gives an enumeration of vertices reachable from @vs@ in breadth
+--   first order.
 --
+--   Let /L/ be the number of seed vertices. Complexity:
+--   /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
+-- 
 -- @
--- bfs [3] ('circuit' [1..5] + ('circuit' [5,4..1])) == [[3],[2,4],[1,5]]
+-- bfs [3] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[3],[2,4],[1,5]]
+-- 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
 -- @
 bfs :: Ord a => [a] -> AdjacencyMap a -> [[a]]
 bfs vs = bfsForestFrom vs >=> levels
@@ -160,7 +166,7 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 
 -- | Compute the list of vertices that are /reachable/ from a given
 -- source vertex in a graph. The vertices in the resulting list appear
--- in the /depth-first order/.
+-- in /breadth-first order/.
 --
 -- @
 -- reachable x $ 'empty'                       == []
