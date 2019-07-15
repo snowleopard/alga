@@ -15,8 +15,7 @@
 -- Undirected graphs satisfy all laws of the
 -- 'Algebra.Graph.Class.Undirected' type class, including the commutativity
 -- of 'connect'.
--- For graphs that are known to be /non-empty/ at compile time, see
--- "Algebra.Graph.NonEmpty". 'Graph' is an instance of type classes defined in
+-- 'Graph' is an instance of type classes defined in
 -- modules "Algebra.Graph.Class" and "Algebra.Graph.HigherKinded.Class", which
 -- can be used for polymorphic graph construction and manipulation.
 --
@@ -36,14 +35,17 @@ module Algebra.Graph.Undirected (
 
     -- * Graph properties
     isEmpty, size, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, edgeSet, adjacencyList,
+    edgeList, vertexSet, edgeSet, adjacencyList, neighbours,
 
     -- * Standard families of graphs
     path, circuit, clique, biclique, star, stars, tree, forest,
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices,
-    induce
+    induce, induceJust,
+
+    -- * Miscellaneous
+    consistent
 
     ) where
 
@@ -268,21 +270,15 @@ coerce1 = coerce
 coerce2 :: (Coercible a b, Coercible c d) => (a -> c -> G.Graph e) -> (b -> d -> Graph e)
 coerce2 = coerce
 
--- Help GHC with type inference (direct use of 'coerce' does not
+-- Help GHC with type inference (direct use of 'coerce' does not 
 -- compile).
-coerce3 :: (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> G.Graph a -> b) 
-        -> (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b) 
+coerce3 :: (Coercible b c) => (G.Graph a -> b) -> (Graph a -> c)
 coerce3 = coerce
 
 -- Help GHC with type inference (direct use of 'coerce' does not 
 -- compile).
-coerce4 :: (Coercible b c) => (G.Graph a -> b) -> (Graph a -> c)
+coerce4 :: (Coercible b c) => (a -> G.Graph a -> b) -> (a -> Graph a -> c)
 coerce4 = coerce
-
--- Help GHC with type inference (direct use of 'coerce' does not 
--- compile).
-coerce5 :: (Coercible b c) => (a -> G.Graph a -> b) -> (a -> Graph a -> c)
-coerce5 = coerce
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time, memory and size.
@@ -424,6 +420,7 @@ overlays = coerce1 G.overlays
 -- connects [x,y]     == 'connect' x y
 -- connects           == 'foldr' 'connect' 'empty'
 -- 'isEmpty' . connects == 'all' 'isEmpty'
+-- connects           == connects . 'reverse'
 -- @
 connects :: [Graph a] -> Graph a
 connects = coerce1 G.connects
@@ -443,7 +440,9 @@ connects = coerce1 G.connects
 -- foldg False (== x)        (||)    (||)           == 'hasVertex' x
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
-foldg = coerce3 G.foldg
+foldg = (coerce :: (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> G.Graph a -> b) 
+                -> (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b))
+        G.foldg
 {-# INLINE [0] foldg #-}
 
 -- TODO: Add rule (?) 
@@ -500,7 +499,7 @@ isSubgraphOfIntR x y = SR.isSubgraphOf (toSymmetricRelation x) (toSymmetricRelat
 -- isEmpty ('removeEdge' x y $ 'edge' x y) == False
 -- @
 isEmpty :: Graph a -> Bool
-isEmpty = coerce4 G.isEmpty
+isEmpty = coerce3 G.isEmpty
 
 -- | The /size/ of a graph, i.e. the number of leaves of the expression
 -- including 'empty' leaves.
@@ -515,7 +514,7 @@ isEmpty = coerce4 G.isEmpty
 -- size x             >= 'vertexCount' x
 -- @
 size :: Graph a -> Int
-size = coerce4 G.size
+size = coerce3 G.size
 
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
@@ -527,7 +526,7 @@ size = coerce4 G.size
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Eq a => a -> Graph a -> Bool
-hasVertex = coerce5 G.hasVertex
+hasVertex = coerce4 G.hasVertex
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 
 -- TODO: Optimize this further.
@@ -556,7 +555,7 @@ hasEdge s t (UG g) = G.hasEdge s t g || G.hasEdge t s g
 -- vertexCount x \< vertexCount y ==> x \< y
 -- @
 vertexCount :: Ord a => Graph a -> Int
-vertexCount = coerce4 G.vertexCount
+vertexCount = coerce3 G.vertexCount
 {-# INLINE [1] vertexCount #-}
 {-# RULES "vertexCount/Int" vertexCount = vertexIntCountR #-}
 
@@ -634,7 +633,7 @@ edgeIntListR = SR.edgeList . toSymmetricRelation
 -- vertexSet . 'vertices' == Set.'Set.fromList'
 -- @
 vertexSet :: Ord a => Graph a -> Set.Set a
-vertexSet = coerce4 G.vertexSet
+vertexSet = coerce3 G.vertexSet
 
 -- Like 'vertexSet' but specialised for graphs with vertices of type 'Int'.
 vertexIntSetR :: Graph Int -> IntSet.IntSet
@@ -646,7 +645,7 @@ vertexIntSetR = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 -- @
 -- edgeSet 'empty'      == Set.'Set.empty'
 -- edgeSet ('vertex' x) == Set.'Set.empty'
--- edgeSet ('edge' x y) == Set.'Set.singleton' (min x y, max x y)
+-- edgeSet ('edge' x y) == Set.'Set.singleton' ('min' x y, 'max' x y)
 -- @
 edgeSet :: Ord a => Graph a -> Set.Set (a, a)
 edgeSet = SR.edgeSet . toSymmetricRelation
@@ -806,7 +805,7 @@ forest = coerce1 G.forest
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Eq a => a -> Graph a -> Graph a
-removeVertex = coerce5 G.removeVertex
+removeVertex = coerce4 G.removeVertex
 {-# SPECIALISE removeVertex :: Int -> Graph Int ->
   Graph Int #-}
 
@@ -868,3 +867,47 @@ mergeVertices p v = coerce (G.mergeVertices p v)
 induce :: (a -> Bool) -> Graph a -> Graph a
 induce = coerce2 G.induce
 {-# INLINE [1] induce #-}
+
+-- | Construct the /induced subgraph/ of a given graph by removing the vertices
+-- that are 'Nothing'.
+-- Complexity: /O(s)/ time, memory and size.
+--
+-- @
+-- induceJust ('vertex' 'Nothing')                               == 'empty'
+-- induceJust ('edge' ('Just' x) 'Nothing')                        == 'vertex' x
+-- induceJust . 'fmap' 'Just'                                    == 'id'
+-- induceJust . 'fmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce' p
+-- @
+induceJust :: Graph (Maybe a) -> Graph a
+induceJust = coerce1 G.induceJust
+{-# INLINE [1] induceJust #-}
+
+-- | The set of /neighbours/ of an element @x@ is the set of elements that are
+-- related to it, i.e. @neighbours x == { a | aRx }@. In the context of undirected
+-- graphs, this corresponds to the set of /adjacent/ vertices of vertex @x@.
+--
+-- @
+-- neighbours x 'empty'      == Set.'Set.empty'
+-- neighbours x ('vertex' x) == Set.'Set.empty'
+-- neighbours x ('edge' x y) == Set.'Set.fromList' [y]
+-- neighbours y ('edge' x y) == Set.'Set.fromList' [x]
+-- @
+neighbours :: Ord a => a -> Graph a -> Set.Set a
+neighbours x = SR.neighbours x . toSymmetricRelation 
+
+-- | Check that the internal representation of an undirected graph is
+-- consistent, i.e. that (i) that all edges refer to existing vertices, and (ii)
+-- all edges have their symmetric counterparts. It should be impossible to
+-- create an inconsistent 'Graph', and we use this function in testing.
+--
+-- @
+-- consistent 'empty'         == True
+-- consistent ('vertex' x)    == True
+-- consistent ('overlay' x y) == True
+-- consistent ('connect' x y) == True
+-- consistent ('edge' x y)    == True
+-- consistent ('edges' xs)    == True
+-- consistent ('stars' xs)    == True
+-- @
+consistent :: Ord a => Graph a -> Bool
+consistent (UG g) = g == G.transpose g
