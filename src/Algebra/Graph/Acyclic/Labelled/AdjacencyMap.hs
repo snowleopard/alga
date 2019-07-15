@@ -32,18 +32,19 @@ module Algebra.Graph.Acyclic.Labelled.AdjacencyMap (
     transitiveClosure,
 
     -- * Miscellaneous
-    -- consistent
+    consistent
     ) where
 
 import Data.Set (Set)
 import Algebra.Graph.Label
 import Data.Function (on)
+import Algebra.Graph.AdjacencyMap.Algorithm (isAcyclic)
 
 import qualified Algebra.Graph.Labelled.AdjacencyMap as AM
 
 -- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
 -- For example, 'AdjacencyMap' @Bool@ @a@ is isomorphic to unlabelled acyclic graphs
--- defined in the top-level module "Algebra.Graph.AdjacencyMap", where @False@
+-- defined in the top-level module "Algebra.Graph.Acyclic.AdjacencyMap", where @False@
 -- and @True@ denote the lack of and the existence of an unlabelled edge,
 -- respectively.
 newtype AdjacencyMap e a = AAM {
@@ -68,13 +69,33 @@ instance (Eq e, Dioid e, Ord a, Num a) => Num (AdjacencyMap e a) where
 
 -- TODO: Add additional/change examples.
 
--- TODO: Add the consistent function.
-
 -- TODO: Make 'skeleton :: Ord a => AdjacencyMap e a -> AAM.AdjacencyMap a'
 
 -- TODO: Add 'fromGraph'
 
 -- TODO: Add 'toAcyclic'
+
+-- | Check if the internal graph representation is consistent,
+-- i.e. that all edges refer to existing vertices and the graph
+-- is acyclic. It should be impossible to create an inconsistent 
+-- adjacency map.
+--
+-- @
+-- consistent 'empty'                 == True
+-- consistent ('vertex' x)            == True
+-- consistent ('vertices' x)          == True
+-- consistent ('transitiveClosure' x) == True
+-- consistent ('transpose' x)         == True
+-- consistent ('removeVertex' x)      == True
+-- consistent ('removeEdge' x)        == True
+-- consistent ('emap' x)              == True
+-- consistent ('induce' x)            == True
+-- consistent ('induceJust' x)        == True
+-- consistent (1 + 2)               == True
+-- consistent (1 * 2 + 2 * 3)       == True
+-- @
+consistent :: (Eq e, Ord a, Monoid e) => AdjacencyMap e a -> Bool
+consistent (AAM m) = AM.consistent m && (isAcyclic . AM.skeleton $ m)
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
