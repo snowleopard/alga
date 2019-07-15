@@ -1,15 +1,15 @@
 {-# LANGUAGE ViewPatterns #-}
--------------------------------------------------------------
+-----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Acyclic.AdjacencyMap
+-- Copyright  : (c) Andrey Mokhov 2016-2019
+-- License    : MIT (see the file LICENSE)
+-- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
 -- Testsuite for "Algebra.Graph.Acyclic.AdjacencyMap".
--------------------------------------------------------------
-
-module Algebra.Graph.Test.Acyclic.AdjacencyMap (
-  testAcyclicAdjacencyMap 
-  ) where
+-----------------------------------------------------------------------------
+module Algebra.Graph.Test.Acyclic.AdjacencyMap (testAcyclicAdjacencyMap) where
 
 import Algebra.Graph.Acyclic.AdjacencyMap
 import Algebra.Graph.Acyclic.Ord
@@ -65,7 +65,7 @@ testAcyclicAdjacencyMap = do
         toAcyclicOrd (1 * 2 + 2 * 1 :: AI) == 1 * 2
   test "toAcyclicOrd                       == fromGraph (<) . toGraph" $ \x ->
         toAcyclicOrd (x :: AI)             == (fromGraph (<) . toGraph $ x)
-  
+
   putStrLn "\n=====AcyclicAdjacencyMap fromAcyclic====="
 
   test "fromAcyclic (1 * 2 + 3 * 4)                 == AM.edges [(1,2), (3,4)]" $
@@ -96,10 +96,10 @@ testAcyclicAdjacencyMap = do
         consistent (1 * 2 + 2 * 3 :: AAI) == True
 
   putStrLn "\n=====AcyclicAdjacencyMap Num instance====="
-  test "edgeList    0                 == []" $
-        edgeList   (0 :: AAI)         == []
-  test "vertexList  0                 == [0]" $
-        vertexList (0 :: AAI)         == [0]
+  test "vertexList  1                 == [1]" $
+        vertexList (1 :: AAI)         == [1]
+  test "edgeList    1                 == []" $
+        edgeList   (1 :: AAI)         == []
   test "edgeList   (1 + 2)            == []" $
         edgeList   (1 + 2 :: AAI)     == []
   test "vertexList (1 + 2)            == [1,2]" $
@@ -121,10 +121,10 @@ testAcyclicAdjacencyMap = do
 
   test "isEmpty 'empty'                                  == True" $
         isEmpty (empty :: AAI)                           == True
-  test "isEmpty ('disjointOverlay' 'empty' 'empty')             == True" $
-        isEmpty (disjointOverlay (empty :: AAI) (empty :: AAI)) == True
   test "isEmpty ('vertex' x)                             == False" $ \x ->
         isEmpty (vertex x :: AAI)                        == False
+  test "isEmpty ('disjointOverlay' 'empty' 'empty')             == True" $
+        isEmpty (disjointOverlay (empty :: AAI) (empty :: AAI)) == True
   test "isEmpty ('removeVertex' x $ 'vertex' x)          == True" $ \x ->
         isEmpty (removeVertex x $ vertex x :: AAI)       == True
   test "isEmpty ('removeEdge' 1 2 $ 1 * 2)               == False" $
@@ -390,8 +390,8 @@ testAcyclicOrd = do
   test "overlays" $ \x                     -> consistent (overlays x :: AAI)
   test "connects" $ \x                     -> consistent (connects x :: AAI)
   test "replaceVertex" $ \x y z            -> consistent (replaceVertex x y z :: AAI)
-  test "mergeVertices" $ \(apply -> p) v x -> consistent (mergeVertices p v x :: AAI) 
-  test "gmap" $ \(apply -> f) x            -> consistent (gmap f (x :: AAI) :: AAI) 
+  test "mergeVertices" $ \(apply -> p) v x -> consistent (mergeVertices p v x :: AAI)
+  test "gmap" $ \(apply -> f) x            -> consistent (gmap f (x :: AAI) :: AAI)
 
   putStrLn "\n=====AcyclicOrd edge====="
 
