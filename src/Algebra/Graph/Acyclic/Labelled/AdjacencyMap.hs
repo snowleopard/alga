@@ -38,6 +38,7 @@ module Algebra.Graph.Acyclic.Labelled.AdjacencyMap (
 import Data.Set (Set)
 import Algebra.Graph.Label
 import Data.Function (on)
+import Data.Coerce (coerce)
 import Algebra.Graph.AdjacencyMap.Algorithm (isAcyclic)
 
 import qualified Algebra.Graph.Labelled.AdjacencyMap as AM
@@ -75,6 +76,22 @@ instance (Eq e, Dioid e, Ord a, Num a) => Num (AdjacencyMap e a) where
 
 -- TODO: Add 'toAcyclic'
 
+-- Help GHC with type inference (direct use of 'coerce' does not compile).
+coerce0 :: AM.AdjacencyMap e a -> AdjacencyMap e a 
+coerce0 = coerce
+
+-- Help GHC with type inference (direct use of 'coerce' does not compile).
+coerce1 :: (b -> AM.AdjacencyMap e a) -> (b -> AdjacencyMap e a)
+coerce1 = coerce
+
+-- Help GHC with type inference (direct use of 'coerce' does not compile).
+coerce2 :: (AM.AdjacencyMap e a -> b) -> (AdjacencyMap e a -> b)
+coerce2 = coerce
+
+-- Help GHC with type inference (direct use of 'coerce' does not compile).
+coerce3 :: (AM.AdjacencyMap e1 a1 -> AM.AdjacencyMap e2 a2) -> (AdjacencyMap e1 a1 -> AdjacencyMap e2 a2)
+coerce3 = coerce
+
 -- | Check if the internal graph representation is consistent,
 -- i.e. that all edges refer to existing vertices and the graph
 -- is acyclic. It should be impossible to create an inconsistent 
@@ -107,7 +124,7 @@ consistent (AAM m) = AM.consistent m && (isAcyclic . AM.skeleton $ m)
 -- 'edgeCount'   empty == 0
 -- @
 empty :: AdjacencyMap e a
-empty = AAM AM.empty
+empty = coerce0 AM.empty
 
 -- | Construct the graph comprising /a single isolated vertex/.
 -- Complexity: /O(1)/ time and memory.
@@ -119,7 +136,7 @@ empty = AAM AM.empty
 -- 'edgeCount'   (vertex x) == 0
 -- @
 vertex :: a -> AdjacencyMap e a
-vertex = AAM . AM.vertex
+vertex = coerce1 AM.vertex
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -133,7 +150,7 @@ vertex = AAM . AM.vertex
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: Ord a => [a] -> AdjacencyMap e a
-vertices = AAM . AM.vertices
+vertices = coerce1 AM.vertices
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -157,7 +174,7 @@ isSubgraphOf = AM.isSubgraphOf `on` fromAcyclic
 -- isEmpty ('removeVertex' x $ 'vertex' x)   == True
 -- @
 isEmpty :: AdjacencyMap e a -> Bool
-isEmpty = AM.isEmpty . fromAcyclic
+isEmpty = coerce2 AM.isEmpty
 
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(log(n))/ time.
@@ -169,7 +186,7 @@ isEmpty = AM.isEmpty . fromAcyclic
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Ord a => a -> AdjacencyMap e a -> Bool
-hasVertex x = AM.hasVertex x . fromAcyclic
+hasVertex x = coerce2 $ AM.hasVertex x
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(log(n))/ time.
@@ -181,7 +198,7 @@ hasVertex x = AM.hasVertex x . fromAcyclic
 -- hasEdge x y                  == 'not' . 'null' . 'filter' (\\(_,ex,ey) -> ex == x && ey == y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> AdjacencyMap e a -> Bool
-hasEdge x y = AM.hasEdge x y . fromAcyclic
+hasEdge x y = coerce2 $ AM.hasEdge x y
 
 -- | Extract the label of a specified edge in a graph.
 -- Complexity: /O(log(n))/ time.
@@ -191,7 +208,7 @@ hasEdge x y = AM.hasEdge x y . fromAcyclic
 -- edgeLabel x y ('vertex' z)    == 'zero'
 -- @
 edgeLabel :: (Monoid e, Ord a) => a -> a -> AdjacencyMap e a -> e
-edgeLabel x y = AM.edgeLabel x y . fromAcyclic
+edgeLabel x y = coerce2 $ AM.edgeLabel x y
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
@@ -203,7 +220,7 @@ edgeLabel x y = AM.edgeLabel x y . fromAcyclic
 -- vertexCount x \< vertexCount y ==> x \< y
 -- @
 vertexCount :: AdjacencyMap e a -> Int
-vertexCount = AM.vertexCount . fromAcyclic
+vertexCount = coerce2 AM.vertexCount
 
 -- | The number of (non-'zero') edges in a graph.
 -- Complexity: /O(n)/ time.
@@ -214,7 +231,7 @@ vertexCount = AM.vertexCount . fromAcyclic
 -- edgeCount              == 'length' . 'edgeList'
 -- @
 edgeCount :: AdjacencyMap e a -> Int
-edgeCount = AM.edgeCount . fromAcyclic
+edgeCount = coerce2 AM.edgeCount
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -225,7 +242,7 @@ edgeCount = AM.edgeCount . fromAcyclic
 -- vertexList . 'vertices' == 'Data.List.nub' . 'Data.List.sort'
 -- @
 vertexList :: AdjacencyMap e a -> [a]
-vertexList = AM.vertexList . fromAcyclic
+vertexList = coerce2 AM.vertexList
 
 -- | The list of edges of a graph, sorted lexicographically with respect to
 -- pairs of connected vertices (i.e. edge-labels are ignored when sorting).
@@ -247,7 +264,7 @@ edgeList = AM.edgeList . fromAcyclic
 -- vertexSet . 'vertices' == Set.'Set.fromList'
 -- @
 vertexSet :: AdjacencyMap e a -> Set a
-vertexSet = AM.vertexSet . fromAcyclic
+vertexSet = coerce2 AM.vertexSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -257,7 +274,7 @@ vertexSet = AM.vertexSet . fromAcyclic
 -- edgeSet ('vertex' x)   == Set.'Set.empty'
 -- @
 edgeSet :: (Eq a, Eq e) => AdjacencyMap e a -> Set (e, a, a)
-edgeSet = AM.edgeSet . fromAcyclic
+edgeSet = coerce2 AM.edgeSet
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(n*log(n))/ time.
@@ -268,7 +285,7 @@ edgeSet = AM.edgeSet . fromAcyclic
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Ord a => a -> AdjacencyMap e a -> AdjacencyMap e a
-removeVertex x = AAM . AM.removeVertex x . fromAcyclic
+removeVertex x = coerce3 $ AM.removeVertex x
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(log(n))/ time.
@@ -279,7 +296,7 @@ removeVertex x = AAM . AM.removeVertex x . fromAcyclic
 -- removeEdge x y . 'removeVertex' x == 'removeVertex' x
 -- @
 removeEdge :: Ord a => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
-removeEdge x y = AAM . AM.removeEdge x y . fromAcyclic
+removeEdge x y = coerce3 $ AM.removeEdge x y
 
 -- | Transpose a given graph.
 -- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
@@ -290,7 +307,7 @@ removeEdge x y = AAM . AM.removeEdge x y . fromAcyclic
 -- transpose . transpose  == id
 -- @
 transpose :: (Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a
-transpose = AAM . AM.transpose . fromAcyclic
+transpose = coerce3 AM.transpose
 
 -- | Transform a graph by applying a function @h@ to each of its edge labels.
 -- Complexity: /O((n + m) * log(n))/ time.
@@ -321,7 +338,7 @@ transpose = AAM . AM.transpose . fromAcyclic
 -- emap g . emap h        == emap (g . h)
 -- @
 emap :: (Eq f, Monoid f) => (e -> f) -> AdjacencyMap e a -> AdjacencyMap f a
-emap h = AAM . AM.emap h . fromAcyclic
+emap h = coerce3 $ AM.emap h
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -336,7 +353,7 @@ emap h = AAM . AM.emap h . fromAcyclic
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: (a -> Bool) -> AdjacencyMap e a -> AdjacencyMap e a
-induce f = AAM . AM.induce f . fromAcyclic
+induce f = coerce3 $ AM.induce f
 
 -- | Construct the /induced subgraph/ of a given graph by removing the vertices
 -- that are 'Nothing'.
@@ -346,7 +363,7 @@ induce f = AAM . AM.induce f . fromAcyclic
 -- induceJust ('vertex' 'Nothing')                               == 'empty'
 -- @
 induceJust :: Ord a => AdjacencyMap e (Maybe a) -> AdjacencyMap e a
-induceJust = AAM . AM.induceJust . fromAcyclic
+induceJust = coerce3 AM.induceJust
 
 -- | Compute the /transitive closure/ of a graph over the underlying star
 -- semiring using a modified version of the Warshall-Floyd-Kleene algorithm,
@@ -359,7 +376,7 @@ induceJust = AAM . AM.induceJust . fromAcyclic
 -- transitiveClosure . transitiveClosure == transitiveClosure
 -- @
 transitiveClosure :: (Eq e, Ord a, StarSemiring e) => AdjacencyMap e a -> AdjacencyMap e a
-transitiveClosure = AAM  . AM.transitiveClosure . fromAcyclic
+transitiveClosure = coerce3 AM.transitiveClosure
 
 -- Helper function, not to be exported.
 -- Induce a subgraph from AM.AdjacencyList removing edges not
