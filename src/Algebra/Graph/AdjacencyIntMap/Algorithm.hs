@@ -35,8 +35,8 @@ import qualified Data.Graph.Typed   as Typed
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.IntSet        as IntSet
 
--- | Compute the forest of a graph's vertices in breadth first order.
--- Complexity: /O(n+m*log n)/ time and /O(n+m)/ space.
+-- | Compute the forest of a graph's vertices in breadth first order. Complexity:
+-- /O(n+m*log n)/ time and /O(n+m)/ space.
 --
 -- @
 -- bfsForest 'empty'                         == []
@@ -45,6 +45,12 @@ import qualified Data.IntSet        as IntSet
 -- 'forest' (bfsForest $ 'edge' 2 1)           == 'vertices' [1,2]
 -- 'isSubgraphOf' ('forest' $ bfsForest x) x   == True
 -- bfsForest . 'forest' . bfsForest          == bfsForest
+-- bfsForest (3 * (1 + 4) * (1 + 5))       == [ Node { rootLabel = 1
+--                                                   , subForest = [ Node { rootLabel = 5
+--                                                                        , subForest = [] }]}
+--                                            , Node { rootLabel = 3
+--                                                   , subForest = [ Node { rootLabel = 4
+--                                                                        , subForest = [] }]}]
 -- 'forest' (bfsForest ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [1,2,3] + 'path' [1,5,4]
 -- @
 bfsForest :: AdjacencyIntMap -> Forest Int
@@ -57,10 +63,21 @@ bfsForest g = bfsForestFrom' (vertexList g) g
 -- time and /O(n+m)/ space.
 --
 -- @
--- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2) == 'vertices' [1,2]
--- 'forest' (bfsForestFrom [2]   $ 'edge' 1 2) == 'vertex' 2
--- 'forest' (bfsForestFrom [3]   $ 'edge' 1 2) == empty
+-- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2)      == 'vertices' [1,2]
+-- 'forest' (bfsForestFrom [2]   $ 'edge' 1 2)      == 'vertex' 2
+-- 'forest' (bfsForestFrom [3]   $ 'edge' 1 2)      == 'empty'
+-- 'forest' (bfsForestFrom [2,1] $ 'edge' 1 2)      == 'vertices' [1,2]
+-- 'isSubgraphOf' ('forest' $ bfsForestFrom vs x) x == True
+-- bfsForestFrom ('vertexList' x) x               == 'bfsForest' x
+-- bfsForestFrom vs ('vertices' vs)               == 'map' (\v -> Node v []) ('nub' vs)
+-- bfsForestFrom [] x                           == []
+-- bfsForestFrom [1,4] (3 * (1 + 4) * (1 + 5))  == [ Node { rootLabel = 1
+--                                                        , subForest = [ Node { rootLabel = 5
+--                                                                             , subForest = [] }]}
+--                                                 , Node { rootLabel = 4
+--                                                        , subForest = [] }]
 -- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [3,2,1] + 'path' [3,4,5]
+-- 
 -- @
 bfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
 bfsForestFrom vs g = bfsForestFrom' [ v | v <- vs, hasVertex v g] g
@@ -80,13 +97,24 @@ bfsForestFrom' vs g = evalState (bff vs) IntSet.empty where
 -- | Like 'bfsForestFrom' with the resulting forest converted to a
 --   level structure.  Flattening the result via @'concat' . 'bfs' vs@
 --   gives an enumeration of vertices reachable from @vs@ in breadth
---   first order.
+--   first order with ties broken by the 'Ord' instance for 'Int'. 
 --
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
 -- 
 -- @
--- bfs [3] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[3],[2,4],[1,5]]
+-- bfs vs 'empty'                                         == []
+-- bfs [] g                                             == []
+-- bfs [1] ('edge' 1 1)                                   == [[1]]
+-- bfs [1] ('edge' 1 2)                                   == [[1],[2]]
+-- bfs [2] ('edge' 1 2)                                   == [[2]]
+-- bfs [3] ('edge' 1 2)                                   == []
+-- bfs [1,2] ('edge' 1 2)                                 == [[1],[2]]
+-- bfs [2,1] ('edge' 1 2)                                 == [[2],[1]]
+-- bfs [1,2] ( (1*2) + (3*4) + (5*6) )                  == [[1],[2]]
+-- bfs [1,3] ( (1*2) + (3*4) + (5*6) )                  == [[1],[2],[3],[4]]
+-- bfs [3] (3 * (1 + 4) * (1 + 5))                      == [[3],[1,4,5]]
+-- bfs [2] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[2],[1,3],[5,4]]
 -- 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
 -- @
 bfs :: [Int] -> AdjacencyIntMap -> [[Int]]

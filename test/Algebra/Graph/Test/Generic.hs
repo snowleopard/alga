@@ -1822,8 +1822,8 @@ testBfs (prefix, API{..}) = do
     test "bfs [3] $ 3 * (1 + 4) * (1 + 5)    == [[3],[1,4,5]]" $
           bfs [3]  (3 * (1 + 4) * (1 + 5))   == [[3],[1,4,5]]
 
-    test "bfs [3] (circuit [1..5] + (circuit [5,4..1])) == [[3],[2,4],[1,5]]" $
-          bfs [3] (circuit [1..5] + (circuit [5,4..1])) == [[3],[2,4],[1,5]]
+    test "bfs [2] (circuit [1..5] + (circuit [5,4..1])) == [[2],[1,3],[5,4]]" $
+          bfs [2] (circuit [1..5] + (circuit [5,4..1])) == [[2],[1,3],[5,4]]
           
     test "concat (bfs [3] $ circuit [1..5] + circuit [5,4..1]) == [3,2,4,1,5]" $
           concat (bfs [3] $ circuit [1..5] + circuit [5,4..1]) == [3,2,4,1,5]
