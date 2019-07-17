@@ -87,11 +87,11 @@ bfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
 bfsForestFrom vs g = bfsForestFrom' [ v | v <- vs, hasVertex v g ] g
 
 bfsForestFrom' :: Ord a => [a] -> AdjacencyMap a -> Forest a
-bfsForestFrom' vs g = evalState (bff vs) Set.empty where
-  bff [] = return []
-  bff (v:vs) = discovered v >>= \case
-    False -> bff vs
-    True -> (:) <$> unfoldTreeM_BF walk v <*> bff vs
+bfsForestFrom' vs g = evalState (explore vs) Set.empty where
+  explore (v:vs) = discovered v >>= \case
+    True -> (:) <$> unfoldTreeM_BF walk v <*> explore vs
+    False -> explore vs
+  explore [] = return []
   walk v = (v,) <$> adjacentM v
   adjacentM v = filterM discovered $ Set.toList (postSet v g)
   discovered v = do new <- gets (not . Set.member v)
@@ -101,7 +101,8 @@ bfsForestFrom' vs g = evalState (bff vs) Set.empty where
 -- | Like 'bfsForestFrom' with the resulting forest converted to a
 --   level structure.  Flattening the result via @'concat' . 'bfs' vs@
 --   gives an enumeration of vertices reachable from @vs@ in breadth
---   first order with ties broken by the 'Ord' instance for @a@. 
+--   first order. Adjacent nodes are expanded smallest to biggest
+--   according to the 'Ord' instance for @a@.
 --
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
