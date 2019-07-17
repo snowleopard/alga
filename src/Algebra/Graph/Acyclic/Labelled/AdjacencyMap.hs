@@ -12,28 +12,31 @@
 -- well as associated operations and algorithms.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Acyclic.Labelled.AdjacencyMap (
-    -- * Data structure
-    AdjacencyMap, fromAcyclic,
+  -- * Data structure
+  AdjacencyMap, fromAcyclic,
 
-    -- * Basic graph construction primitives
-    empty, vertex, vertices,
+  -- * Basic graph construction primitives
+  empty, vertex, vertices,
 
-    -- * Relations on graphs
-    isSubgraphOf,
+  -- * Relations on graphs
+  isSubgraphOf,
 
-    -- * Graph properties
-    isEmpty, hasVertex, hasEdge, edgeLabel, vertexCount, edgeCount, vertexList,
-    edgeList, vertexSet, edgeSet,
+  -- * Graph properties
+  isEmpty, hasVertex, hasEdge, edgeLabel, vertexCount, edgeCount, vertexList,
+  edgeList, vertexSet, edgeSet,
 
-    -- * Graph transformation
-    removeVertex, removeEdge, transpose, emap, induce, induceJust,
+  -- * Graph transformation
+  removeVertex, removeEdge, transpose, emap, induce, induceJust,
 
-    -- * Relational operations
-    transitiveClosure,
+  -- * Relational operations
+  transitiveClosure,
 
-    -- * Miscellaneous
-    consistent
-    ) where
+  -- * Acyclic graph construction methods
+  toAcyclicOrd,
+
+  -- * Miscellaneous
+  consistent
+  ) where
 
 import Data.Set (Set)
 import Algebra.Graph.Label
@@ -103,10 +106,10 @@ coerce3 = coerce
 -- consistent ('vertices' x)          == True
 -- consistent ('transitiveClosure' x) == True
 -- consistent ('transpose' x)         == True
--- consistent ('removeVertex' x)      == True
--- consistent ('removeEdge' x)        == True
--- consistent ('emap' x)              == True
--- consistent ('induce' x)            == True
+-- consistent ('removeVertex' x g)      == True
+-- consistent ('removeEdge' x y g)        == True
+-- consistent ('emap' h x)              == True
+-- consistent ('induce' f x)            == True
 -- consistent ('induceJust' x)        == True
 -- consistent (1 + 2)               == True
 -- consistent (1 * 2 + 2 * 3)       == True
@@ -291,7 +294,6 @@ removeVertex x = coerce3 $ AM.removeVertex x
 -- Complexity: /O(log(n))/ time.
 --
 -- @
--- removeEdge x y ('edge' e x y)     == 'vertices' [x,y]
 -- removeEdge x y . removeEdge x y == removeEdge x y
 -- removeEdge x y . 'removeVertex' x == 'removeVertex' x
 -- @
@@ -372,11 +374,40 @@ induceJust = coerce3 AM.induceJust
 -- @
 -- transitiveClosure 'empty'               == 'empty'
 -- transitiveClosure ('vertex' x)          == 'vertex' x
--- transitiveClosure ('edge' e x y)        == 'edge' e x y
 -- transitiveClosure . transitiveClosure == transitiveClosure
 -- @
 transitiveClosure :: (Eq e, Ord a, StarSemiring e) => AdjacencyMap e a -> AdjacencyMap e a
 transitiveClosure = coerce3 AM.transitiveClosure
+
+-- | Constructs an acyclic graph from any labelled graph based on
+-- the order of vertices to produce an acyclic graph.
+-- The internal order defines the valid set of edges.
+-- 
+-- The order for valid edges is \<, ie. for any two
+-- vertices x and y (x \> y), the only possible edge is (y, x).
+-- This will guarantee the production of an acyclic graph since
+-- no back edges are possible.
+--
+-- For example,
+-- /toAcyclicOrd (1 \* 2 + 2 \* 1) == 1 \* 2/ because
+-- /1 \< 2 == True/ and hence the edge is allowed.
+-- /2 \< 1 == False/ and hence the edge is filtered out.
+--
+-- Topological orderings are also closely related to the concept
+-- of a linear extension of a partial order in mathematics.
+-- Please look at <https://en.wikipedia.org/wiki/Topological_sorting#Relation_to_partial_orders Relation to partial orders> for
+-- additional information. 
+-- In this case the partial order is the order of the vertices
+-- itself. And hence, the topological ordering for such graphs
+-- is simply its 'vertexList'.
+--
+-- @
+-- toAcyclicOrd (2 * 1)         == 1 + 2
+-- toAcyclicOrd (1 * 2)         == 1 * 2
+-- toAcyclicOrd (1 * 2 + 2 * 1) == 1 * 2
+-- @
+toAcyclicOrd :: (Eq e, Ord a, Monoid e) => AM.AdjacencyMap e a -> AdjacencyMap e a
+toAcyclicOrd = AAM . induceEAM (uncurry (<)) 
 
 -- Helper function, not to be exported.
 -- Induce a subgraph from AM.AdjacencyList removing edges not

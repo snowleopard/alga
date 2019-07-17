@@ -1,4 +1,5 @@
 import Algebra.Graph.Test.Acyclic.AdjacencyMap
+import Algebra.Graph.Test.Acyclic.Labelled.AdjacencyMap
 import Algebra.Graph.Test.AdjacencyIntMap
 import Algebra.Graph.Test.AdjacencyMap
 import Algebra.Graph.Test.NonEmpty.AdjacencyMap
@@ -28,6 +29,7 @@ main = do
     selected <- getArgs
     let go current = when (null selected || current `elem` selected)
     go "AcyclicAdjacencyMap"   testAcyclicAdjacencyMap
+    go "AcyclicLabelledAdjacencyMap"   testAcyclicLabelledAdjacencyMap
     go "AdjacencyIntMap"       testAdjacencyIntMap
     go "AdjacencyMap"          testAdjacencyMap
     go "BipartiteAdjacencyMap" testBipartiteAdjacencyMap
