@@ -47,12 +47,12 @@ testAdjacencyMap = do
     testTransformations   t
     testRelational        t
     testBox               tPoly
-    testDfsForest         t
-    testDfsForestFrom     t
-    testDfs               t
     testBfsForest         t
     testBfsForestFrom     t
     testBfs               t
+    testDfsForest         t
+    testDfsForestFrom     t
+    testDfs               t
     testReachable         t
     testTopSort           t
     testIsAcyclic         t
