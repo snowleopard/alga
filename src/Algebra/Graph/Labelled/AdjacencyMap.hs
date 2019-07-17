@@ -300,10 +300,8 @@ fromAdjacencyMaps xs = AM $ trimZeroes $ Map.unionWith mappend vs es
 -- isSubgraphOf ('vertex' x) 'empty' ==  False
 -- isSubgraphOf x y              ==> x <= y
 -- @
-isSubgraphOf :: (Eq e, Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
-isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy (Map.isSubmapOfBy le) x y
-  where
-    le x y = mappend x y == y
+isSubgraphOf :: (Eq e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
+isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy Map.isSubmapOf x y
 
 -- | Check if a graph is empty.
 -- Complexity: /O(1)/ time.
