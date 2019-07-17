@@ -56,6 +56,7 @@ import Data.Set    (Set)
 import Data.Tree
 
 import qualified Algebra.Graph                                as G
+import qualified Algebra.Graph.Undirected                     as UG
 import qualified Algebra.Graph.AdjacencyMap                   as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm         as AM
 import qualified Algebra.Graph.Labelled                       as LG
@@ -334,6 +335,16 @@ instance Ord a => ToGraph (G.Graph a) where
     toGraph = id
     foldg   = G.foldg
     hasEdge = G.hasEdge
+
+-- TODO: This instance is probably wrong because of the way it treats edges.
+-- Find out a better way to integrate undirected graphs into 'ToGraph'.
+-- | See "Algebra.Graph.Undirected". Warning: this instance is likely to
+-- be modified or removed in future.
+instance Ord a => ToGraph (UG.Graph a) where
+    type ToVertex (UG.Graph a) = a
+    toGraph = UG.toGraph
+    foldg   = UG.foldg
+    hasEdge = UG.hasEdge
 
 -- | See "Algebra.Graph.AdjacencyMap".
 instance Ord a => ToGraph (AM.AdjacencyMap a) where

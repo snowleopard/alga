@@ -22,7 +22,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Undirected (
     -- * Algebraic data type for graphs
-    Graph,
+    Graph, toGraph,
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
@@ -171,7 +171,7 @@ compatible with 'overlay' and 'connect' operations:
 x     <= x + y
 x + y <= x * y@
 -}
-newtype Graph a = UG (G.Graph a)
+newtype Graph a = UG { toGraph :: G.Graph a }
              deriving (Generic, NFData)
 
 instance (Show a, Ord a) => Show (Graph a) where
@@ -910,4 +910,4 @@ neighbours x = SR.neighbours x . toSymmetricRelation
 -- consistent ('stars' xs)    == True
 -- @
 consistent :: Ord a => Graph a -> Bool
-consistent (UG g) = g == G.transpose g
+consistent (UG g) = UG g == (UG $ G.transpose g)

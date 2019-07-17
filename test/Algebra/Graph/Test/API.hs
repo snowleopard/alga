@@ -17,7 +17,7 @@ module Algebra.Graph.Test.API (
     API (..), Mono (..), toIntAPI,
 
     -- * APIs of various graph data types
-    adjacencyMapAPI, adjacencyIntMapAPI, graphAPI, relationAPI,
+    adjacencyMapAPI, adjacencyIntMapAPI, graphAPI, undirectedGraphAPI, relationAPI,
     symmetricRelationAPI, labelledGraphAPI, labelledAdjacencyMapAPI
     ) where
 
@@ -31,6 +31,7 @@ import Data.Tree
 import Test.QuickCheck
 
 import qualified Algebra.Graph                                as G
+import qualified Algebra.Graph.Undirected                     as UG
 import qualified Algebra.Graph.AdjacencyIntMap                as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Algorithm      as AIM
 import qualified Algebra.Graph.AdjacencyMap                   as AM
@@ -285,6 +286,72 @@ graphAPI = API
     , simplify                   = G.simplify
     , compose                    = G.compose
     , box                        = G.box }
+
+-- | The API of 'UG.Graph.
+undirectedGraphAPI :: API UG.Graph Ord
+undirectedGraphAPI = API
+    { empty                      = UG.empty
+    , vertex                     = UG.vertex
+    , edge                       = UG.edge
+    , overlay                    = UG.overlay
+    , connect                    = UG.connect
+    , vertices                   = UG.vertices
+    , edges                      = UG.edges
+    , overlays                   = UG.overlays
+    , connects                   = UG.connects
+    , toGraph                    = T.toGraph
+    , foldg                      = UG.foldg
+    , isSubgraphOf               = UG.isSubgraphOf
+    , isEmpty                    = UG.isEmpty
+    , size                       = G.size . T.toGraph
+    , hasVertex                  = UG.hasVertex
+    , hasEdge                    = UG.hasEdge
+    , vertexCount                = UG.vertexCount
+    , edgeCount                  = UG.edgeCount
+    , vertexList                 = UG.vertexList
+    , edgeList                   = UG.edgeList
+    , vertexSet                  = UG.vertexSet
+    , vertexIntSet               = T.vertexIntSet
+    , edgeSet                    = UG.edgeSet
+    , preSet                     = T.preSet
+    , preIntSet                  = T.preIntSet
+    , postSet                    = T.postSet
+    , postIntSet                 = T.postIntSet
+    , neighbours                 = UG.neighbours
+    , adjacencyList              = UG.adjacencyList
+    , adjacencyMap               = T.adjacencyMap
+    , adjacencyIntMap            = T.adjacencyIntMap
+    , adjacencyMapTranspose      = T.adjacencyMapTranspose
+    , adjacencyIntMapTranspose   = T.adjacencyIntMapTranspose
+    , dfsForest                  = T.dfsForest
+    , dfsForestFrom              = T.dfsForestFrom
+    , dfs                        = T.dfs
+    , reachable                  = T.reachable
+    , topSort                    = T.topSort
+    , isAcyclic                  = T.isAcyclic
+    , toAdjacencyMap             = T.toAdjacencyMap
+    , toAdjacencyIntMap          = T.toAdjacencyIntMap
+    , toAdjacencyMapTranspose    = T.toAdjacencyMapTranspose
+    , toAdjacencyIntMapTranspose = T.toAdjacencyIntMapTranspose
+    , isDfsForestOf              = T.isDfsForestOf
+    , isTopSortOf                = T.isTopSortOf
+    , path                       = UG.path
+    , circuit                    = UG.circuit
+    , clique                     = UG.clique
+    , biclique                   = UG.biclique
+    , star                       = UG.star
+    , stars                      = UG.stars
+    , tree                       = UG.tree
+    , forest                     = UG.forest
+    , removeVertex               = UG.removeVertex
+    , removeEdge                 = UG.removeEdge
+    , replaceVertex              = UG.replaceVertex
+    , mergeVertices              = UG.mergeVertices
+    , transpose                  = id
+    , gmap                       = fmap
+    , induce                     = UG.induce
+    , induceJust                 = UG.induceJust
+    , consistent                 = UG.consistent }
 
 -- | The API of 'AIM.AdjacencyIntMap'.
 adjacencyIntMapAPI :: API (Mono AIM.AdjacencyIntMap) ((~) Int)

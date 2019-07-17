@@ -738,7 +738,7 @@ testSymmetricToGraphDefault (prefix, API{..}) = do
           hasVertex x y              == foldg False (==x) (||) (||) y
 
     test "hasEdge x y                == Algebra.Graph.hasEdge x y . toGraph" $ \x y z ->
-          hasEdge x y z              == (G.hasEdge x y . toGraph) z
+          hasEdge x y z              == ((G.hasEdge x y . toGraph) z) || ((G.hasEdge y x . toGraph) z)
 
     test "vertexCount                == Set.size . vertexSet" $ \x ->
           vertexCount x              == (Set.size . vertexSet) x
