@@ -342,9 +342,13 @@ instance Ord a => ToGraph (G.Graph a) where
 -- be modified or removed in future.
 instance Ord a => ToGraph (UG.Graph a) where
     type ToVertex (UG.Graph a) = a
-    toGraph = UG.toGraph
-    foldg   = UG.foldg
-    hasEdge = UG.hasEdge
+    toGraph                    = UG.toGraph
+    foldg                      = UG.foldg
+    hasEdge                    = UG.hasEdge
+    toAdjacencyMap             = toAdjacencyMap . UG.toSymmetricRelation
+    toAdjacencyIntMap          = toAdjacencyIntMap . UG.toSymmetricRelation
+    toAdjacencyMapTranspose    = toAdjacencyMap
+    toAdjacencyIntMapTranspose = toAdjacencyIntMap
 
 -- | See "Algebra.Graph.AdjacencyMap".
 instance Ord a => ToGraph (AM.AdjacencyMap a) where

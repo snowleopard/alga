@@ -42,7 +42,7 @@ module Algebra.Graph.Undirected (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices,
-    induce, induceJust,
+    induce, induceJust, toSymmetricRelation,
 
     -- * Miscellaneous
     consistent
