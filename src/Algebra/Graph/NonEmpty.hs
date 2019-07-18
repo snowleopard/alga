@@ -825,7 +825,6 @@ transpose = foldg1 vertex overlay (flip connect)
 "transpose/clique1"   forall xs. transpose (clique1 xs) = clique1 (NonEmpty.reverse xs)
  #-}
 
--- TODO: Implement via 'induceJust1' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate. Returns @Nothing@ if the
 -- resulting graph is empty.
@@ -839,12 +838,7 @@ transpose = foldg1 vertex overlay (flip connect)
 -- induce1 p '>=>' induce1 q == induce1 (\\x -> p x && q x)
 -- @
 induce1 :: (a -> Bool) -> Graph a -> Maybe (Graph a)
-induce1 p = foldg1
-    (\x -> if p x then Just (Vertex x) else Nothing) (k Overlay) (k Connect)
-  where
-    k _ Nothing  a        = a
-    k _ a        Nothing  = a
-    k f (Just a) (Just b) = Just (f a b)
+induce1 p = induceJust1 . fmap (\x -> if p x then Just x else Nothing)
 
 -- | Construct the /induced subgraph/ of a given graph by removing the vertices
 -- that are 'Nothing'. Returns 'Nothing' if the resulting graph is empty.

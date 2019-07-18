@@ -990,7 +990,6 @@ transpose :: Graph a -> Graph a
 transpose = foldg Empty Vertex Overlay (flip Connect)
 {-# INLINE transpose #-}
 
--- TODO: Implement via 'induceJust' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
@@ -1004,11 +1003,7 @@ transpose = foldg Empty Vertex Overlay (flip Connect)
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: (a -> Bool) -> Graph a -> Graph a
-induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Connect)
-  where
-    k _ x     Empty = x -- Constant folding to get rid of Empty leaves
-    k _ Empty y     = y
-    k f x     y     = f x y
+induce p = induceJust . fmap (\x -> if p x then Just x else Nothing)
 {-# INLINE [1] induce #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the vertices
@@ -1198,7 +1193,7 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
   build's unfolding) else we'd get an infinite loop in the rules. Hence the
   activation control below.
 
-* composeR and matchR are here to remember the original function after applying
+* composeR, matchR and maybeR are here to remember the original function after applying
   a "buildR/f" rule. These functions are higher-order functions and therefore
   benefit from inlining in the final phase.
 
@@ -1219,6 +1214,10 @@ matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
 matchR e v p = \x -> if p x then v x else e
 {-# INLINE [0] matchR #-}
 
+maybeR :: b -> (a -> b) -> Maybe a -> b 
+maybeR = maybe
+{-# INLINE [0] maybeR #-}
+
 -- These rules transform functions into their buildR equivalents.
 {-# RULES
 "buildR/bindR" forall f g.
@@ -1226,6 +1225,9 @@ matchR e v p = \x -> if p x then v x else e
 
 "buildR/induce" [~1] forall p g.
     induce p g = buildR (\e v o c -> foldg e (matchR e v p) o c g)
+
+"buildR/induceJust" [~1] forall g.
+    induceJust g = buildR (\e v o c -> foldg e (maybeR e v) o c g)
 
 "buildR/foldg(fc)" [~1] forall (f :: forall b. (b -> b -> b) -> (b -> b -> b)) g.
     foldg Empty Vertex Overlay (f Connect) g = buildR (\e v o c -> foldg e v o (f c) g)
@@ -1257,6 +1259,9 @@ matchR e v p = \x -> if p x then v x else e
 {-# RULES
 "graph/induce" [1] forall f.
     foldg Empty (matchR Empty Vertex f) Overlay Connect = induce f
+
+"graph/induceJust" [1]
+    foldg Empty (maybeR Empty Vertex) Overlay Connect = induceJust
  #-}
 
 -- 'Focus' on a specified subgraph.
