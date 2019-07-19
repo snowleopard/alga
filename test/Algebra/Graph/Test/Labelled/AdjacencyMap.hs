@@ -177,7 +177,7 @@ testLabelledAdjacencyMap = do
     test "isSubgraphOf x (connect e x y)   ==  True" $ \(e :: S) (x :: LAS) (y :: LAS) ->
           isSubgraphOf x (connect e x y)   ==  True
 
-    test "isSubgraphOf x (connect e x y)   ==  True" $ \(e :: S) (x :: LAS) (y :: LAS) ->
+    test "isSubgraphOf y (connect e x y)   ==  True" $ \(e :: S) (x :: LAS) (y :: LAS) ->
           isSubgraphOf y (connect e x y)   ==  True
 
     test "isSubgraphOf x x   ==  True" $ \(x :: LAS) ->
