@@ -487,7 +487,7 @@ adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
 -- preSet 1 ('edge' 1 2) == Set.'Set.empty'
 -- preSet y ('edge' x y) == Set.'Set.fromList' [x]
 -- @
-preSet :: Ord a => a -> AdjacencyMap a -> Set.Set a
+preSet :: Ord a => a -> AdjacencyMap a -> Set a
 preSet x = Set.fromAscList . map fst . filter p  . Map.toAscList . adjacencyMap
   where
     p (_, set) = x `Set.member` set
@@ -804,6 +804,7 @@ compose x y = fromAdjacencySets
 --                                       , ((0,\'b\'), (1,\'b\'))
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
+--
 -- Up to an isomorphism between the resulting vertex types, this operation
 -- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
 -- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
