@@ -24,11 +24,14 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
     AdjacencyMap, fromAcyclic,
 
     -- * Basic graph construction primitives
-    empty, vertex, vertices, disjointOverlay, disjointConnect,
+    empty, vertex, vertices, union, join,
+
+    -- * Relations on graphs
+    isSubgraphOf,
 
     -- * Graph properties
-    isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList,
-    edgeList, adjacencyList, vertexSet, edgeSet,
+    isEmpty, hasVertex, hasEdge, vertexCount, edgeCount, vertexList, edgeList,
+    adjacencyList, vertexSet, edgeSet,
 
     -- * Graph transformation
     removeVertex, removeEdge, transpose, induce,
@@ -57,52 +60,57 @@ import qualified Algebra.Graph.AdjacencyMap           as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap  as NAM
 import qualified Data.Graph.Typed                     as Typed
+import qualified Data.Map                             as Map
+import qualified Data.Set                             as Set
 
 {-| The 'AdjacencyMap' data type represents an acyclic graph by a map of
 vertices to their adjacency sets. Although the internal representation allows
 for cycles, the methods provided by this module cannot be used to construct a
 graph with cycles.
 
-We define a 'Num' instance as a convenient notation for working
-with graphs:
+We define a 'Num' instance as a convenient notation for constructing small
+acyclic graphs, and use this notation in the examples. To ensure the resulting
+graphs have no cycles we keep only edges @(x,y)@ where @x < y@. See the
+examples below:
 
-    > vertexList 1           == [1]
-    > edgeList   1           == []
-    > vertexList (1 + 2)     == [1,2]
-    > edgeList   (1 + 2)     == []
-    > vertexList (1 * 2)     == [1,2]
-    > edgeList   (1 * 2)     == [(1,2)]
-    > vertexList (1 * 2 * 1) == [1,2]
-    > edgeList   (1 * 2 * 1) == [(1,2)]
+    > edgeList 1           == []
+    > edgeList (1 + 2)     == []
+    > edgeList (1 * 2)     == [(1,2)]
+    > edgeList (2 * 1)     == []
+    > edgeList (1 * 2 * 1) == [(1,2)]
+    > edgeList (1 * 2 * 3) == [(1,2), (1,3), (2,3)]
 
-In the `Num` operations, we only keep edges that align with the order
-of integers. Ie. Edges can only be formed from vertex numbered /a/
-to a vertex numbered /b/ if and only if /a/ \< /b/:
+__Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
+which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
+additive and multiplicative identities, and 'negate' as additive inverse.
+Nevertheless, overloading 'fromInteger', '+' and '*' is very convenient when
+working with algebraic graphs; we hope that in future Haskell's Prelude will
+provide a more fine-grained class hierarchy for algebraic structures, which we
+would be able to utilise without violating any laws.
 
-  > edgeList (1 * 2) == [(1,2)]
-  > edgeList (2 * 1) == []
-  > (2 * 1)          == (2 + 1)
-
-__Note:__ the 'Num' instance does not satisfy several "customary laws"
-of 'Num', which dictate that 'fromInteger' @0@ and 'fromInteger' @1@
-should act as additive and multiplicative identities, and 'negate' as
-additive inverse. Nevertheless, overloading 'fromInteger', '+' and '*'
-is very convenient when working with algebraic graphs; we hope that
-in future Haskell's Prelude will provide a more fine-grained class
-hierarchy for algebraic structures, which we would be able to utilise
-without violating any laws.
-
-The 'Show' instance is defined using toAcyclic and the consutruction
-primitives of 'AM.AdjacencyMap':
+The 'Show' instance is defined using basic graph construction primitives where
+possible, falling back to 'toAcyclic' and "Algebra.Graph.AdjacencyMap"
+otherwise:
 
 @
-show empty       == "fromJust . toAcyclic $ empty"
-show 1           == "fromJust . toAcyclic $ vertex 1"
-show (1 + 2)     == "fromJust . toAcyclic $ vertices [1,2]"
-show (1 * 2)     == "fromJust . toAcyclic $ edge 1 2"
-show (1 * 2 * 3) == "fromJust . toAcyclic $ edges [(1,2),(1,3),(2,3)]"
-show (1 * 2 + 3) == "fromJust . toAcyclic $ overlay (vertex 3) (edge 1 2)"
+show empty       == "empty"
+show 1           == "vertex 1"
+show (1 + 2)     == "vertices [1,2]"
+show (1 * 2)     == "(fromJust . toAcyclic) (edge 1 2)"
+show (1 * 2 * 3) == "(fromJust . toAcyclic) (edges [(1,2),(1,3),(2,3)])"
+show (1 * 2 + 3) == "(fromJust . toAcyclic) (overlay (vertex 3) (edge 1 2))"
 @
+
+The total order on graphs is defined using /size-lexicographic/ comparison:
+
+* Compare the number of vertices. In case of a tie, continue.
+* Compare the sets of vertices. In case of a tie, continue.
+* Compare the number of edges. In case of a tie, continue.
+* Compare the sets of edges.
+
+Note that the resulting order refines the 'isSubgraphOf' relation:
+
+@'isSubgraphOf' x y ==> x <= y@
 -}
 
 -- TODO: Improve the Show instance.
@@ -111,35 +119,46 @@ newtype AdjacencyMap a = AAM {
     -- Complexity: /O(1)/ time and memory.
     --
     -- @
-    -- fromAcyclic (1 * 2 + 3 * 4) == AdjacencyMap.'AM.edges' [(1,2), (3,4)]
-    -- 'AM.vertexCount' . fromAcyclic   == 'vertexCount'
-    -- 'AM.edgeCount'   . fromAcyclic   == 'edgeCount'
+    -- fromAcyclic 'empty'         == AdjacencyMap.'AM.empty'
+    -- fromAcyclic 'vertex'        == AdjacencyMap.'AM.vertex'
+    -- fromAcyclic (1 * 3 * 2)   == AdjacencyMap.'AM.star' 1 [2,3]
+    -- 'AM.vertexCount' . fromAcyclic == 'vertexCount'
+    -- 'AM.edgeCount'   . fromAcyclic == 'edgeCount'
+    -- 'AM.isAcyclic'   . fromAcyclic == 'const' True
     -- @
     fromAcyclic :: AM.AdjacencyMap a
     } deriving (Eq, Ord)
 
 instance (Ord a, Show a) => Show (AdjacencyMap a) where
-    show x = "fromMaybe empty . toAcyclic $ " ++ show (fromAcyclic x)
+    showsPrec p aam@(AAM am)
+        | null vs    = showString "empty"
+        | null es    = showParen (p > 10) $ vshow vs
+        | otherwise  = showParen (p > 10) $ showString "(fromJust . toAcyclic) ("
+                     . shows am . showString ")"
+      where
+        vs             = vertexList aam
+        es             = edgeList aam
+        vshow [x]      = showString "vertex "   . showsPrec 11 x
+        vshow xs       = showString "vertices " . showsPrec 11 xs
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap' for
 -- more details.
 instance (Ord a, Num a) => Num (AdjacencyMap a) where
     fromInteger       = AAM . fromInteger
-    (AAM x) + (AAM y) = AAM $ induceEAM (uncurry (<)) (x + y)
-    (AAM x) * (AAM y) = AAM $ induceEAM (uncurry (<)) (x * y)
+    (AAM x) + (AAM y) = AAM $ induceEAM (<) (x + y)
+    (AAM x) * (AAM y) = AAM $ induceEAM (<) (x * y)
     signum            = const empty
     abs               = id
     negate            = id
 
--- | Construct the /empty acyclic graph/.
+-- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- isEmpty 'empty'                         == True
--- isEmpty ('vertex' x)                    == False
--- isEmpty ('disjointOverlay' 'empty' 'empty') == True
--- isEmpty ('removeVertex' x $ 'vertex' x)   == True
--- isEmpty ('removeEdge' 1 2 $ 1 * 2)      == False
+-- 'isEmpty'     empty == True
+-- 'hasVertex' x empty == False
+-- 'vertexCount' empty == 0
+-- 'edgeCount'   empty == 0
 -- @
 empty :: AdjacencyMap a
 empty = coerce AM.empty
@@ -170,31 +189,41 @@ vertex = coerce AM.vertex
 vertices :: Ord a => [a] -> AdjacencyMap a
 vertices = coerce AM.vertices
 
--- | Perform a disjoint overlay of two different acyclic graphs.
+-- | Construct the disjoint /union/ of two graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- 'isEmpty'               (disjointOverlay x y) == 'isEmpty' x && 'isEmpty' y
--- 'hasVertex'   ('Left'  x) (disjointOverlay y z) == 'hasVertex' x y
--- 'hasVertex'   ('Right' x) (disjointOverlay y z) == 'hasVertex' x z
--- 'vertexCount'           (disjointOverlay x y) == 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'             (disjointOverlay x y) == 'edgeCount' x + 'edgeCount' y
+-- 'vertexSet' (union x y) == Set.'Set.union' (Set.'Set.map' 'Left'              ('vertexSet' x)) (Set.'Set.map' 'Right'               ('vertexSet' y))
+-- 'edgeSet'   (union x y) == Set.'Set.union' (Set.'Set.map' ('Data.Bifunctor.bimap' 'Left' 'Left') ('edgeSet'   x)) (Set.'Set.map' ('Data.Bifunctor.bimap' 'Right' 'Right') ('edgeSet'   y))
 -- @
-disjointOverlay :: (Ord a, Ord b) => AdjacencyMap a -> AdjacencyMap b -> AdjacencyMap (Either a b)
-disjointOverlay (AAM x) (AAM y) = AAM $ AM.overlay (AM.gmap Left x) (AM.gmap Right y)
+union :: (Ord a, Ord b) => AdjacencyMap a -> AdjacencyMap b -> AdjacencyMap (Either a b)
+union (AAM x) (AAM y) = AAM $ AM.overlay (AM.gmap Left x) (AM.gmap Right y)
 
--- | Perform a disjoint connect of two different acyclic graphs.
+-- | Construct the /join/ of two graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
--- 'isEmpty'               (disjointConnect x y) == 'isEmpty' x && 'isEmpty' y
--- 'hasVertex'   ('Left'  x) (disjointConnect y z) == 'hasVertex' x y
--- 'hasVertex'   ('Right' x) (disjointConnect y z) == 'hasVertex' x z
--- 'vertexCount'           (disjointConnect x y) == 'vertexCount' x + 'vertexCount' y
--- 'edgeCount'             (disjointConnect x y) == 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
+-- 'vertexSet' (join x y) == Set.'Set.union' (Set.'Set.map' 'Left' ('vertexSet' x)) (Set.'Set.map' 'Right' ('vertexSet' y))
+-- 'edgeSet'   (join x y) == Set.'Set.unions' [ Set.'Set.map' ('Data.Bifunctor.bimap' 'Left'  'Left' ) ('edgeSet' x)
+--                                    , Set.'Set.map' ('Data.Bifunctor.bimap' 'Right' 'Right') ('edgeSet' y)
+--                                    , Set.'Set.map' ('Data.Bifunctor.bimap' 'Left'  'Right') (Set.'Set.cartesianProduct' ('vertexSet' x) ('vertexSet' y)) ]
 -- @
-disjointConnect :: (Ord a, Ord b) => AdjacencyMap a -> AdjacencyMap b -> AdjacencyMap (Either a b)
-disjointConnect (AAM a) (AAM b) = AAM $ AM.connect (AM.gmap Left a) (AM.gmap Right b)
+join :: (Ord a, Ord b) => AdjacencyMap a -> AdjacencyMap b -> AdjacencyMap (Either a b)
+join (AAM a) (AAM b) = AAM $ AM.connect (AM.gmap Left a) (AM.gmap Right b)
+
+-- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
+-- first graph is a /subgraph/ of the second.
+-- Complexity: /O((n + m) * log(n))/ time.
+--
+-- @
+-- isSubgraphOf 'empty'        x                     ==  True
+-- isSubgraphOf ('vertex' x)   'empty'                 ==  False
+-- isSubgraphOf ('induce' p x) x                     ==  True
+-- isSubgraphOf x            ('transitiveClosure' x) ==  True
+-- isSubgraphOf x y                                ==> x <= y
+-- @
+isSubgraphOf :: Ord a => AdjacencyMap a -> AdjacencyMap a -> Bool
+isSubgraphOf = coerce AM.isSubgraphOf
 
 -- | Compute the /condensation/ of a graph, where each vertex
 -- corresponds to a /strongly-connected component/ of the original
@@ -294,8 +323,7 @@ type PartialOrder a = a -> a -> Bool
 -- fromGraph (<) (1 * 2 + 2 * 1) == 1 * 2
 -- @
 fromGraph :: Ord a => PartialOrder a -> Graph a -> AdjacencyMap a
-fromGraph o =
-  AAM . induceEAM (uncurry o) . foldg AM.empty AM.vertex AM.overlay AM.connect
+fromGraph o = AAM . induceEAM o . foldg AM.empty AM.vertex AM.overlay AM.connect
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -448,18 +476,14 @@ induce = coerce AM.induce
 -- toAcyclic (AdjacencyMap.'AM.path' [1, 2, 1]) == Nothing
 -- toAcyclic (AdjacencyMap.'AM.path' [1, 2, 3]) == Just (1 * 2 + 2 * 3)
 -- @
-toAcyclic :: (Ord a) => AM.AdjacencyMap a -> Maybe (AdjacencyMap a)
+toAcyclic :: Ord a => AM.AdjacencyMap a -> Maybe (AdjacencyMap a)
 toAcyclic x = if AM.isAcyclic x then Just (AAM x) else Nothing
 
--- Helper function, not to be exported.
--- Induce a subgraph from AM.AdjacencyList removing edges not
--- following the given predicate.
-induceEAM ::
-     (Ord a) => ((a, a) -> Bool) -> AM.AdjacencyMap a -> AM.AdjacencyMap a
-induceEAM p m = es m `AM.overlay` vs m
-  where
-    es = AM.edges . filter p . AM.edgeList
-    vs = AM.vertices . AM.vertexList
+-- TODO: Provide a faster equivalent in "Algebra.Graph.AdjacencyMap".
+-- Keep only the edges that satisfy a given predicate.
+induceEAM :: Ord a => (a -> a -> Bool) -> AM.AdjacencyMap a -> AM.AdjacencyMap a
+induceEAM p m = AM.fromAdjacencySets
+    [ (a, Set.filter (p a) bs) | (a, bs) <- Map.toList (AM.adjacencyMap m) ]
 
 -- | Constructs an acyclic graph from any graph based on
 -- the order of vertices to produce an acyclic graph.
@@ -490,7 +514,7 @@ induceEAM p m = es m `AM.overlay` vs m
 -- toAcyclicOrd                 == fromGraph (<) . toGraph
 -- @
 toAcyclicOrd :: Ord a => AM.AdjacencyMap a -> AdjacencyMap a
-toAcyclicOrd = AAM . induceEAM (uncurry (<))
+toAcyclicOrd = AAM . induceEAM (<)
 
 -- | Compute the /transitive closure/ of a graph.
 -- Complexity: /O(n * m * log(n)^2)/ time.
@@ -513,7 +537,7 @@ transitiveClosure = coerce AM.transitiveClosure
 -- consistent 'empty'                 == True
 -- consistent ('vertex' x)            == True
 -- consistent ('disjointOverlay' x y) == True
--- consistent ('disjointConnect' x y) == True
+-- consistent ('join' x y) == True
 -- consistent ('vertices' x)          == True
 -- consistent ('box' x y)             == True
 -- consistent ('transitiveClosure' x) == True

@@ -96,15 +96,13 @@ The 'Eq' instance satisfies all axioms of algebraic graphs:
         >       x + y == y + x
         > x + (y + z) == (x + y) + z
 
-    * 'connect' is associative and has
-    'empty' as the identity:
+    * 'connect' is associative and has 'empty' as the identity:
 
         >   x * empty == x
         >   empty * x == x
         > x * (y * z) == (x * y) * z
 
-    * 'connect' distributes over
-    'overlay':
+    * 'connect' distributes over 'overlay':
 
         > x * (y + z) == x * y + x * z
         > (x + y) * z == x * z + y * z
@@ -115,8 +113,7 @@ The 'Eq' instance satisfies all axioms of algebraic graphs:
 
 The following useful theorems can be proved from the above set of axioms.
 
-    * 'overlay' has 'empty'
-    as the identity and is idempotent:
+    * 'overlay' has 'empty' as the identity and is idempotent:
 
         >   x + empty == x
         >   empty + x == x
@@ -146,9 +143,8 @@ Here are a few examples:
 'edge' 1 2 < 'edge' 1 1 + 'edge' 2 2
 'edge' 1 2 < 'edge' 1 3@
 
-Note that the resulting order refines the 'isSubgraphOf'
-relation and is compatible with 'overlay' and
-'connect' operations:
+Note that the resulting order refines the 'isSubgraphOf' relation and is
+compatible with 'overlay' and 'connect' operations:
 
 @'isSubgraphOf' x y ==> x <= y@
 
@@ -180,9 +176,9 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
         | null vs    = showString "empty"
         | null es    = showParen (p > 10) $ vshow vs
         | vs == used = showParen (p > 10) $ eshow es
-        | otherwise  = showParen (p > 10) $
-                           showString "overlay (" . vshow (vs \\ used) .
-                           showString ") (" . eshow es . showString ")"
+        | otherwise  = showParen (p > 10) $ showString "overlay ("
+                     . vshow (vs \\ used) . showString ") ("
+                     . eshow es . showString ")"
       where
         vs             = vertexList am
         es             = edgeList am
