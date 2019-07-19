@@ -90,11 +90,11 @@ testAcyclicLabelledAdjacencyMap = do
 
   putStrLn $ "\n======= Acyclic.Labelled.AdjacencyMap.isSubgraphOf ======="
   test "isSubgraphOf empty      x                     == True" $ \x ->
-        isSubgraphOf (empty :: LAS)      x            == True
+        isSubgraphOf (empty :: LAD)      x            == True
   test "isSubgraphOf (vertex x) empty                 == False" $ \x ->
-        isSubgraphOf (vertex x) (empty :: LAS)        == False
-  test "isSubgraphOf x y                              == > x <= y" $ \x y ->
-        (not $ isSubgraphOf (x :: LAS) y) || (x <= y)
+        isSubgraphOf (vertex x) (empty :: LAD)        == False
+  test "isSubgraphOf x y                              == > x <= y" $ \(x :: LAD) (y :: LAD) ->
+        (not $ isSubgraphOf x y) || (x <= y)
 
   putStrLn $ "\n======= Acyclic.Labelled.AdjacencyMap.isEmpty ======="
   test "isEmpty empty                              == True" $
@@ -222,7 +222,7 @@ testAcyclicLabelledAdjacencyMap = do
   test "induce p . induce q                  == induce (\\x -> p x && q x)" $ \(apply -> p) (apply -> q) y ->
         (induce p . induce q) (y :: LAS)     == induce (\x -> p x && q x) y
   test "isSubgraphOf (induce p x) x          == True" $ \(apply -> p) x ->
-        isSubgraphOf (induce p x) (x :: LAS) == True
+        isSubgraphOf (induce p x) (x :: LAD) == True
 
   putStrLn $ "\n======= Acyclic.Labelled.AdjacencyMap.induceJust ======="
   test "induceJust (vertex Nothing)                == empty" $
