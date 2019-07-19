@@ -161,26 +161,26 @@ testLabelledAdjacencyMap = do
           overlay (fromAdjacencyMaps xs) (fromAdjacencyMaps ys) == (fromAdjacencyMaps (xs ++ ys) :: LAS)
 
     putStrLn "\n============ Labelled.AdjacencyMap.isSubgraphOf ============"
-    test "isSubgraphOf empty      x     ==  True" $ \(x :: LAS) ->
+    test "isSubgraphOf empty      x     ==  True" $ \(x :: LAD) ->
           isSubgraphOf empty      x     ==  True
 
     test "isSubgraphOf (vertex x) empty ==  False" $ \(x :: Int) ->
-          isSubgraphOf (vertex x)(empty :: LAS)==  False
+          isSubgraphOf (vertex x)(empty :: LAD)==  False
 
     test "isSubgraphOf x y              ==> x <= y" $ \(x :: LAD) z ->
         let y = x + z -- Make sure we hit the precondition
         in isSubgraphOf x y             ==> x <= y
 
-    test "isSubgraphOf x (overlay x y)   ==  True" $ \(x :: LAS) (y :: LAS) ->
+    test "isSubgraphOf x (overlay x y)   ==  True" $ \(x :: LAD) (y :: LAD) ->
           isSubgraphOf x (overlay x y)   ==  True
 
-    test "isSubgraphOf x (connect e x y)   ==  True" $ \(e :: S) (x :: LAS) (y :: LAS) ->
+    test "isSubgraphOf x (connect e x y)   ==  True" $ \(e :: D) (x :: LAD) (y :: LAD) ->
           isSubgraphOf x (connect e x y)   ==  True
 
-    test "isSubgraphOf y (connect e x y)   ==  True" $ \(e :: S) (x :: LAS) (y :: LAS) ->
+    test "isSubgraphOf y (connect e x y)   ==  True" $ \(e :: D) (x :: LAD) (y :: LAD) ->
           isSubgraphOf y (connect e x y)   ==  True
 
-    test "isSubgraphOf x x   ==  True" $ \(x :: LAS) ->
+    test "isSubgraphOf x x   ==  True" $ \(x :: LAD) ->
           isSubgraphOf x x   ==  True
 
     putStrLn "\n============ Labelled.AdjacencyMap.isEmpty ============"

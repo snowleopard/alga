@@ -304,8 +304,8 @@ fromAdjacencyMaps xs = AM $ trimZeroes $ Map.unionWith mappend vs es
 -- isSubgraphOf x ('connect' e x y) ==  True
 -- isSubgraphOf y ('connect' e x y) ==  True
 -- @
-isSubgraphOf :: (Eq e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
-isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy le x y
+isSubgraphOf :: (Eq e, Dioid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
+isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy (Map.isSubmapOfBy le) x y
   where
     le x y = mappend x y == y
 
