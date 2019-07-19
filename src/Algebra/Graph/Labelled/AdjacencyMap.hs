@@ -296,9 +296,13 @@ fromAdjacencyMaps xs = AM $ trimZeroes $ Map.unionWith mappend vs es
 -- graph can be quadratic with respect to the expression size /s/.
 --
 -- @
--- isSubgraphOf 'empty'      x     ==  True
--- isSubgraphOf ('vertex' x) 'empty' ==  False
--- isSubgraphOf x y              ==> x <= y
+-- isSubgraphOf 'empty'      x      ==  True
+-- isSubgraphOf ('vertex' x) 'empty'  ==  False
+-- isSubgraphOf x y               ==> x <= y
+-- isSubgraphOf x x               ==  True
+-- isSubgraphOf x ('overlay' x y)   ==  True
+-- isSubgraphOf x ('connect' e x y) ==  True
+-- isSubgraphOf y ('connect' e x y) ==  True
 -- @
 isSubgraphOf :: (Eq e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
 isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy Map.isSubmapOf x y

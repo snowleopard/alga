@@ -171,6 +171,18 @@ testLabelledAdjacencyMap = do
         let y = x + z -- Make sure we hit the precondition
         in isSubgraphOf x y             ==> x <= y
 
+    test "isSubgraphOf x (overlay x y)   ==  True" $ \(x :: LAS) (y :: LAS) ->
+          isSubgraphOf x (overlay x y)   ==  True
+
+    test "isSubgraphOf x (connect e x y)   ==  True" $ \(e :: S) (x :: LAS) (y :: LAS) ->
+          isSubgraphOf x (connect e x y)   ==  True
+
+    test "isSubgraphOf x (connect e x y)   ==  True" $ \(e :: S) (x :: LAS) (y :: LAS) ->
+          isSubgraphOf y (connect e x y)   ==  True
+
+    test "isSubgraphOf x x   ==  True" $ \(x :: LAS) ->
+          isSubgraphOf x x   ==  True
+
     putStrLn "\n============ Labelled.AdjacencyMap.isEmpty ============"
     test "isEmpty empty                         == True" $
           isEmpty empty                         == True
