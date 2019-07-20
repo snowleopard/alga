@@ -15,6 +15,7 @@ topSort :: (Ord a) => AdjacencyMap e a -> [a]
 topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 
 -- TODO: Add time complexity
+-- TODO: Add examples using 'Optimum' data type
 -- | Compute the /shortest path/ to each vertex in the graph
 -- from a given source vertex.
 --
@@ -24,8 +25,8 @@ topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 -- dijkstra ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.'Map.fromList' [('z', 0), ('a', Infinite), ('b', Infinite), ('c', Infinite)]
 -- dijkstra ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
 -- @
-dijkstra :: (Semiring e, Ord a) => AdjacencyMap e a -> a -> Map a e
-dijkstra am s = foldl (relaxVertex em) (initialize em) vL
+optimumPath :: (Semiring e, Ord a) => AdjacencyMap e a -> a -> Map a e
+optimumPath am s = foldl (relaxVertex em) (initialize em) vL
   where
     vL = dropWhile (/=s) $ topSort am
     em = (LAM.adjacencyMap . fromAcyclic) am

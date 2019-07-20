@@ -240,12 +240,13 @@ testAcyclicLabelledAdjacencyMap = do
   test "transitiveClosure . transitiveClosure     == transitiveClosure" $ \x ->
         (transitiveClosure . transitiveClosure) x == transitiveClosure (x :: LAD)
 
+testAcyclicLabelledAlgorithm :: IO ()
 testAcyclicLabelledAlgorithm = do
 
-  putStrLn "\n======= Acyclic.Labelled.Algorithm.dijkstra ======="
+  putStrLn "\n======= Acyclic.Labelled.Algorithm.optimumPath ======="
 
-  test "dijkstra (toAcyclicOrd $ edges [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.fromList [('z', 0), ('a', Infinite), ('b', Infinite), ('c', Infinite)]" $
-        dijkstra (toAcyclicOrd $ LAM.edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.fromList [('z', 0 :: D), ('a', zero), ('b', zero), ('c', zero)]
+  test "optimumPath (toAcyclicOrd $ edges [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.fromList [('z', 0), ('a', Infinite), ('b', Infinite), ('c', Infinite)]" $
+        optimumPath (toAcyclicOrd $ LAM.edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.fromList [('z', 0 :: D), ('a', zero), ('b', zero), ('c', zero)]
 
-  test "dijkstra (toAcyclicOrd $ edges [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.fromList [('a', 0), ('b', 1), ('c', 3)]" $
-        dijkstra (toAcyclicOrd $ LAM.edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.fromList [('a', 0 :: D), ('b', 1), ('c', 3)]
+  test "optimumPath (toAcyclicOrd $ edges [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.fromList [('a', 0), ('b', 1), ('c', 3)]" $
+        optimumPath (toAcyclicOrd $ LAM.edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.fromList [('a', 0 :: D), ('b', 1), ('c', 3)]
