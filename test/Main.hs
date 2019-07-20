@@ -20,13 +20,12 @@ import System.Environment
 -- you would like to execute only some specific testsuites, you can specify
 -- their names in the command line. For example:
 --
--- stack test --test-arguments "Graph SymmetricRelation"
+-- > stack test --test-arguments "Graph Symmetric.Relation"
 --
 -- will test the modules "Algebra.Graph" and "Algebra.Graph.Symmetric.Relation".
 main :: IO ()
 main = do
     selected <- getArgs
-    putStrLn (show selected)
     let go current = when (null selected || current `elem` selected)
     go "Acyclic.AdjacencyMap"   testAcyclicAdjacencyMap
     go "AdjacencyIntMap"        testAdjacencyIntMap
