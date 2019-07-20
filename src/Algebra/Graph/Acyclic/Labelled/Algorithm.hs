@@ -10,33 +10,25 @@ import Data.Maybe (fromMaybe)
 
 -- TODO: Replace this function with 'skeleton' from Acyclic.Labelled to remove the use of fromMaybe
 -- TODO: Make 'topSort' more efficient
+-- TODO: Add examples and tests
 topSort :: (Ord a) => AdjacencyMap e a -> [a]
 topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 
+-- TODO: Add time complexity
+-- | Compute the /shortest path/ to each vertex in the graph
+-- from a given source vertex.
+--
+-- The following examples assume that the edges are distances,
+-- ie. the edge 'Semiring' is 'Distance'.
+-- @
+-- dijkstra ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.'Map.fromList' [('z', 0), ('a', Infinite), ('b', Infinite), ('c', Infinite)]
+-- dijkstra ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
+-- @
 dijkstra :: (Semiring e, Ord a) => AdjacencyMap e a -> a -> Map a e
-dijkstra am s = foldl (relaxVertex em) (initialize em) vl
+dijkstra am s = foldl (relaxVertex em) (initialize em) vL
   where
-    vl = dropWhile (/=s) $ topSort am
+    vL = dropWhile (/=s) $ topSort am
     em = (LAM.adjacencyMap . fromAcyclic) am
     initialize = Map.insert s one . Map.map (const zero)
     relaxVertex em m v = Map.foldrWithKey (relaxEdge v) m (em ! v)
     relaxEdge v1 v2 e m = Map.insert v2 (((m ! v1) <.> e) <+> (m ! v2)) m
-
-{-
--- REPL Testing
-x = toAcyclicOrd $ LAM.edges
-  [ (4::Distance Int, 0, 1)
-  , (8, 0, 7)
-  , (11, 1, 7)
-  , (8, 1, 2)
-  , (7, 7, 8)
-  , (1, 7, 16)
-  , (6, 8, 16)
-  , (2, 2, 8)
-  , (4, 2, 25)
-  , (2, 16, 25)
-  , (14, 3, 25)
-  , (9, 3, 40)
-  , (10, 25, 40)
-  , (7, 2, 3)]
--}

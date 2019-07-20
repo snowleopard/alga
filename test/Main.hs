@@ -28,18 +28,18 @@ main :: IO ()
 main = do
     selected <- getArgs
     let go current = when (null selected || current `elem` selected)
-    go "AcyclicAdjacencyMap"   testAcyclicAdjacencyMap
-    go "AcyclicLabelledAdjacencyMap"   testAcyclicLabelledAdjacencyMap
-    go "AdjacencyIntMap"       testAdjacencyIntMap
-    go "AdjacencyMap"          testAdjacencyMap
-    go "BipartiteAdjacencyMap" testBipartiteAdjacencyMap
-    go "Export"                testExport
-    go "Graph"                 testGraph
-    go "Internal"              testInternal
-    go "LabelledAdjacencyMap"  testLabelledAdjacencyMap
-    go "LabelledGraph"         testLabelledGraph
-    go "NonEmptyAdjacencyMap"  testNonEmptyAdjacencyMap
-    go "NonEmptyGraph"         testNonEmptyGraph
-    go "Relation"              testRelation
-    go "SymmetricRelation"     testSymmetricRelation
-    go "Typed"                 testTyped
+    go "AcyclicAdjacencyMap"         testAcyclicAdjacencyMap
+    go "AcyclicLabelledAdjacencyMap" testAcyclicLabelledAdjacencyMap
+    go "AdjacencyIntMap"             testAdjacencyIntMap
+    go "AdjacencyMap"                testAdjacencyMap
+    go "BipartiteAdjacencyMap"       testBipartiteAdjacencyMap
+    go "Export"                      testExport
+    go "Graph"                       testGraph
+    go "Internal"                    testInternal
+    go "LabelledAdjacencyMap"        testLabelledAdjacencyMap
+    go "LabelledGraph"               testLabelledGraph
+    go "NonEmptyAdjacencyMap"        testNonEmptyAdjacencyMap
+    go "NonEmptyGraph"               testNonEmptyGraph
+    go "Relation"                    testRelation
+    go "SymmetricRelation"           testSymmetricRelation
+    go "Typed"                       testTyped

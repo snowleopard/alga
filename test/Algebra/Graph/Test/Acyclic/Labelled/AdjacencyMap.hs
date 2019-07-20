@@ -14,11 +14,14 @@ module Algebra.Graph.Test.Acyclic.Labelled.AdjacencyMap (
 import Data.Monoid
 
 import Algebra.Graph.Acyclic.Labelled.AdjacencyMap
+import Algebra.Graph.Acyclic.Labelled.Algorithm
 import Algebra.Graph.Test
 import Algebra.Graph.Label
 
 import qualified Data.List as List
 import qualified Data.Set as Set
+import qualified Data.Map as Map
+import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
 
 type S = Sum Int
 type D = Distance Int
@@ -29,6 +32,7 @@ type LAD = AdjacencyMap D   Int
 -- TODO: Switch to using generic tests.
 testAcyclicLabelledAdjacencyMap :: IO ()
 testAcyclicLabelledAdjacencyMap = do
+  testAcyclicLabelledAlgorithm
 
   putStrLn $ "\n======= Acyclic.Labelled.AdjacencyMap.consistent ======="
   test "consistent empty                            == True" $
@@ -235,3 +239,13 @@ testAcyclicLabelledAdjacencyMap = do
         transitiveClosure (vertex x)              == (vertex x :: LAD)
   test "transitiveClosure . transitiveClosure     == transitiveClosure" $ \x ->
         (transitiveClosure . transitiveClosure) x == transitiveClosure (x :: LAD)
+
+testAcyclicLabelledAlgorithm = do
+
+  putStrLn "\n======= Acyclic.Labelled.Algorithm.dijkstra ======="
+
+  test "dijkstra (toAcyclicOrd $ edges [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.fromList [('z', 0), ('a', Infinite), ('b', Infinite), ('c', Infinite)]" $
+        dijkstra (toAcyclicOrd $ LAM.edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.fromList [('z', 0 :: D), ('a', zero), ('b', zero), ('c', zero)]
+
+  test "dijkstra (toAcyclicOrd $ edges [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.fromList [('a', 0), ('b', 1), ('c', 3)]" $
+        dijkstra (toAcyclicOrd $ LAM.edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.fromList [('a', 0 :: D), ('b', 1), ('c', 3)]
