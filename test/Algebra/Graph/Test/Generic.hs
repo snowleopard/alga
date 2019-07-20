@@ -870,7 +870,7 @@ testHasVertex :: TestsuiteInt g -> IO ()
 testHasVertex (prefix, API{..}) = do
     putStrLn $ "\n============ " ++ prefix ++ "hasVertex ============"
     test "hasVertex x empty            == False" $ \x ->
-          hasVertex x empty          == False
+          hasVertex x empty            == False
 
     test "hasVertex x (vertex x)       == True" $ \x ->
           hasVertex x (vertex x)       == True
@@ -1520,10 +1520,13 @@ testInduceJust (prefix, API{..}) = do
     putStrLn $ "\n============ " ++ prefix ++ "induceJust ============"
     test "induceJust (vertex Nothing)                               == empty" $
           induceJust (vertex (Nothing :: Maybe Int))                == empty
+
     test "induceJust (edge (Just x) Nothing)                        == vertex x" $ \x ->
           induceJust (edge (Just x) (Nothing :: Maybe Int))         == vertex x
+
     test "induceJust . gmap Just                                    == id" $ \(x :: g Int) ->
          (induceJust . gmap Just) x                                 == id x
+
     test "induceJust . gmap (\\x -> if p x then Just x else Nothing) == induce p" $ \(x :: g Int) (apply -> p) ->
          (induceJust . gmap (\x -> if p x then Just x else Nothing)) x == induce p x
 

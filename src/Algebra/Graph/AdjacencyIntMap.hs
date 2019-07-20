@@ -754,7 +754,7 @@ gmap f = AM . IntMap.map (IntSet.map f) . IntMap.mapKeysWith IntSet.union f . ad
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(m)/ time, assuming that the predicate takes /O(1)/ to
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
 -- be evaluated.
 --
 -- @

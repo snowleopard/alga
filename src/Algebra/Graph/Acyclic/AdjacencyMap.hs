@@ -46,13 +46,12 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
     topSort, scc,
 
     -- * Conversion to acyclic graphs
-    fromGraph, PartialOrder, toAcyclic, toAcyclicOrd,
+    toAcyclic, toAcyclicOrd,
 
     -- * Miscellaneous
     consistent
     ) where
 
-import Algebra.Graph (Graph, foldg)
 import Data.Set (Set)
 import Data.Coerce (coerce)
 
@@ -145,8 +144,8 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
 -- more details.
 instance (Ord a, Num a) => Num (AdjacencyMap a) where
     fromInteger       = AAM . fromInteger
-    (AAM x) + (AAM y) = AAM $ induceEAM (<) (x + y)
-    (AAM x) * (AAM y) = AAM $ induceEAM (<) (x * y)
+    (AAM x) + (AAM y) = AAM $ filterEdges (<) (x + y)
+    (AAM x) * (AAM y) = AAM $ filterEdges (<) (x * y)
     signum            = const empty
     abs               = id
     negate            = id
@@ -412,7 +411,7 @@ transpose = coerce AM.transpose
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(m)/ time, assuming that the predicate takes /O(1)/ to
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
 -- be evaluated.
 --
 -- @
@@ -430,9 +429,8 @@ induce = coerce AM.induce
 -- Complexity: /O(n + m)/ time.
 --
 -- @
--- induceJust ('vertex' 'Nothing')   == 'empty'
--- induceJust . 'vertex' . 'Just'    == 'vertex'
--- 'isSubgraphOf' (induceJust x) x == True
+-- induceJust ('vertex' 'Nothing') == 'empty'
+-- induceJust . 'vertex' . 'Just'  == 'vertex'
 -- @
 induceJust :: Ord a => AdjacencyMap (Maybe a) -> AdjacencyMap a
 induceJust = coerce AM.induceJust
@@ -470,139 +468,90 @@ box = coerce AM.box
 -- @
 -- transitiveClosure 'empty'               == 'empty'
 -- transitiveClosure ('vertex' x)          == 'vertex' x
--- transitiveClosure (1 * 2 + 2 * 3)     == 1 * 2 + 2 * 3 + 1 * 3
+-- transitiveClosure (1 * 2 + 2 * 3)     == 1 * 2 + 1 * 3 + 2 * 3
 -- transitiveClosure . transitiveClosure == transitiveClosure
 -- @
 transitiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
 transitiveClosure = coerce AM.transitiveClosure
 
--- | Compute the /topological sort/ of a graph.
+-- | Compute a /topological sort/ of an acyclic graph.
 --
 -- @
--- topSort (1)         == [1]
--- topSort (1 * 2 * 3) == [1,2,3]
+-- topSort 'empty'                 == []
+-- topSort ('vertex' x)            == [x]
+-- topSort (1 * (2 + 4) + 3 * 4) == [3, 1, 4, 2]
+-- topSort ('join' x y)            == 'fmap' 'Left' (topSort x) ++ 'fmap' 'Right' (topSort y)
+-- topSort                       == 'Data.Maybe.fromJust' . topSort . 'fromAcyclic'
 -- @
 topSort :: (Ord a) => AdjacencyMap a -> [a]
 topSort (AAM am) = Typed.topSort (Typed.fromAdjacencyMap am)
 
--- | Compute the /condensation/ of a graph, where each vertex
--- corresponds to a /strongly-connected component/ of the original
--- graph. Note that component graphs are non-empty, and are therefore
--- of type "Algebra.Graph.NonEmpty.AdjacencyMap".
+-- | Compute the acyclic /condensation/ of a graph, where each vertex
+-- corresponds to a /strongly-connected component/ of the original graph. Note
+-- that component graphs are non-empty, and are therefore of type
+-- "Algebra.Graph.NonEmpty.AdjacencyMap".
 --
 -- @
--- scc        AdjacencyMap.'AM.empty'            == 'empty'
--- scc        (AdjacencyMap.'AM.vertex' x)       == 'vertex' (NonEmpty.'NonEmpty.vertex' x)
--- scc        (AdjacencyMap.'AM.edge' 1 1)       == 'vertex' (NonEmpty.'NonEmpty.edge' 1 1)
--- 'vertexList' (scc (AdjacencyMap.'AM.edge' 1 2)) == [NonEmpty.'NonEmpty.vertex' 1,NonEmpty.'NonEmpty.vertex' 2]
--- 'edgeList'   (scc (AdjacencyMap.'AM.edge' 1 2)) == [(NonEmpty.'NonEmpty.vertex' 1,NonEmpty.'NonEmpty.vertex' 2)]
--- scc        (AdjacencyMap.'AM.circuit' (1:xs)) == vertex (NonEmpty.'NonEmpty.circuit1' (1 :| xs))
--- 'vertexList' (scc (3 * 1 * 4 * 1 * 5))     == [NonEmpty.'NonEmpty.vertex' 3,NonEmpty.'NonEmpty.vertex' 5,NonEmpty.'NonEmpty.clique1' [1,4,1]]
--- 'edgeList'   (scc (3 * 1 * 4 * 1 * 5))     == [ (NonEmpty.'NonEmpty.vertex' 3,NonEmpty.'NonEmpty.vertex' 5)
---                                             , (NonEmpty.'NonEmpty.vertex' 3,NonEmpty.'NonEmpty.clique1' [1,4,1])
---                                             , (NonEmpty.'NonEmpty.clique1' [1,4,1],NonEmpty.'NonEmpty.vertex' 5)]
+--            scc 'AM.empty'               == 'empty'
+--            scc ('AM.vertex' x)          == 'vertex' (NonEmpty.'NonEmpty.vertex' x)
+--            scc ('AM.edge' 1 1)          == 'vertex' (NonEmpty.'NonEmpty.edge' 1 1)
+-- 'edgeList' $ scc ('AM.edge' 1 2)          == [ (NonEmpty.'NonEmpty.vertex' 1       , NonEmpty.'NonEmpty.vertex' 2       ) ]
+-- 'edgeList' $ scc (3 * 1 * 4 * 1 * 5) == [ (NonEmpty.'NonEmpty.vertex' 3       , NonEmpty.'NonEmpty.vertex' 5       )
+--                                       , (NonEmpty.'NonEmpty.vertex' 3       , NonEmpty.'NonEmpty.clique1' [1,4,1])
+--                                       , (NonEmpty.'NonEmpty.clique1' [1,4,1], NonEmpty.'NonEmpty.vertex' 5       ) ]
 -- @
 scc :: (Ord a) => AM.AdjacencyMap a -> AdjacencyMap (NAM.AdjacencyMap a)
 scc = coerce AM.scc
 
--- | This is a signature for a __Strict Partial Order__.
--- A strict partial order is a binary relation __/R/__ that has three
--- axioms, namely, irreflexive, transitive and asymmetric.
---
---   > a 'R' a == False               (Irreflexive)
---   > a 'R' b and b 'R' c => a 'R' c (Transitive)
--- Some examples of a Strict Partial Order are
--- __\<__ and __\>__.
-type PartialOrder a = a -> a -> Bool
-
--- | Constructs an acyclic graph from any graph based on
--- a strict partial order to produce an acyclic graph.
--- The partial order defines the valid set of edges.
---
--- If the partial order is \< then for any two
--- vertices x and y (x \> y), the only possible edge is (y, x).
--- This will guarantee the production of an acyclic graph since
--- no back edges are possible.
---
--- For example,
--- /fromGraph (\<) (1 \* 2 + 2 \* 1) == 1 \* 2/ because
--- /1 \< 2 == True/ and hence the edge is allowed.
--- /2 \< 1 == False/ and hence the edge is filtered out.
+-- | Construct an acyclic graph from a given adjacency map, or return 'Nothing'
+-- if the input contains cycles.
 --
 -- @
--- fromGraph (<) (2 * 1)         == 1 + 2
--- fromGraph (<) (1 * 2)         == 1 * 2
--- fromGraph (<) (1 * 2 + 2 * 1) == 1 * 2
--- @
-fromGraph :: Ord a => PartialOrder a -> Graph a -> AdjacencyMap a
-fromGraph o = AAM . induceEAM o . foldg AM.empty AM.vertex AM.overlay AM.connect
-
--- | If possible, construct a graph of type Acyclic.AdjacencyMap
--- from a graph of type AdjacencyMap. If the input graph is contains
--- cycles then return Nothing.
---
--- @
--- toAcyclic (AdjacencyMap.'AM.path' [1, 2, 1]) == Nothing
--- toAcyclic (AdjacencyMap.'AM.path' [1, 2, 3]) == Just (1 * 2 + 2 * 3)
+-- toAcyclic ('AM.path'    [1,2,3]) == 'Just' (1 * 2 + 2 * 3)
+-- toAcyclic ('AM.clique'  [3,2,1]) == 'Just' ('transpose' (1 * 2 * 3))
+-- toAcyclic ('AM.circuit' [1,2,3]) == 'Nothing'
+-- toAcyclic . 'fromAcyclic'     == 'Just'
 -- @
 toAcyclic :: Ord a => AM.AdjacencyMap a -> Maybe (AdjacencyMap a)
 toAcyclic x = if AM.isAcyclic x then Just (AAM x) else Nothing
 
--- TODO: Provide a faster equivalent in "Algebra.Graph.AdjacencyMap".
--- Keep only the edges that satisfy a given predicate.
-induceEAM :: Ord a => (a -> a -> Bool) -> AM.AdjacencyMap a -> AM.AdjacencyMap a
-induceEAM p m = AM.fromAdjacencySets
-    [ (a, Set.filter (p a) bs) | (a, bs) <- Map.toList (AM.adjacencyMap m) ]
-
--- | Constructs an acyclic graph from any graph based on
--- the order of vertices to produce an acyclic graph.
--- The internal order defines the valid set of edges.
---
--- The order for valid edges is \<, ie. for any two
--- vertices x and y (x \> y), the only possible edge is (y, x).
--- This will guarantee the production of an acyclic graph since
--- no back edges are possible.
---
--- For example,
--- /toAcyclicOrd (1 \* 2 + 2 \* 1) == 1 \* 2/ because
--- /1 \< 2 == True/ and hence the edge is allowed.
--- /2 \< 1 == False/ and hence the edge is filtered out.
---
--- Topological orderings are also closely related to the concept
--- of a linear extension of a partial order in mathematics.
--- Please look at <https://en.wikipedia.org/wiki/Topological_sorting#Relation_to_partial_orders Relation to partial orders> for
--- additional information.
--- In this case the partial order is the order of the vertices
--- itself. And hence, the topological ordering for such graphs
--- is simply its 'vertexList'.
+-- | Construct an acyclic graph from a given adjacency map, keeping only edges
+-- @(x,y)@ where @x < y@ according to the supplied 'Ord' @a@ instance.
 --
 -- @
--- toAcyclicOrd (2 * 1)         == 1 + 2
--- toAcyclicOrd (1 * 2)         == 1 * 2
--- toAcyclicOrd (1 * 2 + 2 * 1) == 1 * 2
--- toAcyclicOrd                 == fromGraph (<) . toGraph
+-- toAcyclicOrd 'empty'       == 'empty'
+-- toAcyclicOrd . 'vertex'    == 'vertex'
+-- toAcyclicOrd (1 + 2)     == 1 + 2
+-- toAcyclicOrd (1 * 2)     == 1 * 2
+-- toAcyclicOrd (2 * 1)     == 1 + 2
+-- toAcyclicOrd (1 * 2 * 1) == 1 * 2
+-- toAcyclicOrd (1 * 2 * 3) == 1 * 2 * 3
 -- @
 toAcyclicOrd :: Ord a => AM.AdjacencyMap a -> AdjacencyMap a
-toAcyclicOrd = AAM . induceEAM (<)
+toAcyclicOrd = AAM . filterEdges (<)
 
--- | Check if the internal graph representation is consistent,
--- i.e. that all edges refer to existing vertices and the graph
--- is acyclic. It should be impossible to create an inconsistent
--- adjacency map.
+-- TODO: Provide a faster equivalent in "Algebra.Graph.AdjacencyMap".
+-- Keep only the edges that satisfy a given predicate.
+filterEdges :: Ord a => (a -> a -> Bool) -> AM.AdjacencyMap a -> AM.AdjacencyMap a
+filterEdges p m = AM.fromAdjacencySets
+    [ (a, Set.filter (p a) bs) | (a, bs) <- Map.toList (AM.adjacencyMap m) ]
+
+-- | Check if the internal representation of an acyclic graph is consistent,
+-- i.e. that all edges refer to existing vertices and the graph is acyclic. It
+-- should be impossible to create an inconsistent 'AdjacencyMap'.
 --
 -- @
 -- consistent 'empty'                 == True
 -- consistent ('vertex' x)            == True
--- consistent ('disjointOverlay' x y) == True
--- consistent ('join' x y) == True
--- consistent ('vertices' x)          == True
+-- consistent ('vertices' xs)         == True
+-- consistent ('union' x y)           == True
+-- consistent ('join' x y)            == True
+-- consistent ('transpose' x)         == True
 -- consistent ('box' x y)             == True
 -- consistent ('transitiveClosure' x) == True
--- consistent ('transpose' x)         == True
--- consistent ('fromGraph' (<) x)     == True
--- consistent ('fromGraph' (>) x)     == True
--- consistent (1 + 2)               == True
--- consistent (1 * 2 + 2 * 3)       == True
+-- consistent ('scc' x)               == True
+-- 'fmap' consistent ('toAcyclic' x)    /= False
+-- consistent ('toAcyclicOrd' x)      == True
 -- @
 consistent :: Ord a => AdjacencyMap a -> Bool
 consistent (AAM m) = AM.consistent m && AM.isAcyclic m
