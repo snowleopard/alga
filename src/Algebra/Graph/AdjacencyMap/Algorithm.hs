@@ -1,3 +1,5 @@
+{-# language LambdaCase #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyMap.Algorithm
@@ -15,13 +17,15 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap.Algorithm (
     -- * Algorithms
-    dfsForest, dfsForestFrom, dfs, reachable, topSort, isAcyclic, scc,
-
+    bfsForest, bfsForestFrom, bfs, dfsForest, dfsForestFrom, dfs, reachable,
+    topSort, isAcyclic, scc,
+    
     -- * Correctness properties
     isDfsForestOf, isTopSortOf
     ) where
 
 import Control.Monad
+import Control.Monad.State.Strict
 import Data.Foldable (toList)
 import Data.Maybe
 import Data.Tree
@@ -33,6 +37,93 @@ import qualified Data.Graph                          as KL
 import qualified Data.Graph.Typed                    as Typed
 import qualified Data.Map.Strict                     as Map
 import qualified Data.Set                            as Set
+
+-- | Compute the forest of a graph's vertices in breadth first order. Complexity:
+-- /O(n+m*log n)/ time and /O(n+m)/ space.
+--
+-- @
+-- bfsForest 'empty'                         == []
+-- 'forest' (bfsForest $ 'edge' 1 1)           == 'vertex' 1
+-- 'forest' (bfsForest $ 'edge' 1 2)           == 'edge' 1 2
+-- 'forest' (bfsForest $ 'edge' 2 1)           == 'vertices' [1,2]
+-- 'isSubgraphOf' ('forest' $ bfsForest x) x   == True
+-- bfsForest . 'forest' . bfsForest          == bfsForest
+-- bfsForest (3 * (1 + 4) * (1 + 5))       == [ Node { rootLabel = 1
+--                                                   , subForest = [ Node { rootLabel = 5
+--                                                                        , subForest = [] }]}
+--                                            , Node { rootLabel = 3
+--                                                   , subForest = [ Node { rootLabel = 4
+--                                                                        , subForest = [] }]}]
+-- 'forest' (bfsForest ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [1,2,3] + 'path' [1,5,4]
+-- @
+
+bfsForest :: Ord a => AdjacencyMap a -> Forest a
+bfsForest g = bfsForestFrom' (vertexList g) g
+
+-- | Like 'bfsForest', but the traversal is seeded by a list of
+-- vertices. Vertices not in the graph are ignored.
+--
+-- Let /L/ be the number of seed vertices. Complexity: /O(n+(L+m)*logn)/
+-- time and /O(n+m)/ space.
+--
+-- @
+-- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2)      == 'vertices' [1,2]
+-- 'forest' (bfsForestFrom [2]   $ 'edge' 1 2)      == 'vertex' 2
+-- 'forest' (bfsForestFrom [3]   $ 'edge' 1 2)      == 'empty'
+-- 'forest' (bfsForestFrom [2,1] $ 'edge' 1 2)      == 'vertices' [1,2]
+-- 'isSubgraphOf' ('forest' $ bfsForestFrom vs x) x == True
+-- bfsForestFrom ('vertexList' x) x               == 'bfsForest' x
+-- bfsForestFrom vs ('vertices' vs)               == 'map' (\v -> Node v []) ('nub' vs)
+-- bfsForestFrom [] x                           == []
+-- bfsForestFrom [1,4] (3 * (1 + 4) * (1 + 5))  == [ Node { rootLabel = 1
+--                                                        , subForest = [ Node { rootLabel = 5
+--                                                                             , subForest = [] }]}
+--                                                 , Node { rootLabel = 4
+--                                                        , subForest = [] }]
+-- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [3,2,1] + 'path' [3,4,5]
+-- 
+-- @
+bfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
+bfsForestFrom vs g = bfsForestFrom' [ v | v <- vs, hasVertex v g ] g
+
+bfsForestFrom' :: Ord a => [a] -> AdjacencyMap a -> Forest a
+bfsForestFrom' vs g = evalState (explore vs) Set.empty where
+  explore (v:vs) = discovered v >>= \case
+    True -> (:) <$> unfoldTreeM_BF walk v <*> explore vs
+    False -> explore vs
+  explore [] = return []
+  walk v = (v,) <$> adjacentM v
+  adjacentM v = filterM discovered $ Set.toList (postSet v g)
+  discovered v = do new <- gets (not . Set.member v)
+                    when new $ modify' (Set.insert v)
+                    return new
+
+-- | Like 'bfsForestFrom' with the resulting forest converted to a
+--   level structure.  Flattening the result via @'concat' . 'bfs' vs@
+--   gives an enumeration of vertices reachable from @vs@ in breadth
+--   first order. Adjacent nodes are expanded smallest to biggest
+--   according to the 'Ord' instance for @a@.
+--
+--   Let /L/ be the number of seed vertices. Complexity:
+--   /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
+-- 
+-- @
+-- bfs vs 'empty'                                         == []
+-- bfs [] g                                             == []
+-- bfs [1] ('edge' 1 1)                                   == [[1]]
+-- bfs [1] ('edge' 1 2)                                   == [[1],[2]]
+-- bfs [2] ('edge' 1 2)                                   == [[2]]
+-- bfs [3] ('edge' 1 2)                                   == []
+-- bfs [1,2] ('edge' 1 2)                                 == [[1],[2]]
+-- bfs [2,1] ('edge' 1 2)                                 == [[2],[1]]
+-- bfs [1,2] ( (1*2) + (3*4) + (5*6) )                  == [[1],[2]]
+-- bfs [1,3] ( (1*2) + (3*4) + (5*6) )                  == [[1],[2],[3],[4]]
+-- bfs [3] (3 * (1 + 4) * (1 + 5))                      == [[3],[1,4,5]]
+-- bfs [2] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[2],[1,3],[5,4]]
+-- 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
+-- @
+bfs :: Ord a => [a] -> AdjacencyMap a -> [[a]]
+bfs vs = bfsForestFrom vs >=> levels
 
 -- | Compute the /depth-first search/ forest of a graph that corresponds to
 -- searching from each of the graph vertices in the 'Ord' @a@ order.
@@ -53,6 +144,7 @@ import qualified Data.Set                            as Set
 --                                          , Node { rootLabel = 3
 --                                                 , subForest = [ Node { rootLabel = 4
 --                                                                      , subForest = [] }]}]
+-- 'forest' (dfsForest $ 'circuit' [1..5] + 'circuit' [5,4..1]) == 'path' [1,2,3,4,5]
 -- @
 dfsForest :: Ord a => AdjacencyMap a -> Forest a
 dfsForest g = dfsForestFrom (vertexList g) g
@@ -78,6 +170,7 @@ dfsForest g = dfsForestFrom (vertexList g) g
 --                                                                                 , subForest = [] }
 --                                                     , Node { rootLabel = 4
 --                                                            , subForest = [] }]
+--  'forest' (dfsForestFrom [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == 'path' [3,2,1,5,4]
 -- @
 dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
 dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
@@ -96,13 +189,14 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyMap
 -- dfs []    $ x                        == []
 -- dfs [1,4] $ 3 * (1 + 4) * (1 + 5)    == [1,5,4]
 -- 'isSubgraphOf' ('vertices' $ dfs vs x) x == True
+-- dfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1] == [3,2,1,5,4]
 -- @
 dfs :: Ord a => [a] -> AdjacencyMap a -> [a]
 dfs vs = concatMap flatten . dfsForestFrom vs
 
--- | Compute the list of vertices that are /reachable/ from a given source
--- vertex in a graph. The vertices in the resulting list appear in the
--- /depth-first order/.
+-- | Compute the list of vertices that are /reachable/ from a given
+-- source vertex in a graph. The vertices in the resulting list appear
+-- in /breadth-first order/.
 --
 -- @
 -- reachable x $ 'empty'                       == []
@@ -116,7 +210,7 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- 'isSubgraphOf' ('vertices' $ reachable x y) y == True
 -- @
 reachable :: Ord a => a -> AdjacencyMap a -> [a]
-reachable x = dfs [x]
+reachable x = concat . bfs [x]
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.
