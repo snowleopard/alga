@@ -1,8 +1,11 @@
------------------------------------------------------------------
+-----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Acyclic.AdjacencyMap.Ord
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
+-- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
+--
 --
 -- __Alga__ is a library for algebraic construction and manipulation of graphs
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
@@ -16,7 +19,7 @@
 -- @
 -- import qualified Algebra.Graph.Acyclic.AdjacencyMap.Ord as Acyclic.Ord
 -- @
-----------------------------------------------------------------
+-----------------------------------------------------------------------------
 module Algebra.Graph.Acyclic.AdjacencyMap.Ord (
     -- * Basic graph construction primitives
     edge, overlay, connect, edges, overlays, connects
