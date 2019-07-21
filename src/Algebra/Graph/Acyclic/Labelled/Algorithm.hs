@@ -7,12 +7,21 @@ import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
 import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe)
+import Data.List (foldl')
 
 -- TODO: Replace this function with 'skeleton' from Acyclic.Labelled to remove the use of fromMaybe
 -- TODO: Make 'topSort' more efficient
 -- TODO: Add examples and tests
 topSort :: (Ord a) => AdjacencyMap e a -> [a]
 topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
+
+-- TODO: Improve documentation for 'foldAcyclic'
+-- | Compute the final state by using the initial state and
+-- traversing the entire graph in topological order.
+foldAcyclic :: (Ord a) => (s -> a -> [a] -> s) -> s ->  AdjacencyMap e a -> s
+foldAcyclic f s = snd . foldl' f' ([], s) . topSort
+  where
+    f' (p, s) x = (x:p, f s x p)
 
 -- TODO: Add time complexity
 -- TODO: Add examples using 'Optimum' data type
@@ -22,14 +31,16 @@ topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 -- The following examples assume that the edges are distances,
 -- ie. the edge 'Semiring' is 'Distance'.
 -- @
--- dijkstra ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.'Map.fromList' [('z', 0), ('a', Infinite), ('b', Infinite), ('c', Infinite)]
--- dijkstra ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
+-- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Nothing
+-- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Just $ Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
 -- @
-optimumPath :: (Semiring e, Ord a) => AdjacencyMap e a -> a -> Map a e
-optimumPath am s = foldl (relaxVertex em) (initialize em) vL
+optimumPath :: (Dioid e, Ord a) => AdjacencyMap e a -> a -> Maybe (Map a e)
+optimumPath am src = foldAcyclic foldF Nothing am
   where
-    vL = dropWhile (/=s) $ topSort am
+    foldF s x _ = relaxVertex (srcInit s x) x
     em = (LAM.adjacencyMap . fromAcyclic) am
-    initialize = Map.insert s one . Map.map (const zero)
-    relaxVertex em m v = Map.foldrWithKey (relaxEdge v) m (em ! v)
+    srcInit s x
+      | x == src = Just . Map.insert src one . Map.map (const zero) $ em
+      | otherwise = s
+    relaxVertex s x = flip (Map.foldrWithKey (relaxEdge x)) (em ! x) <$> s
     relaxEdge v1 v2 e m = Map.insert v2 (((m ! v1) <.> e) <+> (m ! v2)) m
