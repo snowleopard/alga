@@ -96,15 +96,13 @@ The 'Eq' instance satisfies all axioms of algebraic graphs:
         >       x + y == y + x
         > x + (y + z) == (x + y) + z
 
-    * 'connect' is associative and has
-    'empty' as the identity:
+    * 'connect' is associative and has 'empty' as the identity:
 
         >   x * empty == x
         >   empty * x == x
         > x * (y * z) == (x * y) * z
 
-    * 'connect' distributes over
-    'overlay':
+    * 'connect' distributes over 'overlay':
 
         > x * (y + z) == x * y + x * z
         > (x + y) * z == x * z + y * z
@@ -115,8 +113,7 @@ The 'Eq' instance satisfies all axioms of algebraic graphs:
 
 The following useful theorems can be proved from the above set of axioms.
 
-    * 'overlay' has 'empty'
-    as the identity and is idempotent:
+    * 'overlay' has 'empty' as the identity and is idempotent:
 
         >   x + empty == x
         >   empty + x == x
@@ -146,9 +143,8 @@ Here are a few examples:
 'edge' 1 2 < 'edge' 1 1 + 'edge' 2 2
 'edge' 1 2 < 'edge' 1 3@
 
-Note that the resulting order refines the 'isSubgraphOf'
-relation and is compatible with 'overlay' and
-'connect' operations:
+Note that the resulting order refines the 'isSubgraphOf' relation and is
+compatible with 'overlay' and 'connect' operations:
 
 @'isSubgraphOf' x y ==> x <= y@
 
@@ -180,9 +176,9 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
         | null vs    = showString "empty"
         | null es    = showParen (p > 10) $ vshow vs
         | vs == used = showParen (p > 10) $ eshow es
-        | otherwise  = showParen (p > 10) $
-                           showString "overlay (" . vshow (vs \\ used) .
-                           showString ") (" . eshow es . showString ")"
+        | otherwise  = showParen (p > 10) $ showString "overlay ("
+                     . vshow (vs \\ used) . showString ") ("
+                     . eshow es . showString ")"
       where
         vs             = vertexList am
         es             = edgeList am
@@ -491,7 +487,7 @@ adjacencyList = map (fmap Set.toAscList) . Map.toAscList . adjacencyMap
 -- preSet 1 ('edge' 1 2) == Set.'Set.empty'
 -- preSet y ('edge' x y) == Set.'Set.fromList' [x]
 -- @
-preSet :: Ord a => a -> AdjacencyMap a -> Set.Set a
+preSet :: Ord a => a -> AdjacencyMap a -> Set a
 preSet x = Set.fromAscList . map fst . filter p  . Map.toAscList . adjacencyMap
   where
     p (_, set) = x `Set.member` set
@@ -742,7 +738,7 @@ gmap f = AM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(m)/ time, assuming that the predicate takes /O(1)/ to
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
 -- be evaluated.
 --
 -- @
@@ -808,6 +804,7 @@ compose x y = fromAdjacencySets
 --                                       , ((0,\'b\'), (1,\'b\'))
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
+--
 -- Up to an isomorphism between the resulting vertex types, this operation
 -- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
 -- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
