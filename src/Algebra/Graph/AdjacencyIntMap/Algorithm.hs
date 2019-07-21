@@ -150,7 +150,7 @@ bfs vs = bfsForestFrom vs >=> levels
 -- 'forest' (dfsForest $ 'circuit' [1..5] + 'circuit' [5,4..1]) == 'path' [1,2,3,4,5]
 -- @
 dfsForest :: AdjacencyIntMap -> Forest Int
-dfsForest = Typed.dfsForest . Typed.fromAdjacencyIntMap
+dfsForest g = dfsForestFrom' (vertexList g) g
 
 -- | Compute the /depth-first search/ forest of a graph, searching from each of
 -- the given vertices in order. Note that the resulting forest does not
@@ -176,7 +176,21 @@ dfsForest = Typed.dfsForest . Typed.fromAdjacencyIntMap
 -- 'forest' (dfsForestFrom [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == 'path' [3,2,1,5,4]
 -- @
 dfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
-dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyIntMap
+dfsForestFrom vs g = dfsForestFrom' [ v | v <- vs, hasVertex v g ] g
+
+dfsForestFrom' :: [Int] -> AdjacencyIntMap -> Forest Int
+dfsForestFrom' vs g = prune $ evalState (explore vs) IntSet.empty where
+  prune ts = [ Node t (prune xs) | Node (Just t) xs <- ts ]
+  explore (v:vs) = (:) <$> unfoldTreeM walk v <*> explore vs
+  explore [] = return []
+  walk v = discovered v >>= \case
+    True -> (Just v,) <$> adjacentM v
+    False -> pure (Nothing,[])
+  adjacentM v = filterM undiscovered $ IntSet.toList (postIntSet v g)
+  undiscovered v = gets (not . IntSet.member v)
+  discovered v = do new <- undiscovered v
+                    when new $ modify' (IntSet.insert v)
+                    return new
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a graph,
 -- when searching from each of the given vertices in order.
@@ -225,9 +239,22 @@ reachable x = concat . bfs [x]
 -- 'isJust' . topSort                      == 'isAcyclic'
 -- @
 topSort :: AdjacencyIntMap -> Maybe [Int]
-topSort m = if isTopSortOf result m then Just result else Nothing
-  where
-    result = Typed.topSort (Typed.fromAdjacencyIntMap m)
+topSort g = check $ execState (explore $ vertexList g) (IntSet.empty,[]) where
+  check (_,result) = guard (isTopSortOf result g) >> return result
+   -- todo add early exit if cycle detected. also add ability to detect
+  explore (v:vs) = do new <- undiscovered v
+                      when new $ do mark v
+                                    explore =<< adjacent v
+                                    include v
+                      explore vs
+  explore [] = return ()
+  adjacent v = filterM undiscovered $ IntSet.toList (postIntSet v g)
+  include v = modify' (\(s,vs) -> (s, v:vs))
+  mark v = modify' (\(s,vs) -> (IntSet.insert v s, vs))
+  undiscovered v = gets (\(s,_) -> not (IntSet.member v s))
+--then Just result else Nothing
+--  where
+--    result = Typed.topSort (Typed.fromAdjacencyMap m)
 
 -- | Check if a given graph is /acyclic/.
 --
