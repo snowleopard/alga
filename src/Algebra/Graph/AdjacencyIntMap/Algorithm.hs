@@ -179,13 +179,12 @@ dfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
 dfsForestFrom vs g = dfsForestFrom' [ v | v <- vs, hasVertex v g ] g
 
 dfsForestFrom' :: [Int] -> AdjacencyIntMap -> Forest Int
-dfsForestFrom' vs g = prune $ evalState (explore vs) IntSet.empty where
-  prune ts = [ Node t (prune xs) | Node (Just t) xs <- ts ]
-  explore (v:vs) = (:) <$> unfoldTreeM walk v <*> explore vs
+dfsForestFrom' vs g = evalState (explore vs) mempty where
+  explore (v:vs) = discovered v >>= \case
+    True -> (:) <$> walk v <*> explore vs
+    False -> explore vs 
   explore [] = return []
-  walk v = discovered v >>= \case
-    True -> (Just v,) <$> adjacentM v
-    False -> pure (Nothing,[])
+  walk v = Node v <$> (explore =<< adjacentM v)
   adjacentM v = filterM undiscovered $ IntSet.toList (postIntSet v g)
   undiscovered v = gets (not . IntSet.member v)
   discovered v = do new <- undiscovered v
@@ -239,15 +238,13 @@ reachable x = concat . bfs [x]
 -- 'isJust' . topSort                      == 'isAcyclic'
 -- @
 topSort :: AdjacencyIntMap -> Maybe [Int]
-topSort g = check $ execState (explore $ vertexList g) (IntSet.empty,[]) where
-  check (_,result) = guard (isTopSortOf result g) >> return result
+topSort g = check $ execState (mapM_ explore $ vertexList g) (mempty,[]) where
    -- todo add early exit if cycle detected. also add ability to detect
-  explore (v:vs) = do new <- undiscovered v
-                      when new $ do mark v
-                                    explore =<< adjacent v
-                                    include v
-                      explore vs
-  explore [] = return ()
+  check (_,result) = guard (isTopSortOf result g) >> return result
+  explore v = do new <- undiscovered v
+                 when new $ do mark v
+                               mapM_ explore =<< adjacent v
+                               include v
   adjacent v = filterM undiscovered $ IntSet.toList (postIntSet v g)
   include v = modify' (\(s,vs) -> (s, v:vs))
   mark v = modify' (\(s,vs) -> (IntSet.insert v s, vs))
