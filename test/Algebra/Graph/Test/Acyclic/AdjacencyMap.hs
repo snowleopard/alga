@@ -524,26 +524,14 @@ testAcyclicAdjacencyMap = do
     test "edge x y               == connect (vertex x) (vertex y)" $ \x y ->
           (edge x y :: AAI)      == connect (vertex x) (vertex y)
 
+    test "hasEdge 1 1 (edge 1 1) == False" $
+          hasEdge 1 1 (edge 1 1 :: AAI) == False
+
     test "hasEdge 1 2 (edge 1 2) == True" $
           hasEdge 1 2 (edge 1 2 :: AAI) == True
 
     test "hasEdge 2 1 (edge 2 1) == False" $
           hasEdge 2 1 (edge 2 1 :: AAI) == False
-
-    test "edgeCount   (edge 1 2) == 1" $
-          edgeCount   (edge 1 2 :: AAI) == 1
-
-    test "edgeCount   (edge 2 1) == 0" $
-          edgeCount   (edge 2 1 :: AAI) == 0
-
-    test "vertexCount (edge 1 1) == 1" $
-          vertexCount (edge 1 1 :: AAI) == 1
-
-    test "vertexCount (edge 1 2) == 2" $
-          vertexCount (edge 1 2 :: AAI) == 2
-
-    test "vertexCount (edge 2 1) == 2" $
-          vertexCount (edge 2 1 :: AAI) == 2
 
     putStrLn "\n============ Acyclic.AdjacencyMap.Ord.overlay ============"
     test "isEmpty     (overlay x y) == isEmpty x && isEmpty y" $ \x y ->
