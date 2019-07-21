@@ -11,17 +11,20 @@ import Data.List (foldl')
 
 -- TODO: Replace this function with 'skeleton' from Acyclic.Labelled to remove the use of fromMaybe
 -- TODO: Make 'topSort' more efficient
--- TODO: Add examples and tests
+-- TODO: Add examples and tests for 'topSort'
 topSort :: (Ord a) => AdjacencyMap e a -> [a]
 topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 
--- TODO: Improve documentation for 'foldAcyclic'
+-- TODO: Improve documentation for 'fold'
+-- TODO: Add examples and tests for 'fold'
 -- | Compute the final state by using the initial state and
 -- traversing the entire graph in topological order.
-foldAcyclic :: (Ord a) => (s -> a -> [a] -> s) -> s ->  AdjacencyMap e a -> s
-foldAcyclic f s = snd . foldl' f' ([], s) . topSort
+fold :: (Ord a) => (s -> a -> [(e, a)] -> s) -> s ->  AdjacencyMap e a -> s
+fold f s am = snd . foldl' f' (Map.map (const []) em, s) . topSort $ am
   where
-    f' (p, s) x = (x:p, f s x p)
+    em = LAM.adjacencyMap . fromAcyclic $ am
+    f' (p, s) x = (addP x p, f s x (p ! x))
+    addP x p = Map.foldrWithKey (\a e -> Map.adjust ((e, x):) a) p (em ! x)
 
 -- TODO: Add time complexity
 -- TODO: Add examples using 'Optimum' data type
@@ -32,15 +35,15 @@ foldAcyclic f s = snd . foldl' f' ([], s) . topSort
 -- ie. the edge 'Semiring' is 'Distance'.
 -- @
 -- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Nothing
--- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Just $ Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
+-- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Just (Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)])
 -- @
 optimumPath :: (Dioid e, Ord a) => AdjacencyMap e a -> a -> Maybe (Map a e)
-optimumPath am src = foldAcyclic foldF Nothing am
+optimumPath am src = fold relax Nothing am
   where
-    foldF s x _ = relaxVertex (srcInit s x) x
-    em = (LAM.adjacencyMap . fromAcyclic) am
-    srcInit s x
-      | x == src = Just . Map.insert src one . Map.map (const zero) $ em
-      | otherwise = s
-    relaxVertex s x = flip (Map.foldrWithKey (relaxEdge x)) (em ! x) <$> s
-    relaxEdge v1 v2 e m = Map.insert v2 (((m ! v1) <.> e) <+> (m ! v2)) m
+    em = LAM.adjacencyMap . fromAcyclic $ am
+    relax mM v2 v1L
+      | v2 == src =
+          return . Map.insert src one . Map.map (const zero) $ em 
+      | otherwise =
+          flip (foldr (relaxOn v2)) v1L <$> mM
+    relaxOn v2 (e, v1) m = Map.adjust (<+> ((m ! v1) <.> e)) v2 m
