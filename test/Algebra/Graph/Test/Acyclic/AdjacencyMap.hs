@@ -18,7 +18,6 @@ import Algebra.Graph.Test
 import Algebra.Graph.Test.Generic
 
 import Data.Bifunctor
-import Data.Either
 import Data.Tuple
 
 import qualified Algebra.Graph.AdjacencyMap           as AM
@@ -450,8 +449,8 @@ testAcyclicAdjacencyMap = do
     test "topSort (join x y)            == fmap Left (topSort x) ++ fmap Right (topSort y)" $ \(x :: AAI) (y :: AAI) ->
           topSort (join x y)            == fmap Left (topSort x) ++ fmap Right (topSort y)
 
-    test "topSort                       == (fromRight (error \"impossible\") . AM.topSort . fromAcyclic)" $ \(x :: AAI) ->
-          topSort x                     == (fromRight (error "impossible") . AM.topSort . fromAcyclic) x
+    test "Right . topSort                   == AM.topSort . fromAcyclic" $ \(x :: AAI) ->
+          Right (topSort x)                 == AM.topSort (fromAcyclic x)
 
     putStrLn "\n============ Acyclic.AdjacencyMap.scc ============"
     test "           scc empty               == empty" $

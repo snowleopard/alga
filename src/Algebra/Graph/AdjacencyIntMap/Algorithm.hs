@@ -1,4 +1,4 @@
-{-# language LambdaCase #-}
+{-# language LambdaCase, ViewPatterns #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -31,7 +31,6 @@ module Algebra.Graph.AdjacencyIntMap.Algorithm (
 import Control.Monad
 import Control.Monad.State.Strict
 import Control.Monad.Cont
-import Data.Either
 import Data.Tree
 
 import Algebra.Graph.AdjacencyIntMap
@@ -234,10 +233,10 @@ data S = S { table :: !(IntMap.IntMap Int)
 
 type TopOrder = Either [Int] [Int]
 
-backtrack :: Int -> Int -> [Int] -> IntMap.IntMap Int -> Either [Int] a
-backtrack v u vs table = case IntMap.lookup u table of
-  Just w -> if w == v then Left (u:vs) else backtrack v w (u:vs) table
-  Nothing -> Left vs
+backtrack :: Int -> [Int] -> IntMap.IntMap Int -> [Int]
+backtrack w vs@(v:_) table = case IntMap.lookup v table of
+  Just u -> if u == w then vs else backtrack w (u:vs) table
+  Nothing -> vs
 
 topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopOrder
 topSort' g = callCC $ \cyclic -> do
@@ -251,13 +250,14 @@ topSort' g = callCC $ \cyclic -> do
            forM_ (IntSet.toDescList (postIntSet u g)) $ \v ->
              nodeState v >>= \case
                Nothing -> parent u v >> explore v
-               Just True -> pure () -- Just True => fully explored, False if not
-               Just False -> cyclic . backtrack v u [v] =<< gets table
+               -- True => tree fully explored, False => not (cycle)
+               Just False -> cyclic . Left . backtrack v [u,v] =<< gets table
+               Just True -> pure () 
            exit u
            
-  forM_ (map fst $ IntMap.toDescList $ adjacencyIntMap g) $ \u ->
-    do new <- unexplored u
-       when new $ explore u
+  forM_ (map fst $ IntMap.toDescList $ adjacencyIntMap g) $ \v ->
+    do new <- unexplored v
+       when new $ explore v
   Right <$> gets order
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
@@ -282,7 +282,8 @@ topSort g = runContT (runStateT (topSort' g) initialState) fst where
 -- isAcyclic                 == 'isJust' . 'topSort'
 -- @
 isAcyclic :: AdjacencyIntMap -> Bool
-isAcyclic = isRight . topSort
+isAcyclic (topSort -> Right _) = True
+isAcyclic _ = False
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong

@@ -1,4 +1,4 @@
-{-# language LambdaCase #-}
+{-# language LambdaCase, ViewPatterns #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -27,7 +27,6 @@ module Algebra.Graph.AdjacencyMap.Algorithm (
 import Control.Monad
 import Control.Monad.Cont
 import Control.Monad.State.Strict
-import Data.Either
 import Data.Foldable (toList)
 import Data.Maybe
 import Data.Tree
@@ -236,11 +235,11 @@ data S a = S { table :: !(Map.Map a a)
 
 type TopOrder a = Either [a] [a]
 
-backtrack :: Ord a => a -> a -> [a] -> Map.Map a a -> Either [a] b
-backtrack v u vs table = case Map.lookup u table of
-  Just w -> if w == v then Left (u:vs) else backtrack v w (u:vs) table
-  Nothing -> Left vs
-
+backtrack :: Ord a => a -> [a] -> Map.Map a a -> [a]
+backtrack w vs@(v:_) table = case Map.lookup v table of
+  Just u -> if u == w then vs else backtrack w (u:vs) table
+  Nothing -> vs
+  
 topSort' :: (Ord a, MonadState (S a) m, MonadCont m) => AdjacencyMap a -> m (TopOrder a)
 topSort' g = callCC $ \cyclic -> do
   let enter v = modify' (\(S p s vs) -> S p (Map.insert v False s) vs)
@@ -253,23 +252,24 @@ topSort' g = callCC $ \cyclic -> do
            forM_ (Set.toDescList (postSet u g)) $ \v ->
              nodeState v >>= \case
                Nothing -> parent u v >> explore v
-               Just True -> pure () -- Just True => fully explored, False if not
-               Just False -> cyclic . backtrack v u [v] =<< gets table
+               -- True => tree fully explored, False => not (cycle)               
+               Just False -> cyclic . Left . backtrack v [u,v] =<< gets table
+               Just True -> pure ()
            exit u
            
-  forM_ (map fst $ Map.toDescList $ adjacencyMap g) $ \u ->
-    do new <- unexplored u
-       when new $ explore u
+  forM_ (map fst $ Map.toDescList $ adjacencyMap g) $ \v ->
+    do new <- unexplored v
+       when new $ explore v
   Right <$> gets order
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.
 --
 -- @
--- topSort (1 * 2 + 3 * 1)               == Just [3,1,2]
--- topSort (1 * 2 + 2 * 1)               == Nothing
+-- topSort (1 * 2 + 3 * 1)               == Right [3,1,2]
+-- topSort (1 * 2 + 2 * 1)               == Left [2,2]
 -- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Just False
--- 'isJust' . topSort                      == 'isAcyclic'
+-- 'isRight' . topSort                     == 'isAcyclic'
 -- @
 topSort :: Ord a => AdjacencyMap a -> Either [a] [a]
 topSort g = runContT (runStateT (topSort' g) initialState) fst where
@@ -284,7 +284,8 @@ topSort g = runContT (runStateT (topSort' g) initialState) fst where
 -- isAcyclic                 == 'isJust' . 'topSort'
 -- @
 isAcyclic :: Ord a => AdjacencyMap a -> Bool
-isAcyclic = isRight . topSort
+isAcyclic (topSort -> Right _) = True
+isAcyclic _ = False
 
 -- TODO: Benchmark and optimise.
 -- | Compute the /condensation/ of a graph, where each vertex corresponds to a
