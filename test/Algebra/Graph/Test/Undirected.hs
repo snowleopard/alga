@@ -6,8 +6,7 @@
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Testsuite for "Algebra.Graph.Undirected" and polymorphic functions defined in
--- "Algebra.Graph.HigherKinded.Class".
+-- Testsuite for "Algebra.Graph.Undirected".
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Undirected (
     -- * Testsuite
