@@ -19,12 +19,12 @@ topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 -- TODO: Add examples and tests for 'fold'
 -- | Compute the final state by using the initial state and
 -- traversing the entire graph in topological order.
-fold :: (Ord a) => (s -> a -> [(e, a)] -> s) -> s ->  AdjacencyMap e a -> s
-fold f s am = snd . foldl' f' (Map.map (const []) em, s) . topSort $ am
+fold :: (Ord a) => (e -> a -> a -> s -> s) -> s ->  AdjacencyMap e a -> s
+fold f s am = foldl' f' s . concatMap unfold . topSort $ am
   where
     em = LAM.adjacencyMap . fromAcyclic $ am
-    f' (p, s) x = (addP x p, f s x (p ! x))
-    addP x p = Map.foldrWithKey (\a e -> Map.adjust ((e, x):) a) p (em ! x)
+    unfold x = map (\(a, e) -> (e, x, a)) . Map.toList $ em ! x
+    f' s (e, v1, v2) = f e v1 v2 s 
 
 -- TODO: Add time complexity
 -- TODO: Add examples using 'Optimum' data type
@@ -40,10 +40,8 @@ fold f s am = snd . foldl' f' (Map.map (const []) em, s) . topSort $ am
 optimumPath :: (Dioid e, Ord a) => AdjacencyMap e a -> a -> Maybe (Map a e)
 optimumPath am src = fold relax Nothing am
   where
-    em = LAM.adjacencyMap . fromAcyclic $ am
-    relax mM v2 v1L
-      | v2 == src =
-          return . Map.insert src one . Map.map (const zero) $ em 
-      | otherwise =
-          flip (foldr (relaxOn v2)) v1L <$> mM
-    relaxOn v2 (e, v1) m = Map.adjust (<+> ((m ! v1) <.> e)) v2 m
+    bm = Map.map (const zero) . LAM.adjacencyMap . fromAcyclic $ am
+    relax e v1 v2 Nothing
+      | v1 == src = relax e v1 v2 . Just . Map.insert src one $ bm 
+      | otherwise = Nothing
+    relax e v1 v2 (Just m) = Just $ Map.adjust (<+> ((m ! v1) <.> e)) v2 m
