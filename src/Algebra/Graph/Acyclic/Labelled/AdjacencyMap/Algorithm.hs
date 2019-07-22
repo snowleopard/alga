@@ -1,4 +1,4 @@
-module Algebra.Graph.Acyclic.Labelled.Algorithm where
+module Algebra.Graph.Acyclic.Labelled.AdjacencyMap.Algorithm where
 
 import Algebra.Graph.Acyclic.Labelled.AdjacencyMap
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM

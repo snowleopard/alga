@@ -14,7 +14,7 @@ module Algebra.Graph.Test.Acyclic.Labelled.AdjacencyMap (
 import Data.Monoid
 
 import Algebra.Graph.Acyclic.Labelled.AdjacencyMap
-import Algebra.Graph.Acyclic.Labelled.Algorithm
+import Algebra.Graph.Acyclic.Labelled.AdjacencyMap.Algorithm
 import Algebra.Graph.Test
 import Algebra.Graph.Label
 

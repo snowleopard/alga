@@ -69,7 +69,7 @@ library
                         Algebra.Graph.Acyclic.AdjacencyMap,
                         Algebra.Graph.Acyclic.AdjacencyMap.Ord,
                         Algebra.Graph.Acyclic.Labelled.AdjacencyMap,
-                        Algebra.Graph.Acyclic.Labelled.Algorithm,
+                        Algebra.Graph.Acyclic.Labelled.AdjacencyMap.Algorithm,
                         Algebra.Graph.AdjacencyIntMap,
                         Algebra.Graph.AdjacencyIntMap.Algorithm,
                         Algebra.Graph.AdjacencyMap,
