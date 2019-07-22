@@ -37,11 +37,11 @@ fold f s am = foldl' f' s . concatMap unfold . topSort $ am
 -- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Nothing
 -- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Just (Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)])
 -- @
-optimumPath :: (Dioid e, Ord a) => AdjacencyMap e a -> a -> Maybe (Map a e)
-optimumPath am src = fold relax Nothing am
+optimumPath :: (Dioid e, Ord a) => AdjacencyMap e a -> a -> Map a e
+optimumPath am src = fromMaybe zm $ fold relax Nothing am
   where
-    bm = Map.map (const zero) . LAM.adjacencyMap . fromAcyclic $ am
+    zm = Map.map (const zero) . LAM.adjacencyMap . fromAcyclic $ am
     relax e v1 v2 Nothing
-      | v1 == src = relax e v1 v2 . Just . Map.insert src one $ bm 
+      | v1 == src = relax e v1 v2 . Just . Map.insert src one $ zm 
       | otherwise = Nothing
     relax e v1 v2 (Just m) = Just $ Map.adjust (<+> ((m ! v1) <.> e)) v2 m
