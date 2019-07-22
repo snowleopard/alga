@@ -266,7 +266,7 @@ class ToGraph t where
     -- @
     -- topSort == Algebra.Graph.AdjacencyMap.'AM.topSort' . toAdjacencyMap
     -- @
-    topSort :: Ord (ToVertex t) => t -> Maybe [ToVertex t]
+    topSort :: Ord (ToVertex t) => t -> Either [ToVertex t] [ToVertex t]
     topSort = AM.topSort . toAdjacencyMap
 
     -- | Check if a given graph is /acyclic/.

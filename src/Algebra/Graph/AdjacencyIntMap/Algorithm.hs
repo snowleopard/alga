@@ -32,12 +32,10 @@ import Control.Monad
 import Control.Monad.State.Strict
 import Control.Monad.Cont
 import Data.Either
-import Data.Maybe
 import Data.Tree
 
 import Algebra.Graph.AdjacencyIntMap
 
-import qualified Data.Graph.Typed   as Typed
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.IntSet        as IntSet
 
@@ -239,6 +237,7 @@ type TopOrder = Either [Int] [Int]
 backtrack :: Int -> Int -> [Int] -> IntMap.IntMap Int -> Either [Int] a
 backtrack v u vs table = case IntMap.lookup u table of
   Just w -> if w == v then Left (u:vs) else backtrack v w (u:vs) table
+  Nothing -> Left vs
 
 topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopOrder
 topSort' g = callCC $ \cyclic -> do

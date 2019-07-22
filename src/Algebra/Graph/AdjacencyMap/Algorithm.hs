@@ -25,7 +25,9 @@ module Algebra.Graph.AdjacencyMap.Algorithm (
     ) where
 
 import Control.Monad
+import Control.Monad.Cont
 import Control.Monad.State.Strict
+import Data.Either
 import Data.Foldable (toList)
 import Data.Maybe
 import Data.Tree
@@ -228,6 +230,38 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = concat . bfs [x]
 
+data S a = S { table :: !(Map.Map a a)
+             , seen :: !(Map.Map a Bool)
+             , order :: [a] } deriving (Show)
+
+type TopOrder a = Either [a] [a]
+
+backtrack :: Ord a => a -> a -> [a] -> Map.Map a a -> Either [a] b
+backtrack v u vs table = case Map.lookup u table of
+  Just w -> if w == v then Left (u:vs) else backtrack v w (u:vs) table
+  Nothing -> Left vs
+
+topSort' :: (Ord a, MonadState (S a) m, MonadCont m) => AdjacencyMap a -> m (TopOrder a)
+topSort' g = callCC $ \cyclic -> do
+  let enter v = modify' (\(S p s vs) -> S p (Map.insert v False s) vs)
+      exit v = modify' (\(S p s vs) -> S p (Map.insert v True s) (v:vs))
+      parent u v = modify' (\(S p s vs) -> S (Map.insert v u p) s vs)
+      nodeState v = gets (Map.lookup v . seen)
+      unexplored u = gets (not . Map.member u . table)
+      explore u =
+        do enter u
+           forM_ (Set.toDescList (postSet u g)) $ \v ->
+             nodeState v >>= \case
+               Nothing -> parent u v >> explore v
+               Just True -> pure () -- Just True => fully explored, False if not
+               Just False -> cyclic . backtrack v u [v] =<< gets table
+           exit u
+           
+  forM_ (map fst $ Map.toDescList $ adjacencyMap g) $ \u ->
+    do new <- unexplored u
+       when new $ explore u
+  Right <$> gets order
+
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.
 --
@@ -237,19 +271,9 @@ reachable x = concat . bfs [x]
 -- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Just False
 -- 'isJust' . topSort                      == 'isAcyclic'
 -- @
-topSort :: Ord a => AdjacencyMap a -> Maybe [a]
-topSort g = check $ execState topologicalSort (mempty,[]) where
-  topologicalSort = mapM_ explore $ Set.toDescList $ vertexSet g
-   -- todo add early exit if cycle detected. also add ability to detect
-  check (_,result) = guard (isTopSortOf result g) >> return result
-  explore v = do new <- undiscovered v
-                 when new $ do mark v
-                               mapM_ explore =<< adjacent v
-                               include v
-  adjacent v = filterM undiscovered $ Set.toDescList (postSet v g)
-  include v = modify' (\(s,vs) -> (s, v:vs))
-  mark v = modify' (\(s,vs) -> (Set.insert v s, vs))
-  undiscovered v = gets (\(s,_) -> not (Set.member v s))
+topSort :: Ord a => AdjacencyMap a -> Either [a] [a]
+topSort g = runContT (runStateT (topSort' g) initialState) fst where
+  initialState = S mempty mempty mempty
 
 -- | Check if a given graph is /acyclic/.
 --
@@ -260,7 +284,7 @@ topSort g = check $ execState topologicalSort (mempty,[]) where
 -- isAcyclic                 == 'isJust' . 'topSort'
 -- @
 isAcyclic :: Ord a => AdjacencyMap a -> Bool
-isAcyclic = isJust . topSort
+isAcyclic = isRight . topSort
 
 -- TODO: Benchmark and optimise.
 -- | Compute the /condensation/ of a graph, where each vertex corresponds to a
