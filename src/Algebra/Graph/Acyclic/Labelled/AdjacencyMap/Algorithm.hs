@@ -34,8 +34,8 @@ fold f s am = foldl' f' s . concatMap unfold . topSort $ am
 -- The following examples assume that the edges are distances,
 -- ie. the edge 'Semiring' is 'Distance'.
 -- @
--- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Nothing
--- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Just (Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)])
+-- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.'Map.fromList' [('a', Infinite), ('b', Infinite), ('c', Infinite)]
+-- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
 -- @
 optimumPath :: (Dioid e, Ord a) => AdjacencyMap e a -> a -> Map a e
 optimumPath am src = fromMaybe zm $ fold relax Nothing am
