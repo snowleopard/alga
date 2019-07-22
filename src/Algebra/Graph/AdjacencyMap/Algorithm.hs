@@ -237,15 +237,17 @@ reachable x = concat . bfs [x]
 -- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Just False
 -- 'isJust' . topSort                      == 'isAcyclic'
 -- @
+
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
-topSort g = check $ execState (mapM_ explore $ vertexList g) (mempty,[]) where
+topSort g = check $ execState topologicalSort (mempty,[]) where
+  topologicalSort = mapM_ explore $ Set.toDescList $ vertexSet g
    -- todo add early exit if cycle detected. also add ability to detect
   check (_,result) = guard (isTopSortOf result g) >> return result
   explore v = do new <- undiscovered v
                  when new $ do mark v
                                mapM_ explore =<< adjacent v
                                include v
-  adjacent v = filterM undiscovered $ Set.toList (postSet v g)
+  adjacent v = filterM undiscovered $ Set.toDescList (postSet v g)
   include v = modify' (\(s,vs) -> (s, v:vs))
   mark v = modify' (\(s,vs) -> (Set.insert v s, vs))
   undiscovered v = gets (\(s,_) -> not (Set.member v s))

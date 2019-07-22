@@ -444,13 +444,13 @@ testAcyclicAdjacencyMap = do
     test "topSort (vertex x)            == [x]" $ \(x :: Int) ->
           topSort (vertex x)            == [x]
 
-    test "topSort (1 * (2 + 4) + 3 * 4) == [3, 1, 4, 2]" $
-          topSort (1 * (2 + 4) + 3 * 4) == [3, 1, 4, 2 :: Int]
+    test "topSort (1 * (2 + 4) + 3 * 4) == [1, 2, 3, 4]" $
+          topSort (1 * (2 + 4) + 3 * 4) == [1, 2, 3, 4 :: Int]
 
     test "topSort (join x y)            == fmap Left (topSort x) ++ fmap Right (topSort y)" $ \(x :: AAI) (y :: AAI) ->
           topSort (join x y)            == fmap Left (topSort x) ++ fmap Right (topSort y)
 
-    test "topSort                       == fromJust . topSort . fromAcyclic" $ \(x :: AAI) ->
+    test "topSort                       == (fromJust . AM.topSort . fromAcyclic)" $ \(x :: AAI) ->
           topSort x                     == (fromJust . AM.topSort . fromAcyclic) x
 
     putStrLn "\n============ Acyclic.AdjacencyMap.scc ============"

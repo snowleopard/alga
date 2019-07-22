@@ -52,6 +52,7 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
     consistent
     ) where
 
+import Data.Maybe
 import Data.Set (Set)
 import Data.Coerce (coerce)
 
@@ -479,12 +480,12 @@ transitiveClosure = coerce AM.transitiveClosure
 -- @
 -- topSort 'empty'                 == []
 -- topSort ('vertex' x)            == [x]
--- topSort (1 * (2 + 4) + 3 * 4) == [3, 1, 4, 2]
+-- topSort (1 * (2 + 4) + 3 * 4) == [1, 2, 3, 4]
 -- topSort ('join' x y)            == 'fmap' 'Left' (topSort x) ++ 'fmap' 'Right' (topSort y)
--- topSort                       == 'Data.Maybe.fromJust' . topSort . 'fromAcyclic'
+-- topSort                       == 'fromJust' . 'AM.topSort' . 'fromAcyclic'
 -- @
-topSort :: (Ord a) => AdjacencyMap a -> [a]
-topSort (AAM am) = Typed.topSort (Typed.fromAdjacencyMap am)
+topSort :: Ord a => AdjacencyMap a -> [a]
+topSort (AAM am) = fromJust (AM.topSort am)
 
 -- | Compute the acyclic /condensation/ of a graph, where each vertex
 -- corresponds to a /strongly-connected component/ of the original graph. Note
