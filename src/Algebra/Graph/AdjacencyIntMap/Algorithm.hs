@@ -30,6 +30,7 @@ module Algebra.Graph.AdjacencyIntMap.Algorithm (
 
 import Control.Monad
 import Control.Monad.State.Strict
+import Control.Monad.Cont
 import Data.Either
 import Data.Maybe
 import Data.Tree
@@ -229,6 +230,37 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 reachable :: Int -> AdjacencyIntMap -> [Int]
 reachable x = concat . bfs [x]
 
+data S = S { table :: !(IntMap.IntMap Int)
+           , seen :: !(IntMap.IntMap Bool)
+           , order :: [Int] } deriving (Show)
+
+type TopOrder = Either [Int] [Int]
+
+backtrack :: Int -> Int -> [Int] -> IntMap.IntMap Int -> Either [Int] a
+backtrack v u vs table = case IntMap.lookup u table of
+  Just w -> if w == v then Left (u:vs) else backtrack v w (u:vs) table
+
+topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopOrder
+topSort' g = callCC $ \cyclic -> do
+  let enter v = modify' (\(S p s vs) -> S p (IntMap.insert v False s) vs)
+      exit v = modify' (\(S p s vs) -> S p (IntMap.insert v True s) (v:vs))
+      parent u v = modify' (\(S p s vs) -> S (IntMap.insert v u p) s vs)
+      nodeState v = gets (IntMap.lookup v . seen)
+      unexplored u = gets (not . IntMap.member u . table)
+      explore u =
+        do enter u
+           forM_ (IntSet.toDescList (postIntSet u g)) $ \v ->
+             nodeState v >>= \case
+               Nothing -> parent u v >> explore v
+               Just True -> pure () -- Just True => fully explored, False if not
+               Just False -> cyclic . backtrack v u [v] =<< gets table
+           exit u
+           
+  forM_ (map fst $ IntMap.toDescList $ adjacencyIntMap g) $ \u ->
+    do new <- unexplored u
+       when new $ explore u
+  Right <$> gets order
+
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
 -- is cyclic.
 --
@@ -238,42 +270,9 @@ reachable x = concat . bfs [x]
 -- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Just False
 -- 'isJust' . topSort                      == 'isAcyclic'
 -- @
-
-topSort :: AdjacencyIntMap -> Maybe [Int]
-topSort g = check $ execState topologicalSort (mempty,[]) where
-  topologicalSort = mapM_ (explore.fst) $ IntMap.toDescList $ adjacencyIntMap g
-   -- todo add early exit if cycle detected. also add ability to detect
-  check (_,result) = guard (isTopSortOf result g) >> return result
-  explore v = do new <- undiscovered v
-                 when new $ do mark v
-                               mapM_ explore =<< adjacent v
-                               include v
-  adjacent v = filterM undiscovered $ IntSet.toDescList (postIntSet v g)
-  include v = modify' (\(s,vs) -> (s, v:vs))
-  mark v = modify' (\(s,vs) -> (IntSet.insert v s, vs))
-  undiscovered v = gets (\(s,_) -> not (IntSet.member v s))
-
--- data Color = White | Gray | Black
---   deriving (Show,Read,Eq,Ord,Enum,Bounded)
---   
--- topSort :: AdjacencyIntMap -> Either [Int] [Int]
--- topSort g = evalState explore state0 where
---   state0 = (adjacencyIntMap g,mempty,[])
--- --  topologicalSort = mapM_ (explore.fst) $ IntMap.toDescList $ adjacencyIntMap g
---    -- todo add early exit if cycle detected. also add ability to detect
--- --  check (_,result) = guard (isTopSortOf result g) >> return result
---   explore = gets (IntMap.maxViewWithKey . graph) >>= \case
---     Nothing -> Right <$> gets ordering
---     Just ((u,vs),g') -> undefined
---   graph (g,_,_) = g
---   graph' g (_,m,vs) = (g,m,vs)
---   ordering (_,_,vs) = vs
---   parents (_,m,_) = m
-  
---   adjacent v = filterM undiscovered $ IntSet.toDescList (postIntSet v g)
---   include v = modify' (\(s,vs) -> (s, v:vs))
---   mark v = modify' (\(s,vs) -> (IntSet.insert v s, vs))
---   undiscovered v = gets (\(s,_) -> not (IntSet.member v s))
+topSort :: AdjacencyIntMap -> Either [Int] [Int]
+topSort g = runContT (runStateT (topSort' g) initialState) fst where
+  initialState = S mempty mempty mempty
 
 -- | Check if a given graph is /acyclic/.
 --
@@ -284,7 +283,7 @@ topSort g = check $ execState topologicalSort (mempty,[]) where
 -- isAcyclic                 == 'isJust' . 'topSort'
 -- @
 isAcyclic :: AdjacencyIntMap -> Bool
-isAcyclic = isJust . topSort
+isAcyclic = isRight . topSort
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
