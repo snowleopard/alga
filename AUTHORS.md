@@ -7,6 +7,7 @@ but over time many contributors helped make it much better, including (among oth
 * [Adithya Obilisetty](mailto:adi.obilisetty@gmail.com) [@adithyaov](https://github.com/adithyaov)
 * [Alexandre Moine](mailto:alexandre@moine.me) [@nobrakal](https://github.com/nobrakal)
 * [Armando Santos](mailto:armandoifsantos@gmail.com) [@bolt12](https://github.com/bolt12)
+* [Joseph Novakovich](mailto:jrn@bluefarm.ca) [@jitwit](https://github.com/jitwit)
 * [Piotr Gawryś](mailto:pgawrys2@gmail.com) [@Avasil](https://github.com/Avasil)
 * [Vasily Alferov](mailto:vasily.v.alferov@gmail.com) [@vasalf](https://github.com/vasalf)
 

@@ -97,6 +97,9 @@ data API g c where
         , adjacencyIntMap            :: g Int -> IntMap IntSet
         , adjacencyMapTranspose      :: forall a. c a => g a -> Map a (Set a)
         , adjacencyIntMapTranspose   :: g Int -> IntMap IntSet
+        , bfsForest                  :: forall a. c a => g a -> Forest a
+        , bfsForestFrom              :: forall a. c a => [a] -> g a -> Forest a
+        , bfs                        :: forall a. c a => [a] -> g a -> [[a]]
         , dfsForest                  :: forall a. c a => g a -> Forest a
         , dfsForestFrom              :: forall a. c a => [a] -> g a -> Forest a
         , dfs                        :: forall a. c a => [a] -> g a -> [a]
@@ -176,6 +179,9 @@ adjacencyMapAPI = API
     , adjacencyIntMap            = T.adjacencyIntMap
     , adjacencyMapTranspose      = T.adjacencyMapTranspose
     , adjacencyIntMapTranspose   = T.adjacencyIntMapTranspose
+    , bfsForest                  = AM.bfsForest
+    , bfsForestFrom              = AM.bfsForestFrom
+    , bfs                        = AM.bfs
     , dfsForest                  = AM.dfsForest
     , dfsForestFrom              = AM.dfsForestFrom
     , dfs                        = AM.dfs
@@ -321,6 +327,9 @@ adjacencyIntMapAPI = API
     , adjacencyIntMap            = coerce AIM.adjacencyIntMap
     , adjacencyMapTranspose      = T.adjacencyMapTranspose . getMono
     , adjacencyIntMapTranspose   = T.adjacencyIntMapTranspose . getMono
+    , bfsForest                  = coerce AIM.bfsForest
+    , bfsForestFrom              = coerce AIM.bfsForestFrom
+    , bfs                        = coerce AIM.bfs
     , dfsForest                  = coerce AIM.dfsForest
     , dfsForestFrom              = coerce AIM.dfsForestFrom
     , dfs                        = coerce AIM.dfs

@@ -471,8 +471,8 @@ instance (Eq o, Dioid a, Dioid o) => Dioid (Optimum o a) where
 -- | A /path/ is a list of edges.
 type Path a = [(a, a)]
 
--- | The 'Optimum' semiring specialised to /finding the lexicographically
--- smallest shortest path/.
+-- | The 'Optimum' semiring specialised to
+-- /finding the lexicographically smallest shortest path/.
 type ShortestPath e a = Optimum (Distance e) (Minimum (Path a))
 
 -- | The 'Optimum' semiring specialised to /finding all shortest paths/.
@@ -481,6 +481,6 @@ type AllShortestPaths e a = Optimum (Distance e) (PowerSet (Path a))
 -- | The 'Optimum' semiring specialised to /counting all shortest paths/.
 type CountShortestPaths e a = Optimum (Distance e) (Count Integer)
 
--- | The 'Optimum' semiring specialised to /finding the lexicographically
--- smallest widest path/.
+-- | The 'Optimum' semiring specialised to
+-- /finding the lexicographically smallest widest path/.
 type WidestPath e a = Optimum (Capacity e) (Minimum (Path a))
