@@ -38,7 +38,6 @@ testUndirected = do
 
     testSymmetricBasicPrimitives t
     testSymmetricIsSubgraphOf    t
-    testSymmetricToGraph         t
     testSymmetricGraphFamilies   t
     testSymmetricTransformations t
     testInduceJust               tPoly
