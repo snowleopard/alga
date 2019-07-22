@@ -1,42 +1,42 @@
------------------------------------------------------------------
+-----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Acyclic.Ord
+-- Module     : Algebra.Graph.Acyclic.AdjacencyMap.Ord
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
+-- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
+--
 --
 -- __Alga__ is a library for algebraic construction and manipulation of graphs
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines functions which guarantee Acyclic graph by
--- establishing an invariant on the edges.
--- An edge (x, y) exists if and only if x < y. This way no back
--- edges are formed and hence making a cyclic graph is impossible.
-----------------------------------------------------------------
-module Algebra.Graph.Acyclic.Ord (
-    -- * Graph construction primitives
-    edge, overlay, connect, edges, overlays, connects,
-
-    -- * Graph transformation
-    replaceVertex, mergeVertices, gmap,
+-- This module provides convenient functions for constructing acyclic graphs by
+-- keeping only edges @(x,y)@ where @x < y@ according to the supplied 'Ord' @a@
+-- instance. This module can be imported qualified to avoid confusion with the
+-- modules "Algebra.Graph.AdjacencyMap" and "Algebra.Graph.Acyclic.AdjacencyMap":
+--
+-- @
+-- import qualified Algebra.Graph.Acyclic.AdjacencyMap.Ord as Acyclic.Ord
+-- @
+-----------------------------------------------------------------------------
+module Algebra.Graph.Acyclic.AdjacencyMap.Ord (
+    -- * Basic graph construction primitives
+    edge, overlay, connect, edges, overlays, connects
     ) where
 
 import Algebra.Graph.Acyclic.AdjacencyMap
+
 import qualified Algebra.Graph.AdjacencyMap as AM
-import Data.Function (on)
 
 -- | Construct the graph comprising /a single edge/.
 -- Complexity: /O(1)/ time, memory.
 --
 -- @
 -- edge x y               == 'connect' ('vertex' x) ('vertex' y)
+-- 'hasEdge' 1 1 (edge 1 1) == False
 -- 'hasEdge' 1 2 (edge 1 2) == True
 -- 'hasEdge' 2 1 (edge 2 1) == False
--- 'edgeCount'   (edge 1 2) == 1
--- 'edgeCount'   (edge 2 1) == 0
--- 'vertexCount' (edge 1 1) == 1
--- 'vertexCount' (edge 1 2) == 2
--- 'vertexCount' (edge 2 1) == 2
 -- @
 edge :: Ord a => a -> a -> AdjacencyMap a
 edge x y = toAcyclicOrd (AM.edge x y)
@@ -56,7 +56,7 @@ edge x y = toAcyclicOrd (AM.edge x y)
 -- 'edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-overlay x y = toAcyclicOrd $ (AM.overlay `on` fromAcyclic) x y
+overlay x y = toAcyclicOrd $ AM.overlay (fromAcyclic x) (fromAcyclic y)
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
 -- 'empty', which distributes over 'overlay' and obeys the decomposition axiom.
@@ -77,7 +77,7 @@ overlay x y = toAcyclicOrd $ (AM.overlay `on` fromAcyclic) x y
 -- 'edgeCount'   (connect 2 1) == 0
 -- @
 connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-connect x y = toAcyclicOrd $ (AM.connect `on` fromAcyclic) x y
+connect x y = toAcyclicOrd $ AM.connect (fromAcyclic x) (fromAcyclic y)
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -116,50 +116,3 @@ overlays = toAcyclicOrd . AM.overlays . map fromAcyclic
 -- @
 connects :: Ord a => [AdjacencyMap a] -> AdjacencyMap a
 connects = toAcyclicOrd . AM.connects . map fromAcyclic
-
--- | The function @'replaceVertex' x y@ replaces vertex @x@ with 
--- vertex @y@ in a given 'AdjacencyMap'. All the edges are filtered
--- for the invariant to hold true.
--- If @y@ already exists, @x@ and @y@ will be merged.
--- Complexity: /O((n + m) * log(n))/ time.
---
--- @
--- replaceVertex x x            == id
--- replaceVertex x y ('vertex' x) == 'vertex' y
--- replaceVertex x y            == 'mergeVertices' (== x) y
--- replaceVertex 1 2 (1 * 3)    == 2 * 3
--- replaceVertex 1 4 (1 * 3)    == 4 + 3
--- @
-replaceVertex :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
-replaceVertex u v = gmap $ \w -> if w == u then v else w
-
--- | Merge vertices satisfying a given predicate into a given vertex
--- keeping the invariant true.
--- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
--- /O(1)/ to be evaluated.
---
--- @
--- mergeVertices ('const' False) x        == id
--- mergeVertices (== x) y               == 'replaceVertex' x y
--- mergeVertices 'even' 1 (0 * 2)         == 1
--- mergeVertices 'odd'  1 (3 + 4 * 5)     == 4 + 1
--- mergeVertices 'even' 1 (2 * 3 + 4 * 5) == 1 * 3 + 1 * 5
--- @
-mergeVertices :: Ord a => (a -> Bool) -> a -> AdjacencyMap a -> AdjacencyMap a
-mergeVertices p v = gmap $ \u -> if p u then v else u
-
--- | Transform a graph by applying a function to each of its
--- vertices without breaking the edge invariant.
--- Complexity: /O((n + m) * log(n))/ time.
---
--- @
--- gmap f 'empty'                   == 'empty'
--- gmap f ('vertex' x)              == 'vertex' (f x)
--- 'vertexList' (gmap f ('edge' x y)) == 'vertexList' ('edge' (f x) (f y))
--- 'edgeCount'  (gmap f ('edge' x y)) <= 'edgeCount' ('edge' (f x) (f y))
--- gmap 'id'                        == 'id'
--- 'vertexList' . gmap f . gmap g   == 'vertexList' . gmap (f . g)
--- 'edgeCount' (gmap f (gmap g x))  <= 'edgeCount' (gmap (f . g) x)
--- @
-gmap :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap a -> AdjacencyMap b
-gmap f = toAcyclicOrd . AM.gmap f . fromAcyclic
