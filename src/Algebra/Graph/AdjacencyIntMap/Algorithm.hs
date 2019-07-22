@@ -30,6 +30,7 @@ module Algebra.Graph.AdjacencyIntMap.Algorithm (
 
 import Control.Monad
 import Control.Monad.State.Strict
+import Data.Either
 import Data.Maybe
 import Data.Tree
 
@@ -237,7 +238,7 @@ reachable x = concat . bfs [x]
 -- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Just False
 -- 'isJust' . topSort                      == 'isAcyclic'
 -- @
-  
+
 topSort :: AdjacencyIntMap -> Maybe [Int]
 topSort g = check $ execState topologicalSort (mempty,[]) where
   topologicalSort = mapM_ (explore.fst) $ IntMap.toDescList $ adjacencyIntMap g
@@ -251,6 +252,28 @@ topSort g = check $ execState topologicalSort (mempty,[]) where
   include v = modify' (\(s,vs) -> (s, v:vs))
   mark v = modify' (\(s,vs) -> (IntSet.insert v s, vs))
   undiscovered v = gets (\(s,_) -> not (IntSet.member v s))
+
+-- data Color = White | Gray | Black
+--   deriving (Show,Read,Eq,Ord,Enum,Bounded)
+--   
+-- topSort :: AdjacencyIntMap -> Either [Int] [Int]
+-- topSort g = evalState explore state0 where
+--   state0 = (adjacencyIntMap g,mempty,[])
+-- --  topologicalSort = mapM_ (explore.fst) $ IntMap.toDescList $ adjacencyIntMap g
+--    -- todo add early exit if cycle detected. also add ability to detect
+-- --  check (_,result) = guard (isTopSortOf result g) >> return result
+--   explore = gets (IntMap.maxViewWithKey . graph) >>= \case
+--     Nothing -> Right <$> gets ordering
+--     Just ((u,vs),g') -> undefined
+--   graph (g,_,_) = g
+--   graph' g (_,m,vs) = (g,m,vs)
+--   ordering (_,_,vs) = vs
+--   parents (_,m,_) = m
+  
+--   adjacent v = filterM undiscovered $ IntSet.toDescList (postIntSet v g)
+--   include v = modify' (\(s,vs) -> (s, v:vs))
+--   mark v = modify' (\(s,vs) -> (IntSet.insert v s, vs))
+--   undiscovered v = gets (\(s,_) -> not (IntSet.member v s))
 
 -- | Check if a given graph is /acyclic/.
 --

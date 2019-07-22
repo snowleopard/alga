@@ -237,7 +237,6 @@ reachable x = concat . bfs [x]
 -- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Just False
 -- 'isJust' . topSort                      == 'isAcyclic'
 -- @
-
 topSort :: Ord a => AdjacencyMap a -> Maybe [a]
 topSort g = check $ execState topologicalSort (mempty,[]) where
   topologicalSort = mapM_ explore $ Set.toDescList $ vertexSet g
@@ -251,9 +250,6 @@ topSort g = check $ execState topologicalSort (mempty,[]) where
   include v = modify' (\(s,vs) -> (s, v:vs))
   mark v = modify' (\(s,vs) -> (Set.insert v s, vs))
   undiscovered v = gets (\(s,_) -> not (Set.member v s))
---then Just result else Nothing
---  where
---    result = Typed.topSort (Typed.fromAdjacencyMap m)
 
 -- | Check if a given graph is /acyclic/.
 --
