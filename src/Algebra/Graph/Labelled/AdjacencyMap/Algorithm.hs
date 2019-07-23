@@ -12,10 +12,11 @@ dijkstra :: (Ord a, Ord e, Dioid e) => AdjacencyMap e a -> a -> Map a e
 dijkstra = dijkstra' zero one
 
 dijkstra' :: (Ord a, Ord e, Dioid e) => e -> e -> AdjacencyMap e a -> a -> Map a e
-dijkstra' z o am src = snd (processG processI)
+dijkstra' z o am src = maybe zm (snd . processG . const processI) (Map.lookup src zm)
   where
     im = adjacencyMap am
-    processI = (Set.singleton (one, src), Map.insert src one . Map.map (const zero) $ im)
+    zm = Map.map (const zero) im
+    processI = (Set.singleton (one, src), Map.insert src one zm)
     processG sm@(s, _)
       | o < z = processS (Set.minView s) sm
       | otherwise = processS (Set.maxView s) sm
