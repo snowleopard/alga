@@ -18,6 +18,7 @@ import Data.Monoid
 
 import Algebra.Graph.Label
 import Algebra.Graph.Labelled.AdjacencyMap
+import Algebra.Graph.Labelled.AdjacencyMap.Algorithm
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API (toIntAPI, labelledAdjacencyMapAPI)
 import Algebra.Graph.Test.Generic
@@ -35,6 +36,7 @@ t = fmap toIntAPI tPoly
 
 type S = Sum Int
 type D = Distance Int
+type C = Capacity Int
 
 type LAI = AdjacencyMap Any Int
 type LAS = AdjacencyMap S   Int
@@ -477,3 +479,16 @@ testLabelledAdjacencyMap = do
 
     test "transitiveClosure . transitiveClosure == transitiveClosure" $ size10 $ \x ->
          (transitiveClosure . transitiveClosure) x == transitiveClosure (x :: LAD)
+
+    putStrLn "\n============ Labelled.AdjacencyMap.Algorithm.dijkstra ============"
+    test "dijkstra (edges [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'z' == Map.fromList [('a', distance infinite), ('b', distance infinite), ('c', distance infinite)]" $
+          dijkstra (edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'z' == Map.fromList [('a', distance infinite), ('b', distance infinite), ('c', distance infinite)]
+
+    test "dijkstra (edges [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'a' == Map.fromList [('a', 0), ('b', 1), ('c', 3)]" $
+          dijkstra (edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'a' == Map.fromList [('a', 0), ('b', 1), ('c', 3)]
+
+    test "dijkstra (edges [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'z' == Map.fromList [('a', 0), ('b', 0), ('c', 0)]" $
+          dijkstra (edges [(2 :: C, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'z' == Map.fromList [('a', 0), ('b', 0), ('c', 0)]
+
+    test "dijkstra (edges [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'a' == Map.fromList [('a', capacity infinite), ('b', 1), ('c', 4)]" $
+          dijkstra (edges [(2 :: C, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'a' == Map.fromList [('a', capacity infinite), ('b', 1), ('c', 4)]
