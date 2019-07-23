@@ -235,7 +235,6 @@ type TopOrder a = Either [a] [a]
 
 pattern TreeEdge <- Nothing
 pattern BackEdge <- Just (_,False)
-pattern Other    <- Just (_,True)
 pattern Parent p <- Just (Just p,_)
 
 topSort' :: (Ord a, MonadState (S a) m, MonadCont m)
@@ -243,8 +242,8 @@ topSort' :: (Ord a, MonadState (S a) m, MonadCont m)
 topSort' g = callCC $ \cyclic -> do
   let unexplored u = gets (not . Map.member u . table)
       parent u v = modify' (\(S p vs) -> S (Map.insert v (u,False) p) vs)
-      exit v = modify' (\(S p vs) -> S (Map.alter mark v p) (v:vs)) where
-        mark = fmap (fmap (const True)) -- mark tree as explored/done
+      exit v = modify' (\(S p vs) -> S (Map.alter done v p) (v:vs)) where
+        done = fmap (fmap (const True))
       edge_type v = gets (Map.lookup v . table)
       retrace v vs@(u:_) table@(Map.lookup u -> ~(Parent p))
         | v == u    = vs
@@ -254,7 +253,7 @@ topSort' g = callCC $ \cyclic -> do
              edge_type v >>= \case
                TreeEdge -> parent (Just u) v >> dfs v
                BackEdge -> cyclic . Left . retrace v [u] =<< gets table
-               Other    -> pure ()
+               _        -> pure ()
            exit u
   forM_ (map fst $ Map.toDescList $ adjacencyMap g) $
     \v -> do new_tree <- unexplored v

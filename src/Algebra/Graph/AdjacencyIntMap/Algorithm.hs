@@ -233,15 +233,14 @@ data S = S { table :: !ParentTable, order :: [Int] }
 
 pattern TreeEdge <- Nothing
 pattern BackEdge <- Just (_,False)
-pattern Other    <- Just (_,True)
 pattern Parent p <- Just (Just p,_)
 
 topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopOrder
 topSort' g = callCC $ \cyclic -> do
   let unexplored u = gets (not . IntMap.member u . table)
       parent u v = modify' (\(S p vs) -> S (IntMap.insert v (u,False) p) vs)
-      exit v = modify' (\(S p vs) -> S (IntMap.alter mark v p) (v:vs)) where
-        mark = fmap (fmap (const True)) -- mark tree as explored/done
+      exit v = modify' (\(S p vs) -> S (IntMap.alter done v p) (v:vs)) where
+        done = fmap (fmap (const True))
       edge_type v = gets (IntMap.lookup v . table)
       retrace v vs@(u:_) table@(IntMap.lookup u -> ~(Parent p))
         | v == u    = vs
@@ -251,7 +250,7 @@ topSort' g = callCC $ \cyclic -> do
              edge_type v >>= \case
                TreeEdge -> parent (Just u) v >> dfs v
                BackEdge -> cyclic . Left . retrace v [u] =<< gets table
-               Other    -> pure ()
+               _        -> pure ()
            exit u
   forM_ (map fst $ IntMap.toDescList $ adjacencyIntMap g) $
     \v -> do new_tree <- unexplored v
