@@ -1,4 +1,4 @@
-{-# language LambdaCase, ViewPatterns #-}
+{-# language LambdaCase, ViewPatterns, PatternSynonyms #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -231,23 +231,28 @@ type TopOrder = Either [Int] [Int]
 type ParentTable = IntMap.IntMap (Maybe Int,Bool)
 data S = S { table :: !ParentTable, order :: [Int] }
 
+pattern TreeEdge  <- Nothing
+pattern BackEdge  <- Just (_,False)
+pattern OtherEdge <- Just (_,True)
+pattern Parent p  <- Just (Just p,_)
+
 topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopOrder
 topSort' g = callCC $ \cyclic -> do
   let unexplored u = gets (not . IntMap.member u . table)
       parent u v = modify' (\(S p vs) -> S (IntMap.insert v (u,False) p) vs)
       exit v = modify' (\(S p vs) -> S (IntMap.alter mark v p) (v:vs)) where
         mark = fmap (fmap (const True)) -- mark tree as explored/done
-      node_state v = gets (IntMap.lookup v . table)
-      retrace v vs@(u:_) table@(IntMap.lookup u -> ~(Just (Just w,_)))
+      edge_type v = gets (IntMap.lookup v . table)
+      retrace v vs@(u:_) table@(IntMap.lookup u -> ~(Parent w))
         | v == u = vs
         | v == w = v:vs
         | otherwise = retrace v (w:vs) table
       dfs u =
         do forM_ (IntSet.toDescList $ postIntSet u g) $ \v ->
-             node_state v >>= \case
-               Nothing -> parent (Just u) v >> dfs v
-               Just (_,True) -> pure ()
-               Just (_,False) -> cyclic . Left . retrace v [u] =<< gets table
+             edge_type v >>= \case
+               TreeEdge  -> parent (Just u) v >> dfs v
+               BackEdge  -> cyclic . Left . retrace v [u] =<< gets table
+               OtherEdge -> pure ()
            exit u
   forM_ (map fst $ IntMap.toDescList $ adjacencyIntMap g) $
     \v -> do new_tree <- unexplored v
@@ -276,8 +281,9 @@ topSort g = runContT (runStateT (topSort' g) initialState) fst where
 -- isAcyclic                 == 'isJust' . 'topSort'
 -- @
 isAcyclic :: AdjacencyIntMap -> Bool
-isAcyclic (topSort -> Right _) = True
-isAcyclic _ = False
+isAcyclic g = case topSort g of
+  Right _ -> True
+  Left  _ -> False
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong

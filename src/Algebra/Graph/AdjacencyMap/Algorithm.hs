@@ -1,4 +1,4 @@
-{-# language LambdaCase, ViewPatterns #-}
+{-# language LambdaCase, ViewPatterns, PatternSynonyms #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -233,6 +233,11 @@ type ParentTable a = Map.Map a (Maybe a,Bool)
 data S a = S { table :: !(ParentTable a), order :: [a] }
 type TopOrder a = Either [a] [a]
 
+pattern TreeEdge  <- Nothing
+pattern BackEdge  <- Just (_,False)
+pattern OtherEdge <- Just (_,True)
+pattern Parent p  <- Just (Just p,_)
+
 topSort' :: (Ord a, MonadState (S a) m, MonadCont m)
          => AdjacencyMap a -> m (TopOrder a)
 topSort' g = callCC $ \cyclic -> do
@@ -240,17 +245,17 @@ topSort' g = callCC $ \cyclic -> do
       parent u v = modify' (\(S p vs) -> S (Map.insert v (u,False) p) vs)
       exit v = modify' (\(S p vs) -> S (Map.alter mark v p) (v:vs)) where
         mark = fmap (fmap (const True)) -- mark tree as explored/done
-      node_state v = gets (Map.lookup v . table)
-      retrace v vs@(u:_) table@(Map.lookup u -> ~(Just (Just w,_)))
+      edge_type v = gets (Map.lookup v . table)
+      retrace v vs@(u:_) table@(Map.lookup u -> ~(Parent w))
         | v == u = vs
         | v == w = v:vs
         | otherwise = retrace v (w:vs) table
       dfs u =
         do forM_ (Set.toDescList $ postSet u g) $ \v ->
-             node_state v >>= \case
-               Nothing -> parent (Just u) v >> dfs v
-               Just (_,True) -> pure ()
-               Just (_,False) -> cyclic . Left . retrace v [u] =<< gets table
+             edge_type v >>= \case
+               TreeEdge  -> parent (Just u) v >> dfs v
+               BackEdge  -> cyclic . Left . retrace v [u] =<< gets table
+               OtherEdge -> pure ()
            exit u
   forM_ (map fst $ Map.toDescList $ adjacencyMap g) $
     \v -> do new_tree <- unexplored v
@@ -279,8 +284,9 @@ topSort g = runContT (runStateT (topSort' g) initialState) fst where
 -- isAcyclic                 == 'isJust' . 'topSort'
 -- @
 isAcyclic :: Ord a => AdjacencyMap a -> Bool
-isAcyclic (topSort -> Right _) = True
-isAcyclic _ = False
+isAcyclic g = case topSort g of
+  Right _ -> True
+  Left  _ -> False
 
 -- TODO: Benchmark and optimise.
 -- | Compute the /condensation/ of a graph, where each vertex corresponds to a
