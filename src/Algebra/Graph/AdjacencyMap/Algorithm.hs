@@ -241,9 +241,9 @@ topSort' g = callCC $ \cyclic -> do
       exit v = modify' (\(S p vs) -> S (Map.alter mark v p) (v:vs)) where
         mark = fmap (fmap (const True)) -- mark tree as explored/done
       node_state v = gets (Map.lookup v . table)
-      retrace v vs@(u:_) table@(Map.lookup u -> Just (Just w,_))
-        | w == v = v:vs
+      retrace v vs@(u:_) table@(Map.lookup u -> ~(Just (Just w,_)))
         | v == u = vs
+        | v == w = v:vs
         | otherwise = retrace v (w:vs) table
       dfs u =
         do forM_ (Set.toDescList $ postSet u g) $ \v ->
