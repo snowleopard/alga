@@ -81,6 +81,7 @@ library
                         Algebra.Graph.Label,
                         Algebra.Graph.Labelled,
                         Algebra.Graph.Labelled.AdjacencyMap,
+                        Algebra.Graph.Labelled.AdjacencyMap.Algorithm,
                         Algebra.Graph.Labelled.Example.Automaton,
                         Algebra.Graph.Labelled.Example.Network,
                         Algebra.Graph.NonEmpty,
