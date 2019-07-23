@@ -231,10 +231,10 @@ type TopOrder = Either [Int] [Int]
 type ParentTable = IntMap.IntMap (Maybe Int,Bool)
 data S = S { table :: !ParentTable, order :: [Int] }
 
-pattern TreeEdge  <- Nothing
-pattern BackEdge  <- Just (_,False)
-pattern OtherEdge <- Just (_,True)
-pattern Parent p  <- Just (Just p,_)
+pattern TreeEdge <- Nothing
+pattern BackEdge <- Just (_,False)
+pattern Other    <- Just (_,True)
+pattern Parent p <- Just (Just p,_)
 
 topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopOrder
 topSort' g = callCC $ \cyclic -> do
@@ -243,16 +243,15 @@ topSort' g = callCC $ \cyclic -> do
       exit v = modify' (\(S p vs) -> S (IntMap.alter mark v p) (v:vs)) where
         mark = fmap (fmap (const True)) -- mark tree as explored/done
       edge_type v = gets (IntMap.lookup v . table)
-      retrace v vs@(u:_) table@(IntMap.lookup u -> ~(Parent w))
-        | v == u = vs
-        | v == w = v:vs
-        | otherwise = retrace v (w:vs) table
+      retrace v vs@(u:_) table@(IntMap.lookup u -> ~(Parent p))
+        | v == u    = vs
+        | otherwise = retrace v (p:vs) table
       dfs u =
         do forM_ (IntSet.toDescList $ postIntSet u g) $ \v ->
              edge_type v >>= \case
-               TreeEdge  -> parent (Just u) v >> dfs v
-               BackEdge  -> cyclic . Left . retrace v [u] =<< gets table
-               OtherEdge -> pure ()
+               TreeEdge -> parent (Just u) v >> dfs v
+               BackEdge -> cyclic . Left . retrace v [u] =<< gets table
+               Other    -> pure ()
            exit u
   forM_ (map fst $ IntMap.toDescList $ adjacencyIntMap g) $
     \v -> do new_tree <- unexplored v
@@ -264,13 +263,13 @@ topSort' g = callCC $ \cyclic -> do
 --
 -- @
 -- topSort (1 * 2 + 3 * 1)               == Right [3,1,2]
--- topSort (1 * 2 + 2 * 1)               == Nothing
--- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Just False
--- 'isJust' . topSort                      == 'isAcyclic'
+-- topSort (1 * 2 + 2 * 1)               == Left [2,1]
+-- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Right False
+-- 'isRight' . topSort                     == 'isAcyclic'
 -- @
 topSort :: AdjacencyIntMap -> Either [Int] [Int]
-topSort g = runContT (runStateT (topSort' g) initialState) fst where
-  initialState = S mempty mempty 
+topSort g = runContT (evalStateT (topSort' g) initialState) id where
+  initialState = S mempty mempty
 
 -- | Check if a given graph is /acyclic/.
 --
@@ -278,7 +277,7 @@ topSort g = runContT (runStateT (topSort' g) initialState) fst where
 -- isAcyclic (1 * 2 + 3 * 1) == True
 -- isAcyclic (1 * 2 + 2 * 1) == False
 -- isAcyclic . 'circuit'       == 'null'
--- isAcyclic                 == 'isJust' . 'topSort'
+-- isAcyclic                 == 'isRight' . 'topSort'
 -- @
 isAcyclic :: AdjacencyIntMap -> Bool
 isAcyclic g = case topSort g of

@@ -1992,9 +1992,8 @@ testTopSort (prefix, API{..}) = do
     test "topSort (1 * 2 + 2 * 1)               == Left [2,1]" $
           topSort (1 * 2 + 2 * 1)               == Left [2,1]
 
--- todo add appropriate test back
---    test "fmap (flip isTopSortOf x) (topSort x) /= Just False" $ \x ->
---          fmap (flip isTopSortOf x) (topSort x) /= Just False
+    test "fmap (flip isTopSortOf x) (topSort x) /= Right False" $ \x ->
+          fmap (flip isTopSortOf x) (topSort x) /= Right False
 
 testIsAcyclic :: TestsuiteInt g -> IO ()
 testIsAcyclic (prefix, API{..}) = do
