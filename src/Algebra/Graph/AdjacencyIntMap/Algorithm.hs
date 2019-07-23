@@ -207,7 +207,7 @@ dfsForestFrom' vs g = evalState (explore vs) mempty where
 -- dfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1] == [3,2,1,5,4]
 -- @
 dfs :: [Int] -> AdjacencyIntMap -> [Int]
-dfs vs = concatMap flatten . dfsForestFrom vs
+dfs vs = dfsForestFrom vs >=> flatten
 
 -- | Compute the list of vertices that are /reachable/ from a given source
 -- vertex in a graph. The vertices in the resulting list appear in
@@ -227,37 +227,32 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 reachable :: Int -> AdjacencyIntMap -> [Int]
 reachable x = concat . bfs [x]
 
-data S = S { table :: !(IntMap.IntMap Int)
-           , seen :: !(IntMap.IntMap Bool)
-           , order :: [Int] } deriving (Show)
-
 type TopOrder = Either [Int] [Int]
-
-backtrack :: Int -> [Int] -> IntMap.IntMap Int -> [Int]
-backtrack w vs@(v:_) table = case IntMap.lookup v table of
-  Just u -> if u == w then vs else backtrack w (u:vs) table
-  Nothing -> vs
+type ParentTable = IntMap.IntMap (Maybe Int,Bool)
+data S = S { table :: !ParentTable, order :: [Int] }
 
 topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopOrder
 topSort' g = callCC $ \cyclic -> do
-  let enter v = modify' (\(S p s vs) -> S p (IntMap.insert v False s) vs)
-      exit v = modify' (\(S p s vs) -> S p (IntMap.insert v True s) (v:vs))
-      parent u v = modify' (\(S p s vs) -> S (IntMap.insert v u p) s vs)
-      nodeState v = gets (IntMap.lookup v . seen)
+  let parent u v = modify' (\(S p vs) -> S (IntMap.alter (register u) v p) vs)
+      register u = const (Just (u, False)) -- mark parent as u 
+      explored v = modify' (\(S p vs) -> S (IntMap.alter mark v p) (v:vs))
+      mark = fmap (fmap (const True)) -- mark tree as explored/done
+      node_state v = gets (IntMap.lookup v . table)
       unexplored u = gets (not . IntMap.member u . table)
-      explore u =
-        do enter u
-           forM_ (IntSet.toDescList (postIntSet u g)) $ \v ->
-             nodeState v >>= \case
-               Nothing -> parent u v >> explore v
-               -- True => tree fully explored, False => not (cycle)
-               Just False -> cyclic . Left . backtrack v [u,v] =<< gets table
-               Just True -> pure () 
-           exit u
-           
-  forM_ (map fst $ IntMap.toDescList $ adjacencyIntMap g) $ \v ->
-    do new <- unexplored v
-       when new $ explore v
+      build_cycle u v = cyclic . Left . expand_cycle v [u,v] =<< gets table
+      expand_cycle w vs@(v:_) table =
+        case IntMap.lookup v table of
+          Just (Just u,_) -> if u == v then vs else expand_cycle w (u:vs) table
+          Just _ -> tail vs
+      dfs u = do forM_ (IntSet.toDescList $ postIntSet u g) $ \v ->
+                   node_state v >>= \case
+                     Nothing -> parent (Just u) v >> dfs v -- new node
+                     Just (_,True) -> pure () -- part of explored tree
+                     Just (_,False) -> build_cycle u v -- part of cycle
+                 explored u
+  forM_ (map fst $ IntMap.toDescList $ adjacencyIntMap g) $
+    \v -> do new_tree <- unexplored v
+             when new_tree $ parent Nothing v >> dfs v
   Right <$> gets order
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
@@ -271,7 +266,7 @@ topSort' g = callCC $ \cyclic -> do
 -- @
 topSort :: AdjacencyIntMap -> Either [Int] [Int]
 topSort g = runContT (runStateT (topSort' g) initialState) fst where
-  initialState = S mempty mempty mempty
+  initialState = S mempty mempty 
 
 -- | Check if a given graph is /acyclic/.
 --
