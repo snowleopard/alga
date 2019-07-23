@@ -8,9 +8,13 @@ import Algebra.Graph.Labelled.AdjacencyMap
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
 
+-- TODO: Inprove documentation for 'dijkstra'.
+-- TODO: Add tests and examples for 'dijkstra'.
+-- | Compute shortest path.
 dijkstra :: (Ord a, Ord e, Dioid e) => AdjacencyMap e a -> a -> Map a e
 dijkstra = dijkstra' zero one
 
+-- Extended dijkstra. This function should not be exported.
 dijkstra' :: (Ord a, Ord e, Dioid e) => e -> e -> AdjacencyMap e a -> a -> Map a e
 dijkstra' z o am src = maybe zm (snd . processG . const processI) (Map.lookup src zm)
   where
