@@ -8,9 +8,28 @@ import Algebra.Graph.Labelled.AdjacencyMap
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
 
--- TODO: Inprove documentation for 'dijkstra'.
--- TODO: Add tests and examples for 'dijkstra'.
--- | Compute shortest path.
+-- TODO: Improve documentation for 'dijkstra'.
+-- TODO: Add tests for 'dijkstra'.
+-- | A generic Dijkstra algorithm that relaxes the list of edges
+-- based on the 'Dioid'.
+--
+-- If the 'Dioid' is 'Distance' (negative 'Dioid') the relaxation
+-- is done in ascending order.
+--
+-- If the 'Dioid' is 'Capacity' (positive 'Dioid') the relaxation
+-- is done in descending order.
+--
+-- The examples below assume the edge values are 'Distance'
+-- @
+-- dijkstra ('edges' [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'z') == Map.'Map.fromList' [('a', Infinite), ('b', Infinite), ('c', Infinite)]
+-- dijkstra ('edges' [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'a'  == Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
+-- @
+--
+-- The examples below assume the edge values are 'Capacity'
+-- @
+-- dijkstra ('edges' [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'z') == Map.'Map.fromList' [('a', 0), ('b', 0), ('c', 0)]
+-- dijkstra ('edges' [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'a'  == Map.'Map.fromList' [('a', Infinite), ('b', 1), ('c', 4)]
+-- @
 dijkstra :: (Ord a, Ord e, Dioid e) => AdjacencyMap e a -> a -> Map a e
 dijkstra = dijkstra' zero one
 
@@ -32,21 +51,3 @@ dijkstra' z o am src = maybe zm (snd . processG . const processI) (Map.lookup sr
     relaxE (e, v1, v2) (s, m) =
       let n = ((m ! v1) <.> e) <+> (m ! v2)
       in (Set.insert (n, v2) s, Map.insert v2 n m)
-
--- REPL Testing
-
-x = edges
-  [ (4::Distance Int, 0, 1)
-  , (8, 0, 7)
-  , (11, 1, 7)
-  , (8, 1, 2)
-  , (7, 7, 8)
-  , (1, 7, 16)
-  , (6, 8, 16)
-  , (2, 2, 8)
-  , (4, 2, 25)
-  , (2, 16, 25)
-  , (14, 3, 25)
-  , (9, 3, 40)
-  , (10, 25, 40)
-  , (7, 2, 3)]
