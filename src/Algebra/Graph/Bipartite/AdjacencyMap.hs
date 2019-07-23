@@ -56,8 +56,8 @@ import GHC.Generics
 import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
 
-import qualified Data.Map.Strict    as Map
-import qualified Data.Set           as Set
+import qualified Data.Map.Strict as Map
+import qualified Data.Set        as Set
 import qualified Data.Tuple
 
 {-| The 'Bipartite.AdjacencyMap' data type represents an __undirected__
@@ -436,6 +436,7 @@ toBipartite m = BAM (Map.fromAscList [ (u, setRights vs) | (Left  u, vs) <- symm
 -- toBipartiteWith Left  x  == 'empty'
 -- toBipartiteWith Right x  == 'empty'
 -- toBipartiteWith f        == 'toBiparitite' . Algebra.Graph.AdjacencyMap.'Algebra.Graph.AdjacencyMap.gmap' f
+-- toBipartiteWith id       == 'toBipartite'
 -- @
 toBipartiteWith :: (Ord a, Ord b, Ord c) => (a -> Either b c) -> AM.AdjacencyMap a -> AdjacencyMap b c
 toBipartiteWith f = toBipartite . AM.gmap f

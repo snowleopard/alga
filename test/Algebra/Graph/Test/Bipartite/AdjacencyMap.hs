@@ -119,6 +119,8 @@ testBipartiteAdjacencyMap = do
         toBipartiteWith parity (AM.clique [1..3] :: AI) == biclique [1, 3] [2]
     test "toBipartiteWith parity (edge 1 1)      == leftVertex 1" $
         toBipartiteWith parity (AM.edge 1 1)            == leftVertex 1
+    test "toBipartiteWith id g                   == toBipartite g" $ \(g :: AII) ->
+        toBipartiteWith id g                            == toBipartite g
 
     putStrLn "\n============ Bipartite.AdjacencyMap.fromGraph ============"
     test "leftAdjacencyMap (fromGraph empty)                                                                                                   == Map.empty" $
