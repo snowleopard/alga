@@ -257,12 +257,17 @@ topSort' g = callCC $ \cyclic -> do
              when new_tree $ parent Nothing v >> dfs v
   Right <$> gets order
 
--- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
--- is cyclic.
+-- | Compute a topological sort of the vertices of a graph. Given a
+--  DAG, the lexicographically least topological ordering is returned,
+--  otherwise, a cycle is.
 --
 -- @
 -- topSort (1 * 2 + 3 * 1)               == Right [3,1,2]
+-- topSort ('path' [1..5])                 == Right [1..5]
+-- topSort (3 * (1 * 4 + 2 * 5))         == Right [3,1,2,4,5]
 -- topSort (1 * 2 + 2 * 1)               == Left [2,1]
+-- topSort ('path' [5,4..1] + 'edge' 2 4)    == Left [4,3,2]
+-- topSort ('circuit' [1..5])              == Left [5,1,2,3,4]
 -- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Right False
 -- 'isRight' . topSort                     == 'isAcyclic'
 -- @
