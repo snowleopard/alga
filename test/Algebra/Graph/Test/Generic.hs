@@ -1989,7 +1989,7 @@ testTopSort (prefix, API{..}) = do
     test "topSort (1 * 2 + 3 * 1)               == Right [3,1,2]" $
           topSort (1 * 2 + 3 * 1)               == Right [3,1,2]
 
-    test "topSort (1 * 2 + 2 * 1)               == Left [1,2]" $
+    test "topSort (1 * 2 + 2 * 1)               == Left [2,1]" $
           topSort (1 * 2 + 2 * 1)               == Left [2,1]
 
 -- todo add appropriate test back

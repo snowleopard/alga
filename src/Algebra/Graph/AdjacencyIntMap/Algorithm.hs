@@ -258,7 +258,7 @@ topSort' g = callCC $ \cyclic -> do
 -- is cyclic.
 --
 -- @
--- topSort (1 * 2 + 3 * 1)               == Just [3,1,2]
+-- topSort (1 * 2 + 3 * 1)               == Right [3,1,2]
 -- topSort (1 * 2 + 2 * 1)               == Nothing
 -- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Just False
 -- 'isJust' . topSort                      == 'isAcyclic'

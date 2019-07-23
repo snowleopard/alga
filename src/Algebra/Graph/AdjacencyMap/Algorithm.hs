@@ -209,7 +209,7 @@ dfsForestFrom' vs g = evalState (explore vs) mempty where
 -- dfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1] == [3,2,1,5,4]
 -- @
 dfs :: Ord a => [a] -> AdjacencyMap a -> [a]
-dfs vs = concatMap flatten . dfsForestFrom vs
+dfs vs = dfsForestFrom vs >=> flatten
 
 -- | Compute the list of vertices that are /reachable/ from a given
 -- source vertex in a graph. The vertices in the resulting list appear
@@ -262,7 +262,7 @@ topSort' g = callCC $ \cyclic -> do
 --
 -- @
 -- topSort (1 * 2 + 3 * 1)               == Right [3,1,2]
--- topSort (1 * 2 + 2 * 1)               == Left [2,2]
+-- topSort (1 * 2 + 2 * 1)               == Left [2,1]
 -- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Just False
 -- 'isRight' . topSort                     == 'isAcyclic'
 -- @
