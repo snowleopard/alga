@@ -227,32 +227,37 @@ dfs vs = dfsForestFrom vs >=> flatten
 reachable :: Int -> AdjacencyIntMap -> [Int]
 reachable x = concat . bfs [x]
 
+data N = Root
+       | Discovered {-# unpack #-} !Int
+       | Explored {-# unpack #-} !Int
+
 type TopOrder = Either [Int] [Int]
-type ParentTable = IntMap.IntMap (Maybe Int,Bool)
+type ParentTable = IntMap.IntMap N
 data S = S { table :: !ParentTable, order :: [Int] }
 
 topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopOrder
 topSort' g = callCC $ \cyclic -> do
   let parent u v = modify' (\(S p vs) -> S (IntMap.alter (register u) v p) vs)
-      register u = const (Just (u, False)) -- mark parent as u 
+      register u = fmap (const u) -- mark parent as u 
       explored v = modify' (\(S p vs) -> S (IntMap.alter mark v p) (v:vs))
-      mark = fmap (fmap (const True)) -- mark tree as explored/done
+      mark = fmap (\(Discovered n) -> Explored n) -- mark tree as explored/done
       node_state v = gets (IntMap.lookup v . table)
       unexplored u = gets (not . IntMap.member u . table)
       build_cycle u v = cyclic . Left . expand_cycle v [u,v] =<< gets table
       expand_cycle w vs@(v:_) table =
         case IntMap.lookup v table of
-          Just (Just u,_) -> if u == v then vs else expand_cycle w (u:vs) table
+          Just (Discovered u) -> if u == v then vs else expand_cycle w (u:vs) table
+          Just (Explored u) -> if u == v then vs else expand_cycle w (u:vs) table
           Just _ -> tail vs
       dfs u = do forM_ (IntSet.toDescList $ postIntSet u g) $ \v ->
                    node_state v >>= \case
-                     Nothing -> parent (Just u) v >> dfs v -- new node
-                     Just (_,True) -> pure () -- part of explored tree
-                     Just (_,False) -> build_cycle u v -- part of cycle
+                     Nothing -> parent (Discovered u) v >> dfs v -- new node
+                     Just (Explored _) -> pure () -- part of explored tree
+                     Just (Discovered _) -> build_cycle u v -- part of cycle
                  explored u
   forM_ (map fst $ IntMap.toDescList $ adjacencyIntMap g) $
     \v -> do new_tree <- unexplored v
-             when new_tree $ parent Nothing v >> dfs v
+             when new_tree $ parent Root v >> dfs v
   Right <$> gets order
 
 -- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
