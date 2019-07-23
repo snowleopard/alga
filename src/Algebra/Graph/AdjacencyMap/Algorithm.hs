@@ -236,23 +236,22 @@ type TopOrder a = Either [a] [a]
 topSort' :: (Ord a, MonadState (S a) m, MonadCont m)
          => AdjacencyMap a -> m (TopOrder a)
 topSort' g = callCC $ \cyclic -> do
-  let parent u v = modify' (\(S p vs) -> S (Map.alter (register u) v p) vs)
-      register u = const (Just (u, False)) -- mark parent as u 
-      explored v = modify' (\(S p vs) -> S (Map.alter mark v p) (v:vs))
-      mark = fmap (fmap (const True)) -- mark tree as explored/done
+  let unexplored u = gets (not . Map.member u . table)
+      parent u v = modify' (\(S p vs) -> S (Map.insert v (u,False) p) vs)
+      exit v = modify' (\(S p vs) -> S (Map.alter mark v p) (v:vs)) where
+        mark = fmap (fmap (const True)) -- mark tree as explored/done
       node_state v = gets (Map.lookup v . table)
-      unexplored u = gets (not . Map.member u . table)
-      build_cycle u v = cyclic . Left . expand_cycle v [u,v] =<< gets table
-      expand_cycle w vs@(v:_) table =
-        case Map.lookup v table of
-          Just (Just u,_) -> if u == v then vs else expand_cycle w (u:vs) table
-          Just _ -> tail vs
-      dfs u = do forM_ (Set.toDescList $ postSet u g) $ \v ->
-                   node_state v >>= \case
-                     Nothing -> parent (Just u) v >> dfs v -- new node
-                     Just (_,True) -> pure () -- part of explored tree
-                     Just (_,False) -> build_cycle u v -- part of cycle
-                 explored u
+      retrace v vs@(u:_) table@(Map.lookup u -> Just (Just w,_))
+        | w == v = v:vs
+        | v == u = vs
+        | otherwise = retrace v (w:vs) table
+      dfs u =
+        do forM_ (Set.toDescList $ postSet u g) $ \v ->
+             node_state v >>= \case
+               Nothing -> parent (Just u) v >> dfs v
+               Just (_,True) -> pure ()
+               Just (_,False) -> cyclic . Left . retrace v [u] =<< gets table
+           exit u
   forM_ (map fst $ Map.toDescList $ adjacencyMap g) $
     \v -> do new_tree <- unexplored v
              when new_tree $ parent Nothing v >> dfs v

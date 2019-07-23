@@ -233,23 +233,22 @@ data S = S { table :: !ParentTable, order :: [Int] }
 
 topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopOrder
 topSort' g = callCC $ \cyclic -> do
-  let parent u v = modify' (\(S p vs) -> S (IntMap.alter (register u) v p) vs)
-      register u = const (Just (u, False)) -- mark parent as u 
-      explored v = modify' (\(S p vs) -> S (IntMap.alter mark v p) (v:vs))
-      mark = fmap (fmap (const True)) -- mark tree as explored/done
+  let unexplored u = gets (not . IntMap.member u . table)
+      parent u v = modify' (\(S p vs) -> S (IntMap.insert v (u,False) p) vs)
+      exit v = modify' (\(S p vs) -> S (IntMap.alter mark v p) (v:vs)) where
+        mark = fmap (fmap (const True)) -- mark tree as explored/done
       node_state v = gets (IntMap.lookup v . table)
-      unexplored u = gets (not . IntMap.member u . table)
-      build_cycle u v = cyclic . Left . expand_cycle v [u,v] =<< gets table
-      expand_cycle w vs@(v:_) table =
-        case IntMap.lookup v table of
-          Just (Just u,_) -> if u == v then vs else expand_cycle w (u:vs) table
-          Just _ -> tail vs
-      dfs u = do forM_ (IntSet.toDescList $ postIntSet u g) $ \v ->
-                   node_state v >>= \case
-                     Nothing -> parent (Just u) v >> dfs v -- new node
-                     Just (_,True) -> pure () -- part of explored tree
-                     Just (_,False) -> build_cycle u v -- part of cycle
-                 explored u
+      retrace v vs@(u:_) table@(IntMap.lookup u -> Just (Just w,_))
+        | w == v = v:vs
+        | v == u = vs
+        | otherwise = retrace v (w:vs) table
+      dfs u =
+        do forM_ (IntSet.toDescList $ postIntSet u g) $ \v ->
+             node_state v >>= \case
+               Nothing -> parent (Just u) v >> dfs v
+               Just (_,True) -> pure ()
+               Just (_,False) -> cyclic . Left . retrace v [u] =<< gets table
+           exit u
   forM_ (map fst $ IntMap.toDescList $ adjacencyIntMap g) $
     \v -> do new_tree <- unexplored v
              when new_tree $ parent Nothing v >> dfs v
