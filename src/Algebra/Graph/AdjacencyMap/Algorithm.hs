@@ -229,35 +229,40 @@ dfs vs = dfsForestFrom vs >=> flatten
 reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = concat . bfs [x]
 
-type ParentTable a = Map.Map a (Maybe a,Bool)
-data S a = S { table :: !(ParentTable a), order :: [a] }
+data S a = S { parent    :: !(Map.Map a a)
+             , processed :: !(Map.Map a Bool)
+             , order     :: [a] }
 type TopOrder a = Either [a] [a]
 
+pattern TreeEdge :: Maybe Bool
 pattern TreeEdge <- Nothing
-pattern BackEdge <- Just (_,False)
-pattern Parent p <- Just (Just p,_)
+pattern BackEdge :: Maybe Bool
+pattern BackEdge <- Just False :: Maybe Bool
+
+retrace :: Ord a => a -> [a] -> Map.Map a a -> [a]
+retrace v [] _ = [v] -- impossible
+retrace v vs@(u:_) table
+  | v == u = vs
+  | Just p <- Map.lookup u table = retrace v (p:vs) table
+  | otherwise = vs -- impossible
 
 topSort' :: (Ord a, MonadState (S a) m, MonadCont m)
          => AdjacencyMap a -> m (TopOrder a)
 topSort' g = callCC $ \cyclic -> do
-  let unexplored u = gets (not . Map.member u . table)
-      parent u v = modify' (\(S p vs) -> S (Map.insert v (u,False) p) vs)
-      exit v = modify' (\(S p vs) -> S (Map.alter done v p) (v:vs)) where
-        done = fmap (fmap (const True))
-      edge_type v = gets (Map.lookup v . table)
-      retrace v vs@(u:_) table@(Map.lookup u -> ~(Parent p))
-        | v == u    = vs
-        | otherwise = retrace v (p:vs) table
-      dfs u =
-        do forM_ (Set.toDescList $ postSet u g) $ \v ->
-             edge_type v >>= \case
-               TreeEdge -> parent (Just u) v >> dfs v
-               BackEdge -> cyclic . Left . retrace v [u] =<< gets table
-               _        -> pure ()
-           exit u
+  let unexplored v = gets (not . Map.member v . processed)
+      enter u v = modify' aux where
+        aux (S p s vs) = S (Map.insert v u p) (Map.insert v False s) vs
+      exit v = modify' (\(S p s vs) -> S p (Map.insert v True s) (v:vs))
+      edge_type v = gets (Map.lookup v . processed)
+      dfs u = do forM_ (Set.toDescList $ postSet u g) $ \v ->
+                   edge_type v >>= \case
+                     TreeEdge -> enter u v >> dfs v
+                     BackEdge -> cyclic . Left . retrace v [u] =<< gets parent
+                     _        -> return ()
+                 exit u
   forM_ (map fst $ Map.toDescList $ adjacencyMap g) $
     \v -> do new_tree <- unexplored v
-             when new_tree $ parent Nothing v >> dfs v
+             when new_tree $ dfs v
   Right <$> gets order
 
 -- | Compute a topological sort of the vertices of a graph. Given a
@@ -268,7 +273,7 @@ topSort' g = callCC $ \cyclic -> do
 -- topSort (1 * 2 + 3 * 1)               == Right [3,1,2]
 -- topSort ('path' [1..5])                 == Right [1..5]
 -- topSort (3 * (1 * 4 + 2 * 5))         == Right [3,1,2,4,5]
--- topSort (1 * 2 + 2 * 1)               == Left [2,1]
+-- topSort (1 * 2 + 2 * 1)               == Left [1,2]
 -- topSort ('path' [5,4..1] + 'edge' 2 4)    == Left [4,3,2]
 -- topSort ('circuit' [1..5])              == Left [5,1,2,3,4]
 -- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Right False
@@ -276,7 +281,7 @@ topSort' g = callCC $ \cyclic -> do
 -- @
 topSort :: Ord a => AdjacencyMap a -> Either [a] [a]
 topSort g = runContT (evalStateT (topSort' g) initialState) id where
-  initialState = S mempty mempty 
+  initialState = S mempty mempty mempty
 
 -- | Check if a given graph is /acyclic/.
 --
