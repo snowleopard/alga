@@ -30,9 +30,9 @@ type LAS = AdjacencyMap S   Int
 type LAD = AdjacencyMap D   Int
 
 -- TODO: Switch to using generic tests.
+-- TODO: Clean the code, use proper and standerdized formatting.
 testAcyclicLabelledAdjacencyMap :: IO ()
 testAcyclicLabelledAdjacencyMap = do
-  testAcyclicLabelledAlgorithm
 
   putStrLn $ "\n======= Acyclic.Labelled.AdjacencyMap.consistent ======="
   test "consistent empty                            == True" $
@@ -240,13 +240,10 @@ testAcyclicLabelledAdjacencyMap = do
   test "transitiveClosure . transitiveClosure     == transitiveClosure" $ \x ->
         (transitiveClosure . transitiveClosure) x == transitiveClosure (x :: LAD)
 
-testAcyclicLabelledAlgorithm :: IO ()
-testAcyclicLabelledAlgorithm = do
-
   putStrLn "\n======= Acyclic.Labelled.Algorithm.optimumPath ======="
 
-  test "optimumPath (toAcyclicOrd $ edges [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z'          == Map.fromList [('a', Infinite), ('b', Infinite), ('c', Infinite)]" $
-        optimumPath (toAcyclicOrd $ LAM.edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.fromList [('a', zero :: D), ('b', zero), ('c', zero)]
+  test "optimumPath (toAcyclicOrd $ edges [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z'          == Map.fromList [('a', distance infinite), ('b', distance infinite), ('c', distance infinite)]" $
+        optimumPath (toAcyclicOrd $ LAM.edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.fromList [('a', distance infinite), ('b', distance infinite), ('c', distance infinite)]
 
   test "optimumPath (toAcyclicOrd $ edges [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a'          == Map.fromList [('a', 0), ('b', 1), ('c', 3)]" $
         optimumPath (toAcyclicOrd $ LAM.edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.fromList [('a', 0 :: D), ('b', 1), ('c', 3)]
