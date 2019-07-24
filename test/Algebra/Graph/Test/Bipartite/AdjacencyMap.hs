@@ -18,6 +18,8 @@ module Algebra.Graph.Test.Bipartite.AdjacencyMap (
 import Algebra.Graph.Bipartite.AdjacencyMap
 import Algebra.Graph.Test
 
+import Algebra.Graph.Test.Generic (size10)
+
 import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
 
@@ -68,7 +70,7 @@ testBipartiteAdjacencyMap = do
         consistent $ stars x
     test "consistent (mesh x y)                == True" $ \(x :: [Int]) (y :: [Int]) ->
         consistent $ mesh x y
-    test "consistent (box (,) (,) (,) (,) x y) == True" $ \(x :: BAII) (y :: BAII) ->
+    test "consistent (box (,) (,) (,) (,) x y) == True" $ size10 $ \(x :: BAII) (y :: BAII) ->
         consistent $ box (,) (,) (,) (,) x y
 
     putStrLn "\n============ Bipartite.AdjacencyMap.toBipartite ============"
@@ -865,11 +867,11 @@ testBipartiteAdjacencyMap = do
     putStrLn "\n============ Bipartite.AdjacencyMap.box ============"
     test "boxc (path [0,1]) (path ['a','b']) == edges [((0,'a'),(0,'b')),((0,'a'),(1,'a')),((1,'b'),(0,'b')),((1,'b'),(1,'a'))]" $
         boxc (path [0,1]) (path ['a','b']) == (edges [((0,'a'),(0,'b')),((0,'a'),(1,'a')),((1,'b'),(0,'b')),((1,'b'),(1,'a'))] :: BAICIC)
-    test "boxc x (overlay y z) == overlay (boxc x y) (boxc x z)" $ \(x :: BAII) (y :: BAII) (z :: BAII) ->
+    test "boxc x (overlay y z) == overlay (boxc x y) (boxc x z)" $ size10 $ \(x :: BAII) (y :: BAII) (z :: BAII) ->
         boxc x (overlay y z) == overlay (boxc x y) (boxc x z)
-    test "vertexCount (boxc x y) <= vertexCount x * vertexCount y" $ \(x :: BAII) (y :: BAII) ->
+    test "vertexCount (boxc x y) <= vertexCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
         vertexCount (boxc x y) <= vertexCount x * vertexCount y
-    test "edgeCount (boxc x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ \(x :: BAII) (y :: BAII) ->
+    test "edgeCount (boxc x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
         edgeCount (boxc x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
 
 expectedBicliqueMap :: Int -> Int -> Map.Map Int (Set.Set Int)
