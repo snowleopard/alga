@@ -249,8 +249,8 @@ pattern Parent p <- Just (Left p)
 unexplored :: (Ord a, MonadState (S a) m) => a -> m Bool
 unexplored u = gets (not . Map.member u . table)
 
-enter :: (Ord a, MonadState (S a) m) => Entry a -> a -> m ()
-enter u v = modify' (\(S p vs) -> S (Map.insert v u p) vs)
+enter :: (Ord a, MonadState (S a) m) => a -> a -> m ()
+enter u v = modify' (\(S p vs) -> S (Map.insert v (Left u) p) vs)
 
 exit :: (Ord a, MonadState (S a) m) => a -> m ()
 exit v = modify' (\(S p vs) -> S (Map.alter (fmap done) v p) (v:vs)) where
@@ -277,13 +277,13 @@ topSort' g = callCC $ \cyclic -> do
         enter z x
         forM_ (adjacent x) $ \y ->
           classify y >>= \case
-            TreeEdge -> dfs (Left x) y
+            TreeEdge -> dfs x y
             BackEdge -> cyclic . Left . retrace x y =<< gets table
             _        -> return ()
         exit x
   forM_ vertices $ \v -> do
     new <- unexplored v
-    when new $ dfs (Left v) v
+    when new $ dfs v v
   Right <$> gets order
 
 -- | Compute a topological sort of the vertices of a graph. Given a
