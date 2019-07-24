@@ -49,10 +49,11 @@ module Algebra.Graph.ToGraph (
     adjacencyMap, adjacencyIntMap, adjacencyMapTranspose, adjacencyIntMapTranspose
     ) where
 
-import Data.IntMap (IntMap)
-import Data.IntSet (IntSet)
-import Data.Map    (Map)
-import Data.Set    (Set)
+import Data.IntMap        (IntMap)
+import Data.IntSet        (IntSet)
+import Data.List.NonEmpty (NonEmpty)
+import Data.Map           (Map)
+import Data.Set           (Set)
 import Data.Tree
 
 import qualified Algebra.Graph                                as G
@@ -266,7 +267,7 @@ class ToGraph t where
     -- @
     -- topSort == Algebra.Graph.AdjacencyMap.'AM.topSort' . toAdjacencyMap
     -- @
-    topSort :: Ord (ToVertex t) => t -> Either [ToVertex t] [ToVertex t]
+    topSort :: Ord (ToVertex t) => t -> Either (NonEmpty (ToVertex t)) [ToVertex t]
     topSort = AM.topSort . toAdjacencyMap
 
     -- | Check if a given graph is /acyclic/.
