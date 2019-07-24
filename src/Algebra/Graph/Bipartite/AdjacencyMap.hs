@@ -332,19 +332,19 @@ overlay (BAM lr1 rl1) (BAM lr2 rl2) = BAM (Map.unionWith Set.union lr1 lr2) (Map
 -- 'edgeCount'   (connect x y)                     >= 'leftVertexCount' x * 'rightVertexCount' y
 -- 'edgeCount'   (connect x y)                     <= 'leftVertexCount' x * 'rightVertexCount' y + 'rightVertexCount' x * 'leftVertexCount' y + 'edgeCount' x + 'edgeCount' y
 -- @
-connect :: forall a b. (Ord a, Ord b) => AdjacencyMap a b -> AdjacencyMap a b -> AdjacencyMap a b
+connect :: (Ord a, Ord b) => AdjacencyMap a b -> AdjacencyMap a b -> AdjacencyMap a b
 connect (BAM lr1 rl1) (BAM lr2 rl2) = BAM lr rl
     where
         lr = Map.unionsWith Set.union $
-            ([ lr1, lr2
-             , Map.fromSet (const $ Map.keysSet rl2) (Map.keysSet lr1)
-             , Map.fromSet (const $ Map.keysSet rl1) (Map.keysSet lr2)
-             ] :: [Map.Map a (Set.Set b)])
+            [ lr1, lr2
+            , Map.fromSet (const $ Map.keysSet rl2) (Map.keysSet lr1)
+            , Map.fromSet (const $ Map.keysSet rl1) (Map.keysSet lr2)
+            ]
         rl = Map.unionsWith Set.union $
-            ([ rl1, rl2
-             , Map.fromSet (const $ Map.keysSet lr2) (Map.keysSet rl1)
-             , Map.fromSet (const $ Map.keysSet lr1) (Map.keysSet rl2)
-             ] :: [Map.Map b (Set.Set a)])
+            [ rl1, rl2
+            , Map.fromSet (const $ Map.keysSet lr2) (Map.keysSet rl1)
+            , Map.fromSet (const $ Map.keysSet lr1) (Map.keysSet rl2)
+            ]
 
 -- | Construct the graph comprising two given lists of isolated vertices for
 -- each part.
