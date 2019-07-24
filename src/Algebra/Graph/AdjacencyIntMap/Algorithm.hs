@@ -260,11 +260,12 @@ exit v = modify' (\(S p vs) -> S (IntMap.alter mark_done v p) (v:vs)) where
 classify :: MonadState S m => Int -> m (Maybe Entry)
 classify v = gets (IntMap.lookup v . table)
 
-retrace :: Int -> Cycle Int -> ParentTable -> Cycle Int
-retrace x0 vs@(x :| _) table
-  | x0 == x = vs
-  | Parent z <- IntMap.lookup x table = retrace x0 (z <| vs) table
-  | otherwise = vs -- impossible
+retrace :: Int -> Int -> ParentTable -> Cycle Int
+retrace x x0 table = aux (x :| []) where
+  aux xs@(x :| _) | x0 == x = xs
+                  | otherwise = case IntMap.lookup x table of
+                      Parent z -> aux (z <| xs)
+                      _ -> error "impossible"
 
 topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopSort
 topSort' g = callCC $ \cyclic -> do
@@ -275,7 +276,7 @@ topSort' g = callCC $ \cyclic -> do
         forM_ (adjacent x) $ \y ->
           classify y >>= \case
             TreeEdge -> dfs (Just x) y
-            BackEdge -> cyclic . Left . retrace y (x :| []) =<< gets table
+            BackEdge -> cyclic . Left . retrace x y =<< gets table
             _        -> return ()
         exit x
   forM_ vertices $ \v -> do
