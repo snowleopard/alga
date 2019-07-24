@@ -228,42 +228,59 @@ dfs vs = dfsForestFrom vs >=> flatten
 reachable :: Int -> AdjacencyIntMap -> [Int]
 reachable x = concat . bfs [x]
 
-type Cycle = NonEmpty Int
-type TopSort = Either Cycle [Int]
-type ParentTable = IntMap.IntMap (Maybe Int,Bool)
-data S = S { table    :: !ParentTable
-           , order     :: [Int] }
+type Cycle = NonEmpty
+type TopSort = Either (Cycle Int) [Int]
+type Entry = (Maybe Int, Bool)
+type ParentTable = IntMap.IntMap Entry
+data S = S { table :: !ParentTable, order :: [Int] }
 
-retrace :: Int -> Cycle -> ParentTable -> Cycle
+-- Tree edge when node has not been explored
+pattern TreeEdge :: Maybe Entry
+pattern TreeEdge <- Nothing
+-- Back edge when node is discovered, but not done
+pattern BackEdge :: Maybe Entry
+pattern BackEdge <- Just (_,False)
+-- Root of component is denoted by Nothing
+pattern Root :: Maybe Int
+pattern Root = Nothing
+-- Pattern to pull out parent from table
+pattern Parent :: Int -> Maybe Entry
+pattern Parent p <- Just (Just p,_)
+
+retrace :: Int -> Cycle Int -> ParentTable -> Cycle Int
 retrace v vs@(u :| _) table
   | v == u = vs
   | Parent p <- IntMap.lookup u table = retrace v (p <| vs) table
   | otherwise = vs -- impossible
 
-pattern TreeEdge :: Maybe (Maybe Int, Bool)
-pattern TreeEdge <- Nothing
-pattern BackEdge :: Maybe (Maybe Int, Bool)
-pattern BackEdge <- Just (_,False)
-pattern Parent :: Int -> Maybe (Maybe Int, Bool)
-pattern Parent p <- Just (Just p,_)
+unexplored :: MonadState S m => Int -> m Bool
+unexplored u = gets (not . IntMap.member u . table)
+
+enter :: MonadState S m => Maybe Int -> Int -> m ()
+enter u v = modify' (\(S p vs) -> S (IntMap.insert v (u,False) p) vs)
+
+exit :: MonadState S m => Int -> m ()
+exit v = modify' (\(S p vs) -> S (IntMap.alter mark_done v p) (v:vs)) where
+  mark_done = fmap (fmap (const True))
+
+classify :: MonadState S m => Int -> m (Maybe Entry)
+classify v = gets (IntMap.lookup v . table)
 
 topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopSort
 topSort' g = callCC $ \cyclic -> do
-  let unexplored u = gets (not . IntMap.member u . table)
-      parent u v = modify' (\(S p vs) -> S (IntMap.insert v (u,False) p) vs)
-      exit v = modify' (\(S p vs) -> S (IntMap.alter done v p) (v:vs)) where
-        done = fmap (fmap (const True))
-      edge_type v = gets (IntMap.lookup v . table)
-      dfs u =
-        do forM_ (IntSet.toDescList $ postIntSet u g) $ \v ->
-             edge_type v >>= \case
-               TreeEdge -> parent (Just u) v >> dfs v
-               BackEdge -> cyclic . Left . retrace v (u :| []) =<< gets table
-               _        -> return ()
-           exit u
-  forM_ (map fst $ IntMap.toDescList $ adjacencyIntMap g) $
-    \v -> do new_tree <- unexplored v
-             when new_tree $ parent Nothing v >> dfs v
+  let vertices = map fst $ IntMap.toDescList $ adjacencyIntMap g
+      adjacent = IntSet.toDescList . flip postIntSet g
+      dfs z x = do
+        enter z x
+        forM_ (adjacent x) $ \y ->
+          classify y >>= \case
+            TreeEdge -> dfs (Just x) y
+            BackEdge -> cyclic . Left . retrace y (x :| []) =<< gets table
+            _        -> return ()
+        exit x
+  forM_ vertices $ \v -> do
+    new <- unexplored v
+    when new $ dfs Root v
   Right <$> gets order
 
 -- | Compute a topological sort of the vertices of a graph. Given a
@@ -280,7 +297,7 @@ topSort' g = callCC $ \cyclic -> do
 -- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Right False
 -- 'isRight' . topSort                     == 'isAcyclic'
 -- @
-topSort :: AdjacencyIntMap -> Either Cycle [Int]
+topSort :: AdjacencyIntMap -> Either (Cycle Int) [Int]
 topSort g = runContT (evalStateT (topSort' g) initialState) id where
   initialState = S mempty mempty 
 
