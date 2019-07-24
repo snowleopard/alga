@@ -247,12 +247,6 @@ pattern Root = Nothing
 pattern Parent :: Int -> Maybe Entry
 pattern Parent p <- Just (Just p,_)
 
-retrace :: Int -> Cycle Int -> ParentTable -> Cycle Int
-retrace v vs@(u :| _) table
-  | v == u = vs
-  | Parent p <- IntMap.lookup u table = retrace v (p <| vs) table
-  | otherwise = vs -- impossible
-
 unexplored :: MonadState S m => Int -> m Bool
 unexplored u = gets (not . IntMap.member u . table)
 
@@ -265,6 +259,12 @@ exit v = modify' (\(S p vs) -> S (IntMap.alter mark_done v p) (v:vs)) where
 
 classify :: MonadState S m => Int -> m (Maybe Entry)
 classify v = gets (IntMap.lookup v . table)
+
+retrace :: Int -> Cycle Int -> ParentTable -> Cycle Int
+retrace x0 vs@(x :| _) table
+  | x0 == x = vs
+  | Parent z <- IntMap.lookup x table = retrace x0 (z <| vs) table
+  | otherwise = vs -- impossible
 
 topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopSort
 topSort' g = callCC $ \cyclic -> do
@@ -288,14 +288,16 @@ topSort' g = callCC $ \cyclic -> do
 --  otherwise, a cycle is.
 --
 -- @
--- topSort (1 * 2 + 3 * 1)               == Right [3,1,2]
--- topSort ('path' [1..5])                 == Right [1..5]
--- topSort (3 * (1 * 4 + 2 * 5))         == Right [3,1,2,4,5]
--- topSort (1 * 2 + 2 * 1)               == Left (2 ':|' [1])
--- topSort ('path' [5,4..1] + 'edge' 2 4)    == Left (4 ':|' [3,2])
--- topSort ('circuit' [1..5])              == Left (5 ':|' [1..4])
--- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Right False
--- 'isRight' . topSort                     == 'isAcyclic'
+-- topSort (1 * 2 + 3 * 1)                    == Right [3,1,2]
+-- topSort ('path' [1..5])                      == Right [1..5]
+-- topSort (3 * (1 * 4 + 2 * 5))              == Right [3,1,2,4,5]
+-- topSort (1 * 2 + 2 * 1)                    == Left (2 ':|' [1])
+-- topSort ('path' [5,4..1] + 'edge' 2 4)         == Left (4 ':|' [3,2])
+-- topSort ('circuit' [1..5])                   == Left (5 ':|' [1..4])
+-- topSort ('circuit' [1..3] + 'circuit' [3,2,1]) == Left (3 ':|' [2])
+-- topSort (1*2+2*1+3*4+4*3+5*1)              == Left (1 ':|' [2])
+-- fmap ('flip' 'isTopSortOf' x) (topSort x)      /= Right False
+-- 'isRight' . topSort                          == 'isAcyclic'
 -- @
 topSort :: AdjacencyIntMap -> Either (Cycle Int) [Int]
 topSort g = runContT (evalStateT (topSort' g) initialState) id where

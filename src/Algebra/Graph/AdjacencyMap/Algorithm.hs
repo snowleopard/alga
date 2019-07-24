@@ -263,9 +263,9 @@ classify :: (Ord a, MonadState (S a) m) => a -> m (Maybe (Entry a))
 classify v = gets (Map.lookup v . table)
 
 retrace :: Ord a => a -> Cycle a -> ParentTable a -> Cycle a
-retrace v vs@(u :| _) table
-  | v == u = vs
-  | Parent p <- Map.lookup u table = retrace v (p <| vs) table
+retrace x0 vs@(x :| _) table
+  | x0 == x = vs
+  | Parent z <- Map.lookup x table = retrace x0 (z <| vs) table
   | otherwise = vs -- impossible
 
 topSort' :: (Ord a, MonadState (S a) m, MonadCont m)
@@ -291,14 +291,16 @@ topSort' g = callCC $ \cyclic -> do
 --  otherwise, a cycle is.
 --
 -- @
--- topSort (1 * 2 + 3 * 1)               == Right [3,1,2]
--- topSort ('path' [1..5])                 == Right [1..5]
--- topSort (3 * (1 * 4 + 2 * 5))         == Right [3,1,2,4,5]
--- topSort (1 * 2 + 2 * 1)               == Left (2 ':|' [1])
--- topSort ('path' [5,4..1] + 'edge' 2 4)    == Left (4 ':|' [3,2])
--- topSort ('circuit' [1..5])              == Left (5 ':|' [1..4])
--- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Right False
--- 'isRight' . topSort                     == 'isAcyclic'
+-- topSort (1 * 2 + 3 * 1)                    == Right [3,1,2]
+-- topSort ('path' [1..5])                      == Right [1..5]
+-- topSort (3 * (1 * 4 + 2 * 5))              == Right [3,1,2,4,5]
+-- topSort (1 * 2 + 2 * 1)                    == Left (2 ':|' [1])
+-- topSort ('path' [5,4..1] + 'edge' 2 4)         == Left (4 ':|' [3,2])
+-- topSort ('circuit' [1..5])                   == Left (5 ':|' [1..4])
+-- topSort ('circuit' [1..3] + 'circuit' [3,2,1]) == Left (3 ':|' [2])
+-- topSort (1*2+2*1+3*4+4*3+5*1)              == Left (1 ':|' [2])
+-- fmap ('flip' 'isTopSortOf' x) (topSort x)      /= Right False
+-- 'isRight' . topSort                          == 'isAcyclic'
 -- @
 topSort :: Ord a => AdjacencyMap a -> Either (Cycle a) [a]
 topSort g = runContT (evalStateT (topSort' g) initialState) id where
