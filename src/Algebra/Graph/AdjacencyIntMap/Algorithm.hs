@@ -230,7 +230,7 @@ reachable x = concat . bfs [x]
 
 type Cycle = NonEmpty
 type TopSort = Either (Cycle Int) [Int]
-type Entry = (Maybe Int, Bool)
+type Entry = Either Int Int
 type ParentTable = IntMap.IntMap Entry
 data S = S { table :: !ParentTable, order :: [Int] }
 
@@ -239,23 +239,22 @@ pattern TreeEdge :: Maybe Entry
 pattern TreeEdge <- Nothing
 -- Back edge when node is discovered, but not done
 pattern BackEdge :: Maybe Entry
-pattern BackEdge <- Just (_,False)
--- Root of component is denoted by Nothing
-pattern Root :: Maybe Int
-pattern Root = Nothing
--- Pattern to pull out parent from table
-pattern Parent :: Int -> Maybe Entry
-pattern Parent p <- Just (Just p,_)
+pattern BackEdge <- Just (Left _)
+-- Pattern to retrieve Parent from table lookup
+pattern Parent :: a -> Maybe (Either a a)
+pattern Parent p <- Just (Left p)
 
 unexplored :: MonadState S m => Int -> m Bool
 unexplored u = gets (not . IntMap.member u . table)
 
-enter :: MonadState S m => Maybe Int -> Int -> m ()
-enter u v = modify' (\(S p vs) -> S (IntMap.insert v (u,False) p) vs)
+enter :: MonadState S m => Entry -> Int -> m ()
+enter u v = modify' (\(S p vs) -> S (IntMap.insert v u p) vs)
 
 exit :: MonadState S m => Int -> m ()
-exit v = modify' (\(S p vs) -> S (IntMap.alter mark_done v p) (v:vs)) where
-  mark_done = fmap (fmap (const True))
+exit v = modify' (\(S p vs) -> S (IntMap.alter (fmap done) v p) (v:vs)) where
+  done = \case
+    Left x -> Right x
+    _ -> error "impossible"
 
 classify :: MonadState S m => Int -> m (Maybe Entry)
 classify v = gets (IntMap.lookup v . table)
@@ -275,13 +274,13 @@ topSort' g = callCC $ \cyclic -> do
         enter z x
         forM_ (adjacent x) $ \y ->
           classify y >>= \case
-            TreeEdge -> dfs (Just x) y
+            TreeEdge -> dfs (Left x) y
             BackEdge -> cyclic . Left . retrace x y =<< gets table
             _        -> return ()
         exit x
   forM_ vertices $ \v -> do
     new <- unexplored v
-    when new $ dfs Root v
+    when new $ dfs (Left v) v
   Right <$> gets order
 
 -- | Compute a topological sort of the vertices of a graph. Given a

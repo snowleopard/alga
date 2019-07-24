@@ -231,33 +231,32 @@ reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = concat . bfs [x]
 
 type Cycle = NonEmpty 
-type Entry a = (Maybe a, Bool)
+type Entry a = (Either a a)
 type TopSort a = Either (Cycle a) [a]
 type ParentTable a = Map.Map a (Entry a)
 data S a = S { table :: !(ParentTable a), order :: [a] }
 
 -- Tree edge when node has not been explored
-pattern TreeEdge :: Maybe (Maybe a , Bool)
+pattern TreeEdge :: Maybe (Entry a)
 pattern TreeEdge <- Nothing
 -- Back edge when node is being processed, but not done
-pattern BackEdge :: Maybe (Maybe a, Bool)
-pattern BackEdge <- Just (_,False)
--- Root of component is denoted by Nothing
-pattern Root :: Maybe a
-pattern Root = Nothing
--- Pattern to pull out parent from table
-pattern Parent :: a -> Maybe (Maybe a, Bool)
-pattern Parent p <- Just (Just p,_)
+pattern BackEdge :: Maybe (Entry a)
+pattern BackEdge <- Just (Left _)
+-- Pattern to retrieve Parent from table lookup
+pattern Parent :: a -> Maybe (Either a a)
+pattern Parent p <- Just (Left p)
 
 unexplored :: (Ord a, MonadState (S a) m) => a -> m Bool
 unexplored u = gets (not . Map.member u . table)
 
-enter :: (Ord a, MonadState (S a) m) => Maybe a -> a -> m ()
-enter u v = modify' (\(S p vs) -> S (Map.insert v (u,False) p) vs)
+enter :: (Ord a, MonadState (S a) m) => Entry a -> a -> m ()
+enter u v = modify' (\(S p vs) -> S (Map.insert v u p) vs)
 
 exit :: (Ord a, MonadState (S a) m) => a -> m ()
-exit v = modify' (\(S p vs) -> S (Map.alter mark_done v p) (v:vs)) where
-  mark_done = fmap (fmap (const True))
+exit v = modify' (\(S p vs) -> S (Map.alter (fmap done) v p) (v:vs)) where
+  done = \case
+    Left x -> Right x
+    _ -> error "impossible"
 
 classify :: (Ord a, MonadState (S a) m) => a -> m (Maybe (Entry a))
 classify v = gets (Map.lookup v . table)
@@ -278,13 +277,13 @@ topSort' g = callCC $ \cyclic -> do
         enter z x
         forM_ (adjacent x) $ \y ->
           classify y >>= \case
-            TreeEdge -> dfs (Just x) y
+            TreeEdge -> dfs (Left x) y
             BackEdge -> cyclic . Left . retrace x y =<< gets table
             _        -> return ()
         exit x
   forM_ vertices $ \v -> do
     new <- unexplored v
-    when new $ dfs Root v
+    when new $ dfs (Left v) v
   Right <$> gets order
 
 -- | Compute a topological sort of the vertices of a graph. Given a
