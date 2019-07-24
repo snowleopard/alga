@@ -17,13 +17,23 @@ topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 
 -- TODO: Improve documentation for 'fold'
 -- TODO: Add examples and tests for 'fold'
+-- TODO: Make 'fold' more efficient
 -- | Compute the final state by using the initial state and
 -- traversing the entire graph in topological order.
+--
+-- @
+-- fold (\e v1 v2 -> ++ (e, v1, v2)) [] (LAM.toAcyclicOrd $ LAM.edges [(5, 2, 3), (0, 1, 2), (6, 1, 3)]) == [(0, 1, 2), (5, 2, 3), (6, 1, 3)] 
+-- @
 fold :: (Ord a) => (e -> a -> a -> s -> s) -> s ->  AdjacencyMap e a -> s
-fold f s am = foldl' f' s . concatMap unfold . topSort $ am
+fold f s am = foldl' f' s . unfold nm . topSort $ am
   where
     em = LAM.adjacencyMap . fromAcyclic $ am
-    unfold x = map (\(a, e) -> (e, x, a)) . Map.toList $ em ! x
+    nm = Map.map (const []) em
+    addP v1 m =
+      let adjust v2 e = Map.adjust ((e, v1, v2):) v2
+      in Map.foldrWithKey adjust m (em ! v1)
+    unfold _ [] = []
+    unfold m (v2:vs) = (m ! v2) ++ unfold (addP v2 m) vs
     f' s (e, v1, v2) = f e v1 v2 s 
 
 -- TODO: Add time complexity
