@@ -14,6 +14,7 @@ module Algebra.Graph.Test.Generic where
 import Control.Monad (when)
 import Data.Either
 import Data.List (nub)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Tree
 import Data.Tuple
 
@@ -1997,15 +1998,15 @@ testTopSort (prefix, API{..}) = do
           
     test "topSort (3 * (1 * 4 + 2 * 5))         == Right [3,1,2,4,5]" $
           topSort (3 * (1 * 4 + 2 * 5))         == Right [3,1,2,4,5]
-          
---    test "topSort (1 * 2 + 2 * 1)               == Left [1,2]" $
---          topSort (1 * 2 + 2 * 1)               == Left [1,2]
---          
---    test "topSort (path [5,4..1] + edge 2 4)    == Left [4,3,2]" $
---          topSort (path [5,4..1] + edge 2 4)    == Left [4,3,2]
---          
---    test "topSort (circuit [1..5])              == Left [1..5]" $
---          topSort (circuit [1..5])              == Left [1..5]
+
+    test "topSort (1 * 2 + 2 * 1)               == Left (2 :| [1])" $
+          topSort (1 * 2 + 2 * 1)               == Left (2 :| [1])
+
+    test "topSort (path [5,4..1] + edge 2 4)    == Left (4 :| [3,2])" $
+          topSort (path [5,4..1] + edge 2 4)    == Left (4 :| [3,2])
+
+    test "topSort (circuit [1..5])              == Left (5 :| [1..4])" $
+          topSort (circuit [1..5])              == Left (5 :| [1..4])
           
     test "fmap (flip isTopSortOf x) (topSort x) /= Right False" $ \x ->
           fmap (flip isTopSortOf x) (topSort x) /= Right False
