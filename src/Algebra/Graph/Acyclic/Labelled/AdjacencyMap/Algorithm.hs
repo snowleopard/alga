@@ -29,8 +29,8 @@ topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 -- fold f s ('empty') == s 
 -- fold f s ('vertex' x) == s 
 -- fold f s ('vertices' xs) == s 
--- fold (\e v1 v2 -> ++ (e, v1, v2)) [] ('edge' e v1 v2) == [(e, v1, v2)] 
--- fold (\e v1 v2 -> ++ (e, v1, v2)) [] (LAM.toAcyclicOrd $ LAM.edges [(5, 2, 3), (0, 1, 2), (6, 1, 3)]) == [(0, 1, 2), (5, 2, 3), (6, 1, 3)] 
+-- fold (\e v1 v2 -> flip (++) (e, v1, v2)) [] ('toAcyclicOrd' $ 'LAM.edge' 5 1 2) == [(5, 1, 2)] 
+-- fold (\e v1 v2 -> flip (++) (e, v1, v2)) [] ('toAcyclicOrd' $ 'LAM.edges' [(5, 2, 3), (0, 1, 2), (6, 1, 3)]) == [(0, 1, 2), (5, 2, 3), (6, 1, 3)] 
 -- @
 fold :: (Ord a) => (e -> a -> a -> s -> s) -> s ->  AdjacencyMap e a -> s
 fold f s am = foldl' f' s . unfold nm . topSort $ am
@@ -54,12 +54,12 @@ fold f s am = foldl' f' s . unfold nm . topSort $ am
 -- @
 -- optimumPath ('vertex' 'a') 'a' == Map.'Map.fromList' [('a', 0)]
 -- optimumPath ('vertex' 'a') 'z' == Map.'Map.fromList' [('a', 'distance' 'infinite')]
--- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edge' 2 'a' 'b') 'a' == Map.'Map.fromList' [('a', 0), ('b', 2)]
--- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edge' 2 'a' 'b') 'z' == Map.'Map.fromList' [('a', 'distance' 'infinite'), ('b', 'distance' 'infinite')]
+-- optimumPath ('toAcyclicOrd' $ 'LAM.edge' 2 'a' 'b') 'a' == Map.'Map.fromList' [('a', 0), ('b', 2)]
+-- optimumPath ('toAcyclicOrd' $ 'LAM.edge' 2 'a' 'b') 'z' == Map.'Map.fromList' [('a', 'distance' 'infinite'), ('b', 'distance' 'infinite')]
 -- optimumPath ('vertices' ['a', 'b']) 'a' == Map.'Map.fromList' [('a', 0), ('b', 'distance' 'infinite')]
 -- optimumPath ('vertices' ['a', 'b']) 'z' == Map.'Map.fromList' [('a', 'distance' 'infinite'), ('b', 'distance' 'infinite')]
--- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.'Map.fromList' [('a', 'distance' 'infinite'), ('b', 'distance' 'infinite'), ('c', 'distance' 'infinite')]
--- optimumPath ('LAM.toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
+-- optimumPath ('toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.'Map.fromList' [('a', 'distance' 'infinite'), ('b', 'distance' 'infinite'), ('c', 'distance' 'infinite')]
+-- optimumPath ('toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
 -- @
 optimumPath :: (Dioid e, Ord a) => AdjacencyMap e a -> a -> Map a e
 optimumPath am src = fromMaybe zm $ fold relax Nothing am
