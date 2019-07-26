@@ -61,7 +61,6 @@ import qualified Data.Set                            as Set
 --                                                                        , subForest = [] }]}]
 -- 'forest' (bfsForest ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [1,2,3] + 'path' [1,5,4]
 -- @
-
 bfsForest :: Ord a => AdjacencyMap a -> Forest a
 bfsForest g = bfsForestFrom' (vertexList g) g
 
@@ -130,8 +129,11 @@ bfsForestFrom' vs g = evalState (explore vs) Set.empty where
 bfs :: Ord a => [a] -> AdjacencyMap a -> [[a]]
 bfs vs = bfsForestFrom vs >=> levels
 
--- | Compute the /depth-first search/ forest of a graph that corresponds to
--- searching from each of the graph vertices in the 'Ord' @a@ order.
+-- | Compute the /depth-first search/ forest of a graph that
+--   corresponds to searching from each of the graph vertices in the
+--   'Ord' @a@ order.
+--
+--   Complexity: /O((n+m)*log n)/ time and /O(n)/ space.
 --
 -- @
 -- dfsForest 'empty'                       == []
@@ -277,9 +279,17 @@ topSort' g = callCC $ \cyclic ->
                           Parent z -> aux (z <| xs)
                           _ -> error "impossible"
 
--- | Compute a topological sort of the vertices of a graph. Given a
---  DAG, the lexicographically least topological ordering is returned,
---  otherwise, a cycle is.
+-- | Compute a topological ordering of a DAG or discover a cycle.
+--
+--   Vertices are expanded largest to smallest according their 'Ord'
+--   instance. This gives the lexicographically smallest topological
+--   ordering in the case of success. In the case of failure, the
+--   cycle is characterized by being the lexicographically smallest up
+--   to rotation with respect to @Ord (Dual a)@ in the first connected
+--   component of the graph, where the connected components are
+--   ordered by their largest vertex with respect to @Ord a@.
+--
+--   Complexity: /O((n+m)*log n)/ time and /O(n)/ space.
 --
 -- @
 -- topSort (1 * 2 + 3 * 1)                    == Right [3,1,2]
@@ -287,9 +297,9 @@ topSort' g = callCC $ \cyclic ->
 -- topSort (3 * (1 * 4 + 2 * 5))              == Right [3,1,2,4,5]
 -- topSort (1 * 2 + 2 * 1)                    == Left (2 ':|' [1])
 -- topSort ('path' [5,4..1] + 'edge' 2 4)         == Left (4 ':|' [3,2])
--- topSort ('circuit' [1..5])                   == Left (5 ':|' [1..4])
+-- topSort ('circuit' [1..3])                   == Left (3 ':|' [1,2])
 -- topSort ('circuit' [1..3] + 'circuit' [3,2,1]) == Left (3 ':|' [2])
--- topSort (1*2+2*1+3*4+4*3+5*1)              == Left (1 ':|' [2])
+-- topSort (1*2 + 2*1 + 3*4 + 4*3 + 5*1)      == Left (1 :| [2])
 -- fmap ('flip' 'isTopSortOf' x) (topSort x)      /= Right False
 -- 'isRight' . topSort                          == 'isAcyclic'
 -- @
@@ -298,6 +308,8 @@ topSort g = runContT (evalStateT (topSort' g) initialState) id where
   initialState = S mempty mempty 
 
 -- | Check if a given graph is /acyclic/.
+-- 
+--   Complexity: /O((n+m)*log n)/ time and /O(n)/ space.
 --
 -- @
 -- isAcyclic (1 * 2 + 3 * 1) == True

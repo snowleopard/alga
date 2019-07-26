@@ -29,8 +29,8 @@ module Algebra.Graph.AdjacencyIntMap.Algorithm (
     ) where
 
 import Control.Monad
-import Control.Monad.State.Strict
 import Control.Monad.Cont
+import Control.Monad.State.Strict
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Tree
 
@@ -275,9 +275,18 @@ topSort' g = callCC $ \cyclic ->
                           _ -> error "impossible"
 
 
--- | Compute a topological sort of the vertices of a graph. Given a
---  DAG, the lexicographically least topological ordering is returned,
---  otherwise, a cycle is.
+-- | Compute a topological ordering of the vertices of a DAG or
+--   discover a cycle.
+--
+--   Vertices are expanded largest to smallest according their 'Ord'
+--   instance. This gives the lexicographically smallest such ordering
+--   in the case of success. In the case of failure, the cycle is
+--   characterized by being the lexicographically smallest by @Ord
+--   (Dual Int)@ up to rotation, in the first connected component of
+--   the graph, where the connected components are ordered by their
+--   largest vertex by @Ord Int@.
+--
+--   Complexity: /O((n+m)*log n)/ time and /O(n+m)/ space.
 --
 -- @
 -- topSort (1 * 2 + 3 * 1)                    == Right [3,1,2]
@@ -285,9 +294,9 @@ topSort' g = callCC $ \cyclic ->
 -- topSort (3 * (1 * 4 + 2 * 5))              == Right [3,1,2,4,5]
 -- topSort (1 * 2 + 2 * 1)                    == Left (2 ':|' [1])
 -- topSort ('path' [5,4..1] + 'edge' 2 4)         == Left (4 ':|' [3,2])
--- topSort ('circuit' [1..5])                   == Left (5 ':|' [1..4])
+-- topSort ('circuit' [1..3])                   == Left (3 ':|' [1,2])
 -- topSort ('circuit' [1..3] + 'circuit' [3,2,1]) == Left (3 ':|' [2])
--- topSort (1*2+2*1+3*4+4*3+5*1)              == Left (1 ':|' [2])
+-- topSort (1*2 + 2*1 + 3*4 + 4*3 + 5*1)      == Left (1 :| [2])
 -- fmap ('flip' 'isTopSortOf' x) (topSort x)      /= Right False
 -- 'isRight' . topSort                          == 'isAcyclic'
 -- @
