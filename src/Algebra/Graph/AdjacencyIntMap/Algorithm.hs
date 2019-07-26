@@ -241,47 +241,39 @@ pattern TreeEdge <- Nothing
 pattern BackEdge :: Maybe Entry
 pattern BackEdge <- Just (Left _)
 -- Pattern to retrieve Parent from table lookup
-pattern Parent :: a -> Maybe (Either a a)
-pattern Parent p <- Just (Left p)
-
-unexplored :: MonadState S m => Int -> m Bool
-unexplored u = gets (not . IntMap.member u . table)
-
-enter :: MonadState S m => Int -> Int -> m ()
-enter u v = modify' (\(S p vs) -> S (IntMap.insert v (Left u) p) vs)
-
-exit :: MonadState S m => Int -> m ()
-exit v = modify' (\(S p vs) -> S (IntMap.alter (fmap done) v p) (v:vs)) where
-  done = \case
-    Left x -> Right x
-    _ -> error "impossible"
-
-classify :: MonadState S m => Int -> m (Maybe Entry)
-classify v = gets (IntMap.lookup v . table)
-
-retrace :: Int -> Int -> ParentTable -> Cycle Int
-retrace x x0 table = aux (x :| []) where
-  aux xs@(x :| _) | x0 == x = xs
-                  | otherwise = case IntMap.lookup x table of
-                      Parent z -> aux (z <| xs)
-                      _ -> error "impossible"
+pattern Parent :: Int -> Entry
+pattern Parent p <- Left p
 
 topSort' :: (MonadState S m, MonadCont m) => AdjacencyIntMap -> m TopSort
-topSort' g = callCC $ \cyclic -> do
-  let vertices = map fst $ IntMap.toDescList $ adjacencyIntMap g
-      adjacent = IntSet.toDescList . flip postIntSet g
-      dfs z x = do
-        enter z x
-        forM_ (adjacent x) $ \y ->
-          classify y >>= \case
-            TreeEdge -> dfs x y
-            BackEdge -> cyclic . Left . retrace x y =<< gets table
-            _        -> return ()
-        exit x
-  forM_ vertices $ \v -> do
-    new <- unexplored v
-    when new $ dfs v v
-  Right <$> gets order
+topSort' g = callCC $ \cyclic ->
+  do let vertices = map fst $ IntMap.toDescList $ adjacencyIntMap g
+         adjacent = IntSet.toDescList . flip postIntSet g
+         dfs z x =
+           do enter z x
+              forM_ (adjacent x) $ \y ->
+                classify y >>= \case
+                  TreeEdge -> dfs x y
+                  BackEdge -> cyclic . Left . retrace x y =<< gets table
+                  _        -> return ()
+              exit x
+     forM_ vertices $ \v ->
+       do new <- unexplored v
+          when new $ dfs undefined v
+     Right <$> gets order
+  where
+    classify v = gets (IntMap.lookup v . table)
+    unexplored u = gets (not . IntMap.member u . table)
+    enter u v = modify' (\(S p vs) -> S (IntMap.insert v (Left u) p) vs)
+    exit v = modify' (\(S p vs) -> S (IntMap.alter (fmap done) v p) (v:vs))
+    done = \case
+      Left x -> Right x
+      _ -> error "impossible"
+    retrace x x0 table = aux (x :| []) where
+      aux xs@(x :| _) | x0 == x = xs
+                      | otherwise = case table IntMap.! x of
+                          Parent z -> aux (z <| xs)
+                          _ -> error "impossible"
+
 
 -- | Compute a topological sort of the vertices of a graph. Given a
 --  DAG, the lexicographically least topological ordering is returned,
@@ -301,7 +293,7 @@ topSort' g = callCC $ \cyclic -> do
 -- @
 topSort :: AdjacencyIntMap -> Either (Cycle Int) [Int]
 topSort g = runContT (evalStateT (topSort' g) initialState) id where
-  initialState = S mempty mempty 
+  initialState = S mempty mempty
 
 -- | Check if a given graph is /acyclic/.
 --
@@ -314,7 +306,7 @@ topSort g = runContT (evalStateT (topSort' g) initialState) id where
 isAcyclic :: AdjacencyIntMap -> Bool
 isAcyclic g = case topSort g of
   Right _ -> True
-  Left  _ -> False
+  Left _ -> False
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong

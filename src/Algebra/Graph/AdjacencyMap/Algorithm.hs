@@ -231,7 +231,7 @@ reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = concat . bfs [x]
 
 type Cycle = NonEmpty 
-type Entry a = (Either a a)
+type Entry a = Either a a
 type TopSort a = Either (Cycle a) [a]
 type ParentTable a = Map.Map a (Entry a)
 data S a = S { table :: !(ParentTable a), order :: [a] }
@@ -243,48 +243,39 @@ pattern TreeEdge <- Nothing
 pattern BackEdge :: Maybe (Entry a)
 pattern BackEdge <- Just (Left _)
 -- Pattern to retrieve Parent from table lookup
-pattern Parent :: a -> Maybe (Either a a)
-pattern Parent p <- Just (Left p)
-
-unexplored :: (Ord a, MonadState (S a) m) => a -> m Bool
-unexplored u = gets (not . Map.member u . table)
-
-enter :: (Ord a, MonadState (S a) m) => a -> a -> m ()
-enter u v = modify' (\(S p vs) -> S (Map.insert v (Left u) p) vs)
-
-exit :: (Ord a, MonadState (S a) m) => a -> m ()
-exit v = modify' (\(S p vs) -> S (Map.alter (fmap done) v p) (v:vs)) where
-  done = \case
-    Left x -> Right x
-    _ -> error "impossible"
-
-classify :: (Ord a, MonadState (S a) m) => a -> m (Maybe (Entry a))
-classify v = gets (Map.lookup v . table)
-
-retrace :: Ord a => a -> a -> ParentTable a -> Cycle a
-retrace x x0 table = aux (x :| []) where
-  aux xs@(x :| _) | x0 == x = xs
-                  | otherwise = case Map.lookup x table of
-                      Parent z -> aux (z <| xs)
-                      _ -> error "impossible"
+pattern Parent :: a -> Entry a
+pattern Parent p <- Left p
 
 topSort' :: (Ord a, MonadState (S a) m, MonadCont m)
          => AdjacencyMap a -> m (TopSort a)
-topSort' g = callCC $ \cyclic -> do
-  let vertices = map fst $ Map.toDescList $ adjacencyMap g
-      adjacent = Set.toDescList . flip postSet g
-      dfs z x = do
-        enter z x
-        forM_ (adjacent x) $ \y ->
-          classify y >>= \case
-            TreeEdge -> dfs x y
-            BackEdge -> cyclic . Left . retrace x y =<< gets table
-            _        -> return ()
-        exit x
-  forM_ vertices $ \v -> do
-    new <- unexplored v
-    when new $ dfs v v
-  Right <$> gets order
+topSort' g = callCC $ \cyclic ->
+  do let vertices = map fst $ Map.toDescList $ adjacencyMap g
+         adjacent = Set.toDescList . flip postSet g
+         dfs z x =
+           do enter z x
+              forM_ (adjacent x) $ \y ->
+                classify y >>= \case
+                  TreeEdge -> dfs x y
+                  BackEdge -> cyclic . Left . retrace x y =<< gets table
+                  _        -> return ()
+              exit x
+     forM_ vertices $ \v ->
+       do new <- unexplored v
+          when new $ dfs undefined v
+     Right <$> gets order
+  where
+    classify v = gets (Map.lookup v . table)
+    unexplored u = gets (not . Map.member u . table)
+    enter u v = modify' (\(S p vs) -> S (Map.insert v (Left u) p) vs)
+    exit v = modify' (\(S p vs) -> S (Map.alter (fmap done) v p) (v:vs))
+    done = \case
+      Left x -> Right x
+      _ -> error "impossible"
+    retrace x x0 table = aux (x :| []) where
+      aux xs@(x :| _) | x0 == x = xs
+                      | otherwise = case table Map.! x of
+                          Parent z -> aux (z <| xs)
+                          _ -> error "impossible"
 
 -- | Compute a topological sort of the vertices of a graph. Given a
 --  DAG, the lexicographically least topological ordering is returned,
@@ -317,7 +308,7 @@ topSort g = runContT (evalStateT (topSort' g) initialState) id where
 isAcyclic :: Ord a => AdjacencyMap a -> Bool
 isAcyclic g = case topSort g of
   Right _ -> True
-  Left  _ -> False
+  Left _ -> False
 
 -- TODO: Benchmark and optimise.
 -- | Compute the /condensation/ of a graph, where each vertex corresponds to a
