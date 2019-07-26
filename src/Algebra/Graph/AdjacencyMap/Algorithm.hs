@@ -270,16 +270,16 @@ topSort' g = callCC $ \cyclic ->
     unexplored u = gets (not . Map.member u . table)
     enter u v = modify' (\(S p vs) -> S (Map.insert v (Left u) p) vs)
     exit v = modify' (\(S p vs) -> S (Map.alter (fmap done) v p) (v:vs))
-    done = \case
-      Left x -> Right x
-      _ -> error "impossible"
+      where done = \case
+              Left x -> Right x
+              _ -> error "impossible"
     retrace x x0 table = aux (x :| []) where
       aux xs@(x :| _) | x0 == x = xs
                       | otherwise = case table Map.! x of
                           Parent z -> aux (z <| xs)
                           _ -> error "impossible"
 
--- | Compute a topological ordering of a DAG or discover a cycle.
+-- | Compute a topological sort of a DAG or discover a cycle.
 --
 --   Vertices are expanded largest to smallest according their 'Ord'
 --   instance. This gives the lexicographically smallest topological
@@ -299,7 +299,7 @@ topSort' g = callCC $ \cyclic ->
 -- topSort ('path' [5,4..1] + 'edge' 2 4)         == Left (4 ':|' [3,2])
 -- topSort ('circuit' [1..3])                   == Left (3 ':|' [1,2])
 -- topSort ('circuit' [1..3] + 'circuit' [3,2,1]) == Left (3 ':|' [2])
--- topSort (1*2 + 2*1 + 3*4 + 4*3 + 5*1)      == Left (1 :| [2])
+-- topSort (1*2 + 2*1 + 3*4 + 4*3 + 5*1)      == Left (1 ':|' [2])
 -- fmap ('flip' 'isTopSortOf' x) (topSort x)      /= Right False
 -- 'isRight' . topSort                          == 'isAcyclic'
 -- @
