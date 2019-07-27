@@ -35,8 +35,12 @@ import qualified Data.Graph.Typed   as Typed
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.IntSet        as IntSet
 
--- | Compute the forest of a graph's vertices in breadth first order. Complexity:
--- /O(n+m*log n)/ time and /O(n+m)/ space.
+-- | Compute the /breadth-first search/ forest of a graph, where
+--   adjacent vertices are expanded smallest to biggest with respect
+--   to their 'Ord' instance.
+-- 
+--   Let /W/ be the number of bits in a machine word. Complexity:
+--   /O((n+m)*W)/ time and /O(n)/ space.
 --
 -- @
 -- bfsForest 'empty'                         == []
@@ -57,10 +61,10 @@ bfsForest :: AdjacencyIntMap -> Forest Int
 bfsForest g = bfsForestFrom' (vertexList g) g
 
 -- | Like 'bfsForest', but the traversal is seeded by a list of
--- vertices. Vertices not in the graph are ignored.
+--   vertices. Vertices not in the graph are ignored.
 --
--- Let /L/ be the number of seed vertices. Complexity: /O(n+(L+m)*logn)/
--- time and /O(n+m)/ space.
+--   Let /L/ be the number of seed vertices and /W/ the number bits in
+--   a machine word. Complexity: /O((L+m)*W)/ time and /O(n)/ space.
 --
 -- @
 -- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2)      == 'vertices' [1,2]
@@ -80,7 +84,7 @@ bfsForest g = bfsForestFrom' (vertexList g) g
 -- 
 -- @
 bfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
-bfsForestFrom vs g = bfsForestFrom' [ v | v <- vs, hasVertex v g] g
+bfsForestFrom vs g = bfsForestFrom' [ v | v <- vs, hasVertex v g ] g
 
 bfsForestFrom' :: [Int] -> AdjacencyIntMap -> Forest Int
 bfsForestFrom' vs g = evalState (explore vs) IntSet.empty where
@@ -97,11 +101,12 @@ bfsForestFrom' vs g = evalState (explore vs) IntSet.empty where
 -- | Like 'bfsForestFrom' with the resulting forest converted to a
 --   level structure.  Flattening the result via @'concat' . 'bfs' vs@
 --   gives an enumeration of vertices reachable from @vs@ in breadth
---   first order. Adjacent nodes are expanded smallest to biggest
---   according to the 'Ord' instance for 'Int'.
+--   first order. Adjacent vertices are expanded smallest to biggest
+--   with respect to their 'Ord' instance.
 --
---   Let /L/ be the number of seed vertices. Complexity:
---   /O(n+(L+m)*log n)/ time and /O(n+m)/ space.
+--   Let /L/ be the number of seed vertices and /W/ the number of bits
+--   in a machine word. Complexity: /O((L+m)*W)/ time and /O(n)/
+--   space.
 -- 
 -- @
 -- bfs vs 'empty'                                         == []
