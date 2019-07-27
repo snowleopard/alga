@@ -1,4 +1,4 @@
-{-# language LambdaCase, PatternSynonyms #-}
+{-# language LambdaCase #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -243,51 +243,41 @@ reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = dfs [x]
 
 type Cycle = NonEmpty 
-type Entry a = Either a a
+data Entry a = Entered (Maybe a) | Exited (Maybe a)
 type TopSort a = Either (Cycle a) [a]
 type ParentTable a = Map.Map a (Entry a)
 data S a = S { table :: !(ParentTable a), order :: [a] }
-
--- Tree edge when node has not been explored
-pattern TreeEdge :: Maybe (Entry a)
-pattern TreeEdge <- Nothing
--- Back edge when node is being processed, but not done
-pattern BackEdge :: Maybe (Entry a)
-pattern BackEdge <- Just (Left _)
--- Pattern to retrieve Parent from table lookup
-pattern Parent :: a -> Entry a
-pattern Parent p <- Left p
 
 topSort' :: (Ord a, MonadState (S a) m, MonadCont m)
          => AdjacencyMap a -> m (TopSort a)
 topSort' g = callCC $ \cyclic ->
   do let vertices = map fst $ Map.toDescList $ adjacencyMap g
          adjacent = Set.toDescList . flip postSet g
-         dfs z x =
-           do enter z x
-              forM_ (adjacent x) $ \y ->
-                classify y >>= \case
-                  TreeEdge -> dfs x y
-                  BackEdge -> cyclic . Left . retrace x y =<< gets table
-                  _        -> return ()
-              exit x
-     forM_ vertices $ \v ->
-       do new <- unexplored v
-          when new $ dfs undefined v
+         dfs prev curr =
+           do enter prev curr
+              forM_ (adjacent curr) $ \next ->
+                nodeState next >>= \case
+                  Nothing -> dfs (Just curr) next
+                  Just (Exited _) -> return ()
+                  _ -> cyclic . Left . retrace curr next =<< gets table
+              exit curr
+     forM_ vertices $ \v -> nodeState v >>= \case
+       Nothing -> dfs Nothing v
+       _       -> return ()
      Right <$> gets order
   where
-    classify v = gets (Map.lookup v . table)
-    unexplored u = gets (not . Map.member u . table)
-    enter u v = modify' (\(S p vs) -> S (Map.insert v (Left u) p) vs)
-    exit v = modify' (\(S p vs) -> S (Map.alter (fmap done) v p) (v:vs)) where
-      done = \case
-        Left x -> Right x
-        _ -> error "Internal error: dfs node was exitted before it was entered"
+    nodeState v = gets (Map.lookup v . table)
+    enter u v = modify' (\(S p vs) -> S (Map.insert v (Entered u) p) vs)
+    exit v = modify' (\(S p vs) -> S (Map.alter (fmap leave) v p) (v:vs))
+      where leave = \case
+              Entered x -> Exited x
+              _ -> error "Internal error: dfs search order violated"
     retrace x x0 table = aux (x :| []) where
-      aux xs@(x :| _) | x0 == x = xs
-                      | otherwise = case table Map.! x of
-                          Parent z -> aux (z <| xs)
-                          _ -> error "Internal error: dfs back edge was mistakingly identified"
+      aux xs@(x :| _)
+        | x0 == x = xs
+        | otherwise = case table Map.! x of
+            Entered (Just z) -> aux (z <| xs)
+            _ -> error "Internal error: dfs back edge was mistakingly identified"
 
 -- | Compute a topological sort of a DAG or discover a cycle.
 --
