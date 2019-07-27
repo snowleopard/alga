@@ -247,7 +247,7 @@ reachable x = dfs [x]
 
 type Cycle = NonEmpty
 type TopSort = Either (Cycle Int) [Int]
-data Entry = Entered (Maybe Int) | Exited (Maybe Int) deriving (Show)
+data Entry = Entered Int | Exited Int
 type ParentTable = IntMap.IntMap Entry
 data S = S { table :: !ParentTable, order :: [Int] }
 
@@ -259,13 +259,13 @@ topSort' g = callCC $ \cyclic ->
            do enter prev curr
               forM_ (adjacent curr) $ \next ->
                 nodeState next >>= \case
-                  Nothing -> dfs (Just curr) next
+                  Nothing -> dfs curr next
                   Just (Exited _) -> return ()
                   _ -> cyclic . Left . retrace curr next =<< gets table
               exit curr
      forM_ vertices $ \v -> nodeState v >>= \case
-       Nothing -> dfs Nothing v
-       _       -> return ()
+       Nothing -> dfs undefined v
+       _ -> return ()
      Right <$> gets order
   where
     nodeState v = gets (IntMap.lookup v . table)
@@ -274,12 +274,12 @@ topSort' g = callCC $ \cyclic ->
       where leave = \case
               Entered x -> Exited x
               _ -> error $ "Internal error: dfs search order violated"
-    retrace x x0 table = aux (x :| []) where
-      aux xs@(x :| _)
-        | x0 == x = xs
-        | otherwise = case table IntMap.! x of
-          Entered (Just z) -> aux (z <| xs)
-          _ -> error $ "Internal error: dfs back edge was mistakingly identified"
+    retrace curr head table = aux (curr :| []) where
+      aux xs@(curr :| _)
+        | head == curr = xs
+        | otherwise = case table IntMap.! curr of
+            Entered prev -> aux (prev <| xs)
+            _ -> error "Internal error: dfs back edge mistakingly identified"
 
 -- | Compute a topological sort of a DAG or discover a cycle.
 --
@@ -287,9 +287,10 @@ topSort' g = callCC $ \cyclic ->
 --   instance. This gives the lexicographically smallest topological
 --   ordering in the case of success. In the case of failure, the
 --   cycle is characterized by being the lexicographically smallest up
---   to rotation with respect to @Ord (Dual a)@ in the first connected
---   component of the graph, where the connected components are
---   ordered by their largest vertex with respect to @Ord a@.
+--   to rotation with respect to @Ord (Dual Int)@ in the first
+--   connected component of the graph containing a cycle, where the
+--   connected components are ordered by their largest vertex with
+--   respect to @Ord a@.
 --
 --   Let /W/ be the number of bits in a machine word. Complexity:
 --   /O((n+m)*W)/ time and /O(n)/ space.
@@ -306,7 +307,7 @@ topSort' g = callCC $ \cyclic ->
 -- fmap ('flip' 'isTopSortOf' x) (topSort x)      /= Right False
 -- 'isRight' . topSort                          == 'isAcyclic'
 -- @
-topSort :: AdjacencyIntMap -> Either (Cycle Int) [Int]
+topSort :: AdjacencyIntMap -> Either (NonEmpty Int) [Int]
 topSort g = runContT (evalStateT (topSort' g) (S IntMap.empty [])) id 
 
 -- | Check if a given graph is /acyclic/.

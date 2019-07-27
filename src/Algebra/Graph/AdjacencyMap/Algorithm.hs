@@ -243,7 +243,7 @@ reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = dfs [x]
 
 type Cycle = NonEmpty 
-data Entry a = Entered (Maybe a) | Exited (Maybe a)
+data Entry a = Entered a | Exited a
 type TopSort a = Either (Cycle a) [a]
 type ParentTable a = Map.Map a (Entry a)
 data S a = S { table :: !(ParentTable a), order :: [a] }
@@ -257,13 +257,13 @@ topSort' g = callCC $ \cyclic ->
            do enter prev curr
               forM_ (adjacent curr) $ \next ->
                 nodeState next >>= \case
-                  Nothing -> dfs (Just curr) next
+                  Nothing -> dfs curr next
                   Just (Exited _) -> return ()
                   _ -> cyclic . Left . retrace curr next =<< gets table
               exit curr
      forM_ vertices $ \v -> nodeState v >>= \case
-       Nothing -> dfs Nothing v
-       _       -> return ()
+       Nothing -> dfs undefined v
+       _ -> return ()
      Right <$> gets order
   where
     nodeState v = gets (Map.lookup v . table)
@@ -272,12 +272,12 @@ topSort' g = callCC $ \cyclic ->
       where leave = \case
               Entered x -> Exited x
               _ -> error "Internal error: dfs search order violated"
-    retrace x x0 table = aux (x :| []) where
-      aux xs@(x :| _)
-        | x0 == x = xs
-        | otherwise = case table Map.! x of
-            Entered (Just z) -> aux (z <| xs)
-            _ -> error "Internal error: dfs back edge was mistakingly identified"
+    retrace curr head table = aux (curr :| []) where
+      aux xs@(curr :| _)
+        | head == curr = xs
+        | otherwise = case table Map.! curr of
+            Entered prev -> aux (prev <| xs)
+            _ -> error "Internal error: dfs back edge mistakingly identified"
 
 -- | Compute a topological sort of a DAG or discover a cycle.
 --
@@ -286,8 +286,9 @@ topSort' g = callCC $ \cyclic ->
 --   ordering in the case of success. In the case of failure, the
 --   cycle is characterized by being the lexicographically smallest up
 --   to rotation with respect to @Ord (Dual a)@ in the first connected
---   component of the graph, where the connected components are
---   ordered by their largest vertex with respect to @Ord a@.
+--   component of the graph containing a cycle, where the connected
+--   components are ordered by their largest vertex with respect to
+--   @Ord a@.
 --
 --   Complexity: /O((n+m)*log n)/ time and /O(n)/ space.
 --
@@ -303,7 +304,7 @@ topSort' g = callCC $ \cyclic ->
 -- fmap ('flip' 'isTopSortOf' x) (topSort x)      /= Right False
 -- 'isRight' . topSort                          == 'isAcyclic'
 -- @
-topSort :: Ord a => AdjacencyMap a -> Either (Cycle a) [a]
+topSort :: Ord a => AdjacencyMap a -> Either (NonEmpty a) [a]
 topSort g = runContT (evalStateT (topSort' g) (S Map.empty [])) id
 
 -- | Check if a given graph is /acyclic/.
