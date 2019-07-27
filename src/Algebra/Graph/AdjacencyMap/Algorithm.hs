@@ -129,9 +129,9 @@ bfsForestFrom' vs g = evalState (explore vs) Set.empty where
 bfs :: Ord a => [a] -> AdjacencyMap a -> [[a]]
 bfs vs = bfsForestFrom vs >=> levels
 
--- | Compute the /depth-first search/ forest of a graph that
---   corresponds to searching from each of the graph vertices in the
---   'Ord' @a@ order.
+-- | Compute the /depth-first search/ forest of a graph, where
+--   adjacent vertices are expanded smallest to biggest with respect
+--   to their 'Ord' instance.
 --
 --   Complexity: /O((n+m)*log n)/ time and /O(n)/ space.
 --
@@ -156,9 +156,10 @@ bfs vs = bfsForestFrom vs >=> levels
 dfsForest :: Ord a => AdjacencyMap a -> Forest a
 dfsForest g = dfsForestFrom (vertexList g) g
 
--- | Compute the /depth-first search/ forest of a graph, searching from each of
--- the given vertices in order. Note that the resulting forest does not
--- necessarily span the whole graph, as some vertices may be unreachable.
+-- | Compute the /depth-first search/ forest of a graph, searching
+--   from each of the given vertices in order. Note that the resulting
+--   forest does not necessarily span the whole graph, as some
+--   vertices may be unreachable.
 --
 -- @
 -- dfsForestFrom vs 'empty'                           == []
@@ -196,7 +197,7 @@ dfsForestFrom' vs g = evalState (explore vs) mempty where
                     return new
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a
--- graph, when searching from each of the given vertices in order.
+--   graph, when searching from each of the given vertices in order.
 --
 -- @
 -- dfs vs    $ 'empty'                    == []

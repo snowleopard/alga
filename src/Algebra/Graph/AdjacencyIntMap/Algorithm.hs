@@ -128,9 +128,9 @@ bfsForestFrom' vs g = evalState (explore vs) IntSet.empty where
 bfs :: [Int] -> AdjacencyIntMap -> [[Int]]
 bfs vs = bfsForestFrom vs >=> levels
 
--- | Compute the /depth-first search/ forest of a graph that
---   corresponds to searching from each of the graph vertices in the
---   'Ord' 'Int' order.
+-- | Compute the /depth-first search/ forest of a graph, where
+--   adjacent vertices are expanded smallest to biggest with respect
+--   to their 'Ord' instance.
 --
 --   Let /W/ be the number of bits in a machine word. Complexity:
 --   /O((n+m)*W)/ time and /O(n)/ space.
@@ -188,8 +188,8 @@ dfsForestFrom' vs g = evalState (explore vs) mempty where
     True -> (:) <$> walk v <*> explore vs
     False -> explore vs 
   explore [] = return []
-  walk v = Node v <$> (explore =<< adjacentM v)
-  adjacentM v = filterM undiscovered $ IntSet.toList (postIntSet v g)
+  walk v = Node v <$> (explore $ adjacent v)
+  adjacent v = IntSet.toList (postIntSet v g)
   undiscovered v = gets (not . IntSet.member v)
   discovered v = do new <- undiscovered v
                     when new $ modify' (IntSet.insert v)
@@ -214,10 +214,13 @@ dfsForestFrom' vs g = evalState (explore vs) mempty where
 dfs :: [Int] -> AdjacencyIntMap -> [Int]
 dfs vs = dfsForestFrom vs >=> flatten
 
--- | Compute the list of vertices that are /reachable/ from a given source
--- vertex in a graph. The vertices in the resulting list appear in
--- /breadth-first order/. 
+-- | Compute the list of vertices that are /reachable/ from a given
+--   source vertex in a graph. The vertices in the resulting list
+--   appear in /breadth-first order/.
 --
+--   Let /W/ be the number of bits in a machine word. Complexity:
+--   /O(m*W)/ time and /O(n)/ space.
+-- 
 -- @
 -- reachable x $ 'empty'                       == []
 -- reachable 1 $ 'vertex' 1                    == [1]
