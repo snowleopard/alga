@@ -159,6 +159,10 @@ dfsForest g = dfsForestFrom' (vertexList g) g
 -- | Compute the /depth-first search/ forest of a graph, searching from each of
 -- the given vertices in order. Note that the resulting forest does not
 -- necessarily span the whole graph, as some vertices may be unreachable.
+-- 
+--   Let /L/ be the number of seed vertices and /W/ the number of bits
+--   in a machine word. Complexity: /O((L+m)*W)/ time and /O(n)/
+--   space.
 --
 -- @
 -- dfsForestFrom vs 'empty'                           == []
@@ -196,6 +200,10 @@ dfsForestFrom' vs g = evalState (explore vs) mempty where
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a graph,
 -- when searching from each of the given vertices in order.
+-- 
+--   Let /L/ be the number of seed vertices and /W/ the number of bits
+--   in a machine word. Complexity: /O((L+m)*W)/ time and /O(n)/
+--   space.
 --
 -- @
 -- dfs vs    $ 'empty'                    == []
@@ -215,7 +223,7 @@ dfs vs = dfsForestFrom vs >=> flatten
 
 -- | Compute the list of vertices that are /reachable/ from a given
 --   source vertex in a graph. The vertices in the resulting list
---   appear in /breadth-first order/.
+--   appear in /depth-first order/.
 --
 --   Let /W/ be the number of bits in a machine word. Complexity:
 --   /O(m*W)/ time and /O(n)/ space.
@@ -232,7 +240,7 @@ dfs vs = dfsForestFrom vs >=> flatten
 -- 'isSubgraphOf' ('vertices' $ reachable x y) y == True
 -- @
 reachable :: Int -> AdjacencyIntMap -> [Int]
-reachable x = concat . bfs [x]
+reachable x = dfs [x]
 
 type Cycle = NonEmpty
 type TopSort = Either (Cycle Int) [Int]

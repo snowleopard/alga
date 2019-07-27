@@ -160,7 +160,10 @@ dfsForest g = dfsForestFrom (vertexList g) g
 --   from each of the given vertices in order. Note that the resulting
 --   forest does not necessarily span the whole graph, as some
 --   vertices may be unreachable.
---
+-- 
+--   Let /L/ be the number of seed vertices. Complexity: /O((L+m)*log n)/
+--   time and /O(n)/ space.
+-- 
 -- @
 -- dfsForestFrom vs 'empty'                           == []
 -- 'forest' (dfsForestFrom [1]   $ 'edge' 1 1)          == 'vertex' 1
@@ -191,13 +194,15 @@ dfsForestFrom' vs g = evalState (explore vs) mempty where
   explore [] = return []
   walk v = Node v <$> explore (adjacent v)
   adjacent v = Set.toList (postSet v g)
-  undiscovered v = gets (not . Set.member v)
-  discovered v = do new <- undiscovered v
+  discovered v = do new <- gets (not . Set.member v)
                     when new $ modify' (Set.insert v)
                     return new
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a
 --   graph, when searching from each of the given vertices in order.
+--
+--   Let /L/ be the number of seed vertices. Complexity: /O((L+m)*log n)/
+--   time and /O(n)/ space.
 --
 -- @
 -- dfs vs    $ 'empty'                    == []
@@ -217,7 +222,9 @@ dfs vs = dfsForestFrom vs >=> flatten
 
 -- | Compute the list of vertices that are /reachable/ from a given
 -- source vertex in a graph. The vertices in the resulting list appear
--- in /breadth-first order/.
+-- in /depth-first order/.
+-- 
+--   Complexity: /O(m*log n)/ time and /O(n)/ space.
 --
 -- @
 -- reachable x $ 'empty'                       == []
@@ -231,7 +238,7 @@ dfs vs = dfsForestFrom vs >=> flatten
 -- 'isSubgraphOf' ('vertices' $ reachable x y) y == True
 -- @
 reachable :: Ord a => a -> AdjacencyMap a -> [a]
-reachable x = concat . bfs [x]
+reachable x = dfs [x]
 
 type Cycle = NonEmpty 
 type Entry a = Either a a
