@@ -1,4 +1,4 @@
-{-# language LambdaCase, ViewPatterns, PatternSynonyms #-}
+{-# language LambdaCase, PatternSynonyms #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -188,7 +188,7 @@ dfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
 dfsForestFrom vs g = dfsForestFrom' [ v | v <- vs, hasVertex v g ] g
 
 dfsForestFrom' :: Ord a => [a] -> AdjacencyMap a -> Forest a
-dfsForestFrom' vs g = evalState (explore vs) mempty where
+dfsForestFrom' vs g = evalState (explore vs) Set.empty where
   explore (v:vs) = discovered v >>= \case
     True -> (:) <$> walk v <*> explore vs
     False -> explore vs 
@@ -279,15 +279,15 @@ topSort' g = callCC $ \cyclic ->
     classify v = gets (Map.lookup v . table)
     unexplored u = gets (not . Map.member u . table)
     enter u v = modify' (\(S p vs) -> S (Map.insert v (Left u) p) vs)
-    exit v = modify' (\(S p vs) -> S (Map.alter (fmap done) v p) (v:vs))
-      where done = \case
-              Left x -> Right x
-              _ -> error "impossible"
+    exit v = modify' (\(S p vs) -> S (Map.alter (fmap done) v p) (v:vs)) where
+      done = \case
+        Left x -> Right x
+        _ -> error "Internal error: dfs node was exitted before it was entered"
     retrace x x0 table = aux (x :| []) where
       aux xs@(x :| _) | x0 == x = xs
                       | otherwise = case table Map.! x of
                           Parent z -> aux (z <| xs)
-                          _ -> error "impossible"
+                          _ -> error "Internal error: dfs back edge was mistakingly identified"
 
 -- | Compute a topological sort of a DAG or discover a cycle.
 --
@@ -314,8 +314,7 @@ topSort' g = callCC $ \cyclic ->
 -- 'isRight' . topSort                          == 'isAcyclic'
 -- @
 topSort :: Ord a => AdjacencyMap a -> Either (Cycle a) [a]
-topSort g = runContT (evalStateT (topSort' g) initialState) id where
-  initialState = S mempty mempty 
+topSort g = runContT (evalStateT (topSort' g) (S Map.empty [])) id
 
 -- | Check if a given graph is /acyclic/.
 -- 

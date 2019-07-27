@@ -485,8 +485,9 @@ transitiveClosure = coerce AM.transitiveClosure
 -- 'Right' . topSort               == 'AM.topSort' . 'fromAcyclic'
 -- @
 topSort :: Ord a => AdjacencyMap a -> [a]
-topSort (AM.topSort . coerce -> Right vs) = vs
-topSort _ = error "topSort on Acyclic Graph produced cycle"
+topSort g = case AM.topSort (coerce g) of
+  Right vs -> vs
+  Left _ ->error "Internal error: the acyclicity invariant is violated in topSort"
 
 -- | Compute the acyclic /condensation/ of a graph, where each vertex
 -- corresponds to a /strongly-connected component/ of the original graph. Note
