@@ -186,12 +186,11 @@ dfsForestFrom' :: [Int] -> AdjacencyIntMap -> Forest Int
 dfsForestFrom' vs g = evalState (explore vs) mempty where
   explore (v:vs) = discovered v >>= \case
     True -> (:) <$> walk v <*> explore vs
-    False -> explore vs 
+    False -> explore vs
   explore [] = return []
-  walk v = Node v <$> (explore $ adjacent v)
+  walk v = Node v <$> explore (adjacent v)
   adjacent v = IntSet.toList (postIntSet v g)
-  undiscovered v = gets (not . IntSet.member v)
-  discovered v = do new <- undiscovered v
+  discovered v = do new <- gets (not . IntSet.member v)
                     when new $ modify' (IntSet.insert v)
                     return new
 

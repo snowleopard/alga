@@ -189,8 +189,8 @@ dfsForestFrom' vs g = evalState (explore vs) mempty where
     True -> (:) <$> walk v <*> explore vs
     False -> explore vs 
   explore [] = return []
-  walk v = Node v <$> (explore =<< adjacentM v)
-  adjacentM v = filterM undiscovered $ Set.toList (postSet v g)
+  walk v = Node v <$> explore (adjacent v)
+  adjacent v = Set.toList (postSet v g)
   undiscovered v = gets (not . Set.member v)
   discovered v = do new <- undiscovered v
                     when new $ modify' (Set.insert v)
