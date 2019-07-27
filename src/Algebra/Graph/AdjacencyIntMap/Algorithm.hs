@@ -156,9 +156,11 @@ bfs vs = bfsForestFrom vs >=> levels
 dfsForest :: AdjacencyIntMap -> Forest Int
 dfsForest g = dfsForestFrom' (vertexList g) g
 
--- | Compute the /depth-first search/ forest of a graph, searching from each of
--- the given vertices in order. Note that the resulting forest does not
--- necessarily span the whole graph, as some vertices may be unreachable.
+-- | Compute the /depth-first search/ forest of a graph from the given
+--   vertices, where adjacent vertices are expanded smallest to
+--   biggest according to their 'Ord' instance. Note that the
+--   resulting forest does not necessarily span the whole graph, as
+--   some vertices may be unreachable.
 -- 
 --   Let /L/ be the number of seed vertices and /W/ the number of bits
 --   in a machine word. Complexity: /O((L+m)*W)/ time and /O(n)/
@@ -198,8 +200,9 @@ dfsForestFrom' vs g = evalState (explore vs) mempty where
                     when new $ modify' (IntSet.insert v)
                     return new
 
--- | Compute the list of vertices visited by the /depth-first search/ in a graph,
--- when searching from each of the given vertices in order.
+-- | Compute the vertices visited by /depth-first search/ in a graph
+--   from the given vertices. Adjacent vertices are expanded smallest
+--   to biggest according to their 'Ord' instance.
 -- 
 --   Let /L/ be the number of seed vertices and /W/ the number of bits
 --   in a machine word. Complexity: /O((L+m)*W)/ time and /O(n)/
