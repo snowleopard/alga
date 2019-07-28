@@ -35,8 +35,8 @@ import qualified Data.Graph.Typed   as Typed
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.IntSet        as IntSet
 
--- | Compute the /breadth-first search/ forest of a graph, where
---   adjacent vertices are expanded smallest to biggest with respect
+-- | Compute the /breadth-first search/ forest of a graph, such that
+--   adjacent vertices are explored in increasing order with respect
 --   to their 'Ord' instance.
 -- 
 --   Let /W/ be the number of bits in a machine word. Complexity:
