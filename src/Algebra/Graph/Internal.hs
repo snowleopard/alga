@@ -112,14 +112,7 @@ data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 -- | A safe version of 'foldr1'.
 foldr1Safe :: (a -> a -> a) -> [a] -> Maybe a
 foldr1Safe f = foldr (maybeF f) Nothing
-{-# INLINE [0] foldr1Safe #-}
-
--- | Tragetting 'map' directly
-{-# RULES
-"foldr1Safe/build"
-  forall k f lst.
-  foldr1Safe k (map f lst) = foldr (maybeF k . f) Nothing lst
- #-}
+{-# INLINE foldr1Safe #-}
 
 -- | Auxiliary function that try to apply a function to a base case and a 'Maybe'
 -- value and return 'Just' the result or 'Just' the base case.
