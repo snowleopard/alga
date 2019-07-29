@@ -38,8 +38,8 @@ import qualified Data.Graph.Typed                    as Typed
 import qualified Data.Map.Strict                     as Map
 import qualified Data.Set                            as Set
 
--- | Compute the /breadth-first search/ forest of a graph, where
---   adjacent vertices are expanded smallest to biggest with respect
+-- | Compute the /breadth-first search/ forest of a graph, such that
+--   adjacent vertices are explored in increasing order with respect
 --   to their 'Ord' instance.
 -- 
 --   Complexity: /O((n+m)*log n)/ time and /O(n)/ space.
@@ -104,7 +104,7 @@ bfsForestFrom' vs g = evalState (explore vs) Set.empty where
 -- | Like 'bfsForestFrom' with the resulting forest converted to a
 --   level structure.  Flattening the result via @'concat' . 'bfs' vs@
 --   gives an enumeration of vertices reachable from @vs@ in breadth
---   first order. Adjacent vertices are expanded smallest to biggest
+--   first order. Adjacent vertices are explored in increasing order
 --   with respect to their 'Ord' instance.
 --
 --   Let /L/ be the number of seed vertices. Complexity: /O((L+m)*log n)/

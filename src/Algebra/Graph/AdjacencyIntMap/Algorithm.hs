@@ -14,6 +14,10 @@
 --
 -- This module provides basic graph algorithms, such as /depth-first search/,
 -- implemented for the "Algebra.Graph.AdjacencyIntMap" data type.
+--
+-- Some of the worst-case complexities include the term /min(n,W)/.
+-- Following 'IntSet.IntSet' and 'IntMap.IntMap', the /W/ stands for
+-- word size (usually 32 or 64 bits).
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyIntMap.Algorithm (
     -- * Algorithms
@@ -39,8 +43,7 @@ import qualified Data.IntSet        as IntSet
 --   adjacent vertices are explored in increasing order with respect
 --   to their 'Ord' instance.
 -- 
---   Let /W/ be the number of bits in a machine word. Complexity:
---   /O((n+m)*W)/ time and /O(n)/ space.
+--   Complexity: /O((n+m)*min(n,W))/ time and /O(n)/ space.
 --
 -- @
 -- bfsForest 'empty'                         == []
@@ -64,7 +67,8 @@ bfsForest g = bfsForestFrom' (vertexList g) g
 --   vertices. Vertices not in the graph are ignored.
 --
 --   Let /L/ be the number of seed vertices and /W/ the number bits in
---   a machine word. Complexity: /O((L+m)*W)/ time and /O(n)/ space.
+--   a machine word. Complexity: /O((L+m)*min(n,W))/ time and /O(n)/
+--   space.
 --
 -- @
 -- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2)      == 'vertices' [1,2]
@@ -101,12 +105,12 @@ bfsForestFrom' vs g = evalState (explore vs) IntSet.empty where
 -- | Like 'bfsForestFrom' with the resulting forest converted to a
 --   level structure.  Flattening the result via @'concat' . 'bfs' vs@
 --   gives an enumeration of vertices reachable from @vs@ in breadth
---   first order. Adjacent vertices are expanded smallest to biggest
+--   first order. Adjacent vertices are explored in increasing order
 --   with respect to their 'Ord' instance.
 --
 --   Let /L/ be the number of seed vertices and /W/ the number of bits
---   in a machine word. Complexity: /O((L+m)*W)/ time and /O(n)/
---   space.
+--   in a machine word. Complexity: /O((L+m)*min(n,W))/ time and
+--   /O(n)/ space.
 -- 
 -- @
 -- bfs vs 'empty'                                         == []
