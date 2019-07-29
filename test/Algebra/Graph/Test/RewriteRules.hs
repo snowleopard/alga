@@ -49,13 +49,19 @@ inspect $ 'vertex1 === 'vertexR
 
 overlay1, overlayR :: Graph a -> Graph a -> Graph a
 overlay1 x y = transpose (Overlay x y)
-overlayR x y = Overlay (transpose x) (transpose y)
+overlayR x y =
+  Overlay
+  (foldg empty vertex overlay (flip connect) x)
+  (foldg empty vertex overlay (flip connect) y)
 
 inspect $ 'overlay1 === 'overlayR
 
 connect1, connectR :: Graph a -> Graph a -> Graph a
 connect1 x y = transpose (Connect x y)
-connectR x y = Connect (transpose y) (transpose x)
+connectR x y =
+  Connect
+  (foldg empty vertex overlay (flip connect) y)
+  (foldg empty vertex overlay (flip connect) x)
 
 inspect $ 'connect1 === 'connectR
 

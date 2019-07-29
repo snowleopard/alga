@@ -984,7 +984,7 @@ splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 -- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Graph a -> Graph a
-transpose = foldg Empty Vertex Overlay (flip Connect)
+transpose g = buildR $ \e v o c -> foldg e v o (flip c) g
 {-# INLINE transpose #-}
 
 -- TODO: Implement via 'induceJust' to reduce code duplication.
