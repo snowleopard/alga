@@ -273,8 +273,9 @@ instance Monad Graph where
     (>>=)  = bindR
 
 bindR :: Graph a -> (a -> Graph b) -> Graph b
-bindR g f = foldg Empty f Overlay Connect g
-{-# INLINE [0] bindR #-}
+bindR g f = buildR $ \e v o c ->
+  foldg e (composeR (foldg e v o c) f) o c g
+{-# INLINE bindR #-}
 
 instance Alternative Graph where
     empty = Empty
@@ -1210,7 +1211,7 @@ buildR g = g Empty Vertex Overlay Connect
 
 composeR :: (b -> c) -> (a -> b) -> a -> c
 composeR = (.)
-{-# INLINE [0] composeR #-}
+{-# INLINE [1] composeR #-}
 
 matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
 matchR e v p = \x -> if p x then v x else e
@@ -1218,9 +1219,6 @@ matchR e v p = \x -> if p x then v x else e
 
 -- These rules transform functions into their buildR equivalents.
 {-# RULES
-"buildR/bindR" forall f g.
-    bindR g f = buildR (\e v o c -> foldg e (composeR (foldg e v o c) f) o c g)
-
 "buildR/induce" [~1] forall p g.
     induce p g = buildR (\e v o c -> foldg e (matchR e v p) o c g)
 
@@ -1245,7 +1243,7 @@ matchR e v p = \x -> if p x then v x else e
 "bindR/bindR" forall c f g.
     composeR (composeR c f) g = composeR c (f.g)
 
--- Rewrite identity (which can appear in the rewriting of bindR) to a much efficient one
+-- Rewrite identity (which can appear in the inlining of 'buildR') to a much efficient one
 "foldg/id"
     foldg Empty Vertex Overlay Connect = id
  #-}
