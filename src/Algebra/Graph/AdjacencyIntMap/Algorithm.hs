@@ -66,9 +66,8 @@ bfsForest g = bfsForestFrom' (vertexList g) g
 -- | Like 'bfsForest', but the traversal is seeded by a list of
 --   vertices. Vertices not in the graph are ignored.
 --
---   Let /L/ be the number of seed vertices and /W/ the number bits in
---   a machine word. Complexity: /O((L+m)*min(n,W))/ time and /O(n)/
---   space.
+--   Let /L/ be the number of seed vertices. Complexity:
+--   /O((L+m)*min(n,W))/ time and /O(n)/ space.
 --
 -- @
 -- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2)      == 'vertices' [1,2]
@@ -108,9 +107,8 @@ bfsForestFrom' vs g = evalState (explore vs) IntSet.empty where
 --   first order. Adjacent vertices are explored in increasing order
 --   with respect to their 'Ord' instance.
 --
---   Let /L/ be the number of seed vertices and /W/ the number of bits
---   in a machine word. Complexity: /O((L+m)*min(n,W))/ time and
---   /O(n)/ space.
+--   Let /L/ be the number of seed vertices. Complexity:
+--   /O((L+m)*min(n,W))/ time and /O(n)/ space.
 -- 
 -- @
 -- bfs vs 'empty'                                         == []
