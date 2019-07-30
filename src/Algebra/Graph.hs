@@ -326,6 +326,7 @@ vertex = Vertex
 -- @
 edge :: a -> a -> Graph a
 edge x y = connect (vertex x) (vertex y)
+{-# INLINE edge #-}
 
 -- | /Overlay/ two graphs. An alias for the constructor 'Overlay'. This is a
 -- commutative, associative and idempotent operation with the identity 'empty'.
@@ -382,7 +383,7 @@ connect = Connect
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: [a] -> Graph a
-vertices = overlays . map vertex
+vertices xs = buildR $ \e v o _ -> combineR e o v xs
 {-# INLINE vertices #-}
 
 -- | Construct the graph from a list of edges.
@@ -395,7 +396,9 @@ vertices = overlays . map vertex
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- @
 edges :: [(a, a)] -> Graph a
-edges = overlays . map (uncurry edge)
+edges xs = buildR $ \e v o c ->
+  combineR e o (\e -> c (v (fst e)) (v (snd e))) xs
+{-# INLINE edges #-}
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -409,8 +412,7 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays xs = buildR $ \e v o c ->
-  fromMaybe e (foldr1Safe o (map (foldg e v o c) xs))
+overlays xs = buildR $ \e v o c -> combineR e o (foldg e v o c) xs
 {-# INLINE overlays #-}
 
 -- | Connect a given list of graphs.
@@ -425,9 +427,13 @@ overlays xs = buildR $ \e v o c ->
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects xs = buildR $ \e v o c ->
-  fromMaybe e (foldr1Safe c (map (foldg e v o c) xs))
+connects xs = buildR $ \e v o c -> combineR e c (foldg e v o c) xs
 {-# INLINE connects #-}
+
+combineR :: c -> (c -> c -> c) -> (a -> c) -> [a] -> c
+combineR e o f =
+  fromMaybe e . foldr1Safe o . map f
+{-# INLINE combineR #-}
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.

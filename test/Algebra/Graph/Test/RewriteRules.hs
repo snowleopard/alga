@@ -123,3 +123,4 @@ ovAp'  x y z = overlay x y <*> z
 ovApR' x y z = overlay (x >>= (<$> z)) (y >>= (<$> z))
 
 inspect $ 'ovAp' === 'ovApR'
+
