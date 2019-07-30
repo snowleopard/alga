@@ -720,9 +720,12 @@ toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 -- path . 'reverse' == 'transpose' . path
 -- @
 path :: [a] -> Graph a
-path xs = case xs of []     -> empty
-                     [x]    -> vertex x
-                     (_:ys) -> edges (zip xs ys)
+path xs = buildR $ \e v o c ->
+  case xs of
+    []     -> e
+    [x]    -> v x
+    (_:ys) -> foldg e v o c $ edges (zip xs ys)
+{-# INLINE path #-}
 
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -735,8 +738,11 @@ path xs = case xs of []     -> empty
 -- circuit . 'reverse' == 'transpose' . circuit
 -- @
 circuit :: [a] -> Graph a
-circuit []     = empty
-circuit (x:xs) = path $ [x] ++ xs ++ [x]
+circuit xs = buildR $ \e v o c ->
+  case xs of
+    [] -> e
+    (x:xs) -> foldg e v o c $ path $ [x] ++ xs ++ [x]
+{-# INLINE circuit #-}
 
 -- | The /clique/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -751,8 +757,8 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: [a] -> Graph a
-clique = connects . map vertex
-{-# INLINE [1] clique #-}
+clique xs = buildR $ \e v _ c -> combineR e c v xs
+{-# INLINE clique #-}
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -766,9 +772,11 @@ clique = connects . map vertex
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: [a] -> [a] -> Graph a
-biclique xs [] = vertices xs
-biclique [] ys = vertices ys
-biclique xs ys = connect (vertices xs) (vertices ys)
+biclique xs [] = buildR $ \e v o c -> foldg e v o c $ vertices xs
+biclique [] ys = buildR $ \e v o c -> foldg e v o c $ vertices ys
+biclique xs ys = buildR $ \e v o c ->
+  c (foldg e v o c $ vertices xs) (foldg e v o c $ vertices ys)
+{-# INLINE biclique #-}
 
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -781,8 +789,10 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 -- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: a -> [a] -> Graph a
-star x [] = vertex x
-star x ys = connect (vertex x) (vertices ys)
+star x ys = buildR $ \e v o c ->
+  case ys of
+    [] -> v x
+    _  -> c (v x) (foldg e v o c $ vertices ys)
 {-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
@@ -800,7 +810,8 @@ star x ys = connect (vertex x) (vertices ys)
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
 stars :: [(a, [a])] -> Graph a
-stars = overlays . map (uncurry star)
+stars xs = buildR $ \e v o c ->
+  combineR e o (foldg e v o c . uncurry star) xs
 {-# INLINE stars #-}
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
