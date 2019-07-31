@@ -431,9 +431,7 @@ connects xs = buildR $ \e v o c -> combineR e c (foldg e v o c) xs
 {-# INLINE connects #-}
 
 combineR :: c -> (c -> c -> c) -> (a -> c) -> [a] -> c
-combineR e o f =
-  fromMaybe e . foldr1Safe o . map f
-{-# INLINE combineR #-}
+combineR e o f = fromMaybe e . foldr1Safe o . map f
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
@@ -522,6 +520,7 @@ infix 4 ===
 -- @
 isEmpty :: Graph a -> Bool
 isEmpty = foldg True (const False) (&&) (&&)
+{-# INLINE isEmpty #-}
 
 -- | The /size/ of a graph, i.e. the number of leaves of the expression
 -- including 'empty' leaves.
@@ -537,6 +536,7 @@ isEmpty = foldg True (const False) (&&) (&&)
 -- @
 size :: Graph a -> Int
 size = foldg 1 (const 1) (+) (+)
+{-# INLINE size #-}
 
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
@@ -550,6 +550,7 @@ size = foldg 1 (const 1) (+) (+)
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex x = foldg False (==x) (||) (||)
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
+{-# INLINE hasVertex #-}
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
@@ -661,10 +662,12 @@ edgeIntListR = AIM.edgeList . toAdjacencyIntMap
 -- @
 vertexSet :: Ord a => Graph a -> Set.Set a
 vertexSet = foldg Set.empty Set.singleton Set.union Set.union
+{-# INLINE vertexSet #-}
 
 -- Like 'vertexSet' but specialised for graphs with vertices of type 'Int'.
 vertexIntSetR :: Graph Int -> IntSet.IntSet
 vertexIntSetR = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
+{-# INLINE vertexIntSetR #-}
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
@@ -704,10 +707,12 @@ adjacencyList = AM.adjacencyList . toAdjacencyMap
 -- Convert a graph to 'AM.AdjacencyMap'.
 toAdjacencyMap :: Ord a => Graph a -> AM.AdjacencyMap a
 toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
+{-# INLINE toAdjacencyMap #-}
 
 -- Like @toAdjacencyMap@ but specialised for graphs with vertices of type 'Int'.
 toAdjacencyIntMap :: Graph Int -> AIM.AdjacencyIntMap
 toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
+{-# INLINE toAdjacencyIntMap #-}
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -1238,15 +1243,6 @@ matchR e v p = \x -> if p x then v x else e
 {-# RULES
 "buildR/induce" [~1] forall p g.
     induce p g = buildR (\e v o c -> foldg e (matchR e v p) o c g)
-
-"buildR/foldg(fc)" [~1] forall (f :: forall b. (b -> b -> b) -> (b -> b -> b)) g.
-    foldg Empty Vertex Overlay (f Connect) g = buildR (\e v o c -> foldg e v o (f c) g)
-
-"buildR/foldg(fo)" [~1] forall (f :: forall b. (b -> b -> b) -> (b -> b -> b)) g.
-    foldg Empty Vertex (f Overlay) Connect g = buildR (\e v o c -> foldg e v (f o) c g)
-
-"buildR/foldg(fo)(hc)" [~1] forall (f :: forall b. (b -> b -> b) -> (b -> b -> b)) (h :: forall b. (b -> b -> b) -> (b -> b -> b)) g.
-    foldg Empty Vertex (f Overlay) (h Connect) g = buildR (\e v o c -> foldg e v (f o) (h c) g)
  #-}
 
 -- Rewrite rules for fusion.
@@ -1274,6 +1270,7 @@ matchR e v p = \x -> if p x then v x else e
 -- 'Focus' on a specified subgraph.
 focus :: (a -> Bool) -> Graph a -> Focus a
 focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
+{-# INLINE focus #-}
 
 -- | The 'Context' of a subgraph comprises its 'inputs' and 'outputs', i.e. all
 -- the vertices that are connected to the subgraph's vertices. Note that inputs
