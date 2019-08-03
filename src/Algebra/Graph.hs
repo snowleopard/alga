@@ -1004,7 +1004,6 @@ transpose = foldg Empty Vertex Overlay (flip Connect)
 -- @
 induce :: (a -> Bool) -> Graph a -> Graph a
 induce p = induceJust . fmap (\x -> if p x then Just x else Nothing)
-{-# INLINE [1] induce #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the vertices
 -- that are 'Nothing'.
@@ -1022,7 +1021,6 @@ induceJust = foldg Empty (maybe Empty Vertex) (k Overlay) (k Connect)
     k _ x     Empty = x -- Constant folding to get rid of Empty leaves
     k _ Empty y     = y
     k f x     y     = f x y
-{-# INLINE [1] induceJust #-}
 
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given expression according to the laws of the algebra.
@@ -1210,24 +1208,10 @@ composeR :: (b -> c) -> (a -> b) -> a -> c
 composeR = (.)
 {-# INLINE [0] composeR #-}
 
-matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
-matchR e v p = \x -> if p x then v x else e
-{-# INLINE [0] matchR #-}
-
-maybeR :: b -> (a -> b) -> Maybe a -> b 
-maybeR = maybe
-{-# INLINE [0] maybeR #-}
-
 -- These rules transform functions into their buildR equivalents.
 {-# RULES
 "buildR/bindR" forall f g.
     bindR g f = buildR (\e v o c -> foldg e (composeR (foldg e v o c) f) o c g)
-
-"buildR/induce" [~1] forall p g.
-    induce p g = buildR (\e v o c -> foldg e (matchR e v p) o c g)
-
-"buildR/induceJust" [~1] forall g.
-    induceJust g = buildR (\e v o c -> foldg e (maybeR e v) o c g)
 
 "buildR/foldg(fc)" [~1] forall (f :: forall b. (b -> b -> b) -> (b -> b -> b)) g.
     foldg Empty Vertex Overlay (f Connect) g = buildR (\e v o c -> foldg e v o (f c) g)
@@ -1253,15 +1237,6 @@ maybeR = maybe
 -- Rewrite identity (which can appear in the rewriting of bindR) to a much efficient one
 "foldg/id"
     foldg Empty Vertex Overlay Connect = id
- #-}
-
--- Eliminate remaining rewrite-only functions.
-{-# RULES
-"graph/induce" [1] forall f.
-    foldg Empty (matchR Empty Vertex f) Overlay Connect = induce f
-
-"graph/induceJust" [1]
-    foldg Empty (maybeR Empty Vertex) Overlay Connect = induceJust
  #-}
 
 -- 'Focus' on a specified subgraph.
