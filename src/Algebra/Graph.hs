@@ -1076,6 +1076,8 @@ transpose g = buildR $ \e v o c -> foldg e v o (flip c) g
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
 -- /O(1)/ to be evaluated.
 --
+-- Good consumer and good producer.
+--
 -- @
 -- induce ('const' True ) x      == x
 -- induce ('const' False) x      == 'empty'
@@ -1094,6 +1096,8 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Co
 -- | Construct the /induced subgraph/ of a given graph by removing the vertices
 -- that are 'Nothing'.
 -- Complexity: /O(s)/ time, memory and size.
+--
+-- Good consumer.
 --
 -- @
 -- induceJust ('vertex' 'Nothing')                               == 'empty'
@@ -1303,8 +1307,8 @@ matchR e v p = \x -> if p x then v x else e
 
 -- These rules transform functions into their buildR equivalents.
 {-# RULES
-"buildR/induce" [~1] forall p g.
-    induce p g = buildR (\e v o c -> foldg e (matchR e v p) o c g)
+"buildR/induce" [~1] forall e v o c p g.
+    foldg e v o c (induce p g) = foldg e (matchR e v p) o c g
  #-}
 
 -- Rewrite rules for fusion.
