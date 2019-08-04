@@ -124,3 +124,10 @@ ovApR' x y z = overlay (x >>= (<$> z)) (y >>= (<$> z))
 
 inspect $ 'ovAp' === 'ovApR'
 
+hasVertexVertices, hasVertexVerticesR :: Eq a => a -> [a] -> Bool
+hasVertexVertices  x xs = hasVertex x (vertices xs)
+hasVertexVerticesR x xs =
+  fromMaybe False $
+    foldr (maybeF (||) . (==x)) Nothing xs
+
+inspect $ 'hasVertexVertices === 'hasVertexVerticesR
