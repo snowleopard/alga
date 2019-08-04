@@ -26,8 +26,9 @@ import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
 type S = Sum Int
 type D = Distance Int
 
-type LAS = AdjacencyMap S   Int
-type LAD = AdjacencyMap D   Int
+type LAS = AdjacencyMap S Int
+type LAD = AdjacencyMap D Int
+type LCD = AdjacencyMap D Char
 
 -- TODO: Switch to using generic tests.
 -- TODO: Clean the code, use proper and standerdized formatting.
@@ -242,18 +243,42 @@ testAcyclicLabelledAdjacencyMap = do
 
   putStrLn "\n======= Acyclic.Labelled.Algorithm.fold ======="
 
---   test "fold f s empty == s" $
---         fold f s empty == s
---   test "fold f s (vertex x) == s" $
---         fold f s (vertex x) == s
---   test "fold f s (vertices xs) == s" $
---         fold f s (vertices xs) == s
-  test "fold (\\e v1 v2 -> flip (++) (e, v1, v2)) [] (LAM.edge 5 1 2) == [(5, 1, 2)] " $
+  let applyFun4 (Fun _ f) a b c d = f (a, b, c, d)
+
+  test "fold f s empty                   == s" $ \(applyFun4 -> f) s ->
+        fold f (s :: Int) (empty :: LAS) == s
+
+  test "fold f s (vertex x)                 == s" $ \(applyFun4 -> f) s x ->
+        fold f (s :: Int) (vertex x :: LAS) == s
+
+  test "fold f s (vertices xs)                 == s" $ \(applyFun4 -> f) s xs ->
+        fold f (s :: Int) (vertices xs :: LAS) == s
+
+  test "fold (\\e v1 v2 -> flip (++) (e, v1, v2)) [] (LAM.edge 5 1 2)                        == [(5, 1, 2)] " $
         fold (\e v1 v2 -> flip (++) [(e, v1, v2)]) [] (toAcyclicOrd $ LAM.edge 5 1 2 :: LAD) == [(5::D, 1::Int, 2::Int)] 
-  test "fold (\\e v1 v2 -> ++ (e, v1, v2)) [] (toAcyclicOrd $ LAM.edges [(5, 2, 3), (0, 1, 2), (6, 1, 3)]) == [(0, 1, 2), (5, 2, 3), (6, 1, 3)]" $
+
+  test "fold (\\e v1 v2 -> ++ (e, v1, v2)) [] (toAcyclicOrd $ LAM.edges [(5, 2, 3), (0, 1, 2), (6, 1, 3)])                == [(0, 1, 2), (5, 2, 3), (6, 1, 3)]" $
         fold (\e v1 v2 -> flip (++) [(e, v1, v2)]) [] (toAcyclicOrd $ LAM.edges [(5, 2, 3), (0, 1, 2), (6, 1, 3)] :: LAD) == [(0::D, 1::Int, 2::Int), (5, 2, 3), (6, 1, 3)]
 
   putStrLn "\n======= Acyclic.Labelled.Algorithm.optimumPath ======="
+
+  test "optimumPath (vertex x) x        == Map.fromList [(x, 0)]" $ \x ->
+        optimumPath (vertex x :: LAD) x == Map.fromList [(x, 0)]
+
+  test "optimumPath (vertex 'a') 'z'        == Map.fromList [('a', distance infinite)]" $
+        optimumPath (vertex 'a' :: LCD) 'z' == Map.fromList [('a', distance infinite)]
+
+  test "optimumPath (toAcyclicOrd $ LAM.edge 2 'a' 'b') 'a'        == Map.fromList [('a', 0), ('b', 2)]" $
+        optimumPath (toAcyclicOrd $ LAM.edge (2 :: D) 'a' 'b') 'a' == Map.fromList [('a', 0), ('b', 2)]
+
+  test "optimumPath (toAcyclicOrd $ LAM.edge 2 'a' 'b') 'z'        == Map.fromList [('a', distance infinite), ('b', distance infinite)]" $
+        optimumPath (toAcyclicOrd $ LAM.edge (2 :: D) 'a' 'b') 'z' == Map.fromList [('a', distance infinite), ('b', distance infinite)]
+
+  test "optimumPath (vertices ['a', 'b']) 'a'        == Map.fromList [('a', 0), ('b', distance infinite)]" $
+        optimumPath (vertices ['a', 'b'] :: LCD) 'a' == Map.fromList [('a', 0), ('b', distance infinite)]
+
+  test "optimumPath (vertices ['a', 'b']) 'z'        == Map.fromList [('a', distance infinite), ('b', distance infinite)]" $
+        optimumPath (vertices ['a', 'b'] :: LCD) 'z' == Map.fromList [('a', distance infinite), ('b', distance infinite)]
 
   test "optimumPath (toAcyclicOrd $ edges [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z'          == Map.fromList [('a', distance infinite), ('b', distance infinite), ('c', distance infinite)]" $
         optimumPath (toAcyclicOrd $ LAM.edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.fromList [('a', distance infinite), ('b', distance infinite), ('c', distance infinite)]

@@ -19,11 +19,12 @@ topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 -- TODO: Add examples and tests for 'fold'
 -- TODO: Make 'fold' more efficient
 -- | fold takes any function with the signature @e -> a -> a -> s -> s@.
--- This function folds over edges modifying an original state.
+-- This function folds over edges, modifying an original input state.
 -- The edges are processed in an topological order of sink vertices,
 -- ie. edge (e1, x, v1) is processed before edge (e2, y, v2) if and
 -- only if v1 comes before v2 in any valid topological order of the
--- graph. 
+-- graph. Please note that (e, v1, v2) represents an edge 'e' from
+-- 'v1' to 'v2'.
 --
 -- @
 -- fold f s ('empty') == s 
@@ -45,14 +46,13 @@ fold f s am = foldl' f' s . unfold nm . topSort $ am
     f' s (e, v1, v2) = f e v1 v2 s 
 
 -- TODO: Add time complexity
--- TODO: Add examples using 'Optimum' data type
 -- | Compute the /shortest path/ to each vertex in the graph
 -- from a given source vertex.
 --
 -- The following examples assume that the edges are distances,
 -- ie. the edge 'Semiring' is 'Distance'.
 -- @
--- optimumPath ('vertex' 'a') 'a' == Map.'Map.fromList' [('a', 0)]
+-- optimumPath ('vertex' x) x == Map.'Map.fromList' [(x, 0)]
 -- optimumPath ('vertex' 'a') 'z' == Map.'Map.fromList' [('a', 'distance' 'infinite')]
 -- optimumPath ('toAcyclicOrd' $ 'LAM.edge' 2 'a' 'b') 'a' == Map.'Map.fromList' [('a', 0), ('b', 2)]
 -- optimumPath ('toAcyclicOrd' $ 'LAM.edge' 2 'a' 'b') 'z' == Map.'Map.fromList' [('a', 'distance' 'infinite'), ('b', 'distance' 'infinite')]
