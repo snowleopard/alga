@@ -430,6 +430,8 @@ connects :: [Graph a] -> Graph a
 connects xs = buildR $ \e v o c -> combineR e c (foldg e v o c) xs
 {-# INLINE connects #-}
 
+-- Safe version of foldr with a map (the composition is optimized)
+-- This is a good consumer of lists.
 combineR :: c -> (c -> c -> c) -> (a -> c) -> [a] -> c
 combineR e o f = fromMaybe e . foldr1Safe o . map f
 
@@ -794,10 +796,10 @@ biclique xs ys = buildR $ \e v o c ->
 -- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: a -> [a] -> Graph a
-star x ys = buildR $ \e v o c ->
-  case ys of
-    [] -> v x
-    _  -> c (v x) (foldg e v o c $ vertices ys)
+star x ys = buildR $ \_ v o c ->
+  case foldr1Safe o (map v ys) of
+    Nothing -> v x
+    Just vertices  -> c (v x) vertices
 {-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of

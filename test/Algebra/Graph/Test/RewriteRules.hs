@@ -91,11 +91,13 @@ inspect $ 'cliqueT1 === 'cliqueTR
 
 starT1, starTR :: a -> [a] -> Graph a
 starT1 x = transpose . star x
-starTR a [] = vertex a
-starTR a xs = connect (vertices xs) (vertex a)
-
+starTR x xs =
+  case foldr (maybeF Overlay . Vertex) Nothing xs of
+    Nothing -> Vertex x
+    Just vertices -> Connect vertices (Vertex x)
 inspect $ 'starT1 === 'starTR
 
+-- Testsuite for 'bind'
 fmapFmap1, fmapFmapR :: Graph a -> (a -> b) -> (b -> c) -> Graph c
 fmapFmap1 g f h = fmap h (fmap f g)
 fmapFmapR g f h = fmap (h . f) g
@@ -124,6 +126,7 @@ ovApR' x y z = overlay (x >>= (<$> z)) (y >>= (<$> z))
 
 inspect $ 'ovAp' === 'ovApR'
 
+-- Testsuite for 'vertices'
 hasVertexVertices, hasVertexVerticesR :: Eq a => a -> [a] -> Bool
 hasVertexVertices  x xs = hasVertex x (vertices xs)
 hasVertexVerticesR x xs =
@@ -131,3 +134,13 @@ hasVertexVerticesR x xs =
     foldr (maybeF (||) . (==x)) Nothing xs
 
 inspect $ 'hasVertexVertices === 'hasVertexVerticesR
+
+-- Testsuite for 'star'
+starMap, starMapR :: (a -> b) -> a -> [a] -> Graph b
+starMap  f x xs = star (f x) (map f xs)
+starMapR f x xs =
+  case foldr (maybeF Overlay . Vertex . f) Nothing xs of
+    Nothing -> Vertex (f x)
+    Just vertices  -> Connect (Vertex (f x)) vertices
+
+inspect $ 'starMap === 'starMapR
