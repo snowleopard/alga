@@ -173,6 +173,10 @@ compatible with 'overlay' and 'connect' operations:
 @'empty' <= x
 x     <= x + y
 x + y <= x * y@
+
+Deforestation (fusion) is implemented for some functions in this module. This means
+that when a function tagged as a \"good producer\" is composed with a \"good consumer\",
+the intermediate structure will not be built.
 -}
 data Graph a = Empty
              | Vertex a
@@ -209,6 +213,7 @@ not under our control. We therefore choose the safe and more explicit path of
 creating our own intermediate functions for guiding rewrite rules when needed.
 -}
 
+-- | 'fmap' is a good consumer and a good producer.
 instance Functor Graph where
     fmap = fmapR
 
@@ -260,6 +265,7 @@ ordR x y = compare (toAdjacencyMap x) (toAdjacencyMap y)
 ordIntR :: Graph Int -> Graph Int -> Ordering
 ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 
+-- | `<*>` is a good consumer and a good producer.
 instance Applicative Graph where
     pure  = Vertex
     (<*>) = apR
@@ -268,6 +274,7 @@ apR :: Graph (a -> b) -> Graph a -> Graph b
 apR f x = bindR f (<$> x)
 {-# INLINE apR #-}
 
+-- | `>>=` is a good consumer and a good producer.
 instance Monad Graph where
     return = pure
     (>>=)  = bindR
@@ -375,6 +382,8 @@ connect = Connect
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
+-- Good consumer of lists and good producer of graphs.
+--
 -- @
 -- vertices []            == 'empty'
 -- vertices [x]           == 'vertex' x
@@ -390,6 +399,8 @@ vertices xs = buildR $ \e v o _ -> combineR e o v xs
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
+-- Good consumer of lists and good producer of graphs.
+--
 -- @
 -- edges []          == 'empty'
 -- edges [(x,y)]     == 'edge' x y
@@ -403,6 +414,8 @@ edges xs = buildR $ \e v o c ->
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
 -- of the given list, and /S/ is the sum of sizes of the graphs in the list.
+--
+-- Good consumer of lists and good producer of graphs.
 --
 -- @
 -- overlays []        == 'empty'
@@ -418,6 +431,8 @@ overlays xs = buildR $ \e v o c -> combineR e o (foldg e v o c) xs
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
 -- of the given list, and /S/ is the sum of sizes of the graphs in the list.
+--
+-- Good consumer of lists and good producer of graphs.
 --
 -- @
 -- connects []        == 'empty'
@@ -440,6 +455,8 @@ combineR e o f = fromMaybe e . foldr1Safe o . map f
 -- The order of arguments is: empty, vertex, overlay and connect.
 -- Complexity: /O(s)/ applications of given functions. As an example, the
 -- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+--
+-- Good consumer.
 --
 -- @
 -- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
@@ -513,6 +530,8 @@ infix 4 ===
 -- | Check if a graph is empty. A convenient alias for 'null'.
 -- Complexity: /O(s)/ time.
 --
+-- Good consumer.
+--
 -- @
 -- isEmpty 'empty'                       == True
 -- isEmpty ('overlay' 'empty' 'empty')       == True
@@ -528,6 +547,8 @@ isEmpty = foldg True (const False) (&&) (&&)
 -- including 'empty' leaves.
 -- Complexity: /O(s)/ time.
 --
+-- Good consumer.
+--
 -- @
 -- size 'empty'         == 1
 -- size ('vertex' x)    == 1
@@ -542,6 +563,8 @@ size = foldg 1 (const 1) (+) (+)
 
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
+--
+-- Good consumer.
 --
 -- @
 -- hasVertex x 'empty'            == False
@@ -582,6 +605,8 @@ hasEdge s t g = hit g == Edge
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
 --
+-- Good consumer.
+--
 -- @
 -- vertexCount 'empty'             ==  0
 -- vertexCount ('vertex' x)        ==  1
@@ -601,6 +626,8 @@ vertexIntCountR = IntSet.size . vertexIntSetR
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
 -- graph can be quadratic with respect to the expression size /s/.
 --
+-- Good consumer.
+--
 -- @
 -- edgeCount 'empty'      == 0
 -- edgeCount ('vertex' x) == 0
@@ -619,6 +646,8 @@ edgeCountIntR = AIM.edgeCount . toAdjacencyIntMap
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
 --
+-- Good consumer.
+--
 -- @
 -- vertexList 'empty'      == []
 -- vertexList ('vertex' x) == [x]
@@ -636,6 +665,8 @@ vertexIntListR = IntSet.toList . vertexIntSetR
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
 -- edges /m/ of a graph can be quadratic with respect to the expression size /s/.
+--
+-- Good consumer.
 --
 -- @
 -- edgeList 'empty'          == []
@@ -657,6 +688,8 @@ edgeIntListR = AIM.edgeList . toAdjacencyIntMap
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
 --
+-- Good consumer.
+--
 -- @
 -- vertexSet 'empty'      == Set.'Set.empty'
 -- vertexSet . 'vertex'   == Set.'Set.singleton'
@@ -673,6 +706,8 @@ vertexIntSetR = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
+--
+-- Good consumer.
 --
 -- @
 -- edgeSet 'empty'      == Set.'Set.empty'
@@ -691,6 +726,8 @@ edgeIntSetR = AIM.edgeSet . toAdjacencyIntMap
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
+--
+-- Good consumer.
 --
 -- @
 -- adjacencyList 'empty'          == []
@@ -720,6 +757,8 @@ toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
+-- Good producer.
+--
 -- @
 -- path []        == 'empty'
 -- path [x]       == 'vertex' x
@@ -738,6 +777,8 @@ path xs = buildR $ \e v o c ->
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
+-- Good producer.
+--
 -- @
 -- circuit []        == 'empty'
 -- circuit [x]       == 'edge' x x
@@ -755,6 +796,8 @@ circuit xs = buildR $ \e v o c ->
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
+-- Good consumer of lists and good producer of graphs.
+--
 -- @
 -- clique []         == 'empty'
 -- clique [x]        == 'vertex' x
@@ -771,6 +814,8 @@ clique xs = buildR $ \e v _ c -> combineR e c v xs
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
 -- lengths of the given lists.
 --
+-- Good consumer of both its arguments and good producer of graphs.
+--
 -- @
 -- biclique []      []      == 'empty'
 -- biclique [x]     []      == 'vertex' x
@@ -779,15 +824,20 @@ clique xs = buildR $ \e v _ c -> combineR e c v xs
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: [a] -> [a] -> Graph a
-biclique xs [] = buildR $ \e v o c -> foldg e v o c $ vertices xs
-biclique [] ys = buildR $ \e v o c -> foldg e v o c $ vertices ys
 biclique xs ys = buildR $ \e v o c ->
-  c (foldg e v o c $ vertices xs) (foldg e v o c $ vertices ys)
+  case foldr1Safe o (map v xs) of
+    Nothing -> foldg e v o c $ vertices ys
+    Just xs ->
+      case foldr1Safe o (map v ys) of
+        Nothing -> xs
+        Just ys -> c xs ys
 {-# INLINE biclique #-}
 
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
+--
+-- Good consumer of lists and good producer of graphs.
 --
 -- @
 -- star x []    == 'vertex' x
@@ -806,6 +856,8 @@ star x ys = buildR $ \_ v o c ->
 -- 'adjacencyList'.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the total size of the
 -- input.
+--
+-- Good consumer of lists and good producer of graphs.
 --
 -- @
 -- stars []                      == 'empty'
@@ -960,6 +1012,8 @@ filterContext s i o g = maybe g go $ context (==s) g
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O(s)/ time, memory and size.
 --
+-- Good consumer and good producer.
+--
 -- @
 -- replaceVertex x x            == id
 -- replaceVertex x y ('vertex' x) == 'vertex' y
@@ -972,6 +1026,8 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
 -- /O(1)/ to be evaluated.
+--
+-- Good consumer and good producer.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -999,6 +1055,8 @@ splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
+--
+-- Good consumer and good producer.
 --
 -- @
 -- transpose 'empty'       == 'empty'
@@ -1057,6 +1115,8 @@ induceJust = foldg Empty (maybe Empty Vertex) (k Overlay) (k Connect)
 -- but uses heuristics to obtain useful simplifications in reasonable time.
 -- Complexity: the function performs /O(s)/ graph comparisons. It is guaranteed
 -- that the size of the result does not exceed the size of the given expression.
+--
+-- Good consumer.
 --
 -- @
 -- simplify              == id
