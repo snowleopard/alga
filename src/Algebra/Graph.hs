@@ -237,9 +237,11 @@ instance Num a => Num (Graph a) where
     abs         = id
     negate      = id
 
+-- | `==` is a good consumer of both its arguments.
 instance Ord a => Eq (Graph a) where
     (==) = eqR
 
+-- | 'compare' is a good consumer of both its arguments.
 instance Ord a => Ord (Graph a) where
     compare = ordR
 
@@ -459,11 +461,11 @@ combineR e o f = fromMaybe e . foldr1Safe o . map f
 -- Good consumer.
 --
 -- @
--- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
+-- foldg 'empty' 'vertex'        'overlay' 'connect'       == id
 -- foldg 'empty' 'vertex'        'overlay' ('flip' 'connect') == 'transpose'
--- foldg 1     ('const' 1)     (+)     (+)            == 'size'
--- foldg True  ('const' False) (&&)    (&&)           == 'isEmpty'
--- foldg False (== x)        (||)    (||)           == 'hasVertex' x
+-- foldg 1     ('const' 1)     (+)     (+)           == 'size'
+-- foldg True  ('const' False) (&&)    (&&)          == 'isEmpty'
+-- foldg False (== x)        (||)    (||)          == 'hasVertex' x
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
@@ -489,6 +491,8 @@ foldg e v o c = go
 -- first graph is a /subgraph/ of the second.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
 -- graph can be quadratic with respect to the expression size /s/.
+--
+-- Good consumer of both its arguments.
 --
 -- @
 -- isSubgraphOf 'empty'         x             ==  True
@@ -973,6 +977,8 @@ deBruijn len alphabet = skeleton >>= expand
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
 --
+-- Good consumer and good producer.
+--
 -- @
 -- removeVertex x ('vertex' x)       == 'empty'
 -- removeVertex 1 ('vertex' 2)       == 'vertex' 2
@@ -1043,6 +1049,8 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 -- occurrences of the vertex in the expression and /L/ is the length of the
 -- given list.
 --
+-- Good consumer of lists and producer of graphs.
+--
 -- @
 -- splitVertex x []                  == 'removeVertex' x
 -- splitVertex x [x]                 == id
@@ -1050,7 +1058,9 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 -- splitVertex 1 [0,1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)
 -- @
 splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
-splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
+splitVertex x us g = buildR $ \e v o c ->
+  let gus = foldg e v o c (vertices us) in
+  foldg e (\w -> if w == x then gus else v w) o c g
 {-# SPECIALISE splitVertex :: Int -> [Int] -> Graph Int -> Graph Int #-}
 
 -- | Transpose a given graph.
@@ -1156,6 +1166,8 @@ simple op x y
 -- graphs. Note that the number of edges in the resulting graph may be
 -- quadratic, i.e. /m = O(m1 * m2)/, but the algebraic representation requires
 -- only /O(m1 + m2)/ operations to list them.
+--
+-- Good consumer of both its arguments.
 --
 -- @
 -- compose 'empty'            x                == 'empty'
