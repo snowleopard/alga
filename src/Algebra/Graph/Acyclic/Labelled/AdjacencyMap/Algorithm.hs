@@ -62,10 +62,9 @@ fold f s am = foldl' f' s . unfold nm . topSort $ am
 -- optimumPath ('toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
 -- @
 optimumPath :: (Dioid e, Ord a) => AdjacencyMap e a -> a -> Map a e
-optimumPath am src = fromMaybe zm $ fold relax Nothing am
+optimumPath am src = fromMaybe zm $ fold relax im am
   where
     zm = Map.map (const zero) . LAM.adjacencyMap . fromAcyclic $ am
-    relax e v1 v2 Nothing
-      | v1 == src = relax e v1 v2 . Just . Map.insert src one $ zm 
-      | otherwise = Nothing
+    im = Map.insert src one zm <$ Map.lookup src zm
+    relax _ _ _ Nothing = Nothing
     relax e v1 v2 (Just m) = Just $ Map.adjust (<+> ((m ! v1) <.> e)) v2 m
