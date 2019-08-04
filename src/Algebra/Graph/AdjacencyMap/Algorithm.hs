@@ -130,7 +130,7 @@ bfs :: Ord a => [a] -> AdjacencyMap a -> [[a]]
 bfs vs = bfsForestFrom vs >=> levels
 
 -- | Compute the /depth-first search/ forest of a graph, where
---   adjacent vertices are expanded smallest to biggest with respect
+--   adjacent vertices are expanded in increasing order with respect
 --   to their 'Ord' instance.
 --
 --   Complexity: /O((n+m)*log n)/ time and /O(n)/ space.
@@ -157,8 +157,8 @@ dfsForest :: Ord a => AdjacencyMap a -> Forest a
 dfsForest g = dfsForestFrom (vertexList g) g
 
 -- | Compute the /depth-first search/ forest of a graph from the given
---   vertices, where adjacent vertices are expanded smallest to
---   biggest according to their 'Ord' instance. Note that the
+--   vertices, where adjacent vertices are expanded in increasing
+--   order with respect to their 'Ord' instance. Note that the
 --   resulting forest does not necessarily span the whole graph, as
 --   some vertices may be unreachable.
 -- 
@@ -200,8 +200,8 @@ dfsForestFrom' vs g = evalState (explore vs) Set.empty where
                     return new
 
 -- | Compute the vertices visited by /depth-first search/ in a graph
---   from the given vertices. Adjacent vertices are expanded smallest
---   to biggest according to their 'Ord' instance.
+--   from the given vertices. Adjacent vertices are expanded in
+--   increasing order with respect to their 'Ord' instance.
 --
 --   Let /L/ be the number of seed vertices. Complexity: /O((L+m)*log n)/
 --   time and /O(n)/ space.
@@ -223,8 +223,8 @@ dfs :: Ord a => [a] -> AdjacencyMap a -> [a]
 dfs vs = dfsForestFrom vs >=> flatten
 
 -- | Compute the list of vertices that are /reachable/ from a given
--- source vertex in a graph. The vertices in the resulting list appear
--- in /depth-first order/.
+--   source vertex in a graph. The vertices in the resulting list
+--   appear in /depth-first order/.
 -- 
 --   Complexity: /O(m*log n)/ time and /O(n)/ space.
 --
@@ -281,14 +281,14 @@ topSort' g = callCC $ \cyclic ->
 
 -- | Compute a topological sort of a DAG or discover a cycle.
 --
---   Vertices are expanded largest to smallest according their 'Ord'
---   instance. This gives the lexicographically smallest topological
---   ordering in the case of success. In the case of failure, the
---   cycle is characterized by being the lexicographically smallest up
---   to rotation with respect to @Ord (Dual a)@ in the first connected
---   component of the graph containing a cycle, where the connected
---   components are ordered by their largest vertex with respect to
---   @Ord a@.
+--   Vertices are expanded in increasing order with respect to their
+--   'Ord' instance. This gives the lexicographically smallest
+--   topological ordering in the case of success. In the case of
+--   failure, the cycle is characterized by being the
+--   lexicographically smallest up to rotation with respect to @Ord
+--   (Dual a)@ in the first connected component of the graph
+--   containing a cycle, where the connected components are ordered by
+--   their largest vertex with respect to @Ord a@.
 --
 --   Complexity: /O((n+m)*log n)/ time and /O(n)/ space.
 --
