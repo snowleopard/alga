@@ -51,7 +51,6 @@ module Algebra.Graph.ToGraph (
 
 import Data.IntMap        (IntMap)
 import Data.IntSet        (IntSet)
-import Data.List.NonEmpty (NonEmpty)
 import Data.Map           (Map)
 import Data.Set           (Set)
 import Data.Tree
@@ -261,13 +260,13 @@ class ToGraph t where
     reachable :: Ord (ToVertex t) => ToVertex t -> t -> [ToVertex t]
     reachable x = AM.reachable x . toAdjacencyMap
 
-    -- | Compute the /topological sort/ of a graph or return @Nothing@ if the
+    -- | Compute the /topological sort/ of a graph or a @AM.Cycle@ if the
     -- graph is cyclic.
     --
     -- @
     -- topSort == Algebra.Graph.AdjacencyMap.'AM.topSort' . toAdjacencyMap
     -- @
-    topSort :: Ord (ToVertex t) => t -> Either (NonEmpty (ToVertex t)) [ToVertex t]
+    topSort :: Ord (ToVertex t) => t -> Either (AM.Cycle (ToVertex t)) [ToVertex t]
     topSort = AM.topSort . toAdjacencyMap
 
     -- | Check if a given graph is /acyclic/.

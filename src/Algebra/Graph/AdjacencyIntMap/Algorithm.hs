@@ -25,12 +25,16 @@ module Algebra.Graph.AdjacencyIntMap.Algorithm (
     topSort, isAcyclic,
     
     -- * Correctness properties
-    isDfsForestOf, isTopSortOf
+    isDfsForestOf, isTopSortOf,
+
+    -- * Type synonyms
+    Cycle
     ) where
 
 import Control.Monad
 import Control.Monad.Cont
 import Control.Monad.State.Strict
+import Data.Either
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Tree
 
@@ -243,7 +247,7 @@ reachable x = dfs [x]
 
 type Cycle = NonEmpty
 type TopSort = Either (Cycle Int) [Int]
-data Entry = Entered Int | Exited Int
+data Entry = Entered Int | Exited Int | OpenRoot | ClosedRoot
 type ParentTable = IntMap.IntMap Entry
 data S = S { table :: !ParentTable, order :: [Int] }
 
@@ -255,20 +259,22 @@ topSort' g = callCC $ \cyclic ->
            do enter prev curr
               forM_ (adjacent curr) $ \next ->
                 nodeState next >>= \case
-                  Nothing -> dfs curr next
-                  Just (Exited _) -> return ()
+                  Nothing -> dfs (Entered curr) next
+                  Just (Exited v) -> return ()
+                  Just ClosedRoot -> return ()
                   _ -> cyclic . Left . retrace curr next =<< gets table
               exit curr
      forM_ vertices $ \v -> nodeState v >>= \case
-       Nothing -> dfs undefined v
+       Nothing -> dfs OpenRoot v
        _ -> return ()
      Right <$> gets order
   where
     nodeState v = gets (IntMap.lookup v . table)
-    enter u v = modify' (\(S p vs) -> S (IntMap.insert v (Entered u) p) vs)
+    enter u v = modify' (\(S p vs) -> S (IntMap.insert v u p) vs)
     exit v = modify' (\(S p vs) -> S (IntMap.alter (fmap leave) v p) (v:vs))
       where leave = \case
               Entered x -> Exited x
+              OpenRoot -> ClosedRoot
               _ -> error $ "Internal error: dfs search order violated"
     retrace curr head table = aux (curr :| []) where
       aux xs@(curr :| _)
@@ -300,9 +306,9 @@ topSort' g = callCC $ \cyclic ->
 -- topSort ('circuit' [1..3] + 'circuit' [3,2,1]) == Left (3 ':|' [2])
 -- topSort (1*2 + 2*1 + 3*4 + 4*3 + 5*1)      == Left (1 ':|' [2])
 -- fmap ('flip' 'isTopSortOf' x) (topSort x)      /= Right False
--- 'isRight' . topSort                          == 'isAcyclic'
+-- topSort . 'vertices'                         == Right . 'nub' . 'sort'
 -- @
-topSort :: AdjacencyIntMap -> Either (NonEmpty Int) [Int]
+topSort :: AdjacencyIntMap -> Either (Cycle Int) [Int]
 topSort g = runContT (evalStateT (topSort' g) (S IntMap.empty [])) id 
 
 -- | Check if a given graph is /acyclic/.
@@ -316,9 +322,7 @@ topSort g = runContT (evalStateT (topSort' g) (S IntMap.empty [])) id
 -- isAcyclic                 == 'isRight' . 'topSort'
 -- @
 isAcyclic :: AdjacencyIntMap -> Bool
-isAcyclic g = case topSort g of
-  Right _ -> True
-  Left _ -> False
+isAcyclic = isRight . topSort
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong

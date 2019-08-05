@@ -13,7 +13,7 @@ module Algebra.Graph.Test.Generic where
 
 import Control.Monad (when)
 import Data.Either
-import Data.List (nub)
+import Data.List (nub,sort)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Tree
 import Data.Tuple
@@ -1990,9 +1990,6 @@ testTopSort (prefix, API{..}) = do
     test "topSort (1 * 2 + 3 * 1)                    == Right [3,1,2]" $
           topSort (1 * 2 + 3 * 1)                    == Right [3,1,2]
                                                      
-    test "topSort (1 * 2 + 3 * 1)                    == Right [3,1,2]" $
-          topSort (1 * 2 + 3 * 1)                    == Right [3,1,2]
-                                                     
     test "topSort (path [1..5])                      == Right [1..5]" $
           topSort (path [1..5])                      == Right [1..5]
                                                      
@@ -2016,6 +2013,11 @@ testTopSort (prefix, API{..}) = do
           
     test "fmap (flip isTopSortOf x) (topSort x) /= Right False" $ \x ->
           fmap (flip isTopSortOf x) (topSort x) /= Right False
+
+    test "topSort . vertices     == Right . nub . sort" $ \vs ->
+         (topSort . vertices) vs == (Right . nubOrd . sort) vs
+      
+          
 
 testIsAcyclic :: TestsuiteInt g -> IO ()
 testIsAcyclic (prefix, API{..}) = do

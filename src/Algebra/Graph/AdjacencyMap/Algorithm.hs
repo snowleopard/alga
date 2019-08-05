@@ -21,12 +21,16 @@ module Algebra.Graph.AdjacencyMap.Algorithm (
     topSort, isAcyclic, scc,
     
     -- * Correctness properties
-    isDfsForestOf, isTopSortOf
+    isDfsForestOf, isTopSortOf,
+    
+    -- * Type synonyms
+    Cycle
     ) where
 
 import Control.Monad
 import Control.Monad.Cont
 import Control.Monad.State.Strict
+import Data.Either
 import Data.Foldable (toList)
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Maybe
@@ -243,7 +247,7 @@ reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = dfs [x]
 
 type Cycle = NonEmpty 
-data Entry a = Entered a | Exited a
+data Entry a = Entered a | Exited a | OpenRoot | ClosedRoot
 type TopSort a = Either (Cycle a) [a]
 type ParentTable a = Map.Map a (Entry a)
 data S a = S { table :: !(ParentTable a), order :: [a] }
@@ -257,20 +261,22 @@ topSort' g = callCC $ \cyclic ->
            do enter prev curr
               forM_ (adjacent curr) $ \next ->
                 nodeState next >>= \case
-                  Nothing -> dfs curr next
-                  Just (Exited _) -> return ()
+                  Nothing -> dfs (Entered curr) next
+                  Just (Exited v) -> return ()
+                  Just ClosedRoot -> return ()
                   _ -> cyclic . Left . retrace curr next =<< gets table
               exit curr
      forM_ vertices $ \v -> nodeState v >>= \case
-       Nothing -> dfs undefined v
+       Nothing -> dfs OpenRoot v
        _ -> return ()
      Right <$> gets order
   where
     nodeState v = gets (Map.lookup v . table)
-    enter u v = modify' (\(S p vs) -> S (Map.insert v (Entered u) p) vs)
+    enter u v = modify' (\(S p vs) -> S (Map.insert v u p) vs)
     exit v = modify' (\(S p vs) -> S (Map.alter (fmap leave) v p) (v:vs))
       where leave = \case
               Entered x -> Exited x
+              OpenRoot -> ClosedRoot
               _ -> error "Internal error: dfs search order violated"
     retrace curr head table = aux (curr :| []) where
       aux xs@(curr :| _)
@@ -303,8 +309,9 @@ topSort' g = callCC $ \cyclic ->
 -- topSort (1*2 + 2*1 + 3*4 + 4*3 + 5*1)      == Left (1 ':|' [2])
 -- fmap ('flip' 'isTopSortOf' x) (topSort x)      /= Right False
 -- 'isRight' . topSort                          == 'isAcyclic'
+-- topSort . 'vertices'                         == Right . 'nub' . 'sort'
 -- @
-topSort :: Ord a => AdjacencyMap a -> Either (NonEmpty a) [a]
+topSort :: Ord a => AdjacencyMap a -> Either (Cycle a) [a]
 topSort g = runContT (evalStateT (topSort' g) (S Map.empty [])) id
 
 -- | Check if a given graph is /acyclic/.
@@ -318,9 +325,7 @@ topSort g = runContT (evalStateT (topSort' g) (S Map.empty [])) id
 -- isAcyclic                 == 'isRight' . 'topSort'
 -- @
 isAcyclic :: Ord a => AdjacencyMap a -> Bool
-isAcyclic g = case topSort g of
-  Right _ -> True
-  Left _ -> False
+isAcyclic = isRight . topSort
 
 -- TODO: Benchmark and optimise.
 -- | Compute the /condensation/ of a graph, where each vertex corresponds to a
