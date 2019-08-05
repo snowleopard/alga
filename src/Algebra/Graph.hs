@@ -213,7 +213,7 @@ not under our control. We therefore choose the safe and more explicit path of
 creating our own intermediate functions for guiding rewrite rules when needed.
 -}
 
--- | 'fmap' is a good consumer and a good producer.
+-- | 'fmap' is a good consumer and producer.
 instance Functor Graph where
     fmap = fmapR
 
@@ -237,11 +237,11 @@ instance Num a => Num (Graph a) where
     abs         = id
     negate      = id
 
--- | `==` is a good consumer of both its arguments.
+-- | `==` is a good consumer of both arguments.
 instance Ord a => Eq (Graph a) where
     (==) = eqR
 
--- | 'compare' is a good consumer of both its arguments.
+-- | 'compare' is a good consumer of both arguments.
 instance Ord a => Ord (Graph a) where
     compare = ordR
 
@@ -267,7 +267,7 @@ ordR x y = compare (toAdjacencyMap x) (toAdjacencyMap y)
 ordIntR :: Graph Int -> Graph Int -> Ordering
 ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 
--- | `<*>` is a good consumer and a good producer.
+-- | `<*>` is a good consumer and producer.
 instance Applicative Graph where
     pure  = Vertex
     (<*>) = apR
@@ -276,7 +276,7 @@ apR :: Graph (a -> b) -> Graph a -> Graph b
 apR f x = bindR f (<$> x)
 {-# INLINE apR #-}
 
--- | `>>=` is a good consumer and a good producer.
+-- | `>>=` is a good consumer and producer.
 instance Monad Graph where
     return = pure
     (>>=)  = bindR
@@ -384,7 +384,7 @@ connect = Connect
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
--- Good consumer of lists and good producer of graphs.
+-- Good consumer of lists and producer of graphs.
 --
 -- @
 -- vertices []            == 'empty'
@@ -401,7 +401,7 @@ vertices xs = buildR $ \e v o _ -> combineR e o v xs
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
--- Good consumer of lists and good producer of graphs.
+-- Good consumer of lists and producer of graphs.
 --
 -- @
 -- edges []          == 'empty'
@@ -417,7 +417,7 @@ edges xs = buildR $ \e v o c ->
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
 -- of the given list, and /S/ is the sum of sizes of the graphs in the list.
 --
--- Good consumer of lists and good producer of graphs.
+-- Good consumer of lists and producer of graphs.
 --
 -- @
 -- overlays []        == 'empty'
@@ -434,7 +434,7 @@ overlays xs = buildR $ \e v o c -> combineR e o (foldg e v o c) xs
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
 -- of the given list, and /S/ is the sum of sizes of the graphs in the list.
 --
--- Good consumer of lists and good producer of graphs.
+-- Good consumer of lists and producer of graphs.
 --
 -- @
 -- connects []        == 'empty'
@@ -492,7 +492,7 @@ foldg e v o c = go
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
 -- graph can be quadratic with respect to the expression size /s/.
 --
--- Good consumer of both its arguments.
+-- Good consumer of both arguments.
 --
 -- @
 -- isSubgraphOf 'empty'         x             ==  True
@@ -800,7 +800,7 @@ circuit xs = buildR $ \e v o c ->
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
--- Good consumer of lists and good producer of graphs.
+-- Good consumer of lists and producer of graphs.
 --
 -- @
 -- clique []         == 'empty'
@@ -818,7 +818,7 @@ clique xs = buildR $ \e v _ c -> combineR e c v xs
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
 -- lengths of the given lists.
 --
--- Good consumer of both its arguments and good producer of graphs.
+-- Good consumer of both arguments and producer of graphs.
 --
 -- @
 -- biclique []      []      == 'empty'
@@ -861,7 +861,7 @@ star x ys = buildR $ \_ v o c ->
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the total size of the
 -- input.
 --
--- Good consumer of lists and good producer of graphs.
+-- Good consumer of lists and producer of graphs.
 --
 -- @
 -- stars []                      == 'empty'
@@ -977,7 +977,7 @@ deBruijn len alphabet = skeleton >>= expand
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
 --
--- Good consumer and good producer.
+-- Good consumer and producer.
 --
 -- @
 -- removeVertex x ('vertex' x)       == 'empty'
@@ -1018,7 +1018,7 @@ filterContext s i o g = maybe g go $ context (==s) g
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O(s)/ time, memory and size.
 --
--- Good consumer and good producer.
+-- Good consumer and producer.
 --
 -- @
 -- replaceVertex x x            == id
@@ -1033,7 +1033,7 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
 -- /O(1)/ to be evaluated.
 --
--- Good consumer and good producer.
+-- Good consumer and producer.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -1066,7 +1066,7 @@ splitVertex x us g = buildR $ \e v o c ->
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
 --
--- Good consumer and good producer.
+-- Good consumer and producer.
 --
 -- @
 -- transpose 'empty'       == 'empty'
@@ -1086,7 +1086,7 @@ transpose g = buildR $ \e v o c -> foldg e v o (flip c) g
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
 -- /O(1)/ to be evaluated.
 --
--- Good consumer and good producer.
+-- Good consumer and producer.
 --
 -- @
 -- induce ('const' True ) x      == x
@@ -1167,7 +1167,7 @@ simple op x y
 -- quadratic, i.e. /m = O(m1 * m2)/, but the algebraic representation requires
 -- only /O(m1 + m2)/ operations to list them.
 --
--- Good consumer of both its arguments.
+-- Good consumer of both arguments.
 --
 -- @
 -- compose 'empty'            x                == 'empty'
