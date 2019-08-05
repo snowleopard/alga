@@ -282,7 +282,7 @@ instance Monad Graph where
     (>>=)  = bindR
 
 bindR :: Graph a -> (a -> Graph b) -> Graph b
-bindR g f = buildR $ \e v o c ->
+bindR g f = buildg $ \e v o c ->
   foldg e (composeR (foldg e v o c) f) o c g
 {-# INLINE bindR #-}
 
@@ -394,7 +394,7 @@ connect = Connect
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: [a] -> Graph a
-vertices xs = buildR $ \e v o _ -> combineR e o v xs
+vertices xs = buildg $ \e v o _ -> combineR e o v xs
 {-# INLINE vertices #-}
 
 -- | Construct the graph from a list of edges.
@@ -409,7 +409,7 @@ vertices xs = buildR $ \e v o _ -> combineR e o v xs
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- @
 edges :: [(a, a)] -> Graph a
-edges xs = buildR $ \e v o c ->
+edges xs = buildg $ \e v o c ->
   combineR e o (\e -> c (v (fst e)) (v (snd e))) xs
 {-# INLINE edges #-}
 
@@ -427,7 +427,7 @@ edges xs = buildR $ \e v o c ->
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays xs = buildR $ \e v o c -> combineR e o (foldg e v o c) xs
+overlays xs = buildg $ \e v o c -> combineR e o (foldg e v o c) xs
 {-# INLINE overlays #-}
 
 -- | Connect a given list of graphs.
@@ -444,7 +444,7 @@ overlays xs = buildR $ \e v o c -> combineR e o (foldg e v o c) xs
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects xs = buildR $ \e v o c -> combineR e c (foldg e v o c) xs
+connects xs = buildg $ \e v o c -> combineR e c (foldg e v o c) xs
 {-# INLINE connects #-}
 
 -- Safe version of foldr with a map (the composition is optimized)
@@ -770,7 +770,7 @@ toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 -- path . 'reverse' == 'transpose' . path
 -- @
 path :: [a] -> Graph a
-path xs = buildR $ \e v o c ->
+path xs = buildg $ \e v o c ->
   case xs of
     []     -> e
     [x]    -> v x
@@ -790,7 +790,7 @@ path xs = buildR $ \e v o c ->
 -- circuit . 'reverse' == 'transpose' . circuit
 -- @
 circuit :: [a] -> Graph a
-circuit xs = buildR $ \e v o c ->
+circuit xs = buildg $ \e v o c ->
   case xs of
     [] -> e
     (x:xs) -> foldg e v o c $ path $ [x] ++ xs ++ [x]
@@ -811,7 +811,7 @@ circuit xs = buildR $ \e v o c ->
 -- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: [a] -> Graph a
-clique xs = buildR $ \e v _ c -> combineR e c v xs
+clique xs = buildg $ \e v _ c -> combineR e c v xs
 {-# INLINE clique #-}
 
 -- | The /biclique/ on two lists of vertices.
@@ -828,7 +828,7 @@ clique xs = buildR $ \e v _ c -> combineR e c v xs
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: [a] -> [a] -> Graph a
-biclique xs ys = buildR $ \e v o c ->
+biclique xs ys = buildg $ \e v o c ->
   case foldr1Safe o (map v xs) of
     Nothing -> foldg e v o c $ vertices ys
     Just xs ->
@@ -850,7 +850,7 @@ biclique xs ys = buildR $ \e v o c ->
 -- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: a -> [a] -> Graph a
-star x ys = buildR $ \_ v o c ->
+star x ys = buildg $ \_ v o c ->
   case foldr1Safe o (map v ys) of
     Nothing -> v x
     Just vertices  -> c (v x) vertices
@@ -873,7 +873,7 @@ star x ys = buildR $ \_ v o c ->
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
 stars :: [(a, [a])] -> Graph a
-stars xs = buildR $ \e v o c ->
+stars xs = buildg $ \e v o c ->
   combineR e o (foldg e v o c . uncurry star) xs
 {-# INLINE stars #-}
 
@@ -1058,7 +1058,7 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 -- splitVertex 1 [0,1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)
 -- @
 splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
-splitVertex x us g = buildR $ \e v o c ->
+splitVertex x us g = buildg $ \e v o c ->
   let gus = foldg e v o c (vertices us) in
   foldg e (\w -> if w == x then gus else v w) o c g
 {-# SPECIALISE splitVertex :: Int -> [Int] -> Graph Int -> Graph Int #-}
@@ -1077,7 +1077,7 @@ splitVertex x us g = buildR $ \e v o c ->
 -- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Graph a -> Graph a
-transpose g = buildR $ \e v o c -> foldg e v o (flip c) g
+transpose g = buildg $ \e v o c -> foldg e v o (flip c) g
 {-# INLINE transpose #-}
 
 -- TODO: Implement via 'induceJust' to reduce code duplication.
@@ -1285,11 +1285,11 @@ sparsifyKL n graph = KL.buildG (1, next - 1) ((n + 1, n + 2) : Exts.toList (res 
 The rules for foldg work very similarly to GHC's mapFB rules; see a note below
 this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
 
-* Up to (but not including) phase 1, we use the "buildR/f" rule to rewrite all
-  saturated applications of f into its buildR/foldg form, hoping for fusion to
-  happen (through the "foldg/buildR" rule).
+* Up to (but not including) phase 1, we use the "buildg/f" rule to rewrite all
+  saturated applications of f into its buildg/foldg form, hoping for fusion to
+  happen (through the "foldg/buildg" rule).
 
-  In phases 1 and 0, we switch off these rules, inline buildR, and switch on the
+  In phases 1 and 0, we switch off these rules, inline buildg, and switch on the
   "graph/f" rule, which rewrites "foldg/f" back into plain functions if needed.
 
   It's important that these two rules aren't both active at once (along with
@@ -1297,7 +1297,7 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
   activation control below.
 
 * composeR and matchR are here to remember the original function after applying
-  a "buildR/f" rule. These functions are higher-order functions and therefore
+  a "buildg/f" rule. These functions are higher-order functions and therefore
   benefit from inlining in the final phase.
 
 * The "bindR/bindR" rule optimises compositions of multiple bindR's.
@@ -1305,9 +1305,9 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
 
 type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
 
-buildR :: Foldg a -> Graph a
-buildR g = g Empty Vertex Overlay Connect
-{-# INLINE [1] buildR #-}
+buildg :: Foldg a -> Graph a
+buildg g = g Empty Vertex Overlay Connect
+{-# INLINE [1] buildg #-}
 
 composeR :: (b -> c) -> (a -> b) -> a -> c
 composeR = (.)
@@ -1317,24 +1317,24 @@ matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
 matchR e v p = \x -> if p x then v x else e
 {-# INLINE [0] matchR #-}
 
--- These rules transform functions into their buildR equivalents.
+-- These rules transform functions into their buildg equivalents.
 {-# RULES
-"buildR/induce" [~1] forall e v o c p g.
+"buildg/induce" [~1] forall e v o c p g.
     foldg e v o c (induce p g) = foldg e (matchR e v p) o c g
  #-}
 
 -- Rewrite rules for fusion.
 {-# RULES
--- Fuse a foldg followed by a buildR
-"foldg/buildR" forall e v o c (g :: Foldg a).
-    foldg e v o c (buildR g) = g e v o c
+-- Fuse a foldg followed by a buildg
+"foldg/buildg" forall e v o c (g :: Foldg a).
+    foldg e v o c (buildg g) = g e v o c
 
 -- Fuse composeR's. This occurs when two adjacent 'bindR' were rewritted into
--- their buildR form.
+-- their buildg form.
 "bindR/bindR" forall c f g.
     composeR (composeR c f) g = composeR c (f.g)
 
--- Rewrite identity (which can appear in the inlining of 'buildR') to a much efficient one
+-- Rewrite identity (which can appear in the inlining of 'buildg') to a much efficient one
 "foldg/id"
     foldg Empty Vertex Overlay Connect = id
  #-}
