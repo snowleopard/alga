@@ -247,3 +247,6 @@ instance (Arbitrary a, Arbitrary b) => Arbitrary (BAM.List a b) where
         go n = do f <- arbitrary
                   s <- arbitrary
                   (BAM.Cons f . BAM.Cons s) <$> go (n - 2)
+
+instance (Arbitrary a, Arbitrary b, Ord a, Ord b) => Arbitrary (BAM.Matching a b) where
+    arbitrary = BAM.matching <$> arbitrary
