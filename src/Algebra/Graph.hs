@@ -47,7 +47,10 @@ module Algebra.Graph (
     compose, box,
 
     -- * Context
-    Context (..), context
+    Context (..), context,
+
+    -- * Deforestation
+    Foldg, buildg
     ) where
 
 import Control.Applicative (Alternative)
@@ -1303,8 +1306,16 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
 * The "bindR/bindR" rule optimises compositions of multiple bindR's.
 -}
 
+-- | A function abstracting graphs constructors.
 type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
 
+-- | Replace abstracted graphs constructors by concrete ones.
+--
+-- Functions expressed with 'buildg' are good producers.
+--
+-- @
+-- buildg g = g 'Empty' 'Vertex' 'Overlay' 'Connect'
+-- @
 buildg :: Foldg a -> Graph a
 buildg g = g Empty Vertex Overlay Connect
 {-# INLINE [1] buildg #-}
