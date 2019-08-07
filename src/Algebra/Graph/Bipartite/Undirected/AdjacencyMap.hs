@@ -43,6 +43,9 @@ module Algebra.Graph.Bipartite.Undirected.AdjacencyMap (
     -- * Standard families of graphs
     circuit, biclique,
 
+    -- * Graph transformations
+    boxWith, box,
+
     -- * Algorithms
     OddCycle, detectParts,
 
@@ -686,8 +689,6 @@ vertexSet = Set.fromAscList . vertexList
 edgeSet :: (Ord a, Ord b) => AdjacencyMap a b -> Set (a, b)
 edgeSet = Set.fromAscList . edgeList
 
-<<<<<<< HEAD
-=======
 -- | The sorted /adjacency list/ of the left part of the graph.
 -- Complexity: /O(n + m)/ time and /O(n)/ memory.
 --
@@ -729,8 +730,8 @@ rightAdjacencyList (BAM _ rl) = [ (v, Set.toAscList us) | (v, us) <- Map.toAscLi
 -- The 'Show' instance is defined using the list constructors.
 --
 -- @
--- 'show' 'Nil' == \"Nil\"
--- 'show' ([1, 2, 3] :: List Int Int) == \"Cons 1 (Cons 2 (Cons 3 Nil))\"
+-- 'show' 'Nil'                              == \"Nil\"
+-- 'show' ([1, 2, 3] :: List Int Int)      == \"Cons 1 (Cons 2 (Cons 3 Nil))\"
 -- 'show' (Cons 1 (Cons \"a\" (Cons 3 Nil))) == \"Cons 1 (Cons \\"a\\" (Cons 3 Nil))\"
 -- @
 data List a b = Nil | Cons a (List b a)
@@ -786,9 +787,8 @@ path xs@(Cons _ xt@(Cons _ xr)) = edges $ zip (odds xs) (odds xt) ++
         odds :: forall a b. List a b -> [a]
         odds Nil                  = []
         odds (Cons x Nil)         = [x]
-        odds (Cons x (Cons _ xt)) = x:(odds xt)
+        odds (Cons x (Cons _ xt)) = x:odds xt
 
->>>>>>> Cosmetical & other changes
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
 --
@@ -820,9 +820,6 @@ biclique xs ys = BAM (Map.fromSet (const sys) sxs) (Map.fromSet (const sxs) sys)
     sxs = Set.fromList xs
     sys = Set.fromList ys
 
-<<<<<<< HEAD
-data Part = LeftPart | RightPart deriving (Show, Eq)
-=======
 -- | The /star/ formed by a center vertex connected to a list of leaves.
 -- Complexity: /O(L log(L))/ time, where /L/ is the length of the given list.
 --
@@ -930,9 +927,7 @@ box :: (Ord a, Ord b) =>
        AdjacencyMap a a -> AdjacencyMap b b -> AdjacencyMap (a, b) (a, b)
 box = boxWith (,) (,) (,) (,)
 
-data Part = LeftPart | RightPart
-    deriving (Show, Eq)
->>>>>>> Cosmetical & other changes
+data Part = LeftPart | RightPart deriving (Show, Eq)
 
 otherPart :: Part -> Part
 otherPart LeftPart  = RightPart
@@ -1044,23 +1039,10 @@ detectParts x = case runState (runMaybeT dfs) Map.empty of
 -- consistent ('vertex' x)      == True
 -- consistent ('edge' x y)      == True
 -- consistent ('edges' x)       == True
-<<<<<<< HEAD
 -- consistent ('toBipartite' x) == True
 -- consistent ('swap' x)        == True
 -- consistent ('circuit' x)     == True
 -- consistent ('biclique' x y)  == True
-=======
--- consistent ('fromGraph' x)   == True
--- consistent ('toBipartite' x) == True
--- consistent ('swap' x)        == True
--- consistent ('path' x)        == True
--- consistent ('circuit' x)     == True
--- consistent ('biclique' x y)  == True
--- consistent ('star' x y)      == True
--- consistent ('stars' x)       == True
--- consistent ('mesh' x y)      == True
--- consistent ('box' x y)       == True
->>>>>>> Cosmetical & other changes
 -- @
 consistent :: (Ord a, Ord b) => AdjacencyMap a b -> Bool
 consistent (BAM lr rl) = edgeList lr == sort (map Data.Tuple.swap $ edgeList rl)
