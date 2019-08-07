@@ -44,34 +44,34 @@ type BAICIC = AdjacencyMap (Int, Char) (Int, Char)
 testBipartiteAdjacencyMap :: IO ()
 testBipartiteAdjacencyMap = do
     putStrLn "\n============ Bipartite.AdjacencyMap.consistent ============"
-    test "consistent empty                     == True" $
+    test "consistent empty            == True" $
         consistent (empty :: BAII)
-    test "consistent (vertex x)                == True" $ \x ->
+    test "consistent (vertex x)       == True" $ \x ->
         consistent (vertex x :: BAII)
-    test "consistent (edge x y)                == True" $ \(x :: Int) (y :: Int) ->
+    test "consistent (edge x y)       == True" $ \(x :: Int) (y :: Int) ->
         consistent (edge x y)
-    test "consistent (edges x)                 == True" $ \(x :: [(Int, Int)]) ->
+    test "consistent (edges x)        == True" $ \(x :: [(Int, Int)]) ->
         consistent (edges x)
-    test "consistent (fromGraph x)             == True" $ \(x :: GII) ->
+    test "consistent (fromGraph x)    == True" $ \(x :: GII) ->
         consistent $ fromGraph x
-    test "consistent (toBipartite x)           == True" $ \(x :: AII) ->
+    test "consistent (toBipartite x)  == True" $ \(x :: AII) ->
         consistent $ toBipartite x
-    test "consistent (swap x)                  == True" $ \(x :: BAII) ->
+    test "consistent (swap x)         == True" $ \(x :: BAII) ->
         consistent $ swap x
-    test "consistent (path x)                  == True" $ \(x :: List Int Int) ->
+    test "consistent (path x)         == True" $ \(x :: List Int Int) ->
         consistent $ path x
-    test "consistent (biclique xs ys)          == True" $ \(xs :: [Int]) (ys :: [Int]) ->
+    test "consistent (biclique xs ys) == True" $ \(xs :: [Int]) (ys :: [Int]) ->
         consistent $ biclique xs ys
-    test "consistent (circuit xs)              == True" $ \(xs :: [(Int, Int)]) ->
+    test "consistent (circuit xs)     == True" $ \(xs :: [(Int, Int)]) ->
         consistent $ circuit xs
-    test "consistent (star x y)                == True" $ \(x :: Int) (y :: [Int]) ->
+    test "consistent (star x y)       == True" $ \(x :: Int) (y :: [Int]) ->
         consistent $ star x y
-    test "consistent (stars x)                 == True" $ \(x :: [(Int, [Int])]) ->
+    test "consistent (stars x)        == True" $ \(x :: [(Int, [Int])]) ->
         consistent $ stars x
-    test "consistent (mesh x y)                == True" $ \(x :: [Int]) (y :: [Int]) ->
+    test "consistent (mesh x y)       == True" $ \(x :: [Int]) (y :: [Int]) ->
         consistent $ mesh x y
-    test "consistent (box (,) (,) (,) (,) x y) == True" $ size10 $ \(x :: BAII) (y :: BAII) ->
-        consistent $ box (,) (,) (,) (,) x y
+    test "consistent (box x y)        == True" $ size10 $ \(x :: BAII) (y :: BAII) ->
+        consistent $ box x y
 
     putStrLn "\n============ Bipartite.AdjacencyMap.toBipartite ============"
     test "leftAdjacencyMap (toBipartite empty)                                                                                                   == Map.empty" $
@@ -776,47 +776,37 @@ testBipartiteAdjacencyMap = do
     test "rightAdjacencyList (star x ys)      == [ (y, [x]) | y <- nub (sort ys) ]" $ \(x :: Int) (ys :: [Int]) ->
         rightAdjacencyList (star x ys)              == [ (y, [x]) | y <- nub (sort ys) ]
 
-    putStrLn "\n============ Bipartite.AdjacencyMap.adjacencyList ============"
-    test "adjacencyList empty            == []" $
-        adjacencyList (empty :: BAII)  == []
-    test "adjacencyList (vertices xs ys) == [ (v, []) | v <- (map Left (sort (nub xs))) ++ (map Right (sort (nub ys)) ]" $ \(xs :: [Int]) (ys :: [Int]) ->
-        adjacencyList (vertices xs ys) == [ (v, []) | v <- (map Left (sort (nub xs))) ++ (map Right (sort (nub ys))) ]
-    test "adjacencyList (edge x y)       == [(Left x, [Right y]), (Right y, [Left x])]" $ \(x :: Int) (y :: Int) ->
-        adjacencyList (edge x y)       == [(Left x, [Right y]), (Right y, [Left x])]
-    test "adjacencyList x                == AM.adjacencyList (fromBipartite x)" $ \(x :: BAII) ->
-        adjacencyList x                == AM.adjacencyList (fromBipartite x)
-
     putStrLn "\n============ Show (Bipartite.AdjacencyMap.List a a) ============"
-    test "show Empty                                == \"[]\"" $
-        show (Empty :: List Int Int)                               == "[]"
-    test "show ([1, 2, 3] :: List Int Int)          == \"[1,2,3]\"" $
-        show ([1, 2, 3] :: List Int Int)                           == "[1,2,3]"
-    test "show (Cons 1 (Cons \"a\" (Cons 3 Empty))) == \"[1,\\\"a\\\",3]\"" $
-        show (Cons 1 (Cons "a" (Cons 3 Empty)) :: List Int String) == "[1,\"a\",3]"
+    test "show Nil                              == \"Nil\"" $
+        show (Nil :: List Int Int)                               == "Nil"
+    test "show ([1, 2, 3] :: List Int Int)      == \"Cons 1 (Cons 2 (Cons 3 Nil))\"" $
+        show ([1, 2, 3] :: List Int Int)                         == "Cons 1 (Cons 2 (Cons 3 Nil))"
+    test "show (Cons 1 (Cons \"a\" (Cons 3 Nil))) == \"Cons 1 (Cons \\\"a\\\" (Cons 3 Nil))" $
+        show (Cons 1 (Cons "a" (Cons 3 Nil)) :: List Int String) == "Cons 1 (Cons \"a\" (Cons 3 Nil))"
 
-    putStrLn "\n============ Bipartite.AdjacencyMap.fromEvenList ============"
-    test "fromEvenList []                       == Empty" $
-        fromEvenList []                   == (Empty :: List Int Int)
-    test "fromEvenList [(1, 2), (3, 4)]         == [1, 2, 3, 4] :: List Int Int" $
-        fromEvenList [(1, 2), (3, 4)]     == ([1, 2, 3, 4] :: List Int Int)
-    test "fromEvenList [(1, \"a\"), (2, \"b\")] == Cons 1 (Cons \"a\" (Cons 2 (Cons \"b\" Empty)))" $
-        fromEvenList [(1, "a"), (2, "b")] == (Cons 1 (Cons "a" (Cons 2 (Cons "b" Empty))) :: List Int String)
+    putStrLn "\n============ Bipartite.AdjacencyMap.fromListEven ============"
+    test "fromListEven []                       == Nil" $
+        fromListEven []                   == (Nil :: List Int Int)
+    test "fromListEven [(1, 2), (3, 4)]         == [1, 2, 3, 4] :: List Int Int" $
+        fromListEven [(1, 2), (3, 4)]     == ([1, 2, 3, 4] :: List Int Int)
+    test "fromListEven [(1, \"a\"), (2, \"b\")] == Cons 1 (Cons \"a\" (Cons 2 (Cons \"b\" Nil)))" $
+        fromListEven [(1, "a"), (2, "b")] == (Cons 1 (Cons "a" (Cons 2 (Cons "b" Nil))) :: List Int String)
 
-    putStrLn "\n============ Bipartite.AdjacencyMap.fromOddList ============"
-    test "fromOddList 1 []                       == Cons 1 Empty" $
-        fromOddList 1 []                   == (Cons 1 Empty :: List Int Int)
-    test "fromOddList 1 [(2, 3), (4, 5)]         == [1, 2, 3, 4, 5] :: List Int Int" $
-        fromOddList 1 [(2, 3), (4, 5)]     == ([1, 2, 3, 4, 5] :: List Int Int)
-    test "fromOddList 1 [(\"a\", 2), (\"b\", 3)] == Cons 1 (Cons \"a\" (Cons 2 (Cons \"b\" (Cons 3 Empty))))" $
-        fromOddList 1 [("a", 2), ("b", 3)] == (Cons 1 (Cons "a" (Cons 2 (Cons "b" (Cons 3 Empty)))) :: List Int String)
+    putStrLn "\n============ Bipartite.AdjacencyMap.fromListOdd ============"
+    test "fromListOdd 1 []                       == Cons 1 Nil" $
+        fromListOdd 1 []                   == (Cons 1 Nil :: List Int Int)
+    test "fromListOdd 1 [(2, 3), (4, 5)]         == [1, 2, 3, 4, 5] :: List Int Int" $
+        fromListOdd 1 [(2, 3), (4, 5)]     == ([1, 2, 3, 4, 5] :: List Int Int)
+    test "fromListOdd 1 [(\"a\", 2), (\"b\", 3)] == Cons 1 (Cons \"a\" (Cons 2 (Cons \"b\" (Cons 3 Nil))))" $
+        fromListOdd 1 [("a", 2), ("b", 3)] == (Cons 1 (Cons "a" (Cons 2 (Cons "b" (Cons 3 Nil)))) :: List Int String)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.path ============"
-    test "path Empty          == empty" $
-        path Empty          == (empty :: BAII)
-    test "path (Cons x Empty) == leftVertex x" $ \(x :: Int) ->
-        path (Cons x Empty) == (leftVertex x :: BAII)
-    test "path (Cons x (Cons y Empty)) == edge x y" $ \(x :: Int) (y :: Int) ->
-        path (Cons x (Cons y Empty)) == edge x y
+    test "path Nil          == empty" $
+        path Nil          == (empty :: BAII)
+    test "path (Cons x Nil) == leftVertex x" $ \(x :: Int) ->
+        path (Cons x Nil) == (leftVertex x :: BAII)
+    test "path (Cons x (Cons y Nil)) == edge x y" $ \(x :: Int) (y :: Int) ->
+        path (Cons x (Cons y Nil)) == edge x y
     test "path [1, 2, 3, 4]   == edges [(1, 2), (3, 2), (3, 4)]" $
         path [1, 2, 3, 4]   == (edges [(1, 2), (3, 2), (3, 4)] :: BAII)
     test "path [1, 2, 1, 3]   == star 1 [2, 3]" $
@@ -861,18 +851,18 @@ testBipartiteAdjacencyMap = do
         mesh [1, 2] ['a', 'b'] == (biclique [(1, 'a'), (2, 'b')] [(1, 'b'), (2, 'a')] :: BAICIC)
     test "mesh [1, 1] ['a', 'b'] == biclique [(1, 'a'), (1, 'b')] [(1, 'a'), (1, 'b')]" $
         mesh [1, 1] ['a', 'b'] == (biclique [(1, 'a'), (1, 'b')] [(1, 'a'), (1, 'b')] :: BAICIC)
-    test "mesh xs ys             == boxc (path (fromList xs)) (path (fromList ys))" $ \(xs :: [Int]) (ys :: [Int]) ->
-        mesh xs ys             == boxc (path $ fromList xs) (path $ fromList ys)
+    test "mesh xs ys             == box (path (fromList xs)) (path (fromList ys))" $ \(xs :: [Int]) (ys :: [Int]) ->
+        mesh xs ys             == box (path $ fromList xs) (path $ fromList ys)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.box ============"
-    test "boxc (path [0,1]) (path ['a','b']) == edges [((0,'a'),(0,'b')),((0,'a'),(1,'a')),((1,'b'),(0,'b')),((1,'b'),(1,'a'))]" $
-        boxc (path [0,1]) (path ['a','b']) == (edges [((0,'a'),(0,'b')),((0,'a'),(1,'a')),((1,'b'),(0,'b')),((1,'b'),(1,'a'))] :: BAICIC)
-    test "boxc x (overlay y z) == overlay (boxc x y) (boxc x z)" $ size10 $ \(x :: BAII) (y :: BAII) (z :: BAII) ->
-        boxc x (overlay y z) == overlay (boxc x y) (boxc x z)
-    test "vertexCount (boxc x y) <= vertexCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
-        vertexCount (boxc x y) <= vertexCount x * vertexCount y
-    test "edgeCount (boxc x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
-        edgeCount (boxc x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
+    test "box (path [0,1]) (path ['a','b']) == edges [((0,'a'),(0,'b')),((0,'a'),(1,'a')),((1,'b'),(0,'b')),((1,'b'),(1,'a'))]" $
+        box (path [0,1]) (path ['a','b']) == (edges [((0,'a'),(0,'b')),((0,'a'),(1,'a')),((1,'b'),(0,'b')),((1,'b'),(1,'a'))] :: BAICIC)
+    test "box x (overlay y z) == overlay (box x y) (box x z)" $ size10 $ \(x :: BAII) (y :: BAII) (z :: BAII) ->
+        box x (overlay y z) == overlay (box x y) (box x z)
+    test "vertexCount (box x y) <= vertexCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
+        vertexCount (box x y) <= vertexCount x * vertexCount y
+    test "edgeCount (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
+        edgeCount (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
 
 expectedBicliqueMap :: Int -> Int -> Map.Map Int (Set.Set Int)
 expectedBicliqueMap n m = Map.fromAscList [ (u, Set.fromAscList [1..m]) | u <- [1..n] ]
@@ -888,5 +878,3 @@ parity :: Int -> Either Int Int
 parity x | x `mod` 2 == 1 = Left  x
          | otherwise      = Right x
 
-boxc :: (Ord a, Ord b) => AdjacencyMap a a -> AdjacencyMap b b -> AdjacencyMap (a, b) (a, b)
-boxc = box (,) (,) (,) (,)
