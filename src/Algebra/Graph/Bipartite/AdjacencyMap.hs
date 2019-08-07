@@ -42,7 +42,7 @@ module Algebra.Graph.Bipartite.AdjacencyMap (
     path, circuit, biclique, star, stars, mesh,
 
     -- * Graph transformations
-    box,
+    boxWith, box,
 
     -- * Testing bipartiteness
     OddCycle, detectParts,
@@ -351,9 +351,9 @@ connect (BAM lr1 rl1) (BAM lr2 rl2) = BAM lr rl
 -- length of two lists.
 --
 -- @
--- vertices [] []                      == 'empty'
--- vertices [x] []                     == 'leftVertex' x
--- vertices [] [x]                     == 'rightVertex' x
+-- vertices [] []                    == 'empty'
+-- vertices [x] []                   == 'leftVertex' x
+-- vertices [] [x]                   == 'rightVertex' x
 -- 'hasLeftVertex'  x (vertices ys zs) == 'elem' x ys
 -- 'hasRightVertex' x (vertices ys zs) == 'elem' x zs
 -- @
@@ -727,8 +727,8 @@ rightAdjacencyList (BAM _ rl) = [ (v, Set.toAscList us) | (v, us) <- Map.toAscLi
 -- The 'Show' instance is defined using the list constructors.
 --
 -- @
--- 'show' 'Nil' == \"Nil\"
--- 'show' ([1, 2, 3] :: List Int Int) == \"Cons 1 (Cons 2 (Cons 3 Nil))\"
+-- 'show' 'Nil'                              == \"Nil\"
+-- 'show' ([1, 2, 3] :: List Int Int)      == \"Cons 1 (Cons 2 (Cons 3 Nil))\"
 -- 'show' (Cons 1 (Cons \"a\" (Cons 3 Nil))) == \"Cons 1 (Cons \\"a\\" (Cons 3 Nil))\"
 -- @
 data List a b = Nil | Cons a (List b a)
@@ -784,7 +784,7 @@ path xs@(Cons _ xt@(Cons _ xr)) = edges $ zip (odds xs) (odds xt) ++
         odds :: forall a b. List a b -> [a]
         odds Nil                  = []
         odds (Cons x Nil)         = [x]
-        odds (Cons x (Cons _ xt)) = x:(odds xt)
+        odds (Cons x (Cons _ xt)) = x:odds xt
 
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
