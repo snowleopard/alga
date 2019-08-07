@@ -257,3 +257,13 @@ instance (Arbitrary o, Arbitrary a) => Arbitrary (Optimum o a) where
 instance (Arbitrary a, Arbitrary b, Ord a, Ord b) => Arbitrary (BAM.AdjacencyMap a b) where
     arbitrary = BAM.toBipartite <$> arbitrary
     shrink = map BAM.toBipartite . shrink . BAM.fromBipartite
+
+instance (Arbitrary a, Arbitrary b) => Arbitrary (BAM.List a b) where
+    arbitrary = sized go
+      where
+        go 0 = return BAM.Nil
+        go 1 = do h <- arbitrary
+                  return $ BAM.Cons h BAM.Nil
+        go n = do f <- arbitrary
+                  s <- arbitrary
+                  (BAM.Cons f . BAM.Cons s) <$> go (n - 2)
