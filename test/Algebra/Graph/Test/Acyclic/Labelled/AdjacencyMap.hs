@@ -254,10 +254,10 @@ testAcyclicLabelledAdjacencyMap = do
   test "fold f s (vertices xs)                 == s" $ \(applyFun4 -> f) s xs ->
         fold f (s :: Int) (vertices xs :: LAS) == s
 
-  test "fold (\\e v1 v2 -> flip (++) (e, v1, v2)) [] (LAM.edge 5 1 2)                        == [(5, 1, 2)] " $
+  test "fold (\\e v1 v2 -> flip (++) [(e, v1, v2)]) [] (LAM.edge 5 1 2)                      == [(5, 1, 2)] " $
         fold (\e v1 v2 -> flip (++) [(e, v1, v2)]) [] (toAcyclicOrd $ LAM.edge 5 1 2 :: LAD) == [(5::D, 1::Int, 2::Int)] 
 
-  test "fold (\\e v1 v2 -> ++ (e, v1, v2)) [] (toAcyclicOrd $ LAM.edges [(5, 2, 3), (0, 1, 2), (6, 1, 3)])                == [(0, 1, 2), (5, 2, 3), (6, 1, 3)]" $
+  test "fold (\\e v1 v2 -> flip (++) [(e, v1, v2)]) [] (toAcyclicOrd $ LAM.edges [(5, 2, 3), (0, 1, 2), (6, 1, 3)])       == [(0, 1, 2), (5, 2, 3), (6, 1, 3)]" $
         fold (\e v1 v2 -> flip (++) [(e, v1, v2)]) [] (toAcyclicOrd $ LAM.edges [(5, 2, 3), (0, 1, 2), (6, 1, 3)] :: LAD) == [(0::D, 1::Int, 2::Int), (5, 2, 3), (6, 1, 3)]
 
   putStrLn "\n======= Acyclic.Labelled.Algorithm.optimumPath ======="

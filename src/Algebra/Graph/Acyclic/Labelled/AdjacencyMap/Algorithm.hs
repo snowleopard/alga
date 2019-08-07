@@ -16,7 +16,6 @@ topSort :: (Ord a) => AdjacencyMap e a -> [a]
 topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 
 -- TODO: Improve documentation for 'fold'
--- TODO: Add examples and tests for 'fold'
 -- TODO: Make 'fold' more efficient
 -- | fold takes any function with the signature @e -> a -> a -> s -> s@.
 -- This function folds over edges, modifying an original input state.
@@ -30,8 +29,8 @@ topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 -- fold f s ('empty') == s 
 -- fold f s ('vertex' x) == s 
 -- fold f s ('vertices' xs) == s 
--- fold (\e v1 v2 -> flip (++) (e, v1, v2)) [] ('toAcyclicOrd' $ 'LAM.edge' 5 1 2) == [(5, 1, 2)] 
--- fold (\e v1 v2 -> flip (++) (e, v1, v2)) [] ('toAcyclicOrd' $ 'LAM.edges' [(5, 2, 3), (0, 1, 2), (6, 1, 3)]) == [(0, 1, 2), (5, 2, 3), (6, 1, 3)] 
+-- fold (\e v1 v2 -> flip (++) [(e, v1, v2)]) [] ('toAcyclicOrd' $ 'LAM.edge' 5 1 2) == [(5, 1, 2)] 
+-- fold (\e v1 v2 -> flip (++) [(e, v1, v2)]) [] ('toAcyclicOrd' $ 'LAM.edges' [(5, 2, 3), (0, 1, 2), (6, 1, 3)]) == [(0, 1, 2), (5, 2, 3), (6, 1, 3)] 
 -- @
 fold :: (Ord a) => (e -> a -> a -> s -> s) -> s ->  AdjacencyMap e a -> s
 fold f s am = foldl' f' s . unfold nm . topSort $ am
