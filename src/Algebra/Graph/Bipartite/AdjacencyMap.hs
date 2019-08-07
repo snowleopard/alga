@@ -1331,7 +1331,7 @@ augmentingPath m g = case runState (runMaybeT dfs) (leftVertexSet g, Set.empty) 
                                       put (s, Set.insert v t)
                                       case v `Map.lookup` pairOfRight m of
                                            Just w  -> inVertex w
-                                           Nothing -> return Empty
+                                           Nothing -> return Nil
 
         add :: a -> b -> List a b -> List a b
         add u v = Cons u . Cons v
