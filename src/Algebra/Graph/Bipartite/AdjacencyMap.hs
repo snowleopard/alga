@@ -59,7 +59,7 @@ module Algebra.Graph.Bipartite.AdjacencyMap (
 import Control.Monad             (foldM, guard, when)
 import Control.Monad.Trans.Maybe (MaybeT(..))
 import Control.Monad.State       (MonadState(..), State, runState, execState, modify)
-import Data.Either               (lefts, rights, fromLeft)
+import Data.Either               (lefts, rights)
 import Data.Foldable             (asum)
 import Data.List                 (sort, (\\))
 import Data.Maybe                (fromJust)
@@ -1272,6 +1272,10 @@ maxMatching g = matching
 -- @
 minVertexCover :: (Ord a, Ord b) => AdjacencyMap a b -> VertexCover a b
 minVertexCover g = fromLeft [] (augmentingPath (maxMatching g) g)
+    where
+        fromLeft :: a -> Either a b -> a
+        fromLeft _ (Left  x) = x
+        fromLeft x (Right _) = x
 
 -- | Find an /independent set/ of maximum possible size in bipartite graph.
 -- Vertices in the returned list are sorted and unique.
