@@ -8,6 +8,7 @@ import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
 
 -- TODO: Improve documentation for 'dijkstra'.
+-- TODO: Change heap operations
 -- | A generic Dijkstra algorithm that relaxes the list of edges
 -- based on the 'Dioid'.
 --
@@ -49,3 +50,26 @@ dijkstra' z o am src = maybe zm (snd . processG . const processI) (Map.lookup sr
     relaxE (e, v1, v2) (s, m) =
       let n = ((m ! v1) <.> e) <+> (m ! v2)
       in (Set.insert (n, v2) s, Map.insert v2 n m)
+
+-- TODO: Improve documentation for bellmanFord
+-- TODO: Write tests and examples for bellmanFord
+-- TODO: safely change 'vL' to 'tail vL' in processL
+bellmanFord :: (Ord a, Dioid e) => a -> AdjacencyMap e a -> Map a e
+bellmanFord src wam = maybe zm processL im
+  where
+    am = adjacencyMap wam
+    zm = Map.map (const zero) am
+    im = Map.insert src one zm <$ Map.lookup src zm
+    vL = Map.keys am
+    processL m = foldr (const processR) m vL
+    processR m = foldr relaxV m vL
+    relaxV v1 m =
+      let eL = map (\(v2, e) -> (e, v1, v2)) . Map.toList $ am ! v1
+      in foldr relaxE m eL
+    relaxE (e, v1, v2) m =
+      let n = ((m ! v1) <.> e) <+> (m ! v2)
+      in Map.adjust (const n) v2 m
+
+
+
+
