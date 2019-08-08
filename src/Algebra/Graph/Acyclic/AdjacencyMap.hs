@@ -1,5 +1,3 @@
-{-# language ViewPatterns #-}
-
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Acyclic.AdjacencyMap

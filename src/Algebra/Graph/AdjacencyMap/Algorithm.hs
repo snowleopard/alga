@@ -247,13 +247,11 @@ reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = dfs [x]
 
 type Cycle = NonEmpty 
-data Entry a = Entered a | Exited a | OpenRoot | ClosedRoot
-type TopSort a = Either (Cycle a) [a]
-type ParentTable a = Map.Map a (Entry a)
-data S a = S { table :: !(ParentTable a), order :: [a] }
+data Entry a = Entered !a | Exited !a | OpenRoot | ClosedRoot
+data S a = S { table :: !(Map.Map a (Entry a)), order :: [a] }
 
 topSort' :: (Ord a, MonadState (S a) m, MonadCont m)
-         => AdjacencyMap a -> m (TopSort a)
+         => AdjacencyMap a -> m (Either (Cycle a) [a])
 topSort' g = callCC $ \cyclic ->
   do let vertices = map fst $ Map.toDescList $ adjacencyMap g
          adjacent = Set.toDescList . flip postSet g
@@ -261,10 +259,11 @@ topSort' g = callCC $ \cyclic ->
            do enter prev curr
               forM_ (adjacent curr) $ \next ->
                 nodeState next >>= \case
-                  Nothing -> dfs (Entered curr) next
-                  Just (Exited v) -> return ()
-                  Just ClosedRoot -> return ()
-                  _ -> cyclic . Left . retrace curr next =<< gets table
+                  Nothing          -> dfs (Entered curr) next
+                  Just (Exited v)  -> return ()
+                  Just ClosedRoot  -> return ()
+                  Just (Entered v) -> cyclic . Left . retrace curr next =<< gets table
+                  Just OpenRoot    -> cyclic . Left . retrace curr next =<< gets table
               exit curr
      forM_ vertices $ \v -> nodeState v >>= \case
        Nothing -> dfs OpenRoot v
@@ -275,19 +274,22 @@ topSort' g = callCC $ \cyclic ->
     enter u v = modify' (\(S p vs) -> S (Map.insert v u p) vs)
     exit v = modify' (\(S p vs) -> S (Map.alter (fmap leave) v p) (v:vs))
       where leave = \case
-              Entered x -> Exited x
-              OpenRoot -> ClosedRoot
-              _ -> error "Internal error: dfs search order violated"
+              Entered x  -> Exited x
+              OpenRoot   -> ClosedRoot
+              Exited x   -> error "Internal error: dfs search order violated"
+              ClosedRoot -> error "Internal error: dfs search order violated"
     retrace curr head table = aux (curr :| []) where
       aux xs@(curr :| _)
         | head == curr = xs
         | otherwise = case table Map.! curr of
             Entered prev -> aux (prev <| xs)
-            _ -> error "Internal error: dfs back edge mistakingly identified"
+            OpenRoot     -> error "Internal error: dfs search order violated"
+            Exited  prev -> error "Internal error: dfs search order violated"
+            ClosedRoot   -> error "Internal error: dfs search order violated"
 
 -- | Compute a topological sort of a DAG or discover a cycle.
 --
---   Vertices are expanded in increasing order with respect to their
+--   Vertices are expanded in decreasing order with respect to their
 --   'Ord' instance. This gives the lexicographically smallest
 --   topological ordering in the case of success. In the case of
 --   failure, the cycle is characterized by being the
