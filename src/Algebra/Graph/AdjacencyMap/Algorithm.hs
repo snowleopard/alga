@@ -247,45 +247,41 @@ reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = dfs [x]
 
 type Cycle = NonEmpty 
-data Entry a = Entered !a | Exited !a | OpenRoot | ClosedRoot
-data S a = S { table :: !(Map.Map a (Entry a)), order :: [a] }
+data NodeState = Entered | Exited
+data S a = S { table :: Map.Map a a
+             , entry :: Map.Map a NodeState
+             , order :: [a] }
 
 topSort' :: (Ord a, MonadState (S a) m, MonadCont m)
          => AdjacencyMap a -> m (Either (Cycle a) [a])
 topSort' g = callCC $ \cyclic ->
   do let vertices = map fst $ Map.toDescList $ adjacencyMap g
          adjacent = Set.toDescList . flip postSet g
-         dfs prev curr =
-           do enter prev curr
-              forM_ (adjacent curr) $ \next ->
-                nodeState next >>= \case
-                  Nothing          -> dfs (Entered curr) next
-                  Just (Exited v)  -> return ()
-                  Just ClosedRoot  -> return ()
-                  Just (Entered v) -> cyclic . Left . retrace curr next =<< gets table
-                  Just OpenRoot    -> cyclic . Left . retrace curr next =<< gets table
-              exit curr
-     forM_ vertices $ \v -> nodeState v >>= \case
-       Nothing -> dfs OpenRoot v
-       _ -> return ()
+         dfsRoot x = nodeState x >>= \case
+           Nothing -> enterRoot x >> dfs x >> exit x
+           _       -> return ()
+         dfs x = forM_ (adjacent x) $ \y ->
+                   nodeState y >>= \case
+                     Nothing      -> enter x y >> dfs y >> exit y
+                     Just Exited  -> return ()
+                     Just Entered -> cyclic . Left . retrace x y =<< gets table
+     forM_ vertices dfsRoot
      Right <$> gets order
   where
-    nodeState v = gets (Map.lookup v . table)
-    enter u v = modify' (\(S p vs) -> S (Map.insert v u p) vs)
-    exit v = modify' (\(S p vs) -> S (Map.alter (fmap leave) v p) (v:vs))
+    nodeState v = gets (Map.lookup v . entry)
+    enter u v = modify' (\(S m n vs) -> S (Map.insert v u m)
+                                          (Map.insert v Entered n)
+                                          vs)
+    enterRoot v = modify' (\(S m n vs) -> S m (Map.insert v Entered n) vs)
+    exit v = modify' (\(S m n vs) -> S m (Map.alter (fmap leave) v n) (v:vs))
       where leave = \case
-              Entered x  -> Exited x
-              OpenRoot   -> ClosedRoot
-              Exited x   -> error "Internal error: dfs search order violated"
-              ClosedRoot -> error "Internal error: dfs search order violated"
+              Entered -> Exited
+              Exited  -> error "Internal error: dfs search order violated"
     retrace curr head table = aux (curr :| []) where
       aux xs@(curr :| _)
         | head == curr = xs
         | otherwise = case table Map.! curr of
-            Entered prev -> aux (prev <| xs)
-            OpenRoot     -> error "Internal error: dfs search order violated"
-            Exited  prev -> error "Internal error: dfs search order violated"
-            ClosedRoot   -> error "Internal error: dfs search order violated"
+            prev -> aux (prev <| xs)
 
 -- | Compute a topological sort of a DAG or discover a cycle.
 --
@@ -314,7 +310,8 @@ topSort' g = callCC $ \cyclic ->
 -- topSort . 'vertices'                         == Right . 'nub' . 'sort'
 -- @
 topSort :: Ord a => AdjacencyMap a -> Either (Cycle a) [a]
-topSort g = runContT (evalStateT (topSort' g) (S Map.empty [])) id
+topSort g = runContT (evalStateT (topSort' g) initialState) id where
+  initialState = S Map.empty Map.empty []
 
 -- | Check if a given graph is /acyclic/.
 -- 

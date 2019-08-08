@@ -246,48 +246,41 @@ reachable :: Int -> AdjacencyIntMap -> [Int]
 reachable x = dfs [x]
 
 type Cycle = NonEmpty
-data Entry = Entered {-# unpack #-} !Int
-           | Exited  {-# unpack #-} !Int
-           | OpenRoot
-           | ClosedRoot
-data S = S { table :: !(IntMap.IntMap Entry), order :: [Int] }
+data NodeState = Entered | Exited
+data S = S { table :: IntMap.IntMap Int
+           , entry :: IntMap.IntMap NodeState
+           , order :: [Int] }
 
 topSort' :: (MonadState S m, MonadCont m)
          => AdjacencyIntMap -> m (Either (Cycle Int) [Int])
 topSort' g = callCC $ \cyclic ->
   do let vertices = map fst $ IntMap.toDescList $ adjacencyIntMap g
          adjacent = IntSet.toDescList . flip postIntSet g
-         dfs prev curr =
-           do enter prev curr
-              forM_ (adjacent curr) $ \next ->
-                nodeState next >>= \case
-                  Nothing          -> dfs (Entered curr) next
-                  Just (Exited v)  -> return ()
-                  Just ClosedRoot  -> return ()
-                  Just (Entered v) -> cyclic . Left . retrace curr next =<< gets table
-                  Just OpenRoot    -> cyclic . Left . retrace curr next =<< gets table
-              exit curr
-     forM_ vertices $ \v -> nodeState v >>= \case
-       Nothing -> dfs OpenRoot v
-       _ -> return ()
+         dfsRoot x = nodeState x >>= \case
+           Nothing -> enterRoot x >> dfs x >> exit x
+           _       -> return ()
+         dfs x = forM_ (adjacent x) $ \y ->
+                   nodeState y >>= \case
+                     Nothing      -> enter x y >> dfs y >> exit y
+                     Just Exited  -> return ()
+                     Just Entered -> cyclic . Left . retrace x y =<< gets table
+     forM_ vertices dfsRoot
      Right <$> gets order
   where
-    nodeState v = gets (IntMap.lookup v . table)
-    enter u v = modify' (\(S p vs) -> S (IntMap.insert v u p) vs)
-    exit v = modify' (\(S p vs) -> S (IntMap.alter (fmap leave) v p) (v:vs))
+    nodeState v = gets (IntMap.lookup v . entry)
+    enter u v = modify' (\(S m n vs) -> S (IntMap.insert v u m)
+                                          (IntMap.insert v Entered n)
+                                          vs)
+    enterRoot v = modify' (\(S m n vs) -> S m (IntMap.insert v Entered n) vs)
+    exit v = modify' (\(S m n vs) -> S m (IntMap.alter (fmap leave) v n) (v:vs))
       where leave = \case
-              Entered x  -> Exited x
-              OpenRoot   -> ClosedRoot
-              Exited x   -> error "Internal error: dfs search order violated"
-              ClosedRoot -> error "Internal error: dfs search order violated"
+              Entered -> Exited
+              Exited  -> error "Internal error: dfs search order violated"
     retrace curr head table = aux (curr :| []) where
       aux xs@(curr :| _)
         | head == curr = xs
         | otherwise = case table IntMap.! curr of
-            Entered prev -> aux (prev <| xs)
-            OpenRoot     -> error "Internal error: dfs search order violated"
-            Exited  prev -> error "Internal error: dfs search order violated"
-            ClosedRoot   -> error "Internal error: dfs search order violated"
+            prev -> aux (prev <| xs)
 
 -- | Compute a topological sort of a DAG or discover a cycle.
 --
@@ -315,7 +308,8 @@ topSort' g = callCC $ \cyclic ->
 -- topSort . 'vertices'                         == Right . 'nub' . 'sort'
 -- @
 topSort :: AdjacencyIntMap -> Either (Cycle Int) [Int]
-topSort g = runContT (evalStateT (topSort' g) (S IntMap.empty [])) id 
+topSort g = runContT (evalStateT (topSort' g) initialState) id where
+  initialState = S IntMap.empty IntMap.empty []
 
 -- | Check if a given graph is /acyclic/.
 --
