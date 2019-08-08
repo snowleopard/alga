@@ -1307,6 +1307,11 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
 -}
 
 -- | A function abstracting graphs constructors.
+--
+-- The Rank-2 type is used to ensure that one can replace abstracted graphs constructors
+-- (the function arguments) by the arguments of a later 'foldg' operation.
+--
+-- See 'buildg'.
 type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
 
 -- | Replace abstracted graphs constructors by concrete ones.
@@ -1314,13 +1319,14 @@ type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
 -- Functions expressed with 'buildg' are good producers.
 --
 -- @
--- buildg f                                                   == f 'Empty' 'Vertex' 'Overlay' 'Connect'
+-- buildg f                                                   == f 'empty' 'vertex' 'overlay' 'connect'
 -- buildg (\\e _ _ _ -> e)                                     == 'empty'
 -- buildg (\\_ v _ _ -> v x)                                   == 'vertex' x
 -- buildg (\\e v o c -> o ('foldg' e v o c x) ('foldg' e v o c y)) == 'overlay' x y
 -- buildg (\\e v o c -> c ('foldg' e v o c x) ('foldg' e v o c y)) == 'connect' x y
 -- buildg (\\e v o _ -> 'foldr' o e ('map' v xs))                  == 'vertices' xs
 -- buildg (\\e v o c -> 'foldg' e v o ('flip' c) g)                 == 'transpose' g
+-- 'foldg' e v o c (buildg f)                                   == f e v o c
 -- @
 buildg :: Foldg a -> Graph a
 buildg f = f Empty Vertex Overlay Connect
