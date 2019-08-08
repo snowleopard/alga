@@ -1314,7 +1314,8 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
 -- See 'buildg'.
 type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
 
--- | Replace abstracted graphs constructors by concrete ones.
+-- | Build a graph given an interpretation of the four graph construction primitives 'empty',
+-- 'vertex', 'overlay' and 'connect', in this order. See examples for further clarification.
 --
 -- Functions expressed with 'buildg' are good producers.
 --
