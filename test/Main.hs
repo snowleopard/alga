@@ -11,6 +11,7 @@ import Algebra.Graph.Test.Labelled.Graph
 import Algebra.Graph.Test.Relation
 import Algebra.Graph.Test.Relation.SymmetricRelation
 import Algebra.Graph.Test.Bipartite.AdjacencyMap
+import Algebra.Graph.Test.Bipartite.AdjacencyMap.Algorithm
 import Data.Graph.Test.Typed
 
 import Control.Monad
@@ -27,17 +28,18 @@ main :: IO ()
 main = do
     selected <- getArgs
     let go current = when (null selected || current `elem` selected)
-    go "Acyclic.AdjacencyMap"   testAcyclicAdjacencyMap
-    go "AdjacencyIntMap"        testAdjacencyIntMap
-    go "AdjacencyMap"           testAdjacencyMap
-    go "Bipartite.AdjacencyMap" testBipartiteAdjacencyMap
-    go "Export"                 testExport
-    go "Graph"                  testGraph
-    go "Internal"               testInternal
-    go "Labelled.AdjacencyMap"  testLabelledAdjacencyMap
-    go "Labelled.Graph"         testLabelledGraph
-    go "NonEmpty.AdjacencyMap"  testNonEmptyAdjacencyMap
-    go "NonEmpty.Graph"         testNonEmptyGraph
-    go "Relation"               testRelation
-    go "Symmetric.Relation"     testSymmetricRelation
-    go "Typed"                  testTyped
+    go "Acyclic.AdjacencyMap"             testAcyclicAdjacencyMap
+    go "AdjacencyIntMap"                  testAdjacencyIntMap
+    go "AdjacencyMap"                     testAdjacencyMap
+    go "Bipartite.AdjacencyMap"           testBipartiteAdjacencyMap
+    go "Bipartite.AdjacencyMap.Algorithm" testBipartiteAdjacencyMapAlgorithm
+    go "Export"                           testExport
+    go "Graph"                            testGraph
+    go "Internal"                         testInternal
+    go "Labelled.AdjacencyMap"            testLabelledAdjacencyMap
+    go "Labelled.Graph"                   testLabelledGraph
+    go "NonEmpty.AdjacencyMap"            testNonEmptyAdjacencyMap
+    go "NonEmpty.Graph"                   testNonEmptyGraph
+    go "Relation"                         testRelation
+    go "Symmetric.Relation"               testSymmetricRelation
+    go "Typed"                            testTyped
