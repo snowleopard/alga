@@ -52,12 +52,10 @@ module Algebra.Graph.Undirected (
 import Control.Applicative (Alternative)
 import Control.DeepSeq
 import Control.Monad (MonadPlus (..))
-import Data.Maybe (fromMaybe)
 import Data.Coerce
 import GHC.Generics
 
 import qualified Algebra.Graph                    as G
-import Algebra.Graph.Internal 
 
 import qualified Algebra.Graph.Relation.Symmetric as SR
 import qualified Control.Applicative              as Ap
@@ -244,8 +242,7 @@ instance Monad Graph where
     (>>=)  = bindR
 
 bindR :: Graph a -> (a -> Graph b) -> Graph b
-bindR g f = foldg empty f overlay connect g
-{-# INLINE [0] bindR #-}
+bindR g = UG . (>>=) (fromUndirected g) . coerce
 
 instance Alternative Graph where
     empty = empty
@@ -322,6 +319,7 @@ vertex = coerce1 G.vertex
 -- @
 edge :: a -> a -> Graph a
 edge = coerce2 G.edge
+{-# INLINE edge #-}
 
 -- | /Overlay/ two graphs. This is a
 -- commutative, associative and idempotent operation with the identity 'empty'.
@@ -394,6 +392,7 @@ vertices = coerce1 G.vertices
 -- @
 edges :: [(a, a)] -> Graph a
 edges = coerce1 G.edges
+{-# INLINE edges #-}
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -408,7 +407,7 @@ edges = coerce1 G.edges
 -- @
 overlays :: [Graph a] -> Graph a
 overlays = coerce1 G.overlays
-{-# INLINE [1] overlays #-}
+{-# INLINE overlays #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
@@ -424,7 +423,7 @@ overlays = coerce1 G.overlays
 -- @
 connects :: [Graph a] -> Graph a
 connects = coerce1 G.connects
-{-# INLINE [1] connects #-}
+{-# INLINE connects #-}
 
 -- | Generalised 'Graph' folding: recursively collapse an 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
@@ -443,25 +442,7 @@ foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg = (coerce :: (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> G.Graph a -> b) 
                 -> (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b))
         G.foldg
-{-# INLINE [0] foldg #-}
-
--- TODO: Add rule (?) 
-    -- foldg e v o c (Connect x y) = c (foldg e v o c y) (foldg e v o c x)
-{-# RULES
-"foldg/Empty"   forall e v o c.
-    foldg e v o c (UG G.Empty) = e
-"foldg/Vertex"  forall e v o c x.
-    foldg e v o c (UG (G.Vertex x)) = v x
-"foldg/Overlay" forall e v o c x y.
-    foldg e v o c (UG (G.Overlay x y)) = o (foldg e v o c (UG x)) (foldg e v o c (UG y))
-"foldg/Connect" forall e v o c x y.
-    foldg e v o c (UG (G.Connect x y)) = c (foldg e v o c (UG x)) (foldg e v o c (UG y))
-
-"foldg/overlays" forall e v o c xs.
-    foldg e v o c (overlays xs) = fromMaybe e (foldr (maybeF o . foldg e v o c) Nothing xs)
-"foldg/connects" forall e v o c xs.
-    foldg e v o c (connects xs) = fromMaybe e (foldr (maybeF c . foldg e v o c) Nothing xs)
- #-}
+{-# INLINE foldg #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -487,6 +468,7 @@ isSubgraphOf x y = SR.isSubgraphOf (toSymmetricRelation x) (toSymmetricRelation 
 -- here for when 'UndirectedAdjacencyIntMap' is implemented.
 isSubgraphOfIntR :: Graph Int -> Graph Int -> Bool
 isSubgraphOfIntR x y = SR.isSubgraphOf (toSymmetricRelation x) (toSymmetricRelation y)
+{-# INLINE isSubgraphOfIntR #-}
 
 -- | Check if a graph is empty. A convenient alias for 'null'.
 -- Complexity: /O(s)/ time.
@@ -500,6 +482,7 @@ isSubgraphOfIntR x y = SR.isSubgraphOf (toSymmetricRelation x) (toSymmetricRelat
 -- @
 isEmpty :: Graph a -> Bool
 isEmpty = coerce3 G.isEmpty
+{-# INLINE isEmpty #-}
 
 -- | The /size/ of a graph, i.e. the number of leaves of the expression
 -- including 'empty' leaves.
@@ -515,6 +498,7 @@ isEmpty = coerce3 G.isEmpty
 -- @
 size :: Graph a -> Int
 size = coerce3 G.size
+{-# INLINE size #-}
 
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
@@ -527,6 +511,7 @@ size = coerce3 G.size
 -- @
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex = coerce4 G.hasVertex
+{-# INLINE hasVertex #-}
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 
 -- TODO: Optimize this further.
@@ -543,6 +528,7 @@ hasVertex = coerce4 G.hasVertex
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
 hasEdge s t (UG g) = G.hasEdge s t g || G.hasEdge t s g 
+{-# INLINE hasEdge #-}
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
@@ -585,6 +571,7 @@ edgeCount = length . edgeList
 -- here for when 'UndirectedAdjacencyIntMap' is implemented.
 edgeCountIntR :: Graph Int -> Int
 edgeCountIntR = length . edgeList
+{-# INLINE edgeCountIntR #-}
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -602,6 +589,7 @@ vertexList = Set.toAscList . vertexSet
 -- Like 'vertexList' but specialised for graphs with vertices of type 'Int'.
 vertexIntListR :: Graph Int -> [Int]
 vertexIntListR = IntSet.toList . vertexIntSetR
+{-# INLINE vertexIntListR #-}
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
@@ -623,6 +611,7 @@ edgeList = SR.edgeList . toSymmetricRelation
 -- here for when 'UndirectedAdjacencyIntMap' is implemented.
 edgeIntListR :: Graph Int -> [(Int, Int)]
 edgeIntListR = SR.edgeList . toSymmetricRelation
+{-# INLINE edgeIntListR #-}
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
@@ -634,10 +623,12 @@ edgeIntListR = SR.edgeList . toSymmetricRelation
 -- @
 vertexSet :: Ord a => Graph a -> Set.Set a
 vertexSet = coerce3 G.vertexSet
+{-# INLINE vertexSet #-}
 
 -- Like 'vertexSet' but specialised for graphs with vertices of type 'Int'.
 vertexIntSetR :: Graph Int -> IntSet.IntSet
 vertexIntSetR = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
+{-# INLINE vertexIntSetR #-}
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
@@ -657,6 +648,7 @@ edgeSet = SR.edgeSet . toSymmetricRelation
 -- here for when 'UndirectedAdjacencyIntMap' is implemented.
 edgeIntSetR :: Graph Int -> Set.Set (Int,Int)
 edgeIntSetR = SR.edgeSet . toSymmetricRelation
+{-# INLINE edgeIntSetR #-}
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -670,6 +662,7 @@ edgeIntSetR = SR.edgeSet . toSymmetricRelation
 -- @
 adjacencyList :: Ord a => Graph a -> [(a, [a])]
 adjacencyList = SR.adjacencyList . toSymmetricRelation
+{-# INLINE adjacencyList #-}
 {-# SPECIALISE adjacencyList :: Graph Int -> [(Int, [Int])] #-}
 
 -- TODO: This is a very inefficient implementation. Find a way to construct an
@@ -680,6 +673,7 @@ adjacencyList = SR.adjacencyList . toSymmetricRelation
 -- Convert a graph to 'SR.Relation'.
 toSymmetricRelation :: Ord a => Graph a -> SR.Relation a
 toSymmetricRelation = foldg SR.empty SR.vertex SR.overlay SR.connect
+{-# INLINE toSymmetricRelation #-}
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -693,6 +687,8 @@ toSymmetricRelation = foldg SR.empty SR.vertex SR.overlay SR.connect
 -- @
 path :: [a] -> Graph a
 path = coerce1 G.path 
+{-# INLINE path #-}
+
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
@@ -705,6 +701,7 @@ path = coerce1 G.path
 -- @
 circuit :: [a] -> Graph a
 circuit = coerce1 G.circuit
+{-# INLINE circuit #-}
 
 -- | The /clique/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -720,7 +717,7 @@ circuit = coerce1 G.circuit
 -- @
 clique :: [a] -> Graph a
 clique = coerce1 G.clique
-{-# INLINE [1] clique #-}
+{-# INLINE clique #-}
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -735,6 +732,7 @@ clique = coerce1 G.clique
 -- @
 biclique :: [a] -> [a] -> Graph a
 biclique = coerce2 G.biclique
+{-# INLINE biclique #-}
 
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -780,6 +778,7 @@ stars = coerce1 G.stars
 -- @
 tree :: Tree.Tree a -> Graph a
 tree = coerce1 G.tree
+{-# INLINE tree #-}
 
 -- | The /forest graph/ constructed from a given 'Tree.Forest' data structure.
 -- Complexity: /O(F)/ time, memory and size, where /F/ is the size of the
@@ -793,6 +792,7 @@ tree = coerce1 G.tree
 -- @
 forest :: Tree.Forest a -> Graph a
 forest = coerce1 G.forest
+{-# INLINE forest #-}
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
@@ -806,6 +806,7 @@ forest = coerce1 G.forest
 -- @
 removeVertex :: Eq a => a -> Graph a -> Graph a
 removeVertex = coerce4 G.removeVertex
+{-# INLINE removeVertex #-}
 {-# SPECIALISE removeVertex :: Int -> Graph Int ->
   Graph Int #-}
 
@@ -822,6 +823,7 @@ removeVertex = coerce4 G.removeVertex
 -- @
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
 removeEdge s t = coerce $ G.removeEdge s t . G.removeEdge t s 
+{-# INLINE removeEdge #-}
 {-# SPECIALISE removeEdge :: Int -> Int -> Graph Int ->
   Graph Int #-}
 
@@ -836,6 +838,7 @@ removeEdge s t = coerce $ G.removeEdge s t . G.removeEdge t s
 -- @
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
 replaceVertex u v = coerce (G.replaceVertex u v)
+{-# INLINE replaceVertex #-}
 {-# SPECIALISE replaceVertex :: Int -> Int -> Graph Int -> Graph Int #-}
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
@@ -850,6 +853,7 @@ replaceVertex u v = coerce (G.replaceVertex u v)
 -- @
 mergeVertices :: (a -> Bool) -> a -> Graph a -> Graph a
 mergeVertices p v = coerce (G.mergeVertices p v)
+{-# INLINE mergeVertices #-}
 
 -- TODO: Implement via 'induceJust' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
@@ -866,7 +870,7 @@ mergeVertices p v = coerce (G.mergeVertices p v)
 -- @
 induce :: (a -> Bool) -> Graph a -> Graph a
 induce = coerce2 G.induce
-{-# INLINE [1] induce #-}
+{-# INLINE induce #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the vertices
 -- that are 'Nothing'.
@@ -880,7 +884,7 @@ induce = coerce2 G.induce
 -- @
 induceJust :: Graph (Maybe a) -> Graph a
 induceJust = coerce1 G.induceJust
-{-# INLINE [1] induceJust #-}
+{-# INLINE induceJust #-}
 
 -- | The set of /neighbours/ of an element @x@ is the set of elements that are
 -- related to it, i.e. @neighbours x == { a | aRx }@. In the context of undirected
@@ -894,6 +898,7 @@ induceJust = coerce1 G.induceJust
 -- @
 neighbours :: Ord a => a -> Graph a -> Set.Set a
 neighbours x = SR.neighbours x . toSymmetricRelation 
+{-# INLINE neighbours #-}
 
 -- | Check that the internal representation of an undirected graph is
 -- consistent, i.e. that (i) that all edges refer to existing vertices, and (ii)
@@ -911,3 +916,4 @@ neighbours x = SR.neighbours x . toSymmetricRelation
 -- @
 consistent :: Ord a => Graph a -> Bool
 consistent (UG g) = UG g == (UG $ G.transpose g)
+{-# INLINE consistent #-}
