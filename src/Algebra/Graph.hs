@@ -50,7 +50,7 @@ module Algebra.Graph (
     Context (..), context,
 
     -- * Deforestation
-    Foldg, buildg
+    buildg
     ) where
 
 import Control.Applicative (Alternative)
@@ -1306,14 +1306,6 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
 * The "bindR/bindR" rule optimises compositions of multiple bindR's.
 -}
 
--- | A function abstracting graphs constructors.
---
--- The Rank-2 type is used to ensure that one can replace abstracted graphs constructors
--- (the function arguments) by the arguments of a later 'foldg' operation.
---
--- See 'buildg'.
-type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
-
 -- | Build a graph given an interpretation of the four graph construction primitives 'empty',
 -- 'vertex', 'overlay' and 'connect', in this order. See examples for further clarification.
 --
@@ -1329,7 +1321,7 @@ type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
 -- buildg (\\e v o c -> 'foldg' e v o ('flip' c) g)                 == 'transpose' g
 -- 'foldg' e v o c (buildg f)                                   == f e v o c
 -- @
-buildg :: Foldg a -> Graph a
+buildg :: (forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b) -> Graph a
 buildg f = f Empty Vertex Overlay Connect
 {-# INLINE [1] buildg #-}
 
@@ -1350,7 +1342,7 @@ matchR e v p = \x -> if p x then v x else e
 -- Rewrite rules for fusion.
 {-# RULES
 -- Fuse a foldg followed by a buildg
-"foldg/buildg" forall e v o c (g :: Foldg a).
+"foldg/buildg" forall e v o c (g :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b).
     foldg e v o c (buildg g) = g e v o c
 
 -- Fuse composeR's. This occurs when two adjacent 'bindR' were rewritted into
