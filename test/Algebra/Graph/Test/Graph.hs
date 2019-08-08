@@ -126,3 +126,22 @@ testGraph = do
 
     test "context (== 4)        (3 * 1 * 4 * 1 * 5) == Just (Context [3,1] [1,5])" $
           context (== 4)        (3 * 1 * 4 * 1 * 5 :: G) == Just (Context [3,1] [1,5])
+
+    putStrLn "\n============ Graph.buildg ============"
+    test "buildg (\\e _ _ _ -> e)                                     == empty" $
+          buildg (\e _ _ _ -> e)                                      == (empty :: G)
+
+    test "buildg (\\_ v _ _ -> v x)                                   == vertex x" $ \(x :: Int) ->
+          buildg (\_ v _ _ -> v x)                                    == vertex x
+
+    test "buildg (\\e v o c -> o (foldg e v o c x) (foldg e v o c y)) == overlay x y" $ \(x :: G) y ->
+          buildg (\e v o c -> o (foldg e v o c x) (foldg e v o c y))  == overlay x y
+
+    test "buildg (\\e v o c -> c (foldg e v o c x) (foldg e v o c y)) == connect x y" $ \(x :: G) y ->
+          buildg (\e v o c -> c (foldg e v o c x) (foldg e v o c y))  == connect x y
+
+    test "buildg (\\e v o _ -> foldr o e (map v xs))                  == vertices xs" $ \(xs :: [Int]) ->
+          buildg (\e v o _ -> foldr o e (map v xs))                   == vertices xs
+
+    test "buildg (\\e v o c -> foldg e v o (flip c) g)                == transpose g" $ \(g :: G) ->
+          buildg (\e v o c -> foldg e v o (flip c) g)                 == transpose g

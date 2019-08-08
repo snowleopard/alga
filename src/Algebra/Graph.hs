@@ -1314,10 +1314,16 @@ type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
 -- Functions expressed with 'buildg' are good producers.
 --
 -- @
--- buildg g = g 'Empty' 'Vertex' 'Overlay' 'Connect'
+-- buildg f                                                   == f 'Empty' 'Vertex' 'Overlay' 'Connect'
+-- buildg (\\e _ _ _ -> e)                                     == 'empty'
+-- buildg (\\_ v _ _ -> v x)                                   == 'vertex' x
+-- buildg (\\e v o c -> o ('foldg' e v o c x) ('foldg' e v o c y)) == 'overlay' x y
+-- buildg (\\e v o c -> c ('foldg' e v o c x) ('foldg' e v o c y)) == 'connect' x y
+-- buildg (\\e v o _ -> 'foldr' o e ('map' v xs))                  == 'vertices' xs
+-- buildg (\\e v o c -> 'foldg' e v o ('flip' c) g)                 == 'transpose' g
 -- @
 buildg :: Foldg a -> Graph a
-buildg g = g Empty Vertex Overlay Connect
+buildg f = f Empty Vertex Overlay Connect
 {-# INLINE [1] buildg #-}
 
 composeR :: (b -> c) -> (a -> b) -> a -> c
