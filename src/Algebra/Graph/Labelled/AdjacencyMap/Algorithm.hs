@@ -54,6 +54,7 @@ dijkstra' z o am src = maybe zm (snd . processG . const processI) (Map.lookup sr
 -- TODO: Improve documentation for bellmanFord
 -- TODO: Write tests and examples for bellmanFord
 -- TODO: safely change 'vL' to 'tail vL' in processL
+-- TODO: Change foldr to foldr'
 bellmanFord :: (Ord a, Dioid e) => a -> AdjacencyMap e a -> Map a e
 bellmanFord src wam = maybe zm processL im
   where
@@ -70,6 +71,23 @@ bellmanFord src wam = maybe zm processL im
       let n = ((m ! v1) <.> e) <+> (m ! v2)
       in Map.adjust (const n) v2 m
 
+-- TODO: Improve documentation for floydWarshall
+-- TODO: Write tests and examples for floydWarshall
+-- TODO: Change foldr to foldr'
+floydWarshall :: (Ord a, Dioid e) => AdjacencyMap e a -> Map a (Map a e)
+floydWarshall wam = relax0 im
+  where
+    am = adjacencyMap wam
+    zm = Map.map (const $ Map.map (const zero) am) am
+    em = Map.unionWith Map.union am zm
+    im = Map.mapWithKey (Map.adjust (const one)) em
+    vL = Map.keys am
+    relax0 m = foldr relax1 m vL
+    relax1 i m = foldr (relax2 i) m vL
+    relax2 i j m = foldr (relax3 i j) m vL
+    relax3 i j k m =
+      let n = (m ! i ! j) <+> ((m ! i ! k) <.> (m ! k ! j))
+      in Map.adjust (Map.adjust (const n) j) i m
 
 
 
