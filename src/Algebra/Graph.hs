@@ -26,7 +26,7 @@ module Algebra.Graph (
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
 
     -- * Graph folding
-    foldg,
+    foldg, buildg,
 
     -- * Relations on graphs
     isSubgraphOf, (===),
@@ -48,9 +48,6 @@ module Algebra.Graph (
 
     -- * Context
     Context (..), context,
-
-    -- * Deforestation
-    buildg
     ) where
 
 import Control.Applicative (Alternative)
