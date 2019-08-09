@@ -1300,7 +1300,7 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
   a "buildg/f" rule. These functions are higher-order functions and therefore
   benefit from inlining in the final phase.
 
-* The "bindR/bindR" rule optimises compositions of multiple bindR's.
+* The "composeR/composeR" rule optimises compositions of multiple composeR's.
 -}
 
 -- | Build a graph given an interpretation of the four graph construction primitives 'empty',
@@ -1344,8 +1344,8 @@ matchR e v p = \x -> if p x then v x else e
 
 -- Fuse composeR's. This occurs when two adjacent 'bindR' were rewritted into
 -- their buildg form.
-"bindR/bindR" forall c f g.
-    composeR (composeR c f) g = composeR c (f.g)
+"composeR/composeR" forall c f g.
+    composeR (composeR c f) g = composeR c (f . g)
 
 -- Rewrite identity (which can appear in the inlining of 'buildg') to a much efficient one
 "foldg/id"
