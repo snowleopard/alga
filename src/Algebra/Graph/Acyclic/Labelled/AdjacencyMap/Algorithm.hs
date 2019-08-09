@@ -32,17 +32,15 @@ topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 -- fold (\e v1 v2 -> flip (++) [(e, v1, v2)]) [] ('toAcyclicOrd' $ 'LAM.edge' 5 1 2) == [(5, 1, 2)] 
 -- fold (\e v1 v2 -> flip (++) [(e, v1, v2)]) [] ('toAcyclicOrd' $ 'LAM.edges' [(5, 2, 3), (0, 1, 2), (6, 1, 3)]) == [(0, 1, 2), (5, 2, 3), (6, 1, 3)] 
 -- @
-fold :: (Ord a) => (e -> a -> a -> s -> s) -> s ->  AdjacencyMap e a -> s
-fold f s am = foldl' f' s . unfold nm . topSort $ am
+fold :: (Ord a) => ([(e, a)] -> a -> s -> s) -> s ->  AdjacencyMap e a -> s
+fold f s wam = snd . foldl' unfold (nm, s) . topSort $ wam
   where
-    em = LAM.adjacencyMap . fromAcyclic $ am
-    nm = Map.map (const []) em
-    addP v1 m =
-      let adjust v2 e = Map.adjust ((e, v1, v2):) v2
-      in Map.foldrWithKey adjust m (em ! v1)
-    unfold _ [] = []
-    unfold m (v2:vs) = (m ! v2) ++ unfold (addP v2 m) vs
-    f' s (e, v1, v2) = f e v1 v2 s 
+    am = LAM.adjacencyMap (fromAcyclic wam)
+    nm = Map.map (const []) am
+    ap v1 m =
+      let adjust v2 e = Map.adjust ((e, v1):) v2
+      in Map.foldrWithKey adjust m (am ! v1)
+    unfold (m, s) v2 = (ap v2 m, f (m ! v2) v2 s)
 
 -- TODO: Add time complexity
 -- | Compute the /shortest path/ to each vertex in the graph
@@ -60,10 +58,12 @@ fold f s am = foldl' f' s . unfold nm . topSort $ am
 -- optimumPath ('toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'z' == Map.'Map.fromList' [('a', 'distance' 'infinite'), ('b', 'distance' 'infinite'), ('c', 'distance' 'infinite')]
 -- optimumPath ('toAcyclicOrd' $ 'LAM.edges' [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) 'a' == Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
 -- @
-optimumPath :: (Dioid e, Ord a) => AdjacencyMap e a -> a -> Map a e
-optimumPath am src = fromMaybe zm $ fold relax im am
+optimumPath :: (Dioid e, Ord a) => a -> AdjacencyMap e a -> Map a e
+optimumPath src am = maybe zm relaxW im
   where
     zm = Map.map (const zero) . LAM.adjacencyMap . fromAcyclic $ am
     im = Map.insert src one zm <$ Map.lookup src zm
-    relax _ _ _ Nothing = Nothing
-    relax e v1 v2 (Just m) = Just $ Map.adjust (<+> ((m ! v1) <.> e)) v2 m
+    relaxE v2 (e, v1) m = Map.adjust (<+> ((m ! v1) <.> e)) v2 m
+    relaxV eL v2 m = foldr (relaxE v2) m eL 
+    relaxW m = fold relaxV m am
+
