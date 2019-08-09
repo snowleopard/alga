@@ -846,7 +846,7 @@ star x ys = overlay (leftVertex x) (edges [ (x, y) | y <- ys ])
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
 stars :: (Ord a, Ord b) => [(a, [b])] -> AdjacencyMap a b
-stars xs = overlay (vertices (map fst xs) []) (edges (concat (map sequenceA xs)))
+stars = overlays . map (uncurry star)
 
 -- | Construct a /mesh/ graph from two lists of vertices.
 -- Complexity: /O(L1 * L2 + L1 log(L1) + L2 log(L2))/ time, where /L1/ and
