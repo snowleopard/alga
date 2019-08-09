@@ -17,6 +17,7 @@ topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 
 -- TODO: Improve documentation for 'fold'
 -- TODO: Make 'fold' more efficient
+-- TODO: Change doc, examples and test accordingly for fold
 -- | fold takes any function with the signature @e -> a -> a -> s -> s@.
 -- This function folds over edges, modifying an original input state.
 -- The edges are processed in an topological order of sink vertices,
@@ -33,14 +34,14 @@ topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 -- fold (\e v1 v2 -> flip (++) [(e, v1, v2)]) [] ('toAcyclicOrd' $ 'LAM.edges' [(5, 2, 3), (0, 1, 2), (6, 1, 3)]) == [(0, 1, 2), (5, 2, 3), (6, 1, 3)] 
 -- @
 fold :: (Ord a) => ([(e, a)] -> a -> s -> s) -> s ->  AdjacencyMap e a -> s
-fold f s wam = snd . foldl' unfold (nm, s) . topSort $ wam
+fold f s wam = snd . foldl' process (nm, s) . topSort $ wam
   where
     am = LAM.adjacencyMap (fromAcyclic wam)
     nm = Map.map (const []) am
     ap v1 m =
       let adjust v2 e = Map.adjust ((e, v1):) v2
       in Map.foldrWithKey adjust m (am ! v1)
-    unfold (m, s) v2 = (ap v2 m, f (m ! v2) v2 s)
+    process (m, s) v2 = (ap v2 m, f (m ! v2) v2 s)
 
 -- TODO: Add time complexity
 -- | Compute the /shortest path/ to each vertex in the graph
