@@ -215,11 +215,8 @@ creating our own intermediate functions for guiding rewrite rules when needed.
 
 -- | 'fmap' is a good consumer and producer.
 instance Functor Graph where
-    fmap = fmapR
-
-fmapR :: (a -> b) -> Graph a -> Graph b
-fmapR f g = bindR g (vertex . f)
-{-# INLINE fmapR #-}
+    fmap f g = g >>= (vertex . f)
+    {-# INLINE fmap #-}
 
 instance NFData a => NFData (Graph a) where
     rnf Empty         = ()
@@ -269,22 +266,16 @@ ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 
 -- | `<*>` is a good consumer and producer.
 instance Applicative Graph where
-    pure  = Vertex
-    (<*>) = apR
-
-apR :: Graph (a -> b) -> Graph a -> Graph b
-apR f x = bindR f (<$> x)
-{-# INLINE apR #-}
+    pure    = Vertex
+    f <*> x = f >>= (<$> x)
+    {-# INLINE (<*>) #-}
 
 -- | `>>=` is a good consumer and producer.
 instance Monad Graph where
     return = pure
-    (>>=)  = bindR
-
-bindR :: Graph a -> (a -> Graph b) -> Graph b
-bindR g f = buildg $ \e v o c ->
-  foldg e (composeR (foldg e v o c) f) o c g
-{-# INLINE bindR #-}
+    g >>= f  = buildg $ \e v o c ->
+      foldg e (composeR (foldg e v o c) f) o c g
+    {-# INLINE (>>=) #-}
 
 instance Alternative Graph where
     empty = Empty
@@ -1338,16 +1329,15 @@ matchR e v p = \x -> if p x then v x else e
 
 -- Rewrite rules for fusion.
 {-# RULES
--- Fuse a foldg followed by a buildg
+-- Fuse a foldg followed by a buildg.
 "foldg/buildg" forall e v o c (g :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b).
     foldg e v o c (buildg g) = g e v o c
 
--- Fuse composeR's. This occurs when two adjacent 'bindR' were rewritted into
--- their buildg form.
+-- Fuse composeR's (from bind's definition).
 "composeR/composeR" forall c f g.
     composeR (composeR c f) g = composeR c (f . g)
 
--- Rewrite identity (which can appear in the inlining of 'buildg') to a much efficient one
+-- Rewrite identity (which can appear in the inlining of 'buildg') to a much efficient one.
 "foldg/id"
     foldg Empty Vertex Overlay Connect = id
  #-}
