@@ -178,11 +178,8 @@ instance (Show a, Ord a) => Show (Graph a) where
 {- See Note [Functions for rewrite rules] in 'Algebra.Graph' -}
 
 instance Functor Graph where
-    fmap = fmapR
-
-fmapR :: (a -> b) -> Graph a -> Graph b
-fmapR f g = bindR g (vertex . f)
-{-# INLINE fmapR #-}
+    fmap f = UG . fmap f . fromUndirected
+    {-# INLINE fmap #-}
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'Graph' for more
 -- details.
@@ -231,18 +228,13 @@ ordIntR x y = compare (toSymmetricRelation x) (toSymmetricRelation y)
 
 instance Applicative Graph where
     pure  = vertex
-    (<*>) = apR
-
-apR :: Graph (a -> b) -> Graph a -> Graph b
-apR f x = bindR f (<$> x)
-{-# INLINE apR #-}
+    (<*>) = coerce3 (<*>)
+    {-# INLINE (<*>) #-}
 
 instance Monad Graph where
-    return = pure
-    (>>=)  = bindR
-
-bindR :: Graph a -> (a -> Graph b) -> Graph b
-bindR g = UG . (>>=) (fromUndirected g) . coerce
+    return  = pure
+    (>>=) g = UG . (>>=) (fromUndirected g) . coerce
+    {-# INLINE (>>=) #-}
 
 instance Alternative Graph where
     empty = empty
