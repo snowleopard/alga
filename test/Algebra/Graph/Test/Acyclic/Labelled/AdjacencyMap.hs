@@ -241,3 +241,29 @@ testAcyclicLabelledAdjacencyMap = do
   test "transitiveClosure . transitiveClosure     == transitiveClosure" $ \x ->
         (transitiveClosure . transitiveClosure) x == transitiveClosure (x :: LAD)
 
+
+  putStrLn "\n======= Acyclic.Labelled.Algorithm.optimumPath ======="
+
+  test "optimumPath x (vertex x)        == Map.fromList [(x, 0)]" $ \x ->
+        optimumPath x (vertex x :: LAD) == Map.fromList [(x, 0)]
+
+  test "optimumPath 'z' (vertex 'a')        == Map.fromList [('a', distance infinite)]" $
+        optimumPath 'z' (vertex 'a' :: LCD) == Map.fromList [('a', distance infinite)]
+
+  test "optimumPath 'a' (toAcyclicOrd $ LAM.edge 2 'a' 'b')        == Map.fromList [('a', 0), ('b', 2)]" $
+        optimumPath 'a' (toAcyclicOrd $ LAM.edge (2 :: D) 'a' 'b') == Map.fromList [('a', 0), ('b', 2)]
+
+  test "optimumPath 'z' (toAcyclicOrd $ LAM.edge 2 'a' 'b')        == Map.fromList [('a', distance infinite), ('b', distance infinite)]" $
+        optimumPath 'z' (toAcyclicOrd $ LAM.edge (2 :: D) 'a' 'b') == Map.fromList [('a', distance infinite), ('b', distance infinite)]
+
+  test "optimumPath 'a' (vertices ['a', 'b'])        == Map.fromList [('a', 0), ('b', distance infinite)]" $
+        optimumPath 'a' (vertices ['a', 'b'] :: LCD) == Map.fromList [('a', 0), ('b', distance infinite)]
+
+  test "optimumPath 'z' (vertices ['a', 'b'])        == Map.fromList [('a', distance infinite), ('b', distance infinite)]" $
+        optimumPath 'z' (vertices ['a', 'b'] :: LCD) == Map.fromList [('a', distance infinite), ('b', distance infinite)]
+
+  test "optimumPath 'z' (toAcyclicOrd $ edges [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')])          == Map.fromList [('a', distance infinite), ('b', distance infinite), ('c', distance infinite)]" $
+        optimumPath 'z' (toAcyclicOrd $ LAM.edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) == Map.fromList [('a', distance infinite), ('b', distance infinite), ('c', distance infinite)]
+
+  test "optimumPath 'a' (toAcyclicOrd $ edges [(2, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')])          == Map.fromList [('a', 0), ('b', 1), ('c', 3)]" $
+        optimumPath 'a' (toAcyclicOrd $ LAM.edges [(2 :: D, 'b', 'c'), (1, 'a', 'b'), (3, 'a', 'c')]) == Map.fromList [('a', 0 :: D), ('b', 1), ('c', 3)]
