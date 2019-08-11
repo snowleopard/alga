@@ -14,12 +14,14 @@ module Algebra.Graph.Bipartite.AdjacencyMap.Algorithm (
 
 import Algebra.Graph.Bipartite.AdjacencyMap
 
-import Control.Monad             (foldM, guard, when)
+import Control.Monad             (guard, when)
 import Control.Monad.Trans.Maybe (MaybeT(..))
-import Control.Monad.State       (MonadState(..), State, runState, execState, modify)
+import Control.Monad.State       (MonadState(..), State, runState, modify)
+import Control.Monad.ST          (ST, runST)
 import Data.Foldable             (asum)
 import Data.List                 (sort)
 import Data.Maybe                (fromJust)
+import Data.STRef                (STRef, newSTRef, readSTRef, writeSTRef, modifySTRef)
 import GHC.Generics
 
 import qualified Algebra.Graph.AdjacencyMap as AM
@@ -247,17 +249,12 @@ type VertexCover a b = [Either a b] -- TODO: Maybe set?
 -- vertices.
 type IndependentSet a b = [Either a b] -- TODO: Maybe set?
 
-data HKState a b s = HKS {
-    distance :: Map.Map a Int,
-    curMatching :: Matching a b,
-    localState :: s
-} deriving Show
-
-type HKBfsMonad a b r = State (HKState a b (Seq.Seq a)) r
-
-type HKDfsMonad a b r = State (HKState a b (Set.Set a)) r
-
-type HKMonad a b = State (HKState a b ()) ()
+data HKState s a b = HKS {
+    distance    :: STRef s (Map.Map a Int),
+    curMatching :: STRef s (Matching a b),
+    queue       :: STRef s (Seq.Seq a),
+    visited     :: STRef s (Set.Set a)
+}
 
 -- | Find a /maximum mathcing/ in bipartite graph. A matching is maximum if it
 -- has maximum possible size.
@@ -271,87 +268,93 @@ type HKMonad a b = State (HKState a b ()) ()
 -- 'matchingSize' (maxMatching ('star' x (y:ys)))               == 1
 -- 'matchingSize' (maxMatching ('biclique' xs ys))              == 'min' ('length' ('nub' xs)) ('length' ('nub' ys))
 -- @
-maxMatching :: forall a b. (Ord a, Ord b) => AdjacencyMap a b -> Matching a b
-maxMatching g = matching
+maxMatching :: forall a b. (Ord a, Ord b, Show a, Show b) => AdjacencyMap a b -> Matching a b
+maxMatching g = runST $ do dist <- newSTRef Map.empty
+                           m    <- newSTRef (Matching Map.empty Map.empty)
+                           q    <- newSTRef Seq.empty
+                           vis  <- newSTRef Set.empty
+                           let state = HKS dist m q vis
+                           runHK state
+                           readSTRef m
     where
-        dequeue :: HKBfsMonad a b (Maybe a)
-        dequeue = do (HKS d m q) <- get
-                     case Seq.viewl q of
-                          a Seq.:< q' -> Just a <$ put (HKS d m q')
-                          Seq.EmptyL  -> return Nothing
+        dequeue :: HKState s a b -> ST s (Maybe a)
+        dequeue state = do q <- readSTRef (queue state)
+                           case Seq.viewl q of
+                                a Seq.:< q' -> do writeSTRef (queue state) q'
+                                                  return (Just a)
+                                Seq.EmptyL  -> return Nothing
 
-        enqueue :: Int -> a -> HKBfsMonad a b ()
-        enqueue dist v = do (HKS d m q) <- get
-                            let d' = Map.insert v dist d
-                            let q' = q Seq.|> v
-                            put (HKS d' m q')
+        enqueue :: HKState s a b -> Int -> a -> ST s ()
+        enqueue state d v = do modifySTRef (distance state) (Map.insert v d)
+                               modifySTRef (queue state)    (Seq.|> v)
 
-        distanceTo :: a -> HKBfsMonad a b Int
-        distanceTo v = do (HKS d _ _) <- get
-                          return (fromJust (v `Map.lookup` d))
+        checkEnqueue :: HKState s a b -> Int -> a -> ST s ()
+        checkEnqueue state d v = do dist <- readSTRef (distance state)
+                                    let action = enqueue state d v
+                                    when (v `Map.notMember` dist) action
 
-        bfsEdge :: Int -> b -> HKBfsMonad a b Bool
-        bfsEdge dist v = do (HKS d m _) <- get
-                            case v `Map.lookup` pairOfRight m of
-                                 Nothing -> return True
-                                 Just u  -> case u `Map.lookup` d of
-                                                 Just _  -> return False
-                                                 Nothing -> False <$ enqueue (dist + 1) u
+        bfsEdge :: HKState s a b -> Int -> b -> ST s Bool
+        bfsEdge state d u = do m <- readSTRef (curMatching state)
+                               case u `Map.lookup` pairOfRight m of
+                                    Just v  -> False <$ checkEnqueue state d v
+                                    Nothing -> return True
 
-        bfsVertex :: a -> HKBfsMonad a b Bool
-        bfsVertex v = do d <- distanceTo v
-                         or <$> mapM (bfsEdge d) (neighbours v)
+        bfsVertex :: HKState s a b -> a -> ST s Bool
+        bfsVertex state v = do dist <- readSTRef (distance state)
+                               let d = fromJust (v `Map.lookup` dist) + 1
+                               or <$> mapM (bfsEdge state d) (neighbours v)
 
-        bfsCycle :: HKBfsMonad a b Bool
-        bfsCycle = do mv <- dequeue
-                      case mv of
-                           Just v  -> (||) <$> bfsVertex v <*> bfsCycle
-                           Nothing -> return False
+        bfsLoop :: HKState s a b -> ST s Bool
+        bfsLoop state = do mv <- dequeue state
+                           case mv of
+                                Just v  -> do p <- bfsVertex state v
+                                              q <- bfsLoop state
+                                              return (p || q)
+                                Nothing -> return False
 
-        bfs :: HKBfsMonad a b Bool
-        bfs = do (HKS _ m _) <- get
-                 mapM_ (enqueue 1) [ v | v <- leftVertexList g, not (leftCovered v m) ]
-                 bfsCycle
+        bfs :: HKState s a b -> ST s Bool
+        bfs state = do m <- readSTRef (curMatching state)
+                       let uncovered = [ v | v <- leftVertexList g
+                                           , not (leftCovered v m) ]
+                       mapM_ (enqueue state 1) uncovered
+                       bfsLoop state
 
-        {-# INLINE dfsEdge #-}
-        dfsEdge :: Int -> a -> Bool -> b -> HKDfsMonad a b Bool
-        dfsEdge _   _ True  _ = return True
-        dfsEdge dst v False u = do (HKS d m s) <- get
-                                   case u `Map.lookup` pairOfRight m of
-                                        Nothing -> True <$ modify (addEdgeTo v u)
-                                        Just w  -> case w `Set.member` s of
-                                                        True  -> return False
-                                                        False -> case fromJust (w `Map.lookup` d) == dst + 1 of
-                                                                      False -> return False
-                                                                      True  -> do z <- dfsVertex w
-                                                                                  when z (modify (addEdgeTo v u))
-                                                                                  return z
+        dfsEdges :: HKState s a b -> Int -> a -> [b] -> ST s Bool
+        dfsEdges _     _ _ []     = return False
+        dfsEdges state d v (u:us) = do m <- readSTRef (curMatching state)
+                                       case u `Map.lookup` pairOfRight m of
+                                            Nothing -> True <$ addEdge state v u
+                                            Just w  -> do z <- dfsVertex state d w
+                                                          case z of
+                                                               True  -> True <$ addEdge state v u
+                                                               False -> dfsEdges state d v us
 
-        dfsVertex :: a -> HKDfsMonad a b Bool
-        dfsVertex v = do (HKS d m s) <- get
-                         let dist = fromJust (v `Map.lookup` d)
-                         put (HKS d m (Set.insert v s))
-                         foldM (dfsEdge dist v) False (neighbours v)
+        dfsVertex :: HKState s a b -> Int -> a -> ST s Bool
+        dfsVertex state d v = do dist <- readSTRef (distance state)
+                                 vis  <- readSTRef (visited state)
+                                 let dv = fromJust (v `Map.lookup` dist)
+                                 case (d + 1 == dv) && (v `Set.notMember` vis) of
+                                      False -> return False
+                                      True  -> do modifySTRef (visited state) (Set.insert v)
+                                                  dfsEdges state dv v (neighbours v)
 
-        addEdgeTo :: a -> b -> HKState a b (Set.Set a) -> HKState a b (Set.Set a)
-        addEdgeTo u v (HKS d m q) = HKS d (addEdgeUnsafe u v m) q
+        addEdge :: HKState s a b -> a -> b -> ST s ()
+        addEdge state v u = modifySTRef (curMatching state) (addEdgeUnsafe v u)
 
-        dfs :: HKDfsMonad a b ()
-        dfs = do (HKS _ m _) <- get
-                 mapM_ dfsVertex [ v | v <- leftVertexList g, not (leftCovered v m) ]
+        dfs :: HKState s a b -> ST s ()
+        dfs state = do m <- readSTRef (curMatching state)
+                       let uncovered = [ v | v <- leftVertexList g
+                                           , not (leftCovered v m) ]
+                       mapM_ (dfsVertex state 0) uncovered
 
-        runHK :: HKMonad a b
-        runHK = do (HKS _ m _) <- get
-                   let (run, HKS d _ _) = runState bfs (HKS Map.empty m Seq.empty)
-                   when run $ do let (HKS _ m' _) = execState dfs (HKS d m Set.empty)
-                                 put (HKS d m' ())
-                                 runHK
-
-        matching :: Matching a b
-        matching = curMatching (execState runHK (HKS Map.empty emptyMatching ()))
-
-        emptyMatching :: Matching a b
-        emptyMatching = Matching (Map.empty) (Map.empty)
+        runHK :: HKState s a b -> ST s ()
+        runHK state = do writeSTRef (distance state) Map.empty
+                         run <- bfs state
+                         dist <- readSTRef (distance state)
+                         when run $ do writeSTRef (visited state) Set.empty
+                                       dfs state
+                                       m <- readSTRef (curMatching state)
+                                       runHK state
 
         neighbours :: a -> [b]
         neighbours v = Set.toAscList $ fromJust $ Map.lookup v $ leftAdjacencyMap g
@@ -368,7 +371,7 @@ maxMatching g = matching
 -- 'length' (minVertexCover ('biclique' xs ys)) == 'min' ('length' ('nub' xs)) ('length' ('nub' ys))
 -- 'length' . minVertexCover                  == 'matchingSize' . 'maxMatching'
 -- @
-minVertexCover :: (Ord a, Ord b) => AdjacencyMap a b -> VertexCover a b
+minVertexCover :: (Ord a, Ord b, Show a, Show b) => AdjacencyMap a b -> VertexCover a b
 minVertexCover g = fromLeft [] (augmentingPath (maxMatching g) g)
     where
         fromLeft :: a -> Either a b -> a
@@ -388,7 +391,7 @@ minVertexCover g = fromLeft [] (augmentingPath (maxMatching g) g)
 -- 'length' (maxIndependentSet ('biclique' xs ys)) == 'max' ('length' ('nub' xs)) ('length' ('nub' ys))
 -- 'length' (maxIndependentSet x)                == vertexCount x - length (minVertexCover x)
 -- @
-maxIndependentSet :: (Ord a, Ord b) => AdjacencyMap a b -> IndependentSet a b
+maxIndependentSet :: (Ord a, Ord b, Show a, Show b) => AdjacencyMap a b -> IndependentSet a b
 maxIndependentSet g = Set.toAscList (vertexSet g `Set.difference` vc)
     where
         vc = Set.fromAscList (minVertexCover g)
@@ -411,7 +414,7 @@ type AugPathMonad a b = MaybeT (State (Set.Set a, Set.Set b)) (List a b)
 -- augmentingPath ('matching' [(3,2)]) ('path' [1,2,3,4]) == Right [1,2,3,4]
 -- isLeft (augmentingPath ('maxMatching' x) x)          == True
 -- @
-augmentingPath :: forall a b. (Ord a, Ord b) =>
+augmentingPath :: forall a b. (Ord a, Ord b, Show a, Show b) =>
                   Matching a b -> AdjacencyMap a b -> Either (VertexCover a b) (List a b)
 augmentingPath m g = case runState (runMaybeT dfs) (leftVertexSet g, Set.empty) of
                           (Nothing, (s, t)) -> Left $ (map Left  (Set.toAscList s)) ++
