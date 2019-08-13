@@ -19,11 +19,11 @@ import qualified Data.Map.Strict as Map
 -- Choice of heap:
 -- @
 -- 'one' < 'zero':
---   'one' <+> 'zero' == 'one': Max heap
---   'one' <+> 'zero' == 'zero': Min heap
--- 'one' > 'zero':
 --   'one' <+> 'zero' == 'one': Min heap
 --   'one' <+> 'zero' == 'zero': Max heap
+-- 'one' > 'zero':
+--   'one' <+> 'zero' == 'one': Max heap
+--   'one' <+> 'zero' == 'zero': Min heap
 -- @
 --
 -- The examples below assume the edge values are 'Distance'.
@@ -49,10 +49,10 @@ dijkstra' z o am src = maybe zm (snd . processG . const processI) (Map.lookup sr
     zm = Map.map (const zero) im
     view =
       case (compare o z, o <+> z) of
-        (LT, o) -> Set.maxView
-        (LT, z) -> Set.minView
-        (GT, o) -> Set.minView
-        (GT, z) -> Set.maxView
+        (LT, o) -> Set.minView
+        (LT, z) -> Set.maxView
+        (GT, o) -> Set.maxView
+        (GT, z) -> Set.minView
         _       -> Set.minView
     processI = (Set.singleton (one, src), Map.insert src one zm)
     processG sm@(s, _) = processS (view s) sm
