@@ -241,6 +241,19 @@ testAcyclicLabelledAdjacencyMap = do
   test "transitiveClosure . transitiveClosure     == transitiveClosure" $ \x ->
         (transitiveClosure . transitiveClosure) x == transitiveClosure (x :: LAD)
 
+  putStrLn "\n======= Acyclic.Labelled.Algorithm.fold ======="
+
+  test "fold f s empty          == s" $ \(applyFun3 -> f) (s :: Int) ->
+        fold f s (empty :: LAS) == s 
+
+  test "fold (\\e v -> (++[v])) []  == topSort" $ \(x :: LAS) -> 
+        fold (\e v -> (++[v])) [] x == topSort x
+
+  test "fold (\\e v -> (++[(e, v)]) [] (vertex x)        == [([], x)]" $ \x ->
+        fold (\e v -> (++[(e, v)])) [] (vertex x :: LAS) == [([], x)] 
+
+  test "fold (\\e v -> (++[(e, v)]) [] (toAcyclicOrd $ LAM.edge 5 1 2)        == [([], 1), ([(5, 1)], 2)]" $
+        fold (\e v -> (++[(e, v)])) [] (toAcyclicOrd $ LAM.edge 5 1 2 :: LAS) == [([], 1), ([(5, 1)], 2)] 
 
   putStrLn "\n======= Acyclic.Labelled.Algorithm.optimumPath ======="
 

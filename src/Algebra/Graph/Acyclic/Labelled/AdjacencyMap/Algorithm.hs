@@ -29,8 +29,8 @@ topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 -- @
 -- fold f s 'empty' == s 
 -- fold (\e v -> (++[v])) [] == 'topSort'
--- fold (\e v -> (++[(e, v)]) [] ('vertex' x) == [([], x)] 
--- fold (\e v -> (++[(e, v)]) [] ('toAcyclicOrd' $ 'LAM.edge' 5 1 2) == [([], 1), ([(5, 1)], 2)] 
+-- fold (\e v -> (++[(e, v)])) [] ('vertex' x) == [([], x)] 
+-- fold (\e v -> (++[(e, v)])) [] ('toAcyclicOrd' $ 'LAM.edge' 5 1 2) == [([], 1), ([(5, 1)], 2)] 
 -- @
 fold :: (Ord a) => ([(e, a)] -> a -> s -> s) -> s ->  AdjacencyMap e a -> s
 fold f s wam = snd . foldl' process (nm, s) . topSort $ wam
