@@ -8,6 +8,7 @@ import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
 
 -- TODO: Improve documentation for 'dijkstra'.
+-- TODO: Add additional examples
 -- | A generic Dijkstra algorithm that relaxes the list of edges
 -- based on the 'Dioid'.
 --
@@ -43,23 +44,26 @@ dijkstra = dijkstra' zero one
 
 -- Extended dijkstra. This function should not be exported.
 dijkstra' :: (Ord a, Ord e, Dioid e) => e -> e -> AdjacencyMap e a -> a -> Map a e
-dijkstra' z o am src = maybe zm (snd . processG . const processI) (Map.lookup src zm)
+dijkstra' z o wam src = maybe zm (snd . processG) jsm
   where
-    im = adjacencyMap am
+    am = adjacencyMap wam
     zm = Map.map (const zero) im
-    view =
-      case (compare o z, o <+> z) of
-        (LT, o) -> Set.minView
-        (LT, z) -> Set.maxView
-        (GT, o) -> Set.maxView
-        (GT, z) -> Set.minView
-        _       -> Set.minView
-    processI = (Set.singleton (one, src), Map.insert src one zm)
+    im = Map.insert src one zm
+    is = Set.singleton (one, src)
+    jsm = (is, im) <$ Map.lookup src zm
+    view
+      | o <+> z == o = if o < z 
+                          then Set.minView
+                          else Set.maxView
+      | o <+> z == z = if o < z
+                          then Set.maxView
+                          else Set.minView
+      | otherwise = Set.minView
     processG sm@(s, _) = processS (view s) sm
     processS Nothing sm = sm
     processS (Just ((_, v1), s)) (_, m) = processG $ relaxV v1 (s, m)
     relaxV v1 sm =
-      let eL = map (\(v2, e) -> (e, v1, v2)) . Map.toList $ im ! v1
+      let eL = map (\(v2, e) -> (e, v1, v2)) . Map.toList $ am ! v1
       in foldr relaxE sm eL
     relaxE (e, v1, v2) (s, m) =
       let n = ((m ! v1) <.> e) <+> (m ! v2)
@@ -70,12 +74,12 @@ dijkstra' z o am src = maybe zm (snd . processG . const processI) (Map.lookup sr
 -- TODO: safely change 'vL' to 'tail vL' in processL
 -- TODO: Change foldr to foldr'
 bellmanFord :: (Ord a, Dioid e) => a -> AdjacencyMap e a -> Map a e
-bellmanFord src wam = maybe zm processL im
+bellmanFord src wam = maybe zm processL jim
   where
     am = adjacencyMap wam
     zm = Map.map (const zero) am
-    im = Map.insert src one zm <$ Map.lookup src zm
     vL = Map.keys am
+    jim = Map.insert src one zm <$ Map.lookup src zm
     processL m = foldr (const processR) m vL
     processR m = foldr relaxV m vL
     relaxV v1 m =
