@@ -12,13 +12,21 @@ import qualified Data.Map.Strict as Map
 -- | A generic Dijkstra algorithm that relaxes the list of edges
 -- based on the 'Dioid'.
 --
--- If the 'Dioid' is 'Distance' (negative 'Dioid') the relaxation
--- is done in ascending order.
+-- The heap (min vs max) is decided based on '<+>', 'zero' and 'one'.
+-- We assume that the semiring is selective i.e. the operation '<+>'
+-- always selects one of its arguments.
 --
--- If the 'Dioid' is 'Capacity' (positive 'Dioid') the relaxation
--- is done in descending order.
+-- @
+-- one < zero :
+--   one <+> zero == one : max
+--   one <+> zero == zero : min
+-- one > zero :
+--   one <+> zero == one : min
+--   one <+> zero == zero : max
+-- @
 --
--- The examples below assume the edge values are 'Distance'
+-- The examples below assume the edge values are 'Distance'.
+--
 -- @
 -- dijkstra ('edges' [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'z' == Map.'Map.fromList' [('a', distance infinite), ('b', distance infinite), ('c', distance infinite)]
 -- dijkstra ('edges' [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'a' == Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
@@ -38,10 +46,15 @@ dijkstra' z o am src = maybe zm (snd . processG . const processI) (Map.lookup sr
   where
     im = adjacencyMap am
     zm = Map.map (const zero) im
+    view =
+      case (compare o z, o <+> z) of
+        (LT, o) -> Set.maxView
+        (LT, z) -> Set.minView
+        (GT, o) -> Set.minView
+        (GT, z) -> Set.maxView
+        _       -> Set.minView
     processI = (Set.singleton (one, src), Map.insert src one zm)
-    processG sm@(s, _)
-      | o < z = processS (Set.minView s) sm
-      | otherwise = processS (Set.maxView s) sm
+    processG sm@(s, _) = processS (view s) sm
     processS Nothing sm = sm
     processS (Just ((_, v1), s)) (_, m) = processG $ relaxV v1 (s, m)
     relaxV v1 sm =
