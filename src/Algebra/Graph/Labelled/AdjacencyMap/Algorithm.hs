@@ -8,21 +8,22 @@ import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
 
 -- TODO: Improve documentation for 'dijkstra'.
--- TODO: Change heap operations
 -- | A generic Dijkstra algorithm that relaxes the list of edges
 -- based on the 'Dioid'.
 --
 -- The heap (min vs max) is decided based on '<+>', 'zero' and 'one'.
--- We assume that the semiring is selective i.e. the operation '<+>'
--- always selects one of its arguments.
 --
+-- We assume that the underlying semiring is selective i.e. the 
+-- operation '<+>' always selects one of its arguments.
+--
+-- Choice of heap:
 -- @
--- one < zero :
---   one <+> zero == one : max
---   one <+> zero == zero : min
--- one > zero :
---   one <+> zero == one : min
---   one <+> zero == zero : max
+-- 'one' < 'zero':
+--   'one' <+> 'zero' == 'one': Max heap
+--   'one' <+> 'zero' == 'zero': Min heap
+-- 'one' > 'zero':
+--   'one' <+> 'zero' == 'one': Min heap
+--   'one' <+> 'zero' == 'zero': Max heap
 -- @
 --
 -- The examples below assume the edge values are 'Distance'.
