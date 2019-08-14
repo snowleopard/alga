@@ -47,7 +47,7 @@ dijkstra' :: (Ord a, Ord e, Dioid e) => e -> e -> AdjacencyMap e a -> a -> Map a
 dijkstra' z o wam src = maybe zm (snd . processG) jsm
   where
     am = adjacencyMap wam
-    zm = Map.map (const zero) im
+    zm = Map.map (const zero) am
     im = Map.insert src one zm
     is = Set.singleton (one, src)
     jsm = (is, im) <$ Map.lookup src zm
