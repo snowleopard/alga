@@ -1,21 +1,21 @@
-import Algebra.Graph.Test.Acyclic.AdjacencyMap
-import Algebra.Graph.Test.AdjacencyIntMap
-import Algebra.Graph.Test.AdjacencyMap
-import Algebra.Graph.Test.NonEmpty.AdjacencyMap
-import Algebra.Graph.Test.Export
-import Algebra.Graph.Test.Graph
-import Algebra.Graph.Test.Undirected
-import Algebra.Graph.Test.NonEmpty.Graph
-import Algebra.Graph.Test.Internal
-import Algebra.Graph.Test.Labelled.AdjacencyMap
-import Algebra.Graph.Test.Labelled.Graph
-import Algebra.Graph.Test.Relation
-import Algebra.Graph.Test.Relation.SymmetricRelation
-import Algebra.Graph.Test.Bipartite.AdjacencyMap
-import Data.Graph.Test.Typed
+import           Algebra.Graph.Test.Acyclic.AdjacencyMap
+import           Algebra.Graph.Test.AdjacencyIntMap
+import           Algebra.Graph.Test.AdjacencyMap
+import           Algebra.Graph.Test.Bipartite.AdjacencyMap
+import           Algebra.Graph.Test.Export
+import           Algebra.Graph.Test.Graph
+import           Algebra.Graph.Test.Internal
+import           Algebra.Graph.Test.Labelled.AdjacencyMap
+import           Algebra.Graph.Test.Labelled.Graph
+import           Algebra.Graph.Test.NonEmpty.AdjacencyMap
+import           Algebra.Graph.Test.NonEmpty.Graph
+import           Algebra.Graph.Test.Relation
+import           Algebra.Graph.Test.Relation.SymmetricRelation
+import           Algebra.Graph.Test.Undirected
+import           Data.Graph.Test.Typed
 
-import Control.Monad
-import System.Environment
+import           Control.Monad
+import           System.Environment
 
 -- | By default, all testsuites will be executed, which takes a few minutes. If
 -- you would like to execute only some specific testsuites, you can specify
@@ -34,7 +34,6 @@ main = do
     go "Bipartite.AdjacencyMap" testBipartiteAdjacencyMap
     go "Export"                 testExport
     go "Graph"                  testGraph
-    go "Undirected"             testUndirected
     go "Internal"               testInternal
     go "Labelled.AdjacencyMap"  testLabelledAdjacencyMap
     go "Labelled.Graph"         testLabelledGraph
@@ -43,3 +42,4 @@ main = do
     go "Relation"               testRelation
     go "Symmetric.Relation"     testSymmetricRelation
     go "Typed"                  testTyped
+    go "Undirected"             testUndirected

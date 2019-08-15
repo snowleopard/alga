@@ -293,7 +293,7 @@ graphAPI = API
     , compose                    = G.compose
     , box                        = G.box }
 
--- | The API of 'UG.Graph.
+-- | The API of 'UG.Graph'.
 undirectedGraphAPI :: API UG.Graph Ord
 undirectedGraphAPI = API
     { empty                      = UG.empty

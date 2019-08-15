@@ -1,4 +1,5 @@
-{-# LANGUAGE DeriveGeneric, RankNTypes #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RankNTypes    #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Undirected
@@ -49,11 +50,11 @@ module Algebra.Graph.Undirected (
 
     ) where
 
-import Control.Applicative (Alternative)
-import Control.DeepSeq
-import Control.Monad (MonadPlus (..))
-import Data.Coerce
-import GHC.Generics
+import           Control.Applicative              (Alternative)
+import           Control.DeepSeq
+import           Control.Monad                    (MonadPlus (..))
+import           Data.Coerce
+import           GHC.Generics
 
 import qualified Algebra.Graph                    as G
 
@@ -65,7 +66,7 @@ import qualified Data.Tree                        as Tree
 
 {-| The Undirected 'Graph' data type is an abstraction over the 'Graph' data
    type and provides the same graph construction
-primitives 'empty', 'vertex', 'overlay' and 'connect'. We define the same 'Num' 
+primitives 'empty', 'vertex', 'overlay' and 'connect'. We define the same 'Num'
 as 'Graph' instance as a convenient notation for working with graphs:
 
     > 0           == vertex 0
@@ -94,7 +95,7 @@ The 'Eq' instance is currently implemented using the 'AM.AdjacencyMap' as the
 
         >   x * empty == x
         >   empty * x == x
-        >   x * y     == y * x
+        >       x * y == y * x
         > x * (y * z) == (x * y) * z
 
     * 'connect' distributes over 'overlay':
@@ -207,7 +208,7 @@ eqR x y = toSymmetricRelation x == toSymmetricRelation y
 {-# RULES "eqR/Int" eqR = eqIntR #-}
 
 -- Like 'eqR' but specialised for graphs with vertices of type 'Int'.
--- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- TODO: This is currently not specialised to vertices of type 'Int'. But it's still
 -- here for when 'UndirectedAdjacencyIntMap' is implemented.
 eqIntR :: Graph Int -> Graph Int -> Bool
 eqIntR x y = toSymmetricRelation x == toSymmetricRelation y
@@ -221,7 +222,7 @@ ordR x y = compare (toSymmetricRelation x) (toSymmetricRelation y)
 {-# RULES "ordR/Int" ordR = ordIntR #-}
 
 -- Like 'ordR' but specialised for graphs with vertices of type 'Int'.
--- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- TODO: This is currently not specialised to vertices of type 'Int'. But it's still
 -- here for when 'UndirectedAdjacencyIntMap' is implemented.
 ordIntR :: Graph Int -> Graph Int -> Ordering
 ordIntR x y = compare (toSymmetricRelation x) (toSymmetricRelation y)
@@ -244,9 +245,9 @@ instance MonadPlus Graph where
     mzero = empty
     mplus = overlay
 
--- Help GHC with type inference (direct use of 'coerce' does not 
+-- Help GHC with type inference (direct use of 'coerce' does not
 -- compile).
-coerce0 :: G.Graph a -> Graph a 
+coerce0 :: G.Graph a -> Graph a
 coerce0 = coerce
 
 -- Help GHC with type inference (direct use of 'coerce' does not
@@ -259,12 +260,12 @@ coerce1 = coerce
 coerce2 :: (Coercible a b, Coercible c d) => (a -> c -> G.Graph e) -> (b -> d -> Graph e)
 coerce2 = coerce
 
--- Help GHC with type inference (direct use of 'coerce' does not 
+-- Help GHC with type inference (direct use of 'coerce' does not
 -- compile).
 coerce3 :: (Coercible b c) => (G.Graph a -> b) -> (Graph a -> c)
 coerce3 = coerce
 
--- Help GHC with type inference (direct use of 'coerce' does not 
+-- Help GHC with type inference (direct use of 'coerce' does not
 -- compile).
 coerce4 :: (Coercible b c) => (a -> G.Graph a -> b) -> (a -> Graph a -> c)
 coerce4 = coerce
@@ -283,7 +284,7 @@ empty :: Graph a
 empty = coerce0 G.empty
 {-# INLINE empty #-}
 
--- | Construct the graph comprising /a single isolated vertex/. 
+-- | Construct the graph comprising /a single isolated vertex/.
 -- Complexity: /O(1)/ time, memory and size.
 --
 -- @
@@ -329,7 +330,7 @@ edge = coerce2 G.edge
 -- 'edgeCount'   (overlay 1 2) == 0
 -- @
 overlay :: Graph a -> Graph a -> Graph a
-overlay = coerce2 G.overlay 
+overlay = coerce2 G.overlay
 {-# INLINE overlay #-}
 
 -- | /Connect/ two graphs. This is a commutative and
@@ -431,7 +432,7 @@ connects = coerce1 G.connects
 -- foldg False (== x)        (||)    (||)           == 'hasVertex' x
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
-foldg = (coerce :: (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> G.Graph a -> b) 
+foldg = (coerce :: (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> G.Graph a -> b)
                 -> (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b))
         G.foldg
 {-# INLINE foldg #-}
@@ -456,7 +457,7 @@ isSubgraphOf x y = SR.isSubgraphOf (toSymmetricRelation x) (toSymmetricRelation 
 {-# RULES "isSubgraphOf/Int" isSubgraphOf = isSubgraphOfIntR #-}
 
 -- Like 'isSubgraphOf' but specialised for graphs with vertices of type 'Int'.
--- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- TODO: This is currently not specialised to vertices of type 'Int'. But it's still
 -- here for when 'UndirectedAdjacencyIntMap' is implemented.
 isSubgraphOfIntR :: Graph Int -> Graph Int -> Bool
 isSubgraphOfIntR x y = SR.isSubgraphOf (toSymmetricRelation x) (toSymmetricRelation y)
@@ -519,7 +520,7 @@ hasVertex = coerce4 G.hasVertex
 -- hasEdge x y                  == 'elem' (min x y, max x y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t (UG g) = G.hasEdge s t g || G.hasEdge t s g 
+hasEdge s t (UG g) = G.hasEdge s t g || G.hasEdge t s g
 {-# INLINE hasEdge #-}
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
@@ -538,7 +539,7 @@ vertexCount = coerce3 G.vertexCount
 {-# RULES "vertexCount/Int" vertexCount = vertexIntCountR #-}
 
 -- Like 'vertexCount' but specialised for graphs with vertices of type 'Int'.
--- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- TODO: This is currently not specialised to vertices of type 'Int'. But it's still
 -- here for when 'UndirectedAdjacencyIntMap' is implemented.
 vertexIntCountR :: Graph Int -> Int
 vertexIntCountR = IntSet.size . vertexIntSetR
@@ -559,7 +560,7 @@ edgeCount = length . edgeList
 {-# RULES "edgeCount/Int" edgeCount = edgeCountIntR #-}
 
 -- Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
--- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- TODO: This is currently not specialised to vertices of type 'Int'. But it's still
 -- here for when 'UndirectedAdjacencyIntMap' is implemented.
 edgeCountIntR :: Graph Int -> Int
 edgeCountIntR = length . edgeList
@@ -599,7 +600,7 @@ edgeList = SR.edgeList . toSymmetricRelation
 {-# RULES "edgeList/Int" edgeList = edgeIntListR #-}
 
 -- Like 'edgeList' but specialised for graphs with vertices of type 'Int'.
--- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- TODO: This is currently not specialised to vertices of type 'Int'. But it's still
 -- here for when 'UndirectedAdjacencyIntMap' is implemented.
 edgeIntListR :: Graph Int -> [(Int, Int)]
 edgeIntListR = SR.edgeList . toSymmetricRelation
@@ -636,7 +637,7 @@ edgeSet = SR.edgeSet . toSymmetricRelation
 {-# RULES "edgeSet/Int" edgeSet = edgeIntSetR #-}
 
 -- Like 'edgeSet' but specialised for graphs with vertices of type 'Int'.
--- NOTE: This is not specialised to vertices of type 'Int'. But it's still
+-- TODO: This is currently not specialised to vertices of type 'Int'. But it's still
 -- here for when 'UndirectedAdjacencyIntMap' is implemented.
 edgeIntSetR :: Graph Int -> Set.Set (Int,Int)
 edgeIntSetR = SR.edgeSet . toSymmetricRelation
@@ -675,10 +676,10 @@ toSymmetricRelation = foldg SR.empty SR.vertex SR.overlay SR.connect
 -- path []        == 'empty'
 -- path [x]       == 'vertex' x
 -- path [x,y]     == 'edge' x y
--- path . 'reverse' == path 
+-- path . 'reverse' == path
 -- @
 path :: [a] -> Graph a
-path = coerce1 G.path 
+path = coerce1 G.path
 {-# INLINE path #-}
 
 -- | The /circuit/ on a list of vertices.
@@ -814,7 +815,7 @@ removeVertex = coerce4 G.removeVertex
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Eq a => a -> a -> Graph a -> Graph a
-removeEdge s t = coerce $ G.removeEdge s t . G.removeEdge t s 
+removeEdge s t = coerce $ G.removeEdge s t . G.removeEdge t s
 {-# INLINE removeEdge #-}
 {-# SPECIALISE removeEdge :: Int -> Int -> Graph Int ->
   Graph Int #-}
@@ -889,7 +890,7 @@ induceJust = coerce1 G.induceJust
 -- neighbours y ('edge' x y) == Set.'Set.fromList' [x]
 -- @
 neighbours :: Ord a => a -> Graph a -> Set.Set a
-neighbours x = SR.neighbours x . toSymmetricRelation 
+neighbours x = SR.neighbours x . toSymmetricRelation
 {-# INLINE neighbours #-}
 
 -- | Check that the internal representation of an undirected graph is
