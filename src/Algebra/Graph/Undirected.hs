@@ -159,7 +159,7 @@ Here are a few examples:
 'edge' 1 1 < 'edge' 1 2
 'edge' 1 2 < 'edge' 1 1 + 'edge' 2 2
 'edge' 1 2 < 'edge' 1 3
-'edge' 1 2 == 'edge' 2 1
+'edge' 1 2 == 'edge' 2 1@
 
 Note that the resulting order refines the 'isSubgraphOf' relation and is
 compatible with 'overlay' and 'connect' operations:
