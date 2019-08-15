@@ -158,7 +158,7 @@ bfs vs = bfsForestFrom vs >=> levels
 -- 'forest' (dfsForest $ 'circuit' [1..5] + 'circuit' [5,4..1]) == 'path' [1,2,3,4,5]
 -- @
 dfsForest :: Ord a => AdjacencyMap a -> Forest a
-dfsForest g = dfsForestFrom (vertexList g) g
+dfsForest g = dfsForestFrom' (vertexList g) g
 
 -- | Compute the /depth-first search/ forest of a graph from the given
 --   vertices, where adjacent vertices are expanded in increasing
