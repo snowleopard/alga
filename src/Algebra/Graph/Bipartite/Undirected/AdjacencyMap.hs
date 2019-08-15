@@ -44,7 +44,7 @@ module Algebra.Graph.Bipartite.Undirected.AdjacencyMap (
     circuit, biclique,
 
     -- * Graph transformations
-    boxWith, box,
+    box, boxWith,
 
     -- * Algorithms
     OddCycle, detectParts,
@@ -862,9 +862,7 @@ stars = overlays . map (uncurry star)
 mesh :: (Ord a, Ord b) => [a] -> [b] -> AdjacencyMap (a, b) (a, b)
 mesh xs ys = box (path (fromList xs)) (path (fromList ys))
 
--- | Compute the /Cartesian product/ of bipartite graphs. The vertices are
--- sorted into parts using given combinators. Values returned by combinators
--- are not necessarily distinct.
+-- | Compute the /Cartesian product/ of bipartite graphs.
 -- Complexity: /O(s1 * s2 * log(s1 * s2))/ time and /O(s1 * s2)/ memory, where
 -- /s1/ and /s2/ are the sizes of the given graphs.
 --
@@ -884,48 +882,49 @@ mesh xs ys = box (path (fromList xs)) (path (fromList ys))
 -- @
 -- box x y               ~~ box y x
 -- box x (box y z)       ~~ box (box x y) z
--- box x ('overlay' y z)   == 'overlay' (box x y) (box z)
+-- box x ('overlay' y z)   == 'overlay' (box x y) (box x z)
 -- box x ('vertex' ())     ~~ x
 -- box x 'empty'           ~~ 'empty'
--- 'vertexCount' (box x y) <= 'vertexCount' x * 'vertexCount' y
--- 'edgeCount'   (box x y) <= 'vertexCount' x * 'edgeCount' y + 'edgeCount' x * 'vertexCount' y
+-- 'vertexCount' (box x y) == 'vertexCount' x * 'vertexCount' y
+-- 'edgeCount'   (box x y) == 'vertexCount' x * 'edgeCount' y + 'edgeCount' x * 'vertexCount' y
 -- @
-boxWith :: forall a b c d e f. (Ord a, Ord b, Ord c, Ord d, Ord e, Ord f) =>
+box :: (Ord a, Ord b) =>
+       AdjacencyMap a a -> AdjacencyMap b b -> AdjacencyMap (a, b) (a, b)
+box = boxWith (,) (,) (,) (,)
+
+-- | Compute the /Cartesian product/ of bipartite graphs. The vertices are
+-- combined using given combinators.
+-- Complexity: /O(s1 * s2 * log(s1 * s2))/ time and /O(s1 * s2)/ memory, where
+-- /s1/ and /s2/ are the sizes of the given graphs.
+--
+-- See 'box' for more examples.
+--
+-- @
+-- box = boxWith (,) (,) (,) (,)
+-- @
+boxWith :: (Ord a, Ord b, Ord c, Ord d, Ord e, Ord f) =>
            (a -> c -> e) -> (b -> d -> e) -> (a -> d -> f) -> (b -> c -> f) ->
            AdjacencyMap a b -> AdjacencyMap c d -> AdjacencyMap e f
 boxWith ac bd ad bc g h = toBipartite gbox
     where
-        amg :: AM.AdjacencyMap (Either a b)
+        -- amg :: AM.AdjacencyMap (Either a b)
         amg = fromBipartite g
 
-        amh :: AM.AdjacencyMap (Either c d)
+        -- amh :: AM.AdjacencyMap (Either c d)
         amh = fromBipartite h
 
-        ambox :: AM.AdjacencyMap (Either a b, Either c d)
+        -- ambox :: AM.AdjacencyMap (Either a b, Either c d)
         ambox = AM.box amg amh
 
-        mapper :: (Either a b, Either c d) -> Either e f
+        -- mapper :: (Either a b, Either c d) -> Either e f
         mapper (Left  x, Left  y) = Left  (ac x y)
         mapper (Left  x, Right y) = Right (ad x y)
         mapper (Right x, Left  y) = Right (bc x y)
         mapper (Right x, Right y) = Left  (bd x y)
 
-        gbox :: AM.AdjacencyMap (Either e f)
+        -- gbox :: AM.AdjacencyMap (Either e f)
         gbox = AM.gmap mapper ambox
 
--- | Compute the /Cartesian product/ of bipartite graphs.
--- Complexity: /O(s1 * s2 * log(s1 * s2))/ time and /O(s1 * s2)/ memory, where
--- /s1/ and /s2/ are the sizes of the given graphs.
---
--- This is a shorthand for @boxWith (,) (,) (,) (,)@, see 'boxWith' for more
--- details and examples.
---
--- @
--- box = boxWith (,) (,) (,) (,)
--- @
-box :: (Ord a, Ord b) =>
-       AdjacencyMap a a -> AdjacencyMap b b -> AdjacencyMap (a, b) (a, b)
-box = boxWith (,) (,) (,) (,)
 
 data Part = LeftPart | RightPart deriving (Show, Eq)
 
