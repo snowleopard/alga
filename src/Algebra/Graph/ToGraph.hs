@@ -49,10 +49,10 @@ module Algebra.Graph.ToGraph (
     adjacencyMap, adjacencyIntMap, adjacencyMapTranspose, adjacencyIntMapTranspose
     ) where
 
-import Data.IntMap        (IntMap)
-import Data.IntSet        (IntSet)
-import Data.Map           (Map)
-import Data.Set           (Set)
+import Data.IntMap (IntMap)
+import Data.IntSet (IntSet)
+import Data.Map    (Map)
+import Data.Set    (Set)
 import Data.Tree
 
 import qualified Algebra.Graph                                as G

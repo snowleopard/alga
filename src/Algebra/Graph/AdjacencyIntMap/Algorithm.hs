@@ -163,7 +163,8 @@ dfsForest g = dfsForestFrom' (vertexList g) g
 --   vertices, where adjacent vertices are expanded in increasing
 --   order with respect to to their 'Ord' instance. Note that the
 --   resulting forest does not necessarily span the whole graph, as
---   some vertices may be unreachable.
+--   some vertices may be unreachable. Any of the given vertices which
+--   are not in the graph are ignored.
 -- 
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O((L+m)*min(n,W))/ time and /O(n)/ space.
@@ -247,9 +248,9 @@ reachable x = dfs [x]
 
 type Cycle = NonEmpty
 data NodeState = Entered | Exited
-data S = S { table :: IntMap.IntMap Int
-           , entry :: IntMap.IntMap NodeState
-           , order :: [Int] }
+data S = S { parent :: IntMap.IntMap Int
+           , entry  :: IntMap.IntMap NodeState
+           , order  :: [Int] }
 
 topSort' :: (MonadState S m, MonadCont m)
          => AdjacencyIntMap -> m (Either (Cycle Int) [Int])
@@ -263,7 +264,7 @@ topSort' g = callCC $ \cyclic ->
                    nodeState y >>= \case
                      Nothing      -> enter x y >> dfs y >> exit y
                      Just Exited  -> return ()
-                     Just Entered -> cyclic . Left . retrace x y =<< gets table
+                     Just Entered -> cyclic . Left . retrace x y =<< gets parent
      forM_ vertices dfsRoot
      Right <$> gets order
   where
@@ -276,11 +277,10 @@ topSort' g = callCC $ \cyclic ->
       where leave = \case
               Entered -> Exited
               Exited  -> error "Internal error: dfs search order violated"
-    retrace curr head table = aux (curr :| []) where
+    retrace curr head parent = aux (curr :| []) where
       aux xs@(curr :| _)
         | head == curr = xs
-        | otherwise = case table IntMap.! curr of
-            prev -> aux (prev <| xs)
+        | otherwise = aux (parent IntMap.! curr <| xs)
 
 -- | Compute a topological sort of a DAG or discover a cycle.
 --
