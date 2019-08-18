@@ -182,7 +182,7 @@ data Graph a = Empty
              | Vertex a
              | Overlay (Graph a) (Graph a)
              | Connect (Graph a) (Graph a)
-             deriving (Generic)
+             deriving (Show, Generic)
 
 {- Note [Functions for rewrite rules]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -212,13 +212,6 @@ But that would have to rely on appropriate inlining behaviour of (==) which is
 not under our control. We therefore choose the safe and more explicit path of
 creating our own intermediate functions for guiding rewrite rules when needed.
 -}
-
--- | 'show' is a good consumer.
-instance Show a => Show (Graph a) where
-    show = foldg "Empty" ((++) "Vertex " . show) (par "Overlay") (par "Connect")
-      where
-        par s a b = s ++ " (" ++ a ++ ") (" ++ b ++ ")"
-    {-# INLINE show #-}
 
 -- | 'fmap' is a good consumer and producer.
 instance Functor Graph where
