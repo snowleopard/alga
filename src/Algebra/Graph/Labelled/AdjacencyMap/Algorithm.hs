@@ -7,37 +7,62 @@ import Algebra.Graph.Labelled.AdjacencyMap
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
 
+-- TODO: Abstract documentation?
+
 -- TODO: Improve documentation for 'dijkstra'.
--- TODO: Add additional examples
+-- TODO: Make tests
 -- | A generic Dijkstra algorithm that relaxes the list of edges
--- based on the 'Dioid'.
+-- based on the 'Dioid'. 
 --
--- The heap (min vs max) is decided based on '<+>', 'zero' and 'one'.
+-- The heap (min vs max) for Dijkstra is decided based on '<+>' 
 --
--- We assume that the underlying semiring is selective i.e. the 
+-- We assume two things,
+--
+-- 1. The underlying semiring is selective i.e. the 
 -- operation '<+>' always selects one of its arguments.
 --
--- Choice of heap:
+-- 2. The underlying semiring has an optimisation criterion.
+-- 
+-- Assuming the above, the Heap type is chosen depending on '<+>':
+-- If '<+>' acts like a 'min' then we use a Min Heap else we use a 
+-- Max Heap.
+--
+-- The algorithm is best suited to work with the 'Optimum' data type.
+--
+-- If the edge type is 'Distance' 'Int':
 -- @
--- 'one' < 'zero':
---   'one' <+> 'zero' == 'one': Min heap
---   'one' <+> 'zero' == 'zero': Max heap
--- 'one' > 'zero':
---   'one' <+> 'zero' == 'one': Max heap
---   'one' <+> 'zero' == 'zero': Min heap
+-- '<+>'  == 'min'
+-- '<.>'  == '+'
+-- 'one'  == 0
+-- 'zero' == 'distance' 'infinity'
+-- @
+-- @
+-- dijkstra ('vertex' 'a') 'a' == 'Map.fromList' [('a', 'one')]
+-- dijkstra ('vertex' 'a') 'z' == 'Map.fromList' [('z', 'zero')]
+-- dijkstra ('edge' x 'a' 'b') 'a' == 'Map.fromList' [('a', 'one'), ('b', x)]
+-- dijkstra ('edge' x 'a' 'b') 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero')]
+-- dijkstra ('vertices' ['a', 'b']) 'a' == 'Map.fromList' [('a', 'one'), ('b', 'zero')]
+-- dijkstra ('vertices' ['a', 'b']) 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero')]
+-- dijkstra ('edges' [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'a' == 'Map.fromList' [('a', 'one'), ('b', 3), ('c', 4)]
+-- dijkstra ('edges' [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero'), ('c', 'zero')]
 -- @
 --
--- The examples below assume the edge values are 'Distance'.
---
+-- If the edge type is 'Capacity' 'Int':
 -- @
--- dijkstra ('edges' [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'z' == Map.'Map.fromList' [('a', distance infinite), ('b', distance infinite), ('c', distance infinite)]
--- dijkstra ('edges' [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'a' == Map.'Map.fromList' [('a', 0), ('b', 1), ('c', 3)]
+-- '<+>'  == 'max'
+-- '<.>'  == 'min'
+-- 'one'  == 'distance' 'infinity'
+-- 'zero' == 0
 -- @
---
--- The examples below assume the edge values are 'Capacity'
 -- @
--- dijkstra ('edges' [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'z' == Map.'Map.fromList' [('a', 0), ('b', 0), ('c', 0)]
--- dijkstra ('edges' [(2, 'b', 'c'), (1, 'a', 'b'), (4, 'a', 'c')]) 'a' == Map.'Map.fromList' [('a', capacity infinite), ('b', 1), ('c', 4)]
+-- dijkstra ('vertex' 'a') 'a' == 'Map.fromList' [('a', 'one')]
+-- dijkstra ('vertex' 'a') 'z' == 'Map.fromList' [('z', 'zero')]
+-- dijkstra ('edge' x 'a' 'b') 'a' == 'Map.fromList' [('a', 'one'), ('b', x)]
+-- dijkstra ('edge' x 'a' 'b') 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero')]
+-- dijkstra ('vertices' ['a', 'b']) 'a' == 'Map.fromList' [('a', 'one'), ('b', 'zero')]
+-- dijkstra ('vertices' ['a', 'b']) 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero')]
+-- dijkstra ('edges' [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'a' == 'Map.fromList' [('a', 'one'), ('b', 3), ('c', 5)]
+-- dijkstra ('edges' [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero'), ('c', 'zero')]
 -- @
 dijkstra :: (Ord a, Ord e, Dioid e) => AdjacencyMap e a -> a -> Map a e
 dijkstra = dijkstra' zero one
@@ -70,11 +95,57 @@ dijkstra' z o wam src = maybe zm (snd . processG) jsm
       in (Set.insert (n, v2) s, Map.insert v2 n m)
 
 -- TODO: Improve documentation for bellmanFord
--- TODO: Write tests and examples for bellmanFord
+-- TODO: Write tests for bellmanFord
 -- TODO: safely change 'vL' to 'tail vL' in processL
--- TODO: Change foldr to foldr'
-bellmanFord :: (Ord a, Dioid e) => a -> AdjacencyMap e a -> Map a e
-bellmanFord src wam = maybe zm processL jim
+-- | A generic Bellman-Ford algorithm that relaxes the list of edges
+-- based on the 'Dioid'. 
+--
+-- We assume two things,
+--
+-- 1. The underlying semiring is selective i.e. the 
+-- operation '<+>' always selects one of its arguments.
+--
+-- 2. The underlying semiring has an optimisation criterion.
+-- 
+-- The algorithm is best suited to work with the 'Optimum' data type.
+--
+-- If the edge type is 'Distance' 'Int':
+-- @
+-- '<+>'  == 'min'
+-- '<.>'  == '+'
+-- 'one'  == 0
+-- 'zero' == 'distance' 'infinity'
+-- @
+-- @
+-- bellmanFord ('vertex' 'a') 'a' == 'Map.fromList' [('a', 'one')]
+-- bellmanFord ('vertex' 'a') 'z' == 'Map.fromList' [('z', 'zero')]
+-- bellmanFord ('edge' x 'a' 'b') 'a' == 'Map.fromList' [('a', 'one'), ('b', x)]
+-- bellmanFord ('edge' x 'a' 'b') 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero')]
+-- bellmanFord ('vertices' ['a', 'b']) 'a' == 'Map.fromList' [('a', 'one'), ('b', 'zero')]
+-- bellmanFord ('vertices' ['a', 'b']) 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero')]
+-- bellmanFord ('edges' [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'a' == 'Map.fromList' [('a', 'one'), ('b', 3), ('c', 4)]
+-- bellmanFord ('edges' [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero'), ('c', 'zero')]
+-- @
+--
+-- If the edge type is 'Capacity' 'Int':
+-- @
+-- '<+>'  == 'max'
+-- '<.>'  == 'min'
+-- 'one'  == 'distance' 'infinity'
+-- 'zero' == 0
+-- @
+-- @
+-- bellmanFord ('vertex' 'a') 'a' == 'Map.fromList' [('a', 'one')]
+-- bellmanFord ('vertex' 'a') 'z' == 'Map.fromList' [('z', 'zero')]
+-- bellmanFord ('edge' x 'a' 'b') 'a' == 'Map.fromList' [('a', 'one'), ('b', x)]
+-- bellmanFord ('edge' x 'a' 'b') 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero')]
+-- bellmanFord ('vertices' ['a', 'b']) 'a' == 'Map.fromList' [('a', 'one'), ('b', 'zero')]
+-- bellmanFord ('vertices' ['a', 'b']) 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero')]
+-- bellmanFord ('edges' [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'a' == 'Map.fromList' [('a', 'one'), ('b', 3), ('c', 5)]
+-- bellmanFord ('edges' [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero'), ('c', 'zero')]
+-- @
+bellmanFord :: (Ord a, Dioid e) => AdjacencyMap e a -> a -> Map a e
+bellmanFord wam src = maybe zm processL jim
   where
     am = adjacencyMap wam
     zm = Map.map (const zero) am
@@ -92,6 +163,22 @@ bellmanFord src wam = maybe zm processL jim
 -- TODO: Improve documentation for floydWarshall
 -- TODO: Write tests and examples for floydWarshall
 -- TODO: Change foldr to foldr'
+-- A generic Floyd-Warshall algorithm that finds all pair optimum path
+-- based on the 'Dioid'.
+--
+-- We assume two things,
+--
+-- 1. The underlying semiring is selective i.e. the 
+-- operation '<+>' always selects one of its arguments.
+--
+-- 2. The underlying semiring has an optimisation criterion.
+-- 
+-- The algorithm is best suited to work with the 'Optimum' data type.
+--
+-- The algorithm returns a 2 dimentional 'Map' with the signature
+-- 'Map' a ('Map' a e). Assuming @g :: 'AdjacencyMap' ('Distance' 'Int') 'Int'),
+-- if @floydWarshall g == m@ then @m '!' x '!' y@ is the distance between @x@ and @y@. 
+-- @
 floydWarshall :: (Ord a, Dioid e) => AdjacencyMap e a -> Map a (Map a e)
 floydWarshall wam = relax0 im
   where
@@ -107,5 +194,19 @@ floydWarshall wam = relax0 im
       let n = (m ! i ! j) <+> ((m ! i ! k) <.> (m ! k ! j))
       in Map.adjust (Map.adjust (const n) j) i m
 
+-- REPL testing, will be removed later
+graph = edges [ (Optimum 7 (pure [(1, 2)]), 1, 2)
+              , (Optimum 9 (pure [(1, 3)]), 1, 3)
+              , (Optimum 14 (pure [(1, 6)]), 1, 6)
+              , (Optimum 2 (pure [(3, 6)]), 3, 6)
+              , (Optimum 10 (pure [(2, 3)]), 2, 3)
+              , (Optimum 9 (pure [(6, 5)]), 6, 5)
+              , (Optimum 6 (pure [(4, 5)]), 4, 5)
+              , (Optimum 15 (pure [(2, 4)]), 2, 4)
+              , (Optimum 11 (pure [(3, 4)]), 3, 4)
+              ] :: AdjacencyMap (ShortestPath Int Int) Int
+
+x = Optimum 7 (pure [(1, 2)]) <.> Optimum 9 (pure [(3, 4)]) :: ShortestPath Int Int
+y = Optimum 10 (pure [(1, 2)]) <+> Optimum 9 (pure [(3, 4)]) :: ShortestPath Int Int
 
 
