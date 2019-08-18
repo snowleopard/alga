@@ -17,10 +17,12 @@ topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
 
 -- TODO: Improve documentation for 'fold'
 -- TODO: Make 'fold' more efficient
--- TODO: Add tests for fold
--- | fold takes any function with the signature @e -> a -> a -> s -> s@.
+-- | A function which folds over Acyclic.Labelled.'AdjacencyMap'.
+-- @fold@ takes any function with the signature @e -> a -> a -> s -> s@.
 -- This function folds over an acyclic graph, modifying an original
--- input state. If one assumes the acyclic graph as a dependency
+-- input state.
+--
+-- If one assumes the acyclic graph as a dependency
 -- graph and the vertices as resources, then, the expected function
 -- for fold takes all the dependents of the resource, the resource
 -- and the input state in that order and pproduces an output state.
@@ -43,7 +45,7 @@ fold f s wam = snd . foldl' process (nm, s) . topSort $ wam
     process (m, s) v2 = (addP v2 m, f (m ! v2) v2 s)
 
 -- TODO: Add time complexity
--- | Compute the /shortest path/ to each vertex in the graph
+-- | Compute the /optimum path/ to each vertex in the graph
 -- from a given source vertex.
 --
 -- The following examples assume that the edges are distances,
