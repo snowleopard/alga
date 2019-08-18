@@ -45,8 +45,8 @@ annhilator f z a = conjoin
 
 star' :: Eq a => Plus a -> Mult a -> One a -> Star a -> a -> Property
 star' p m o s a = conjoin
-  [ s a == o `p` a `m` s a // "Star property"
-  , s a == o `p` s a `m` a // "Star property" ]
+  [ s a == o `p` (a `m` s a) // "Star property"
+  , s a == o `p` (s a `m` a) // "Star property" ]
 
 leftDistribute :: Eq a => Plus a -> Mult a -> a -> a -> a -> Property
 leftDistribute p m a b c = a `m` (b `p` c) == (a `m` b) `p` (a `m` c) // "Left distribute"
