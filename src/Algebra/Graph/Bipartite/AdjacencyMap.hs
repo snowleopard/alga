@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ExplicitForAll #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 ----------------------------------------------------------------------------
 -- |
@@ -25,19 +27,30 @@ module Algebra.Graph.Bipartite.AdjacencyMap (
     vertices, edges, overlays, connects, swap,
 
     -- * Conversion functions
-    toBipartite, fromBipartite, fromGraph,
+    toBipartite, toBipartiteWith, fromBipartite, fromGraph,
 
     -- * Graph properties
     isEmpty, hasEdge, hasLeftVertex, hasRightVertex, hasVertex, leftVertexCount,
     rightVertexCount, vertexCount, edgeCount, leftVertexList, rightVertexList,
     vertexList, edgeList, leftVertexSet, rightVertexSet, vertexSet, edgeSet,
 
+    -- * Standard families of graphs
+    circuit, biclique,
+
+    -- * Testing bipartiteness
+    OddCycle, detectParts,
+
     -- * Miscellaneous
     consistent,
     ) where
 
-import Data.Either (lefts, rights)
-import Data.List   (sort, (\\))
+import Control.Monad             (guard)
+import Control.Monad.Trans.Maybe (MaybeT(..))
+import Control.Monad.State       (State, runState, modify, get)
+import Data.Either               (lefts, rights)
+import Data.Foldable             (asum)
+import Data.List                 (sort, (\\))
+import Data.Maybe                (fromJust)
 import GHC.Generics
 
 import qualified Algebra.Graph              as G
@@ -413,6 +426,21 @@ toBipartite m = BAM (Map.fromAscList [ (u, setRights vs) | (Left  u, vs) <- symm
         setLefts      = Set.fromAscList . lefts  . Set.toAscList
         symmetricList = Map.toAscList $ AM.adjacencyMap $ AM.symmetricClosure m
 
+-- | Construct a bipartite 'AdjacencyMap' from "Algebra.Graph.AdjacencyMap"
+-- with part identifiers obtained from a given function, adding all neeeded
+-- edges to make the graph undirected and removing all edges inside one part.
+-- Complexity: /O(m log(n))/
+--
+-- @
+-- toBipartiteWith f Algebra.Graph.AdjacencyMap.'Algebra.Graph.AdjacencyMap.empty' == 'empty'
+-- toBipartiteWith Left  x  == 'empty'
+-- toBipartiteWith Right x  == 'empty'
+-- toBipartiteWith f        == 'toBiparitite' . Algebra.Graph.AdjacencyMap.'Algebra.Graph.AdjacencyMap.gmap' f
+-- toBipartiteWith id       == 'toBipartite'
+-- @
+toBipartiteWith :: (Ord a, Ord b, Ord c) => (a -> Either b c) -> AM.AdjacencyMap a -> AdjacencyMap b c
+toBipartiteWith f = toBipartite . AM.gmap f
+
 -- | Construct an 'Algrebra.Graph.AdjacencyMap' from a bipartite
 -- 'AdjacencyMap'.
 -- Complexity: /O(m log(n))/.
@@ -650,6 +678,139 @@ vertexSet = Set.fromAscList . vertexList
 edgeSet :: (Ord a, Ord b) => AdjacencyMap a b -> Set.Set (a, b)
 edgeSet = Set.fromAscList . edgeList
 
+-- | The /circuit/ on a list of vertices.
+-- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
+--
+-- @
+-- circuit []                       == 'empty'
+-- circuit [(x, y)]                 == 'edge' x y
+-- circuit [(x, y), (z, w)]         == 'biclique' [x, z] [y, w]
+-- circuit [(1, 2), (3, 4), (5, 6)] == swap 1 * (2 + 6) + swap 3 * (2 + 4) + swap 5 * (6 + 2)
+-- circuit . 'reverse'              == 'swap' . circuit . 'map' 'Data.Tuple.swap'
+-- @
+circuit :: (Ord a, Ord b) => [(a, b)] -> AdjacencyMap a b
+circuit [] = empty
+circuit xs = edges $ xs ++ zip (drop 1 $ cycle as) bs
+    where
+        (as, bs) = unzip xs
+
+-- | The /biclique/ on two lists of vertices.
+-- Complexity: /O(n * log(n) + m)/ time and /O(n + m)/ memory.
+--
+-- @
+-- biclique [] [] == 'empty'
+-- biclique xs [] == 'vertices' xs []
+-- biclique [] ys == 'vertices' [] ys
+-- biclique xs ys == 'connect' ('vertices' xs []) ('vertices' [] ys)
+-- @
+biclique :: (Ord a, Ord b) => [a] -> [b] -> AdjacencyMap a b
+biclique xs ys = let sxs = Set.fromList xs
+                     sys = Set.fromList ys
+                  in BAM (Map.fromSet (const sys) sxs)
+                         (Map.fromSet (const sxs) sys)
+
+data Part = LeftPart | RightPart
+    deriving (Show, Eq)
+
+otherPart :: Part -> Part
+otherPart LeftPart  = RightPart
+otherPart RightPart = LeftPart
+
+type PartMap a = Map.Map a Part
+type PartMonad a = MaybeT (State (PartMap a)) [a]
+
+-- | An odd cycle. For example, @[1, 2, 3]@ represents the cycle 1 → 2 → 3 → 1.
+type OddCycle a = [a] -- TODO: Make this representation type-safe
+
+neighbours :: Ord a => a -> AM.AdjacencyMap a -> [a]
+neighbours v = Set.toAscList . AM.postSet v
+
+-- | Test bipartiteness of given graph. In case of success, return an
+-- 'AdjacencyMap' with the same set of edges and each vertex marked with the
+-- part it belongs to. In case of failure, return any odd cycle in the graph.
+--
+-- The returned partition is lexicographicaly minimal. That is, consider the
+-- string of part identifiers for each vertex in ascending order. Then,
+-- considering that the identifier of the left part is less then the identifier
+-- of the right part, this string is lexicographically minimal of all such
+-- strings for all partitions.
+--
+-- The returned odd cycle is optimal in the following way: there exists a path
+-- that is either empty or ends in a vertex adjacent to the first vertex in the
+-- cycle, such that all vertices in @path ++ cycle@ are distinct and
+-- @path ++ cycle@ is lexicographically minimal among all such pairs of odd
+-- cycles and paths.
+--
+-- /Note/: as 'AdjacencyMap' only represents __undirected__ bipartite graphs,
+-- all edges in the input graph are assumed to be bidirected and all edges in
+-- the output 'AdjacencyMap' are bidirected.
+--
+-- It is advised to use 'leftVertexList' and 'rightVertexList' to obtain the
+-- partition of the vertices and 'hasLeftVertex' and 'hasRightVertex' to check
+-- whether a vertex belongs to a part.
+--
+-- Complexity: /O((n + m) log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- detectParts 'Algebra.Graph.AdjacencyMap.empty'                                       == Right 'empty'
+-- detectParts ('Algebra.Graph.AdjacencyMap.vertex' x)                                  == Right ('leftVertex' x)
+-- detectParts (1 * (2 + 3))                               == Right ('edges' [(1, 2), (1, 3)])
+-- detectParts ((1 + 3) * (2 + 4) + 6 * 5)                 == Right ('swap' (1 + 3) * (2 + 4) + 'swap' 5 * 6)
+-- detectParts ('Algebra.Graph.AdjacencyMap.edge' 1 1)                                  == Left [1]
+-- detectParts ('Algebra.Graph.AdjacencyMap.edge' 1 2)                                  == Right ('edge' 1 2)
+-- detectParts (1 * 2 * 3)                                 == Left [1, 2, 3]
+-- detectParts ((1 * 3 * 4) + 2 * (1 + 2))                 == Left [2]
+-- detectParts ('Algebra.Graph.AdjacencyMap.clique' [1..10])                            == Left [1, 2, 3]
+-- detectParts ('Algebra.Graph.AdjacencyMap.circuit' [1..11])                           == Left [1..11]
+-- detectParts ('Algebra.Graph.AdjacencyMap.circuit' [1..10])                           == Right ('circuit' [(2 * x - 1, 2 * x) | x <- [1..5]])
+-- detectParts ('Algebra.Graph.AdjacencyMap.biclique' [] xs)                            == Right (vertices xs [])
+-- detectParts ('Algebra.Graph.AdjacencyMap.biclique' (map Left (x:xs)) (map Right ys)) == Right ('biclique' (map Left (x:xs)) (map Right ys))
+-- 'Data.Either.isRight' (detectParts ('Algebra.Graph.AdjacencyMap.star' x ys))                       == not (elem x ys)
+-- 'Data.Either.isRight' (detectParts ('fromBipartite' ('toBipartite' x)))   == True
+-- @
+detectParts :: forall a. Ord a => AM.AdjacencyMap a -> Either (OddCycle a) (AdjacencyMap a a)
+detectParts x = case runState (runMaybeT $ dfs) Map.empty of
+                     (Nothing, m) -> Right $ toBipartiteWith (toEither m) g
+                     (Just c,  _) -> Left  $ oddCycle c
+    where
+        g :: AM.AdjacencyMap a
+        g = AM.symmetricClosure x
+
+        dfs :: PartMonad a
+        dfs = asum [ processVertex v | v <- AM.vertexList g ]
+
+        {-# INLINE onEdge #-}
+        onEdge :: Part -> a -> PartMonad a
+        onEdge p v = do m <- get
+                        case v `Map.lookup` m of
+                             Nothing -> inVertex p v
+                             Just q  -> do guard (p /= q)
+                                           return [v]
+
+        inVertex :: Part -> a -> PartMonad a
+        inVertex p v = ((:) v) <$> do modify (Map.insert v p)
+                                      let q = otherPart p
+                                      asum [ onEdge q u | u <- neighbours v g ]
+
+        processVertex :: a -> PartMonad a
+        processVertex v = do m <- get
+                             guard (v `Map.notMember` m)
+                             inVertex LeftPart v
+
+        toEither :: PartMap a -> a -> Either a a
+        toEither m v = case fromJust (v `Map.lookup` m) of
+                            LeftPart  -> Left  v
+                            RightPart -> Right v
+
+        oddCycle :: [a] -> [a]
+        oddCycle c = init $ dropUntil (last c) c
+
+        dropUntil :: a -> [a] -> [a]
+        dropUntil _ []        = []
+        dropUntil x ys@(y:yt) | y == x    = ys
+                              | otherwise = dropUntil x yt
+
+
 -- | Check that the internal graph representation is consistent, i.e. that all
 -- edges that are present in the 'leftAdjacencyMap' are present in the
 -- 'rightAdjacencyMap' map.
@@ -662,6 +823,8 @@ edgeSet = Set.fromAscList . edgeList
 -- consistent ('fromGraph' x)   == True
 -- consistent ('toBipartite' x) == True
 -- consistent ('swap' x)        == True
+-- consistent ('circuit' x)     == True
+-- consistent ('biclique' x y)  == True
 -- @
 consistent :: (Ord a, Ord b) => AdjacencyMap a b -> Bool
 consistent (BAM lr rl) = internalEdgeList lr == sort (map Data.Tuple.swap $ internalEdgeList rl)
