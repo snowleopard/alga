@@ -294,8 +294,8 @@ instance Num a => Num (Extended a) where
 -- | If @a@ is a monoid, 'Minimum' @a@ forms the following 'Dioid':
 --
 -- @
--- 'zero'  = 'pure' 'mempty'
--- 'one'   = 'noMinimum'
+-- 'zero'  = 'noMinimum'
+-- 'one'   = 'pure' 'mempty'
 -- ('<+>') = 'liftA2' 'min'
 -- ('<.>') = 'liftA2' 'mappend'
 -- @
@@ -323,13 +323,13 @@ instance Ord a => Semigroup (Minimum a) where
     (<>) = liftA2 min
 
 instance (Monoid a, Ord a) => Monoid (Minimum a) where
-    mempty = pure mempty
+    mempty = noMinimum
 #if !MIN_VERSION_base(4,11,0)
     mappend = (<>)
 #endif
 
 instance (Monoid a, Ord a) => Semiring (Minimum a) where
-    one = noMinimum
+    one = pure mempty
     (<.>) = liftA2 mappend
 
 instance (Monoid a, Ord a) => Dioid (Minimum a)

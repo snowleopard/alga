@@ -135,6 +135,7 @@ test-suite test-alga
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
                         Algebra.Graph.Test.Internal,
+                        Algebra.Graph.Test.Label,
                         Algebra.Graph.Test.Labelled.AdjacencyMap,
                         Algebra.Graph.Test.Labelled.Graph,
                         Algebra.Graph.Test.NonEmpty.AdjacencyMap,
