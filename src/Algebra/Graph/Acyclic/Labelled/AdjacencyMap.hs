@@ -26,7 +26,7 @@ module Algebra.Graph.Acyclic.Labelled.AdjacencyMap (
   edgeList, vertexSet, edgeSet,
 
   -- * Graph transformation
-  removeVertex, removeEdge, transpose, emap, induce, induceJust,
+  removeVertex, removeEdge, swapVertex, transpose, emap, induce, induceJust,
 
   -- * Relational operations
   transitiveClosure,
@@ -74,8 +74,6 @@ instance (Eq e, Dioid e, Ord a, Num a) => Num (AdjacencyMap e a) where
 -- TODO: Add additional/change examples.
 
 -- TODO: Make 'skeleton :: Ord a => AdjacencyMap e a -> AAM.AdjacencyMap a'
-
--- TODO: Add 'fromGraph'
 
 -- TODO: Add 'toAcyclic'
 
@@ -299,6 +297,18 @@ removeVertex x = coerce3 $ AM.removeVertex x
 -- @
 removeEdge :: Ord a => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
 removeEdge x y = coerce3 $ AM.removeEdge x y
+
+-- | The function @'swapVertex' x y@ swaps vertex @x@ and vertex @y@ in a
+-- given 'AdjacencyMap'. If one of @x@ or @y@ do not exist, this function
+-- acts like 'replaceVertex'. If both @x@ and @y@ do not exist, the same
+-- 'AdjacencyMap' is returned.
+-- Complexity: /O((n + m) * log(n))/ time.
+--
+-- @
+-- swapVertex x x == id
+-- @
+swapVertex :: (Eq e, Monoid e, Ord a) => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
+swapVertex u v = coerce3 $ AM.swapVertex u v
 
 -- | Transpose a given graph.
 -- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
