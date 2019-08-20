@@ -47,7 +47,7 @@ module Algebra.Graph (
     compose, box,
 
     -- * Context
-    Context (..), context,
+    Context (..), context
     ) where
 
 import Control.Applicative (Alternative)
