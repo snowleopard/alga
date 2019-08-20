@@ -59,7 +59,7 @@ distribute p m a b c = conjoin
   [ leftDistribute p m a b c
   , rightDistribute p m a b c ]
 
-identity :: Eq a => BinaryFn a -> a -> a -> Property
+identity :: Eq a => BinaryFn a -> Identity a -> a -> Property
 identity f e a = conjoin
   [ a `f` e == a // "Identity"
   , e `f` a == a // "Identity" ]
@@ -94,13 +94,13 @@ starSemiring p z m o s a b c = conjoin
   [ semiring p z m o a b c
   , star' p m o s a ]
 
-testSemiring :: Eq a => Semiring a => a -> a -> a -> Property
+testSemiring :: (Eq a, Semiring a) => a -> a -> a -> Property
 testSemiring = semiring (<+>) zero (<.>) one
 
-testDioid :: Eq a => Dioid a => a -> a -> a -> Property
+testDioid :: (Eq a, Dioid a) => a -> a -> a -> Property
 testDioid = dioid (<+>) zero (<.>) one
 
-testStarSemiring :: Eq a => StarSemiring a => a -> a -> a -> Property
+testStarSemiring :: (Eq a, StarSemiring a) => a -> a -> a -> Property
 testStarSemiring = starSemiring (<+>) zero (<.>) one star
 
 testLabel :: IO ()
