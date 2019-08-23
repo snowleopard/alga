@@ -7,10 +7,13 @@
 --
 -- Testsuite for "Algebra.Graph.Label".
 -----------------------------------------------------------------------------
+{-
 module Algebra.Graph.Test.Label (
   -- * Testsuite
   testLabel
   ) where
+-}
+module Algebra.Graph.Test.Label where
 
 import Algebra.Graph.Test hiding (NonNegative)
 import Algebra.Graph.Label
@@ -74,10 +77,24 @@ commutativeMonoid f e a b c = conjoin
   [ monoid f e a b c
   , commutative f a b ]
 
+leftNearRing :: Eq a => Plus a -> Zero a -> Mult a -> One a -> a -> a -> a -> Property
+leftNearRing p z m o a b c = conjoin
+  [ commutativeMonoid p z a b c
+  , monoid m o a b c
+  , leftDistribute p m a b c
+  , annhilator m z a ]
+
+rightNearRing :: Eq a => Plus a -> Zero a -> Mult a -> One a -> a -> a -> a -> Property
+rightNearRing p z m o a b c = conjoin
+  [ commutativeMonoid p z a b c
+  , monoid m o a b c
+  , rightDistribute p m a b c
+  , annhilator m z a ]
+
 semiring :: Eq a => Plus a -> Zero a -> Mult a -> One a -> a -> a -> a -> Property
 semiring p z m o a b c = conjoin
-  [ commutativeMonoid p z a b c // "Semiring plus commutative monoid"
-  , monoid m o a b c            // "Semiring mult monoid"
+  [ commutativeMonoid p z a b c
+  , monoid m o a b c
   , distribute p m a b c
   , annhilator m z a ]
 
@@ -90,6 +107,9 @@ starSemiring :: Eq a => Plus a -> Zero a -> Mult a -> One a -> Star a -> a -> a 
 starSemiring p z m o s a b c = conjoin
   [ semiring p z m o a b c
   , star' p m o s a ]
+
+testLeftNearRing :: (Eq a, Semiring a) => a -> a -> a -> Property
+testLeftNearRing = leftNearRing (<+>) zero (<.>) one
 
 testSemiring :: (Eq a, Semiring a) => a -> a -> a -> Property
 testSemiring = semiring (<+>) zero (<.>) one
@@ -121,5 +141,4 @@ testLabel = do
     test "Dioid"        $ \(a :: Capacity Int) b c -> testDioid a b c
 
     putStrLn "\n============ Minimum ============"
-    test "Semiring"     $ \(a :: Minimum String) b c -> testSemiring a b c
-    test "Dioid"        $ \(a :: Minimum String) b c -> testDioid a b c
+    test "LeftNearRing" $ \(a :: Minimum String) b c -> testLeftNearRing a b c
