@@ -237,6 +237,9 @@ instance (Arbitrary a, Num a, Ord a) => Arbitrary (Distance a) where
 instance (Arbitrary a, Num a, Ord a) => Arbitrary (Capacity a) where
     arbitrary = (\x -> if x < 0 then capacity infinite else capacity (unsafeFinite x)) <$> arbitrary
 
+instance Arbitrary a => Arbitrary (Minimum a) where
+  arbitrary = frequency [(10, pure <$> arbitrary), (1, pure noMinimum)]
+
 instance (Arbitrary a, Arbitrary b, Ord a, Ord b) => Arbitrary (BAM.AdjacencyMap a b) where
     arbitrary = BAM.toBipartite <$> arbitrary
     shrink = map BAM.toBipartite . shrink . BAM.fromBipartite

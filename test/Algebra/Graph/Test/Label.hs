@@ -122,3 +122,7 @@ testLabel = do
     test "Semiring"     $ \(a :: Capacity Int) b c -> testSemiring a b c
     test "StarSemiring" $ \(a :: Capacity Int) b c -> testStarSemiring a b c
     test "Dioid"        $ \(a :: Capacity Int) b c -> testDioid a b c
+
+    putStrLn "\n============ Minimum ============"
+    test "Semiring"     $ \(a :: Minimum String) b c -> testSemiring a b c
+    test "Dioid"        $ \(a :: Minimum String) b c -> testDioid a b c
