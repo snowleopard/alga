@@ -76,8 +76,8 @@ commutativeMonoid f e a b c = conjoin
 
 semiring :: Eq a => Plus a -> Zero a -> Mult a -> One a -> a -> a -> a -> Property
 semiring p z m o a b c = conjoin
-  [ commutativeMonoid p z a b c
-  , monoid m o a b c
+  [ commutativeMonoid p z a b c // "Semiring plus commutative monoid"
+  , monoid m o a b c            // "Semiring mult monoid"
   , distribute p m a b c
   , annhilator m z a ]
 

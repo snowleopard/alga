@@ -320,7 +320,7 @@ noMinimum :: Minimum a
 noMinimum = Minimum Infinite
 
 instance Ord a => Semigroup (Minimum a) where
-    (<>) = liftA2 min
+    (<>) = min
 
 instance (Monoid a, Ord a) => Monoid (Minimum a) where
     mempty = noMinimum
