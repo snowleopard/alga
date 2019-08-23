@@ -22,7 +22,7 @@ import Test.QuickCheck
 
 import Algebra.Graph
 import Algebra.Graph.Export
-import Algebra.Graph.Label
+import Algebra.Graph.Label as Label
 
 import qualified Algebra.Graph.Acyclic.AdjacencyMap   as AAM
 import qualified Algebra.Graph.AdjacencyIntMap        as AIM
@@ -233,6 +233,9 @@ instance Arbitrary s => Arbitrary (Doc s) where
 
 instance (Arbitrary a, Num a, Ord a) => Arbitrary (Distance a) where
     arbitrary = (\x -> if x < 0 then distance infinite else distance (unsafeFinite x)) <$> arbitrary
+
+instance (Arbitrary a, Num a, Ord a) => Arbitrary (Capacity a) where
+    arbitrary = (\x -> if x < 0 then capacity infinite else capacity (unsafeFinite x)) <$> arbitrary
 
 instance (Arbitrary a, Arbitrary b, Ord a, Ord b) => Arbitrary (BAM.AdjacencyMap a b) where
     arbitrary = BAM.toBipartite <$> arbitrary

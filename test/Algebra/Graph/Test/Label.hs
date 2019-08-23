@@ -15,7 +15,7 @@ module Algebra.Graph.Test.Label where
     ) where
 -}
 
-import Algebra.Graph.Test
+import Algebra.Graph.Test hiding (NonNegative)
 import Algebra.Graph.Label
 import Data.Monoid
 
@@ -103,6 +103,9 @@ testDioid = dioid (<+>) zero (<.>) one
 testStarSemiring :: (Eq a, StarSemiring a) => a -> a -> a -> Property
 testStarSemiring = starSemiring (<+>) zero (<.>) one star
 
+on3 :: (b -> a) -> (a -> a -> a -> c) -> b -> b -> b -> c
+on3 g f a b c = f (g a) (g b) (g c)
+
 testLabel :: IO ()
 testLabel = do
     putStrLn "\n============ Any ============"
@@ -110,5 +113,12 @@ testLabel = do
     test "StarSemiring" $ \(a :: Any) b c -> testStarSemiring a b c
     test "Dioid"        $ \(a :: Any) b c -> testDioid a b c
 
+    putStrLn "\n============ Distance ============"
+    test "Semiring"     $ \(a :: Distance Int) b c -> testSemiring a b c
+    test "StarSemiring" $ \(a :: Distance Int) b c -> testStarSemiring a b c
+    test "Dioid"        $ \(a :: Distance Int) b c -> testDioid a b c
 
-
+    putStrLn "\n============ Capacity ============"
+    test "Semiring"     $ \(a :: Capacity Int) b c -> testSemiring a b c
+    test "StarSemiring" $ \(a :: Capacity Int) b c -> testStarSemiring a b c
+    test "Dioid"        $ \(a :: Capacity Int) b c -> testDioid a b c
