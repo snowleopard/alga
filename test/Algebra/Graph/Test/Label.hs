@@ -7,13 +7,10 @@
 --
 -- Testsuite for "Algebra.Graph.Label".
 -----------------------------------------------------------------------------
-module Algebra.Graph.Test.Label where
-{-
-  (
-    -- * Testsuite
-    testLabel
-    ) where
--}
+module Algebra.Graph.Test.Label (
+  -- * Testsuite
+  testLabel
+  ) where
 
 import Algebra.Graph.Test hiding (NonNegative)
 import Algebra.Graph.Label
@@ -40,13 +37,13 @@ idempotance f a = a `f` a == a // "Idempotence property"
 
 annhilator :: Eq a => BinaryFn a -> Annhilator a -> a -> Property
 annhilator f z a = conjoin
-  [ a `f` z == z // "Annhilator property"
-  , z `f` a == z // "Annhilator property" ]
+  [ a `f` z == z // "Annhilator property 1"
+  , z `f` a == z // "Annhilator property 2" ]
 
 star' :: Eq a => Plus a -> Mult a -> One a -> Star a -> a -> Property
 star' p m o s a = conjoin
-  [ s a == o `p` (a `m` s a) // "Star property"
-  , s a == o `p` (s a `m` a) // "Star property" ]
+  [ s a == o `p` (a `m` s a) // "Star property 1"
+  , s a == o `p` (s a `m` a) // "Star property 2" ]
 
 leftDistribute :: Eq a => Plus a -> Mult a -> a -> a -> a -> Property
 leftDistribute p m a b c = a `m` (b `p` c) == (a `m` b) `p` (a `m` c) // "Left distribute"
@@ -61,8 +58,8 @@ distribute p m a b c = conjoin
 
 identity :: Eq a => BinaryFn a -> Identity a -> a -> Property
 identity f e a = conjoin
-  [ a `f` e == a // "Identity"
-  , e `f` a == a // "Identity" ]
+  [ a `f` e == a // "Identity property 1"
+  , e `f` a == a // "Identity property 2" ]
 
 semigroup :: Eq a => BinaryFn a -> a -> a -> a -> Property
 semigroup = associative
