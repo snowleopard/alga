@@ -141,4 +141,4 @@ testLabel = do
     test "Dioid"        $ \(a :: Capacity Int) b c -> testDioid a b c
 
     putStrLn "\n============ Minimum ============"
-    test "LeftNearRing" $ \(a :: Minimum String) b c -> testLeftNearRing a b c
+    test "LeftNearRing" $ \(a :: Minimum (Path Int)) b c -> testLeftNearRing a b c
