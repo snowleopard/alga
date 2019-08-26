@@ -133,7 +133,7 @@ instance (Num a, Ord a) => Num (NonNegative a) where
         f = fromInteger x
 
     (+) = liftA2 (+)
-    (*) = liftA2 (*)
+    (*) x y = if x == 0 || y == 0 then 0 else liftA2 (*) x y
 
     negate _ = error "NonNegative values cannot be negated"
 
