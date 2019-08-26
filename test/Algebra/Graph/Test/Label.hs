@@ -152,4 +152,3 @@ testLabel = do
     putStrLn "\n============ Count ============"
     test "Semiring"     $ \(a :: Count Int) b c -> testSemiring a b c
     test "StarSemiring" $ \(a :: Count Int) b c -> testStarSemiring a b c
-    test "Dioid"        $ \(a :: Count Int) b c -> testDioid a b c
