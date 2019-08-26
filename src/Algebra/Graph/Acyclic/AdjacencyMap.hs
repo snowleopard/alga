@@ -58,7 +58,6 @@ import Data.Coerce (coerce)
 import qualified Algebra.Graph.AdjacencyMap           as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap  as NAM
-import qualified Data.Graph.Typed                     as Typed
 import qualified Data.Map                             as Map
 import qualified Data.Set                             as Set
 
@@ -479,12 +478,14 @@ transitiveClosure = coerce AM.transitiveClosure
 -- @
 -- topSort 'empty'                 == []
 -- topSort ('vertex' x)            == [x]
--- topSort (1 * (2 + 4) + 3 * 4) == [3, 1, 4, 2]
+-- topSort (1 * (2 + 4) + 3 * 4) == [1, 2, 3, 4]
 -- topSort ('join' x y)            == 'fmap' 'Left' (topSort x) ++ 'fmap' 'Right' (topSort y)
--- topSort                       == 'Data.Maybe.fromJust' . topSort . 'fromAcyclic'
+-- 'Right' . topSort               == 'AM.topSort' . 'fromAcyclic'
 -- @
-topSort :: (Ord a) => AdjacencyMap a -> [a]
-topSort (AAM am) = Typed.topSort (Typed.fromAdjacencyMap am)
+topSort :: Ord a => AdjacencyMap a -> [a]
+topSort g = case AM.topSort (coerce g) of
+  Right vs -> vs
+  Left _ -> error "Internal error: the acyclicity invariant is violated in topSort"
 
 -- | Compute the acyclic /condensation/ of a graph, where each vertex
 -- corresponds to a /strongly-connected component/ of the original graph. Note

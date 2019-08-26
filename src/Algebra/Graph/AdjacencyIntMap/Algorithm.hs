@@ -25,17 +25,21 @@ module Algebra.Graph.AdjacencyIntMap.Algorithm (
     topSort, isAcyclic,
     
     -- * Correctness properties
-    isDfsForestOf, isTopSortOf
+    isDfsForestOf, isTopSortOf,
+
+    -- * Type synonyms
+    Cycle
     ) where
 
 import Control.Monad
+import Control.Monad.Cont
 import Control.Monad.State.Strict
-import Data.Maybe
+import Data.Either
+import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Tree
 
 import Algebra.Graph.AdjacencyIntMap
 
-import qualified Data.Graph.Typed   as Typed
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.IntSet        as IntSet
 
@@ -128,8 +132,11 @@ bfsForestFrom' vs g = evalState (explore vs) IntSet.empty where
 bfs :: [Int] -> AdjacencyIntMap -> [[Int]]
 bfs vs = bfsForestFrom vs >=> levels
 
--- | Compute the /depth-first search/ forest of a graph that corresponds to
--- searching from each of the graph vertices in the 'Ord' @a@ order.
+-- | Compute the /depth-first search/ forest of a graph, where
+--   adjacent vertices are expanded in increasing order with respect
+--   to their 'Ord' instance.
+--
+--   Complexity: /O((n+m)*min(n,W))/ time and /O(n)/ space.
 --
 -- @
 -- dfsForest 'empty'                       == []
@@ -150,11 +157,17 @@ bfs vs = bfsForestFrom vs >=> levels
 -- 'forest' (dfsForest $ 'circuit' [1..5] + 'circuit' [5,4..1]) == 'path' [1,2,3,4,5]
 -- @
 dfsForest :: AdjacencyIntMap -> Forest Int
-dfsForest = Typed.dfsForest . Typed.fromAdjacencyIntMap
+dfsForest g = dfsForestFrom' (vertexList g) g
 
--- | Compute the /depth-first search/ forest of a graph, searching from each of
--- the given vertices in order. Note that the resulting forest does not
--- necessarily span the whole graph, as some vertices may be unreachable.
+-- | Compute the /depth-first search/ forest of a graph from the given
+--   vertices, where adjacent vertices are expanded in increasing
+--   order with respect to to their 'Ord' instance. Note that the
+--   resulting forest does not necessarily span the whole graph, as
+--   some vertices may be unreachable. Any of the given vertices which
+--   are not in the graph are ignored.
+-- 
+--   Let /L/ be the number of seed vertices. Complexity:
+--   /O((L+m)*min(n,W))/ time and /O(n)/ space.
 --
 -- @
 -- dfsForestFrom vs 'empty'                           == []
@@ -176,10 +189,26 @@ dfsForest = Typed.dfsForest . Typed.fromAdjacencyIntMap
 -- 'forest' (dfsForestFrom [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == 'path' [3,2,1,5,4]
 -- @
 dfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
-dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyIntMap
+dfsForestFrom vs g = dfsForestFrom' [ v | v <- vs, hasVertex v g ] g
 
--- | Compute the list of vertices visited by the /depth-first search/ in a graph,
--- when searching from each of the given vertices in order.
+dfsForestFrom' :: [Int] -> AdjacencyIntMap -> Forest Int
+dfsForestFrom' vs g = evalState (explore vs) IntSet.empty where
+  explore (v:vs) = discovered v >>= \case
+    True -> (:) <$> walk v <*> explore vs
+    False -> explore vs
+  explore [] = return []
+  walk v = Node v <$> explore (adjacent v)
+  adjacent v = IntSet.toList (postIntSet v g)
+  discovered v = do new <- gets (not . IntSet.member v)
+                    when new $ modify' (IntSet.insert v)
+                    return new
+
+-- | Compute the vertices visited by /depth-first search/ in a graph
+--   from the given vertices. Adjacent vertices are explored in
+--   increasing order with respect to their 'Ord' instance.
+-- 
+--   Let /L/ be the number of seed vertices. Complexity:
+--   /O((L+m)*min(n,W))/ time and /O(n)/ space.
 --
 -- @
 -- dfs vs    $ 'empty'                    == []
@@ -195,12 +224,14 @@ dfsForestFrom vs = Typed.dfsForestFrom vs . Typed.fromAdjacencyIntMap
 -- dfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1] == [3,2,1,5,4]
 -- @
 dfs :: [Int] -> AdjacencyIntMap -> [Int]
-dfs vs = concatMap flatten . dfsForestFrom vs
+dfs vs = dfsForestFrom vs >=> flatten
 
--- | Compute the list of vertices that are /reachable/ from a given source
--- vertex in a graph. The vertices in the resulting list appear in
--- /breadth-first order/. 
+-- | Compute the list of vertices that are /reachable/ from a given
+--   source vertex in a graph. The vertices in the resulting list
+--   appear in /depth-first order/.
 --
+--   Complexity: /O(m*min(n,W))/ time and /O(n)/ space.
+-- 
 -- @
 -- reachable x $ 'empty'                       == []
 -- reachable 1 $ 'vertex' 1                    == [1]
@@ -213,32 +244,85 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- 'isSubgraphOf' ('vertices' $ reachable x y) y == True
 -- @
 reachable :: Int -> AdjacencyIntMap -> [Int]
-reachable x = concat . bfs [x]
+reachable x = dfs [x]
 
--- | Compute the /topological sort/ of a graph or return @Nothing@ if the graph
--- is cyclic.
+type Cycle = NonEmpty
+data NodeState = Entered | Exited
+data S = S { parent :: IntMap.IntMap Int
+           , entry  :: IntMap.IntMap NodeState
+           , order  :: [Int] }
+
+topSort' :: (MonadState S m, MonadCont m)
+         => AdjacencyIntMap -> m (Either (Cycle Int) [Int])
+topSort' g = callCC $ \cyclic ->
+  do let vertices = map fst $ IntMap.toDescList $ adjacencyIntMap g
+         adjacent = IntSet.toDescList . flip postIntSet g
+         dfsRoot x = nodeState x >>= \case
+           Nothing -> enterRoot x >> dfs x >> exit x
+           _       -> return ()
+         dfs x = forM_ (adjacent x) $ \y ->
+                   nodeState y >>= \case
+                     Nothing      -> enter x y >> dfs y >> exit y
+                     Just Exited  -> return ()
+                     Just Entered -> cyclic . Left . retrace x y =<< gets parent
+     forM_ vertices dfsRoot
+     Right <$> gets order
+  where
+    nodeState v = gets (IntMap.lookup v . entry)
+    enter u v = modify' (\(S m n vs) -> S (IntMap.insert v u m)
+                                          (IntMap.insert v Entered n)
+                                          vs)
+    enterRoot v = modify' (\(S m n vs) -> S m (IntMap.insert v Entered n) vs)
+    exit v = modify' (\(S m n vs) -> S m (IntMap.alter (fmap leave) v n) (v:vs))
+      where leave = \case
+              Entered -> Exited
+              Exited  -> error "Internal error: dfs search order violated"
+    retrace curr head parent = aux (curr :| []) where
+      aux xs@(curr :| _)
+        | head == curr = xs
+        | otherwise = aux (parent IntMap.! curr <| xs)
+
+-- | Compute a topological sort of a DAG or discover a cycle.
+--
+--   Vertices are expanded in decreasing order with respect to their
+--   'Ord' instance. This gives the lexicographically smallest
+--   topological ordering in the case of success. In the case of
+--   failure, the cycle is characterized by being the
+--   lexicographically smallest up to rotation with respect to @Ord
+--   (Dual Int)@ in the first connected component of the graph
+--   containing a cycle, where the connected components are ordered by
+--   their largest vertex with respect to @Ord a@.
+--
+--   Complexity: /O((n+m)*min(n,W))/ time and /O(n)/ space.
 --
 -- @
--- topSort (1 * 2 + 3 * 1)               == Just [3,1,2]
--- topSort (1 * 2 + 2 * 1)               == Nothing
--- fmap ('flip' 'isTopSortOf' x) (topSort x) /= Just False
--- 'isJust' . topSort                      == 'isAcyclic'
+-- topSort (1 * 2 + 3 * 1)                    == Right [3,1,2]
+-- topSort ('path' [1..5])                      == Right [1..5]
+-- topSort (3 * (1 * 4 + 2 * 5))              == Right [3,1,2,4,5]
+-- topSort (1 * 2 + 2 * 1)                    == Left (2 ':|' [1])
+-- topSort ('path' [5,4..1] + 'edge' 2 4)         == Left (4 ':|' [3,2])
+-- topSort ('circuit' [1..3])                   == Left (3 ':|' [1,2])
+-- topSort ('circuit' [1..3] + 'circuit' [3,2,1]) == Left (3 ':|' [2])
+-- topSort (1*2 + 2*1 + 3*4 + 4*3 + 5*1)      == Left (1 ':|' [2])
+-- fmap ('flip' 'isTopSortOf' x) (topSort x)      /= Right False
+-- topSort . 'vertices'                         == Right . 'nub' . 'sort'
 -- @
-topSort :: AdjacencyIntMap -> Maybe [Int]
-topSort m = if isTopSortOf result m then Just result else Nothing
-  where
-    result = Typed.topSort (Typed.fromAdjacencyIntMap m)
+topSort :: AdjacencyIntMap -> Either (Cycle Int) [Int]
+topSort g = runContT (evalStateT (topSort' g) initialState) id where
+  initialState = S IntMap.empty IntMap.empty []
 
 -- | Check if a given graph is /acyclic/.
+--
+--   Complexity: /O((n+m)*min(n,W))/ time and /O(n)/ space.
 --
 -- @
 -- isAcyclic (1 * 2 + 3 * 1) == True
 -- isAcyclic (1 * 2 + 2 * 1) == False
 -- isAcyclic . 'circuit'       == 'null'
--- isAcyclic                 == 'isJust' . 'topSort'
+-- isAcyclic                 == 'isRight' . 'topSort'
 -- @
 isAcyclic :: AdjacencyIntMap -> Bool
-isAcyclic = isJust . topSort
+isAcyclic = isRight . topSort
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
