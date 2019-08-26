@@ -142,3 +142,14 @@ testLabel = do
 
     putStrLn "\n============ Minimum ============"
     test "LeftNearRing" $ \(a :: Minimum (Path Int)) b c -> testLeftNearRing a b c
+
+    putStrLn "\n============ PowerSet ============"
+    test "LeftNearRing" $ \(a :: PowerSet (Path Int)) b c -> testLeftNearRing a b c
+    test "Semiring"     $ \(a :: PowerSet (Path Int)) b c -> testSemiring a b c
+    test "StarSemiring" $ \(a :: PowerSet (Path Int)) b c -> testStarSemiring a b c
+    test "Dioid"        $ \(a :: PowerSet (Path Int)) b c -> testDioid a b c
+
+    putStrLn "\n============ Count ============"
+    test "Semiring"     $ \(a :: Count Int) b c -> testSemiring a b c
+    test "StarSemiring" $ \(a :: Count Int) b c -> testStarSemiring a b c
+    test "Dioid"        $ \(a :: Count Int) b c -> testDioid a b c
