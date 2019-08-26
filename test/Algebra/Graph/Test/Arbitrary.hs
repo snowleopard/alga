@@ -22,7 +22,7 @@ import Test.QuickCheck
 
 import Algebra.Graph
 import Algebra.Graph.Export
-import Algebra.Graph.Label as Label
+import Algebra.Graph.Label
 
 import qualified Algebra.Graph.Acyclic.AdjacencyMap   as AAM
 import qualified Algebra.Graph.AdjacencyIntMap        as AIM
@@ -237,14 +237,14 @@ instance (Arbitrary a, Num a, Ord a) => Arbitrary (Distance a) where
 instance (Arbitrary a, Num a, Ord a) => Arbitrary (Capacity a) where
     arbitrary = (\x -> if x < 0 then capacity infinite else capacity (unsafeFinite x)) <$> arbitrary
 
-instance Arbitrary a => Arbitrary (Minimum a) where
-  arbitrary = frequency [(10, pure <$> arbitrary), (1, pure noMinimum)]
+instance (Arbitrary a, Num a, Ord a) => Arbitrary (Count a) where
+    arbitrary = (\x -> if x < 0 then count infinite else count (unsafeFinite x)) <$> arbitrary
 
-instance (Arbitrary a, Num a) => Arbitrary (Count a) where
-  arbitrary = count . unsafeFinite . abs <$> arbitrary
+instance Arbitrary a => Arbitrary (Minimum a) where
+    arbitrary = frequency [(10, pure <$> arbitrary), (1, pure noMinimum)]
 
 instance (Arbitrary a, Ord a) => Arbitrary (PowerSet a) where
-  arbitrary = PowerSet <$> arbitrary
+    arbitrary = PowerSet <$> arbitrary
 
 instance (Arbitrary a, Arbitrary b, Ord a, Ord b) => Arbitrary (BAM.AdjacencyMap a b) where
     arbitrary = BAM.toBipartite <$> arbitrary

@@ -40,13 +40,13 @@ idempotance f a = a `f` a == a // "Idempotence property"
 
 annhilator :: Eq a => BinaryFn a -> Annhilator a -> a -> Property
 annhilator f z a = conjoin
-  [ a `f` z == z // "Annhilator property 1"
-  , z `f` a == z // "Annhilator property 2" ]
+  [ a `f` z == z // "Annhilator property right"
+  , z `f` a == z // "Annhilator property left" ]
 
 star' :: Eq a => Plus a -> Mult a -> One a -> Star a -> a -> Property
 star' p m o s a = conjoin
-  [ s a == o `p` (a `m` s a) // "Star property 1"
-  , s a == o `p` (s a `m` a) // "Star property 2" ]
+  [ s a == o `p` (a `m` s a) // "Star property right"
+  , s a == o `p` (s a `m` a) // "Star property left" ]
 
 leftDistribute :: Eq a => Plus a -> Mult a -> a -> a -> a -> Property
 leftDistribute p m a b c = a `m` (b `p` c) == (a `m` b) `p` (a `m` c) // "Left distribute"
@@ -61,8 +61,8 @@ distribute p m a b c = conjoin
 
 identity :: Eq a => BinaryFn a -> Identity a -> a -> Property
 identity f e a = conjoin
-  [ a `f` e == a // "Identity property 1"
-  , e `f` a == a // "Identity property 2" ]
+  [ a `f` e == a // "Identity property right"
+  , e `f` a == a // "Identity property left" ]
 
 semigroup :: Eq a => BinaryFn a -> a -> a -> a -> Property
 semigroup = associative
@@ -79,22 +79,22 @@ commutativeMonoid f e a b c = conjoin
 
 leftNearRing :: Eq a => Plus a -> Zero a -> Mult a -> One a -> a -> a -> a -> Property
 leftNearRing p z m o a b c = conjoin
-  [ commutativeMonoid p z a b c
-  , monoid m o a b c
+  [ commutativeMonoid p z a b c // "Commutative monoid"
+  , monoid m o a b c            // "Monoid"
   , leftDistribute p m a b c
   , annhilator m z a ]
 
 rightNearRing :: Eq a => Plus a -> Zero a -> Mult a -> One a -> a -> a -> a -> Property
 rightNearRing p z m o a b c = conjoin
-  [ commutativeMonoid p z a b c
-  , monoid m o a b c
+  [ commutativeMonoid p z a b c // "Commutative monoid"
+  , monoid m o a b c            // "Monoid"
   , rightDistribute p m a b c
   , annhilator m z a ]
 
 semiring :: Eq a => Plus a -> Zero a -> Mult a -> One a -> a -> a -> a -> Property
 semiring p z m o a b c = conjoin
-  [ commutativeMonoid p z a b c
-  , monoid m o a b c
+  [ commutativeMonoid p z a b c // "Commutative monoid"
+  , monoid m o a b c            // "Monoid"
   , distribute p m a b c
   , annhilator m z a ]
 

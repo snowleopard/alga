@@ -361,9 +361,6 @@ instance (Monoid a, Ord a) => Semiring (PowerSet a) where
     one                       = PowerSet (Set.singleton mempty)
     PowerSet x <.> PowerSet y = PowerSet (setProductWith mappend x y)
 
-instance (Monoid a, Ord a) => StarSemiring (PowerSet a) where
-    star _ = one
-
 instance (Monoid a, Ord a) => Dioid (PowerSet a) where
 
 -- | The type of /free labels/ over the underlying set of symbols @a@. This data
