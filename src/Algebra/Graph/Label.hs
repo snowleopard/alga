@@ -281,11 +281,11 @@ fromExtended :: Extended a -> Maybe a
 fromExtended (Finite a) = Just a
 fromExtended Infinite   = Nothing
 
-instance Num a => Num (Extended a) where
+instance (Num a, Eq a) => Num (Extended a) where
     fromInteger = Finite . fromInteger
 
     (+) = liftA2 (+)
-    (*) = liftA2 (*)
+    (*) x y = if x == 0 || y == 0 then 0 else liftA2 (*) x y
 
     negate = fmap negate
     signum = fmap signum
