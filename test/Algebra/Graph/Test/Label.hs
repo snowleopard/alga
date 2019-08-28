@@ -7,13 +7,10 @@
 --
 -- Testsuite for "Algebra.Graph.Label".
 -----------------------------------------------------------------------------
-{-
 module Algebra.Graph.Test.Label (
   -- * Testsuite
   testLabel
   ) where
--}
-module Algebra.Graph.Test.Label where
 
 import Algebra.Graph.Test hiding (NonNegative)
 import Algebra.Graph.Label

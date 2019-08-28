@@ -31,6 +31,7 @@ module Algebra.Graph.Label (
 
 import Control.Applicative
 import Control.Monad
+import Data.Coerce
 import Data.Maybe
 import Data.Monoid (Any (..), Sum (..))
 import Data.Semigroup (Min (..), Max (..), Semigroup (..))
@@ -133,7 +134,7 @@ instance (Num a, Ord a) => Num (NonNegative a) where
         f = fromInteger x
 
     (+) = liftA2 (+)
-    (*) x y = if x == 0 || y == 0 then 0 else liftA2 (*) x y
+    (*) = coerce ((*) :: ExtendedBinary a)
 
     negate _ = error "NonNegative values cannot be negated"
 
@@ -281,11 +282,17 @@ fromExtended :: Extended a -> Maybe a
 fromExtended (Finite a) = Just a
 fromExtended Infinite   = Nothing
 
+-- A type alias for a binary function on Extended.
+type ExtendedBinary a = Extended a -> Extended a -> Extended a
+
 instance (Num a, Eq a) => Num (Extended a) where
     fromInteger = Finite . fromInteger
 
     (+) = liftA2 (+)
-    (*) x y = if x == 0 || y == 0 then 0 else liftA2 (*) x y
+
+    Finite 0 * _ = Finite 0
+    _ * Finite 0 = Finite 0
+    x * y = liftA2 (*) x y
 
     negate = fmap negate
     signum = fmap signum
