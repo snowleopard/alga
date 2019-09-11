@@ -23,7 +23,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Undirected (
     -- * Algebraic data type for graphs
-    Graph, fromUndirected,
+    Graph, fromUndirected, toUndirected,
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
@@ -269,6 +269,18 @@ coerce3 = coerce
 -- compile).
 coerce4 :: (Coercible b c) => (a -> G.Graph a -> b) -> (a -> Graph a -> c)
 coerce4 = coerce
+--
+-- | Construct an undirected graph from a given "Algebra.Graph".
+-- Complexity: /O(1)/ time.
+--
+-- @
+-- toUndirected ('Algebra.Graph.edge' 1 2)         == 'edge' 1 2
+-- toUndirected . 'fromUndirected'    == id
+-- 'vertexCount'      . toUndirected == 'Algebra.Graph.vertexCount'
+-- (*2) . 'edgeCount' . toUndirected >= 'Algebra.Graph.edgeCount'
+-- @
+toUndirected :: G.Graph a -> Graph a
+toUndirected = UG
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time, memory and size.
