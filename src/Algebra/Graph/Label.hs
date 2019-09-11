@@ -134,7 +134,7 @@ instance (Num a, Ord a) => Num (NonNegative a) where
         f = fromInteger x
 
     (+) = liftA2 (+)
-    (*) = coerce ((*) :: ExtendedBinary a)
+    (*) = coerce ((*) :: Extended a -> Extended a -> Extended a)
 
     negate _ = error "NonNegative values cannot be negated"
 
@@ -283,8 +283,6 @@ fromExtended (Finite a) = Just a
 fromExtended Infinite   = Nothing
 
 -- A type alias for a binary function on Extended.
-type ExtendedBinary a = Extended a -> Extended a -> Extended a
-
 instance (Num a, Eq a) => Num (Extended a) where
     fromInteger = Finite . fromInteger
 
