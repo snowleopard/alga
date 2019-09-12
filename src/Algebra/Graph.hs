@@ -264,10 +264,11 @@ ordR x y = compare (toAdjacencyMap x) (toAdjacencyMap y)
 ordIntR :: Graph Int -> Graph Int -> Ordering
 ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 
--- | `<*>` is a good consumer and producer.
+-- | `<*>` is a good consumer of its first agument and producer of both.
 instance Applicative Graph where
     pure    = Vertex
-    f <*> x = f >>= (<$> x)
+    f <*> x = buildg $ \e v o c ->
+      foldg e (\w -> foldg e (v . w) o c x) o c f
     {-# INLINE (<*>) #-}
 
 -- | `>>=` is a good consumer and producer.

@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.RewriteRules
@@ -16,131 +16,140 @@ import Data.Maybe (fromMaybe)
 import Algebra.Graph hiding ((===))
 import Algebra.Graph.Internal
 
+import GHC.Base (build)
+
 import Test.Inspection
 
--- Naming convention: we use the suffix "R" to indicate the desired outcome of
--- rewrite rules, and suffices "1", "2", etc. to indicate initial expressions.
+type Build  a = forall b. (a -> b -> b) -> b -> b
+type Buildg a = forall b. b -> (a -> b) -> (b -> b ->b ) -> (b -> b-> b) -> b
 
--- Testsuite for 'overlays' and 'connects'.
-vertices1, verticesR :: [a] -> Graph a
-vertices1 = overlays . map vertex
-verticesR = fromMaybe Empty . foldr (maybeF Overlay . Vertex) Nothing
+-- Naming convention
+--- We use:
+--- * the suffix "R" to indicate the desired outcome of rewrite rules.
+--- * the suffix "C" when testing the "good consumer" property.
+--- * the suffix "P" when testing the "good producer" property.
+--- * the suffix "I" when testing inlining.
 
-inspect $ 'vertices1 === 'verticesR
+-- 'foldg'.
+emptyI, emptyIR :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
+emptyI  e v o c = foldg e v o c Empty
+emptyIR e _ _ _ = e
 
-clique1, cliqueR :: [a] -> Graph a
-clique1 = connects . map vertex
-cliqueR = fromMaybe Empty . foldr (maybeF Connect . Vertex) Nothing
+inspect $ 'emptyI === 'emptyIR
 
-inspect $ 'clique1 === 'cliqueR
+vertexI, vertexIR :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> a -> b
+vertexI  e v o c x = foldg e v o c (Vertex x)
+vertexIR _ v _ _ x = v x
 
--- Testsuite for 'transpose'.
-empty1, emptyR :: Graph a
-empty1 = transpose Empty
-emptyR = Empty
+inspect $ 'vertexI === 'vertexIR
 
-inspect $ 'empty1 === 'emptyR
+overlayI, overlayIR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> Graph a -> b
+overlayI  e v o c x y = foldg e v o c (Overlay x y)
+overlayIR e v o c x y = o (foldg e v o c x) (foldg e v o c y)
 
-vertex1, vertexR :: a -> Graph a
-vertex1 = transpose . vertex
-vertexR = Vertex
+inspect $ 'overlayI === 'overlayIR
 
-inspect $ 'vertex1 === 'vertexR
+connectI, connectIR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> Graph a -> b
+connectI  e v o c x y = foldg e v o c (Connect x y)
+connectIR e v o c x y = c (foldg e v o c x) (foldg e v o c y)
 
-overlay1, overlayR :: Graph a -> Graph a -> Graph a
-overlay1 x y = transpose (Overlay x y)
-overlayR x y =
-  Overlay
-  (foldg empty vertex overlay (flip connect) x)
-  (foldg empty vertex overlay (flip connect) y)
+inspect $ 'connectI === 'connectIR
 
-inspect $ 'overlay1 === 'overlayR
+-- overlays
+overlaysC, overlaysCR :: Build (Graph a) -> Graph a
+overlaysC  xs = overlays (build xs)
+overlaysCR xs = fromMaybe Empty (xs (maybeF Overlay) Nothing)
 
-connect1, connectR :: Graph a -> Graph a -> Graph a
-connect1 x y = transpose (Connect x y)
-connectR x y =
-  Connect
-  (foldg empty vertex overlay (flip connect) y)
-  (foldg empty vertex overlay (flip connect) x)
+inspect $ 'overlaysC === 'overlaysCR
 
-inspect $ 'connect1 === 'connectR
+overlaysP, overlaysPR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [Graph a] -> b
+overlaysP  e v o c xs = foldg e v o c (overlays xs)
+overlaysPR e v o c xs = fromMaybe e (foldr (maybeF o . foldg e v o c) Nothing xs)
 
-overlays1, overlaysR :: [Graph a] -> Graph a
-overlays1 = transpose . overlays
-overlaysR = overlays . map transpose
+inspect $ 'overlaysP === 'overlaysPR
 
-inspect $ 'overlays1 === 'overlaysR
+-- connects
+connectsC, connectsCR :: Build (Graph a) -> Graph a
+connectsC  xs = connects (build xs)
+connectsCR xs = fromMaybe Empty (xs (maybeF Connect) Nothing)
 
-connects1, connectsR :: [Graph a] -> Graph a
-connects1 = transpose . connects
-connectsR = fromMaybe Empty . foldr (maybeF (flip Connect) . transpose) Nothing
+inspect $ 'connectsC === 'connectsCR
 
-inspect $ 'connects1 === 'connectsR
+connectsP, connectsPR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [Graph a] -> b
+connectsP  e v o c xs = foldg e v o c (connects xs)
+connectsPR e v o c xs = fromMaybe e (foldr (maybeF c . foldg e v o c) Nothing xs)
 
-vertices2 :: [a] -> Graph a
-vertices2 = transpose . overlays . map vertex
+inspect $ 'connectsP === 'connectsPR
 
-inspect $ 'vertices2 === 'vertices1
-inspect $ 'vertices2 === 'verticesR
-
-cliqueT1, cliqueTR :: [a] -> Graph a
-cliqueT1 = transpose . connects . map vertex
-cliqueTR = fromMaybe Empty . foldr (maybeF (flip Connect) . Vertex) Nothing
-
-inspect $ 'cliqueT1 === 'cliqueTR
-
-starT1, starTR :: a -> [a] -> Graph a
-starT1 x = transpose . star x
-starTR x xs =
-  case foldr (maybeF Overlay . Vertex) Nothing xs of
+-- star
+starC, starCR :: a -> Build a -> Graph a
+starC  x xs = star x (build xs)
+starCR x xs =
+  case xs (maybeF Overlay . Vertex) Nothing of
     Nothing -> Vertex x
-    Just vertices -> Connect vertices (Vertex x)
-inspect $ 'starT1 === 'starTR
+    Just vertices -> Connect (Vertex x) vertices
 
--- Testsuite for 'bind'
-fmapFmap1, fmapFmapR :: Graph a -> (a -> b) -> (b -> c) -> Graph c
-fmapFmap1 g f h = fmap h (fmap f g)
-fmapFmapR g f h = fmap (h . f) g
+inspect $ 'starC === 'starCR
 
-inspect $ 'fmapFmap1 === 'fmapFmapR
+starP, starPR :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> a -> [a] -> b
+starP  e v o c x xs = foldg e v o c (star x xs)
+starPR _ v o c x xs =
+  case foldr (maybeF o . v) Nothing xs of
+    Nothing -> v x
+    Just vertices -> c (v x) vertices
 
-bind2, bind2R :: (a -> Graph b) -> (b -> Graph c) -> Graph a -> Graph c
-bind2 f g x = x >>= f >>= g
-bind2R f g x = x >>= (\x -> f x >>= g)
+inspect $ 'starP === 'starPR
 
-inspect $ 'bind2 === 'bind2R
+-- fmap
+fmapC, fmapCR :: (a -> b) -> Buildg a -> Graph b
+fmapC  f g = fmap f (buildg g)
+fmapCR f g = g Empty (Vertex . f) Overlay Connect
 
--- Ideally, we want this test to pass.
--- Strangely, '<*>' in 'ovApR' does not inline and makes the test fail.
---
--- This is corrected below, where '<*>' was inlined "by hand"
-ovAp, ovApR :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
-ovAp  x y z = overlay x y <*> z
-ovApR x y z = overlay (x <*> z) (y <*> z)
+inspect $ 'fmapC === 'fmapCR
 
-inspect $ 'ovAp =/= 'ovApR
+fmapP, fmapPR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> (c -> a) -> Graph c -> b
+fmapP  e v o c f g = foldg e v o c (fmap f g)
+fmapPR e v o c f g = foldg e (v . f) o c g
 
-ovAp', ovApR' :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
-ovAp'  x y z = overlay x y <*> z
-ovApR' x y z = overlay (x >>= (<$> z)) (y >>= (<$> z))
+inspect $ 'fmapP === 'fmapPR
 
-inspect $ 'ovAp' === 'ovApR'
+-- bind
+bindC, bindCR :: (a -> Graph b) -> Buildg a -> Graph b
+bindC  f g = (buildg g) >>= f
+bindCR f g = g Empty (\x -> f x) Overlay Connect
 
--- Testsuite for 'vertices'
-hasVertexVertices, hasVertexVerticesR :: Eq a => a -> [a] -> Bool
-hasVertexVertices  x xs = hasVertex x (vertices xs)
-hasVertexVerticesR x xs =
-  fromMaybe False $
-    foldr (maybeF (||) . (==x)) Nothing xs
+inspect $ 'bindC === 'bindCR
 
-inspect $ 'hasVertexVertices === 'hasVertexVerticesR
+bindP, bindPR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> (c -> Graph a) -> Graph c -> b
+bindP  e v o c f g = foldg e v o c (g >>= f)
+bindPR e v o c f g = foldg e (foldg e v o c . f) o c g
 
--- Testsuite for 'star'
-starMap, starMapR :: (a -> b) -> a -> [a] -> Graph b
-starMap  f x xs = star (f x) (map f xs)
-starMapR f x xs =
-  case foldr (maybeF Overlay . Vertex . f) Nothing xs of
-    Nothing -> Vertex (f x)
-    Just vertices  -> Connect (Vertex (f x)) vertices
+inspect $ 'fmapP === 'fmapPR
 
-inspect $ 'starMap === 'starMapR
+-- ap
+ovC, ovCR :: Buildg (a -> b) -> Graph a -> Graph b
+ovC  f x = buildg f <*> x
+ovCR f x = f Empty (\v -> foldg Empty (Vertex . v) Overlay Connect x) Overlay Connect
+
+inspect $ 'ovC === 'ovCR
+
+ovP, ovPR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph (c -> a) -> Graph c -> b
+ovP  e v o c f x = foldg e v o c (f <*> x)
+ovPR e v o c f x =
+  foldg e (\w -> foldg e (v . w) o c x) o c f
+
+inspect $ 'ovP === 'ovPR
+
+-- hasVertex
+hasVertexC, hasVertexCR :: Eq a => a -> Buildg a -> Bool
+hasVertexC  x g = hasVertex x (buildg g)
+hasVertexCR x g = g False (==x) (||) (||)
+
+inspect $ 'hasVertexC === 'hasVertexCR
