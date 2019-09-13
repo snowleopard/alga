@@ -42,7 +42,7 @@ testUndirected = do
     test "toUndirected (edge 1 2)         == edge 1 2" $
           toUndirected (G.edge 1 2)       == edge 1 (2 :: Int)
 
-    test "toUndirected . fromUndirected    == id" $ \(x :: G) ->
+    test "toUndirected . fromUndirected   == id" $ \(x :: G) ->
           (toUndirected . fromUndirected) x == id x
 
     test "vertexCount      . toUndirected == vertexCount" $ \(x :: AGI) ->
@@ -52,8 +52,11 @@ testUndirected = do
           ((*2) . edgeCount . toUndirected) x >= G.edgeCount x
 
     putStrLn $ "\n============ Graph.Undirected.fromUndirected ============"
-    test "fromUndirected (edge 1 2)    == Connect (Vertex 1) (Vertex 2)" $
-          fromUndirected (edge 1 2)    == G.edge 1 2
+    test "fromUndirected (edge 1 2)    == edges [(1,2),(2,1)]" $
+          fromUndirected (edge 1 2)    == G.edges [(1,2), (2,1)]
+
+    test "toUndirected . fromUndirected == id" $ \(x :: G) ->
+          (toUndirected . fromUndirected) x == id x
 
     test "vertexCount . fromUndirected == vertexCount" $ \(x :: G) ->
           (G.vertexCount . fromUndirected) x == vertexCount x

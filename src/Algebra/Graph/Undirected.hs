@@ -55,6 +55,7 @@ import           Control.DeepSeq
 import           Control.Monad                    (MonadPlus (..))
 import           Data.Coerce
 import           GHC.Generics
+import           Algebra.Graph.ToGraph            (toGraph)
 
 import qualified Algebra.Graph                    as G
 
@@ -170,7 +171,7 @@ compatible with 'overlay' and 'connect' operations:
 x     <= x + y
 x + y <= x * y@
 -}
-newtype Graph a = UG { fromUndirected :: G.Graph a }
+newtype Graph a = UG { _fromUndirected :: G.Graph a }
              deriving (Generic, NFData)
 
 instance (Show a, Ord a) => Show (Graph a) where
@@ -179,7 +180,7 @@ instance (Show a, Ord a) => Show (Graph a) where
 {- See Note [Functions for rewrite rules] in 'Algebra.Graph' -}
 
 instance Functor Graph where
-    fmap f = UG . fmap f . fromUndirected
+    fmap f = UG . fmap f . _fromUndirected
     {-# INLINE fmap #-}
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'Graph' for more
@@ -234,7 +235,7 @@ instance Applicative Graph where
 
 instance Monad Graph where
     return  = pure
-    (>>=) g = UG . (>>=) (fromUndirected g) . coerce
+    (>>=) g = UG . (>>=) (_fromUndirected g) . coerce
     {-# INLINE (>>=) #-}
 
 instance Alternative Graph where
@@ -269,18 +270,30 @@ coerce3 = coerce
 -- compile).
 coerce4 :: (Coercible b c) => (a -> G.Graph a -> b) -> (a -> Graph a -> c)
 coerce4 = coerce
---
+
 -- | Construct an undirected graph from a given "Algebra.Graph".
 -- Complexity: /O(1)/ time.
 --
 -- @
 -- toUndirected ('Algebra.Graph.edge' 1 2)         == 'edge' 1 2
--- toUndirected . 'fromUndirected'    == id
--- 'vertexCount'      . toUndirected == 'Algebra.Graph.vertexCount'
+-- toUndirected . 'fromUndirected'   == id
+-- 'vertexCount' . toUndirected      == 'Algebra.Graph.vertexCount'
 -- (*2) . 'edgeCount' . toUndirected >= 'Algebra.Graph.edgeCount'
 -- @
 toUndirected :: G.Graph a -> Graph a
 toUndirected = UG
+
+-- | Extract the underlying "Algebra.Graph".
+-- Complexity: /O(n + m)/ time.
+--
+-- @
+-- fromUndirected ('Algebra.Graph.edge' 1 2)     == 'Algebra.Graph.edges' [(1,2),(2,1)]
+-- 'toUndirected' . 'fromUndirected' == id
+-- 'Algebra.Graph.vertexCount' . fromUndirected  == 'vertexCount'
+-- 'Algebra.Graph.edgeCount' . fromUndirected    <= (*2) . 'edgeCount'
+-- @
+fromUndirected :: (Ord a) => Graph a -> G.Graph a
+fromUndirected = toGraph . toSymmetricRelation
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time, memory and size.
