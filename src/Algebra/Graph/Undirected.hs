@@ -180,7 +180,7 @@ instance (Show a, Ord a) => Show (Graph a) where
 {- See Note [Functions for rewrite rules] in 'Algebra.Graph' -}
 
 instance Functor Graph where
-    fmap f = UG . fmap f . _fromUndirected
+    fmap f = UG . fmap f . coerce
     {-# INLINE fmap #-}
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'Graph' for more
@@ -235,7 +235,7 @@ instance Applicative Graph where
 
 instance Monad Graph where
     return  = pure
-    (>>=) g = UG . (>>=) (_fromUndirected g) . coerce
+    (>>=) g = UG . (>>=) (coerce5 g) . coerce
     {-# INLINE (>>=) #-}
 
 instance Alternative Graph where
@@ -270,6 +270,11 @@ coerce3 = coerce
 -- compile).
 coerce4 :: (Coercible b c) => (a -> G.Graph a -> b) -> (a -> Graph a -> c)
 coerce4 = coerce
+
+-- Help GHC with type inference (direct use of 'coerce' does not
+-- compile).
+coerce5 :: Graph a -> G.Graph a
+coerce5 = coerce
 
 -- | Construct an undirected graph from a given "Algebra.Graph".
 -- Complexity: /O(1)/ time.
