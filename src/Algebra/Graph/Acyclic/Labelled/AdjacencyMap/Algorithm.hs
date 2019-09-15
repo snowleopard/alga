@@ -1,31 +1,29 @@
 module Algebra.Graph.Acyclic.Labelled.AdjacencyMap.Algorithm where
 
 import Algebra.Graph.Acyclic.Labelled.AdjacencyMap
-import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
 import Algebra.Graph.Label
-import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
-import Data.Map.Strict (Map, (!))
-import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe)
 import Data.List (foldl')
+import Data.Map.Strict (Map, (!))
 
--- TODO: Replace this function with 'skeleton' from Acyclic.Labelled to remove the use of fromMaybe
--- TODO: Make 'topSort' more efficient
+import qualified Algebra.Graph.Acyclic.AdjacencyMap  as AAM
+import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
+import qualified Data.Map.Strict                     as Map
+
 -- TODO: Add examples and tests for 'topSort'
 topSort :: (Ord a) => AdjacencyMap e a -> [a]
-topSort = fromMaybe [] . AM.topSort . LAM.skeleton . fromAcyclic
+topSort = AAM.topSort . skeleton
 
 -- TODO: Improve documentation for 'fold'
 -- TODO: Make 'fold' more efficient
 -- | A function which folds over Acyclic.Labelled.'AdjacencyMap'.
--- @fold@ takes any function with the signature @e -> a -> a -> s -> s@.
+-- @fold@ takes any function with the signature @[(e, a)] -> a -> s -> s@.
 -- This function folds over an acyclic graph, modifying an original
 -- input state.
 --
 -- If one assumes the acyclic graph as a dependency
 -- graph and the vertices as resources, then, the expected function
 -- for fold takes all the dependents of the resource, the resource
--- and the input state in that order and pproduces an output state.
+-- and the input state in that order and produces an output state.
 -- The resources (vertices) are processed in their topological order.
 --
 -- @

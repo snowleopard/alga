@@ -23,7 +23,7 @@ module Algebra.Graph.Acyclic.Labelled.AdjacencyMap (
 
   -- * Graph properties
   isEmpty, hasVertex, hasEdge, edgeLabel, vertexCount, edgeCount, vertexList,
-  edgeList, vertexSet, edgeSet,
+  edgeList, vertexSet, edgeSet, skeleton,
 
   -- * Graph transformation
   removeVertex, removeEdge, swapVertex, transpose, emap, induce, induceJust,
@@ -44,6 +44,7 @@ import Data.Function (on)
 import Data.Coerce (coerce)
 import Algebra.Graph.AdjacencyMap.Algorithm (isAcyclic)
 
+import qualified Algebra.Graph.Acyclic.AdjacencyMap  as AAM
 import qualified Algebra.Graph.Labelled.AdjacencyMap as AM
 
 -- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
@@ -287,6 +288,18 @@ edgeSet = coerce2 AM.edgeSet
 -- @
 removeVertex :: Ord a => a -> AdjacencyMap e a -> AdjacencyMap e a
 removeVertex x = coerce3 $ AM.removeVertex x
+
+-- TODO: Optimise.
+-- TODO: Write tests
+-- | Convert a graph to the corresponding unlabelled 'AM.AdjacencyMap' by
+-- forgetting labels on all non-'zero' edges.
+-- Complexity: /O((n + m) * log(n))/ time and memory.
+--
+-- @
+-- 'hasEdge' x y == 'AM.hasEdge' x y . skeleton
+-- @
+skeleton :: Ord a => AdjacencyMap e a -> AAM.AdjacencyMap a
+skeleton = AAM.shrink . coerce2 AM.skeleton
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(log(n))/ time.

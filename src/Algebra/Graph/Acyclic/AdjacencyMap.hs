@@ -46,7 +46,7 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
     topSort, scc,
 
     -- * Conversion to acyclic graphs
-    toAcyclic, toAcyclicOrd,
+    toAcyclic, toAcyclicOrd, shrink,
 
     -- * Miscellaneous
     consistent
@@ -59,6 +59,7 @@ import qualified Algebra.Graph.AdjacencyMap           as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap  as NAM
 import qualified Data.Graph.Typed                     as Typed
+import qualified Data.List.NonEmpty                   as NonEmpty
 import qualified Data.Map                             as Map
 import qualified Data.Set                             as Set
 
@@ -529,6 +530,25 @@ toAcyclic x = if AM.isAcyclic x then Just (AAM x) else Nothing
 -- @
 toAcyclicOrd :: Ord a => AM.AdjacencyMap a -> AdjacencyMap a
 toAcyclicOrd = AAM . filterEdges (<)
+
+-- TODO: Write tests for shrink
+-- TODO: Add time complexity
+-- TODO: Change Arbitrary instance of Acyclic and Labelled Acyclic graph
+-- | Construct an acyclic graph from a given adjacency map using 'scc'.
+-- If the graph is acyclic in nature, the same graph is returned as an acyclic graph.
+-- If the graph is cyclic, then a representative for every strongly conected
+-- component in its condensation graph is chosen an these representatives are
+-- used to build an acyclic graph.
+--
+-- @
+-- shrink . 'AM.vertex'   == 'vertex'
+-- shrink . 'AM.vertices' == 'vertices'
+-- shrink . 'fromAcyclic' == 'id'
+-- @
+shrink :: Ord a => AM.AdjacencyMap a -> AdjacencyMap a
+shrink am = AAM (AM.gmap (NonEmpty.head . NAM.vertexList1) m)
+  where
+    m = AM.scc am
 
 -- TODO: Provide a faster equivalent in "Algebra.Graph.AdjacencyMap".
 -- Keep only the edges that satisfy a given predicate.
