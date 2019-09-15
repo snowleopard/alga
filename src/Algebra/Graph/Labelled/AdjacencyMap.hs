@@ -515,6 +515,7 @@ replaceEdge e x y
     replace (Just m) = Just $ Map.insert y e m
     replace Nothing  = Just $ Map.singleton y e
 
+-- TODO: Add tests
 -- | The function @'swapVertex' x y@ swaps vertex @x@ and vertex @y@ in a
 -- given 'AdjacencyMap'. If one of @x@ or @y@ do not exist, this function
 -- acts like 'replaceVertex'. If both @x@ and @y@ do not exist, the same

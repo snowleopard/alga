@@ -63,7 +63,7 @@ instance Arbitrary a => Arbitrary (Graph a) where
 
 -- An Arbitrary instance for Acyclic.AdjacencyMap
 instance (Ord a, Arbitrary a) => Arbitrary (AAM.AdjacencyMap a) where
-    arbitrary = AAM.toAcyclicOrd <$> arbitrary
+    arbitrary = AAM.shrink <$> arbitrary
 
     shrink g = shrinkVertices ++ shrinkEdges
       where
@@ -75,6 +75,7 @@ instance (Ord a, Arbitrary a) => Arbitrary (AAM.AdjacencyMap a) where
           let edges = AAM.edgeList g
           in [ AAM.removeEdge x y g | (x, y) <- edges ]
 
+-- TODO: Improve Arbitrary instance using swapVertex
 -- An Arbitrary instance for Acyclic.Labelled.AdjacencyMap
 instance (Ord a, Arbitrary a, Eq e, Monoid e, Arbitrary e) => Arbitrary (ALAM.AdjacencyMap e a) where
     arbitrary = ALAM.toAcyclicOrd <$> arbitrary

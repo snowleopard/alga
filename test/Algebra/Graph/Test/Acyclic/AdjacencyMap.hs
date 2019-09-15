@@ -14,7 +14,7 @@ module Algebra.Graph.Test.Acyclic.AdjacencyMap (testAcyclicAdjacencyMap) where
 import Algebra.Graph.Acyclic.AdjacencyMap
 import Algebra.Graph.Acyclic.AdjacencyMap.Ord
 import Algebra.Graph.Internal
-import Algebra.Graph.Test
+import Algebra.Graph.Test hiding (shrink)
 import Algebra.Graph.Test.Generic
 
 import Data.Bifunctor
@@ -504,6 +504,16 @@ testAcyclicAdjacencyMap = do
 
     test "toAcyclicOrd (1 * 2 * 3) == 1 * 2 * 3" $
           toAcyclicOrd (1 * 2 * 3) == (1 * 2 * 3 :: AAI)
+
+    putStrLn "\n============ Acyclic.AdjacencyMap.shrink ============"
+    test "shrink . AM.vertex   == vertex" $ \x ->
+          (shrink . AM.vertex) x   == (vertex x :: AAI)
+  
+    test "shrink . AM.vertices == vertices" $ \x ->
+          (shrink . AM.vertices) x == (vertices x :: AAI)
+  
+    test "shrink . fromAcyclic == id" $ \(x :: AAI) ->
+          (shrink . fromAcyclic) x == id x
 
     putStrLn "\n============ Acyclic.AdjacencyMap.consistent ============"
     test "Arbitrary"         $ \(x :: AAI)            -> consistent x
