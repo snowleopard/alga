@@ -24,6 +24,7 @@ import Algebra.Graph
 import Algebra.Graph.Export
 import Algebra.Graph.Label
 
+import qualified Algebra.Graph.Undirected             as UG
 import qualified Algebra.Graph.Acyclic.AdjacencyMap   as AAM
 import qualified Algebra.Graph.AdjacencyIntMap        as AIM
 import qualified Algebra.Graph.AdjacencyMap           as AM
@@ -59,6 +60,10 @@ instance Arbitrary a => Arbitrary (Graph a) where
                         ++ [Overlay x' y' | (x', y') <- shrink (x, y) ]
     shrink (Connect x y) = [Empty, x, y, Overlay x y]
                         ++ [Connect x' y' | (x', y') <- shrink (x, y) ]
+
+-- An Arbitrary instance for Graph.Undirected
+instance Arbitrary a => Arbitrary (UG.Graph a) where
+    arbitrary = arbitraryGraph
 
 -- An Arbitrary instance for Acyclic.AdjacencyMap
 instance (Ord a, Arbitrary a) => Arbitrary (AAM.AdjacencyMap a) where
