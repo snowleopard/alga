@@ -334,7 +334,7 @@ instance (Monoid a, Ord a) => Semiring (Minimum a) where
 
 instance (Monoid a, Ord a) => Dioid (Minimum a)
 
-instance (Num a, Show a) => Show (Minimum a) where
+instance Show a => Show (Minimum a) where
     show (Minimum Infinite  ) = "one"
     show (Minimum (Finite x)) = show x
 

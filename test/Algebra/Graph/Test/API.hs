@@ -22,6 +22,7 @@ module Algebra.Graph.Test.API (
     ) where
 
 import Data.Coerce
+import Data.List.NonEmpty (NonEmpty)
 import Data.Monoid (Any)
 import Data.IntMap (IntMap)
 import Data.IntSet (IntSet)
@@ -104,7 +105,7 @@ data API g c where
         , dfsForestFrom              :: forall a. c a => [a] -> g a -> Forest a
         , dfs                        :: forall a. c a => [a] -> g a -> [a]
         , reachable                  :: forall a. c a => a -> g a -> [a]
-        , topSort                    :: forall a. c a => g a -> Maybe [a]
+        , topSort                    :: forall a. c a => g a -> Either (NonEmpty a) [a]
         , isAcyclic                  :: forall a. c a => g a -> Bool
         , toAdjacencyMap             :: forall a. c a => g a -> AM.AdjacencyMap a
         , toAdjacencyIntMap          :: g Int -> AIM.AdjacencyIntMap
