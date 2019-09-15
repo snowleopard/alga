@@ -66,6 +66,7 @@ source-repository head
 library
     hs-source-dirs:     src
     exposed-modules:    Algebra.Graph,
+                        Algebra.Graph.Undirected,
                         Algebra.Graph.Acyclic.AdjacencyMap,
                         Algebra.Graph.Acyclic.AdjacencyMap.Ord,
                         Algebra.Graph.Acyclic.Labelled.AdjacencyMap,
@@ -137,6 +138,7 @@ test-suite test-alga
                         Algebra.Graph.Test.Export,
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
+                        Algebra.Graph.Test.Undirected,
                         Algebra.Graph.Test.Internal,
                         Algebra.Graph.Test.Labelled.AdjacencyMap,
                         Algebra.Graph.Test.Labelled.Graph,
