@@ -24,7 +24,8 @@ module Algebra.Graph.AdjacencyMap.Algorithm (
     isDfsForestOf, isTopSortOf,
     
     -- * Type synonyms
-    Cycle
+    Cycle,
+    LevelStructure
     ) where
 
 import Control.Monad
@@ -118,20 +119,22 @@ bfsForestFrom' vs g = evalState (explore vs) Set.empty where
 -- @
 -- bfs vs 'empty'                                         == []
 -- bfs [] g                                             == []
--- bfs [1] ('edge' 1 1)                                   == [[1]]
--- bfs [1] ('edge' 1 2)                                   == [[1],[2]]
--- bfs [2] ('edge' 1 2)                                   == [[2]]
+-- bfs [1] ('edge' 1 1)                                   == [[[1]]]
+-- bfs [1] ('edge' 1 2)                                   == [[[1],[2]]]
+-- bfs [2] ('edge' 1 2)                                   == [[[2]]]
 -- bfs [3] ('edge' 1 2)                                   == []
--- bfs [1,2] ('edge' 1 2)                                 == [[1],[2]]
--- bfs [2,1] ('edge' 1 2)                                 == [[2],[1]]
+-- bfs [1,2] ('edge' 1 2)                                 == [[[1],[2]]]
+-- bfs [2,1] ('edge' 1 2)                                 == [[2]],[[1]]
 -- bfs [1,2] ( (1*2) + (3*4) + (5*6) )                  == [[1],[2]]
--- bfs [1,3] ( (1*2) + (3*4) + (5*6) )                  == [[1],[2],[3],[4]]
--- bfs [3] (3 * (1 + 4) * (1 + 5))                      == [[3],[1,4,5]]
--- bfs [2] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[2],[1,3],[5,4]]
--- 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
+-- bfs [1,3] ( (1*2) + (3*4) + (5*6) )                  == [[[1],[2]],[[3],[4]]]
+-- bfs [3] (3 * (1 + 4) * (1 + 5))                      == [[[3],[1,4,5]]]
+-- bfs [2] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[[2],[1,3],[5,4]]]
+-- 'concatMap' 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
 -- @
-bfs :: Ord a => [a] -> AdjacencyMap a -> [[a]]
-bfs vs = bfsForestFrom vs >=> levels
+bfs :: Ord a => [a] -> AdjacencyMap a -> [LevelStructure a]
+bfs vs = map levels . bfsForestFrom vs
+
+type LevelStructure a = [[a]]
 
 -- | Compute the /depth-first search/ forest of a graph, where
 --   adjacent vertices are expanded in increasing order with respect
