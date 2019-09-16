@@ -395,7 +395,7 @@ testAcyclicAdjacencyMap = do
                                               , ((1,20), (2,20))
                                               , ((2,10), (2 :: Int,20 :: Int)) ]
 
-    let gmap f = toAcyclicOrd . AM.gmap f . fromAcyclic
+    let gmap f = shrink . AM.gmap f . fromAcyclic
         unit = gmap $ \(a :: Int, ()      ) -> a
         comm = gmap $ \(a :: Int, b :: Int) -> (b, a)
     test "box x y               ~~ box y x" $ size10 $ \x y ->
