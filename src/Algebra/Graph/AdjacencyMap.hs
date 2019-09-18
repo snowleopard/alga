@@ -20,7 +20,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyMap (
     -- * Data structure
-    AdjacencyMap, adjacencyMap,
+    AdjacencyMap (..), adjacencyMap,
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,

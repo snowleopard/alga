@@ -34,6 +34,7 @@ module Algebra.Graph.AdjacencyIntMap.Algorithm (
 import Control.Monad
 import Control.Monad.Cont
 import Control.Monad.State.Strict
+import Data.Coerce
 import Data.Either
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Tree
@@ -43,6 +44,8 @@ import Algebra.Graph.AdjacencyIntMap
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.IntMap.Strict         as IntMap
 import qualified Data.IntSet                as IntSet
+import qualified Data.Map.Strict            as Map
+import qualified Data.Set                   as Set
 
 -- | Compute the /breadth-first search/ forest of a graph, such that
 --   adjacent vertices are explored in increasing order with respect
@@ -325,12 +328,12 @@ topSort g = runContT (evalStateT (topSort' g) initialState) id where
 isAcyclic :: AdjacencyIntMap -> Bool
 isAcyclic = isRight . topSort
 
-data C = C { preorders :: IntMap.IntMap Int
-           , current :: Int
-           , componentId :: Int
-           , boundary :: [(Int,Int)]
-           , dfsPath :: [Int]
-           , components :: IntMap.IntMap Int
+data C = C { preorders :: !(IntMap.IntMap Int)
+           , current :: !Int
+           , componentId :: !Int
+           , boundary :: ![(Int,Int)]
+           , dfsPath :: ![Int]
+           , components :: !(IntMap.IntMap Int)
            } deriving (Show)
 
 -- gabow path-based scc algorithm
@@ -369,14 +372,13 @@ scc' g =
           scc' = foldr (\x sccs -> IntMap.insert x i sccs) sccs (v:takeWhile (/= v) s)
 
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
-scc g = if null inters then AM.vertex g else sccs where
-  sccs = AM.edges [ (sccMap IntMap.! x, sccMap IntMap.! y) | (x,y) <- inters ]
-  sccMap = IntMap.fromListWith overlay intras
-  (inters, intras) = partitionEithers $ classify =<< edgeList g where
-    classify (x,y)
-      | cx == cy  = [Right (cx, edge x y)]
-      | otherwise = [Left (cx,cy),Right (cx, vertex x),Right (cy, vertex y)]
-      where cx = assignment IntMap.! x; cy = assignment IntMap.! y
+scc g = AM.gmap (component IntMap.!) $ convert $ removeSelfLoops $ gmap (assignment IntMap.!) g where
+  convert = coerce . Map.fromAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
+  setOfIntSet = Set.fromAscList . IntSet.toList
+  component = expand <$> IntMap.fromListWith (<>) transposed
+  transposed = [ (i,IntSet.singleton x) | (x,i) <- IntMap.toList assignment ]
+  expand xs = induce (`IntSet.member` xs) g
+  removeSelfLoops m = foldr (\x -> removeEdge x x) m (vertexList m)
   assignment = components $ execState (scc' g) initialState
   initialState = C IntMap.empty 0 0 [] [] IntMap.empty
 

@@ -31,7 +31,6 @@ import Control.Monad
 import Control.Monad.Cont
 import Control.Monad.State.Strict
 import Data.Either
-import Data.Foldable (toList)
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Maybe
 import Data.Tree
@@ -39,9 +38,8 @@ import Data.Tree
 import Algebra.Graph.AdjacencyMap
 
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
-import qualified Data.Graph                          as KL
-import qualified Data.Graph.Typed                    as Typed
 import qualified Data.Map.Strict                     as Map
+import qualified Data.IntMap.Strict                  as IntMap
 import qualified Data.Set                            as Set
 
 -- | Compute the /breadth-first search/ forest of a graph, such that
@@ -345,15 +343,56 @@ isAcyclic = isRight . topSort
 -- 'isAcyclic' x     == (scc x == 'gmap' NonEmpty.'NonEmpty.vertex' x)
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (NonEmpty.AdjacencyMap a)
-scc m = gmap (component Map.!) $ removeSelfLoops $ gmap (leader Map.!) m
+scc g = gmap (component IntMap.!) $ removeSelfLoops $ gmap (assignment Map.!) g where
+  component = expand <$> IntMap.fromListWith (<>) transposed
+  transposed = [ (i,Set.singleton x) | (x,i) <- Map.toList assignment ]
+  expand xs = fromJust $ NonEmpty.toNonEmpty $ induce (`Set.member` xs) g
+  assignment = components $ execState (scc' g) initialState
+  initialState = C Map.empty 0 0 [] [] Map.empty
+        
+data C a = C { preorders :: !(Map.Map a Int)
+             , current :: !Int
+             , componentId :: !Int
+             , boundary :: ![(Int,a)]
+             , dfsPath :: ![a]
+             , components :: !(Map.Map a Int)
+             } deriving (Show)
+
+-- gabow path-based scc algorithm
+scc' :: (Ord a, MonadState (C a) m) => AdjacencyMap a -> m ()
+scc' g =
+  do let adjacent = Set.toList . flip postSet g
+         dfs v = do modify' (enter v)
+                    forM_ (adjacent v) $ \w ->
+                      gets (Map.lookup w . preorders) >>= \case
+                        Nothing -> dfs w
+                        Just pw -> gets (Map.member w . components) >>= \case
+                          True -> return ()
+                          False -> modify' (popBoundary pw)
+                    modify' (exit v)
+     forM_ (vertexList g) $ \v -> gets (Map.member v . preorders) >>= \case
+       False -> dfs v
+       True -> return ()
   where
-    Typed.GraphKL g decode _ = Typed.fromAdjacencyMap m
-    sccs      = map toList (KL.scc g)
-    leader    = Map.fromList [ (decode y, x)      | x:xs <- sccs, y <- x:xs ]
-    component = Map.fromList [ (x, expand (x:xs)) | x:xs <- sccs ]
-    expand xs = fromJust $ NonEmpty.toNonEmpty $ induce (`Set.member` s) m
-      where
-        s = Set.fromList (map decode xs)
+    -- called when visiting vertex v. increments preorder number, logs
+    -- it in the table, adds it to the boundary stack b, and adds it
+    -- to the path stack s.
+    enter v (C t c i b s sccs) =
+      C (Map.insert v c t) (1+c) i ((c,v):b) (v:s) sccs
+
+    -- called on back edges. pops the boundary stack until a vertex
+    -- with a smaller preorder num is at the top
+    popBoundary x (C t c i b s sccs) = C t c i (dropWhile ((>x).fst) b) s sccs
+
+    -- called when exiting vertex v. if v is the bottom of a scc
+    -- boundary, we add a new SCC, otherwise we're still building a
+    -- scc and the state is unchanged.
+    exit v st@(C t c i b s sccs)
+      | v /= snd (head b) = st
+      | otherwise = C t c (1+i) (tail b) (tail s') scc' where
+          s' = dropWhile (/= v) s
+          scc' = foldr (\x sccs -> Map.insert x i sccs) sccs (v:takeWhile (/= v) s)
+
 
 -- Remove all self loops from a graph.
 removeSelfLoops :: Ord a => AdjacencyMap a -> AdjacencyMap a
