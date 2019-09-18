@@ -22,7 +22,7 @@
 module Algebra.Graph.AdjacencyIntMap.Algorithm (
     -- * Algorithms
     bfsForest, bfsForestFrom, bfs, dfsForest, dfsForestFrom, dfs, reachable,
-    topSort, isAcyclic,
+    topSort, isAcyclic, scc,
     
     -- * Correctness properties
     isDfsForestOf, isTopSortOf,
@@ -42,6 +42,8 @@ import Algebra.Graph.AdjacencyIntMap
 
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.IntSet        as IntSet
+
+import Debug.Trace
 
 -- | Compute the /breadth-first search/ forest of a graph, such that
 --   adjacent vertices are explored in increasing order with respect
@@ -323,6 +325,53 @@ topSort g = runContT (evalStateT (topSort' g) initialState) id where
 -- @
 isAcyclic :: AdjacencyIntMap -> Bool
 isAcyclic = isRight . topSort
+
+data C = C { preorders :: IntMap.IntMap Int
+           , current :: Int
+           , componentId :: Int
+           , boundary :: [(Int,Int)]
+           , dfsPath :: [Int]
+           , components :: IntMap.IntMap Int
+           } deriving (Show)
+
+--enterSCC :: MonadState C m => Int -> m ()
+enterSCC v = modify' (\(C t c cid b s sccs) ->
+                        C (IntMap.insert v c t) (1+c) cid ((c,v):b) (v:s) sccs)
+
+checkPreorderNum v = do
+  C t _ _ _ _ s <- get
+  return $ guard (IntMap.member v s) >> IntMap.lookup v t
+
+popBoundary :: MonadState C m => Int -> m ()
+popBoundary x = modify' (\(C t c i b s sccs) -> C t c i (dropWhile ((>x).fst) b) s sccs)
+
+-- gabow path-based scc algorithm
+scc' :: MonadState C m => AdjacencyIntMap -> m ()
+scc' g = do
+  let adjacent = IntSet.toList . flip postIntSet g
+      dfs v = do enterSCC v
+                 forM_ (adjacent v) $ \w ->
+                   gets (IntMap.lookup w . preorders) >>= \case
+                     Nothing -> dfs w
+                     Just pw -> gets (IntMap.member w . components) >>= \case
+                       True -> return ()
+                       False -> popBoundary pw
+                 C t c i b s sccs <- get
+                 when (v == snd (head b)) $ do
+                   let new = v:takeWhile (/= v) s
+                       s' = dropWhile (/= v) s
+                       scc' = sccs <> IntMap.fromList [ (v,i) | v <- new ]
+                   put $ C t c (1+i) (tail b) (tail s') scc'
+  forM_ (vertexList g) $ \v -> gets (IntMap.member v . preorders) >>= \case
+    False -> dfs v
+    True -> return ()
+
+scc g = map classify (edgeList g) where
+  classify (x, y) = if cx == cy then Right (x,y) else Left (x,y,cx,cy) where
+    cx = assignment IntMap.! x
+    cy = assignment IntMap.! y
+  assignment = components $ execState (scc' g) initialState
+  initialState = C IntMap.empty 0 0 [] [] IntMap.empty
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
