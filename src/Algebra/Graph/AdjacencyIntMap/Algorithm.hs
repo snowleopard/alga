@@ -328,12 +328,13 @@ topSort g = runContT (evalStateT (topSort' g) initialState) id where
 isAcyclic :: AdjacencyIntMap -> Bool
 isAcyclic = isRight . topSort
 
-data C = C { preorders :: !(IntMap.IntMap Int)
-           , current :: !Int
+data C = C { current :: !Int
            , componentId :: !Int
            , boundary :: ![(Int,Int)]
            , dfsPath :: ![Int]
-           , components :: !(IntMap.IntMap Int)
+           , preorders :: !(IntMap.IntMap Int)
+           , componentIds :: !(IntMap.IntMap Int)
+           , componentSets :: !(IntMap.IntMap IntSet.IntSet)
            } deriving (Show)
 
 -- gabow path-based scc algorithm
@@ -344,7 +345,7 @@ scc' g =
                     forM_ (adjacent v) $ \w ->
                       gets (IntMap.lookup w . preorders) >>= \case
                         Nothing -> dfs w
-                        Just pw -> gets (IntMap.member w . components) >>= \case
+                        Just pw -> gets (IntMap.member w . componentIds) >>= \case
                           True -> return ()
                           False -> modify' (popBoundary pw)
                     modify' (exit v)
@@ -355,32 +356,33 @@ scc' g =
     -- called when visiting vertex v. increments preorder number, logs
     -- it in the table, adds it to the boundary stack b, and adds it
     -- to the path stack s.
-    enter v (C t c i b s sccs) =
-      C (IntMap.insert v c t) (1+c) i ((c,v):b) (v:s) sccs
+    enter v (C c i b s t ids vs) =
+      C (1+c) i ((c,v):b) (v:s) (IntMap.insert v c t) ids vs
 
     -- called on back edges. pops the boundary stack until a vertex
     -- with a smaller preorder num is at the top
-    popBoundary x (C t c i b s sccs) = C t c i (dropWhile ((>x).fst) b) s sccs
+    popBoundary x (C c i b s t ids vs) = C c i (dropWhile ((>x).fst) b) s t ids vs
 
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise we're still building a
     -- scc and the state is unchanged.
-    exit v st@(C t c i b s sccs)
+    exit v st@(C c i b s t ids vs)
       | v /= snd (head b) = st
-      | otherwise = C t c (1+i) (tail b) (tail s') scc' where
+      | otherwise = C c (1+i) (tail b) (tail s') t ids' vs' where
+          curr = v:takeWhile (/=v) s
           s' = dropWhile (/= v) s
-          scc' = foldr (\x sccs -> IntMap.insert x i sccs) sccs (v:takeWhile (/= v) s)
+          ids' = foldr (\x sccs -> IntMap.insert x i sccs) ids curr
+          vs' = IntMap.insert i (IntSet.fromList curr) vs
 
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
 scc g = AM.gmap (component IntMap.!) $ convert $ removeSelfLoops $ gmap (assignment IntMap.!) g where
   convert = coerce . Map.fromAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
   setOfIntSet = Set.fromAscList . IntSet.toList
-  component = expand <$> IntMap.fromListWith (<>) transposed
-  transposed = [ (i,IntSet.singleton x) | (x,i) <- IntMap.toList assignment ]
+  component = expand <$> transposed
   expand xs = induce (`IntSet.member` xs) g
   removeSelfLoops m = foldr (\x -> removeEdge x x) m (vertexList m)
-  assignment = components $ execState (scc' g) initialState
-  initialState = C IntMap.empty 0 0 [] [] IntMap.empty
+  C _ _ _ _ _ assignment transposed = execState (scc' g) initialState
+  initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong

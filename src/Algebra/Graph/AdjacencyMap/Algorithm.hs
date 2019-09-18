@@ -344,18 +344,18 @@ isAcyclic = isRight . topSort
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (NonEmpty.AdjacencyMap a)
 scc g = gmap (component IntMap.!) $ removeSelfLoops $ gmap (assignment Map.!) g where
-  component = expand <$> IntMap.fromListWith (<>) transposed
-  transposed = [ (i,Set.singleton x) | (x,i) <- Map.toList assignment ]
+  component = expand <$> transposed
   expand xs = fromJust $ NonEmpty.toNonEmpty $ induce (`Set.member` xs) g
-  assignment = components $ execState (scc' g) initialState
-  initialState = C Map.empty 0 0 [] [] Map.empty
+  C _ _ _ _ _ assignment transposed = execState (scc' g) initialState 
+  initialState = C 0 0 [] [] Map.empty Map.empty IntMap.empty
         
-data C a = C { preorders :: !(Map.Map a Int)
-             , current :: !Int
+data C a = C { current :: !Int
              , componentId :: !Int
              , boundary :: ![(Int,a)]
              , dfsPath :: ![a]
-             , components :: !(Map.Map a Int)
+             , preorders :: !(Map.Map a Int)
+             , componentIds :: !(Map.Map a Int)
+             , componentSets :: !(IntMap.IntMap (Set.Set a))
              } deriving (Show)
 
 -- gabow path-based scc algorithm
@@ -366,7 +366,7 @@ scc' g =
                     forM_ (adjacent v) $ \w ->
                       gets (Map.lookup w . preorders) >>= \case
                         Nothing -> dfs w
-                        Just pw -> gets (Map.member w . components) >>= \case
+                        Just pw -> gets (Map.member w . componentIds) >>= \case
                           True -> return ()
                           False -> modify' (popBoundary pw)
                     modify' (exit v)
@@ -377,22 +377,23 @@ scc' g =
     -- called when visiting vertex v. increments preorder number, logs
     -- it in the table, adds it to the boundary stack b, and adds it
     -- to the path stack s.
-    enter v (C t c i b s sccs) =
-      C (Map.insert v c t) (1+c) i ((c,v):b) (v:s) sccs
+    enter v (C c i b s t ids vs) =
+      C (1+c) i ((c,v):b) (v:s) (Map.insert v c t) ids vs
 
     -- called on back edges. pops the boundary stack until a vertex
     -- with a smaller preorder num is at the top
-    popBoundary x (C t c i b s sccs) = C t c i (dropWhile ((>x).fst) b) s sccs
+    popBoundary x (C c i b s t ids vs) = C c i (dropWhile ((>x).fst) b) s t ids vs
 
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise we're still building a
     -- scc and the state is unchanged.
-    exit v st@(C t c i b s sccs)
+    exit v st@(C c i b s t ids vs)
       | v /= snd (head b) = st
-      | otherwise = C t c (1+i) (tail b) (tail s') scc' where
+      | otherwise = C c (1+i) (tail b) (tail s') t ids' vs' where
+          curr = v:takeWhile (/=v) s
           s' = dropWhile (/= v) s
-          scc' = foldr (\x sccs -> Map.insert x i sccs) sccs (v:takeWhile (/= v) s)
-
+          ids' = foldr (\x sccs -> Map.insert x i sccs) ids curr
+          vs' = IntMap.insert i (Set.fromList curr) vs
 
 -- Remove all self loops from a graph.
 removeSelfLoops :: Ord a => AdjacencyMap a -> AdjacencyMap a
