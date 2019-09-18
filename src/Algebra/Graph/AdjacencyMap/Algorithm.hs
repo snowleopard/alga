@@ -24,8 +24,7 @@ module Algebra.Graph.AdjacencyMap.Algorithm (
     isDfsForestOf, isTopSortOf,
     
     -- * Type synonyms
-    Cycle,
-    LevelStructure
+    Cycle
     ) where
 
 import Control.Monad
@@ -42,6 +41,7 @@ import Algebra.Graph.AdjacencyMap
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.Graph                          as KL
 import qualified Data.Graph.Typed                    as Typed
+import qualified Data.List                           as List
 import qualified Data.Map.Strict                     as Map
 import qualified Data.Set                            as Set
 
@@ -131,10 +131,8 @@ bfsForestFrom' vs g = evalState (explore vs) Set.empty where
 -- bfs [2] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[[2],[1,3],[5,4]]]
 -- 'concatMap' 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
 -- @
-bfs :: Ord a => [a] -> AdjacencyMap a -> [LevelStructure a]
-bfs vs = map levels . bfsForestFrom vs
-
-type LevelStructure a = [[a]]
+bfs :: Ord a => [a] -> AdjacencyMap a -> [[a]]
+bfs vs = map concat . List.transpose . map levels . bfsForestFrom vs
 
 -- | Compute the /depth-first search/ forest of a graph, where
 --   adjacent vertices are expanded in increasing order with respect

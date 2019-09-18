@@ -101,7 +101,7 @@ data API g c where
         , adjacencyIntMapTranspose   :: g Int -> IntMap IntSet
         , bfsForest                  :: forall a. c a => g a -> Forest a
         , bfsForestFrom              :: forall a. c a => [a] -> g a -> Forest a
-        , bfs                        :: forall a. c a => [a] -> g a -> [AM.LevelStructure a]
+        , bfs                        :: forall a. c a => [a] -> g a -> [[a]]
         , dfsForest                  :: forall a. c a => g a -> Forest a
         , dfsForestFrom              :: forall a. c a => [a] -> g a -> Forest a
         , dfs                        :: forall a. c a => [a] -> g a -> [a]

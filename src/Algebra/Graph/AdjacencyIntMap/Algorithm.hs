@@ -28,8 +28,7 @@ module Algebra.Graph.AdjacencyIntMap.Algorithm (
     isDfsForestOf, isTopSortOf,
 
     -- * Type synonyms
-    Cycle,
-    LevelStructure
+    Cycle
     ) where
 
 import Control.Monad
@@ -41,6 +40,7 @@ import Data.Tree
 
 import Algebra.Graph.AdjacencyIntMap
 
+import qualified Data.List          as List
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.IntSet        as IntSet
 
@@ -118,22 +118,20 @@ bfsForestFrom' vs g = evalState (explore vs) IntSet.empty where
 -- @
 -- bfs vs 'empty'                                         == []
 -- bfs [] g                                             == []
--- bfs [1] ('edge' 1 1)                                   == [[[1]]]
--- bfs [1] ('edge' 1 2)                                   == [[[1],[2]]]
--- bfs [2] ('edge' 1 2)                                   == [[[2]]]
+-- bfs [1] ('edge' 1 1)                                   == [[1]]
+-- bfs [1] ('edge' 1 2)                                   == [[1],[2]]
+-- bfs [2] ('edge' 1 2)                                   == [[2]]
 -- bfs [3] ('edge' 1 2)                                   == []
--- bfs [1,2] ('edge' 1 2)                                 == [[[1],[2]]]
--- bfs [2,1] ('edge' 1 2)                                 == [[2]],[[1]]
+-- bfs [1,2] ('edge' 1 2)                                 == [[1],[2]]
+-- bfs [2,1] ('edge' 1 2)                                 == [[2,1]]
 -- bfs [1,2] ( (1*2) + (3*4) + (5*6) )                  == [[1],[2]]
--- bfs [1,3] ( (1*2) + (3*4) + (5*6) )                  == [[[1],[2]],[[3],[4]]]
--- bfs [3] (3 * (1 + 4) * (1 + 5))                      == [[[3],[1,4,5]]]
--- bfs [2] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[[2],[1,3],[5,4]]]
--- 'concatMap' 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
+-- bfs [1,3] ( (1*2) + (3*4) + (5*6) )                  == [[1,3],[2,4]]
+-- bfs [3] (3 * (1 + 4) * (1 + 5))                      == [[3],[1,4,5]]
+-- bfs [2] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[2],[1,3],[5,4]]
+-- 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
 -- @
-bfs :: [Int] -> AdjacencyIntMap -> [LevelStructure Int]
-bfs vs = map levels . bfsForestFrom vs
-
-type LevelStructure a = [[a]]
+bfs :: [Int] -> AdjacencyIntMap -> [[Int]]
+bfs vs = map concat . List.transpose . map levels . bfsForestFrom vs
 
 -- | Compute the /depth-first search/ forest of a graph, where
 --   adjacent vertices are expanded in increasing order with respect
