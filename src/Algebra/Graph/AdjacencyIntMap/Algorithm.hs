@@ -21,7 +21,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyIntMap.Algorithm (
     -- * Algorithms
-    bfsForest, bfsForestFrom, bfs, dfsForest, dfsForestFrom, dfs, reachable,
+    bfsForest, bfs, dfsForest, dfsForestFrom, dfs, reachable,
     topSort, isAcyclic,
     
     -- * Correctness properties
@@ -47,62 +47,35 @@ import qualified Data.IntSet        as IntSet
 -- | Compute the /breadth-first search/ forest of a graph, such that
 --   adjacent vertices are explored in increasing order with respect
 --   to their 'Ord' instance.
--- 
---   Complexity: /O((n+m)*min(n,W))/ time and /O(n)/ space.
---
--- @
--- bfsForest 'empty'                         == []
--- 'forest' (bfsForest $ 'edge' 1 1)           == 'vertex' 1
--- 'forest' (bfsForest $ 'edge' 1 2)           == 'edge' 1 2
--- 'forest' (bfsForest $ 'edge' 2 1)           == 'vertices' [1,2]
--- 'isSubgraphOf' ('forest' $ bfsForest x) x   == True
--- bfsForest . 'forest' . bfsForest          == bfsForest
--- bfsForest (3 * (1 + 4) * (1 + 5))       == [ Node { rootLabel = 1
---                                                   , subForest = [ Node { rootLabel = 5
---                                                                        , subForest = [] }]}
---                                            , Node { rootLabel = 3
---                                                   , subForest = [ Node { rootLabel = 4
---                                                                        , subForest = [] }]}]
--- 'forest' (bfsForest ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [1,2,3] + 'path' [1,5,4]
--- @
-bfsForest :: AdjacencyIntMap -> Forest Int
-bfsForest g = concat $ evalState (bfs $ vertexList g) IntSet.empty where
-  bfs (v:vs) = gets (IntSet.member v) >>= \case
-    True  -> bfs vs
-    False -> (:) <$> bfsForestFrom' g [v] <*> bfs vs
-  bfs [] = return []
-
--- | Like 'bfsForest', but the traversal is seeded by a list of
---   vertices. Vertices not in the graph are ignored.
 --
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O((L+m)*min(n,W))/ time and /O(n)/ space.
 --
 -- @
--- 'forest' (bfsForestFrom [1,2] $ 'edge' 1 2)      == 'vertices' [1,2]
--- 'forest' (bfsForestFrom [2]   $ 'edge' 1 2)      == 'vertex' 2
--- 'forest' (bfsForestFrom [3]   $ 'edge' 1 2)      == 'empty'
--- 'forest' (bfsForestFrom [2,1] $ 'edge' 1 2)      == 'vertices' [1,2]
--- 'isSubgraphOf' ('forest' $ bfsForestFrom vs x) x == True
--- bfsForestFrom ('vertexList' x) x               == 'bfsForest' x
--- bfsForestFrom vs ('vertices' vs)               == 'map' (\v -> Node v []) ('nub' vs)
--- bfsForestFrom [] x                           == []
--- bfsForestFrom [1,4] (3 * (1 + 4) * (1 + 5))  == [ Node { rootLabel = 1
+-- 'forest' (bfsForest [1,2] $ 'edge' 1 2)      == 'vertices' [1,2]
+-- 'forest' (bfsForest [2]   $ 'edge' 1 2)      == 'vertex' 2
+-- 'forest' (bfsForest [3]   $ 'edge' 1 2)      == 'empty'
+-- 'forest' (bfsForest [2,1] $ 'edge' 1 2)      == 'vertices' [1,2]
+-- 'isSubgraphOf' ('forest' $ bfsForest vs x) x == True
+-- bfsForest vs ('vertices' vs)               == 'map' (\v -> Node v []) ('nub' vs)
+-- bfsForest [] x                           == []
+-- bfsForest [1,4] (3 * (1 + 4) * (1 + 5))  == [ Node { rootLabel = 1
 --                                                        , subForest = [ Node { rootLabel = 5
 --                                                                             , subForest = [] }]}
 --                                                 , Node { rootLabel = 4
 --                                                        , subForest = [] }]
--- 'forest' (bfsForestFrom [3] ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [3,2,1] + 'path' [3,4,5]
--- 
+-- 'forest' (bfsForest [3] ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [3,2,1] + 'path' [3,4,5]
+y-- 
 -- @
-bfsForestFrom :: [Int] -> AdjacencyIntMap -> Forest Int
-bfsForestFrom vs g = evalState (bfsForestFrom' g vs) IntSet.empty
+bfsForest :: [Int] -> AdjacencyIntMap -> Forest Int
+bfsForest vs g = bfsForest' [ v | v <- vs, hasVertex v g ] g
 
-bfsForestFrom' :: AdjacencyIntMap -> [Int] -> State IntSet.IntSet (Forest Int)
-bfsForestFrom' g = unfoldForestM_BF walk <=< filterM discovered where
+bfsForest' :: [Int] -> AdjacencyIntMap -> Forest Int
+bfsForest' vs g = evalState (explore vs) IntSet.empty where
+  explore = unfoldForestM_BF walk <=< filterM discovered 
   walk v = (v,) <$> adjacentM v
   adjacentM v = filterM discovered $ IntSet.toList (postIntSet v g)
-  discovered v = do new <- gets ((&& hasVertex v g) . not . IntSet.member v)
+  discovered v = do new <- gets (not . IntSet.member v)
                     when new $ modify' (IntSet.insert v)
                     return new
 
@@ -131,7 +104,7 @@ bfsForestFrom' g = unfoldForestM_BF walk <=< filterM discovered where
 -- 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
 -- @
 bfs :: [Int] -> AdjacencyIntMap -> [[Int]]
-bfs vs = map concat . List.transpose . map levels . bfsForestFrom vs
+bfs vs = map concat . List.transpose . map levels . bfsForest vs
 
 -- | Compute the /depth-first search/ forest of a graph, where
 --   adjacent vertices are expanded in increasing order with respect

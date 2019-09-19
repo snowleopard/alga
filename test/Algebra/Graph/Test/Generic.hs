@@ -1699,88 +1699,42 @@ testSimplify (prefix, API{..}) = do
 testBfsForest :: TestsuiteInt g -> IO ()
 testBfsForest (prefix, API{..}) = do
     putStrLn $ "\n============ " ++ prefix ++ "bfsForest ============"
-    test "bfsForest empty                       == []" $
-          bfsForest empty                       == []
+    test "bfsForest vs empty                           == []" $ \vs ->
+          bfsForest vs empty                           == []
 
-    test "forest (bfsForest $ edge 1 1)         == vertex 1" $
-          forest (bfsForest $ edge 1 1)         == vertex 1
+    test "forest (bfsForest [1]   $ edge 1 1)          == vertex 1" $
+          forest (bfsForest [1]   $ edge 1 1)          == vertex 1
 
-    test "forest (bfsForest $ edge 1 2)         == edge 1 2" $
-          forest (bfsForest $ edge 1 2)         == edge 1 2
+    test "forest (bfsForest [1]   $ edge 1 2)          == edge 1 2" $
+          forest (bfsForest [1]   $ edge 1 2)          == edge 1 2
 
-    test "forest (bfsForest $ edge 2 1)         == vertices [1,2]" $
-          forest (bfsForest $ edge 2 1)         == vertices [1,2]
+    test "forest (bfsForest [2]   $ edge 1 2)          == vertex 2" $
+          forest (bfsForest [2]   $ edge 1 2)          == vertex 2
 
-    test "isSubgraphOf (forest $ bfsForest x) x == True" $ \x ->
-          isSubgraphOf (forest $ bfsForest x) x == True
+    test "forest (bfsForest [3]   $ edge 1 2)          == empty" $
+          forest (bfsForest [3]   $ edge 1 2)          == empty
 
+    test "forest (bfsForest [2,1] $ edge 1 2)          == vertices [1,2]" $
+          forest (bfsForest [2,1] $ edge 1 2)          == vertices [1,2]
 
-    test "bfsForest . forest . bfsForest        == bfsForest" $ \x ->
-         (bfsForest . forest . bfsForest) x     == bfsForest x
+    test "isSubgraphOf (forest $ bfsForest vs x) x     == True" $ \vs x ->
+          isSubgraphOf (forest $ bfsForest vs x) x     == True
 
-    test "bfsForest (vertices vs)               == map (\\v -> Node v []) (nub $ sort vs)" $ \vs ->
-          bfsForest (vertices vs)               == map (\v -> Node v []) (nub $ sort vs)
+    test "bfsForest vs             (vertices vs)       == map (\\v -> Node v []) (nub vs)" $ \vs ->
+          bfsForest vs             (vertices vs)       == map (\v -> Node v []) (nub vs)
 
-    test "bfsForest $ 3 * (1 + 4) * (1 + 5)     == <correct result>" $
-          bfsForest  (3 * (1 + 4) * (1 + 5))    == [ Node { rootLabel = 1
-                                                   , subForest = [ Node { rootLabel = 5
-                                                                        , subForest = [] }]}
-                                                   , Node { rootLabel = 3
-                                                   , subForest = [ Node { rootLabel = 4
-                                                                        , subForest = [] }]}]
-          
-    test "bfsForest (circuit [1..5] + (circuit [5,4..1])) == <correct result>" $
-          bfsForest (circuit [1..5] + (circuit [5,4..1])) ==
-          [ Node { rootLabel = 1
-                 , subForest = [ Node { rootLabel = 2
-                                      , subForest = [ Node { rootLabel = 3
-                                                           , subForest = []}]}
-                               , Node { rootLabel = 5
-                                      , subForest = [ Node { rootLabel = 4
-                                                           , subForest = []}]}]}]
+    test "bfsForest []             x                   == []" $ \x ->
+          bfsForest []             x                   == []
 
-testBfsForestFrom :: TestsuiteInt g -> IO ()
-testBfsForestFrom (prefix, API{..}) = do
-    putStrLn $ "\n============ " ++ prefix ++ "bfsForestFrom ============"
-    test "bfsForestFrom vs empty                           == []" $ \vs ->
-          bfsForestFrom vs empty                           == []
-
-    test "forest (bfsForestFrom [1]   $ edge 1 1)          == vertex 1" $
-          forest (bfsForestFrom [1]   $ edge 1 1)          == vertex 1
-
-    test "forest (bfsForestFrom [1]   $ edge 1 2)          == edge 1 2" $
-          forest (bfsForestFrom [1]   $ edge 1 2)          == edge 1 2
-
-    test "forest (bfsForestFrom [2]   $ edge 1 2)          == vertex 2" $
-          forest (bfsForestFrom [2]   $ edge 1 2)          == vertex 2
-
-    test "forest (bfsForestFrom [3]   $ edge 1 2)          == empty" $
-          forest (bfsForestFrom [3]   $ edge 1 2)          == empty
-
-    test "forest (bfsForestFrom [2,1] $ edge 1 2)          == vertices [1,2]" $
-          forest (bfsForestFrom [2,1] $ edge 1 2)          == vertices [1,2]
-
-    test "isSubgraphOf (forest $ bfsForestFrom vs x) x     == True" $ \vs x ->
-          isSubgraphOf (forest $ bfsForestFrom vs x) x     == True
-
---    test "bfsForestFrom (vertexList x) x                   == bfsForest x" $ \x ->
---          bfsForestFrom (vertexList x) x                   == bfsForest x
-
-    test "bfsForestFrom vs             (vertices vs)       == map (\\v -> Node v []) (nub vs)" $ \vs ->
-          bfsForestFrom vs             (vertices vs)       == map (\v -> Node v []) (nub vs)
-
-    test "bfsForestFrom []             x                   == []" $ \x ->
-          bfsForestFrom []             x                   == []
-
-    test "bfsForestFrom [1,4] $ 3 * (1 + 4) * (1 + 5)      == <correct result>" $
-          bfsForestFrom [1,4]  (3 * (1 + 4) * (1 + 5))     == [ Node { rootLabel = 1
+    test "bfsForest [1,4] $ 3 * (1 + 4) * (1 + 5)      == <correct result>" $
+          bfsForest [1,4]  (3 * (1 + 4) * (1 + 5))     == [ Node { rootLabel = 1
                                                                      , subForest = [ Node { rootLabel = 5
                                                                                           , subForest = [] }]}
                                                               , Node { rootLabel = 4
                                                                      , subForest = [] }]
           
-    test "bfsForestFrom [3] (circuit [1..5] + (circuit [5,4..1])) == <correct result>" $
-          bfsForestFrom [3] (circuit [1..5] + (circuit [5,4..1])) ==
+    test "bfsForest [3] (circuit [1..5] + (circuit [5,4..1])) == <correct result>" $
+          bfsForest [3] (circuit [1..5] + (circuit [5,4..1])) ==
           [ Node { rootLabel = 3
                  , subForest = [ Node { rootLabel = 2
                                       , subForest = [ Node { rootLabel = 1
