@@ -65,7 +65,7 @@ import qualified Data.IntSet        as IntSet
 --                                                 , Node { rootLabel = 4
 --                                                        , subForest = [] }]
 -- 'forest' (bfsForest [3] ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [3,2,1] + 'path' [3,4,5]
-y-- 
+-- 
 -- @
 bfsForest :: [Int] -> AdjacencyIntMap -> Forest Int
 bfsForest vs g = bfsForest' [ v | v <- vs, hasVertex v g ] g
