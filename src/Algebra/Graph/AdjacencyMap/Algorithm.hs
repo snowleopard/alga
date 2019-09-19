@@ -67,7 +67,11 @@ import qualified Data.Set                            as Set
 -- 'forest' (bfsForest ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [1,2,3] + 'path' [1,5,4]
 -- @
 bfsForest :: Ord a => AdjacencyMap a -> Forest a
-bfsForest g = bfsForestFrom' (vertexList g) g
+bfsForest g = concat $ evalState (bfs $ vertexList g) Set.empty where
+  bfs (v:vs) = gets (Set.member v) >>= \case
+    True  -> bfs vs
+    False -> (:) <$> bfsForestFrom' g [v] <*> bfs vs
+  bfs [] = return []
 
 -- | Like 'bfsForest', but the traversal is seeded by a list of
 --   vertices. Vertices not in the graph are ignored.
@@ -93,17 +97,13 @@ bfsForest g = bfsForestFrom' (vertexList g) g
 -- 
 -- @
 bfsForestFrom :: Ord a => [a] -> AdjacencyMap a -> Forest a
-bfsForestFrom vs g = bfsForestFrom' [ v | v <- vs, hasVertex v g ] g
+bfsForestFrom vs g = evalState (bfsForestFrom' g vs) Set.empty
 
-bfsForestFrom' :: Ord a => [a] -> AdjacencyMap a -> Forest a
-bfsForestFrom' vs g = evalState (explore vs) Set.empty where
-  explore (v:vs) = discovered v >>= \case
-    True -> (:) <$> unfoldTreeM_BF walk v <*> explore vs
-    False -> explore vs
-  explore [] = return []
+bfsForestFrom' :: Ord a => AdjacencyMap a -> [a] -> State (Set.Set a) (Forest a)
+bfsForestFrom' g = unfoldForestM_BF walk <=< filterM discovered where
   walk v = (v,) <$> adjacentM v
   adjacentM v = filterM discovered $ Set.toList (postSet v g)
-  discovered v = do new <- gets (not . Set.member v)
+  discovered v = do new <- gets ((&& hasVertex v g) . not . Set.member v)
                     when new $ modify' (Set.insert v)
                     return new
 
