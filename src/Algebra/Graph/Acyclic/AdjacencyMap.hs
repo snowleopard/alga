@@ -46,7 +46,7 @@ module Algebra.Graph.Acyclic.AdjacencyMap (
     topSort, scc,
 
     -- * Conversion to acyclic graphs
-    toAcyclic, toAcyclicOrd,
+    toAcyclic, toAcyclicOrd, shrink,
 
     -- * Miscellaneous
     consistent
@@ -58,6 +58,7 @@ import Data.Coerce (coerce)
 import qualified Algebra.Graph.AdjacencyMap           as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap  as NAM
+import qualified Data.List.NonEmpty                   as NonEmpty
 import qualified Data.Map                             as Map
 import qualified Data.Set                             as Set
 
@@ -66,37 +67,17 @@ vertices to their adjacency sets. Although the internal representation allows
 for cycles, the methods provided by this module cannot be used to construct a
 graph with cycles.
 
-We define a 'Num' instance as a convenient notation for constructing small
-acyclic graphs, and use this notation in the examples. To ensure the resulting
-graphs have no cycles we keep only edges @(x,y)@ where @x < y@. See the
-examples below:
-
-    > edgeList 1           == []
-    > edgeList (1 + 2)     == []
-    > edgeList (1 * 2)     == [(1,2)]
-    > edgeList (2 * 1)     == []
-    > edgeList (1 * 2 * 1) == [(1,2)]
-    > edgeList (1 * 2 * 3) == [(1,2), (1,3), (2,3)]
-
-__Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
-which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
-additive and multiplicative identities, and 'negate' as additive inverse.
-Nevertheless, overloading 'fromInteger', '+' and '*' is very convenient when
-working with algebraic graphs; we hope that in future Haskell's Prelude will
-provide a more fine-grained class hierarchy for algebraic structures, which we
-would be able to utilise without violating any laws.
-
 The 'Show' instance is defined using basic graph construction primitives where
 possible, falling back to 'toAcyclic' and "Algebra.Graph.AdjacencyMap"
 otherwise:
 
 @
 show empty       == "empty"
-show 1           == "vertex 1"
-show (1 + 2)     == "vertices [1,2]"
-show (1 * 2)     == "(fromJust . toAcyclic) (edge 1 2)"
-show (1 * 2 * 3) == "(fromJust . toAcyclic) (edges [(1,2),(1,3),(2,3)])"
-show (1 * 2 + 3) == "(fromJust . toAcyclic) (overlay (vertex 3) (edge 1 2))"
+show (shrink 1)           == "vertex 1"
+show (shrink $ 1 + 2)     == "vertices [1,2]"
+show (shrink $ 1 * 2)     == "(fromJust . toAcyclic) (edge 1 2)"
+show (shrink $ 1 * 2 * 3) == "(fromJust . toAcyclic) (edges [(1,2),(1,3),(2,3)])"
+show (shrink $ 1 * 2 + 3) == "(fromJust . toAcyclic) (overlay (vertex 3) (edge 1 2))"
 @
 
 The total order on graphs is defined using /size-lexicographic/ comparison:
@@ -119,7 +100,7 @@ newtype AdjacencyMap a = AAM {
     -- @
     -- fromAcyclic 'empty'         == 'AM.empty'
     -- fromAcyclic . 'vertex'      == 'AM.vertex'
-    -- fromAcyclic (1 * 3 * 2)   == 'AM.star' 1 [2,3]
+    -- fromAcyclic (shrink $ 1 * 3 * 2)   == 'AM.star' 1 [2,3]
     -- 'AM.vertexCount' . fromAcyclic == 'vertexCount'
     -- 'AM.edgeCount'   . fromAcyclic == 'edgeCount'
     -- 'AM.isAcyclic'   . fromAcyclic == 'const' True
@@ -138,16 +119,6 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
         es             = edgeList aam
         vshow [x]      = showString "vertex "   . showsPrec 11 x
         vshow xs       = showString "vertices " . showsPrec 11 xs
-
--- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap' for
--- more details.
-instance (Ord a, Num a) => Num (AdjacencyMap a) where
-    fromInteger       = AAM . fromInteger
-    (AAM x) + (AAM y) = AAM $ filterEdges (<) (x + y)
-    (AAM x) * (AAM y) = AAM $ filterEdges (<) (x * y)
-    signum            = const empty
-    abs               = id
-    negate            = id
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.
@@ -235,7 +206,7 @@ isSubgraphOf = coerce AM.isSubgraphOf
 -- isEmpty 'empty'                       == True
 -- isEmpty ('vertex' x)                  == False
 -- isEmpty ('removeVertex' x $ 'vertex' x) == True
--- isEmpty ('removeEdge' 1 2 $ 1 * 2)    == False
+-- isEmpty ('removeEdge' 1 2 $ shrink $ 1 * 2)    == False
 -- @
 isEmpty :: AdjacencyMap a -> Bool
 isEmpty = coerce AM.isEmpty
@@ -258,7 +229,7 @@ hasVertex = coerce AM.hasVertex
 -- @
 -- hasEdge x y 'empty'            == False
 -- hasEdge x y ('vertex' z)       == False
--- hasEdge 1 2 (1 * 2)          == True
+-- hasEdge 1 2 (shrink $ 1 * 2)          == True
 -- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
@@ -283,7 +254,7 @@ vertexCount = coerce AM.vertexCount
 -- @
 -- edgeCount 'empty'      == 0
 -- edgeCount ('vertex' x) == 0
--- edgeCount (1 * 2)    == 1
+-- edgeCount (shrink $ 1 * 2)    == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: AdjacencyMap a -> Int
@@ -306,8 +277,7 @@ vertexList = coerce AM.vertexList
 -- @
 -- edgeList 'empty'       == []
 -- edgeList ('vertex' x)  == []
--- edgeList (1 * 2)     == [(1,2)]
--- edgeList (2 * 1)     == []
+-- edgeList (shrink $ 2 * 1)     == [(2,1)]
 -- edgeList . 'transpose' == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . edgeList
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
@@ -319,7 +289,7 @@ edgeList = coerce AM.edgeList
 -- @
 -- adjacencyList 'empty'      == []
 -- adjacencyList ('vertex' x) == [(x, [])]
--- adjacencyList (1 * 2)    == [(1, [2]), (2, [])]
+-- adjacencyList (shrink $ 1 * 2)    == [(1, [2]), (2, [])]
 -- @
 adjacencyList :: AdjacencyMap a -> [(a, [a])]
 adjacencyList = coerce AM.adjacencyList
@@ -341,7 +311,7 @@ vertexSet = coerce AM.vertexSet
 -- @
 -- edgeSet 'empty'      == Set.'Set.empty'
 -- edgeSet ('vertex' x) == Set.'Set.empty'
--- edgeSet (1 * 2)    == Set.'Set.singleton' (1,2)
+-- edgeSet (shrink $ 1 * 2)    == Set.'Set.singleton' (1,2)
 -- @
 edgeSet :: Eq a => AdjacencyMap a -> Set (a, a)
 edgeSet = coerce AM.edgeSet
@@ -352,8 +322,8 @@ edgeSet = coerce AM.edgeSet
 -- @
 -- preSet x 'empty'          == Set.'Set.empty'
 -- preSet x ('vertex' x)     == Set.'Set.empty'
--- preSet 1 (1 * 2)        == Set.'Set.empty'
--- preSet 2 (1 * 2)        == Set.'Set.fromList' [1]
+-- preSet 1 (shrink $ 1 * 2)        == Set.'Set.empty'
+-- preSet 2 (shrink $ 1 * 2)        == Set.'Set.fromList' [1]
 -- Set.'Set.member' x . preSet x == 'const' False
 -- @
 preSet :: Ord a => a -> AdjacencyMap a -> Set a
@@ -365,8 +335,8 @@ preSet = coerce AM.preSet
 -- @
 -- postSet x 'empty'          == Set.'Set.empty'
 -- postSet x ('vertex' x)     == Set.'Set.empty'
--- postSet 1 (1 * 2)        == Set.'Set.fromList' [2]
--- postSet 2 (1 * 2)        == Set.'Set.empty'
+-- postSet 1 (shrink $ 1 * 2)        == Set.'Set.fromList' [2]
+-- postSet 2 (shrink $ 1 * 2)        == Set.'Set.empty'
 -- Set.'Set.member' x . postSet x == 'const' False
 -- @
 postSet :: Ord a => a -> AdjacencyMap a -> Set a
@@ -378,7 +348,7 @@ postSet = coerce AM.postSet
 -- @
 -- removeVertex x ('vertex' x)       == 'empty'
 -- removeVertex 1 ('vertex' 2)       == 'vertex' 2
--- removeVertex 1 (1 * 2)          == 'vertex' 2
+-- removeVertex 1 (shrink $ 1 * 2)          == 'vertex' 2
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Ord a => a -> AdjacencyMap a -> AdjacencyMap a
@@ -388,10 +358,10 @@ removeVertex = coerce AM.removeVertex
 -- Complexity: /O(log(n))/ time.
 --
 -- @
--- removeEdge 1 2 (1 * 2)          == 'vertices' [1,2]
+-- removeEdge 1 2 (shrink $ 1 * 2)          == 'vertices' [1,2]
 -- removeEdge x y . removeEdge x y == removeEdge x y
 -- removeEdge x y . 'removeVertex' x == 'removeVertex' x
--- removeEdge 1 2 (1 * 2 * 3)      == (1 + 2) * 3
+-- removeEdge 1 2 (shrink $ 1 * 2 * 3)      == shrink ((1 + 2) * 3)
 -- @
 removeEdge :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
 removeEdge = coerce AM.removeEdge
@@ -438,10 +408,10 @@ induceJust = coerce AM.induceJust
 -- Complexity: /O(n * m * log(n)^2)/ time.
 --
 -- @
--- 'edgeList' (box (1 * 2) (10 * 20)) == [ ((1,10), (1,20))
---                                     , ((1,10), (2,10))
---                                     , ((1,20), (2,20))
---                                     , ((2,10), (2,20)) ]
+-- 'edgeList' (box (shrink $ 1 * 2) (shrink $ 10 * 20)) == [ ((1,10), (1,20))
+--                                                         , ((1,10), (2,10))
+--                                                         , ((1,20), (2,20))
+--                                                         , ((2,10), (2,20)) ]
 -- @
 --
 -- Up to an isomorphism between the resulting vertex types, this operation
@@ -467,7 +437,7 @@ box = coerce AM.box
 -- @
 -- transitiveClosure 'empty'               == 'empty'
 -- transitiveClosure ('vertex' x)          == 'vertex' x
--- transitiveClosure (1 * 2 + 2 * 3)     == 1 * 2 + 1 * 3 + 2 * 3
+-- transitiveClosure (shrink $ 1 * 2 + 2 * 3)     == shrink (1 * 2 + 1 * 3 + 2 * 3)
 -- transitiveClosure . transitiveClosure == transitiveClosure
 -- @
 transitiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
@@ -478,7 +448,7 @@ transitiveClosure = coerce AM.transitiveClosure
 -- @
 -- topSort 'empty'                 == []
 -- topSort ('vertex' x)            == [x]
--- topSort (1 * (2 + 4) + 3 * 4) == [1, 2, 3, 4]
+-- topSort (shrink $ 1 * (2 + 4) + 3 * 4) == [1, 2, 3, 4]
 -- topSort ('join' x y)            == 'fmap' 'Left' (topSort x) ++ 'fmap' 'Right' (topSort y)
 -- 'Right' . topSort               == 'AM.topSort' . 'fromAcyclic'
 -- @
@@ -508,8 +478,8 @@ scc = coerce AM.scc
 -- if the input contains cycles.
 --
 -- @
--- toAcyclic ('AM.path'    [1,2,3]) == 'Just' (1 * 2 + 2 * 3)
--- toAcyclic ('AM.clique'  [3,2,1]) == 'Just' ('transpose' (1 * 2 * 3))
+-- toAcyclic ('AM.path'    [1,2,3]) == 'Just' (shrink $ 1 * 2 + 2 * 3)
+-- toAcyclic ('AM.clique'  [3,2,1]) == 'Just' ('transpose' (shrink $ 1 * 2 * 3))
 -- toAcyclic ('AM.circuit' [1,2,3]) == 'Nothing'
 -- toAcyclic . 'fromAcyclic'     == 'Just'
 -- @
@@ -522,14 +492,30 @@ toAcyclic x = if AM.isAcyclic x then Just (AAM x) else Nothing
 -- @
 -- toAcyclicOrd 'empty'       == 'empty'
 -- toAcyclicOrd . 'vertex'    == 'vertex'
--- toAcyclicOrd (1 + 2)     == 1 + 2
--- toAcyclicOrd (1 * 2)     == 1 * 2
--- toAcyclicOrd (2 * 1)     == 1 + 2
--- toAcyclicOrd (1 * 2 * 1) == 1 * 2
--- toAcyclicOrd (1 * 2 * 3) == 1 * 2 * 3
+-- toAcyclicOrd (1 + 2)     == shrink (1 + 2)
+-- toAcyclicOrd (1 * 2)     == shrink (1 * 2)
+-- toAcyclicOrd (2 * 1)     == shrink (1 + 2)
+-- toAcyclicOrd (1 * 2 * 1) == shrink (1 * 2)
+-- toAcyclicOrd (1 * 2 * 3) == shrink (1 * 2 * 3)
 -- @
 toAcyclicOrd :: Ord a => AM.AdjacencyMap a -> AdjacencyMap a
 toAcyclicOrd = AAM . filterEdges (<)
+
+-- TODO: Add time complexity
+-- TODO: Change Arbitrary instance of Acyclic and Labelled Acyclic graph
+-- | Construct an acyclic graph from a given adjacency map using 'scc'.
+-- If the graph is acyclic in nature, the same graph is returned as an acyclic graph.
+-- If the graph is cyclic, then a representative for every strongly conected
+-- component in its condensation graph is chosen an these representatives are
+-- used to build an acyclic graph.
+--
+-- @
+-- shrink . 'AM.vertex'   == 'vertex'
+-- shrink . 'AM.vertices' == 'vertices'
+-- shrink . 'fromAcyclic' == 'id'
+-- @
+shrink :: Ord a => AM.AdjacencyMap a -> AdjacencyMap a
+shrink = AAM . AM.gmap (NonEmpty.head . NAM.vertexList1) . AM.scc
 
 -- TODO: Provide a faster equivalent in "Algebra.Graph.AdjacencyMap".
 -- Keep only the edges that satisfy a given predicate.
