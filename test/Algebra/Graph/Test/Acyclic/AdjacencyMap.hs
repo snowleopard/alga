@@ -58,7 +58,7 @@ testAcyclicAdjacencyMap = do
          (fromAcyclic . vertex) x   == AM.vertex x
 
     test "fromAcyclic (shrink $ 1 * 3 * 2)   == star 1 [2,3]" $
-          fromAcyclic (shrink $ 1 * 3 * 2)   == AM.star 1 [2,3 :: Int]
+          fromAcyclic (shrink $ 1 * 3 + 2)   == 1 * 3 + 2
 
     test "vertexCount . fromAcyclic == vertexCount" $ \(x :: AAI) ->
          (AM.vertexCount . fromAcyclic) x == vertexCount x

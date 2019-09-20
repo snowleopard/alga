@@ -100,7 +100,7 @@ newtype AdjacencyMap a = AAM {
     -- @
     -- fromAcyclic 'empty'         == 'AM.empty'
     -- fromAcyclic . 'vertex'      == 'AM.vertex'
-    -- fromAcyclic (shrink $ 1 * 3 * 2)   == 'AM.star' 1 [2,3]
+    -- fromAcyclic (shrink $ 1 * 3 + 2)   == 1 * 3 + 2
     -- 'AM.vertexCount' . fromAcyclic == 'vertexCount'
     -- 'AM.edgeCount'   . fromAcyclic == 'edgeCount'
     -- 'AM.isAcyclic'   . fromAcyclic == 'const' True
