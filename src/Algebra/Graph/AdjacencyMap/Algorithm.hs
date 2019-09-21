@@ -73,7 +73,7 @@ import qualified Data.Set                            as Set
 bfsForest :: Ord a => [a] -> AdjacencyMap a -> Forest a
 bfsForest vs g = bfsForest' [ v | v <- vs, hasVertex v g ] g
 
-bfsForest' :: Ord a => [a] -> AdjacencyMap a -> (Forest a)
+bfsForest' :: Ord a => [a] -> AdjacencyMap a -> Forest a
 bfsForest' vs g = evalState (explore vs) Set.empty where
   explore = unfoldForestM_BF walk <=< filterM discovered
   walk v = (v,) <$> adjacentM v
