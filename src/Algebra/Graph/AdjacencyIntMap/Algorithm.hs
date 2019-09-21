@@ -46,7 +46,9 @@ import qualified Data.IntSet        as IntSet
 
 -- | Compute the /breadth-first search/ forest of a graph, such that
 --   adjacent vertices are explored in increasing order with respect
---   to their 'Ord' instance.
+--   to their 'Ord' instance. The search is seeded by a list of
+--   argument vertices that will be the roots of the resulting
+--   forest. Argument vertices not in the graph are ignored.
 --
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O((L+m)*min(n,W))/ time and /O(n)/ space.

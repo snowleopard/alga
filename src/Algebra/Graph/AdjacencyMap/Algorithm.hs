@@ -47,7 +47,12 @@ import qualified Data.Set                            as Set
 
 -- | Compute the /breadth-first search/ forest of a graph, such that
 --   adjacent vertices are explored in increasing order with respect
---   to their 'Ord' instance.
+--   to their 'Ord' instance. The search is seeded by a list of
+--   argument vertices that will be the roots of the resulting
+--   forest. Argument vertices not in the graph are ignored.
+--
+--   Let /L/ be the number of seed vertices. Complexity:
+--   /O((L+m)*log(n))/ time and /O(n)/ space.
 --
 -- @
 -- 'forest' (bfsForest [1,2] $ 'edge' 1 2)      == 'vertices' [1,2]
@@ -89,17 +94,17 @@ bfsForest' vs g = evalState (explore vs) Set.empty where
 -- @
 -- bfs vs 'empty'                                         == []
 -- bfs [] g                                             == []
--- bfs [1] ('edge' 1 1)                                   == [[[1]]]
--- bfs [1] ('edge' 1 2)                                   == [[[1],[2]]]
--- bfs [2] ('edge' 1 2)                                   == [[[2]]]
+-- bfs [1] ('edge' 1 1)                                   == [[1]]
+-- bfs [1] ('edge' 1 2)                                   == [[1],[2]]
+-- bfs [2] ('edge' 1 2)                                   == [[2]]
 -- bfs [3] ('edge' 1 2)                                   == []
--- bfs [1,2] ('edge' 1 2)                                 == [[[1],[2]]]
--- bfs [2,1] ('edge' 1 2)                                 == [[2]],[[1]]
+-- bfs [1,2] ('edge' 1 2)                                 == [[1],[2]]
+-- bfs [2,1] ('edge' 1 2)                                 == [[2,1]]
 -- bfs [1,2] ( (1*2) + (3*4) + (5*6) )                  == [[1],[2]]
--- bfs [1,3] ( (1*2) + (3*4) + (5*6) )                  == [[[1],[2]],[[3],[4]]]
--- bfs [3] (3 * (1 + 4) * (1 + 5))                      == [[[3],[1,4,5]]]
--- bfs [2] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[[2],[1,3],[5,4]]]
--- 'concatMap' 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
+-- bfs [1,3] ( (1*2) + (3*4) + (5*6) )                  == [[1,3],[2,4]]
+-- bfs [3] (3 * (1 + 4) * (1 + 5))                      == [[3],[1,4,5]]
+-- bfs [2] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[2],[1,3],[5,4]]
+-- 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
 -- @
 bfs :: Ord a => [a] -> AdjacencyMap a -> [[a]]
 bfs vs = map concat . List.transpose . map levels . bfsForest vs
