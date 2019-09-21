@@ -343,10 +343,8 @@ isAcyclic = isRight . topSort
 -- 'isAcyclic' x     == (scc x == 'gmap' NonEmpty.'NonEmpty.vertex' x)
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (NonEmpty.AdjacencyMap a)
-scc g = gmap (component IntMap.!) $ removeSelfLoops $ gmap (assignment Map.!) g where
-  component = expand <$> transposed
-  expand xs = fromJust $ NonEmpty.toNonEmpty $ induce (`Set.member` xs) g
-  C _ _ _ _ _ assignment transposed = execState (scc' g) initialState 
+scc g = gmap (components IntMap.!) $ removeSelfLoops $ gmap (assignment Map.!) g where
+  C _ _ _ _ _ assignment components = execState (scc' g) initialState 
   initialState = C 0 0 [] [] Map.empty Map.empty IntMap.empty
         
 data C a = C { current :: !Int
@@ -355,7 +353,7 @@ data C a = C { current :: !Int
              , dfsPath :: ![a]
              , preorders :: !(Map.Map a Int)
              , componentIds :: !(Map.Map a Int)
-             , componentSets :: !(IntMap.IntMap (Set.Set a))
+             , componentSets :: !(IntMap.IntMap (NonEmpty.AdjacencyMap a))
              } deriving (Show)
 
 -- gabow path-based scc algorithm
@@ -393,7 +391,7 @@ scc' g =
           curr = v:takeWhile (/=v) s
           s' = dropWhile (/= v) s
           ids' = foldr (\x sccs -> Map.insert x i sccs) ids curr
-          vs' = IntMap.insert i (Set.fromList curr) vs
+          vs' = IntMap.insert i (fromJust $ NonEmpty.toNonEmpty $ induce (`Set.member`Set.fromList curr) g) vs
 
 -- Remove all self loops from a graph.
 removeSelfLoops :: Ord a => AdjacencyMap a -> AdjacencyMap a

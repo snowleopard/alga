@@ -334,7 +334,7 @@ data C = C { current :: !Int
            , dfsPath :: ![Int]
            , preorders :: !(IntMap.IntMap Int)
            , componentIds :: !(IntMap.IntMap Int)
-           , componentSets :: !(IntMap.IntMap IntSet.IntSet)
+           , componentSets :: !(IntMap.IntMap AdjacencyIntMap)
            } deriving (Show)
 
 -- gabow path-based scc algorithm
@@ -372,16 +372,14 @@ scc' g =
           curr = v:takeWhile (/=v) s
           s' = dropWhile (/= v) s
           ids' = foldr (\x sccs -> IntMap.insert x i sccs) ids curr
-          vs' = IntMap.insert i (IntSet.fromList curr) vs
+          vs' = IntMap.insert i (induce (`IntSet.member`IntSet.fromList curr) g) vs
 
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
-scc g = AM.gmap (component IntMap.!) $ convert $ removeSelfLoops $ gmap (assignment IntMap.!) g where
+scc g = AM.gmap (components IntMap.!) $ convert $ removeSelfLoops $ gmap (assignment IntMap.!) g where
   convert = coerce . Map.fromAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
   setOfIntSet = Set.fromAscList . IntSet.toList
-  component = expand <$> transposed
-  expand xs = induce (`IntSet.member` xs) g
   removeSelfLoops m = foldr (\x -> removeEdge x x) m (vertexList m)
-  C _ _ _ _ _ assignment transposed = execState (scc' g) initialState
+  C _ _ _ _ _ assignment components = execState (scc' g) initialState
   initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
