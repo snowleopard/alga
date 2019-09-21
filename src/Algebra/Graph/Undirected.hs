@@ -43,7 +43,7 @@ module Algebra.Graph.Undirected (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices,
-    induce, induceJust, toSymmetricRelation,
+    induce, induceJust, toSymmetricRelation, complement,
 
     -- * Miscellaneous
     consistent
@@ -697,6 +697,19 @@ adjacencyList = SR.adjacencyList . toSymmetricRelation
 toSymmetricRelation :: Ord a => Graph a -> SR.Relation a
 toSymmetricRelation = foldg SR.empty SR.vertex SR.overlay SR.connect
 {-# INLINE toSymmetricRelation #-}
+
+-- | Complement of a graph.
+--
+-- @
+-- complement 'empty'           == 'empty'
+-- complement ('vertex' x)      == ('vertex' x)
+-- complement ('edge' x y)      == ('overlay' ('vertex' x) ('vertex' y))
+-- complement ('star' x [y, z]) == ('overlay' ('vertex' x) ('edge' y z))
+-- complement . complement      == id
+-- @
+complement :: Ord a => Graph a -> Graph a
+complement g@(UG _) = foldr (uncurry removeEdge) (cliqueG g) (edgeList g)
+  where cliqueG = clique . vertexList
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
