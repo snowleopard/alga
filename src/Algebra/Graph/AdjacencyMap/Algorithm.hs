@@ -49,7 +49,9 @@ import qualified Data.Set                            as Set
 --   adjacent vertices are explored in increasing order with respect
 --   to their 'Ord' instance. The search is seeded by a list of
 --   argument vertices that will be the roots of the resulting
---   forest. Argument vertices not in the graph are ignored.
+--   forest. Duplicates in the list will have their first occurrence
+--   expanded and subsequent ones ignored. Argument vertices not in
+--   the graph are also ignored. 
 --
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O((L+m)*log(n))/ time and /O(n)/ space.
@@ -60,7 +62,7 @@ import qualified Data.Set                            as Set
 -- 'forest' (bfsForest [3]   $ 'edge' 1 2)      == 'empty'
 -- 'forest' (bfsForest [2,1] $ 'edge' 1 2)      == 'vertices' [1,2]
 -- 'isSubgraphOf' ('forest' $ bfsForest vs x) x == True
--- bfsForest vs ('vertices' vs)               == 'map' (\v -> Node v []) ('nub' vs)
+-- bfsForest ('vertexList' g) g               == 'map' (\v -> Node v []) ('nub' $ 'vertexList' g)
 -- bfsForest [] x                           == []
 -- bfsForest [1,4] (3 * (1 + 4) * (1 + 5))  == [ Node { rootLabel = 1
 --                                                        , subForest = [ Node { rootLabel = 5
@@ -71,10 +73,7 @@ import qualified Data.Set                            as Set
 -- 
 -- @
 bfsForest :: Ord a => [a] -> AdjacencyMap a -> Forest a
-bfsForest vs g = bfsForest' [ v | v <- vs, hasVertex v g ] g
-
-bfsForest' :: Ord a => [a] -> AdjacencyMap a -> Forest a
-bfsForest' vs g = evalState (explore vs) Set.empty where
+bfsForest vs g = evalState (explore [ v | v <- vs, hasVertex v g ]) Set.empty where
   explore = unfoldForestM_BF walk <=< filterM discovered
   walk v = (v,) <$> adjacentM v
   adjacentM v = filterM discovered $ Set.toList (postSet v g)
@@ -82,7 +81,7 @@ bfsForest' vs g = evalState (explore vs) Set.empty where
                     when new $ modify' (Set.insert v)
                     return new
 
--- | Like 'bfsForestFrom' with the resulting forest converted to a
+-- | This is 'bfsForest' with the resulting forest converted to a
 --   level structure.  Flattening the result via @'concat' . 'bfs' vs@
 --   gives an enumeration of vertices reachable from @vs@ in breadth
 --   first order. Adjacent vertices are explored in increasing order
@@ -97,9 +96,9 @@ bfsForest' vs g = evalState (explore vs) Set.empty where
 -- bfs [1] ('edge' 1 1)                                   == [[1]]
 -- bfs [1] ('edge' 1 2)                                   == [[1],[2]]
 -- bfs [2] ('edge' 1 2)                                   == [[2]]
--- bfs [3] ('edge' 1 2)                                   == []
--- bfs [1,2] ('edge' 1 2)                                 == [[1],[2]]
+-- bfs [1,2] ('edge' 1 2)                                 == [[1,2]]
 -- bfs [2,1] ('edge' 1 2)                                 == [[2,1]]
+-- bfs [3] ('edge' 1 2)                                   == []
 -- bfs [1,2] ( (1*2) + (3*4) + (5*6) )                  == [[1],[2]]
 -- bfs [1,3] ( (1*2) + (3*4) + (5*6) )                  == [[1,3],[2,4]]
 -- bfs [3] (3 * (1 + 4) * (1 + 5))                      == [[3],[1,4,5]]

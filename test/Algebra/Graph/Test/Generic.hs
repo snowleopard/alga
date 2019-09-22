@@ -1720,8 +1720,8 @@ testBfsForest (prefix, API{..}) = do
     test "isSubgraphOf (forest $ bfsForest vs x) x     == True" $ \vs x ->
           isSubgraphOf (forest $ bfsForest vs x) x     == True
 
-    test "bfsForest vs             (vertices vs)       == map (\\v -> Node v []) (nub vs)" $ \vs ->
-          bfsForest vs             (vertices vs)       == map (\v -> Node v []) (nub vs)
+    test "bfsForest vs             (vertices vs)       == map (\\v -> Node v []) (nub vs)" $ \g ->
+          bfsForest             (vertexList g)  g      == map (\v -> Node v []) (nub $ vertexList g)
 
     test "bfsForest []             x                   == []" $ \x ->
           bfsForest []             x                   == []
@@ -1762,16 +1762,16 @@ testBfs (prefix, API{..}) = do
     test "bfs [2]   $ edge 1 2                 == [[2]]" $
           bfs [2]    (edge 1 2)                == [[2]]
 
-    test "bfs [3]   $ edge 1 2                 == []" $
-          bfs [3]    (edge 1 2)                == []
-
-    test "bfs [1,2] $ edge 1 2                 == [[1],[2]]" $
+    test "bfs [1,2] $ edge 1 2                 == [[1,2]]" $
           bfs [1,2]  (edge 1 2)                == [[1,2]]
 
     test "bfs [2,1] $ edge 1 2                 == [[2,1]]" $
           bfs [2,1]  (edge 1 2)                == [[2,1]]
 
-    test "bfs [1,2] ((1*2) + (3*4) + (5*6))    == [[1],[2]]" $
+    test "bfs [3]   $ edge 1 2                 == []" $
+          bfs [3]    (edge 1 2)                == []
+
+    test "bfs [1,2] ((1*2) + (3*4) + (5*6))    == [[1,2]]" $
           bfs [1,2] ((1*2) + (3*4) + (5*6))    == [[1,2]]
 
     test "bfs [1,3] ((1*2) + (3*4) + (5*6))    == [[1,3],[2,4]]" $
