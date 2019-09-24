@@ -81,10 +81,10 @@ bfsForest vs g = evalState (explore [ v | v <- vs, hasVertex v g ]) IntSet.empty
                     return new
 
 -- | This is 'bfsForest' with the resulting forest converted to a
---   level structure.  Flattening the result via @'concat' . 'bfs' vs@
---   gives an enumeration of vertices reachable from @vs@ in breadth
---   first order. Adjacent vertices are explored in increasing order
---   with respect to their 'Ord' instance.
+--   level structure. Adjacent vertices are explored in increasing
+--   order with respect to their 'Ord' instance. Flattening the result
+--   via @'concat' . 'bfs' vs@ gives an enumeration of vertices
+--   reachable from @vs@ in breadth first order.
 --
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O((L+m)*min(n,W))/ time and /O(n)/ space.
@@ -103,6 +103,7 @@ bfsForest vs g = evalState (explore [ v | v <- vs, hasVertex v g ]) IntSet.empty
 -- bfs [3] (3 * (1 + 4) * (1 + 5))                      == [[3],[1,4,5]]
 -- bfs [2] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[2],[1,3],[5,4]]
 -- 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
+-- bfs vs == 'map' 'concat' . 'List.transpose' . 'map' 'levels' . 'bfsForest' vs
 -- @
 bfs :: [Int] -> AdjacencyIntMap -> [[Int]]
 bfs vs = map concat . List.transpose . map levels . bfsForest vs

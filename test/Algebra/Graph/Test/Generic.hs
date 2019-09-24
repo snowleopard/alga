@@ -1720,8 +1720,8 @@ testBfsForest (prefix, API{..}) = do
     test "isSubgraphOf (forest $ bfsForest vs x) x     == True" $ \vs x ->
           isSubgraphOf (forest $ bfsForest vs x) x     == True
 
-    test "bfsForest vs             (vertices vs)       == map (\\v -> Node v []) (nub vs)" $ \g ->
-          bfsForest             (vertexList g)  g      == map (\v -> Node v []) (nub $ vertexList g)
+    test "bfsForest (vertexList g) g               == map (\v -> Node v []) (nub $ vertexList g)" $ \g ->
+          bfsForest (vertexList g) g               == map (\v -> Node v []) (nub $ vertexList g)
 
     test "bfsForest []             x                   == []" $ \x ->
           bfsForest []             x                   == []
