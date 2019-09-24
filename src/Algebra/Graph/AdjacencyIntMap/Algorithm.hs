@@ -64,10 +64,10 @@ import qualified Data.IntSet        as IntSet
 -- bfsForest ('vertexList' g) g               == 'map' (\v -> Node v []) ('nub' $ 'vertexList' g)
 -- bfsForest [] x                           == []
 -- bfsForest [1,4] (3 * (1 + 4) * (1 + 5))  == [ Node { rootLabel = 1
---                                                        , subForest = [ Node { rootLabel = 5
---                                                                             , subForest = [] }]}
---                                                 , Node { rootLabel = 4
---                                                        , subForest = [] }]
+--                                                    , subForest = [ Node { rootLabel = 5
+--                                                                         , subForest = [] }]}
+--                                             , Node { rootLabel = 4
+--                                                    , subForest = [] }]
 -- 'forest' (bfsForest [3] ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [3,2,1] + 'path' [3,4,5]
 -- 
 -- @
@@ -98,8 +98,8 @@ bfsForest vs g = evalState (explore [ v | v <- vs, hasVertex v g ]) IntSet.empty
 -- bfs [1,2] ('edge' 1 2)                                 == [[1,2]]
 -- bfs [2,1] ('edge' 1 2)                                 == [[2,1]]
 -- bfs [3] ('edge' 1 2)                                   == []
--- bfs [1,2] ( (1*2) + (3*4) + (5*6) )                  == [[1],[2]]
--- bfs [1,3] ( (1*2) + (3*4) + (5*6) )                  == [[1,3],[2,4]]
+-- bfs [1,2] ((1*2) + (3*4) + (5*6))                    == [[1,2]]
+-- bfs [1,3] ((1*2) + (3*4) + (5*6))                    == [[1,3],[2,4]]
 -- bfs [3] (3 * (1 + 4) * (1 + 5))                      == [[3],[1,4,5]]
 -- bfs [2] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[2],[1,3],[5,4]]
 -- 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
