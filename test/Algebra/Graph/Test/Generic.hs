@@ -1720,18 +1720,19 @@ testBfsForest (prefix, API{..}) = do
     test "isSubgraphOf (forest $ bfsForest vs x) x     == True" $ \vs x ->
           isSubgraphOf (forest $ bfsForest vs x) x     == True
 
-    test "bfsForest (vertexList g) g               == map (\v -> Node v []) (nub $ vertexList g)" $ \g ->
-          bfsForest (vertexList g) g               == map (\v -> Node v []) (nub $ vertexList g)
+    test "bfsForest (vertexList g) g                   == <correct result>" $ \g ->
+          bfsForest (vertexList g) g                   ==
+          map (\v -> Node v []) (nub $ vertexList g)
 
     test "bfsForest []             x                   == []" $ \x ->
           bfsForest []             x                   == []
 
     test "bfsForest [1,4] $ 3 * (1 + 4) * (1 + 5)      == <correct result>" $
           bfsForest [1,4]  (3 * (1 + 4) * (1 + 5))     == [ Node { rootLabel = 1
-                                                                     , subForest = [ Node { rootLabel = 5
-                                                                                          , subForest = [] }]}
-                                                              , Node { rootLabel = 4
-                                                                     , subForest = [] }]
+                                                                 , subForest = [ Node { rootLabel = 5
+                                                                                      , subForest = [] }]}
+                                                          , Node { rootLabel = 4
+                                                                 , subForest = [] }]
           
     test "bfsForest [3] (circuit [1..5] + (circuit [5,4..1])) == <correct result>" $
           bfsForest [3] (circuit [1..5] + (circuit [5,4..1])) ==
@@ -1746,46 +1747,46 @@ testBfsForest (prefix, API{..}) = do
 testBfs :: TestsuiteInt g -> IO ()
 testBfs (prefix, API{..}) = do
     putStrLn $ "\n============ " ++ prefix ++ "bfs ============"
-    
-    test "bfs vs    $ empty                    == []" $ \vs ->
-          bfs vs      empty                    == []
 
-    test "bfs []    $ g                        == []" $ \g ->
-          bfs []      g                        == []
+    test "bfs vs    $ empty                             == []" $ \vs ->
+          bfs vs      empty                             == []
 
-    test "bfs [1]   $ edge 1 1                 == [[1]]" $
-          bfs [1]    (edge 1 1)                == [[1]]
+    test "bfs []      g                                 == []" $ \g ->
+          bfs []      g                                 == []
 
-    test "bfs [1]   $ edge 1 2                 == [[1],[2]]" $
-          bfs [1]    (edge 1 2)                == [[1],[2]]
+    test "bfs [1]    (edge 1 1)                         == [[1]]" $
+          bfs [1]    (edge 1 1)                         == [[1]]
 
-    test "bfs [2]   $ edge 1 2                 == [[2]]" $
-          bfs [2]    (edge 1 2)                == [[2]]
+    test "bfs [1]    (edge 1 2)                         == [[1],[2]]" $
+          bfs [1]    (edge 1 2)                         == [[1],[2]]
 
-    test "bfs [1,2] $ edge 1 2                 == [[1,2]]" $
-          bfs [1,2]  (edge 1 2)                == [[1,2]]
+    test "bfs [2]    (edge 1 2)                         == [[2]]" $
+          bfs [2]    (edge 1 2)                         == [[2]]
 
-    test "bfs [2,1] $ edge 1 2                 == [[2,1]]" $
-          bfs [2,1]  (edge 1 2)                == [[2,1]]
+    test "bfs [1,2]  (edge 1 2)                         == [[1,2]]" $
+          bfs [1,2]  (edge 1 2)                         == [[1,2]]
 
-    test "bfs [3]   $ edge 1 2                 == []" $
-          bfs [3]    (edge 1 2)                == []
+    test "bfs [2,1]  (edge 1 2)                         == [[2,1]]" $
+          bfs [2,1]  (edge 1 2)                         == [[2,1]]
 
-    test "bfs [1,2] ((1*2) + (3*4) + (5*6))    == [[1,2]]" $
-          bfs [1,2] ((1*2) + (3*4) + (5*6))    == [[1,2]]
+    test "bfs [3]    (edge 1 2)                         == []" $
+          bfs [3]    (edge 1 2)                         == []
 
-    test "bfs [1,3] ((1*2) + (3*4) + (5*6))    == [[1,3],[2,4]]" $
-          bfs [1,3] ((1*2) + (3*4) + (5*6))    == [[1,3],[2,4]]
+    test "bfs [1,2] ((1*2) + (3*4) + (5*6))             == [[1,2]]" $
+          bfs [1,2] ((1*2) + (3*4) + (5*6))             == [[1,2]]
 
-    test "bfs [3] $ 3 * (1 + 4) * (1 + 5)    == [[3],[1,4,5]]" $
-          bfs [3]  (3 * (1 + 4) * (1 + 5))   == [[3],[1,4,5]]
+    test "bfs [1,3] ((1*2) + (3*4) + (5*6))             == [[1,3],[2,4]]" $
+          bfs [1,3] ((1*2) + (3*4) + (5*6))             == [[1,3],[2,4]]
+
+    test "bfs [3]  (3 * (1 + 4) * (1 + 5))              == [[3],[1,4,5]]" $
+          bfs [3]  (3 * (1 + 4) * (1 + 5))              == [[3],[1,4,5]]
 
     test "bfs [2] (circuit [1..5] + (circuit [5,4..1])) == [[2],[1,3],[5,4]]" $
           bfs [2] (circuit [1..5] + (circuit [5,4..1])) == [[2],[1,3],[5,4]]
-          
+
     test "concat (bfs [3] $ circuit [1..5] + circuit [5,4..1]) == [3,2,4,1,5]" $
           concat (bfs [3] $ circuit [1..5] + circuit [5,4..1]) == [3,2,4,1,5]
-          
+
     test "isSubgraphOf (vertices $ concat $ bfs vs x) x == True" $ \vs x ->
           isSubgraphOf (vertices $ concat $ bfs vs x) x == True
 

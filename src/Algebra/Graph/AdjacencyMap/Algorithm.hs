@@ -54,7 +54,7 @@ import qualified Data.Set                            as Set
 --   the graph are also ignored. 
 --
 --   Let /L/ be the number of seed vertices. Complexity:
---   /O((L+m)*log(n))/ time and /O(n)/ space.
+--   /O((L+m)*log n)/ time and /O(n)/ space.
 --
 -- @
 -- 'forest' (bfsForest [1,2] $ 'edge' 1 2)      == 'vertices' [1,2]
@@ -65,10 +65,10 @@ import qualified Data.Set                            as Set
 -- bfsForest ('vertexList' g) g               == 'map' (\v -> Node v []) ('nub' $ 'vertexList' g)
 -- bfsForest [] x                           == []
 -- bfsForest [1,4] (3 * (1 + 4) * (1 + 5))  == [ Node { rootLabel = 1
---                                                        , subForest = [ Node { rootLabel = 5
---                                                                             , subForest = [] }]}
---                                                 , Node { rootLabel = 4
---                                                        , subForest = [] }]
+--                                                    , subForest = [ Node { rootLabel = 5
+--                                                                         , subForest = [] }]}
+--                                             , Node { rootLabel = 4
+--                                                    , subForest = [] }]
 -- 'forest' (bfsForest [3] ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [3,2,1] + 'path' [3,4,5]
 -- 
 -- @
@@ -87,19 +87,20 @@ bfsForest vs g = evalState (explore [ v | v <- vs, hasVertex v g ]) Set.empty wh
 --   via @'concat' . 'bfs' vs@ gives an enumeration of vertices
 --   reachable from @vs@ in breadth first order.
 --
---   TODO, discuss transpose + map levels.
---
+--   Let /L/ be the number of seed vertices. Complexity:
+--   /O((L+m)*log n)/ time and /O(n)/ space.
+-- 
 -- @
 -- bfs vs 'empty'                                         == []
 -- bfs [] g                                             == []
--- bfs [1] ('edge' 1 1)                                   == [[1]]
--- bfs [1] ('edge' 1 2)                                   == [[1],[2]]
--- bfs [2] ('edge' 1 2)                                   == [[2]]
+-- bfs [1]   ('edge' 1 1)                                 == [[1]]
+-- bfs [1]   ('edge' 1 2)                                 == [[1],[2]]
+-- bfs [2]   ('edge' 1 2)                                 == [[2]]
 -- bfs [1,2] ('edge' 1 2)                                 == [[1,2]]
 -- bfs [2,1] ('edge' 1 2)                                 == [[2,1]]
--- bfs [3] ('edge' 1 2)                                   == []
--- bfs [1,2] ((1*2) + (3*4) + (5*6))                    == [[1,2]]
--- bfs [1,3] ((1*2) + (3*4) + (5*6))                    == [[1,3],[2,4]]
+-- bfs [3]   ('edge' 1 2)                                 == []
+-- bfs [1,2] ( (1*2) + (3*4) + (5*6) )                  == [[1,2]]
+-- bfs [1,3] ( (1*2) + (3*4) + (5*6) )                  == [[1,3],[2,4]]
 -- bfs [3] (3 * (1 + 4) * (1 + 5))                      == [[3],[1,4,5]]
 -- bfs [2] ('circuit' [1..5] + 'circuit' [5,4..1])          == [[2],[1,3],[5,4]]
 -- 'concat' (bfs [3] $ 'circuit' [1..5] + 'circuit' [5,4..1]) == [3,2,4,1,5]
