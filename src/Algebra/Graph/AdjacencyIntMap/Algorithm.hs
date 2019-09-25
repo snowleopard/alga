@@ -36,6 +36,7 @@ import Control.Monad.Cont
 import Control.Monad.State.Strict
 import Data.Coerce
 import Data.Either
+import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Tree
 
@@ -328,13 +329,13 @@ topSort g = runContT (evalStateT (topSort' g) initialState) id where
 isAcyclic :: AdjacencyIntMap -> Bool
 isAcyclic = isRight . topSort
 
-data C = C { current :: !Int
-           , componentId :: !Int
-           , boundary :: ![(Int,Int)]
-           , dfsPath :: ![Int]
-           , preorders :: !(IntMap.IntMap Int)
-           , componentIds :: !(IntMap.IntMap Int)
-           , componentSets :: !(IntMap.IntMap AdjacencyIntMap)
+data C = C { current :: !Int -- current preorder number
+           , componentId :: !Int -- current component id 
+           , boundary :: ![(Int,Int)] -- list of preorder numbers and vertices
+           , dfsPath :: ![Int] -- current path in search tree
+           , preorders :: !(IntMap.IntMap Int) -- map vertices to preorder num
+           , componentIds :: !(IntMap.IntMap Int) -- map vertices to component id
+           , componentSets :: !(IntMap.IntMap AdjacencyIntMap) -- adjancymaps of components
            } deriving (Show)
 
 -- gabow path-based scc algorithm
@@ -344,14 +345,18 @@ scc' g =
          dfs v = do modify' (enter v)
                     forM_ (adjacent v) $ \w ->
                       gets (IntMap.lookup w . preorders) >>= \case
+                        -- if w not assigned preorder num, dfs
                         Nothing -> dfs w
                         Just pw -> gets (IntMap.member w . componentIds) >>= \case
+                          -- if w is in a new component keep searching
                           True -> return ()
+                          -- else grow the current scc
                           False -> modify' (popBoundary pw)
                     modify' (exit v)
-     forM_ (vertexList g) $ \v -> gets (IntMap.member v . preorders) >>= \case
-       False -> dfs v
-       True -> return ()
+     forM_ (vertexList g) $ \v -> do 
+       -- v has no preorder iff it is unexplored
+       vHasPreorderNum <- gets (IntMap.member v . preorders)
+       when (not vHasPreorderNum) $ dfs v
   where
     -- called when visiting vertex v. increments preorder number, logs
     -- it in the table, adds it to the boundary stack b, and adds it
@@ -369,9 +374,13 @@ scc' g =
     exit v st@(C c i b s t ids vs)
       | v /= snd (head b) = st
       | otherwise = C c (1+i) (tail b) (tail s') t ids' vs' where
-          curr = v:takeWhile (/=v) s
+          -- find path up to v
+          curr = v:takeWhile (/= v) s
+          -- find path below v
           s' = dropWhile (/= v) s
-          ids' = foldr (\x sccs -> IntMap.insert x i sccs) ids curr
+          -- assign scc vertices a component id
+          ids' = foldl' (\sccs x -> IntMap.insert x i sccs) ids curr
+          -- get the induced subgraph of the scc
           vs' = IntMap.insert i (induce (`IntSet.member`IntSet.fromList curr) g) vs
 
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
