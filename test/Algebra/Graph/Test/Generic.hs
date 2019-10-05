@@ -13,7 +13,7 @@ module Algebra.Graph.Test.Generic where
 
 import Control.Monad (when)
 import Data.Either
-import Data.List (nub,sort)
+import Data.List as List
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Tree
 import Data.Tuple
@@ -1789,6 +1789,9 @@ testBfs (prefix, API{..}) = do
 
     test "isSubgraphOf (vertices $ concat $ bfs vs x) x == True" $ \vs x ->
           isSubgraphOf (vertices $ concat $ bfs vs x) x == True
+
+    test "bfs vs == map concat . List.transpose . map levels . bfsForest vs" $ \vs g ->
+          (bfs vs) g == (map concat . List.transpose . map levels . bfsForest vs) g
 
 testDfsForest :: TestsuiteInt g -> IO ()
 testDfsForest (prefix, API{..}) = do
