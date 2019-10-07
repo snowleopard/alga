@@ -304,13 +304,13 @@ topSort g = runContT (evalStateT (topSort' g) initialState) id where
 isAcyclic :: AdjacencyIntMap -> Bool
 isAcyclic = isRight . topSort
 
-data C = C { current :: !Int -- current preorder number
-           , componentId :: !Int -- current component id 
-           , boundary :: ![(Int,Int)] -- list of preorder numbers and vertices
-           , dfsPath :: ![Int] -- current path in search tree
-           , preorders :: !(IntMap.IntMap Int) -- map vertices to preorder num
-           , componentIds :: !(IntMap.IntMap Int) -- map vertices to component id
-           , componentSets :: !(IntMap.IntMap AdjacencyIntMap) -- adjancymaps of components
+data C = C { current :: !Int
+           , componentId :: !Int
+           , boundary :: ![(Int,Int)]
+           , dfsPath :: ![Int]
+           , preorders :: !(IntMap.IntMap Int)
+           , componentIds :: !(IntMap.IntMap Int)
+           , componentSets :: !(IntMap.IntMap IntSet.IntSet)
            } deriving (Show)
 
 -- gabow path-based scc algorithm
@@ -320,18 +320,14 @@ scc' g =
          dfs v = do modify' (enter v)
                     forM_ (adjacent v) $ \w ->
                       gets (IntMap.lookup w . preorders) >>= \case
-                        -- if w not assigned preorder num, dfs
                         Nothing -> dfs w
                         Just pw -> gets (IntMap.member w . componentIds) >>= \case
-                          -- if w is in a new component keep searching
                           True -> return ()
-                          -- else grow the current scc
                           False -> modify' (popBoundary pw)
                     modify' (exit v)
-     forM_ (vertexList g) $ \v -> do 
-       -- v has no preorder iff it is unexplored
-       vHasPreorderNum <- gets (IntMap.member v . preorders)
-       when (not vHasPreorderNum) $ dfs v
+     forM_ (vertexList g) $ \v -> gets (IntMap.member v . preorders) >>= \case
+       False -> dfs v
+       True -> return ()
   where
     -- called when visiting vertex v. increments preorder number, logs
     -- it in the table, adds it to the boundary stack b, and adds it
@@ -349,21 +345,19 @@ scc' g =
     exit v st@(C c i b s t ids vs)
       | v /= snd (head b) = st
       | otherwise = C c (1+i) (tail b) (tail s') t ids' vs' where
-          -- find path up to v
-          curr = v:takeWhile (/= v) s
-          -- find path below v
+          curr = v:takeWhile (/=v) s
           s' = dropWhile (/= v) s
-          -- assign scc vertices a component id
-          ids' = List.foldl' (\sccs x -> IntMap.insert x i sccs) ids curr
-          -- get the induced subgraph of the scc
-          vs' = IntMap.insert i (induce (`IntSet.member`IntSet.fromList curr) g) vs
+          ids' = foldr (\x sccs -> IntMap.insert x i sccs) ids curr
+          vs' = IntMap.insert i (IntSet.fromList curr) vs
 
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
-scc g = AM.gmap (components IntMap.!) $ convert $ removeSelfLoops $ gmap (assignment IntMap.!) g where
+scc g = AM.gmap (component IntMap.!) $ convert $ removeSelfLoops $ gmap (assignment IntMap.!) g where
   convert = coerce . Map.fromAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
   setOfIntSet = Set.fromAscList . IntSet.toList
+  component = expand <$> transposed
+  expand xs = induce (`IntSet.member` xs) g
   removeSelfLoops m = foldr (\x -> removeEdge x x) m (vertexList m)
-  C _ _ _ _ _ assignment components = execState (scc' g) initialState
+  C _ _ _ _ _ assignment transposed = execState (scc' g) initialState
   initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
