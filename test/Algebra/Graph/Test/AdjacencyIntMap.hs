@@ -42,7 +42,6 @@ testAdjacencyIntMap = do
     testTransformations      t
     testRelational           t
     testBfsForest            t
-    testBfsForestFrom        t
     testBfs                  t
     testDfsForest            t
     testDfsForestFrom        t
