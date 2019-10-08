@@ -351,14 +351,35 @@ scc' g =
           vs' = IntMap.insert i (IntSet.fromList curr) vs
 
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
-scc g = AM.gmap (component IntMap.!) $ convert $ removeSelfLoops $ gmap (assignment IntMap.!) g where
+scc g | 0 == v_count = AM.empty
+      | ratio > 0.1 = convertMany g assignment components
+      | otherwise = convertFew g assignment components 
+  where C v_count scc_count _ _ _ assignment components = execState (scc' g) initialState
+        initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty
+        ratio = fromIntegral scc_count / fromIntegral v_count
+
+convertFew g assignment components = result where
+  result = AM.gmap (sccs IntMap.!) $ convert $ removeSelfLoops $ gmap (assignment IntMap.!) g
   convert = coerce . Map.fromAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
   setOfIntSet = Set.fromAscList . IntSet.toList
-  component = expand <$> transposed
+  sccs = expand <$> components
   expand xs = induce (`IntSet.member` xs) g
   removeSelfLoops m = foldr (\x -> removeEdge x x) m (vertexList m)
-  C _ _ _ _ _ assignment transposed = execState (scc' g) initialState
-  initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty
+
+convertMany g assignment components = AM.gmap (sccs IntMap.!) (convert $ overlays es) where
+  convert = coerce . Map.fromAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
+  setOfIntSet = Set.fromAscList . IntSet.toList
+  sccs = overlays <$> components'
+  (components',es) = runState (foldM buildSCC sccGraph0 (edgeList g)) sccComps0
+  sccComps0 = [vertices $ IntMap.elems assignment]
+  sccGraph0 = ((:[]) . vertices . IntSet.toList) <$> components
+  buildSCC x (u,v) = do
+    let u_i = assignment IntMap.! u
+        v_i = assignment IntMap.! v
+    if u_i == v_i
+      then return (IntMap.update (\ cmp -> Just (edge u v:cmp) ) u_i x)
+      else modify' (edge u_i v_i:) >> return x
+        
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong

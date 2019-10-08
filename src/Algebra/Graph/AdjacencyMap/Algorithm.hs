@@ -319,11 +319,30 @@ isAcyclic = isRight . topSort
 -- 'isAcyclic' x     == (scc x == 'gmap' NonEmpty.'NonEmpty.vertex' x)
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (NonEmpty.AdjacencyMap a)
-scc g = gmap (component IntMap.!) $ removeSelfLoops $ gmap (assignment Map.!) g where
-  component = expand <$> transposed
+scc g | 0 == v_count = empty
+      | ratio > 0.1 = convertMany g assignment components
+      | otherwise = convertFew g assignment components 
+  where C v_count scc_count _ _ _ assignment components = execState (scc' g) initialState
+        initialState = C 0 0 [] [] Map.empty Map.empty IntMap.empty
+        ratio = fromIntegral scc_count / fromIntegral v_count
+
+convertFew g assignment components = result where
+  result = gmap (sccs IntMap.!) $ removeSelfLoops $ gmap (assignment Map.!) g
+  sccs = expand <$> components
   expand xs = fromJust $ NonEmpty.toNonEmpty $ induce (`Set.member` xs) g
-  C _ _ _ _ _ assignment transposed = execState (scc' g) initialState 
-  initialState = C 0 0 [] [] Map.empty Map.empty IntMap.empty
+  removeSelfLoops m = foldr (\x -> removeEdge x x) m (vertexList m)  
+
+convertMany g assignment components = gmap (sccs IntMap.!) (overlays es) where
+  sccs = fromJust . NonEmpty.toNonEmpty . overlays <$> components'
+  (components',es) = runState (foldM buildSCC sccGraph0 (edgeList g)) sccComps0
+  sccComps0 = [vertices $ Map.elems assignment]
+  sccGraph0 = ((:[]) . vertices . Set.toList) <$> components
+  buildSCC x (u,v) = do
+    let u_i = assignment Map.! u
+        v_i = assignment Map.! v
+    if u_i == v_i
+      then return (IntMap.update (\ cmp -> Just (edge u v:cmp) ) u_i x)
+      else modify' (edge u_i v_i:) >> return x
         
 data C a = C { current :: !Int
              , componentId :: !Int
@@ -370,10 +389,6 @@ scc' g =
           s' = dropWhile (/= v) s
           ids' = foldr (\x sccs -> Map.insert x i sccs) ids curr
           vs' = IntMap.insert i (Set.fromList curr) vs
-
--- Remove all self loops from a graph.
-removeSelfLoops :: Ord a => AdjacencyMap a -> AdjacencyMap a
-removeSelfLoops m = foldr (\x -> removeEdge x x) m (vertexList m)
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
