@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP             #-}
 {-# LANGUAGE TemplateHaskell #-}
 -----------------------------------------------------------------------------
 -- |
@@ -116,4 +117,8 @@ ovAp', ovApR' :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
 ovAp'  x y z = overlay x y <*> z
 ovApR' x y z = overlay (x >>= (<$> z)) (y >>= (<$> z))
 
--- inspect $ 'ovAp' =/= 'ovApR'
+#if MIN_VERSION_base(4,13,0)
+inspect $ 'ovAp' =/= 'ovApR'
+#else
+inspect $ 'ovAp' === 'ovApR'
+#endif
