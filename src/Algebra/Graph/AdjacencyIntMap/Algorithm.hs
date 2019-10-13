@@ -304,59 +304,67 @@ topSort g = runContT (evalStateT (topSort' g) initialState) id where
 isAcyclic :: AdjacencyIntMap -> Bool
 isAcyclic = isRight . topSort
 
-data C = C { current :: !Int
-           , componentId :: !Int
-           , boundary :: ![(Int,Int)]
-           , dfsPath :: ![Int]
-           , preorders :: !(IntMap.IntMap Int)
-           , componentIds :: !(IntMap.IntMap Int)
-           , componentSets :: !(IntMap.IntMap IntSet.IntSet)
-           } deriving (Show)
+data StateSCC
+  = C { current       :: !Int
+      , componentId   :: !Int
+      , boundary      :: ![(Int,Int)]
+      , dfsPath       :: ![Int]
+      , preorders     :: !(IntMap.IntMap Int)
+      , componentIds  :: !(IntMap.IntMap Int)
+      , componentSets :: !(IntMap.IntMap IntSet.IntSet) } deriving (Show)
 
 -- gabow path-based scc algorithm
-scc' :: MonadState C m => AdjacencyIntMap -> m ()
+scc' :: AdjacencyIntMap -> State StateSCC ()
 scc' g =
   do let adjacent = IntSet.toList . flip postIntSet g
-         dfs v = do modify' (enter v)
-                    forM_ (adjacent v) $ \w ->
-                      gets (IntMap.lookup w . preorders) >>= \case
-                        Nothing -> dfs w
-                        Just pw -> gets (IntMap.member w . componentIds) >>= \case
-                          True -> return ()
-                          False -> modify' (popBoundary pw)
-                    modify' (exit v)
-     forM_ (vertexList g) $ \v -> gets (IntMap.member v . preorders) >>= \case
-       False -> dfs v
-       True -> return ()
+         dfs u = do enter u
+                    forM_ (adjacent u) $ \v ->
+                      preorderId v >>= \case
+                        Nothing  -> dfs v
+                        Just p_v -> hasComponent v >>= \case
+                          True  -> return ()
+                          False -> popBoundary p_v
+                    exit u
+     forM_ (vertexList g) $ \v -> do
+       assigned <- hasPreorderId v
+       if assigned then return () else dfs v
   where
     -- called when visiting vertex v. increments preorder number, logs
     -- it in the table, adds it to the boundary stack b, and adds it
     -- to the path stack s.
-    enter v (C c i b s t ids vs) =
-      C (1+c) i ((c,v):b) (v:s) (IntMap.insert v c t) ids vs
+    enter v = modify'
+      (\(C c i b s t ids vs) ->
+         C (c + 1) i ((c,v):b) (v:s) (IntMap.insert v c t) ids vs)
 
     -- called on back edges. pops the boundary stack until a vertex
-    -- with a smaller preorder num is at the top
-    popBoundary x (C c i b s t ids vs) = C c i (dropWhile ((>x).fst) b) s t ids vs
+    -- with a strictly smaller preorder number than x is at the top
+    popBoundary p_v = modify'
+      (\(C c i b s t ids vs) ->
+         C c i (dropWhile ((>p_v).fst) b) s t ids vs)
 
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise we're still building a
     -- scc and the state is unchanged.
-    exit v st@(C c i b s t ids vs)
-      | v /= snd (head b) = st
-      | otherwise = C c (1+i) (tail b) (tail s') t ids' vs' where
-          curr = v:takeWhile (/=v) s
-          s' = dropWhile (/= v) s
-          ids' = foldr (\x sccs -> IntMap.insert x i sccs) ids curr
-          vs' = IntMap.insert i (IntSet.fromList curr) vs
+    exit v = modify'
+      (\sccState@(C c i b s t ids vs) ->
+       if v /= snd (head b) then sccState
+       else let curr = v:takeWhile (/= v) s
+                s' = tail $ dropWhile (/= v) s
+                ids' = List.foldl' (\sccs x -> IntMap.insert x i sccs) ids curr
+                vs' = IntMap.insert i (IntSet.fromList curr) vs
+             in C c (1+i) (tail b) s' t ids' vs')
+
+    hasPreorderId v = gets (IntMap.member v . preorders)
+    preorderId    v = gets (IntMap.lookup v . preorders)
+    hasComponent  v = gets (IntMap.member v . componentIds)
 
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
-scc g | 0 == v_count = AM.empty
-      | ratio > 0.1 = convertMany g assignment components
+scc g | v_count == 0 = AM.empty
+      | scc_count > 2 = convertMany g assignment components
       | otherwise = convertFew g assignment components 
-  where C v_count scc_count _ _ _ assignment components = execState (scc' g) initialState
-        initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty
-        ratio = fromIntegral scc_count / fromIntegral v_count
+  where
+    C v_count scc_count _ _ _ assignment components = execState (scc' g) initialState
+    initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty
 
 convertFew g assignment components = result where
   result = AM.gmap (sccs IntMap.!) $ convert $ removeSelfLoops $ gmap (assignment IntMap.!) g
@@ -374,12 +382,11 @@ convertMany g assignment components = AM.gmap (sccs IntMap.!) (convert $ overlay
   sccComps0 = [vertices $ IntMap.elems assignment]
   sccGraph0 = ((:[]) . vertices . IntSet.toList) <$> components
   buildSCC x (u,v) = do
-    let u_i = assignment IntMap.! u
-        v_i = assignment IntMap.! v
-    if u_i == v_i
-      then return (IntMap.update (\ cmp -> Just (edge u v:cmp) ) u_i x)
-      else modify' (edge u_i v_i:) >> return x
-        
+    let scc_u = assignment IntMap.! u
+        scc_v = assignment IntMap.! v
+    if scc_u == scc_v
+      then return (IntMap.update (\sccs -> Just (edge u v:sccs)) scc_u x)
+      else modify' (edge scc_u scc_v:) >> return x
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong

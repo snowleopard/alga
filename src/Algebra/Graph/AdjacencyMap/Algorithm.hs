@@ -324,7 +324,7 @@ scc g | 0 == v_count = empty
       | otherwise = convertFew g assignment components 
   where C v_count scc_count _ _ _ assignment components = execState (scc' g) initialState
         initialState = C 0 0 [] [] Map.empty Map.empty IntMap.empty
-        ratio = fromIntegral scc_count / fromIntegral v_count
+        ratio = fromIntegral scc_count / fromIntegral v_count :: Double
 
 convertFew g assignment components = result where
   result = gmap (sccs IntMap.!) $ removeSelfLoops $ gmap (assignment Map.!) g
