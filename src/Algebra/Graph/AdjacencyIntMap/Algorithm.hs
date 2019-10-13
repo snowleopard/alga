@@ -43,7 +43,9 @@ import Algebra.Graph.AdjacencyIntMap
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.IntMap.Strict         as IntMap
+import qualified Data.Map.Strict            as Map
 import qualified Data.IntSet                as IntSet
+import qualified Data.Set                   as Set
 import qualified Data.List                  as List
 
 -- | Compute the /breadth-first search/ forest of a graph, such that
@@ -386,18 +388,21 @@ scc' g =
 
     removeSelfLoops = coerce (IntMap.mapWithKey IntSet.delete)
 
-    convertMany g assignment = AM.gmap (sccs IntMap.!) es where
-      (sccs,es) = List.foldl' buildSCC (IntMap.empty,AM.empty) (edgeList g) where
+    amOfAim = coerce . Map.fromDistinctAscList . map (fmap Set.fromDistinctAscList) . adjacencyList
+-- [ (u,vs) <- adjacencyList g ]
+
+    convertMany g assignment = AM.gmap (sccs IntMap.!) $ amOfAim es where
+      (sccs,es) = List.foldl' buildSCC (IntMap.empty,empty) (edgeList g) where
         insertAux e = Just . maybe e (overlay e)
         buildSCC (im,m) (u,v) =
           let scc_u = assignment IntMap.! u
               scc_v = assignment IntMap.! v
            in if scc_u == scc_v
                  then (IntMap.alter (insertAux (edge u v)) scc_u im,
-                       AM.overlay (AM.vertex scc_u) m)
+                       overlay (vertex scc_u) m)
                  else (IntMap.alter (insertAux (vertex v)) scc_v $
                        IntMap.alter (insertAux (vertex u)) scc_u im,
-                       AM.overlay (AM.edge scc_u scc_v) m)
+                       overlay (edge scc_u scc_v) m)
         
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
