@@ -19,7 +19,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.AdjacencyIntMap (
     -- * Data structure
-    AdjacencyIntMap, adjacencyIntMap, fromAdjacencyMap,
+    AdjacencyIntMap (..), fromAdjacencyMap,
 
     -- * Basic graph construction primitives
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
