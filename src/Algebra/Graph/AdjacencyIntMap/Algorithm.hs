@@ -304,14 +304,41 @@ topSort g = runContT (evalStateT (topSort' g) initialState) id where
 isAcyclic :: AdjacencyIntMap -> Bool
 isAcyclic = isRight . topSort
 
+-- TODO: Benchmark and optimise.
+-- | Compute the /condensation/ of a graph, where each vertex corresponds to a
+-- /strongly-connected component/ of the original graph. Note that component
+-- graphs are non-empty, and are therefore of type
+-- "Algebra.Graph.NonEmpty.AdjacencyMap".
+--
+-- @
+-- scc 'empty'               == 'empty'
+-- scc ('vertex' x)          == 'vertex' (NonEmpty.'NonEmpty.vertex' x)
+-- scc ('edge' 1 1)          == 'vertex' (NonEmpty.'NonEmpty.edge' 1 1)
+-- scc ('edge' 1 2)          == 'edge'   (NonEmpty.'NonEmpty.vertex' 1) (NonEmpty.'NonEmpty.vertex' 2)
+-- scc ('circuit' (1:xs))    == 'vertex' (NonEmpty.'NonEmpty.circuit1' (1 'Data.List.NonEmpty.:|' xs))
+-- scc (3 * 1 * 4 * 1 * 5) == 'edges'  [ (NonEmpty.'NonEmpty.vertex'  3      , NonEmpty.'NonEmpty.vertex'  5      )
+--                                   , (NonEmpty.'NonEmpty.vertex'  3      , NonEmpty.'NonEmpty.clique1' [1,4,1])
+--                                   , (NonEmpty.'NonEmpty.clique1' [1,4,1], NonEmpty.'NonEmpty.vertex'  5      ) ]
+-- 'isAcyclic' . scc == 'const' True
+-- 'isAcyclic' x     == (scc x == 'gmap' NonEmpty.'NonEmpty.vertex' x)
+-- @
+scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
+scc g | v_count == 0 = AM.empty
+      | scc_count > 2 = convertMany g assignment components
+      | otherwise = convertFew g assignment components 
+  where
+    C v_count scc_count _ _ _ assignment components = execState (scc' g) initialState
+    initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty
+
 data StateSCC
   = C { current       :: !Int
       , componentId   :: !Int
-      , boundary      :: ![(Int,Int)]
-      , dfsPath       :: ![Int]
+      , boundary      :: [(Int,Int)]
+      , dfsPath       :: [Int]
       , preorders     :: !(IntMap.IntMap Int)
-      , componentIds  :: !(IntMap.IntMap Int)
-      , componentSets :: !(IntMap.IntMap IntSet.IntSet) } deriving (Show)
+      , components    :: !(IntMap.IntMap Int)
+      , componentSets :: !(IntMap.IntMap IntSet.IntSet)
+      } deriving (Show)
 
 -- gabow path-based scc algorithm
 scc' :: AdjacencyIntMap -> State StateSCC ()
@@ -329,22 +356,22 @@ scc' g =
        assigned <- hasPreorderId v
        if assigned then return () else dfs v
   where
-    -- called when visiting vertex v. increments preorder number, logs
-    -- it in the table, adds it to the boundary stack b, and adds it
-    -- to the path stack s.
+    -- called when visiting vertex v. assigns preorder number to v,
+    -- adds the id v pair to the boundary stack b, and adds 
+    -- v to the path stack s.
     enter v = modify'
       (\(C c i b s t ids vs) ->
          C (c + 1) i ((c,v):b) (v:s) (IntMap.insert v c t) ids vs)
 
     -- called on back edges. pops the boundary stack until a vertex
-    -- with a strictly smaller preorder number than x is at the top
+    -- with a strictly smaller preorder number than p_v is at the top
     popBoundary p_v = modify'
       (\(C c i b s t ids vs) ->
          C c i (dropWhile ((>p_v).fst) b) s t ids vs)
 
     -- called when exiting vertex v. if v is the bottom of a scc
-    -- boundary, we add a new SCC, otherwise we're still building a
-    -- scc and the state is unchanged.
+    -- boundary, we add a new SCC, otherwise v is part of a larger scc
+    -- being constructed and we continue.
     exit v = modify'
       (\sccState@(C c i b s t ids vs) ->
        if v /= snd (head b) then sccState
@@ -356,15 +383,7 @@ scc' g =
 
     hasPreorderId v = gets (IntMap.member v . preorders)
     preorderId    v = gets (IntMap.lookup v . preorders)
-    hasComponent  v = gets (IntMap.member v . componentIds)
-
-scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
-scc g | v_count == 0 = AM.empty
-      | scc_count > 2 = convertMany g assignment components
-      | otherwise = convertFew g assignment components 
-  where
-    C v_count scc_count _ _ _ assignment components = execState (scc' g) initialState
-    initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty
+    hasComponent  v = gets (IntMap.member v . components)
 
 convertFew g assignment components = result where
   result = AM.gmap (sccs IntMap.!) $ convert $ removeSelfLoops $ gmap (assignment IntMap.!) g
