@@ -350,7 +350,7 @@ scc' g =
      forM_ (vertexList g) $ \v -> do
        assigned <- hasPreorderId v
        if assigned then return () else dfs v
-     convertRepresentation       
+     convertRepresentation
   where
     -- called when visiting vertex v. assigns preorder number to v,
     -- adds the id v pair to the boundary stack b, and adds 
@@ -388,21 +388,37 @@ scc' g =
 
     removeSelfLoops = coerce (IntMap.mapWithKey IntSet.delete)
 
-    amOfAim = coerce . Map.fromDistinctAscList . map (fmap Set.fromDistinctAscList) . adjacencyList
+--    amOfAim = coerce . Map.fromDistinctAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
+--    setOfIntSet = Set.fromDistinctAscList . IntSet.toList
+-- coerce . Map.fromDistinctAscList . map (fmap Set.fromDistinctAscList) . adjacencyList
 -- [ (u,vs) <- adjacencyList g ]
 
-    convertMany g assignment = AM.gmap (sccs IntMap.!) $ amOfAim es where
-      (sccs,es) = List.foldl' buildSCC (IntMap.empty,empty) (edgeList g) where
-        insertAux e = Just . maybe e (overlay e)
+    convertMany g assignment = AM.gmap (sccs IntMap.!) $ (AM.overlays es) where
+      sccs = overlays <$> sccs'
+      (sccs',es) = List.foldl' buildSCC (IntMap.empty,[]) (edgeList g) where
+        insAux g = Just . maybe [g] (g:)
         buildSCC (im,m) (u,v) =
           let scc_u = assignment IntMap.! u
               scc_v = assignment IntMap.! v
            in if scc_u == scc_v
-                 then (IntMap.alter (insertAux (edge u v)) scc_u im,
-                       overlay (vertex scc_u) m)
-                 else (IntMap.alter (insertAux (vertex v)) scc_v $
-                       IntMap.alter (insertAux (vertex u)) scc_u im,
-                       overlay (edge scc_u scc_v) m)
+              then (IntMap.alter (insAux (edge u v)) scc_u im, AM.vertex scc_u:m)
+              else (IntMap.alter (insAux (vertex u)) scc_u $
+                    IntMap.alter (insAux (vertex v)) scc_v $ im,
+                    AM.edge scc_u scc_v:m)
+
+--convertMany g assignment components = AM.gmap (sccs IntMap.!) (convert $ overlays es) where
+--  convert = coerce . Map.fromAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
+--  setOfIntSet = Set.fromAscList . IntSet.toList
+--  sccs = overlays <$> components'
+--  (components',es) = runState (foldM buildSCC sccGraph0 (edgeList g)) sccComps0
+--  sccComps0 = [vertices $ IntMap.elems assignment]
+--  sccGraph0 = ((:[]) . vertices . IntSet.toList) <$> components
+--  buildSCC x (u,v) = do
+--    let u_i = assignment IntMap.! u
+--        v_i = assignment IntMap.! v
+--    if u_i == v_i
+--      then return (IntMap.update (\ cmp -> Just (edge u v:cmp) ) u_i x)
+--      else modify' (edge u_i v_i:) >> return x
         
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
