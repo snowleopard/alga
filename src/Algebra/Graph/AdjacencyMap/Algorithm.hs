@@ -381,10 +381,10 @@ scc' g =
     convertRepresentation = do
       scc_count <- gets componentId
       if scc_count == 1
-      then return (vertex $ fromJust $ NonEmpty.toNonEmpty $ removeSelfLoops g)
+      then return (vertex $ fromJust $ NonEmpty.toNonEmpty $ g)
       else convertMany g <$> gets components
 
-    removeSelfLoops = coerce (Map.mapWithKey Set.delete)
+--    removeSelfLoops = coerce (Map.mapWithKey Set.delete)
 
     convertMany g assignment = gmap (sccs IntMap.!) es where
       sccs = fromJust . NonEmpty.toNonEmpty <$> components'

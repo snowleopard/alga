@@ -383,10 +383,10 @@ scc' g =
     convertRepresentation = do
       scc_count <- gets componentId
       if scc_count == 1
-      then return (AM.vertex $ removeSelfLoops g)
+      then return (AM.vertex g)
       else convertMany g <$> gets components
 
-    removeSelfLoops = coerce (IntMap.mapWithKey IntSet.delete)
+--    removeSelfLoops = coerce (IntMap.mapWithKey IntSet.delete)
 
 --    amOfAim = coerce . Map.fromDistinctAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
 --    setOfIntSet = Set.fromDistinctAscList . IntSet.toList
