@@ -329,7 +329,7 @@ data StateSCC a
       , dfsPath       :: ![a]
       , preorders     :: !(Map.Map a Int)
       , components    :: !(Map.Map a Int)
-      , componentSets :: !(IntMap.IntMap (AdjacencyMap a))
+      , componentSets :: !(IntMap.IntMap [AdjacencyMap a])
       } deriving (Show)
 
 -- gabow path-based scc algorithm
@@ -372,7 +372,7 @@ scc' g =
        else let curr = v:takeWhile (/= v) s
                 s' = tail $ dropWhile (/= v) s
                 ids' = List.foldl' (\sccs x -> Map.insert x i sccs) ids curr
-                sets' = IntMap.insert i (vertices curr) sets                
+                sets' = IntMap.insert i [vertices curr] sets
              in C c (i + 1) (tail b) s' t ids' sets')
 
     hasPreorderId v = gets (Map.member v . preorders)
@@ -386,10 +386,10 @@ scc' g =
       else convert <$> gets components <*> gets componentSets
 
     convert assignment sets = gmap (sccs IntMap.!) (overlays es) where
-      sccs = fromJust . NonEmpty.toNonEmpty <$> components
+      sccs = fromJust . NonEmpty.toNonEmpty . overlays <$> components
       es0 = vertex <$> Map.elems assignment
       (components,es) = List.foldl' buildSCC (sets,es0) (edgeList g) where
-        insertAux e = Just . maybe e (overlay e)
+        insertAux g = Just . maybe [g] (g:)
         buildSCC (im,m) (u,v)
           | scc_u == scc_v = (IntMap.alter (insertAux (edge u v)) scc_u im, m)
           | otherwise      = (im, (edge scc_u scc_v) : m)
