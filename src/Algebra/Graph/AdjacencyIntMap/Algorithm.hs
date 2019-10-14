@@ -34,20 +34,15 @@ module Algebra.Graph.AdjacencyIntMap.Algorithm (
 import Control.Monad
 import Control.Monad.Cont
 import Control.Monad.State.Strict
-import Data.Coerce
 import Data.Either
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Tree
-
-import Debug.Trace
 
 import Algebra.Graph.AdjacencyIntMap
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.IntMap.Strict         as IntMap
-import qualified Data.Map.Strict            as Map
 import qualified Data.IntSet                as IntSet
-import qualified Data.Set                   as Set
 import qualified Data.List                  as List
 
 -- | Compute the /breadth-first search/ forest of a graph, such that
@@ -335,7 +330,7 @@ data StateSCC
       , dfsPath       :: ![Int]
       , preorders     :: !(IntMap.IntMap Int)
       , components    :: !(IntMap.IntMap Int)
-      , componentSets :: !(IntMap.IntMap [AdjacencyIntMap])
+      , componentSets :: !(IntMap.IntMap AdjacencyIntMap)
       } deriving (Show)
 
 -- gabow path-based scc algorithm
@@ -377,7 +372,7 @@ scc' g =
        else let curr = v:takeWhile (/= v) s
                 s' = tail $ dropWhile (/= v) s
                 ids' = List.foldl' (\sccs x -> IntMap.insert x i sccs) ids curr
-                sets' = IntMap.insert i [vertices curr] sets
+                sets' = IntMap.insert i (vertices curr) sets
              in C c (i + 1) (tail b) s' t ids' sets')
 
     hasPreorderId v = gets (IntMap.member v . preorders)
@@ -388,21 +383,16 @@ scc' g =
       scc_count <- gets componentId
       if scc_count == 1
       then return (AM.vertex g)
-      else convertMany g <$> gets components <*> gets componentSets
+      else convert <$> gets components <*> gets componentSets
 
-    convertMany g assignment sets = AM.gmap (sccs IntMap.!) $ AM.overlays es where
-      sccs = overlays <$> sccs'
+    convert assignment sets = AM.gmap (sccs IntMap.!) (AM.overlays es) where
       es0 = AM.vertex <$> IntMap.elems assignment
-      (sccs',es) = List.foldl' buildSCC (sets,es0) (edgeList g) where
-        insAux g = Just . maybe [g] (g:)
-        buildSCC xs@(im,m) ys@(u,v) =
-          let scc_u = assignment IntMap.! u
-              scc_v = assignment IntMap.! v
-           in if scc_u == scc_v
-              then (IntMap.alter (insAux (edge u v)) scc_u im, AM.vertex scc_u:m)
-              else (IntMap.alter (insAux (vertex u)) scc_u $
-                    IntMap.alter (insAux (vertex v)) scc_v $ im,
-                    AM.edge scc_u scc_v:m)
+      (sccs,es) = List.foldl' buildSCC (sets,es0) (edgeList g) where
+        insertAux g = Just . maybe g (overlay g)
+        buildSCC (im,m) (u,v)
+          | scc_u == scc_v = (IntMap.alter (insertAux (edge u v)) scc_u im, m)
+          | otherwise      = (im, (AM.edge scc_u scc_v) : m)
+          where scc_u = assignment IntMap.! u; scc_v = assignment IntMap.! v
 
 --    removeSelfLoops = coerce (IntMap.mapWithKey IntSet.delete)
 

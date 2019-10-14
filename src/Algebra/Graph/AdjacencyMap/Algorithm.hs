@@ -30,7 +30,6 @@ module Algebra.Graph.AdjacencyMap.Algorithm (
 import Control.Monad
 import Control.Monad.Cont
 import Control.Monad.State.Strict
-import Data.Coerce
 import Data.Either
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Maybe
@@ -384,24 +383,17 @@ scc' g =
       scc_count <- gets componentId
       if scc_count == 1
       then return (vertex $ fromJust $ NonEmpty.toNonEmpty $ g)
-      else convertMany g <$> gets components <*> gets componentSets
+      else convert <$> gets components <*> gets componentSets
 
---    removeSelfLoops = coerce (Map.mapWithKey Set.delete)
-
-    convertMany g assignment sets = gmap (sccs IntMap.!) es where
-      sccs = fromJust . NonEmpty.toNonEmpty <$> components'
-      (components',es) = List.foldl' buildSCC (sets,empty) (edgeList g) where
+    convert assignment sets = gmap (sccs IntMap.!) (overlays es) where
+      sccs = fromJust . NonEmpty.toNonEmpty <$> components
+      es0 = vertex <$> Map.elems assignment
+      (components,es) = List.foldl' buildSCC (sets,es0) (edgeList g) where
         insertAux e = Just . maybe e (overlay e)
-        buildSCC (im,m) (u,v) =
-          let scc_u = assignment Map.! u
-              scc_v = assignment Map.! v
-           in if scc_u == scc_v
-                 then (IntMap.alter (insertAux (edge u v)) scc_u im,
-                       overlay (vertex scc_u) m)
-                 else (IntMap.alter (insertAux (vertex v)) scc_v $
-                       IntMap.alter (insertAux (vertex u)) scc_u im,
-                       overlay (edge scc_u scc_v) m)
-        
+        buildSCC (im,m) (u,v)
+          | scc_u == scc_v = (IntMap.alter (insertAux (edge u v)) scc_u im, m)
+          | otherwise      = (im, (edge scc_u scc_v) : m)
+          where scc_u = assignment Map.! u; scc_v = assignment Map.! v
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
