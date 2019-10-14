@@ -66,6 +66,9 @@ testAdjacencyMap = do
     test "scc (vertex x)          == vertex (NonEmpty.vertex x)" $ \(x :: Int) ->
           scc (vertex x)          == vertex (NonEmpty.vertex x)
 
+    test "scc (vertices xs)       == vertices (map NonEmpty.vertex xs)" $ \(xs :: [Int]) ->
+          scc (vertices xs)       == vertices (Prelude.map NonEmpty.vertex xs)
+
     test "scc (edge 1 1)          == vertex (NonEmpty.edge 1 1)" $
           scc (edge 1 1 :: AI)    == vertex (NonEmpty.edge 1 1)
 

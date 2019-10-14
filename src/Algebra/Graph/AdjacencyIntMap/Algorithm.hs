@@ -310,6 +310,7 @@ isAcyclic = isRight . topSort
 -- @
 -- scc 'empty'               == 'empty'
 -- scc ('vertex' x)          == 'vertex' (NonEmpty.'NonEmpty.vertex' x)
+-- scc ('vertices' xs)       == 'vertices' ('map' 'NonEmpty.vertex' xs)
 -- scc ('edge' 1 1)          == 'vertex' (NonEmpty.'NonEmpty.edge' 1 1)
 -- scc ('edge' 1 2)          == 'edge'   (NonEmpty.'NonEmpty.vertex' 1) (NonEmpty.'NonEmpty.vertex' 2)
 -- scc ('circuit' (1:xs))    == 'vertex' (NonEmpty.'NonEmpty.circuit1' (1 'Data.List.NonEmpty.:|' xs))
@@ -341,13 +342,13 @@ scc' g =
                     forM_ (adjacent u) $ \v ->
                       preorderId v >>= \case
                         Nothing  -> dfs v
-                        Just p_v -> hasComponent v >>= \case
-                          True  -> return ()
-                          False -> popBoundary p_v
+                        Just p_v -> do
+                          scc_v <- hasComponent v
+                          unless scc_v $ popBoundary p_v
                     exit u
      forM_ (vertexList g) $ \v -> do
        assigned <- hasPreorderId v
-       if assigned then return () else dfs v
+       unless assigned $ dfs v
      convertRepresentation
   where
     -- called when visiting vertex v. assigns preorder number to v,
@@ -383,39 +384,18 @@ scc' g =
       scc_count <- gets componentId
       if scc_count == 1
       then return (AM.vertex g)
-      else convert <$> gets components <*> gets componentSets
+      else convertByEdges <$> gets components <*> gets componentSets
 
-    convert assignment sets = AM.gmap (sccs IntMap.!) (AM.overlays es) where
-      es0 = AM.vertex <$> IntMap.elems assignment
+    convertByEdges assignment sets = AM.gmap (sccs IntMap.!) (AM.overlays es) where
       sccs = overlays <$> sccs'
       (sccs',es) = List.foldl' buildSCC (sets,es0) (edgeList g) where
+        es0 = AM.vertex <$> IntMap.elems assignment
         insertAux g = Just . maybe [g] (g:)
         buildSCC (im,m) (u,v)
           | scc_u == scc_v = (IntMap.alter (insertAux (edge u v)) scc_u im, m)
           | otherwise      = (im, (AM.edge scc_u scc_v) : m)
           where scc_u = assignment IntMap.! u; scc_v = assignment IntMap.! v
 
---    removeSelfLoops = coerce (IntMap.mapWithKey IntSet.delete)
-
---    amOfAim = coerce . Map.fromDistinctAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
---    setOfIntSet = Set.fromDistinctAscList . IntSet.toList
--- coerce . Map.fromDistinctAscList . map (fmap Set.fromDistinctAscList) . adjacencyList
--- [ (u,vs) <- adjacencyList g ]
-
---convertMany g assignment components = AM.gmap (sccs IntMap.!) (convert $ overlays es) where
---  convert = coerce . Map.fromAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
---  setOfIntSet = Set.fromAscList . IntSet.toList
---  sccs = overlays <$> components'
---  (components',es) = runState (foldM buildSCC sccGraph0 (edgeList g)) sccComps0
---  sccComps0 = [vertices $ IntMap.elems assignment]
---  sccGraph0 = ((:[]) . vertices . IntSet.toList) <$> components
---  buildSCC x (u,v) = do
---    let u_i = assignment IntMap.! u
---        v_i = assignment IntMap.! v
---    if u_i == v_i
---      then return (IntMap.update (\ cmp -> Just (edge u v:cmp) ) u_i x)
---      else modify' (edge u_i v_i:) >> return x
-        
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
 -- Connectivity in Coq" by François Pottier.
