@@ -39,6 +39,8 @@ import Data.Either
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Tree
 
+import Debug.Trace
+
 import Algebra.Graph.AdjacencyIntMap
 
 import qualified Algebra.Graph.AdjacencyMap as AM
@@ -324,7 +326,7 @@ isAcyclic = isRight . topSort
 -- @
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
 scc g = evalState (scc' g) initialState where
-  initialState = C 0 0 [] [] IntMap.empty IntMap.empty
+  initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty
 
 data StateSCC
   = C { current       :: !Int
@@ -333,6 +335,7 @@ data StateSCC
       , dfsPath       :: ![Int]
       , preorders     :: !(IntMap.IntMap Int)
       , components    :: !(IntMap.IntMap Int)
+      , componentSets :: !(IntMap.IntMap [AdjacencyIntMap])
       } deriving (Show)
 
 -- gabow path-based scc algorithm
@@ -356,25 +359,26 @@ scc' g =
     -- adds the id v pair to the boundary stack b, and adds 
     -- v to the path stack s.
     enter v = modify'
-      (\(C c i b s t ids) ->
-         C (c + 1) i ((c,v):b) (v:s) (IntMap.insert v c t) ids)
+      (\(C c i b s t ids sets) ->
+         C (c + 1) i ((c,v):b) (v:s) (IntMap.insert v c t) ids sets)
 
     -- called on back edges. pops the boundary stack until a vertex
     -- with a strictly smaller preorder number than p_v is at the top
     popBoundary p_v = modify'
-      (\(C c i b s t ids) ->
-         C c i (dropWhile ((>p_v).fst) b) s t ids)
+      (\(C c i b s t ids sets) ->
+         C c i (dropWhile ((>p_v).fst) b) s t ids sets)
 
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
     -- being constructed and we continue.
     exit v = modify'
-      (\sccState@(C c i b s t ids) ->
+      (\sccState@(C c i b s t ids sets) ->
        if v /= snd (head b) then sccState
        else let curr = v:takeWhile (/= v) s
                 s' = tail $ dropWhile (/= v) s
                 ids' = List.foldl' (\sccs x -> IntMap.insert x i sccs) ids curr
-             in C c (i + 1) (tail b) s' t ids')
+                sets' = IntMap.insert i [vertices curr] sets
+             in C c (i + 1) (tail b) s' t ids' sets')
 
     hasPreorderId v = gets (IntMap.member v . preorders)
     preorderId    v = gets (IntMap.lookup v . preorders)
@@ -384,20 +388,14 @@ scc' g =
       scc_count <- gets componentId
       if scc_count == 1
       then return (AM.vertex g)
-      else convertMany g <$> gets components
+      else convertMany g <$> gets components <*> gets componentSets
 
---    removeSelfLoops = coerce (IntMap.mapWithKey IntSet.delete)
-
---    amOfAim = coerce . Map.fromDistinctAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
---    setOfIntSet = Set.fromDistinctAscList . IntSet.toList
--- coerce . Map.fromDistinctAscList . map (fmap Set.fromDistinctAscList) . adjacencyList
--- [ (u,vs) <- adjacencyList g ]
-
-    convertMany g assignment = AM.gmap (sccs IntMap.!) $ (AM.overlays es) where
+    convertMany g assignment sets = AM.gmap (sccs IntMap.!) $ AM.overlays es where
       sccs = overlays <$> sccs'
-      (sccs',es) = List.foldl' buildSCC (IntMap.empty,[]) (edgeList g) where
+      es0 = AM.vertex <$> IntMap.elems assignment
+      (sccs',es) = List.foldl' buildSCC (sets,es0) (edgeList g) where
         insAux g = Just . maybe [g] (g:)
-        buildSCC (im,m) (u,v) =
+        buildSCC xs@(im,m) ys@(u,v) =
           let scc_u = assignment IntMap.! u
               scc_v = assignment IntMap.! v
            in if scc_u == scc_v
@@ -405,6 +403,13 @@ scc' g =
               else (IntMap.alter (insAux (vertex u)) scc_u $
                     IntMap.alter (insAux (vertex v)) scc_v $ im,
                     AM.edge scc_u scc_v:m)
+
+--    removeSelfLoops = coerce (IntMap.mapWithKey IntSet.delete)
+
+--    amOfAim = coerce . Map.fromDistinctAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
+--    setOfIntSet = Set.fromDistinctAscList . IntSet.toList
+-- coerce . Map.fromDistinctAscList . map (fmap Set.fromDistinctAscList) . adjacencyList
+-- [ (u,vs) <- adjacencyList g ]
 
 --convertMany g assignment components = AM.gmap (sccs IntMap.!) (convert $ overlays es) where
 --  convert = coerce . Map.fromAscList . IntMap.toList . fmap setOfIntSet . adjacencyIntMap
