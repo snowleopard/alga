@@ -67,7 +67,7 @@ instance Arbitrary a => Arbitrary (UG.Graph a) where
 
 -- An Arbitrary instance for Acyclic.AdjacencyMap
 instance (Ord a, Arbitrary a) => Arbitrary (AAM.AdjacencyMap a) where
-    arbitrary = AAM.toAcyclicOrd <$> arbitrary
+    arbitrary = AAM.shrink <$> arbitrary
 
     shrink g = shrinkVertices ++ shrinkEdges
       where
