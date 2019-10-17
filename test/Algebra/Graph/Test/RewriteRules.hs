@@ -147,9 +147,34 @@ ovPR e v o c f x =
 
 inspect $ 'ovP === 'ovPR
 
+-- isEmpty
+isEmptyC, isEmptyCR :: Buildg a -> Bool
+isEmptyC  g = isEmpty (buildg g)
+isEmptyCR g = g True (const False) (&&) (&&)
+
+inspect $ 'isEmptyC === 'isEmptyCR
+
+-- size
+sizeC, sizeCR :: Buildg a -> Int
+sizeC  g = size (buildg g)
+sizeCR g = g 1 (const 1) (+) (+)
+
+inspect $ 'sizeC === 'sizeCR
+
 -- hasVertex
 hasVertexC, hasVertexCR :: Eq a => a -> Buildg a -> Bool
 hasVertexC  x g = hasVertex x (buildg g)
 hasVertexCR x g = g False (==x) (||) (||)
 
 inspect $ 'hasVertexC === 'hasVertexCR
+
+-- path
+pathP, pathPR ::  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [a] -> b
+pathP  e v o c xs = foldg e v o c (path xs)
+pathPR e v o c xs =
+  case xs of
+    []     -> e
+    [x]    -> v x
+    (_:ys) -> foldg e v o c $ edges (zip xs ys) -- TODO: Do we rewrite here too ?
+
+inspect $ 'pathP === 'pathPR
