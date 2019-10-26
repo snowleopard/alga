@@ -56,6 +56,7 @@ import           Control.Monad                    (MonadPlus (..))
 import           Data.Coerce
 import           GHC.Generics
 import           Algebra.Graph.ToGraph            (toGraph)
+import           Data.List                        ((\\))
 
 import qualified Algebra.Graph                    as G
 
@@ -64,6 +65,7 @@ import qualified Control.Applicative              as Ap
 import qualified Data.IntSet                      as IntSet
 import qualified Data.Set                         as Set
 import qualified Data.Tree                        as Tree
+
 
 {-| The Undirected 'Graph' data type is an abstraction over the 'Graph' data
    type and provides the same graph construction
@@ -699,6 +701,9 @@ toSymmetricRelation = foldg SR.empty SR.vertex SR.overlay SR.connect
 {-# INLINE toSymmetricRelation #-}
 
 -- | Complement of a graph.
+-- Complexity: /O(E^2+V)/ time, /O(E+V)/ memory where
+-- E is the number of edges and V is the number of vertices
+-- The quadratic bound is due to `edges`.
 --
 -- @
 -- complement 'empty'           == 'empty'
@@ -708,8 +713,12 @@ toSymmetricRelation = foldg SR.empty SR.vertex SR.overlay SR.connect
 -- complement . complement      == id
 -- @
 complement :: Ord a => Graph a -> Graph a
-complement g@(UG _) = foldr (uncurry removeEdge) (cliqueG g) (edgeList g)
-  where cliqueG = clique . vertexList
+complement g@(UG _) = overlay (vertices allVertices) (edges complementEdges)
+ where cliqueG = clique . vertexList
+       allVertices = vertexList g
+       previousEdges = edgeList g
+       loops = filter (uncurry (==)) previousEdges
+       complementEdges = loops ++ (edgeList (cliqueG g) \\ previousEdges)
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the

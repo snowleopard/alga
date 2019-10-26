@@ -80,9 +80,8 @@ testUndirected = do
     test "complement (star 1 [2, 3])    == (overlay (vertex 1) (edge 2 3))" $
           complement (star 1 [2, 3])    == (overlay (vertex 1) (edge 2 3) :: UGI)
 
-    -- TODO: should not create undirected graphs with loops
-    -- test "complement . complement       == id" $ \(x :: UGI) ->
-    --      (complement . complement $ x)  == x
+    test "complement . complement       == id" $ \(x :: UGI) ->
+         (complement . complement $ x)  == x
 
     testSymmetricBasicPrimitives t
     testSymmetricIsSubgraphOf    t
