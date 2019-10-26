@@ -407,7 +407,7 @@ vertices = coerce1 G.vertices
 
 -- TODO: Use a faster nubBy implementation with 'Data.Set'
 -- | Construct the graph from a list of edges.
--- Complexity: /O(L^2)/ time, /O(L)/ memory and size, where /L/ is the length of the
+-- Complexity: /O(L)/ time, /O(L)/ memory and size, where /L/ is the length of the
 -- given list.
 --
 -- @
@@ -701,9 +701,8 @@ toSymmetricRelation = foldg SR.empty SR.vertex SR.overlay SR.connect
 {-# INLINE toSymmetricRelation #-}
 
 -- | Complement of a graph.
--- Complexity: /O(E^2+V)/ time, /O(E+V)/ memory where
--- E is the number of edges and V is the number of vertices
--- The quadratic bound is due to `edges`.
+-- Complexity: /O(E+V)/ time, /O(E+V)/ memory where
+-- E is the number of edges and V is the number of vertices.
 --
 -- @
 -- complement 'empty'           == 'empty'
