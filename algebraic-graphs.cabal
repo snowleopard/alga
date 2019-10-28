@@ -68,7 +68,6 @@ library
     exposed-modules:    Algebra.Graph,
                         Algebra.Graph.Undirected,
                         Algebra.Graph.Acyclic.AdjacencyMap,
-                        Algebra.Graph.Acyclic.AdjacencyMap.Ord,
                         Algebra.Graph.Acyclic.Labelled.AdjacencyMap,
                         Algebra.Graph.Acyclic.Labelled.AdjacencyMap.Algorithm,
                         Algebra.Graph.AdjacencyIntMap,
@@ -158,7 +157,7 @@ test-suite test-alga
     if !impl(ghc >= 8.0)
         build-depends:  semigroups   >= 0.18.2  && < 0.18.4
     if impl(ghc >= 8.0.2)
-        build-depends:  inspection-testing >= 0.4 && < 0.4.2
+        build-depends:  inspection-testing >= 0.4.2.2 && < 0.5
 
     default-language:   Haskell2010
     GHC-options:        -Wall

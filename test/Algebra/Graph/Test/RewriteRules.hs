@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP             #-}
 {-# LANGUAGE TemplateHaskell #-}
 -----------------------------------------------------------------------------
 -- |
@@ -76,13 +77,7 @@ vertices2 = transpose . overlays . map vertex
 
 inspect $ 'vertices2 === 'vertices1
 
--- Note that we currently have these three tests:
--- * vertices2 === vertices1
--- * vertices1 === verticesR
--- * vertices2 =/= verticesR
--- This non-transitivity is awkward, and feels like a bug in the inspection
--- testing library. See https://github.com/nomeata/inspection-testing/issues/23.
-inspect $ 'vertices2 =/= 'verticesR
+inspect $ 'vertices2 === 'verticesR
 
 cliqueT1, cliqueTR :: [a] -> Graph a
 cliqueT1 = transpose . connects . map vertex
@@ -111,16 +106,19 @@ inspect $ 'bind2 === 'bind2R
 
 -- Ideally, we want this test to pass.
 -- Strangely, '<*>' in 'ovApR' does not inline and makes the test fail.
---
--- This is corrected below, where '<*>' was inlined "by hand"
 ovAp, ovApR :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
 ovAp  x y z = overlay x y <*> z
 ovApR x y z = overlay (x <*> z) (y <*> z)
 
 inspect $ 'ovAp =/= 'ovApR
 
+-- Here we inline "by hand", but we see different results on GHC 8.6 vs GHC 8.8!
 ovAp', ovApR' :: Graph (a -> b) -> Graph (a -> b) -> Graph a -> Graph b
 ovAp'  x y z = overlay x y <*> z
 ovApR' x y z = overlay (x >>= (<$> z)) (y >>= (<$> z))
 
+#if MIN_VERSION_base(4,13,0)
+inspect $ 'ovAp' =/= 'ovApR'
+#else
 inspect $ 'ovAp' === 'ovApR'
+#endif
