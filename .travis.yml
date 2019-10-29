@@ -128,10 +128,7 @@ script:
 
   # build & run tests, build benchmarks
   - ${CABAL} new-build -w ${HC} ${TEST} ${BENCH} all
-  - if [ "x$TEST" = "x--enable-tests" ];
-    echo "${CABAL} new-test -w ${HC} ${TEST} ${BENCH} all";
-    exit 0;
-    fi
+  - if [ "x$TEST" = "x--enable-tests" ]; .travis/timeout.sh "${CABAL} new-test -w ${HC} ${TEST} ${BENCH} all"; fi
 
   # cabal check
   - (cd algebraic-graphs-* && ${CABAL} check)

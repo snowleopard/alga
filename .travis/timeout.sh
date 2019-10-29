@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 RED='\033[0;31m'
 LIMIT=240
 minutes=0
