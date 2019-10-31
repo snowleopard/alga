@@ -74,8 +74,8 @@ testUndirected = do
     test "complement (vertex 1)         == (vertex 1)" $
           complement (vertex 1)         == (vertex 1 :: UGI)
 
-    test "complement (edge 1 2)         == (overlay (vertex 1) (vertex 2))" $
-          complement (edge 1 2)         == (overlay (vertex 1) (vertex 2) :: UGI)
+    test "complement (edge 1 2)         == (vertices [1, 2])" $
+          complement (edge 1 2)         == (vertices [1, 2] :: UGI)
 
     test "complement (star 1 [2, 3])    == (overlay (vertex 1) (edge 2 3))" $
           complement (star 1 [2, 3])    == (overlay (vertex 1) (edge 2 3) :: UGI)
