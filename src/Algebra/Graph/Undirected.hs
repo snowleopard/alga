@@ -701,13 +701,11 @@ toSymmetricRelation = foldg SR.empty SR.vertex SR.overlay SR.connect
 {-# INLINE toSymmetricRelation #-}
 
 -- | Complement of a graph.
--- Complexity: /O(m^2+n)/ time, /O(m+n)/ memory where
+-- Complexity: /O(m^2)/ time, /O(m^2)/ memory where
 --
 -- @
 -- complement 'empty'           == 'empty'
 -- complement ('vertex' x)      == ('vertex' x)
--- complement ('edge' x y)      == ('vertices' [x, y])
--- complement ('star' x [y, z]) == ('overlay' ('vertex' x) ('edge' y z))
 -- complement . complement    == id
 -- @
 complement :: Ord a => Graph a -> Graph a
