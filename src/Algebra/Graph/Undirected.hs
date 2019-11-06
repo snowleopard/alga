@@ -43,7 +43,7 @@ module Algebra.Graph.Undirected (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, mergeVertices,
-    induce, induceJust, toSymmetricRelation,
+    induce, induceJust, toSymmetricRelation, complement,
 
     -- * Miscellaneous
     consistent
@@ -56,6 +56,7 @@ import           Control.Monad                    (MonadPlus (..))
 import           Data.Coerce
 import           GHC.Generics
 import           Algebra.Graph.ToGraph            (toGraph)
+import           Data.List                        ((\\))
 
 import qualified Algebra.Graph                    as G
 
@@ -64,6 +65,7 @@ import qualified Control.Applicative              as Ap
 import qualified Data.IntSet                      as IntSet
 import qualified Data.Set                         as Set
 import qualified Data.Tree                        as Tree
+
 
 {-| The Undirected 'Graph' data type is an abstraction over the 'Graph' data
    type and provides the same graph construction
@@ -405,7 +407,7 @@ vertices = coerce1 G.vertices
 
 -- TODO: Use a faster nubBy implementation with 'Data.Set'
 -- | Construct the graph from a list of edges.
--- Complexity: /O(L^2)/ time, /O(L)/ memory and size, where /L/ is the length of the
+-- Complexity: /O(L)/ time, /O(L)/ memory and size, where /L/ is the length of the
 -- given list.
 --
 -- @
@@ -697,6 +699,25 @@ adjacencyList = SR.adjacencyList . toSymmetricRelation
 toSymmetricRelation :: Ord a => Graph a -> SR.Relation a
 toSymmetricRelation = foldg SR.empty SR.vertex SR.overlay SR.connect
 {-# INLINE toSymmetricRelation #-}
+
+-- | Complement of a graph.
+-- Complexity: /O(n^2*m)/ time, /O(n^2)/ memory where
+--
+-- @
+-- complement 'empty'           == 'empty'
+-- complement ('vertex' x)      == ('vertex' x)
+-- complement ('edge' 1 2)      == ('vertices' [1, 2])
+-- complement ('edge' 0 0)      == ('edge' 0 0)
+-- complement ('star' 1 [2, 3]) == ('overlay' ('vertex' 1) ('edge' 2 3))
+-- complement . complement    == id
+-- @
+complement :: Ord a => Graph a -> Graph a
+complement g@(UG _) = overlay (vertices allVertices) (edges complementEdges)
+ where cliqueG = clique . vertexList
+       allVertices = vertexList g
+       previousEdges = edgeList g
+       loops = filter (uncurry (==)) previousEdges
+       complementEdges = loops ++ (edgeList (cliqueG g) \\ previousEdges)
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
