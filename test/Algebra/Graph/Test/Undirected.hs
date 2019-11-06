@@ -74,6 +74,15 @@ testUndirected = do
     test "complement (vertex x)         == (vertex x)" $ \(x :: Int) ->
           complement (vertex x)         == (vertex x :: UGI)
 
+    test "complement (edge 1 2)         == (vertices [1, 2])" $
+          complement (edge 1 2)         == (vertices [1, 2] :: UGI)
+
+    test "complement (edge 0 0)         == (edge 0 0)" $
+          complement (edge 0 0)         == edge 0 0
+
+    test "complement (star 1 [2, 3])    == (overlay (vertex 1) (edge 2 3))" $
+          complement (star 1 [2, 3])    == (overlay (vertex 1) (edge 2 3) :: UGI)
+
     test "complement . complement       == id" $ \(x :: UGI) ->
          (complement . complement $ x)  == x
 
