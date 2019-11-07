@@ -40,6 +40,7 @@ import Data.Tree
 
 import Algebra.Graph.AdjacencyIntMap
 
+-- import qualified Algebra.Graph as G
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.IntMap.Strict         as IntMap
 import qualified Data.IntSet                as IntSet
@@ -322,7 +323,7 @@ isAcyclic = isRight . topSort
 -- @
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
 scc g = evalState (scc' g) initialState where
-  initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty
+  initialState = C 0 0 [] [] IntMap.empty IntMap.empty -- IntMap.empty
 
 data StateSCC
   = C { current       :: !Int
@@ -331,7 +332,7 @@ data StateSCC
       , dfsPath       :: ![Int]
       , preorders     :: !(IntMap.IntMap Int)
       , components    :: !(IntMap.IntMap Int)
-      , componentSets :: !(IntMap.IntMap [AdjacencyIntMap])
+--      , componentSets :: !(IntMap.IntMap [AdjacencyIntMap])
       } deriving (Show)
 
 -- gabow path-based scc algorithm
@@ -355,26 +356,25 @@ scc' g =
     -- adds the id v pair to the boundary stack b, and adds 
     -- v to the path stack s.
     enter v = modify'
-      (\(C c i b s t ids sets) ->
-         C (c + 1) i ((c,v):b) (v:s) (IntMap.insert v c t) ids sets)
+      (\(C c i b s t ids) ->
+         C (c + 1) i ((c,v):b) (v:s) (IntMap.insert v c t) ids)
 
     -- called on back edges. pops the boundary stack until a vertex
     -- with a strictly smaller preorder number than p_v is at the top
     popBoundary p_v = modify'
-      (\(C c i b s t ids sets) ->
-         C c i (dropWhile ((>p_v).fst) b) s t ids sets)
+      (\(C c i b s t ids) ->
+         C c i (dropWhile ((>p_v).fst) b) s t ids)
 
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
     -- being constructed and we continue.
     exit v = modify'
-      (\sccState@(C c i b s t ids sets) ->
+      (\sccState@(C c i b s t ids) ->
        if v /= snd (head b) then sccState
        else let curr = v:takeWhile (/= v) s
                 s' = tail $ dropWhile (/= v) s
                 ids' = List.foldl' (\sccs x -> IntMap.insert x i sccs) ids curr
-                sets' = IntMap.insert i [vertices curr] sets
-             in C c (i + 1) (tail b) s' t ids' sets')
+             in C c (i + 1) (tail b) s' t ids')
 
     hasPreorderId v = gets (IntMap.member v . preorders)
     preorderId    v = gets (IntMap.lookup v . preorders)
@@ -384,17 +384,17 @@ scc' g =
       scc_count <- gets componentId
       if scc_count == 1
       then return (AM.vertex g)
-      else convertByEdges <$> gets components <*> gets componentSets
+      else classifyEdges <$> gets components
 
-    convertByEdges assignment sets = AM.gmap (sccs IntMap.!) (AM.overlays es) where
+    classifyEdges assignment = AM.gmap (sccs IntMap.!) (AM.overlays es) where
       sccs = overlays <$> sccs'
-      (sccs',es) = List.foldl' buildSCC (sets,es0) (edgeList g) where
-        es0 = AM.vertex <$> IntMap.elems assignment
-        insertAux g = Just . maybe [g] (g:)
-        buildSCC (im,m) (u,v)
-          | scc_u == scc_v = (IntMap.alter (insertAux (edge u v)) scc_u im, m)
-          | otherwise      = (im, (AM.edge scc_u scc_v) : m)
-          where scc_u = assignment IntMap.! u; scc_v = assignment IntMap.! v
+      (sccs',es) = IntMap.foldrWithKey' condense (IntMap.empty,[]) (adjacencyIntMap g) where
+        condense u vs (m_scc,es_scc) = (m_scc',es_scc') where
+          es_scc' = AM.vertex scc_u:(AM.edge scc_u.snd <$> inters) ++ es_scc
+          m_scc' = IntMap.insertWith (++) scc_u (vertex u:(edge u.fst <$> intras)) m_scc
+          scc_vs = [ (v,assignment IntMap.! v) | v <- IntSet.toList vs]
+          (intras,inters) = List.partition ((==scc_u).snd) scc_vs
+          scc_u = assignment IntMap.! u
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
