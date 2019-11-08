@@ -492,6 +492,16 @@ testAcyclicAdjacencyMap = do
     test "shrink . fromAcyclic     == id" $ \(x :: AAI) ->
           (shrink . fromAcyclic) x == id x
 
+    putStrLn "\n============ Acyclic.AdjacencyMap.shrink ============"
+    test "shrink . AM.vertex   == vertex" $ \x ->
+          (shrink . AM.vertex) x   == (vertex x :: AAI)
+  
+    test "shrink . AM.vertices == vertices" $ \x ->
+          (shrink . AM.vertices) x == (vertices x :: AAI)
+  
+    test "shrink . fromAcyclic == id" $ \(x :: AAI) ->
+          (shrink . fromAcyclic) x == id x
+
     putStrLn "\n============ Acyclic.AdjacencyMap.consistent ============"
     test "Arbitrary"         $ \(x :: AAI)            -> consistent x
     test "empty"             $                           consistent (empty :: AAI)

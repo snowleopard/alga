@@ -32,8 +32,7 @@ module Algebra.Graph.Labelled.AdjacencyMap (
     edgeList, vertexSet, edgeSet, preSet, postSet, skeleton,
 
     -- * Graph transformation
-    removeVertex, removeEdge, replaceVertex, replaceEdge, transpose, gmap,
-    emap, induce, induceJust,
+    removeVertex, removeEdge, replaceVertex, replaceEdge, swapVertex,    transpose, gmap, emap, induce, induceJust,
 
     -- * Relational operations
     closure, reflexiveClosure, symmetricClosure, transitiveClosure,
@@ -515,6 +514,21 @@ replaceEdge e x y
     addY             = Map.alter (Just . fromMaybe Map.empty) y
     replace (Just m) = Just $ Map.insert y e m
     replace Nothing  = Just $ Map.singleton y e
+
+-- TODO: Add tests
+-- | The function @'swapVertex' x y@ swaps vertex @x@ and vertex @y@ in a
+-- given 'AdjacencyMap'. If one of @x@ or @y@ do not exist, this function
+-- acts like 'replaceVertex'. If both @x@ and @y@ do not exist, the same
+-- 'AdjacencyMap' is returned.
+-- Complexity: /O((n + m) * log(n))/ time.
+--
+-- @
+-- swapVertex x x            == id
+-- swapVertex x y ('edge' x y) == 'edge' y x
+-- swapVertex x y            == 'gmap' (\\v -> if v == x then y else if v == y then x else v)
+-- @
+swapVertex :: (Eq e, Monoid e, Ord a) => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
+swapVertex u v = gmap $ \w -> if w == u then v else if w == v then u else w
 
 -- | Transpose a given graph.
 -- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.

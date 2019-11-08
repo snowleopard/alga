@@ -510,8 +510,8 @@ toAcyclicOrd = AAM . filterEdges (<)
 -- used to build an acyclic graph.
 --
 -- @
--- shrink . 'AM.vertex'      == 'vertex'
--- shrink . 'AM.vertices'    == 'vertices'
+-- shrink . 'AM.vertex'   == 'vertex'
+-- shrink . 'AM.vertices' == 'vertices'
 -- shrink . 'fromAcyclic' == 'id'
 -- @
 shrink :: Ord a => AM.AdjacencyMap a -> AdjacencyMap a
