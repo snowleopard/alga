@@ -28,18 +28,18 @@ main :: IO ()
 main = do
     selected <- getArgs
     let go current = when (null selected || current `elem` selected)
-    go "Acyclic.AdjacencyMap"   testAcyclicAdjacencyMap
-    go "AdjacencyIntMap"        testAdjacencyIntMap
-    go "AdjacencyMap"           testAdjacencyMap
-    go "Bipartite.AdjacencyMap" testBipartiteAdjacencyMap
-    go "Export"                 testExport
-    go "Graph"                  testGraph
-    go "Internal"               testInternal
-    go "Label"                  testLabel
-    go "Labelled.AdjacencyMap"  testLabelledAdjacencyMap
-    go "Labelled.Graph"         testLabelledGraph
-    go "NonEmpty.AdjacencyMap"  testNonEmptyAdjacencyMap
-    go "NonEmpty.Graph"         testNonEmptyGraph
-    go "Relation"               testRelation
-    go "Symmetric.Relation"     testSymmetricRelation
-    go "Typed"                  testTyped
+    {-# SCC "Ann.Acyclic.AdjacencyMap"   #-} go "Acyclic.AdjacencyMap"   testAcyclicAdjacencyMap
+    {-# SCC "Ann.AdjacencyIntMap"        #-} go "AdjacencyIntMap"        testAdjacencyIntMap
+    {-# SCC "Ann.AdjacencyMap"           #-} go "AdjacencyMap"           testAdjacencyMap
+    {-# SCC "Ann.Bipartite.AdjacencyMap" #-} go "Bipartite.AdjacencyMap" testBipartiteAdjacencyMap
+    {-# SCC "Ann.Export"                 #-} go "Export"                 testExport
+    {-# SCC "Ann.Graph"                  #-} go "Graph"                  testGraph
+    {-# SCC "Ann.Internal"               #-} go "Internal"               testInternal
+    {-# SCC "Ann.Label"                  #-} go "Label"                  testLabel
+    {-# SCC "Ann.Labelled.AdjacencyMap"  #-} go "Labelled.AdjacencyMap"  testLabelledAdjacencyMap
+    {-# SCC "Ann.Labelled.Graph"         #-} go "Labelled.Graph"         testLabelledGraph
+    {-# SCC "Ann.NonEmpty.AdjacencyMap"  #-} go "NonEmpty.AdjacencyMap"  testNonEmptyAdjacencyMap
+    {-# SCC "Ann.NonEmpty.Graph"         #-} go "NonEmpty.Graph"         testNonEmptyGraph
+    {-# SCC "Ann.Relation"               #-} go "Relation"               testRelation
+    {-# SCC "Ann.Symmetric.Relation"     #-} go "Symmetric.Relation"     testSymmetricRelation
+    {-# SCC "Ann.Typed"                  #-} go "Typed"                  testTyped

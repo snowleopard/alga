@@ -1,0 +1,40 @@
+Major time consuming tests (anything that takes > 10% of total time):
+testBipartiteAdjacencyMap A.G.T.Bipartite.AdjacencyMap     23.4 22.1
+testLabel                 A.G.T.Label                      33.7 12.5
+testSymmetricRelation     A.G.T.Relation.SymmetricRelation 11.6 16.9
+
+testBipartiteAdjacencyMap.connect ~ Lot of time
+testLabel.powerSet ~ Lot of time
+
+
+sed -n -r '/^  test.+/p' test-alga.prof > test-alga.prof.f
+
+sed -n -r '/Algebra\.Graph\.Test\.Bipartite\.AdjacencyMap.+/p' test-alga.prof > test-alga.prof.f
+
+['connects', 7.7, 3.8]
+['connect', 7.7, 3.8]
+['connect', 5.0, 2.8]
+['toBipartite', 1.1, 1.5]
+['toBipartite', 0.5, 0.8]
+['overlay', 0.2, 0.2]
+['overlays', 0.3, 0.2]
+['detectParts', 0.1, 0.1]
+['toBipartite', 0.1, 0.1]
+
+
+Results of profiling:
+
+2 modules take up time more than expected.
+Test.Bipartite.AdjacencyMap (connect) and Test.Label (PowerSet)
+There are 2 ways in which we can make the test suit faster.
+1. Optimize the functions. (Can be done in the future? This might be difficult as it depends on Data.Map)
+2. Simplify the test arguments. This would require us to work with QuickCheck which is a more viable and a simpler option. Basically we need to simplify the auto generated args.
+
+I'll look into this. I will hopefully solve this in the next couple of days.
+I'll simplify tests for Test.Label in PR#232 itself.
+I'll create another PR for simplifying tests of Tests.Bipartite.AdjacencyMap
+
+Test.Relation.SymmetricRelation also has a considerable amount (~11% to total runtime) of delay but it can be ignored for now.
+This is more or less a global problem. I'll create an issue regarding this, which can be solved later.
+
+

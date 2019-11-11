@@ -13,6 +13,7 @@ module Algebra.Graph.Test.Label (
   ) where
 
 import Algebra.Graph.Test hiding (NonNegative)
+import Algebra.Graph.Test.Generic (size10)
 import Algebra.Graph.Label
 import Data.Monoid
 
@@ -120,27 +121,27 @@ testStarSemiring = starSemiring (<+>) zero (<.>) one star
 testLabel :: IO ()
 testLabel = do
     putStrLn "\n============ Any ============"
-    test "Semiring"     $ \(a :: Any) b c -> testSemiring a b c
-    test "StarSemiring" $ \(a :: Any) b c -> testStarSemiring a b c
-    test "Dioid"        $ \(a :: Any) b c -> testDioid a b c
+    {-# SCC "Ann1.Any_Semiring" #-}     test "Semiring"     $ \(a :: Any) b c -> testSemiring a b c
+    {-# SCC "Ann1.Any_StarSemiring" #-} test "StarSemiring" $ \(a :: Any) b c -> testStarSemiring a b c
+    {-# SCC "Ann1.Any_Dioid" #-}        test "Dioid"        $ \(a :: Any) b c -> testDioid a b c
 
     putStrLn "\n============ Distance ============"
-    test "Semiring"     $ \(a :: Distance Int) b c -> testSemiring a b c
-    test "StarSemiring" $ \(a :: Distance Int) b c -> testStarSemiring a b c
-    test "Dioid"        $ \(a :: Distance Int) b c -> testDioid a b c
+    {-# SCC "Ann1.Distance_Semiring" #-}     test "Semiring"     $ \(a :: Distance Int) b c -> testSemiring a b c
+    {-# SCC "Ann1.Distance_StarSemiring" #-} test "StarSemiring" $ \(a :: Distance Int) b c -> testStarSemiring a b c
+    {-# SCC "Ann1.Distance_Dioid" #-}        test "Dioid"        $ \(a :: Distance Int) b c -> testDioid a b c
 
     putStrLn "\n============ Capacity ============"
-    test "Semiring"     $ \(a :: Capacity Int) b c -> testSemiring a b c
-    test "StarSemiring" $ \(a :: Capacity Int) b c -> testStarSemiring a b c
-    test "Dioid"        $ \(a :: Capacity Int) b c -> testDioid a b c
+    {-# SCC "Ann1.Capacity_Semiring" #-}     test "Semiring"     $ \(a :: Capacity Int) b c -> testSemiring a b c
+    {-# SCC "Ann1.Capacity_StarSemiring" #-} test "StarSemiring" $ \(a :: Capacity Int) b c -> testStarSemiring a b c
+    {-# SCC "Ann1.Capacity_Dioid" #-}        test "Dioid"        $ \(a :: Capacity Int) b c -> testDioid a b c
 
     putStrLn "\n============ Minimum ============"
-    test "LeftNearRing" $ \(a :: Minimum (Path Int)) b c -> testLeftNearRing a b c
+    {-# SCC "Ann1.Minimum_LeftNearRing" #-} test "LeftNearRing" $ \(a :: Minimum (Path Int)) b c -> testLeftNearRing a b c
 
     putStrLn "\n============ PowerSet ============"
-    test "Semiring"     $ \(a :: PowerSet (Path Int)) b c -> testSemiring a b c
-    test "Dioid"        $ \(a :: PowerSet (Path Int)) b c -> testDioid a b c
+    {-# SCC "Ann1.PowerSet_Semiring" #-} test "Semiring" $ size10 $ \(a :: PowerSet (Path Int)) b c -> testSemiring a b c
+    {-# SCC "Ann1.PowerSet_Dioid" #-}    test "Dioid"    $ size10 $ \(a :: PowerSet (Path Int)) b c -> testDioid a b c
 
     putStrLn "\n============ Count ============"
-    test "Semiring"     $ \(a :: Count Int) b c -> testSemiring a b c
-    test "StarSemiring" $ \(a :: Count Int) b c -> testStarSemiring a b c
+    {-# SCC "Ann1.Count_Semiring" #-}     test "Semiring"     $ \(a :: Count Int) b c -> testSemiring a b c
+    {-# SCC "Ann1.Count_StarSemiring" #-} test "StarSemiring" $ \(a :: Count Int) b c -> testStarSemiring a b c
