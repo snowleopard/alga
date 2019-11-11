@@ -48,7 +48,6 @@ testAdjacencyMap = do
     testRelational        t
     testBox               tPoly
     testBfsForest         t
-    testBfsForestFrom     t
     testBfs               t
     testDfsForest         t
     testDfsForestFrom     t

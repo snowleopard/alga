@@ -1,17 +1,18 @@
 import Algebra.Graph.Test.Acyclic.AdjacencyMap
 import Algebra.Graph.Test.AdjacencyIntMap
 import Algebra.Graph.Test.AdjacencyMap
-import Algebra.Graph.Test.NonEmpty.AdjacencyMap
+import Algebra.Graph.Test.Bipartite.AdjacencyMap
 import Algebra.Graph.Test.Export
 import Algebra.Graph.Test.Graph
-import Algebra.Graph.Test.NonEmpty.Graph
 import Algebra.Graph.Test.Internal
 import Algebra.Graph.Test.Label
 import Algebra.Graph.Test.Labelled.AdjacencyMap
 import Algebra.Graph.Test.Labelled.Graph
+import Algebra.Graph.Test.NonEmpty.AdjacencyMap
+import Algebra.Graph.Test.NonEmpty.Graph
 import Algebra.Graph.Test.Relation
 import Algebra.Graph.Test.Relation.SymmetricRelation
-import Algebra.Graph.Test.Bipartite.AdjacencyMap
+import Algebra.Graph.Test.Undirected
 import Data.Graph.Test.Typed
 
 import Control.Monad
