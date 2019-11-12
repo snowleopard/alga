@@ -13,6 +13,7 @@ module Algebra.Graph.Test.Label (
   ) where
 
 import Algebra.Graph.Test hiding (NonNegative)
+import Algebra.Graph.Test.Generic (size10)
 import Algebra.Graph.Label
 import Data.Monoid
 
@@ -138,8 +139,8 @@ testLabel = do
     test "LeftNearRing" $ \(a :: Minimum (Path Int)) b c -> testLeftNearRing a b c
 
     putStrLn "\n============ PowerSet ============"
-    test "Semiring"     $ \(a :: PowerSet (Path Int)) b c -> testSemiring a b c
-    test "Dioid"        $ \(a :: PowerSet (Path Int)) b c -> testDioid a b c
+    test "Semiring" $ size10 $ \(a :: PowerSet (Path Int)) b c -> testSemiring a b c
+    test "Dioid"    $ size10 $ \(a :: PowerSet (Path Int)) b c -> testDioid a b c
 
     putStrLn "\n============ Count ============"
     test "Semiring"     $ \(a :: Count Int) b c -> testSemiring a b c
