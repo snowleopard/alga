@@ -133,7 +133,7 @@ instance (Num a, Ord a) => Num (NonNegative a) where
       where
         f = fromInteger x
 
-    (+) = liftA2 (+)
+    (+) = coerce ((+) :: Extended a -> Extended a -> Extended a)
     (*) = coerce ((*) :: Extended a -> Extended a -> Extended a)
 
     negate _ = error "NonNegative values cannot be negated"
