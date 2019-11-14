@@ -28,29 +28,29 @@ type One a = a
 type Annihilator a = a
 
 associative :: Eq a => BinaryFn a -> a -> a -> a -> Property
-associative f a b c = (a `f` b) `f` c == a `f` (b `f` c) // "Associative"
+associative (<>) a b c = (a <> b) <> c == a <> (b <> c) // "Associative"
 
 commutative :: Eq a => BinaryFn a -> a -> a -> Property
-commutative f a b = a `f` b == b `f` a // "Commutative"
+commutative (<>) a b = a <> b == b <> a // "Commutative"
 
 idempotent :: Eq a => BinaryFn a -> a -> Property
-idempotent f a = a `f` a == a // "Idempotent"
+idempotent (<>) a = a <> a == a // "Idempotent"
 
 annihilator :: Eq a => BinaryFn a -> Annihilator a -> a -> Property
-annihilator f z a = conjoin
-  [ a `f` z == z 
-  , z `f` a == z ] // "Annihilator"
+annihilator (<>) z a = conjoin
+  [ a <> z == z // "Left" 
+  , z <> a == z // "Right" ] // "Annihilator"
 
 closure :: Eq a => Plus a -> Mult a -> One a -> Star a -> a -> Property
-closure p m o s a = conjoin
-  [ s a == o `p` (a `m` s a)
-  , s a == o `p` (s a `m` a) ] // "Closure"
+closure (+) (*) o s a = conjoin
+  [ s a == o + (a * s a) // "Left"
+  , s a == o + (s a * a) // "Right" ] // "Closure"
 
 leftDistributive :: Eq a => Plus a -> Mult a -> a -> a -> a -> Property
-leftDistributive p m a b c = a `m` (b `p` c) == (a `m` b) `p` (a `m` c) // "Left distributive"
+leftDistributive (+) (*) a b c = a * (b + c) == (a * b) + (a * c) // "Left distributive"
 
 rightDistributive :: Eq a => Plus a -> Mult a -> a -> a -> a -> Property
-rightDistributive p m a b c = (a `p` b) `m` c == (a `m` c) `p` (b `m` c) // "Right distributive"
+rightDistributive (+) (*) a b c = (a + b) * c == (a * c) + (b * c) // "Right distributive"
 
 distributive :: Eq a => Plus a -> Mult a -> a -> a -> a -> Property
 distributive p m a b c = conjoin
@@ -58,12 +58,12 @@ distributive p m a b c = conjoin
   , rightDistributive p m a b c ] // "Distributive"
 
 identity :: Eq a => BinaryFn a -> Identity a -> a -> Property
-identity f e a = conjoin
-  [ a `f` e == a 
-  , e `f` a == a ] // "Identity"
+identity (<>) e a = conjoin
+  [ a <> e == a // "Left"
+  , e <> a == a // "Right" ] // "Identity"
 
 semigroup :: Eq a => BinaryFn a -> a -> a -> a -> Property
-semigroup = associative // "Semigroup"
+semigroup f a b c = associative f a b c // "Semigroup"
 
 monoid :: Eq a => BinaryFn a -> Identity a -> a -> a -> a -> Property
 monoid f e a b c = conjoin

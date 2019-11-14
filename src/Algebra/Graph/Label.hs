@@ -481,7 +481,7 @@ type ShortestPath e a = Optimum (Distance e) (Minimum (Path a))
 type AllShortestPaths e a = Optimum (Distance e) (PowerSet (Path a))
 
 -- | The 'Optimum' semiring specialised to /counting all shortest paths/.
-type CountShortestPaths e a = Optimum (Distance e) (Count Integer)
+type CountShortestPaths e = Optimum (Distance e) (Count Integer)
 
 -- | The 'Optimum' semiring specialised to
 -- /finding the lexicographically smallest widest path/.

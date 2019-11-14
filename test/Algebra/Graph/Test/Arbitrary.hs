@@ -251,6 +251,9 @@ instance Arbitrary a => Arbitrary (Minimum a) where
 instance (Arbitrary a, Ord a) => Arbitrary (PowerSet a) where
     arbitrary = PowerSet <$> arbitrary
 
+instance (Arbitrary o, Arbitrary a) => Arbitrary (Optimum o a) where
+    arbitrary = Optimum <$> arbitrary <*> arbitrary
+
 instance (Arbitrary a, Arbitrary b, Ord a, Ord b) => Arbitrary (BAM.AdjacencyMap a b) where
     arbitrary = BAM.toBipartite <$> arbitrary
     shrink = map BAM.toBipartite . shrink . BAM.fromBipartite
