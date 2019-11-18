@@ -31,6 +31,7 @@ module Algebra.Graph.Label (
 
 import Control.Applicative
 import Control.Monad
+import Data.Coerce
 import Data.Maybe
 import Data.Monoid (Any (..), Sum (..))
 import Data.Semigroup (Min (..), Max (..), Semigroup (..))
@@ -132,8 +133,8 @@ instance (Num a, Ord a) => Num (NonNegative a) where
       where
         f = fromInteger x
 
-    (+) = liftA2 (+)
-    (*) = liftA2 (*)
+    (+) = coerce ((+) :: Extended a -> Extended a -> Extended a)
+    (*) = coerce ((*) :: Extended a -> Extended a -> Extended a)
 
     negate _ = error "NonNegative values cannot be negated"
 
@@ -281,11 +282,15 @@ fromExtended :: Extended a -> Maybe a
 fromExtended (Finite a) = Just a
 fromExtended Infinite   = Nothing
 
-instance Num a => Num (Extended a) where
+-- A type alias for a binary function on Extended.
+instance (Num a, Eq a) => Num (Extended a) where
     fromInteger = Finite . fromInteger
 
     (+) = liftA2 (+)
-    (*) = liftA2 (*)
+
+    Finite 0 * _ = Finite 0
+    _ * Finite 0 = Finite 0
+    x * y = liftA2 (*) x y
 
     negate = fmap negate
     signum = fmap signum
@@ -294,8 +299,8 @@ instance Num a => Num (Extended a) where
 -- | If @a@ is a monoid, 'Minimum' @a@ forms the following 'Dioid':
 --
 -- @
--- 'zero'  = 'pure' 'mempty'
--- 'one'   = 'noMinimum'
+-- 'zero'  = 'noMinimum'
+-- 'one'   = 'pure' 'mempty'
 -- ('<+>') = 'liftA2' 'min'
 -- ('<.>') = 'liftA2' 'mappend'
 -- @
@@ -320,16 +325,16 @@ noMinimum :: Minimum a
 noMinimum = Minimum Infinite
 
 instance Ord a => Semigroup (Minimum a) where
-    (<>) = liftA2 min
+    (<>) = min
 
 instance (Monoid a, Ord a) => Monoid (Minimum a) where
-    mempty = pure mempty
+    mempty = noMinimum
 #if !MIN_VERSION_base(4,11,0)
     mappend = (<>)
 #endif
 
 instance (Monoid a, Ord a) => Semiring (Minimum a) where
-    one = noMinimum
+    one = pure mempty
     (<.>) = liftA2 mappend
 
 instance (Monoid a, Ord a) => Dioid (Minimum a)
@@ -360,9 +365,6 @@ newtype PowerSet a = PowerSet { getPowerSet :: Set a }
 instance (Monoid a, Ord a) => Semiring (PowerSet a) where
     one                       = PowerSet (Set.singleton mempty)
     PowerSet x <.> PowerSet y = PowerSet (setProductWith mappend x y)
-
-instance (Monoid a, Ord a) => StarSemiring (PowerSet a) where
-    star _ = one
 
 instance (Monoid a, Ord a) => Dioid (PowerSet a) where
 
@@ -479,7 +481,7 @@ type ShortestPath e a = Optimum (Distance e) (Minimum (Path a))
 type AllShortestPaths e a = Optimum (Distance e) (PowerSet (Path a))
 
 -- | The 'Optimum' semiring specialised to /counting all shortest paths/.
-type CountShortestPaths e a = Optimum (Distance e) (Count Integer)
+type CountShortestPaths e = Optimum (Distance e) (Count Integer)
 
 -- | The 'Optimum' semiring specialised to
 -- /finding the lexicographically smallest widest path/.
