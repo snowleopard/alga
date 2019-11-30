@@ -36,6 +36,7 @@ import Control.Monad.Cont
 import Control.Monad.State.Strict
 import Data.Either
 import Data.List.NonEmpty (NonEmpty(..),(<|))
+import Data.Monoid
 import Data.Tree
 import GHC.Exts (toList,fromList)
 
