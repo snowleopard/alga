@@ -385,17 +385,20 @@ scc' g =
       then return (AM.vertex g)
       else classifyEdges <$> gets components
 
-    runE = flip appEndo []
-    classifyEdges assignment = AM.gmap (sccs IntMap.!) es where
-      sccs = overlays . runE <$> sccs'
-      es = AM.overlays $ runE es'
-      (sccs',es') = IntMap.foldrWithKey' condense (IntMap.empty,mempty) (adjacencyIntMap g) where
-        condense u vs (m_scc,es_scc) = (m_scc',es_scc' <> es_scc) where
-          es_scc' = Endo $ (++) (AM.vertex scc_u:(AM.edge scc_u.snd <$> inters))
-          m_scc' = IntMap.insertWith (<>) scc_u (Endo $ (++) (vertex u:(edge u.fst <$> intras))) m_scc
-          scc_vs = [ (v,assignment IntMap.! v) | v <- IntSet.toList vs ]
-          (intras,inters) = List.partition ((==scc_u).snd) scc_vs
+    classifyEdges assignment = AM.gmap (inner IntMap.!) outer where
+      inner = overlays . unEndo <$> inner'
+      outer = AM.overlays $ unEndo outer'
+      (inner',outer') = IntMap.foldrWithKey' condense in_out aim where
+        in_out = (IntMap.empty,mempty); aim = adjacencyIntMap g
+        condense u vs (inner,outer) = (inner',outer') where
           scc_u = assignment IntMap.! u
+          scc_vs = [ (v,assignment IntMap.! v) | v <- IntSet.toList vs ]
+          (intras,inters) = List.partition ((==scc_u) . snd) scc_vs
+          os = Endo $ (++) (AM.vertex scc_u:(AM.edge scc_u . snd <$> inters))
+          is = Endo $ (++) (vertex u:(edge u . fst <$> intras))
+          inner' = IntMap.insertWith (<>) scc_u is inner
+          outer' = os <> outer
+      unEndo = flip appEndo []
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
