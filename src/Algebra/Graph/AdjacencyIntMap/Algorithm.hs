@@ -36,11 +36,12 @@ import Control.Monad.Cont
 import Control.Monad.State.Strict
 import Data.Either
 import Data.List.NonEmpty (NonEmpty(..),(<|))
+import Data.Monoid
 import Data.Tree
 
 import Algebra.Graph.AdjacencyIntMap
 
--- import qualified Algebra.Graph as G
+import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.IntMap.Strict         as IntMap
 import qualified Data.IntSet                as IntSet
@@ -323,7 +324,7 @@ isAcyclic = isRight . topSort
 -- @
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
 scc g = evalState (scc' g) initialState where
-  initialState = C 0 0 [] [] IntMap.empty IntMap.empty -- IntMap.empty
+  initialState = C 0 0 [] [] IntMap.empty IntMap.empty
 
 data StateSCC
   = C { current       :: !Int
@@ -331,9 +332,7 @@ data StateSCC
       , boundary      :: ![(Int,Int)]
       , dfsPath       :: ![Int]
       , preorders     :: !(IntMap.IntMap Int)
-      , components    :: !(IntMap.IntMap Int)
---      , componentSets :: !(IntMap.IntMap [AdjacencyIntMap])
-      } deriving (Show)
+      , components    :: !(IntMap.IntMap Int) }
 
 -- gabow path-based scc algorithm
 scc' :: AdjacencyIntMap -> State StateSCC (AM.AdjacencyMap AdjacencyIntMap)
@@ -353,8 +352,8 @@ scc' g =
      convertRepresentation
   where
     -- called when visiting vertex v. assigns preorder number to v,
-    -- adds the id v pair to the boundary stack b, and adds 
-    -- v to the path stack s.
+    -- adds the (id, v) pair to the boundary stack b, and adds v to
+    -- the path stack s.
     enter v = modify'
       (\(C c i b s t ids) ->
          C (c + 1) i ((c,v):b) (v:s) (IntMap.insert v c t) ids)
@@ -386,13 +385,15 @@ scc' g =
       then return (AM.vertex g)
       else classifyEdges <$> gets components
 
-    classifyEdges assignment = AM.gmap (sccs IntMap.!) (AM.overlays es) where
-      sccs = overlays <$> sccs'
-      (sccs',es) = IntMap.foldrWithKey' condense (IntMap.empty,[]) (adjacencyIntMap g) where
-        condense u vs (m_scc,es_scc) = (m_scc',es_scc') where
-          es_scc' = AM.vertex scc_u:(AM.edge scc_u.snd <$> inters) ++ es_scc
-          m_scc' = IntMap.insertWith (++) scc_u (vertex u:(edge u.fst <$> intras)) m_scc
-          scc_vs = [ (v,assignment IntMap.! v) | v <- IntSet.toList vs]
+    runE = flip appEndo []
+    classifyEdges assignment = AM.gmap (sccs IntMap.!) es where
+      sccs = overlays . runE <$> sccs'
+      es = AM.overlays $ runE es'
+      (sccs',es') = IntMap.foldrWithKey' condense (IntMap.empty,mempty) (adjacencyIntMap g) where
+        condense u vs (m_scc,es_scc) = (m_scc',es_scc' <> es_scc) where
+          es_scc' = Endo $ (++) (AM.vertex scc_u:(AM.edge scc_u.snd <$> inters))
+          m_scc' = IntMap.insertWith (<>) scc_u (Endo $ (++) (vertex u:(edge u.fst <$> intras))) m_scc
+          scc_vs = [ (v,assignment IntMap.! v) | v <- IntSet.toList vs ]
           (intras,inters) = List.partition ((==scc_u).snd) scc_vs
           scc_u = assignment IntMap.! u
 

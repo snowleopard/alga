@@ -33,6 +33,7 @@ import Control.Monad.State.Strict
 import Data.Either
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Maybe
+import Data.Monoid
 import Data.Tree
 
 import Algebra.Graph.AdjacencyMap
@@ -329,9 +330,7 @@ data StateSCC a
       , boundary      :: ![(Int,a)]
       , dfsPath       :: ![a]
       , preorders     :: !(Map.Map a Int)
-      , components    :: !(Map.Map a Int)
---      , componentSets :: !(IntMap.IntMap [AdjacencyMap a])
-      } deriving (Show)
+      , components    :: !(Map.Map a Int) }
 
 -- gabow path-based scc algorithm
 scc' :: Ord a => AdjacencyMap a ->
@@ -352,8 +351,8 @@ scc' g =
      convertRepresentation
   where
     -- called when visiting vertex v. assigns preorder number to v,
-    -- adds the id v pair to the boundary stack b, and adds 
-    -- v to the path stack s.
+    -- adds the (id, v) pair to the boundary stack b, and adds v to
+    -- the path stack s.
     enter v = modify'
       (\(C c i b s t ids) ->
          C (c + 1) i ((c,v):b) (v:s) (Map.insert v c t) ids)
@@ -382,16 +381,18 @@ scc' g =
     convertRepresentation = do
       scc_count <- gets componentId
       if scc_count == 1
-      then return (vertex $ fromJust $ NonEmpty.toNonEmpty $ g)
+      then return (vertex $ fromJust $ NonEmpty.toNonEmpty g)
       else classifyEdges <$> gets components
 
-    classifyEdges assignment = gmap (sccs IntMap.!) (overlays es) where
-      sccs = fromJust . NonEmpty.toNonEmpty . overlays <$> sccs'
-      (sccs',es) = Map.foldrWithKey' condense (IntMap.empty,[]) (adjacencyMap g) where
-        condense u vs (m_scc,es_scc) = (m_scc',es_scc') where
-          es_scc' = vertex scc_u:(edge scc_u.snd <$> inters) ++ es_scc
-          m_scc' = IntMap.insertWith (++) scc_u (vertex u:(edge u.fst <$> intras)) m_scc
-          scc_vs = [ (v,assignment Map.! v) | v <- Set.toList vs]
+    runE = flip appEndo []
+    classifyEdges assignment = gmap (sccs IntMap.!) es where
+      sccs = fromJust . NonEmpty.toNonEmpty . overlays . runE <$> sccs'
+      es = overlays $ runE es'
+      (sccs',es') = Map.foldrWithKey condense (IntMap.empty,mempty) (adjacencyMap g) where
+        condense u vs (m_scc,es_scc) = (m_scc',es_scc' <> es_scc) where
+          es_scc' = Endo $ (++) (vertex scc_u:(edge scc_u.snd <$> inters))
+          m_scc' = IntMap.insertWith (<>) scc_u (Endo $ (++) (vertex u:(edge u.fst <$> intras))) m_scc
+          scc_vs = [ (v,assignment Map.! v) | v <- Set.toList vs ]
           (intras,inters) = List.partition ((==scc_u).snd) scc_vs
           scc_u = assignment Map.! u
 
