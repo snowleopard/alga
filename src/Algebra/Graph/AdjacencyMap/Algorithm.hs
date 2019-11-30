@@ -33,10 +33,11 @@ import Control.Monad.State.Strict
 import Data.Either
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Maybe
-import Data.Monoid
 import Data.Tree
+import GHC.Exts (toList,fromList)
 
 import Algebra.Graph.AdjacencyMap
+import Algebra.Graph.Internal
 
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.List                           as List
@@ -335,7 +336,7 @@ data StateSCC a
 -- gabow path-based scc algorithm
 scc' :: Ord a => AdjacencyMap a ->
         State (StateSCC a) (AdjacencyMap (NonEmpty.AdjacencyMap a))
-scc' g =
+scc' (g :: AdjacencyMap a) =
   do let adjacent = Set.toList . flip postSet g
          dfs u = do enter u
                     forM_ (adjacent u) $ \v ->
@@ -385,19 +386,18 @@ scc' g =
       else classifyEdges <$> gets components
 
     classifyEdges assignment = gmap (inner IntMap.!) outer where
-      inner = fromJust . NonEmpty.toNonEmpty . overlays . unEndo <$> inner'
-      outer = overlays $ unEndo outer'
+      inner = fromJust . NonEmpty.toNonEmpty . overlays . toList <$> inner'
+      outer = overlays $ toList outer'
       (inner',outer') = Map.foldrWithKey' condense in_out am where
         in_out = (IntMap.empty,mempty); am = adjacencyMap g
         condense u vs (inner,outer) = (inner',outer') where
+          inner' = IntMap.insertWith (<>) scc_u is inner
+          outer' = fromList os <> outer :: List (AdjacencyMap Int)
+          is = fromList (vertex u:(edge u . fst <$> intras)) :: List (AdjacencyMap a)
+          os = vertex scc_u:(edge scc_u . snd <$> inters)
+          (intras,inters) = List.partition ((==scc_u) . snd) scc_vs
           scc_u = assignment Map.! u
           scc_vs = [ (v,assignment Map.! v) | v <- Set.toList vs ]
-          (intras,inters) = List.partition ((==scc_u) . snd) scc_vs
-          os = Endo $ (++) (vertex scc_u:(edge scc_u . snd <$> inters))
-          is = Endo $ (++) (vertex u:(edge u . fst <$> intras))
-          inner' = IntMap.insertWith (<>) scc_u is inner
-          outer' = os <> outer
-      unEndo = flip appEndo []
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong

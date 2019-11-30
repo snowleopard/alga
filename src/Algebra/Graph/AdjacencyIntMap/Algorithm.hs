@@ -36,16 +36,18 @@ import Control.Monad.Cont
 import Control.Monad.State.Strict
 import Data.Either
 import Data.List.NonEmpty (NonEmpty(..),(<|))
-import Data.Monoid
 import Data.Tree
+import GHC.Exts (toList,fromList)
 
 import Algebra.Graph.AdjacencyIntMap
+import Algebra.Graph.Internal
 
 import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.IntMap.Strict         as IntMap
 import qualified Data.IntSet                as IntSet
 import qualified Data.List                  as List
+
 
 -- | Compute the /breadth-first search/ forest of a graph, such that
 --   adjacent vertices are explored in increasing order with respect
@@ -386,19 +388,18 @@ scc' g =
       else classifyEdges <$> gets components
 
     classifyEdges assignment = AM.gmap (inner IntMap.!) outer where
-      inner = overlays . unEndo <$> inner'
-      outer = AM.overlays $ unEndo outer'
+      inner = overlays . toList <$> inner'
+      outer = AM.overlays $ toList outer'
       (inner',outer') = IntMap.foldrWithKey' condense in_out aim where
         in_out = (IntMap.empty,mempty); aim = adjacencyIntMap g
         condense u vs (inner,outer) = (inner',outer') where
+          inner' = IntMap.insertWith (<>) scc_u is inner
+          outer' = fromList os <> outer :: List (AM.AdjacencyMap Int)
+          is = fromList (vertex u : (edge u . fst <$> intras)) :: List AdjacencyIntMap
+          os = AM.vertex scc_u : (AM.edge scc_u . snd <$> inters)
+          (intras,inters) = List.partition ((==scc_u) . snd) scc_vs
           scc_u = assignment IntMap.! u
           scc_vs = [ (v,assignment IntMap.! v) | v <- IntSet.toList vs ]
-          (intras,inters) = List.partition ((==scc_u) . snd) scc_vs
-          os = Endo $ (++) (AM.vertex scc_u:(AM.edge scc_u . snd <$> inters))
-          is = Endo $ (++) (vertex u:(edge u . fst <$> intras))
-          inner' = IntMap.insertWith (<>) scc_u is inner
-          outer' = os <> outer
-      unEndo = flip appEndo []
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
