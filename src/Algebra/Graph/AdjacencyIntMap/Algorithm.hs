@@ -43,7 +43,6 @@ import GHC.Exts (toList,fromList)
 import Algebra.Graph.AdjacencyIntMap
 import Algebra.Graph.Internal
 
-import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.IntMap.Strict         as IntMap
 import qualified Data.IntSet                as IntSet
@@ -363,8 +362,7 @@ scc' g =
      forM_ (vertexList g) $ \v -> do
        assigned <- hasPreorderId v
        unless assigned (dfs v >>  pure ())
-     st <- get
-     traceShow st $ convertRepresentation
+     convertRepresentation
   where
     -- called when visiting vertex v. assigns preorder number to v,
     -- adds the (id, v) pair to the boundary stack b, and adds v to
@@ -409,21 +407,12 @@ scc' g =
       scc_count <- gets componentId
       if scc_count == 1
       then return (AM.vertex g)
-      else classifyEdges <$> gets components
+      else condense <$> gets components <*> gets inner_graphs <*> gets outedges
 
-    classifyEdges assignment = AM.gmap (inner IntMap.!) outer where
-      inner = overlays . toList <$> inner'
-      outer = AM.overlays $ toList outer'
-      (inner',outer') = IntMap.foldrWithKey' condense in_out aim where
-        in_out = (IntMap.empty,mempty); aim = adjacencyIntMap g
-        condense u vs (inner,outer) = (inner',outer') where
-          inner' = IntMap.insertWith (<>) scc_u is inner
-          outer' = fromList os <> outer :: List (AM.AdjacencyMap Int)
-          is = fromList (vertex u : (edge u . fst <$> intras)) :: List AdjacencyIntMap
-          os = AM.vertex scc_u : (AM.edge scc_u . snd <$> inters)
-          (intras,inters) = List.partition ((==scc_u) . snd) scc_vs
-          scc_u = assignment IntMap.! u
-          scc_vs = [ (v,assignment IntMap.! v) | v <- IntSet.toList vs ]
+    condense assignment inner outer = AM.gmap (inner' IntMap.!) outer' where
+       inner' = overlays <$> inner
+       sccid v = assignment IntMap.! v
+       outer' = AM.edges [ (sccid x, sccid y) | (x,y) <- outer ]
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
