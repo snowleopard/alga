@@ -328,7 +328,7 @@ isAcyclic = isRight . topSort
 -- @
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
 scc g = evalState (scc' g) initialState where
-  initialState = C 0 0 [] [] IntMap.empty IntMap.empty [] []
+  initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty [] []
 
 data StateSCC
   = C { current       :: !Int
@@ -337,7 +337,8 @@ data StateSCC
       , dfsPath       :: ![Int]
       , preorders     :: !(IntMap.IntMap Int)
       , components    :: !(IntMap.IntMap Int)
-      , inedges       :: ![(Int,Int)]      
+      , inner_graphs  :: IntMap.IntMap [AdjacencyIntMap]
+      , inedges       :: ![(Int,(Int,Int))]
       , outedges      :: ![(Int,Int)]
       } deriving (Show)
 
@@ -347,14 +348,17 @@ scc' g =
   do let adjacent = IntSet.toList . flip postIntSet g
          dfs u = do
                     enter u
-                    forM_ (adjacent u) $ \v -> do 
+                    forM_ (adjacent u) $ \v -> do
                       preorderId v >>= \case
-                        Nothing  -> do ch <- dfs v
-                                       if ch then add_outedge (u,v) else add_inedge (u,v) 
+                        Nothing  -> do p_v <- gets current
+                                       ch <- dfs v
+                                       if ch
+                                         then add_outedge (u,v)
+                                         else add_inedge (p_v,(u,v))
                         Just p_v -> do
                           scc_v <- hasComponent v
                           if scc_v then add_outedge (u,v)
-                            else popBoundary p_v >> add_inedge (u,v)
+                            else popBoundary p_v >> add_inedge (p_v,(u,v))
                     exit u
      forM_ (vertexList g) $ \v -> do
        assigned <- hasPreorderId v
@@ -366,22 +370,22 @@ scc' g =
     -- adds the (id, v) pair to the boundary stack b, and adds v to
     -- the path stack s.
     enter v = modify'
-      (\(C c i b s t ids ins outs) ->
-         C (c + 1) i ((c,v):b) (v:s) (IntMap.insert v c t) ids ins outs)
+      (\(C c i b s t ids gs ins outs) ->
+         C (c + 1) i ((c,v):b) (v:s) (IntMap.insert v c t) ids gs ins outs)
 
     add_inedge uv = modify'
-      (\(C c i b s t ids ins outs) ->
-         C c i b s t ids (uv:ins) outs)
+      (\(C c i b s t ids gs ins outs) ->
+         C c i b s t ids gs (uv:ins) outs)
 
     add_outedge uv = modify'
-      (\(C c i b s t ids ins outs) ->
-         C c i b s t ids ins (uv:outs))
+      (\(C c i b s t ids gs ins outs) ->
+         C c i b s t ids gs ins (uv:outs))
 
     -- called on back edges. pops the boundary stack while the top
     -- vertex has a larger preorder number than p_v.
     popBoundary p_v = modify'
-      (\(C c i b s t ids ins out) ->
-         C c i (dropWhile ((>p_v).fst) b) s t ids ins out)
+      (\(C c i b s t ids gs ins out) ->
+         C c i (dropWhile ((>p_v).fst) b) s t ids gs ins out)
 
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
@@ -389,8 +393,11 @@ scc' g =
     exit v = do scc_found <- ((v==).snd.head) <$> gets boundary
                 when scc_found $ modify' log_scc
                 return scc_found
-              where log_scc (C c i b s t ids ins out) = C c (i + 1) (tail b) s' t ids' ins out where
-                      curr = traceShow (ins,out) $ v:takeWhile (/= v) s
+              where log_scc (C c i b s t ids gs ins out) = C c (i + 1) (tail b) s' t ids' gs' esn out where
+                      p_v = fst $ head b
+                      (esy,esn) = span ((>=p_v).fst) ins
+                      gs' = IntMap.insert i ((vertex <$> curr) ++ (map (uncurry edge) $ snd <$> esy)) gs
+                      curr = v:takeWhile (/= v) s
                       s' = tail $ dropWhile (/= v) s
                       ids' = List.foldl' (\sccs x -> IntMap.insert x i sccs) ids curr
 
