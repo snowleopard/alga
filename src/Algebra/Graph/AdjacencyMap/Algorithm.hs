@@ -332,7 +332,7 @@ data StateSCC a
       , boundary      :: ![(Int,a)]
       , dfsPath       :: ![a]
       , preorders     :: !(Map.Map a Int)
-      , components    :: !(Map.Map a Int) }
+      , components    :: !(Map.Map a Int) } deriving (Show)
 
 -- gabow path-based scc algorithm
 scc' :: Ord a => AdjacencyMap a ->
@@ -359,8 +359,8 @@ scc' (g :: AdjacencyMap a) =
       (\(C c i b s t ids) ->
          C (c + 1) i ((c,v):b) (v:s) (Map.insert v c t) ids)
 
-    -- called on back edges. pops the boundary stack until a vertex
-    -- with a strictly smaller preorder number than p_v is at the top
+    -- called on back edges. pops the boundary stack while the top
+    -- vertex has a larger preorder number than p_v.
     popBoundary p_v = modify'
       (\(C c i b s t ids) ->
          C c i (dropWhile ((>p_v).fst) b) s t ids)

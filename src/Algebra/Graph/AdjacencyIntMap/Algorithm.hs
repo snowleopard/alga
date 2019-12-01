@@ -49,6 +49,7 @@ import qualified Data.IntMap.Strict         as IntMap
 import qualified Data.IntSet                as IntSet
 import qualified Data.List                  as List
 
+import Debug.Trace
 
 -- | Compute the /breadth-first search/ forest of a graph, such that
 --   adjacent vertices are explored in increasing order with respect
@@ -327,7 +328,7 @@ isAcyclic = isRight . topSort
 -- @
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
 scc g = evalState (scc' g) initialState where
-  initialState = C 0 0 [] [] IntMap.empty IntMap.empty
+  initialState = C 0 0 [] [] IntMap.empty IntMap.empty [] []
 
 data StateSCC
   = C { current       :: !Int
@@ -335,48 +336,63 @@ data StateSCC
       , boundary      :: ![(Int,Int)]
       , dfsPath       :: ![Int]
       , preorders     :: !(IntMap.IntMap Int)
-      , components    :: !(IntMap.IntMap Int) }
+      , components    :: !(IntMap.IntMap Int)
+      , inedges       :: ![(Int,Int)]      
+      , outedges      :: ![(Int,Int)]
+      } deriving (Show)
 
 -- gabow path-based scc algorithm
 scc' :: AdjacencyIntMap -> State StateSCC (AM.AdjacencyMap AdjacencyIntMap)
 scc' g =
   do let adjacent = IntSet.toList . flip postIntSet g
-         dfs u = do enter u
-                    forM_ (adjacent u) $ \v ->
+         dfs u = do
+                    enter u
+                    forM_ (adjacent u) $ \v -> do 
                       preorderId v >>= \case
-                        Nothing  -> dfs v
+                        Nothing  -> do ch <- dfs v
+                                       if ch then add_outedge (u,v) else add_inedge (u,v) 
                         Just p_v -> do
                           scc_v <- hasComponent v
-                          unless scc_v $ popBoundary p_v
+                          if scc_v then add_outedge (u,v)
+                            else popBoundary p_v >> add_inedge (u,v)
                     exit u
      forM_ (vertexList g) $ \v -> do
        assigned <- hasPreorderId v
-       unless assigned $ dfs v
-     convertRepresentation
+       unless assigned (dfs v >>  pure ())
+     st <- get
+     traceShow st $ convertRepresentation
   where
     -- called when visiting vertex v. assigns preorder number to v,
     -- adds the (id, v) pair to the boundary stack b, and adds v to
     -- the path stack s.
     enter v = modify'
-      (\(C c i b s t ids) ->
-         C (c + 1) i ((c,v):b) (v:s) (IntMap.insert v c t) ids)
+      (\(C c i b s t ids ins outs) ->
+         C (c + 1) i ((c,v):b) (v:s) (IntMap.insert v c t) ids ins outs)
 
-    -- called on back edges. pops the boundary stack until a vertex
-    -- with a strictly smaller preorder number than p_v is at the top
+    add_inedge uv = modify'
+      (\(C c i b s t ids ins outs) ->
+         C c i b s t ids (uv:ins) outs)
+
+    add_outedge uv = modify'
+      (\(C c i b s t ids ins outs) ->
+         C c i b s t ids ins (uv:outs))
+
+    -- called on back edges. pops the boundary stack while the top
+    -- vertex has a larger preorder number than p_v.
     popBoundary p_v = modify'
-      (\(C c i b s t ids) ->
-         C c i (dropWhile ((>p_v).fst) b) s t ids)
+      (\(C c i b s t ids ins out) ->
+         C c i (dropWhile ((>p_v).fst) b) s t ids ins out)
 
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
     -- being constructed and we continue.
-    exit v = modify'
-      (\sccState@(C c i b s t ids) ->
-       if v /= snd (head b) then sccState
-       else let curr = v:takeWhile (/= v) s
-                s' = tail $ dropWhile (/= v) s
-                ids' = List.foldl' (\sccs x -> IntMap.insert x i sccs) ids curr
-             in C c (i + 1) (tail b) s' t ids')
+    exit v = do scc_found <- ((v==).snd.head) <$> gets boundary
+                when scc_found $ modify' log_scc
+                return scc_found
+              where log_scc (C c i b s t ids ins out) = C c (i + 1) (tail b) s' t ids' ins out where
+                      curr = traceShow (ins,out) $ v:takeWhile (/= v) s
+                      s' = tail $ dropWhile (/= v) s
+                      ids' = List.foldl' (\sccs x -> IntMap.insert x i sccs) ids curr
 
     hasPreorderId v = gets (IntMap.member v . preorders)
     preorderId    v = gets (IntMap.lookup v . preorders)
