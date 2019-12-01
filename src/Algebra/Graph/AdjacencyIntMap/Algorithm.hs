@@ -336,17 +336,16 @@ data StateSCC
       , dfsPath       :: ![Int]
       , preorders     :: !(IntMap.IntMap Int)
       , components    :: !(IntMap.IntMap Int)
-      , inner_graphs  :: IntMap.IntMap [AdjacencyIntMap]
-      , inedges       :: ![(Int,(Int,Int))]
-      , outedges      :: ![(Int,Int)]
+      , inner_graphs  :: (IntMap.IntMap (List AdjacencyIntMap))
+      , inneredges    :: ![(Int,(Int,Int))]
+      , outeredges    :: ![(Int,Int)]
       } deriving (Show)
 
 -- gabow path-based scc algorithm
 scc' :: AdjacencyIntMap -> State StateSCC (AM.AdjacencyMap AdjacencyIntMap)
 scc' g =
   do let adjacent = IntSet.toList . flip postIntSet g
-         dfs u = do
-                    enter u
+         dfs u = do enter u
                     forM_ (adjacent u) $ \v -> do
                       preorderId v >>= \case
                         Nothing  -> do p_v <- gets current
@@ -388,16 +387,18 @@ scc' g =
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
     -- being constructed and we continue.
-    exit v = do scc_found <- ((v==).snd.head) <$> gets boundary
-                when scc_found $ modify' log_scc
-                return scc_found
-              where log_scc (C c i b s t ids gs ins out) = C c (i + 1) (tail b) s' t ids' gs' esn out where
-                      p_v = fst $ head b
-                      (esy,esn) = span ((>=p_v).fst) ins
-                      gs' = IntMap.insert i ((vertex <$> curr) ++ (map (uncurry edge) $ snd <$> esy)) gs
-                      curr = v:takeWhile (/= v) s
-                      s' = tail $ dropWhile (/= v) s
-                      ids' = List.foldl' (\sccs x -> IntMap.insert x i sccs) ids curr
+    exit v = do
+      scc_found <- ((v==).snd.head) <$> gets boundary
+      when scc_found $ modify' log_scc
+      return scc_found
+      where
+        log_scc (C c i b s t ids gs ins out) = C c (i + 1) (tail b) s' t ids' gs' esn out where
+          p_v = fst $ head b
+          (esy,esn) = span ((>=p_v).fst) ins
+          gs' = IntMap.insert i (fromList (vertex <$> curr) <> fromList (map (uncurry edge) $ snd <$> esy)) gs
+          curr = v:takeWhile (/= v) s
+          s' = tail $ dropWhile (/= v) s
+          ids' = List.foldl' (\sccs x -> IntMap.insert x i sccs) ids curr
 
     hasPreorderId v = gets (IntMap.member v . preorders)
     preorderId    v = gets (IntMap.lookup v . preorders)
@@ -407,12 +408,13 @@ scc' g =
       scc_count <- gets componentId
       if scc_count == 1
       then return (AM.vertex g)
-      else condense <$> gets components <*> gets inner_graphs <*> gets outedges
+      else condense scc_count <$> gets components <*> gets inner_graphs <*> gets outeredges
 
-    condense assignment inner outer = AM.gmap (inner' IntMap.!) outer' where
-       inner' = overlays <$> inner
+    condense scc_count assignment inner outer = AM.gmap (inner' IntMap.!) outer' where
+       inner' = overlays . toList <$> inner
        sccid v = assignment IntMap.! v
-       outer' = AM.edges [ (sccid x, sccid y) | (x,y) <- outer ]
+       outer' = AM.vertices [0..scc_count-1] `AM.overlay` AM.edges [ (sccid x, sccid y) | (x,y) <- outer ]
+
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
