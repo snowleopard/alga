@@ -48,8 +48,6 @@ import qualified Data.IntMap.Strict         as IntMap
 import qualified Data.IntSet                as IntSet
 import qualified Data.List                  as List
 
-import Debug.Trace
-
 -- | Compute the /breadth-first search/ forest of a graph, such that
 --   adjacent vertices are explored in increasing order with respect
 --   to their 'Ord' instance. The search is seeded by a list of
@@ -326,7 +324,7 @@ isAcyclic = isRight . topSort
 -- 'isAcyclic' x     == (scc x == 'gmap' NonEmpty.'NonEmpty.vertex' x)
 -- @
 scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
-scc g = evalState (scc' g) initialState where
+scc g = condense g $ execState (gabowSCC g) initialState where
   initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty [] []
 
 data StateSCC
@@ -337,84 +335,87 @@ data StateSCC
       , preorders     :: !(IntMap.IntMap Int)
       , components    :: !(IntMap.IntMap Int)
       , inner_graphs  :: (IntMap.IntMap (List AdjacencyIntMap))
-      , inneredges    :: ![(Int,(Int,Int))]
-      , outeredges    :: ![(Int,Int)]
+      , inner_edges   :: ![(Int,(Int,Int))]
+      , outer_edges   :: [(Int,Int)]
       } deriving (Show)
 
--- gabow path-based scc algorithm
-scc' :: AdjacencyIntMap -> State StateSCC (AM.AdjacencyMap AdjacencyIntMap)
-scc' g =
+gabowSCC :: AdjacencyIntMap -> State StateSCC ()
+gabowSCC g =
   do let adjacent = IntSet.toList . flip postIntSet g
          dfs u = do enter u
                     forM_ (adjacent u) $ \v -> do
                       preorderId v >>= \case
-                        Nothing  -> do p_v <- gets current
-                                       ch <- dfs v
-                                       if ch
-                                         then add_outedge (u,v)
-                                         else add_inedge (p_v,(u,v))
+                        Nothing  -> do
+                          p_v <- gets current
+                          updated <- dfs v
+                          if updated then outedge (u,v) else inedge (p_v,(u,v))
                         Just p_v -> do
                           scc_v <- hasComponent v
-                          if scc_v then add_outedge (u,v)
-                            else popBoundary p_v >> add_inedge (p_v,(u,v))
+                          if scc_v
+                            then outedge (u,v)
+                            else popBoundary p_v >> inedge (p_v,(u,v))
                     exit u
      forM_ (vertexList g) $ \v -> do
        assigned <- hasPreorderId v
-       unless assigned (dfs v >>  pure ())
-     convertRepresentation
+       unless assigned $ void $ dfs v
   where
     -- called when visiting vertex v. assigns preorder number to v,
     -- adds the (id, v) pair to the boundary stack b, and adds v to
     -- the path stack s.
     enter v = modify'
-      (\(C c i b s t ids gs ins outs) ->
-         C (c + 1) i ((c,v):b) (v:s) (IntMap.insert v c t) ids gs ins outs)
+      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
+         let pre' = pre+1
+             bnd' = (pre,v):bnd
+             pth' = v:pth
+             pres' = IntMap.insert v pre pres
+          in C pre' scc bnd' pth' pres' sccs gs es_i es_o)
 
-    add_inedge uv = modify'
-      (\(C c i b s t ids gs ins outs) ->
-         C c i b s t ids gs (uv:ins) outs)
+    inedge uv = modify'
+      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
+         C pre scc bnd pth pres sccs gs (uv:es_i) es_o)
 
-    add_outedge uv = modify'
-      (\(C c i b s t ids gs ins outs) ->
-         C c i b s t ids gs ins (uv:outs))
+    outedge uv = modify'
+      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
+         C pre scc bnd pth pres sccs gs es_i (uv:es_o))
 
     -- called on back edges. pops the boundary stack while the top
     -- vertex has a larger preorder number than p_v.
     popBoundary p_v = modify'
-      (\(C c i b s t ids gs ins out) ->
-         C c i (dropWhile ((>p_v).fst) b) s t ids gs ins out)
+      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
+         C pre scc (dropWhile ((>p_v).fst) bnd) pth pres sccs gs es_i es_o)
 
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
     -- being constructed and we continue.
     exit v = do
       scc_found <- ((v==).snd.head) <$> gets boundary
-      when scc_found $ modify' log_scc
-      return scc_found
-      where
-        log_scc (C c i b s t ids gs ins out) = C c (i + 1) (tail b) s' t ids' gs' esn out where
-          p_v = fst $ head b
-          (esy,esn) = span ((>=p_v).fst) ins
-          gs' = IntMap.insert i (fromList (vertex <$> curr) <> fromList (map (uncurry edge) $ snd <$> esy)) gs
-          curr = v:takeWhile (/= v) s
-          s' = tail $ dropWhile (/= v) s
-          ids' = List.foldl' (\sccs x -> IntMap.insert x i sccs) ids curr
+      when scc_found $ modify' insert_component
+      return scc_found where
+        insert_component (C pre scc bnd pth pres sccs gs es_i es_o) =
+          C pre scc' bnd' pth' pres sccs' gs' es_i' es_o where
+            gs' = IntMap.insert scc g_i gs
+            sccs' = List.foldl' (\sccs x -> IntMap.insert x scc sccs) sccs curr
+            scc' = scc + 1
+            bnd' = tail bnd
+            p_v = fst $ head bnd
+            g_i = fromList (vertex <$> curr) <> fromList (uncurry edge.snd <$> es)
+            (es,es_i') = span ((>=p_v).fst) es_i
+            pth' = tail $ dropWhile (/=v) pth
+            curr = v:takeWhile(/=v) pth
 
     hasPreorderId v = gets (IntMap.member v . preorders)
     preorderId    v = gets (IntMap.lookup v . preorders)
     hasComponent  v = gets (IntMap.member v . components)
 
-    convertRepresentation = do
-      scc_count <- gets componentId
-      if scc_count == 1
-      then return (AM.vertex g)
-      else condense scc_count <$> gets components <*> gets inner_graphs <*> gets outeredges
-
-    condense scc_count assignment inner outer = AM.gmap (inner' IntMap.!) outer' where
-       inner' = overlays . toList <$> inner
-       sccid v = assignment IntMap.! v
-       outer' = AM.vertices [0..scc_count-1] `AM.overlay` AM.edges [ (sccid x, sccid y) | (x,y) <- outer ]
-
+condense :: AdjacencyIntMap -> StateSCC -> AM.AdjacencyMap AdjacencyIntMap
+condense g (C _ n _ _ _ assignment inner _ outer)
+  | n == 1 = AM.vertex g
+  | otherwise = AM.gmap (inner' IntMap.!) outer'
+  where inner' = overlays . toList <$> inner
+        outer' = AM.overlays $ es ++ vs
+        vs = AM.vertex <$> [0..n-1]
+        es = [ AM.edge (sccid x) (sccid y) | (x,y) <- outer ]
+        sccid v = assignment IntMap.! v
 
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong

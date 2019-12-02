@@ -323,7 +323,7 @@ isAcyclic = isRight . topSort
 -- 'isAcyclic' x     == (scc x == 'gmap' NonEmpty.'NonEmpty.vertex' x)
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (NonEmpty.AdjacencyMap a)
-scc g = evalState (scc' g) initialState where
+scc g = condense g $ execState (gabowSCC g) initialState where
   initialState = C 0 0 [] [] Map.empty Map.empty IntMap.empty [] []
 
 data StateSCC a
@@ -334,83 +334,90 @@ data StateSCC a
       , preorders     :: !(Map.Map a Int)
       , components    :: !(Map.Map a Int)
       , inner_graphs  :: !(IntMap.IntMap (List (AdjacencyMap a)))
-      , inneredges    :: ![(Int,(a,a))]
-      , outeredges    :: ![(a,a)]
+      , inner_edges   :: ![(Int,(a,a))]
+      , outer_edges   :: ![(a,a)]
       } deriving (Show)
 
--- gabow path-based scc algorithm
-scc' :: Ord a => AdjacencyMap a ->
-        State (StateSCC a) (AdjacencyMap (NonEmpty.AdjacencyMap a))
-scc' (g :: AdjacencyMap a) =
+gabowSCC :: Ord a => AdjacencyMap a -> State (StateSCC a) ()
+gabowSCC g =
   do let adjacent = Set.toList . flip postSet g
          dfs u = do enter u
                     forM_ (adjacent u) $ \v -> do
                       preorderId v >>= \case
-                        Nothing  -> do p_v <- gets current
-                                       ch <- dfs v
-                                       if ch
-                                         then add_outedge (u,v)
-                                         else add_inedge (p_v,(u,v))
+                        Nothing  -> do
+                          p_v <- gets current
+                          updated <- dfs v
+                          if updated then outedge (u,v) else inedge (p_v,(u,v))
                         Just p_v -> do
                           scc_v <- hasComponent v
-                          if scc_v then add_outedge (u,v)
-                            else popBoundary p_v >> add_inedge (p_v,(u,v))
+                          if scc_v
+                            then outedge (u,v)
+                            else popBoundary p_v >> inedge (p_v,(u,v))
                     exit u
      forM_ (vertexList g) $ \v -> do
        assigned <- hasPreorderId v
-       unless assigned $ (dfs v >> pure ())
-     convertRepresentation
+       unless assigned $ void $ dfs v
   where
     -- called when visiting vertex v. assigns preorder number to v,
     -- adds the (id, v) pair to the boundary stack b, and adds v to
     -- the path stack s.
     enter v = modify'
-      (\(C c i b s t ids gs ins outs) ->
-         C (c + 1) i ((c,v):b) (v:s) (Map.insert v c t) ids gs ins outs)
+      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
+         let pre' = pre+1
+             bnd' = (pre,v):bnd
+             pth' = v:pth
+             pres' = Map.insert v pre pres
+          in C pre' scc bnd' pth' pres' sccs gs es_i es_o)
 
-    add_inedge uv = modify'
-      (\(C c i b s t ids gs ins outs) ->
-         C c i b s t ids gs (uv:ins) outs)
+    inedge uv = modify'
+      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
+         C pre scc bnd pth pres sccs gs (uv:es_i) es_o)
 
-    add_outedge uv = modify'
-      (\(C c i b s t ids gs ins outs) ->
-         C c i b s t ids gs ins (uv:outs))
+    outedge uv = modify'
+      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
+         C pre scc bnd pth pres sccs gs es_i (uv:es_o))
 
     -- called on back edges. pops the boundary stack while the top
     -- vertex has a larger preorder number than p_v.
     popBoundary p_v = modify'
-      (\(C c i b s t ids gs ins outs) ->
-         C c i (dropWhile ((>p_v).fst) b) s t ids gs ins outs)
+      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
+         C pre scc (dropWhile ((>p_v).fst) bnd) pth pres sccs gs es_i es_o)
 
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
     -- being constructed and we continue.
-    exit v = do scc_found <- ((v==).snd.head) <$> gets boundary
-                when scc_found $ modify' log_scc
-                return scc_found
-              where log_scc (C c i b s t ids gs ins out) = C c (i + 1) (tail b) s' t ids' gs' esn out where
-                      p_v = fst $ head b
-                      (esy,esn) = span ((>=p_v).fst) ins
-                      gs' = IntMap.insert i (fromList (vertex <$> curr) <> fromList (map (uncurry edge) $ snd <$> esy)) gs
-                      curr = v:takeWhile (/= v) s
-                      s' = tail $ dropWhile (/= v) s
-                      ids' = List.foldl' (\sccs x -> Map.insert x i sccs) ids curr
+    exit v = do
+      scc_found <- ((v==).snd.head) <$> gets boundary
+      when scc_found $ modify' insert_component
+      return scc_found where
+        insert_component (C pre scc bnd pth pres sccs gs es_i es_o) =
+          C pre scc' bnd' pth' pres sccs' gs' es_i' es_o where
+            gs' = IntMap.insert scc g_i gs
+            sccs' = List.foldl' (\sccs x -> Map.insert x scc sccs) sccs curr
+            scc' = scc + 1
+            bnd' = tail bnd
+            p_v = fst $ head bnd
+            g_i = fromList (vertex <$> curr) <> fromList (uncurry edge.snd <$> es)
+            (es,es_i') = span ((>=p_v).fst) es_i
+            pth' = tail $ dropWhile (/=v) pth
+            curr = v:takeWhile(/=v) pth
 
     hasPreorderId v = gets (Map.member v . preorders)
     preorderId    v = gets (Map.lookup v . preorders)
     hasComponent  v = gets (Map.member v . components)
 
-    convertRepresentation = do
-      scc_count <- gets componentId
-      if scc_count == 1
-      then return (vertex $ fromJust $ NonEmpty.toNonEmpty g)
-      else condense scc_count <$> gets components <*> gets inner_graphs <*> gets outeredges
+condense :: Ord a => AdjacencyMap a -> StateSCC a -> AdjacencyMap (NonEmpty.AdjacencyMap a)
+condense g (C _ n _ _ _ assignment inner _ outer)
+  | n == 1 = vertex $ convert g
+  | otherwise = gmap (inner' IntMap.!) outer'
+  where inner' = convert . overlays . toList <$> inner
+        outer' = overlays $ es ++ vs
+        vs = vertex <$> [0..n-1]
+        es = [ edge (sccid x) (sccid y) | (x,y) <- outer ]
+        sccid v = assignment Map.! v
+        convert = fromJust . NonEmpty.toNonEmpty
 
-    condense scc_count assignment inner outer = gmap (inner' IntMap.!) outer' where
-       inner' = fromJust . NonEmpty.toNonEmpty . overlays . toList <$> inner
-       sccid v = assignment Map.! v
-       outer' = vertices [0..scc_count-1] `overlay` edges [ (sccid x, sccid y) | (x,y) <- outer ]
-
+-- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- | Check if a given forest is a correct /depth-first search/ forest of a graph.
 -- The implementation is based on the paper "Depth-First Search and Strong
 -- Connectivity in Coq" by François Pottier.
