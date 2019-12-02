@@ -370,14 +370,6 @@ gabowSCC g =
              pres' = IntMap.insert v pre pres
           in C pre' scc bnd' pth' pres' sccs gs es_i es_o)
 
-    inedge uv = modify'
-      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
-         C pre scc bnd pth pres sccs gs (uv:es_i) es_o)
-
-    outedge uv = modify'
-      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
-         C pre scc bnd pth pres sccs gs es_i (uv:es_o))
-
     -- called on back edges. pops the boundary stack while the top
     -- vertex has a larger preorder number than p_v.
     popBoundary p_v = modify'
@@ -388,20 +380,30 @@ gabowSCC g =
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
     -- being constructed and we continue.
     exit v = do
-      scc_found <- ((v==).snd.head) <$> gets boundary
-      when scc_found $ modify' insert_component
-      return scc_found where
-        insert_component (C pre scc bnd pth pres sccs gs es_i es_o) =
-          C pre scc' bnd' pth' pres sccs' gs' es_i' es_o where
-            gs' = IntMap.insert scc g_i gs
-            sccs' = List.foldl' (\sccs x -> IntMap.insert x scc sccs) sccs curr
-            scc' = scc + 1
-            bnd' = tail bnd
-            p_v = fst $ head bnd
-            g_i = fromList (vertex <$> curr) <> fromList (uncurry edge.snd <$> es)
-            (es,es_i') = span ((>=p_v).fst) es_i
-            pth' = tail $ dropWhile (/=v) pth
-            curr = v:takeWhile(/=v) pth
+      new_component <- ((v==).snd.head) <$> gets boundary
+      when new_component $ insert_component v
+      return new_component
+
+    insert_component v = modify'
+      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
+         let gs' = IntMap.insert scc g_i gs
+             sccs' = List.foldl' (\sccs x -> IntMap.insert x scc sccs) sccs curr
+             scc' = scc + 1
+             bnd' = tail bnd
+             p_v = fst $ head bnd
+             g_i = fromList (vertex <$> curr) <> fromList (uncurry edge.snd <$> es)
+             (es,es_i') = span ((>=p_v).fst) es_i
+             pth' = tail $ dropWhile (/=v) pth
+             curr = v:takeWhile(/=v) pth
+          in C pre scc' bnd' pth' pres sccs' gs' es_i' es_o)
+
+    inedge uv = modify'
+      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
+         C pre scc bnd pth pres sccs gs (uv:es_i) es_o)
+
+    outedge uv = modify'
+      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
+         C pre scc bnd pth pres sccs gs es_i (uv:es_o))
 
     hasPreorderId v = gets (IntMap.member v . preorders)
     preorderId    v = gets (IntMap.lookup v . preorders)
