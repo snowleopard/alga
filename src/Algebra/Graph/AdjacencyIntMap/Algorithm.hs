@@ -327,15 +327,52 @@ scc :: AdjacencyIntMap -> AM.AdjacencyMap AdjacencyIntMap
 scc g = condense g $ execState (gabowSCC g) initialState where
   initialState = C 0 0 [] [] IntMap.empty IntMap.empty IntMap.empty [] []
 
+
+-- StateSCC is the data type used to keep track of state while
+-- calculating the strongly connected components of a graph with
+-- gabowSCC.
+type PreorderId = Int
+type ComponentId = Int
+
 data StateSCC
-  = C { current       :: !Int
-      , componentId   :: !Int
-      , boundary      :: ![(Int,Int)]
+  = C { -- on entry, a vertex is given a preorder id to be stored in
+        -- the preorders table.
+        preorder      :: !PreorderId
+        
+        -- when a scc is found, its vertices are assigned a component
+        -- id.
+      , component     :: !ComponentId
+      
+        -- the so called boundary stack of Gabow's algorithm. We store
+        -- (preorder id, vertex) pairs to avoid log(n) cost in lookup
+        -- when calling popBoundary.
+      , boundary      :: ![(PreorderId,Int)]
+      
+        -- the so called path stack of Gabow's algorithm. It is a list
+        -- of vertices in the path of the dfs search tree during
+        -- traversal. Vertices are popped when a new scc is found.
       , dfsPath       :: ![Int]
-      , preorders     :: !(IntMap.IntMap Int)
-      , components    :: !(IntMap.IntMap Int)
-      , inner_graphs  :: (IntMap.IntMap (List AdjacencyIntMap))
-      , inner_edges   :: ![(Int,(Int,Int))]
+      
+        -- the table storing preorder ids for vertices.
+      , preorders     :: !(IntMap.IntMap PreorderId)
+      
+        -- the table storing the component id to which vertices have
+        -- been assigned.
+      , components    :: !(IntMap.IntMap ComponentId)
+      
+        -- the remaining fields are used for calculating the
+        -- condesation of the traversed graph.  inner_graphs stores a
+        -- table of strongly connected components indexed by their
+        -- component id.  inner_edges holds a list of edges that has
+        -- been classified as inner during the traversal. They are
+        -- stored with a preorderId of the target vertex to
+        -- distinguish which connected component each vertex belongs
+        -- to. outer_edges holds a list of edges classified as between
+        -- strongly connected components. It and inner_graphs are lazy
+        -- because they are not always required to compute the
+        -- condensation.
+      , inner_graphs  :: IntMap.IntMap (List AdjacencyIntMap)
+      , inner_edges   :: ![(PreorderId,(Int,Int))]
       , outer_edges   :: [(Int,Int)]
       } deriving (Show)
 
@@ -343,10 +380,10 @@ gabowSCC :: AdjacencyIntMap -> State StateSCC ()
 gabowSCC g =
   do let adjacent = IntSet.toList . flip postIntSet g
          dfs u = do enter u
-                    forM_ (adjacent u) $ \v -> do
+                    forM_ (adjacent u) $ \v ->
                       preorderId v >>= \case
                         Nothing  -> do
-                          p_v <- gets current
+                          p_v <- gets preorder
                           updated <- dfs v
                           if updated then outedge (u,v) else inedge (p_v,(u,v))
                         Just p_v -> do
