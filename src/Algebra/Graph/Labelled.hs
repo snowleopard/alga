@@ -15,7 +15,7 @@
 -- graphs with edge labels. The API will be expanded in the next release.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled (
-    -- * Algebraic data type for edge-labeleld graphs
+    -- * Algebraic data type for edge-labelled graphs
     Graph (..), empty, vertex, edge, (-<), (>-), overlay, connect, vertices,
     edges, overlays,
 

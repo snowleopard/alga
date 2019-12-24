@@ -505,7 +505,7 @@ toAcyclicOrd = AAM . filterEdges (<)
 -- TODO: Change Arbitrary instance of Acyclic and Labelled Acyclic graph
 -- | Construct an acyclic graph from a given adjacency map using 'scc'.
 -- If the graph is acyclic in nature, the same graph is returned as an acyclic graph.
--- If the graph is cyclic, then a representative for every strongly conected
+-- If the graph is cyclic, then a representative for every strongly connected
 -- component in its condensation graph is chosen an these representatives are
 -- used to build an acyclic graph.
 --
