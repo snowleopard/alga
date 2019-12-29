@@ -48,12 +48,12 @@ matrix:
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.6.5","cabal-install-2.4"]}}
       os: osx
 ##### Performance regression suite, added manually #####
-    - compiler: ghc-8.8.1
-      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.8.1","cabal-install-3.0"]}}
+    - compiler: ghc-8.6.5
+      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.6.5","cabal-install-2.4"]}}
       env: DOBENCH="Graph"
       script: cd $ORIG; HC=${HC} timeout 45m ./compare.sh /opt/ghc/bin/cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; );
-    - compiler: ghc-8.8.1
-      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.8.1","cabal-install-3.0"]}}
+    - compiler: ghc-8.6.5
+      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.6.5","cabal-install-2.4"]}}
       env: DOBENCH="Graph.NonEmpty"
       script: cd $ORIG; HC=${HC} timeout 45m ./compare.sh /opt/ghc/bin/cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ) "True" ;
 ##### Performance regression suite, added manually #####
