@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, DeriveFunctor, OverloadedLists #-}
+{-# LANGUAGE DeriveFunctor, OverloadedLists #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Label

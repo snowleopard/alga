@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, OverloadedLists, ViewPatterns #-}
+{-# LANGUAGE OverloadedLists, ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.NonEmpty.Graph

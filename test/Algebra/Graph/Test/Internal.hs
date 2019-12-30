@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, OverloadedLists #-}
+{-# LANGUAGE OverloadedLists #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Internal

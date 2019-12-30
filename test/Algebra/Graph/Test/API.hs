@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, CPP, GADTs, RankNTypes, RecordWildCards #-}
+{-# LANGUAGE ConstraintKinds, GADTs, RankNTypes, RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-missing-fields #-}
 -----------------------------------------------------------------------------
 -- |
