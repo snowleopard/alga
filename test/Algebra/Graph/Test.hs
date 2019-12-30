@@ -31,19 +31,6 @@ import Test.QuickCheck.Test (isSuccess)
 import Algebra.Graph.Class
 import Algebra.Graph.Test.Arbitrary ()
 
-#if !MIN_VERSION_base(4,9,0)
-import Data.Monoid (Sum (..))
-import Control.Applicative (liftA2)
-import Data.Coerce
-
-instance Monoid a => Monoid (IO a) where
-    mempty  = pure mempty
-    mappend = liftA2 mappend
-
-instance Functor Sum where
-    fmap = coerce
-#endif
-
 test :: Testable a => String -> a -> IO ()
 test str p = do
     result <- quickCheckWithResult (stdArgs { chatty = False }) p

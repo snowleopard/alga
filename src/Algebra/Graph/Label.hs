@@ -329,9 +329,7 @@ instance Ord a => Semigroup (Minimum a) where
 
 instance (Monoid a, Ord a) => Monoid (Minimum a) where
     mempty = noMinimum
-#if !MIN_VERSION_base(4,11,0)
     mappend = (<>)
-#endif
 
 instance (Monoid a, Ord a) => Semiring (Minimum a) where
     one = pure mempty

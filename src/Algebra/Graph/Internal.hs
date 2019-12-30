@@ -37,11 +37,11 @@ import qualified GHC.Exts as Exts
 -- | An abstract list data type with /O(1)/ time concatenation (the current
 -- implementation uses difference lists). Here @a@ is the type of list elements.
 -- 'List' @a@ is a 'Monoid': 'mempty' corresponds to the empty list and two lists
--- can be concatenated with 'mappend' (or operator 'Data.Monoid.<>'). Singleton
+-- can be concatenated with 'mappend' (or operator 'Data.Semigroup.<>'). Singleton
 -- lists can be constructed using the function 'pure' from the 'Applicative'
 -- instance. 'List' @a@ is also an instance of 'IsList', therefore you can use
 -- list literals, e.g. @[1,4]@ @::@ 'List' @Int@ is the same as 'pure' @1@
--- 'Data.Monoid.<>' 'pure' @4@; note that this requires the @OverloadedLists@
+-- 'Data.Semigroup.<>' 'pure' @4@; note that this requires the @OverloadedLists@
 -- GHC extension. To extract plain Haskell lists you can use the 'toList'
 -- function from the 'Foldable' instance.
 newtype List a = List (Endo [a]) deriving (Monoid, Semigroup)

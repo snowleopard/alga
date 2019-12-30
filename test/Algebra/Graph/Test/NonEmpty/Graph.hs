@@ -14,13 +14,10 @@ module Algebra.Graph.Test.NonEmpty.Graph (
     testNonEmptyGraph
     ) where
 
-#if !MIN_VERSION_base(4,11,0)
-import Data.Semigroup
-#endif
-
 import Control.Monad
 import Data.Either
 import Data.Maybe
+import Data.Semigroup
 import Data.Tree
 import Data.Tuple
 

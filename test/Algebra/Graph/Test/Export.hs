@@ -14,9 +14,7 @@ module Algebra.Graph.Test.Export (
     testExport
     ) where
 
-#if !MIN_VERSION_base(4,11,0)
 import Data.Semigroup
-#endif
 
 import Algebra.Graph (Graph, circuit)
 import Algebra.Graph.Export hiding (unlines)
