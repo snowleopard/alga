@@ -234,6 +234,9 @@ instance Arbitrary s => Arbitrary (Doc s) where
 instance (Arbitrary a, Num a, Ord a) => Arbitrary (Distance a) where
     arbitrary = (\x -> if x < 0 then distance infinite else distance (unsafeFinite x)) <$> arbitrary
 
+instance (Arbitrary a, Num a, Ord a) => Arbitrary (Capacity a) where
+    arbitrary = (\x -> if x < 0 then capacity infinite else capacity (unsafeFinite x)) <$> arbitrary
+
 instance (Arbitrary a, Arbitrary b, Ord a, Ord b) => Arbitrary (BAM.AdjacencyMap a b) where
     arbitrary = BAM.toBipartite <$> arbitrary
     shrink = map BAM.toBipartite . shrink . BAM.fromBipartite

@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Algebra.Graph.Labelled.AdjacencyMap.Algorithm where
 
 import Algebra.Graph.Label
@@ -7,10 +9,8 @@ import Algebra.Graph.Labelled.AdjacencyMap
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
 
--- TODO: Abstract documentation?
-
 -- TODO: Improve documentation for 'dijkstra'.
--- TODO: Make tests
+-- TODO: Improve performance
 -- | A generic Dijkstra algorithm that relaxes the list of edges
 -- based on the 'Dioid'. 
 --
@@ -38,7 +38,7 @@ import qualified Data.Map.Strict as Map
 -- @
 -- @
 -- dijkstra ('vertex' 'a') 'a' == 'Map.fromList' [('a', 'one')]
--- dijkstra ('vertex' 'a') 'z' == 'Map.fromList' [('z', 'zero')]
+-- dijkstra ('vertex' 'a') 'z' == 'Map.fromList' [('a', 'zero')]
 -- dijkstra ('edge' x 'a' 'b') 'a' == 'Map.fromList' [('a', 'one'), ('b', x)]
 -- dijkstra ('edge' x 'a' 'b') 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero')]
 -- dijkstra ('vertices' ['a', 'b']) 'a' == 'Map.fromList' [('a', 'one'), ('b', 'zero')]
@@ -56,7 +56,7 @@ import qualified Data.Map.Strict as Map
 -- @
 -- @
 -- dijkstra ('vertex' 'a') 'a' == 'Map.fromList' [('a', 'one')]
--- dijkstra ('vertex' 'a') 'z' == 'Map.fromList' [('z', 'zero')]
+-- dijkstra ('vertex' 'a') 'z' == 'Map.fromList' [('a', 'zero')]
 -- dijkstra ('edge' x 'a' 'b') 'a' == 'Map.fromList' [('a', 'one'), ('b', x)]
 -- dijkstra ('edge' x 'a' 'b') 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero')]
 -- dijkstra ('vertices' ['a', 'b']) 'a' == 'Map.fromList' [('a', 'one'), ('b', 'zero')]
@@ -66,36 +66,37 @@ import qualified Data.Map.Strict as Map
 -- @
 dijkstra :: (Ord a, Ord e, Dioid e) => AdjacencyMap e a -> a -> Map a e
 dijkstra = dijkstra' zero one
-
--- Extended dijkstra. This function should not be exported.
-dijkstra' :: (Ord a, Ord e, Dioid e) => e -> e -> AdjacencyMap e a -> a -> Map a e
-dijkstra' z o wam src = maybe zm (snd . processG) jsm
   where
-    am = adjacencyMap wam
-    zm = Map.map (const zero) am
-    im = Map.insert src one zm
-    is = Set.singleton (one, src)
-    jsm = (is, im) <$ Map.lookup src zm
-    view
-      | o <+> z == o = if o < z 
-                          then Set.minView
-                          else Set.maxView
-      | o <+> z == z = if o < z
-                          then Set.maxView
-                          else Set.minView
-      | otherwise = Set.minView
-    processG sm@(s, _) = processS (view s) sm
-    processS Nothing sm = sm
-    processS (Just ((_, v1), s)) (_, m) = processG $ relaxV v1 (s, m)
-    relaxV v1 sm =
-      let eL = map (\(v2, e) -> (e, v1, v2)) . Map.toList $ am ! v1
-      in foldr relaxE sm eL
-    relaxE (e, v1, v2) (s, m) =
-      let n = ((m ! v1) <.> e) <+> (m ! v2)
-      in (Set.insert (n, v2) s, Map.insert v2 n m)
+    dijkstra' :: (Ord a, Ord e, Dioid e) => e -> e -> AdjacencyMap e a -> a -> Map a e
+    dijkstra' z o wam src = maybe zm (snd . processG) jsm
+      where
+        am = adjacencyMap wam
+        zm = Map.map (const zero) am
+        im = Map.insert src one zm
+        is = Set.singleton (one, src)
+        jsm = (is, im) <$ Map.lookup src zm
+        view
+            | o <+> z == o =
+                if o < z
+                    then Set.minView
+                    else Set.maxView
+            | o <+> z == z =
+                if o < z
+                    then Set.maxView
+                    else Set.minView
+            | otherwise = Set.minView
+        processG sm@(s, _) = processS (view s) sm
+        processS Nothing sm = sm
+        processS (Just ((_, v1), s)) (_, m) = processG $ relaxV v1 (s, m)
+        relaxV v1 sm =
+            let eL = map (\(v2, e) -> (e, v1, v2)) . Map.toList $ am ! v1
+             in foldr relaxE sm eL
+        relaxE (e, v1, v2) (s, m) =
+            let n = ((m ! v1) <.> e) <+> (m ! v2)
+             in (Set.insert (n, v2) s, Map.insert v2 n m)
 
 -- TODO: Improve documentation for bellmanFord
--- TODO: Write tests for bellmanFord
+-- TODO: Improve performance
 -- TODO: safely change 'vL' to 'tail vL' in processL
 -- | A generic Bellman-Ford algorithm that relaxes the list of edges
 -- based on the 'Dioid'. 
@@ -118,7 +119,7 @@ dijkstra' z o wam src = maybe zm (snd . processG) jsm
 -- @
 -- @
 -- bellmanFord ('vertex' 'a') 'a' == 'Map.fromList' [('a', 'one')]
--- bellmanFord ('vertex' 'a') 'z' == 'Map.fromList' [('z', 'zero')]
+-- bellmanFord ('vertex' 'a') 'z' == 'Map.fromList' [('a', 'zero')]
 -- bellmanFord ('edge' x 'a' 'b') 'a' == 'Map.fromList' [('a', 'one'), ('b', x)]
 -- bellmanFord ('edge' x 'a' 'b') 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero')]
 -- bellmanFord ('vertices' ['a', 'b']) 'a' == 'Map.fromList' [('a', 'one'), ('b', 'zero')]
@@ -136,7 +137,7 @@ dijkstra' z o wam src = maybe zm (snd . processG) jsm
 -- @
 -- @
 -- bellmanFord ('vertex' 'a') 'a' == 'Map.fromList' [('a', 'one')]
--- bellmanFord ('vertex' 'a') 'z' == 'Map.fromList' [('z', 'zero')]
+-- bellmanFord ('vertex' 'a') 'z' == 'Map.fromList' [('a', 'zero')]
 -- bellmanFord ('edge' x 'a' 'b') 'a' == 'Map.fromList' [('a', 'one'), ('b', x)]
 -- bellmanFord ('edge' x 'a' 'b') 'z' == 'Map.fromList' [('a', 'zero'), ('b', 'zero')]
 -- bellmanFord ('vertices' ['a', 'b']) 'a' == 'Map.fromList' [('a', 'one'), ('b', 'zero')]
@@ -154,15 +155,15 @@ bellmanFord wam src = maybe zm processL jim
     processL m = foldr (const processR) m vL
     processR m = foldr relaxV m vL
     relaxV v1 m =
-      let eL = map (\(v2, e) -> (e, v1, v2)) . Map.toList $ am ! v1
-      in foldr relaxE m eL
+        let eL = map (\(v2, e) -> (e, v1, v2)) . Map.toList $ am ! v1
+         in foldr relaxE m eL
     relaxE (e, v1, v2) m =
-      let n = ((m ! v1) <.> e) <+> (m ! v2)
-      in Map.adjust (const n) v2 m
+        let n = ((m ! v1) <.> e) <+> (m ! v2)
+         in Map.adjust (const n) v2 m
 
 -- TODO: Improve documentation for floydWarshall
--- TODO: Write tests and examples for floydWarshall
--- TODO: Change foldr to foldr'
+-- TODO: Improve performance
+-- TODO: Use a strict fold
 -- A generic Floyd-Warshall algorithm that finds all pair optimum path
 -- based on the 'Dioid'.
 --
@@ -179,6 +180,9 @@ bellmanFord wam src = maybe zm processL jim
 -- 'Map' a ('Map' a e). Assuming @g :: 'AdjacencyMap' ('Distance' 'Int') 'Int'),
 -- if @floydWarshall g == m@ then @m '!' x '!' y@ is the distance between @x@ and @y@. 
 -- @
+-- forall vertex v in g. floydWarshall g ! v == 'dijkstra' g v
+-- forall vertex v in g. floydWarshall g ! v == 'bellmanFord' g v
+-- @
 floydWarshall :: (Ord a, Dioid e) => AdjacencyMap e a -> Map a (Map a e)
 floydWarshall wam = relax0 im
   where
@@ -191,22 +195,6 @@ floydWarshall wam = relax0 im
     relax1 i m = foldr (relax2 i) m vL
     relax2 i j m = foldr (relax3 i j) m vL
     relax3 i j k m =
-      let n = (m ! i ! j) <+> ((m ! i ! k) <.> (m ! k ! j))
-      in Map.adjust (Map.adjust (const n) j) i m
-
--- REPL testing, will be removed later
-graph = edges [ (Optimum 7 (pure [(1, 2)]), 1, 2)
-              , (Optimum 9 (pure [(1, 3)]), 1, 3)
-              , (Optimum 14 (pure [(1, 6)]), 1, 6)
-              , (Optimum 2 (pure [(3, 6)]), 3, 6)
-              , (Optimum 10 (pure [(2, 3)]), 2, 3)
-              , (Optimum 9 (pure [(6, 5)]), 6, 5)
-              , (Optimum 6 (pure [(4, 5)]), 4, 5)
-              , (Optimum 15 (pure [(2, 4)]), 2, 4)
-              , (Optimum 11 (pure [(3, 4)]), 3, 4)
-              ] :: AdjacencyMap (ShortestPath Int Int) Int
-
-x = Optimum 7 (pure [(1, 2)]) <.> Optimum 9 (pure [(3, 4)]) :: ShortestPath Int Int
-y = Optimum 10 (pure [(1, 2)]) <+> Optimum 9 (pure [(3, 4)]) :: ShortestPath Int Int
-
+        let n = (m ! i ! j) <+> ((m ! i ! k) <.> (m ! k ! j))
+         in Map.adjust (Map.adjust (const n) j) i m
 
