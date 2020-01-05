@@ -109,13 +109,13 @@ library
                         DeriveFunctor
                         OverloadedStrings
                         RecordWildCards
-    GHC-options:        -fno-warn-name-shadowing
-                        -fspec-constr
-                        -Wall
+    GHC-options:        -Wall
                         -Wcompat
                         -Wincomplete-record-updates
                         -Wincomplete-uni-patterns
                         -Wredundant-constraints
+                        -fno-warn-name-shadowing
+                        -fspec-constr
 
 test-suite test-alga
     hs-source-dirs:     test
@@ -151,13 +151,13 @@ test-suite test-alga
                         QuickCheck         >= 2.10    && < 2.14
 
     default-language:   Haskell2010
-    GHC-options:        -fno-warn-name-shadowing
-                        -fspec-constr
-                        -Wall
+    GHC-options:        -Wall
                         -Wcompat
                         -Wincomplete-record-updates
                         -Wincomplete-uni-patterns
                         -Wredundant-constraints
+                        -fno-warn-name-shadowing
+                        -fspec-constr
     default-extensions: FlexibleContexts
                         FlexibleInstances
                         GeneralizedNewtypeDeriving
