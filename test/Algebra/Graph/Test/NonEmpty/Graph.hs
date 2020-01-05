@@ -17,6 +17,7 @@ module Algebra.Graph.Test.NonEmpty.Graph (
 import Control.Monad
 import Data.Either
 import Data.Maybe
+import Data.Semigroup ((<>))
 import Data.Tree
 import Data.Tuple
 

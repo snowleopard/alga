@@ -33,8 +33,8 @@ import Control.Applicative
 import Control.Monad
 import Data.Coerce
 import Data.Maybe
-import Data.Monoid
-import Data.Semigroup (Min (..), Max (..))
+import Data.Monoid (Any (..), Monoid (..), Sum (..))
+import Data.Semigroup (Max (..), Min (..), Semigroup (..))
 import Data.Set (Set)
 import GHC.Exts (IsList (..))
 
@@ -73,7 +73,7 @@ Instances of this type class must satisfy the following semiring laws:
         > x <.> (y <+> z) == x <.> y <+> x <.> z
         > (x <+> y) <.> z == x <.> z <+> y <.> z
 -}
-class Monoid a => Semiring a where
+class (Monoid a, Semigroup a) => Semiring a where
     one   :: a
     (<.>) :: a -> a -> a
 

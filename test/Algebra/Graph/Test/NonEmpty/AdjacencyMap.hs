@@ -15,6 +15,7 @@ module Algebra.Graph.Test.NonEmpty.AdjacencyMap (
     ) where
 
 import Control.Monad
+import Data.Semigroup ((<>))
 import Data.Tree
 import Data.Tuple
 

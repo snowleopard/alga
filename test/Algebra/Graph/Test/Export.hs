@@ -18,6 +18,7 @@ import Algebra.Graph (Graph, circuit)
 import Algebra.Graph.Export hiding (unlines)
 import Algebra.Graph.Export.Dot (Attribute (..))
 import Algebra.Graph.Test
+import Data.Semigroup ((<>))
 
 import qualified Algebra.Graph.Export     as E
 import qualified Algebra.Graph.Export.Dot as ED
