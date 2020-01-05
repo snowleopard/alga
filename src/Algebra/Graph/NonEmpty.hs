@@ -56,7 +56,6 @@ module Algebra.Graph.NonEmpty (
 import Control.DeepSeq
 import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Semigroup ((<>))
 
 import Algebra.Graph.Internal
 

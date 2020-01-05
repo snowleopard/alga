@@ -26,7 +26,6 @@ import Prelude hiding ((+), (*))
 import System.Exit (exitFailure)
 import Test.QuickCheck hiding ((===))
 import Test.QuickCheck.Function
-import Test.QuickCheck.Test (isSuccess)
 
 import Algebra.Graph.Class
 import Algebra.Graph.Test.Arbitrary ()

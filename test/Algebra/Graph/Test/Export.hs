@@ -14,8 +14,6 @@ module Algebra.Graph.Test.Export (
     testExport
     ) where
 
-import Data.Semigroup
-
 import Algebra.Graph (Graph, circuit)
 import Algebra.Graph.Export hiding (unlines)
 import Algebra.Graph.Export.Dot (Attribute (..))

@@ -33,8 +33,8 @@ import Control.Applicative
 import Control.Monad
 import Data.Coerce
 import Data.Maybe
-import Data.Monoid (Any (..), Sum (..))
-import Data.Semigroup (Min (..), Max (..), Semigroup (..))
+import Data.Monoid
+import Data.Semigroup
 import Data.Set (Set)
 import GHC.Exts (IsList (..))
 

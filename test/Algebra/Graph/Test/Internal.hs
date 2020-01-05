@@ -14,8 +14,6 @@ module Algebra.Graph.Test.Internal (
     testInternal
     ) where
 
-import Data.Semigroup
-
 import Algebra.Graph.Internal
 import Algebra.Graph.Test
 
