@@ -14,7 +14,6 @@ module Algebra.Graph.Test.Acyclic.AdjacencyMap (testAcyclicAdjacencyMap) where
 import Algebra.Graph.Acyclic.AdjacencyMap
 import Algebra.Graph.Internal
 import Algebra.Graph.Test hiding (shrink)
-import Algebra.Graph.Test.Generic
 
 import Data.Bifunctor
 import Data.Tuple

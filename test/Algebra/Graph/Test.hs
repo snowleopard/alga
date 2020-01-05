@@ -17,7 +17,7 @@ module Algebra.Graph.Test (
     module Test.QuickCheck.Function,
 
     GraphTestsuite, (//), axioms, theorems, undirectedAxioms, reflexiveAxioms,
-    transitiveAxioms, preorderAxioms, test,
+    transitiveAxioms, preorderAxioms, size10, test
     ) where
 
 import Data.List (sort)
@@ -29,6 +29,10 @@ import Test.QuickCheck.Function
 
 import Algebra.Graph.Class
 import Algebra.Graph.Test.Arbitrary ()
+
+-- | Test a property only on small (at most size 10) inputs.
+size10 :: Testable prop => prop -> Property
+size10 = mapSize (min 10)
 
 test :: Testable a => String -> a -> IO ()
 test str p = do

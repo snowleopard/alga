@@ -14,8 +14,7 @@ module Algebra.Graph.Test.Label (
   testLabel
   ) where
 
-import Algebra.Graph.Test hiding (NonNegative)
-import Algebra.Graph.Test.Generic (size10)
+import Algebra.Graph.Test
 import Algebra.Graph.Label
 import Data.Monoid
 

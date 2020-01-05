@@ -32,9 +32,6 @@ type ModulePrefix = String
 type Testsuite g c = (ModulePrefix, API g c)
 type TestsuiteInt g = (ModulePrefix, API g ((~) Int))
 
-size10 :: Testable prop => prop -> Property
-size10 = mapSize (min 10)
-
 testBasicPrimitives :: TestsuiteInt g -> IO ()
 testBasicPrimitives = mconcat [ testOrd
                               , testEmpty
@@ -1733,7 +1730,7 @@ testBfsForest (prefix, API{..}) = do
                                                                                       , subForest = [] }]}
                                                           , Node { rootLabel = 4
                                                                  , subForest = [] }]
-          
+
     test "bfsForest [3] (circuit [1..5] + (circuit [5,4..1])) == <correct result>" $
           bfsForest [3] (circuit [1..5] + (circuit [5,4..1])) ==
           [ Node { rootLabel = 3
@@ -1743,7 +1740,7 @@ testBfsForest (prefix, API{..}) = do
                                , Node { rootLabel = 4
                                       , subForest = [ Node { rootLabel = 5
                                                            , subForest = []}]}]}]
-          
+
 testBfs :: TestsuiteInt g -> IO ()
 testBfs (prefix, API{..}) = do
     putStrLn $ "\n============ " ++ prefix ++ "bfs ============"
@@ -1874,7 +1871,7 @@ testDfsForestFrom (prefix, API{..}) = do
                                                                      , subForest = [] }]
     test "forest (dfsForestFrom [3] $ circuit [1..5] + circuit [5,4..1]) == path [3,2,1,5,4]" $
           forest (dfsForestFrom [3] $ circuit [1..5] + circuit [5,4..1]) == path [3,2,1,5,4]
-   
+
 
 testDfs :: TestsuiteInt g -> IO ()
 testDfs (prefix, API{..}) = do
@@ -1947,19 +1944,19 @@ testTopSort (prefix, API{..}) = do
     putStrLn $ "\n============ " ++ prefix ++ "topSort ============"
     test "topSort (1 * 2 + 3 * 1)                    == Right [3,1,2]" $
           topSort (1 * 2 + 3 * 1)                    == Right [3,1,2]
-                                                     
+
     test "topSort (path [1..5])                      == Right [1..5]" $
           topSort (path [1..5])                      == Right [1..5]
-                                                     
+
     test "topSort (3 * (1 * 4 + 2 * 5))              == Right [3,1,2,4,5]" $
           topSort (3 * (1 * 4 + 2 * 5))              == Right [3,1,2,4,5]
-                                                     
+
     test "topSort (1 * 2 + 2 * 1)                    == Left (2 :| [1])" $
           topSort (1 * 2 + 2 * 1)                    == Left (2 :| [1])
-                                                     
+
     test "topSort (path [5,4..1] + edge 2 4)         == Left (4 :| [3,2])" $
           topSort (path [5,4..1] + edge 2 4)         == Left (4 :| [3,2])
-                                                     
+
     test "topSort (circuit [1..5])                   == Left (3 :| [1,2])" $
           topSort (circuit [1..3])                   == Left (3 :| [1,2])
 
@@ -1968,14 +1965,14 @@ testTopSort (prefix, API{..}) = do
 
     test "topSort (1*2 + 2*1 + 3*4 + 4*3 + 5*1)      == Left (1 :| [2])" $
           topSort (1*2 + 2*1 + 3*4 + 4*3 + 5*1)      == Left (1 :| [2])
-          
+
     test "fmap (flip isTopSortOf x) (topSort x) /= Right False" $ \x ->
           fmap (flip isTopSortOf x) (topSort x) /= Right False
 
     test "topSort . vertices     == Right . nub . sort" $ \vs ->
          (topSort . vertices) vs == (Right . nubOrd . sort) vs
-      
-          
+
+
 
 testIsAcyclic :: TestsuiteInt g -> IO ()
 testIsAcyclic (prefix, API{..}) = do
