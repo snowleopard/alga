@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeApplications #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Undirected
@@ -34,8 +35,7 @@ type AGI = G.Graph Int
 testUndirected :: IO ()
 testUndirected = do
     putStrLn "\n============ Graph.Undirected ============"
-    test "Axioms of undirected graphs" $
-        size10 (undirectedAxioms :: GraphTestsuite G)
+    test "Axioms of undirected graphs" $ size10 $ undirectedAxioms @(Graph Int)
 
     testConsistent    t
     testSymmetricShow t
@@ -55,7 +55,7 @@ testUndirected = do
 
     putStrLn $ "\n============ Graph.Undirected.fromUndirected ============"
     test "fromUndirected (edge 1 2)    == edges [(1,2),(2,1)]" $
-          fromUndirected (edge 1 2)    == G.edges [(1,2), (2,1)]
+          fromUndirected (edge 1 2)    == G.edges [(1,2), (2,1 :: Int)]
 
     test "toUndirected . fromUndirected == id" $ \(x :: G) ->
           (toUndirected . fromUndirected) x == id x
@@ -67,21 +67,20 @@ testUndirected = do
           (G.edgeCount . fromUndirected) x <= ((*2) . edgeCount) x
 
     putStrLn $ "\n============ Graph.Undirected.complement ================"
-
     test "complement empty              == empty" $
-          complement empty              == (empty :: UGI)
+          complement (empty :: UGI)     == empty
 
-    test "complement (vertex x)         == (vertex x)" $ \(x :: Int) ->
-          complement (vertex x)         == (vertex x :: UGI)
+    test "complement (vertex x)         == vertex x" $ \x ->
+          complement (vertex x :: UGI)  == vertex x
 
-    test "complement (edge 1 2)         == (vertices [1, 2])" $
-          complement (edge 1 2)         == (vertices [1, 2] :: UGI)
+    test "complement (edge 1 1)         == edge 1 1" $
+          complement (edge 1 1)         == edge 1 (1 :: Int)
 
-    test "complement (edge 0 0)         == (edge 0 0)" $
-          complement (edge 0 0)         == edge 0 0
+    test "complement (edge 1 2)         == vertices [1, 2]" $
+          complement (edge 1 2 :: UGI)  == vertices [1, 2]
 
-    test "complement (star 1 [2, 3])    == (overlay (vertex 1) (edge 2 3))" $
-          complement (star 1 [2, 3])    == (overlay (vertex 1) (edge 2 3) :: UGI)
+    test "complement (star 1 [2, 3])    == overlay (vertex 1) (edge 2 3)" $
+          complement (star 1 [2, 3])    == overlay (vertex 1) (edge 2 3 :: UGI)
 
     test "complement . complement       == id" $ \(x :: UGI) ->
          (complement . complement $ x)  == x

@@ -34,10 +34,13 @@ newtype ReflexiveRelation a = ReflexiveRelation { fromReflexive :: Relation a }
     deriving (Num, NFData)
 
 instance Ord a => Eq (ReflexiveRelation a) where
-    x == y = reflexiveClosure (fromReflexive x) == reflexiveClosure (fromReflexive y)
+    x == y = toRelation x == toRelation y
+
+instance Ord a => Ord (ReflexiveRelation a) where
+    compare x y = compare (toRelation x) (toRelation y)
 
 instance (Ord a, Show a) => Show (ReflexiveRelation a) where
-    show = show . reflexiveClosure . fromReflexive
+    show = show . toRelation
 
 instance Ord a => C.Graph (ReflexiveRelation a) where
     type Vertex (ReflexiveRelation a) = a

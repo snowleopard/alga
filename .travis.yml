@@ -6,9 +6,10 @@
 #
 # version: 0.3.20190429
 #
-# Changes to the generated script:
+# Manual changes to the generated script:
 # 1) Add the performance regression suite by Alexandre Moine.
 # 2) Remove 'brew update; brew upgrade python@3;' from the OSX script.
+# 3) Remove GHC 7.10.3
 #
 language: c
 dist: xenial
@@ -33,7 +34,6 @@ matrix:
   include:
     - compiler: ghc-8.8.1
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.8.1","cabal-install-3.0"]}}
-      env: GHCHEAD=true
     - compiler: ghc-8.6.5
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.6.5","cabal-install-2.4"]}}
     - compiler: ghc-8.4.4
@@ -42,8 +42,6 @@ matrix:
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.2.2","cabal-install-2.4"]}}
     - compiler: ghc-8.0.2
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.0.2","cabal-install-2.4"]}}
-    - compiler: ghc-7.10.3
-      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-7.10.3","cabal-install-2.4"]}}
     - compiler: ghc-8.6.5
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.6.5","cabal-install-2.4"]}}
       os: osx
@@ -58,8 +56,6 @@ matrix:
       script: cd $ORIG; HC=${HC} timeout 45m ./compare.sh /opt/ghc/bin/cabal ./ QuickComparison $(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "HEAD^1"; else echo "HEAD";fi; ) "True" ;
 ##### Performance regression suite, added manually #####
 
-  allow_failures:
-    - compiler: ghc-8.8.1
 before_install:
   - HC=$(echo "/opt/$CC/bin/ghc" | sed 's/-/\//')
   - HCPKG="$HC-pkg"

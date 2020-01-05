@@ -14,7 +14,6 @@ module Algebra.Graph.Test.Acyclic.AdjacencyMap (testAcyclicAdjacencyMap) where
 import Algebra.Graph.Acyclic.AdjacencyMap
 import Algebra.Graph.Internal
 import Algebra.Graph.Test hiding (shrink)
-import Algebra.Graph.Test.Generic
 
 import Data.Bifunctor
 import Data.Tuple
@@ -22,7 +21,6 @@ import Data.Tuple
 import qualified Algebra.Graph.AdjacencyMap           as AM
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as AM
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap  as NonEmpty
-import qualified Data.List                            as List
 import qualified Data.Set                             as Set
 
 type AAI = AdjacencyMap Int
@@ -58,7 +56,7 @@ testAcyclicAdjacencyMap = do
          (fromAcyclic . vertex) x          == AM.vertex x
 
     test "fromAcyclic (shrink $ 1 * 3 * 2) == star 1 [2,3]" $
-          fromAcyclic (shrink $ 1 * 3 + 2) == 1 * 3 + 2
+          fromAcyclic (shrink $ 1 * 3 + 2) == 1 * 3 + (2 :: AI)
 
     test "vertexCount . fromAcyclic        == vertexCount" $ \(x :: AAI) ->
          (AM.vertexCount . fromAcyclic) x  == vertexCount x
