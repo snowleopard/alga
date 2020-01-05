@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, TypeApplications #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 -----------------------------------------------------------------------------
 -- |
@@ -57,50 +57,48 @@ infixl 1 //
 infixl 6 +
 infixl 7 *
 
-type GraphTestsuite g = g -> g -> g -> Property
+type GraphTestsuite g = (Ord g, Graph g) => g -> g -> g -> Property
 
-axioms :: (Eq g, Graph g) => GraphTestsuite g
+axioms :: GraphTestsuite g
 axioms x y z = conjoin
-    [       x + y == y + x                      // "Overlay commutativity"
-    , x + (y + z) == (x + y) + z                // "Overlay associativity"
-    ,   empty * x == x                          // "Left connect identity"
-    ,   x * empty == x                          // "Right connect identity"
-    , x * (y * z) == (x * y) * z                // "Connect associativity"
-    , x * (y + z) == x * y + x * z              // "Left distributivity"
-    , (x + y) * z == x * z + y * z              // "Right distributivity"
-    ,   x * y * z == x * y + x * z + y * z      // "Decomposition" ]
+    [       x + y == y + x                 // "Overlay commutativity"
+    , x + (y + z) == (x + y) + z           // "Overlay associativity"
+    ,   empty * x == x                     // "Left connect identity"
+    ,   x * empty == x                     // "Right connect identity"
+    , x * (y * z) == (x * y) * z           // "Connect associativity"
+    , x * (y + z) == x * y + x * z         // "Left distributivity"
+    , (x + y) * z == x * z + y * z         // "Right distributivity"
+    ,   x * y * z == x * y + x * z + y * z // "Decomposition" ]
 
-theorems :: (Ord g, Graph g) => GraphTestsuite g
+theorems :: GraphTestsuite g
 theorems x y z = conjoin
-    [     x + empty == x                        // "Overlay identity"
-    ,         x + x == x                        // "Overlay idempotence"
-    , x + y + x * y == x * y                    // "Absorption"
+    [     x + empty == x                     // "Overlay identity"
+    ,         x + x == x                     // "Overlay idempotence"
+    , x + y + x * y == x * y                 // "Absorption"
     ,     x * y * z == x * y + x * z + y * z
-                     + x + y + z + empty        // "Full decomposition"
-    ,         x * x == x * x * x                // "Connect saturation"
-    ,         empty <= x                        // "Lower bound"
-    ,             x <= x + y                    // "Overlay order"
-    ,         x + y <= x * y                    // "Overlay-connect order" ]
+                     + x + y + z + empty     // "Full decomposition"
+    ,         x * x == x * x * x             // "Connect saturation"
+    ,         empty <= x                     // "Lower bound"
+    ,             x <= x + y                 // "Overlay order"
+    ,         x + y <= x * y                 // "Overlay-connect order" ]
 
-undirectedAxioms :: (Eq g, Graph g) => GraphTestsuite g
+undirectedAxioms :: GraphTestsuite g
 undirectedAxioms x y z = conjoin
     [ axioms x y z
-    , x * y == y * x                            // "Connect commutativity" ]
+    , x * y == y * x // "Connect commutativity" ]
 
-reflexiveAxioms :: (Eq g, Graph g, Arbitrary (Vertex g), Show (Vertex g)) => GraphTestsuite g
+reflexiveAxioms :: forall g. (Arbitrary (Vertex g), Show (Vertex g)) => GraphTestsuite g
 reflexiveAxioms x y z = conjoin
     [ axioms x y z
-    , forAll arbitrary (\v -> vertex v `asTypeOf` x == vertex v * vertex v)
-                                                // "Vertex self-loop" ]
+    , forAll arbitrary (\v -> vertex @g v == vertex v * vertex v) // "Vertex self-loop" ]
 
-transitiveAxioms :: (Eq g, Graph g) => GraphTestsuite g
+transitiveAxioms :: GraphTestsuite g
 transitiveAxioms x y z = conjoin
     [ axioms x y z
-    , y == empty || x * y * z == x * y + y * z  // "Closure" ]
+    , y == empty || x * y * z == x * y + y * z // "Closure" ]
 
-preorderAxioms :: (Eq g, Graph g, Arbitrary (Vertex g), Show (Vertex g)) => GraphTestsuite g
+preorderAxioms :: forall g. (Arbitrary (Vertex g), Show (Vertex g)) => GraphTestsuite g
 preorderAxioms x y z = conjoin
     [ axioms x y z
-    , forAll arbitrary (\v -> vertex v `asTypeOf` x == vertex v * vertex v)
-                                                // "Vertex self-loop"
-    , y == empty || x * y * z == x * y + y * z  // "Closure" ]
+    , forAll arbitrary (\v -> vertex @g v == vertex v * vertex v) // "Vertex self-loop"
+    , y == empty || x * y * z == x * y + y * z                    // "Closure" ]

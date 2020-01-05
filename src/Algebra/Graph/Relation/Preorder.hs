@@ -44,10 +44,13 @@ newtype PreorderRelation a = PreorderRelation { fromPreorder :: Relation a }
     deriving (Num, NFData)
 
 instance (Ord a, Show a) => Show (PreorderRelation a) where
-    show = show . closure . fromPreorder
+    show = show . toRelation
 
 instance Ord a => Eq (PreorderRelation a) where
-    x == y = closure (fromPreorder x) == closure (fromPreorder y)
+    x == y = toRelation x == toRelation y
+
+instance Ord a => Ord (PreorderRelation a) where
+    compare x y = compare (toRelation x) (toRelation y)
 
 -- TODO: To be derived automatically using GeneralizedNewtypeDeriving in GHC 8.2
 instance Ord a => C.Graph (PreorderRelation a) where
