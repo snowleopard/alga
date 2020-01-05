@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE CPP, TemplateHaskell #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.RewriteRules
