@@ -34,7 +34,7 @@ import Control.Monad
 import Data.Coerce
 import Data.Maybe
 import Data.Monoid
-import Data.Semigroup
+import Data.Semigroup (Min (..), Max (..))
 import Data.Set (Set)
 import GHC.Exts (IsList (..))
 
@@ -73,7 +73,7 @@ Instances of this type class must satisfy the following semiring laws:
         > x <.> (y <+> z) == x <.> y <+> x <.> z
         > (x <+> y) <.> z == x <.> z <+> y <.> z
 -}
-class (Monoid a, Semigroup a) => Semiring a where
+class Monoid a => Semiring a where
     one   :: a
     (<.>) :: a -> a -> a
 
@@ -328,11 +328,11 @@ instance Ord a => Semigroup (Minimum a) where
     (<>) = min
 
 instance (Monoid a, Ord a) => Monoid (Minimum a) where
-    mempty = noMinimum
+    mempty  = noMinimum
     mappend = (<>)
 
 instance (Monoid a, Ord a) => Semiring (Minimum a) where
-    one = pure mempty
+    one   = pure mempty
     (<.>) = liftA2 mappend
 
 instance (Monoid a, Ord a) => Dioid (Minimum a)
@@ -445,6 +445,7 @@ type RegularExpression a = Label a
 data Optimum o a = Optimum { getOptimum :: o, getArgument :: a }
     deriving (Eq, Ord, Show)
 
+-- TODO: Add tests.
 -- This is similar to geodetic semirings.
 -- See http://vlado.fmf.uni-lj.si/vlado/papers/SemiRingSNA.pdf
 instance (Eq o, Monoid a, Monoid o) => Semigroup (Optimum o a) where
@@ -455,32 +456,40 @@ instance (Eq o, Monoid a, Monoid o) => Semigroup (Optimum o a) where
               o = mappend o1 o2
               a = if o == o1 then a1 else a2
 
+-- TODO: Add tests.
 instance (Eq o, Monoid a, Monoid o) => Monoid (Optimum o a) where
     mempty  = Optimum mempty mempty
     mappend = (<>)
 
+-- TODO: Add tests.
 instance (Eq o, Semiring a, Semiring o) => Semiring (Optimum o a) where
     one = Optimum one one
     Optimum o1 a1 <.> Optimum o2 a2 = Optimum (o1 <.> o2) (a1 <.> a2)
 
+-- TODO: Add tests.
 instance (Eq o, StarSemiring a, StarSemiring o) => StarSemiring (Optimum o a) where
     star (Optimum o a) = Optimum (star o) (star a)
 
+-- TODO: Add tests.
 instance (Eq o, Dioid a, Dioid o) => Dioid (Optimum o a) where
 
 -- | A /path/ is a list of edges.
 type Path a = [(a, a)]
 
+-- TODO: Add tests.
 -- | The 'Optimum' semiring specialised to
 -- /finding the lexicographically smallest shortest path/.
 type ShortestPath e a = Optimum (Distance e) (Minimum (Path a))
 
+-- TODO: Add tests.
 -- | The 'Optimum' semiring specialised to /finding all shortest paths/.
 type AllShortestPaths e a = Optimum (Distance e) (PowerSet (Path a))
 
+-- TODO: Add tests.
 -- | The 'Optimum' semiring specialised to /counting all shortest paths/.
 type CountShortestPaths e = Optimum (Distance e) (Count Integer)
 
+-- TODO: Add tests.
 -- | The 'Optimum' semiring specialised to
 -- /finding the lexicographically smallest widest path/.
 type WidestPath e a = Optimum (Capacity e) (Minimum (Path a))
