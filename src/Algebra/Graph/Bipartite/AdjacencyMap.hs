@@ -729,7 +729,7 @@ neighbours v = Set.toAscList . AM.postSet v
 -- 'AdjacencyMap' with the same set of edges and each vertex marked with the
 -- part it belongs to. In case of failure, return any odd cycle in the graph.
 --
--- The returned partition is lexicographicaly minimal. That is, consider the
+-- The returned partition is lexicographically minimal. That is, consider the
 -- string of part identifiers for each vertex in ascending order. Then,
 -- considering that the identifier of the left part is less then the identifier
 -- of the right part, this string is lexicographically minimal of all such

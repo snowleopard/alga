@@ -2,6 +2,7 @@
 
 ## 0.5
 
+* #172, #245: Stop supporting GHC 7.8.4 and GHC 7.10.3.
 * #203, #215, #223: Add `Acyclic.AdjacencyMap`.
 * #202, #209, #211: Add `induceJust` and `induceJust1`.
 * #208: Add `fromNonEmpty` to `NonEmpty.AdjacencyMap`.
@@ -16,7 +17,6 @@
         `ToGraph.adjacencyIntMap`, `ToGraph.adjacencyMapTranspose` and
         `ToGraph.adjacencyIntMapTranspose` to functions.
 * #204: Derive `Generic` and `NFData` for `Algebra.Graph` and `Algebra.Graph.Labelled`.
-* #172: Stop supporting GHC 7.8.4.
 
 ## 0.4
 

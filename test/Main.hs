@@ -5,6 +5,7 @@ import Algebra.Graph.Test.Bipartite.AdjacencyMap
 import Algebra.Graph.Test.Export
 import Algebra.Graph.Test.Graph
 import Algebra.Graph.Test.Internal
+import Algebra.Graph.Test.Label
 import Algebra.Graph.Test.Labelled.AdjacencyMap
 import Algebra.Graph.Test.Labelled.Graph
 import Algebra.Graph.Test.NonEmpty.AdjacencyMap
@@ -35,6 +36,7 @@ main = do
     go "Export"                 testExport
     go "Graph"                  testGraph
     go "Internal"               testInternal
+    go "Label"                  testLabel
     go "Labelled.AdjacencyMap"  testLabelledAdjacencyMap
     go "Labelled.Graph"         testLabelledGraph
     go "NonEmpty.AdjacencyMap"  testNonEmptyAdjacencyMap

@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, OverloadedLists #-}
+{-# LANGUAGE OverloadedLists #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Internal
@@ -14,12 +14,9 @@ module Algebra.Graph.Test.Internal (
     testInternal
     ) where
 
-#if !MIN_VERSION_base(4,11,0)
-import Data.Semigroup
-#endif
-
 import Algebra.Graph.Internal
 import Algebra.Graph.Test
+import Data.Semigroup ((<>))
 
 testInternal :: IO ()
 testInternal = do
