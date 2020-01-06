@@ -1,4 +1,4 @@
-{-# language LambdaCase #-}
+{-# language LambdaCase, BangPatterns #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -341,18 +341,17 @@ data StateSCC a
 gabowSCC :: Ord a => AdjacencyMap a -> State (StateSCC a) ()
 gabowSCC g =
   do let adjacent = Set.toList . flip postSet g
-         dfs u = do enter u
+         dfs u = do p_u <- enter u
                     forM_ (adjacent u) $ \v -> do
                       preorderId v >>= \case
                         Nothing  -> do
-                          p_v <- gets current
                           updated <- dfs v
-                          if updated then outedge (u,v) else inedge (p_v,(u,v))
+                          if updated then outedge (u,v) else inedge (p_u,(u,v))
                         Just p_v -> do
                           scc_v <- hasComponent v
                           if scc_v
                             then outedge (u,v)
-                            else popBoundary p_v >> inedge (p_v,(u,v))
+                            else popBoundary p_v >> inedge (p_u,(u,v))
                     exit u
      forM_ (vertexList g) $ \v -> do
        assigned <- hasPreorderId v
@@ -361,13 +360,13 @@ gabowSCC g =
     -- called when visiting vertex v. assigns preorder number to v,
     -- adds the (id, v) pair to the boundary stack b, and adds v to
     -- the path stack s.
-    enter v = modify'
-      (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
-         let pre' = pre+1
-             bnd' = (pre,v):bnd
-             pth' = v:pth
-             pres' = Map.insert v pre pres
-          in C pre' scc bnd' pth' pres' sccs gs es_i es_o)
+    enter v = do C pre scc bnd pth pres sccs gs es_i es_o <- get
+                 let !pre' = pre+1
+                     !bnd' = (pre,v):bnd
+                     !pth' = v:pth
+                     !pres' = Map.insert v pre pres
+                 put $! C pre' scc bnd' pth' pres' sccs gs es_i es_o
+                 return pre
 
     -- called on back edges. pops the boundary stack while the top
     -- vertex has a larger preorder number than p_v.
@@ -378,10 +377,9 @@ gabowSCC g =
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
     -- being constructed and we continue.
-    exit v = do
-      new_component <- ((v==).snd.head) <$> gets boundary
-      when new_component $ insert_component v
-      return new_component
+    exit v = do new_component <- ((v==).snd.head) <$> gets boundary
+                when new_component $ insert_component v
+                return new_component
 
     insert_component v = modify'
       (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
