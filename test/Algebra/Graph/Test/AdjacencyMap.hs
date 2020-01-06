@@ -23,6 +23,7 @@ import Algebra.Graph.Test.API (toIntAPI, adjacencyMapAPI)
 import Algebra.Graph.Test.Generic
 
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
+import qualified Data.Graph.Typed                    as KL
 
 tPoly :: Testsuite AdjacencyMap Ord
 tPoly = ("AdjacencyMap.", adjacencyMapAPI)
@@ -88,3 +89,6 @@ testAdjacencyMap = do
 
     test "isAcyclic x     == (scc x == gmap NonEmpty.vertex x)" $ \(x :: AI) ->
           isAcyclic x     == (scc x == gmap NonEmpty.vertex x)
+
+    test "scc g == KL.scc g" $ \(g :: AI) ->
+          scc g == KL.scc g
