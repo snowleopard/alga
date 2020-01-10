@@ -378,26 +378,28 @@ data StateSCC
 
 gabowSCC :: AdjacencyIntMap -> State StateSCC ()
 gabowSCC g =
-  do let adjacent = IntSet.toList . flip postIntSet g
+  do let -- adjacent = IntSet.toList . flip postIntSet g
          dfs u = do p_u <- enter u
-                    forM_ (adjacent u) $ \v ->
+                    intsetForEach_ (postIntSet u g) $ \v ->
                       preorderId v >>= \case
                         Nothing  -> do
                           updated <- dfs v
-                          if updated then outedge (u,v) else inedge (p_u,(u,v))
+                          if updated
+                            then outedge (u,v)
+                            else inedge (p_u,(u,v))
                         Just p_v -> do
                           scc_v <- hasComponent v
                           if scc_v
                             then outedge (u,v)
-                            else popBoundary p_v >> inedge (p_u,(u,v))
+                            else popBoundary p_v >> inedge (p_v,(u,v))
                     exit u
      forM_ (vertexList g) $ \v -> do
        assigned <- hasPreorderId v
        unless assigned $ void $ dfs v
   where
-    -- called when visiting vertex v. assigns preorder number to v,
-    -- adds the (id, v) pair to the boundary stack b, and adds v to
-    -- the path stack s.
+    -- called when visiting vertex v. assigns preorder number/enter
+    -- time to v, adds the (id, v) pair to the boundary stack b, and
+    -- adds v to the path stack s. returns time to help classify edges 
     enter v = do C pre scc bnd pth pres sccs gs es_i es_o <- get
                  let !pre' = pre+1
                      !bnd' = (pre,v):bnd
@@ -416,11 +418,11 @@ gabowSCC g =
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
     -- being constructed and we continue.
     exit v = do
-      new_component <- ((v==).snd.head) <$> gets boundary
-      when new_component $ insert_component v
-      return new_component
+      newComponent <- (v==).snd.head <$> gets boundary
+      when newComponent $ insertComponent v
+      return newComponent
 
-    insert_component v = modify'
+    insertComponent v = modify'
       (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
          let gs' = IntMap.insert scc g_i gs
              sccs' = List.foldl' (\sccs x -> IntMap.insert x scc sccs) sccs curr
@@ -429,8 +431,8 @@ gabowSCC g =
              p_v = fst $ head bnd
              g_i = fromList (vertex <$> curr) <> fromList (uncurry edge.snd <$> es)
              (es,es_i') = span ((>=p_v).fst) es_i
-             pth' = tail $ dropWhile (/=v) pth
-             curr = v:takeWhile(/=v) pth
+             (curr',pth') = fmap tail $ span (/=v) pth
+             curr = v:curr'
           in C pre scc' bnd' pth' pres sccs' gs' es_i' es_o)
 
     inedge uv = modify'

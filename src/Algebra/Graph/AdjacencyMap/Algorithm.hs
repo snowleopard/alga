@@ -340,9 +340,9 @@ data StateSCC a
 
 gabowSCC :: Ord a => AdjacencyMap a -> State (StateSCC a) ()
 gabowSCC g =
-  do let adjacent = Set.toList . flip postSet g
+  do let -- adjacent = Set.toList . flip postSet g
          dfs u = do p_u <- enter u
-                    forM_ (adjacent u) $ \v -> do
+                    setForEach_ (postSet u g) $ \v -> do
                       preorderId v >>= \case
                         Nothing  -> do
                           updated <- dfs v
@@ -377,11 +377,11 @@ gabowSCC g =
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
     -- being constructed and we continue.
-    exit v = do new_component <- ((v==).snd.head) <$> gets boundary
-                when new_component $ insert_component v
-                return new_component
+    exit v = do newComponent <- ((v==).snd.head) <$> gets boundary
+                when newComponent $ insertComponent v
+                return newComponent
 
-    insert_component v = modify'
+    insertComponent v = modify'
       (\(C pre scc bnd pth pres sccs gs es_i es_o) ->
          let gs' = IntMap.insert scc g_i gs
              sccs' = List.foldl' (\sccs x -> Map.insert x scc sccs) sccs curr
