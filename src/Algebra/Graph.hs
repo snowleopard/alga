@@ -557,19 +557,19 @@ hasVertex x = foldg False (==x) (||) (||)
 -- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
-hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = hit g == Edge
+hasEdge :: forall a. Eq a => a -> a -> Graph a -> Bool
+hasEdge s t g = go 0 g == 2
   where
-    hit Empty         = Miss
-    hit (Vertex x   ) = if x == s then Tail else Miss
-    hit (Overlay x y) = case hit x of
-        Miss -> hit y
-        Tail -> max Tail (hit y)
-        Edge -> Edge
-    hit (Connect x y) = case hit x of
-        Miss -> hit y
-        Tail -> if hasVertex t y then Edge else Tail
-        Edge -> Edge
+    index :: Int -> a
+    index 0 = s
+    index _ = t
+    go :: Int -> Graph a -> Int
+    go 2 _ = 2
+    go p g = case g of
+        Empty       -> p
+        Vertex  x   -> if x == index p then p + 1 else p
+        Overlay x y -> max (go p x) (go p y)
+        Connect x y -> go (go p x) y
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
