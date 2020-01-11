@@ -24,7 +24,7 @@ module Algebra.Graph.Internal (
     foldr1Safe, maybeF,
 
     -- * Utilities
-    setProduct, setProductWith, setForEach_, intsetForEach_
+    setProduct, setProductWith, forEach, forEachInt
     ) where
 
 import Data.Foldable
@@ -144,10 +144,10 @@ setProductWith f x y = Set.fromList [ f a b | a <- Set.toAscList x, b <- Set.toA
 
 -- | Perform an applicative action for each member of a Set,
 -- discarding the results.
-setForEach_ :: Applicative f => Set a -> (a -> f b) -> f ()
-setForEach_ s f = Set.foldr (\a u -> f a *> u) (pure ()) s
+forEach :: Applicative f => Set a -> (a -> f b) -> f ()
+forEach s f = Set.foldr (\a u -> f a *> u) (pure ()) s
 
 -- | Perform an applicative action for each member of an IntSet,
 -- discarding the results.
-intsetForEach_ :: Applicative f => IntSet -> (Int -> f a) -> f ()
-intsetForEach_ s f = IntSet.foldr (\a u -> f a *> u) (pure ()) s
+forEachInt :: Applicative f => IntSet -> (Int -> f a) -> f ()
+forEachInt s f = IntSet.foldr (\a u -> f a *> u) (pure ()) s

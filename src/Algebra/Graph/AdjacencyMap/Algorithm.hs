@@ -309,6 +309,10 @@ isAcyclic = isRight . topSort
 -- graphs are non-empty, and are therefore of type
 -- "Algebra.Graph.NonEmpty.AdjacencyMap".
 --
+-- Notes about the implementation can be found at
+-- <https://github.com/jitwit/alga-notes/blob/master/gabow.org
+-- https://github.com/jitwit/alga-notes/blob/master/gabow.org>
+--
 -- @
 -- scc 'empty'               == 'empty'
 -- scc ('vertex' x)          == 'vertex' (NonEmpty.'NonEmpty.vertex' x)
@@ -340,9 +344,8 @@ data StateSCC a
 
 gabowSCC :: Ord a => AdjacencyMap a -> State (StateSCC a) ()
 gabowSCC g =
-  do let -- adjacent = Set.toList . flip postSet g
-         dfs u = do p_u <- enter u
-                    setForEach_ (postSet u g) $ \v -> do
+  do let dfs u = do p_u <- enter u
+                    forEach (postSet u g) $ \v -> do
                       preorderId v >>= \case
                         Nothing  -> do
                           updated <- dfs v
