@@ -145,9 +145,9 @@ setProductWith f x y = Set.fromList [ f a b | a <- Set.toAscList x, b <- Set.toA
 -- | Perform an applicative action for each member of a Set,
 -- discarding the results.
 setForEach_ :: Applicative f => Set a -> (a -> f b) -> f ()
-setForEach_ s f = Set.foldl' (\u a -> f a *> u) (pure ()) s
+setForEach_ s f = Set.foldr (\a u -> f a *> u) (pure ()) s
 
 -- | Perform an applicative action for each member of an IntSet,
 -- discarding the results.
 intsetForEach_ :: Applicative f => IntSet -> (Int -> f a) -> f ()
-intsetForEach_ s f = IntSet.foldl' (\u a -> f a *> u) (pure ()) s
+intsetForEach_ s f = IntSet.foldr (\a u -> f a *> u) (pure ()) s
