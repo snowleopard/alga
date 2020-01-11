@@ -460,10 +460,9 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = foldg1 v o c g 0 == 2
+hasEdge s t g = foldg1 v o c g 0 == (2 :: Int)
   where
-    v x 0 = if x == s then 1 else 0 :: Int
-    v x _ = if x == t then 2 else 1
+    v x k = if ((k == 0 && x == s) || (k == 1 && x == t)) then k + 1 else k
     o x y = \a -> case x a of { 2 -> 2; r -> max r (y a) }
     c x y = \a -> case x a of { 2 -> 2; r -> y r }
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}

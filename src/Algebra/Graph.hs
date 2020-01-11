@@ -54,6 +54,7 @@ import Control.Applicative (Alternative)
 import Control.DeepSeq
 import Control.Monad (MonadPlus (..))
 import Control.Monad.State (runState, get, put)
+import Data.Array.Unboxed
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Semigroup ((<>))
@@ -557,13 +558,13 @@ generalised to algebraic graphs of higher dimensions, e.g. we can similarly find
 
 The four graph constructors are interpreted as follows:
 
-* Empty: the number is unchanged
-* Vertex x: if x matches the next vertex, the number is incremented
-* Overlay x y: pick the best match from the two subexpressions
-* Connect x y: match the subexpressions one after another
+* Empty: the number is unchanged;
+* Vertex x: if x matches the next vertex, the number is incremented;
+* Overlay x y: pick the best match in the two subexpressions;
+* Connect x y: match the subexpressions one after another.
 
 The 2 -> 2 cases in the code are merely an (important) optimisation: they
-shortcut the computation as soon as we find an edge.
+shortcircuit the computation as soon as we find an edge.
 -}
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
@@ -576,10 +577,9 @@ shortcut the computation as soon as we find an edge.
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = foldg id v o c g 0 == 2
+hasEdge s t g = foldg id v o c g 0 == (2 :: Int)
   where
-    v x 0 = if x == s then 1 else 0 :: Int
-    v x _ = if x == t then 2 else 1
+    v x k = if ((k == 0 && x == s) || (k == 1 && x == t)) then k + 1 else k
     o x y = \a -> case x a of { 2 -> 2; res -> max res (y a) }
     c x y = \a -> case x a of { 2 -> 2; res -> y res }
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
