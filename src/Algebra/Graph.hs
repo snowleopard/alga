@@ -576,11 +576,12 @@ shortcircuit the computation as soon as we find an edge.
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = foldg id v o c g 0 == (2 :: Int)
+hasEdge s t g = foldg id v o c g LT == GT
   where
-    v x k = if ((k == 0 && x == s) || (k == 1 && x == t)) then k + 1 else k
-    o x y = \a -> case x a of { 2 -> 2; res -> max res (y a) }
-    c x y = \a -> case x a of { 2 -> 2; res -> y res }
+    v x LT = if x == s then EQ else LT
+    v x _  = if x == t then GT else EQ
+    o x y = \a -> case x a of { GT -> GT; res -> max res (y a) }
+    c x y = \a -> case x a of { GT -> GT; res -> y res }
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
