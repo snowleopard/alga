@@ -54,6 +54,7 @@ import Control.Applicative (Alternative)
 import Control.DeepSeq
 import Control.Monad (MonadPlus (..))
 import Control.Monad.State (runState, get, put)
+import Data.Array
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Semigroup ((<>))
@@ -560,14 +561,13 @@ hasVertex x = foldg False (==x) (||) (||)
 hasEdge :: forall a. Eq a => a -> a -> Graph a -> Bool
 hasEdge s t g = go 0 g == 2
   where
-    index :: Int -> a
-    index 0 = s
-    index _ = t
+    a :: Array Int a
+    a = listArray (0, 1) [s, t]
     go :: Int -> Graph a -> Int
     go 2 _ = 2
     go p g = case g of
         Empty       -> p
-        Vertex  x   -> if x == index p then p + 1 else p
+        Vertex  x   -> if x == a ! p then p + 1 else p
         Overlay x y -> max (go p x) (go p y)
         Connect x y -> go (go p x) y
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}

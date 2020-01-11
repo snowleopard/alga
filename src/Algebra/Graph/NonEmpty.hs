@@ -55,6 +55,7 @@ module Algebra.Graph.NonEmpty (
 
 import Control.DeepSeq
 import Control.Monad.State
+import Data.Array
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup ((<>))
 
@@ -462,13 +463,12 @@ hasVertex v = foldg1 (==v) (||) (||)
 hasEdge :: forall a. Eq a => a -> a -> Graph a -> Bool
 hasEdge s t g = go 0 g == 2
   where
-    index :: Int -> a
-    index 0 = s
-    index _ = t
+    a :: Array Int a
+    a = listArray (0, 1) [s, t]
     go :: Int -> Graph a -> Int
     go 2 _ = 2
     go p g = case g of
-        Vertex  x   -> if x == index p then p + 1 else p
+        Vertex  x   -> if x == a ! p then p + 1 else p
         Overlay x y -> max (go p x) (go p y)
         Connect x y -> go (go p x) y
 
