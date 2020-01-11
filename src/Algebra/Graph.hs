@@ -54,7 +54,6 @@ import Control.Applicative (Alternative)
 import Control.DeepSeq
 import Control.Monad (MonadPlus (..))
 import Control.Monad.State (runState, get, put)
-import Data.Array
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Semigroup ((<>))
@@ -559,18 +558,15 @@ hasVertex x = foldg False (==x) (||) (||)
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: forall a. Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = go 0 g == 2
+hasEdge s t g = foldg id v o (.) g (0 :: Int) == 2
   where
-    a :: Array Int a
-    a = listArray (0, 1) [s, t]
-    go :: Int -> Graph a -> Int
-    go 2 _ = 2
-    go p g = case g of
-        Empty       -> p
-        Vertex  x   -> if x == a ! p then p + 1 else p
-        Overlay x y -> max (go p x) (go p y)
-        Connect x y -> go (go p x) y
+    v x 0 = if x == s then 1 else 0
+    v x _ = if x == t then 2 else 1
+    o x y = \a -> max (x a) (y a)
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
+
+-- k :: (a -> a -> a) -> Graph (a -> a) -> a -> a
+-- k o = foldg id id (\x y a -> o (x a) (y a)) (.)
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
