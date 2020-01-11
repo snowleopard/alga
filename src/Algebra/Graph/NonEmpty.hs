@@ -462,8 +462,8 @@ hasVertex v = foldg1 (==v) (||) (||)
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
 hasEdge s t g = foldg1 v o (.) g 0 == 2
   where
-    v x 0 = if x == s then 1 else 0 :: Int
-    v x _ = if x == t then 2 else 1
+    v x 0 = if x == t then 1 else 0 :: Int
+    v x k = if x == s then 2 else k
     o x y = \a -> case x a of { 2 -> 2; r -> max r (y a) }
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
