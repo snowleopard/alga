@@ -557,16 +557,13 @@ hasVertex x = foldg False (==x) (||) (||)
 -- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
-hasEdge :: forall a. Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = foldg id v o (.) g (0 :: Int) == 2
+hasEdge :: Eq a => a -> a -> Graph a -> Bool
+hasEdge s t g = foldg id v o (.) g 0 == 2
   where
-    v x 0 = if x == s then 1 else 0
+    v x 0 = if x == s then 1 else 0 :: Int
     v x _ = if x == t then 2 else 1
-    o x y = \a -> max (x a) (y a)
+    o x y = \a -> case x a of { 2 -> 2; r -> max r (y a) }
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
-
--- k :: (a -> a -> a) -> Graph (a -> a) -> a -> a
--- k o = foldg id id (\x y a -> o (x a) (y a)) (.)
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
