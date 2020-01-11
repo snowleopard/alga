@@ -54,7 +54,6 @@ import Control.Applicative (Alternative)
 import Control.DeepSeq
 import Control.Monad (MonadPlus (..))
 import Control.Monad.State (runState, get, put)
-import Data.Array.Unboxed
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Semigroup ((<>))
