@@ -467,7 +467,7 @@ hasEdge s t g = foldg1 v o c g 0 == 2
     o x y a = case x a of
         0 -> y a
         1 -> if y a == 2 then 2 else 1
-        2 -> 2 :: Int
+        _ -> 2 :: Int
     c x y a = case x a of { 2 -> 2; res -> y res }
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
