@@ -640,10 +640,9 @@ edgeCount = AM.edgeCount . toAdjacencyMap
 edgeCountIntR :: Graph Int -> Int
 edgeCountIntR = AIM.edgeCount . toAdjacencyIntMap
 
+-- TODO: should be a good consumer.
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
---
--- Good consumer.
 --
 -- @
 -- vertexList 'empty'      == []

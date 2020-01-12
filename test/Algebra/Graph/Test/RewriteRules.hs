@@ -12,6 +12,7 @@
 module Algebra.Graph.Test.RewriteRules where
 
 import Data.Maybe (fromMaybe)
+import qualified Data.Set as Set
 
 import Algebra.Graph hiding ((===))
 import Algebra.Graph.Internal
@@ -113,6 +114,9 @@ cliqueP  e v o c xs = foldg e v o c (clique xs)
 cliquePR e v _ c xs =
   fromMaybe e (foldr (maybeF c . v) Nothing xs)
 
+inspect $ 'cliqueP === 'cliquePR
+
+
 -- star
 starC, starCR :: a -> Build a -> Graph a
 starC  x xs = star x (build xs)
@@ -188,6 +192,22 @@ sizeC  g = size (buildg g)
 sizeCR g = g 1 (const 1) (+) (+)
 
 inspect $ 'sizeC === 'sizeCR
+
+-- vertexSet
+vertexSetC, vertexSetCR :: Ord a => Buildg a -> Set.Set a
+vertexSetC  g = vertexSet (buildg g)
+vertexSetCR g =
+  g Set.empty Set.singleton Set.union Set.union
+
+inspect $ 'vertexSetC === 'vertexSetCR
+
+-- vertexCount
+vertexCountC, vertexCountCR :: Ord a => Buildg a -> Int
+vertexCountC  g = vertexCount (buildg g)
+vertexCountCR g =
+  Set.size (g Set.empty Set.singleton Set.union Set.union)
+
+inspect $ 'vertexSetC === 'vertexSetCR
 
 -- hasVertex
 hasVertexC, hasVertexCR :: Eq a => a -> Buildg a -> Bool
