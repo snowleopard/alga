@@ -246,23 +246,25 @@ instance Ord a => Ord (Graph a) where
 -- Check if two graphs are equal by converting them to their adjacency maps.
 eqR :: Ord a => Graph a -> Graph a -> Bool
 eqR x y = toAdjacencyMap x == toAdjacencyMap y
-{-# NOINLINE [1] eqR #-}
+{-# INLINE [2] eqR #-}
 {-# RULES "eqR/Int" eqR = eqIntR #-}
 
 -- Like 'eqR' but specialised for graphs with vertices of type 'Int'.
 eqIntR :: Graph Int -> Graph Int -> Bool
-eqIntR x y = toAdjacencyIntMap x == toAdjacencyIntMap y
+eqIntR = \x y -> toAdjacencyIntMap x == toAdjacencyIntMap y
+{-# INLINE eqIntR #-}
 
 -- TODO: Find a more efficient comparison.
 -- Compare two graphs by converting them to their adjacency maps.
 ordR :: Ord a => Graph a -> Graph a -> Ordering
 ordR x y = compare (toAdjacencyMap x) (toAdjacencyMap y)
-{-# NOINLINE [1] ordR #-}
+{-# INLINE [2] ordR #-}
 {-# RULES "ordR/Int" ordR = ordIntR #-}
 
 -- Like 'ordR' but specialised for graphs with vertices of type 'Int'.
 ordIntR :: Graph Int -> Graph Int -> Ordering
-ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
+ordIntR = \x y -> compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
+{-# INLINE ordIntR #-}
 
 -- | `<*>` is a good consumer of its first agument and producer of both.
 instance Applicative Graph where
@@ -612,12 +614,13 @@ hasEdge s t g = hit g == Edge
 -- @
 vertexCount :: Ord a => Graph a -> Int
 vertexCount = Set.size . vertexSet
-{-# INLINE [1] vertexCount #-}
+{-# INLINE [2] vertexCount #-}
 {-# RULES "vertexCount/Int" vertexCount = vertexIntCountR #-}
 
 -- Like 'vertexCount' but specialised for graphs with vertices of type 'Int'.
 vertexIntCountR :: Graph Int -> Int
 vertexIntCountR = IntSet.size . vertexIntSetR
+{-# INLINE vertexIntCountR #-}
 
 -- | The number of edges in a graph.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
@@ -633,14 +636,14 @@ vertexIntCountR = IntSet.size . vertexIntSetR
 -- @
 edgeCount :: Ord a => Graph a -> Int
 edgeCount = AM.edgeCount . toAdjacencyMap
-{-# INLINE [1] edgeCount #-}
+{-# INLINE [2] edgeCount #-}
 {-# RULES "edgeCount/Int" edgeCount = edgeCountIntR #-}
 
 -- Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
 edgeCountIntR :: Graph Int -> Int
 edgeCountIntR = AIM.edgeCount . toAdjacencyIntMap
+{-# INLINE edgeCountIntR #-}
 
--- TODO: should be a good consumer.
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
 --
@@ -651,12 +654,13 @@ edgeCountIntR = AIM.edgeCount . toAdjacencyIntMap
 -- @
 vertexList :: Ord a => Graph a -> [a]
 vertexList = Set.toAscList . vertexSet
-{-# INLINE [1] vertexList #-}
+{-# INLINE [2] vertexList #-}
 {-# RULES "vertexList/Int" vertexList = vertexIntListR #-}
 
 -- Like 'vertexList' but specialised for graphs with vertices of type 'Int'.
 vertexIntListR :: Graph Int -> [Int]
 vertexIntListR = IntSet.toList . vertexIntSetR
+{-# INLINE vertexIntListR #-}
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
@@ -713,12 +717,13 @@ vertexIntSetR = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 -- @
 edgeSet :: Ord a => Graph a -> Set.Set (a, a)
 edgeSet = AM.edgeSet . toAdjacencyMap
-{-# INLINE [1] edgeSet #-}
+{-# INLINE [2] edgeSet #-}
 {-# RULES "edgeSet/Int" edgeSet = edgeIntSetR #-}
 
 -- Like 'edgeSet' but specialised for graphs with vertices of type 'Int'.
 edgeIntSetR :: Graph Int -> Set.Set (Int,Int)
 edgeIntSetR = AIM.edgeSet . toAdjacencyIntMap
+{-# INLINE edgeIntSetR #-}
 
 -- | The sorted /adjacency list/ of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.

@@ -13,7 +13,11 @@
 module Algebra.Graph.Test.RewriteRules where
 
 import Data.Maybe (fromMaybe)
-import qualified Data.Set as Set
+
+import qualified Algebra.Graph.AdjacencyMap    as AM
+import qualified Algebra.Graph.AdjacencyIntMap as AIM
+import qualified Data.Set                      as Set
+import qualified Data.IntSet                   as IntSet
 
 import Algebra.Graph hiding ((===))
 import Algebra.Graph.Internal
@@ -31,6 +35,7 @@ type Buildg a = forall b. b -> (a -> b) -> (b -> b ->b ) -> (b -> b-> b) -> b
 --- * the suffix "C" when testing the "good consumer" property.
 --- * the suffix "P" when testing the "good producer" property.
 --- * the suffix "I" when testing inlining.
+--- * the suffix "T" when testing specialisation for a type
 
 -- 'foldg'
 emptyI, emptyIR :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
@@ -196,6 +201,39 @@ ovPR e v o c f x =
 
 inspect $ 'ovP === 'ovPR
 
+-- eq
+eqC, eqCR :: Ord a => Buildg a -> Buildg a -> Bool
+eqC  x y = buildg x == buildg y
+eqCR x y = x AM.empty AM.vertex AM.overlay AM.connect == y AM.empty AM.vertex AM.overlay AM.connect
+
+inspect $ 'eqC === 'eqCR
+
+eqT, eqTR :: Graph Int -> Graph Int -> Bool
+eqT  x y = x == y
+eqTR x y =
+  foldg AIM.empty AIM.vertex AIM.overlay AIM.connect x == foldg AIM.empty AIM.vertex AIM.overlay AIM.connect y
+
+inspect $ 'eqT === 'eqTR
+
+-- ord
+ordC, ordCR :: Ord a => Buildg a -> Buildg a -> Ordering
+ordC  x y = compare (buildg x) (buildg y)
+ordCR x y =
+  compare
+    (x AM.empty AM.vertex AM.overlay AM.connect)
+    (y AM.empty AM.vertex AM.overlay AM.connect)
+
+inspect $ 'ordC === 'ordCR
+
+ordT, ordTR :: Graph Int -> Graph Int -> Ordering
+ordT  x y = compare x y
+ordTR x y =
+  compare
+    (foldg AIM.empty AIM.vertex AIM.overlay AIM.connect x)
+    (foldg AIM.empty AIM.vertex AIM.overlay AIM.connect y)
+
+inspect $ 'ordT === 'ordTR
+
 -- isEmpty
 isEmptyC, isEmptyCR :: Buildg a -> Bool
 isEmptyC  g = isEmpty (buildg g)
@@ -225,6 +263,55 @@ vertexCountCR g =
   Set.size (g Set.empty Set.singleton Set.union Set.union)
 
 inspect $ 'vertexSetC === 'vertexSetCR
+
+vertexCountT, vertexCountTR :: Graph Int -> Int
+vertexCountT  g = vertexCount g
+vertexCountTR g =
+  IntSet.size (foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union g)
+
+inspect $ 'vertexCountT === 'vertexCountTR
+
+-- edgeCount
+edgeCountC, edgeCountCR :: Ord a => Buildg a -> Int
+edgeCountC  g = edgeCount (buildg g)
+edgeCountCR g =
+  AM.edgeCount (g AM.empty AM.vertex AM.overlay AM.connect)
+
+-- WARNING: this should defintely pass. Inspecting the core by hand validate the assertion.
+inspect $ 'edgeCountC =/= 'edgeCountCR
+
+edgeCountT, edgeCountTR :: Graph Int -> Int
+edgeCountT  g = edgeCount g
+edgeCountTR g =
+  AIM.edgeCount (foldg AIM.empty AIM.vertex AIM.overlay AIM.connect g)
+
+inspect $ 'edgeCountT === 'edgeCountTR
+
+-- vertexList
+vertexListC, vertexListCR :: Ord a => Buildg a -> [a]
+vertexListC  g = vertexList (buildg g)
+vertexListCR g = Set.toAscList (g Set.empty Set.singleton Set.union Set.union)
+
+inspect $ 'vertexListC === 'vertexListCR
+
+vertexListT, vertexListTR :: Graph Int -> [Int]
+vertexListT  g = vertexList g
+vertexListTR g = IntSet.toAscList (foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union g)
+
+inspect $ 'vertexListT === 'vertexListTR
+
+-- edgeSet
+edgeSetC, edgeSetCR :: Ord a => Buildg a -> Set.Set (a,a)
+edgeSetC  g = edgeSet (buildg g)
+edgeSetCR g = AM.edgeSet (g AM.empty AM.vertex AM.overlay AM.connect)
+
+inspect $ 'edgeSetC === 'edgeSetCR
+
+edgeSetT, edgeSetTR :: Graph Int -> Set.Set (Int,Int)
+edgeSetT  g = edgeSet g
+edgeSetTR g = AIM.edgeSet (foldg AIM.empty AIM.vertex AIM.overlay AIM.connect g)
+
+inspect $ 'edgeSetT === 'edgeSetTR
 
 -- hasVertex
 hasVertexC, hasVertexCR :: Eq a => a -> Buildg a -> Bool
