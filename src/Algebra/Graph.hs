@@ -557,13 +557,13 @@ generalised to algebraic graphs of higher dimensions, e.g. we can similarly find
 
 The four graph constructors are interpreted as follows:
 
-* Empty       : the matching number is unchanged;
-* Vertex x    : if x matches the next vertex, the number is incremented;
-* Overlay x y : pick the best match in the two subexpressions;
-* Connect x y : match the subexpressions one after another.
+  * Empty       : the matching number is unchanged;
+  * Vertex x    : if x matches the next vertex, the number is incremented;
+  * Overlay x y : pick the best match in the two subexpressions;
+  * Connect x y : match the subexpressions one after another.
 
-The 2 -> 2 cases in the code are an (important) optimisation: they shortcircuit
-the computation as soon as the edge is matched.
+Note that in the last two cases we can (and do) shortcircuit the computation as
+soon as the edge is fully matched in one of the subexpressions.
 -}
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
