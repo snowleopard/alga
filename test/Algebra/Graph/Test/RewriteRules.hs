@@ -320,7 +320,6 @@ inspect $ 'mergeVerticesP === 'mergeVerticesPR
 
 -- splitVertex
 -- Good consumption if lists is guaranteed by `vertices`
-
 splitVertexC, splitVertexCR :: Eq a => a -> [a] -> Buildg a -> Graph a
 splitVertexC  x us g = splitVertex x us (buildg g)
 splitVertexCR x us g =
@@ -351,3 +350,18 @@ transposeP  e v o c g = foldg e v o c (transpose g)
 transposePR e v o c g = foldg e v o (flip c) g
 
 inspect $ 'transposeP === 'transposePR
+
+-- simplify
+simple :: Eq g => (g -> g -> g) -> g -> g -> g
+simple op x y
+    | x == z    = x
+    | y == z    = y
+    | otherwise = z
+  where
+    z = op x y
+
+simplifyC, simplifyCR :: Ord a => Buildg a -> Graph a
+simplifyC  g = simplify (buildg g)
+simplifyCR g = g Empty Vertex (simple Overlay) (simple Connect)
+
+inspect $ 'simplifyC === 'simplifyCR

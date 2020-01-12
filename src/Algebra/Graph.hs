@@ -1138,6 +1138,7 @@ induceJust = foldg Empty (maybe Empty Vertex) (k Overlay) (k Connect)
 -- @
 simplify :: Ord a => Graph a -> Graph a
 simplify = foldg Empty Vertex (simple Overlay) (simple Connect)
+{-# INLINE simplify #-}
 {-# SPECIALISE simplify :: Graph Int -> Graph Int #-}
 
 simple :: Eq g => (g -> g -> g) -> g -> g -> g
