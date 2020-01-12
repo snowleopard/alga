@@ -234,13 +234,26 @@ hasVertexCR x g = g False (==x) (||) (||)
 inspect $ 'hasVertexC === 'hasVertexCR
 
 -- path
-pathP, pathPR ::  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [a] -> b
+pathP, pathPR :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [a] -> b
 pathP  e v o c xs = foldg e v o c (path xs)
 pathPR e v o c xs =
   case xs of
     []     -> e
     [x]    -> v x
     (_:ys) -> foldg e v o c $ edges (zip xs ys)
-    --  edges is a good producer and consumer so this is optimized
+    -- edges is a good producer and consumer so this is optimized
 
 inspect $ 'pathP === 'pathPR
+
+-- circuit
+
+circuitP, circuitPR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [a] -> b
+circuitP  e v o c xs = foldg e v o c (circuit xs)
+circuitPR e v o c xs =
+  case xs of
+    [] -> e
+    (x:xs) -> foldg e v o c $ path $ [x] ++ xs ++ [x]
+    -- path is a good producer and consumer so this is optimized
+
+inspect $ 'circuitP === 'circuitPR
