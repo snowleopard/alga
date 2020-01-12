@@ -104,6 +104,7 @@ library
                         GeneralizedNewtypeDeriving
                         ScopedTypeVariables
                         TupleSections
+                        TypeApplications
                         TypeFamilies
     other-extensions:   CPP
                         DeriveFunctor
@@ -163,11 +164,11 @@ test-suite test-alga
                         GeneralizedNewtypeDeriving
                         ScopedTypeVariables
                         TupleSections
+                        TypeApplications
                         TypeFamilies
     other-extensions:   ConstrainedClassMethods
                         ConstraintKinds
                         CPP
                         MultiParamTypeClasses
                         RankNTypes
-                        TypeApplications
                         ViewPatterns
