@@ -301,6 +301,23 @@ replaceVertexPR u v e v' o c g =
 
 inspect $ 'replaceVertexP === 'replaceVertexPR
 
+-- mergeVertices
+mergeVerticesC, mergeVerticesCR :: (a -> Bool) -> a -> Buildg a -> Graph a
+mergeVerticesC  p v g = mergeVertices p v (buildg g)
+mergeVerticesCR p v g =
+  g Empty (\w -> Vertex (if p w then v else w)) Overlay Connect
+
+inspect $ 'mergeVerticesC === 'mergeVerticesCR
+
+mergeVerticesP, mergeVerticesPR :: (a -> Bool) -> a ->
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
+mergeVerticesP  p v e v' o c g =
+  foldg e v' o c (mergeVertices p v g)
+mergeVerticesPR p v e v' o c g =
+  foldg e (\w -> v' (if p w then v else w)) o c g
+
+inspect $ 'mergeVerticesP === 'mergeVerticesPR
+
 --transpose
 transposeC, transposeCR :: Buildg a -> Graph a
 transposeC  g = transpose (buildg g)

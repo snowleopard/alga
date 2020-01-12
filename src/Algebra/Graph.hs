@@ -1036,6 +1036,7 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 -- @
 mergeVertices :: (a -> Bool) -> a -> Graph a -> Graph a
 mergeVertices p v = fmap $ \w -> if p w then v else w
+{-# INLINE mergeVertices #-}
 
 -- | Split a vertex into a list of vertices with the same connectivity.
 -- Complexity: /O(s + k * L)/ time, memory and size, where /k/ is the number of
