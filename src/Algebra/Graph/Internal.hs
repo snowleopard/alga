@@ -117,7 +117,10 @@ foldr1Safe f = foldr (maybeF f) Nothing
 -- | Auxiliary function that try to apply a function to a base case and a 'Maybe'
 -- value and return 'Just' the result or 'Just' the base case.
 maybeF :: (a -> b -> a) -> a -> Maybe b -> Maybe a
-maybeF f x = Just . maybe x (f x)
+maybeF f x = \y ->
+  case y of
+    Nothing -> Just x
+    Just y  -> Just (f x y)
 {-# INLINE maybeF #-}
 
 -- | Compute the Cartesian product of two sets.

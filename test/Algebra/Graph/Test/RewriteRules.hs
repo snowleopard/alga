@@ -116,6 +116,23 @@ cliquePR e v _ c xs =
 
 inspect $ 'cliqueP === 'cliquePR
 
+-- edges
+
+edgesC, edgesCR :: Build (a,a) -> Graph a
+edgesC  xs = edges (build xs)
+edgesCR xs =
+  fromMaybe Empty
+    (xs (\e -> maybeF Overlay (Connect (Vertex (fst e)) (Vertex (snd e)))) Nothing)
+
+inspect $ 'edgesC === 'edgesCR
+
+edgesP, edgesPR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [(a,a)] -> b
+edgesP  e v o c xs = foldg e v o c (edges xs)
+edgesPR e v o c xs =
+  fromMaybe e (foldr (\e -> maybeF o (c (v (fst e)) (v (snd e)))) Nothing xs)
+
+inspect $ 'edgesP === 'edgesPR
 
 -- star
 starC, starCR :: a -> Build a -> Graph a
@@ -223,6 +240,7 @@ pathPR e v o c xs =
   case xs of
     []     -> e
     [x]    -> v x
-    (_:ys) -> foldg e v o c $ edges (zip xs ys) -- TODO: Do we rewrite here too ?
+    (_:ys) -> foldg e v o c $ edges (zip xs ys)
+    --  edges is a good producer and consumer so this is optimized
 
 inspect $ 'pathP === 'pathPR
