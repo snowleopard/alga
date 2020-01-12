@@ -257,3 +257,32 @@ circuitPR e v o c xs =
     -- path is a good producer and consumer so this is optimized
 
 inspect $ 'circuitP === 'circuitPR
+
+-- biclique
+
+bicliqueC, bicliqueCR :: Build a -> Build a -> Graph a
+bicliqueC  xs ys = biclique (build xs) (build ys)
+bicliqueCR xs ys =
+  case xs (maybeF Overlay . Vertex) Nothing of
+    Nothing -> vertices (build ys)
+    -- vertices is a good consumer so this is optimized
+    Just xs ->
+      case ys (maybeF Overlay . Vertex) Nothing of
+        Nothing -> xs
+        Just ys -> Connect xs ys
+
+inspect $ 'bicliqueC === 'bicliqueCR
+
+bicliqueP, bicliquePR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [a] -> [a] -> b
+bicliqueP  e v o c xs ys = foldg e v o c (biclique xs ys)
+bicliquePR e v o c xs ys =
+  case foldr1Safe o (map v xs) of
+    Nothing -> foldg e v o c $ vertices ys
+    -- vertices is a good producer so this is optimized
+    Just xs ->
+      case foldr1Safe o (map v ys) of
+        Nothing -> xs
+        Just ys -> c xs ys
+
+inspect $ 'bicliqueP === 'bicliquePR
