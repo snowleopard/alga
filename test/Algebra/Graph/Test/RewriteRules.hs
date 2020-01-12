@@ -318,7 +318,27 @@ mergeVerticesPR p v e v' o c g =
 
 inspect $ 'mergeVerticesP === 'mergeVerticesPR
 
---transpose
+-- splitVertex
+-- Good consumption if lists is guaranteed by `vertices`
+
+splitVertexC, splitVertexCR :: Eq a => a -> [a] -> Buildg a -> Graph a
+splitVertexC  x us g = splitVertex x us (buildg g)
+splitVertexCR x us g =
+  let gus = vertices us in
+  g Empty (\w -> if w == x then gus else Vertex w) Overlay Connect
+
+inspect $ 'splitVertexC === 'splitVertexCR
+
+splitVertexP, splitVertexPR :: Eq a => a -> [a] ->
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
+splitVertexP  x us e v o c g = foldg e v o c (splitVertex x us g)
+splitVertexPR x us e v o c g =
+  let gus = foldg e v o c (vertices us) in
+  foldg e (\w -> if w == x then gus else v w) o c g
+
+inspect $ 'splitVertexP === 'splitVertexPR
+
+-- transpose
 transposeC, transposeCR :: Buildg a -> Graph a
 transposeC  g = transpose (buildg g)
 transposeCR g = g Empty Vertex Overlay (flip Connect)

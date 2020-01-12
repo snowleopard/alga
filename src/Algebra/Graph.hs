@@ -1055,6 +1055,7 @@ splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
 splitVertex x us g = buildg $ \e v o c ->
   let gus = foldg e v o c (vertices us) in
   foldg e (\w -> if w == x then gus else v w) o c g
+{-# INLINE splitVertex #-}
 {-# SPECIALISE splitVertex :: Int -> [Int] -> Graph Int -> Graph Int #-}
 
 -- | Transpose a given graph.
