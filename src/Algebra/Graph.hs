@@ -547,6 +547,24 @@ hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex x = foldg False (==x) (||) (||)
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 
+{- Note [The implementation of hasEdge]
+
+We fold a graph into a function of type Int -> Int where the Int stands for the
+number of vertices of the specified edge that have been matched so far. The edge
+belongs to the graph if we reach the number 2. Note that this algorithm can be
+generalised to algebraic graphs of higher dimensions, e.g. we can similarly find
+3-edges (triangles), 4-edges (tetrahedra) and k-edges in O(s) time.
+
+The four graph constructors are interpreted as follows:
+
+  * Empty       : the matching number is unchanged;
+  * Vertex x    : if x matches the next vertex, the number is incremented;
+  * Overlay x y : pick the best match in the two subexpressions;
+  * Connect x y : match the subexpressions one after another.
+
+Note that in the last two cases we can (and do) shortcircuit the computation as
+soon as the edge is fully matched in one of the subexpressions.
+-}
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
 --
@@ -558,18 +576,15 @@ hasVertex x = foldg False (==x) (||) (||)
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = hit g == Edge
+hasEdge s t g = foldg id v o c g 0 == 2
   where
-    hit Empty         = Miss
-    hit (Vertex x   ) = if x == s then Tail else Miss
-    hit (Overlay x y) = case hit x of
-        Miss -> hit y
-        Tail -> max Tail (hit y)
-        Edge -> Edge
-    hit (Connect x y) = case hit x of
-        Miss -> hit y
-        Tail -> if hasVertex t y then Edge else Tail
-        Edge -> Edge
+    v x 0   = if x == s then 1 else 0
+    v x _   = if x == t then 2 else 1
+    o x y a = case x a of
+        0 -> y a
+        1 -> if y a == 2 then 2 else 1
+        _ -> 2 :: Int
+    c x y a = case x a of { 2 -> 2; res -> y res }
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
