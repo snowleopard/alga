@@ -117,7 +117,6 @@ cliquePR e v _ c xs =
 inspect $ 'cliqueP === 'cliquePR
 
 -- edges
-
 edgesC, edgesCR :: Build (a,a) -> Graph a
 edgesC  xs = edges (build xs)
 edgesCR xs =
@@ -246,7 +245,6 @@ pathPR e v o c xs =
 inspect $ 'pathP === 'pathPR
 
 -- circuit
-
 circuitP, circuitPR ::
   b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [a] -> b
 circuitP  e v o c xs = foldg e v o c (circuit xs)
@@ -259,7 +257,6 @@ circuitPR e v o c xs =
 inspect $ 'circuitP === 'circuitPR
 
 -- biclique
-
 bicliqueC, bicliqueCR :: Build a -> Build a -> Graph a
 bicliqueC  xs ys = biclique (build xs) (build ys)
 bicliqueCR xs ys =
@@ -286,3 +283,20 @@ bicliquePR e v o c xs ys =
         Just ys -> c xs ys
 
 inspect $ 'bicliqueP === 'bicliquePR
+
+-- replaceVertex
+replaceVertexC, replaceVertexCR :: Eq a => a -> a -> Buildg a -> Graph a
+replaceVertexC  u v g = replaceVertex u v (buildg g)
+replaceVertexCR u v g =
+  g Empty (\w -> Vertex (if w == u then v else w)) Overlay Connect
+
+inspect $ 'replaceVertexC === 'replaceVertexCR
+
+replaceVertexP, replaceVertexPR :: Eq a => a -> a ->
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
+replaceVertexP  u v e v' o c g =
+  foldg e v' o c (replaceVertex u v g)
+replaceVertexPR u v e v' o c g =
+  foldg e (\w -> v' (if w == u then v else w)) o c g
+
+inspect $ 'replaceVertexP === 'replaceVertexPR

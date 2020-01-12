@@ -1019,6 +1019,7 @@ filterContext s i o g = maybe g go $ context (==s) g
 -- @
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
 replaceVertex u v = fmap $ \w -> if w == u then v else w
+{-# INLINE replaceVertex #-}
 {-# SPECIALISE replaceVertex :: Int -> Int -> Graph Int -> Graph Int #-}
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
