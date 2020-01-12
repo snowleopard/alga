@@ -30,7 +30,7 @@ type Buildg a = forall b. b -> (a -> b) -> (b -> b ->b ) -> (b -> b-> b) -> b
 --- * the suffix "P" when testing the "good producer" property.
 --- * the suffix "I" when testing inlining.
 
--- 'foldg'.
+-- 'foldg'
 emptyI, emptyIR :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
 emptyI  e v o c = foldg e v o c Empty
 emptyIR e _ _ _ = e
@@ -71,6 +71,21 @@ overlaysPR e v o c xs = fromMaybe e (foldr (maybeF o . foldg e v o c) Nothing xs
 
 inspect $ 'overlaysP === 'overlaysPR
 
+-- vertices
+verticesC, verticesCR :: Build a -> Graph a
+verticesC  xs = vertices (build xs)
+verticesCR xs = fromMaybe Empty (xs (maybeF Overlay . Vertex) Nothing)
+
+inspect $ 'verticesC === 'verticesCR
+
+verticesP, verticesPR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [a] -> b
+verticesP  e v o c xs = foldg e v o c (vertices xs)
+verticesPR e v o _ xs =
+  fromMaybe e (foldr (maybeF o . v) Nothing xs)
+
+inspect $ 'verticesP === 'verticesPR
+
 -- connects
 connectsC, connectsCR :: Build (Graph a) -> Graph a
 connectsC  xs = connects (build xs)
@@ -84,6 +99,19 @@ connectsP  e v o c xs = foldg e v o c (connects xs)
 connectsPR e v o c xs = fromMaybe e (foldr (maybeF c . foldg e v o c) Nothing xs)
 
 inspect $ 'connectsP === 'connectsPR
+
+-- clique
+cliqueC, cliqueCR :: Build a -> Graph a
+cliqueC  xs = clique (build xs)
+cliqueCR xs = fromMaybe Empty (xs (maybeF Connect . Vertex) Nothing)
+
+inspect $ 'cliqueC === 'cliqueCR
+
+cliqueP, cliquePR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [a] -> b
+cliqueP  e v o c xs = foldg e v o c (clique xs)
+cliquePR e v _ c xs =
+  fromMaybe e (foldr (maybeF c . v) Nothing xs)
 
 -- star
 starC, starCR :: a -> Build a -> Graph a

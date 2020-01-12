@@ -443,6 +443,7 @@ connects xs = buildg $ \e v o c -> combineR e c (foldg e v o c) xs
 -- This is a good consumer of lists.
 combineR :: c -> (c -> c -> c) -> (a -> c) -> [a] -> c
 combineR e o f = fromMaybe e . foldr1Safe o . map f
+{-# INLINE combineR #-}
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
