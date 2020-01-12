@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.AdjacencyMap
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -35,7 +35,7 @@ type AI = AdjacencyMap Int
 testAdjacencyMap :: IO ()
 testAdjacencyMap = do
     putStrLn "\n============ AdjacencyMap ============"
-    test "Axioms of graphs" (axioms :: GraphTestsuite AI)
+    test "Axioms of graphs" (axioms @ AI)
 
     testConsistent        t
     testShow              t

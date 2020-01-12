@@ -1,8 +1,7 @@
-{-# LANGUAGE TypeApplications #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Undirected
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -35,7 +34,7 @@ type AGI = G.Graph Int
 testUndirected :: IO ()
 testUndirected = do
     putStrLn "\n============ Graph.Undirected ============"
-    test "Axioms of undirected graphs" $ size10 $ undirectedAxioms @(Graph Int)
+    test "Axioms of undirected graphs" $ size10 $ undirectedAxioms @ G
 
     testConsistent    t
     testSymmetricShow t
