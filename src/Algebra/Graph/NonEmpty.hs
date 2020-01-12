@@ -460,12 +460,15 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = foldg1 v o c g 0 == (2 :: Int)
+hasEdge s t g = foldg1 v o c g LT == GT
   where
-    v x k | k == 0    = k + fromEnum (x == s)
-          | otherwise = k + fromEnum (x == t)
-    o x y = \a -> case x a of { 2 -> 2; r -> max r (y a) }
-    c x y = \a -> case x a of { 2 -> 2; r -> y r }
+    v x LT  = if x == s then EQ else LT
+    v x _   = if x == t then GT else EQ
+    o x y a = case x a of
+        LT -> y a
+        EQ -> if y a == GT then GT else EQ
+        GT -> GT
+    c x y a = case x a of { GT -> GT; res -> y res }
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
