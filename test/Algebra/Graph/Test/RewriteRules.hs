@@ -320,6 +320,13 @@ hasVertexCR x g = g False (==x) (||) (||)
 
 inspect $ 'hasVertexC === 'hasVertexCR
 
+-- adjacencyList
+adjacencyListC, adjacencyListCR :: Ord a => Buildg a -> [(a, [a])]
+adjacencyListC  g = adjacencyList (buildg g)
+adjacencyListCR g = AM.adjacencyList (g AM.empty AM.vertex AM.overlay AM.connect)
+
+inspect $ 'adjacencyListC === 'adjacencyListCR
+
 -- path
 pathP, pathPR :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [a] -> b
 pathP  e v o c xs = foldg e v o c (path xs)

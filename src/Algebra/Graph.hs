@@ -739,6 +739,7 @@ edgeIntSetR = AIM.edgeSet . toAdjacencyIntMap
 -- @
 adjacencyList :: Ord a => Graph a -> [(a, [a])]
 adjacencyList = AM.adjacencyList . toAdjacencyMap
+{-# INLINE adjacencyList #-}
 {-# SPECIALISE adjacencyList :: Graph Int -> [(Int, [Int])] #-}
 
 -- TODO: This is a very inefficient implementation. Find a way to construct an
