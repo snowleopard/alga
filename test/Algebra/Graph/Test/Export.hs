@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Export
@@ -14,14 +14,11 @@ module Algebra.Graph.Test.Export (
     testExport
     ) where
 
-#if !MIN_VERSION_base(4,11,0)
-import Data.Semigroup
-#endif
-
 import Algebra.Graph (Graph, circuit)
 import Algebra.Graph.Export hiding (unlines)
 import Algebra.Graph.Export.Dot (Attribute (..))
 import Algebra.Graph.Test
+import Data.Semigroup ((<>))
 
 import qualified Algebra.Graph.Export     as E
 import qualified Algebra.Graph.Export.Dot as ED

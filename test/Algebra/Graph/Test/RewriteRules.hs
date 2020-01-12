@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell, RankNTypes #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.RewriteRules

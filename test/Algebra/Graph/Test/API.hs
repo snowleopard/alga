@@ -1,7 +1,5 @@
-{-# LANGUAGE ConstraintKinds, CPP, GADTs, RankNTypes, RecordWildCards #-}
-#if __GLASGOW_HASKELL__ >= 800
+{-# LANGUAGE ConstraintKinds, GADTs, RankNTypes, RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-missing-fields #-}
-#endif
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.API
@@ -17,11 +15,12 @@ module Algebra.Graph.Test.API (
     API (..), Mono (..), toIntAPI,
 
     -- * APIs of various graph data types
-    adjacencyMapAPI, adjacencyIntMapAPI, graphAPI, relationAPI,
+    adjacencyMapAPI, adjacencyIntMapAPI, graphAPI, undirectedGraphAPI, relationAPI,
     symmetricRelationAPI, labelledGraphAPI, labelledAdjacencyMapAPI
     ) where
 
 import Data.Coerce
+import Data.List.NonEmpty (NonEmpty)
 import Data.Monoid (Any)
 import Data.IntMap (IntMap)
 import Data.IntSet (IntSet)
@@ -31,6 +30,7 @@ import Data.Tree
 import Test.QuickCheck
 
 import qualified Algebra.Graph                                as G
+import qualified Algebra.Graph.Undirected                     as UG
 import qualified Algebra.Graph.AdjacencyIntMap                as AIM
 import qualified Algebra.Graph.AdjacencyIntMap.Algorithm      as AIM
 import qualified Algebra.Graph.AdjacencyMap                   as AM
@@ -97,14 +97,13 @@ data API g c where
         , adjacencyIntMap            :: g Int -> IntMap IntSet
         , adjacencyMapTranspose      :: forall a. c a => g a -> Map a (Set a)
         , adjacencyIntMapTranspose   :: g Int -> IntMap IntSet
-        , bfsForest                  :: forall a. c a => g a -> Forest a
-        , bfsForestFrom              :: forall a. c a => [a] -> g a -> Forest a
+        , bfsForest                  :: forall a. c a => [a] -> g a -> Forest a
         , bfs                        :: forall a. c a => [a] -> g a -> [[a]]
         , dfsForest                  :: forall a. c a => g a -> Forest a
         , dfsForestFrom              :: forall a. c a => [a] -> g a -> Forest a
         , dfs                        :: forall a. c a => [a] -> g a -> [a]
         , reachable                  :: forall a. c a => a -> g a -> [a]
-        , topSort                    :: forall a. c a => g a -> Maybe [a]
+        , topSort                    :: forall a. c a => g a -> Either (NonEmpty a) [a]
         , isAcyclic                  :: forall a. c a => g a -> Bool
         , toAdjacencyMap             :: forall a. c a => g a -> AM.AdjacencyMap a
         , toAdjacencyIntMap          :: g Int -> AIM.AdjacencyIntMap
@@ -180,7 +179,6 @@ adjacencyMapAPI = API
     , adjacencyMapTranspose      = T.adjacencyMapTranspose
     , adjacencyIntMapTranspose   = T.adjacencyIntMapTranspose
     , bfsForest                  = AM.bfsForest
-    , bfsForestFrom              = AM.bfsForestFrom
     , bfs                        = AM.bfs
     , dfsForest                  = AM.dfsForest
     , dfsForestFrom              = AM.dfsForestFrom
@@ -292,6 +290,51 @@ graphAPI = API
     , compose                    = G.compose
     , box                        = G.box }
 
+-- | The API of 'UG.Graph'.
+undirectedGraphAPI :: API UG.Graph Ord
+undirectedGraphAPI = API
+    { empty                      = UG.empty
+    , vertex                     = UG.vertex
+    , edge                       = UG.edge
+    , overlay                    = UG.overlay
+    , connect                    = UG.connect
+    , vertices                   = UG.vertices
+    , edges                      = UG.edges
+    , overlays                   = UG.overlays
+    , connects                   = UG.connects
+    , toGraph                    = UG.fromUndirected
+    , foldg                      = UG.foldg
+    , isSubgraphOf               = UG.isSubgraphOf
+    , isEmpty                    = UG.isEmpty
+    , size                       = UG.size
+    , hasVertex                  = UG.hasVertex
+    , hasEdge                    = UG.hasEdge
+    , vertexCount                = UG.vertexCount
+    , edgeCount                  = UG.edgeCount
+    , vertexList                 = UG.vertexList
+    , edgeList                   = UG.edgeList
+    , vertexSet                  = UG.vertexSet
+    , edgeSet                    = UG.edgeSet
+    , neighbours                 = UG.neighbours
+    , adjacencyList              = UG.adjacencyList
+    , path                       = UG.path
+    , circuit                    = UG.circuit
+    , clique                     = UG.clique
+    , biclique                   = UG.biclique
+    , star                       = UG.star
+    , stars                      = UG.stars
+    , tree                       = UG.tree
+    , forest                     = UG.forest
+    , removeVertex               = UG.removeVertex
+    , removeEdge                 = UG.removeEdge
+    , replaceVertex              = UG.replaceVertex
+    , mergeVertices              = UG.mergeVertices
+    , transpose                  = id
+    , gmap                       = fmap
+    , induce                     = UG.induce
+    , induceJust                 = UG.induceJust
+    , consistent                 = UG.consistent }
+
 -- | The API of 'AIM.AdjacencyIntMap'.
 adjacencyIntMapAPI :: API (Mono AIM.AdjacencyIntMap) ((~) Int)
 adjacencyIntMapAPI = API
@@ -328,7 +371,6 @@ adjacencyIntMapAPI = API
     , adjacencyMapTranspose      = T.adjacencyMapTranspose . getMono
     , adjacencyIntMapTranspose   = T.adjacencyIntMapTranspose . getMono
     , bfsForest                  = coerce AIM.bfsForest
-    , bfsForestFrom              = coerce AIM.bfsForestFrom
     , bfs                        = coerce AIM.bfs
     , dfsForest                  = coerce AIM.dfsForest
     , dfsForestFrom              = coerce AIM.dfsForestFrom

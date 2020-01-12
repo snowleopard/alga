@@ -22,4 +22,6 @@ ghcid.txt
 .vscode/
 *.swp
 *.swo
+*.swn
 .log
+stack.yaml.lock
