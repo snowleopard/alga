@@ -553,17 +553,17 @@ We fold a graph into a function of type Int -> Int where the Int stands for the
 number of vertices of the specified edge that have been matched so far. The edge
 belongs to the graph if we reach the number 2. Note that this algorithm can be
 generalised to algebraic graphs of higher dimensions, e.g. we can similarly find
-3-edges (triangles), 4-edges (tetrahedra) or k-edges in O(s) time.
+3-edges (triangles), 4-edges (tetrahedra) and k-edges in O(s) time.
 
 The four graph constructors are interpreted as follows:
 
-* Empty: the number is unchanged;
-* Vertex x: if x matches the next vertex, the number is incremented;
-* Overlay x y: pick the best match in the two subexpressions;
-* Connect x y: match the subexpressions one after another.
+* Empty       : the matching number is unchanged;
+* Vertex x    : if x matches the next vertex, the number is incremented;
+* Overlay x y : pick the best match in the two subexpressions;
+* Connect x y : match the subexpressions one after another.
 
-The 2 -> 2 cases in the code are merely an (important) optimisation: they
-shortcircuit the computation as soon as we find an edge.
+The 2 -> 2 cases in the code are an (important) optimisation: they shortcircuit
+the computation as soon as the edge is matched.
 -}
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
@@ -576,14 +576,14 @@ shortcircuit the computation as soon as we find an edge.
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = foldg id v o c g 0 == (2 :: Int)
+hasEdge s t g = foldg id v o c g 0 == 2
   where
     v x 0   = if x == s then 1 else 0
     v x _   = if x == t then 2 else 1
     o x y a = case x a of
         0 -> y a
         1 -> if y a == 2 then 2 else 1
-        2 -> 2
+        2 -> 2 :: Int
     c x y a = case x a of { 2 -> 2; res -> y res }
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 

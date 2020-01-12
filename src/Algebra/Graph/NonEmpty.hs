@@ -449,7 +449,7 @@ hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex v = foldg1 (==v) (||) (||)
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 
--- See the Note [The implementation of hasEdge] in Algebra.Graph.
+-- See the Note [The implementation of hasEdge] in "Algebra.Graph".
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
 --
@@ -460,15 +460,15 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = foldg1 v o c g LT == GT
+hasEdge s t g = foldg1 v o c g 0 == 2
   where
-    v x LT  = if x == s then EQ else LT
-    v x _   = if x == t then GT else EQ
+    v x 0   = if x == s then 1 else 0
+    v x _   = if x == t then 2 else 1
     o x y a = case x a of
-        LT -> y a
-        EQ -> if y a == GT then GT else EQ
-        GT -> GT
-    c x y a = case x a of { GT -> GT; res -> y res }
+        0 -> y a
+        1 -> if y a == 2 then 2 else 1
+        2 -> 2 :: Int
+    c x y a = case x a of { 2 -> 2; res -> y res }
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
