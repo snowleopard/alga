@@ -300,3 +300,17 @@ replaceVertexPR u v e v' o c g =
   foldg e (\w -> v' (if w == u then v else w)) o c g
 
 inspect $ 'replaceVertexP === 'replaceVertexPR
+
+--transpose
+transposeC, transposeCR :: Buildg a -> Graph a
+transposeC  g = transpose (buildg g)
+transposeCR g = g Empty Vertex Overlay (flip Connect)
+
+inspect $ 'transposeC === 'transposeCR
+
+transposeP, transposePR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
+transposeP  e v o c g = foldg e v o c (transpose g)
+transposePR e v o c g = foldg e v o (flip c) g
+
+inspect $ 'transposeP === 'transposePR
