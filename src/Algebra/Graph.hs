@@ -456,11 +456,11 @@ combineR e o f = fromMaybe e . foldr1Safe o . map f
 -- Good consumer.
 --
 -- @
--- foldg 'empty' 'vertex'        'overlay' 'connect'       == id
+-- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
 -- foldg 'empty' 'vertex'        'overlay' ('flip' 'connect') == 'transpose'
--- foldg 1     ('const' 1)     (+)     (+)           == 'size'
--- foldg True  ('const' False) (&&)    (&&)          == 'isEmpty'
--- foldg False (== x)        (||)    (||)          == 'hasVertex' x
+-- foldg 1     ('const' 1)     (+)     (+)            == 'size'
+-- foldg True  ('const' False) (&&)    (&&)           == 'isEmpty'
+-- foldg False (== x)        (||)    (||)           == 'hasVertex' x
 -- @
 foldg :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
 foldg e v o c = go
@@ -1340,7 +1340,7 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
 -- buildg (\\e v o c -> o ('foldg' e v o c x) ('foldg' e v o c y)) == 'overlay' x y
 -- buildg (\\e v o c -> c ('foldg' e v o c x) ('foldg' e v o c y)) == 'connect' x y
 -- buildg (\\e v o _ -> 'foldr' o e ('map' v xs))                  == 'vertices' xs
--- buildg (\\e v o c -> 'foldg' e v o ('flip' c) g)                 == 'transpose' g
+-- buildg (\\e v o c -> 'foldg' e v o ('flip' c) g)                == 'transpose' g
 -- 'foldg' e v o c (buildg f)                                   == f e v o c
 -- @
 buildg :: (forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b) -> Graph a
