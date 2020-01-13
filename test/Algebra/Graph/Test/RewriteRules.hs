@@ -159,7 +159,7 @@ bindP, bindPR ::
 bindP  e v o c f g = foldg e v o c (g >>= f)
 bindPR e v o c f g = foldg e (foldg e v o c . f) o c g
 
-inspect $ 'fmapP === 'fmapPR
+inspect $ 'bindP === 'bindPR
 
 -- ap
 ovC, ovCR :: Buildg (a -> b) -> Graph a -> Graph b
