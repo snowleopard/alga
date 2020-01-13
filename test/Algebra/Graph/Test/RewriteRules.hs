@@ -100,6 +100,12 @@ connectsPR e v o c xs = fromMaybe e (foldr (maybeF c . foldg e v o c) Nothing xs
 
 inspect $ 'connectsP === 'connectsPR
 
+-- isSubgraphOf
+isSubgraphOfC :: Ord a => Buildg a -> Buildg a -> Bool
+isSubgraphOfC x y = isSubgraphOf (buildg x) (buildg y)
+
+inspect $ 'isSubgraphOfC `hasNoType` ''Graph
+
 -- clique
 cliqueC :: Build a -> Graph a
 cliqueC xs = clique (build xs)

@@ -499,12 +499,13 @@ foldg e v o c = go
 -- @
 isSubgraphOf :: Ord a => Graph a -> Graph a -> Bool
 isSubgraphOf x y = AM.isSubgraphOf (toAdjacencyMap x) (toAdjacencyMap y)
-{-# NOINLINE [1] isSubgraphOf #-}
+{-# INLINE [2] isSubgraphOf #-}
 {-# RULES "isSubgraphOf/Int" isSubgraphOf = isSubgraphOfIntR #-}
 
 -- Like 'isSubgraphOf' but specialised for graphs with vertices of type 'Int'.
 isSubgraphOfIntR :: Graph Int -> Graph Int -> Bool
 isSubgraphOfIntR x y = AIM.isSubgraphOf (toAdjacencyIntMap x) (toAdjacencyIntMap y)
+{-# INLINE isSubgraphOfIntR #-}
 
 -- | Structural equality on graph expressions.
 -- Complexity: /O(s)/ time.
