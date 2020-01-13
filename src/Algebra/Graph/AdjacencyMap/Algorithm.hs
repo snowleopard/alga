@@ -1,4 +1,4 @@
-{-# language LambdaCase, BangPatterns #-}
+{-# language LambdaCase #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -303,7 +303,6 @@ topSort g = runContT (evalStateT (topSort' g) initialState) id where
 isAcyclic :: Ord a => AdjacencyMap a -> Bool
 isAcyclic = isRight . topSort
 
--- TODO: Benchmark and optimise.
 -- | Compute the /condensation/ of a graph, where each vertex corresponds to a
 -- /strongly-connected component/ of the original graph. Note that component
 -- graphs are non-empty, and are therefore of type
@@ -333,12 +332,12 @@ scc g = condense g $ execState (gabowSCC g) initialState where
 data StateSCC a
   = C { current       :: !Int
       , componentId   :: !Int
-      , boundary      :: ![(Int,a)]
-      , dfsPath       :: ![a]
-      , preorders     :: !(Map.Map a Int)
-      , components    :: !(Map.Map a Int)
-      , inner_graphs  :: (IntMap.IntMap (List (AdjacencyMap a)))
-      , inner_edges   :: ![(Int,(a,a))]
+      , boundary      :: [(Int,a)]
+      , dfsPath       :: [a]
+      , preorders     :: Map.Map a Int
+      , components    :: Map.Map a Int
+      , inner_graphs  :: IntMap.IntMap (List (AdjacencyMap a))
+      , inner_edges   :: [(Int,(a,a))]
       , outer_edges   :: [(a,a)]
       } deriving (Show)
 
@@ -364,10 +363,10 @@ gabowSCC g =
     -- adds the (id, v) pair to the boundary stack b, and adds v to
     -- the path stack s.
     enter v = do C pre scc bnd pth pres sccs gs es_i es_o <- get
-                 let !pre' = pre+1
-                     !bnd' = (pre,v):bnd
-                     !pth' = v:pth
-                     !pres' = Map.insert v pre pres
+                 let pre' = pre+1
+                     bnd' = (pre,v):bnd
+                     pth' = v:pth
+                     pres' = Map.insert v pre pres
                  put $! C pre' scc bnd' pth' pres' sccs gs es_i es_o
                  return pre
 
@@ -380,7 +379,7 @@ gabowSCC g =
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
     -- being constructed and we continue.
-    exit v = do newComponent <- ((v==).snd.head) <$> gets boundary
+    exit v = do newComponent <- (v==).snd.head <$> gets boundary
                 when newComponent $ insertComponent v
                 return newComponent
 
@@ -391,7 +390,7 @@ gabowSCC g =
              scc' = scc + 1
              bnd' = tail bnd
              p_v = fst $ head bnd
-             g_i = fromList (vertex <$> curr) <> fromList (uncurry edge.snd <$> es)
+             g_i = fromList (uncurry edge.snd <$> es) <> fromList (vertex <$> curr)
              (es,es_i') = span ((>=p_v).fst) es_i
              pth' = tail $ dropWhile (/=v) pth
              curr = v:takeWhile(/=v) pth
