@@ -169,19 +169,19 @@ bindPR e v o c f g = foldg e (foldg e v o c . f) o c g
 inspect $ 'bindP === 'bindPR
 
 -- ap
-ovC, ovCR :: Buildg (a -> b) -> Graph a -> Graph b
-ovC  f x = buildg f <*> x
-ovCR f x = f Empty (\v -> foldg Empty (Vertex . v) Overlay Connect x) Overlay Connect
+apC, apCR :: Buildg (a -> b) -> Graph a -> Graph b
+apC  f x = buildg f <*> x
+apCR f x = f Empty (\v -> foldg Empty (Vertex . v) Overlay Connect x) Overlay Connect
 
-inspect $ 'ovC === 'ovCR
+inspect $ 'apC === 'apCR
 
-ovP, ovPR ::
+apP, apPR ::
   b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph (c -> a) -> Graph c -> b
-ovP  e v o c f x = foldg e v o c (f <*> x)
-ovPR e v o c f x =
+apP  e v o c f x = foldg e v o c (f <*> x)
+apPR e v o c f x =
   foldg e (\w -> foldg e (v . w) o c x) o c f
 
-inspect $ 'ovP === 'ovPR
+inspect $ 'apP === 'apPR
 
 -- eq
 eqC :: Ord a => Buildg a -> Buildg a -> Bool

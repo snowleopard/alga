@@ -266,7 +266,7 @@ ordIntR :: Graph Int -> Graph Int -> Ordering
 ordIntR = \x y -> compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 {-# INLINE ordIntR #-}
 
--- | `<*>` is a good consumer of its first agument and producer of both.
+-- | `<*>` is a good consumer of its first agument and producer.
 instance Applicative Graph where
     pure    = Vertex
     f <*> x = buildg $ \e v o c ->
