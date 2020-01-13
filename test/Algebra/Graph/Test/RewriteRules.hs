@@ -278,6 +278,12 @@ hasVertexC x g = hasVertex x (buildg g)
 
 inspect $ 'hasVertexC `hasNoType` ''Graph
 
+-- hasEdge
+hasEdgeC :: Eq a => a -> a -> Buildg a -> Bool
+hasEdgeC x y g = hasEdge x y (buildg g)
+
+inspect $ 'hasEdgeC `hasNoType` ''Graph
+
 -- adjacencyList
 adjacencyListC :: Ord a => Buildg a -> [(a, [a])]
 adjacencyListC g = adjacencyList (buildg g)

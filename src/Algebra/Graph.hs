@@ -597,6 +597,8 @@ soon as the edge is fully matched in one of the subexpressions.
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
 --
+-- Good consumer.
+--
 -- @
 -- hasEdge x y 'empty'            == False
 -- hasEdge x y ('vertex' z)       == False
@@ -614,6 +616,7 @@ hasEdge s t g = foldg id v o c g 0 == 2
         1 -> if y a == 2 then 2 else 1
         _ -> 2 :: Int
     c x y a = case x a of { 2 -> 2; res -> y res }
+{-# INLINE hasEdge #-}
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
