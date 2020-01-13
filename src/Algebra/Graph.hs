@@ -1353,10 +1353,18 @@ matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
 matchR e v p = \x -> if p x then v x else e
 {-# INLINE [0] matchR #-}
 
--- These rules transform functions into their buildg equivalents.
+macthfR :: (a -> Bool)
+  -> (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b)
+  -> b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
+macthfR p f = \e v o c -> f e (matchR e v p) o c
+{-# INLINE macthfR #-}
+
+-- Applying induce rules by hand since the semantic is not preserved
 {-# RULES
 "buildg/induce" [~1] forall e v o c p g.
     foldg e v o c (induce p g) = foldg e (matchR e v p) o c g
+"induce/buildg" [~1] forall p (g :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b).
+    induce p (buildg g) = buildg (macthfR p g)
  #-}
 
 -- Rewrite rules for fusion.

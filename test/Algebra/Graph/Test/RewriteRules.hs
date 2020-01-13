@@ -416,7 +416,7 @@ simplifyCR g = g Empty Vertex (simple Overlay) (simple Connect)
 inspect $ 'simplifyC === 'simplifyCR
 
 -- compose
-composeC, composeCR ::  Ord a => Buildg a -> Buildg a -> Graph a
+composeC, composeCR :: Ord a => Buildg a -> Buildg a -> Graph a
 composeC  x y = compose (buildg x) (buildg y)
 composeCR x y = overlays
     [ biclique xs ys
@@ -428,3 +428,19 @@ composeCR x y = overlays
     my = y AM.empty AM.vertex AM.overlay AM.connect
 
 inspect $ 'composeC === 'composeCR
+
+-- induce
+induceC, induceCR :: (a -> Bool) -> Buildg a -> Graph a
+induceC  p g = induce p (buildg g)
+induceCR p g =
+  g Empty (\v -> if p v then Vertex v else Empty) Overlay Connect
+
+inspect $ 'induceC === 'induceCR
+
+induceP, inducePR ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> (a -> Bool) -> Graph a -> b
+induceP  e v o c p g = foldg e v o c (induce p g)
+inducePR e v o c p g =
+  foldg e (\v' -> if p v' then v v' else e) o c g
+
+inspect $ 'induceP === 'inducePR
