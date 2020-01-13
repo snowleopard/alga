@@ -1308,22 +1308,24 @@ sparsifyKL n graph = KL.buildG (1, next - 1) ((n + 1, n + 2) : Exts.toList (res 
 The rules for foldg work very similarly to GHC's mapFB rules; see a note below
 this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
 
-* Up to (but not including) phase 1, we use the "buildg/f" rule to rewrite all
-  saturated applications of f into its buildg/foldg form, hoping for fusion to
-  happen (through the "foldg/buildg" rule).
+* All concerned expressions are inlined to allow the compiler to apply the main
+  rule: "foldg/buildg"
+  This rule states that the composition of a good producer (expressed via buildg)
+  and a good consumer (expressed via foldg) can be fused to remove the construction
+  of the intermediate structure.
 
-  In phases 1 and 0, we switch off these rules, inline buildg, and switch on the
-  "graph/f" rule, which rewrites "foldg/f" back into plain functions if needed.
+* If this inlining is made blindlessly, it can lead to unneeded operations. They
+  are optimized via the "foldg/id" rule.
 
-  It's important that these two rules aren't both active at once (along with
-  build's unfolding) else we'd get an infinite loop in the rules. Hence the
-  activation control below.
-
-* composeR and matchR are here to remember the original function after applying
-  a "buildg/f" rule. These functions are higher-order functions and therefore
-  benefit from inlining in the final phase.
+* composeR and matchR are here to remember the original function after inlining.
+  These functions are higher-order functions and therefore benefit from inlining
+  in the final phase.
 
 * The "composeR/composeR" rule optimises compositions of multiple composeR's.
+
+* induce is not really a good producer, but can be viewed as such. Its inlining is
+  therefore delayed to allow custom rules ("buildg/induce" and "induce/buildg") to
+  fire correclty.
 -}
 
 -- | Build a graph given an interpretation of the four graph construction primitives 'empty',
@@ -1353,18 +1355,12 @@ matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
 matchR e v p = \x -> if p x then v x else e
 {-# INLINE [0] matchR #-}
 
-macthfR :: (a -> Bool)
-  -> (b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b)
-  -> b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
-macthfR p f = \e v o c -> f e (matchR e v p) o c
-{-# INLINE macthfR #-}
-
 -- Applying induce rules by hand since the semantic is not preserved
 {-# RULES
 "buildg/induce" [~1] forall e v o c p g.
     foldg e v o c (induce p g) = foldg e (matchR e v p) o c g
 "induce/buildg" [~1] forall p (g :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b).
-    induce p (buildg g) = buildg (macthfR p g)
+    induce p (buildg g) = buildg (\e v o c -> g e (matchR e v p) o c)
  #-}
 
 -- Rewrite rules for fusion.
