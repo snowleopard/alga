@@ -278,6 +278,19 @@ edgeSetTR g = AIM.edgeSet (foldg AIM.empty AIM.vertex AIM.overlay AIM.connect g)
 
 inspect $ 'edgeSetT === 'edgeSetTR
 
+-- edgeList
+edgeListC :: Ord a => Buildg a -> [(a,a)]
+edgeListC g = edgeList (buildg g)
+
+inspect $ 'edgeListC `hasNoType` ''Graph
+
+edgeListT, edgeListTR :: Graph Int -> [(Int,Int)]
+edgeListT  g = edgeList g
+edgeListTR g =
+  AIM.edgeList (foldg AIM.empty AIM.vertex AIM.overlay AIM.connect g)
+
+inspect $ 'edgeListT === 'edgeListTR
+
 -- hasVertex
 hasVertexC :: Eq a => a -> Buildg a -> Bool
 hasVertexC x g = hasVertex x (buildg g)

@@ -574,8 +574,8 @@ size = foldg 1 (const 1) (+) (+)
 -- @
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex x = foldg False (==x) (||) (||)
-{-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 {-# INLINE hasVertex #-}
+{-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 
 {- Note [The implementation of hasEdge]
 
@@ -697,12 +697,13 @@ vertexIntListR = IntSet.toList . vertexIntSetR
 -- @
 edgeList :: Ord a => Graph a -> [(a, a)]
 edgeList = AM.edgeList . toAdjacencyMap
-{-# INLINE [1] edgeList #-}
+{-# INLINE [2] edgeList #-}
 {-# RULES "edgeList/Int" edgeList = edgeIntListR #-}
 
 -- Like 'edgeList' but specialised for graphs with vertices of type 'Int'.
 edgeIntListR :: Graph Int -> [(Int, Int)]
 edgeIntListR = AIM.edgeList . toAdjacencyIntMap
+{-# INLINE edgeIntListR #-}
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
