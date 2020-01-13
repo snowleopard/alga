@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Test.Relation
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Module     : Algebra.Graph.Test.Relation.SymmetricRelation
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
 --
--- Testsuite for "Algebra.Graph.Relation".
+-- Testsuite for "Algebra.Graph.Relation.Symmetric".
 -----------------------------------------------------------------------------
 module Algebra.Graph.Test.Relation.SymmetricRelation (
     -- * Testsuite
@@ -32,8 +32,7 @@ type SRI = Relation Int
 testSymmetricRelation :: IO ()
 testSymmetricRelation = do
     putStrLn "\n============ Symmetric.Relation ============"
-    test "Axioms of undirected graphs" $
-        size10 (undirectedAxioms :: GraphTestsuite SRI)
+    test "Axioms of undirected graphs" $ size10 $ undirectedAxioms @ SRI
 
     testConsistent    t
     testSymmetricShow t

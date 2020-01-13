@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Graph
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -35,8 +35,8 @@ type G = Graph Int
 testGraph :: IO ()
 testGraph = do
     putStrLn "\n============ Graph ============"
-    test "Axioms of graphs"   (axioms   :: GraphTestsuite G)
-    test "Theorems of graphs" (theorems :: GraphTestsuite G)
+    test "Axioms of graphs"   (axioms   @ G)
+    test "Theorems of graphs" (theorems @ G)
 
     testBasicPrimitives t
     testIsSubgraphOf    t

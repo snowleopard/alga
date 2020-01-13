@@ -20,8 +20,8 @@ module Algebra.Graph.Internal (
     List (..),
 
     -- * Graph traversal
-    Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, Hit (..),
-    foldr1Safe, maybeF,
+    Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, foldr1Safe,
+    maybeF,
 
     -- * Utilities
     setProduct, setProductWith, forEach, forEachInt
@@ -106,10 +106,6 @@ connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
   where
     xs = if ok y then vs x else is x
     ys = if ok x then vs y else os y
-
--- | An auxiliary data type for 'hasEdge': when searching for an edge, we can hit
--- its 'Tail', i.e. the source vertex, the whole 'Edge', or 'Miss' it entirely.
-data Hit = Miss | Tail | Edge deriving (Eq, Ord)
 
 -- | A safe version of 'foldr1'.
 foldr1Safe :: (a -> a -> a) -> [a] -> Maybe a
