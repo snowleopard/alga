@@ -1213,6 +1213,7 @@ compose x y = overlays
   where
     mx = toAdjacencyMap (transpose x)
     my = toAdjacencyMap y
+{-# INLINE compose #-}
 
 -- | Compute the /Cartesian product/ of graphs.
 -- Complexity: /O(s1 * s2)/ time, memory and size, where /s1/ and /s2/ are the
