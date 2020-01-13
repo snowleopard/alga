@@ -1,4 +1,4 @@
-{-# language LambdaCase #-}
+{-# language LambdaCase, CPP #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -33,9 +33,11 @@ import Control.Monad.State.Strict
 import Data.Either
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Maybe
-import Data.Monoid
 import Data.Tree
 import GHC.Exts (toList,fromList)
+#if __GLASGOW_HASKELL__ <= 802
+import Data.Monoid
+#endif
 
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Internal
