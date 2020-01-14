@@ -356,3 +356,10 @@ induceCP ::
 induceCP e v o c p g = foldg e v o c (induce p (buildg g))
 
 inspect $ 'induceCP `hasNoType` ''Graph
+
+-- induceJust
+induceJustCP ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Buildg (Maybe a) -> b
+induceJustCP e v o c g = foldg e v o c (induceJust (buildg g))
+
+inspect $ 'induceJustCP `hasNoType` ''Graph
