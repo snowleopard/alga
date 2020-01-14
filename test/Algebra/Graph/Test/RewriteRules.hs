@@ -14,10 +14,8 @@ module Algebra.Graph.Test.RewriteRules where
 
 import Data.Maybe (fromMaybe)
 
-import qualified Algebra.Graph.AdjacencyMap    as AM
-import qualified Algebra.Graph.AdjacencyIntMap as AIM
-import qualified Data.Set                      as Set
-import qualified Data.IntSet                   as IntSet
+import qualified Algebra.Graph.AdjacencyMap as AM
+import qualified Data.Set                   as Set
 
 import Algebra.Graph hiding ((===))
 import Algebra.Graph.Internal
@@ -78,15 +76,11 @@ overlaysPR e v o c xs = fromMaybe e (foldr (maybeF o . foldg e v o c) Nothing xs
 inspect $ 'overlaysP === 'overlaysPR
 
 -- vertices
-verticesC :: Build a -> Graph a
-verticesC xs = vertices (build xs)
+verticesCP :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Build a -> b
+verticesCP e v o c xs = foldg e v o c (vertices (build xs))
 
-inspect $ 'verticesC `hasNoType` ''[]
-
-verticesP :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [a] -> b
-verticesP e v o c xs = foldg e v o c (vertices xs)
-
-inspect $ 'verticesP `hasNoType` ''Graph
+inspect $ 'verticesCP `hasNoType` ''[]
+inspect $ 'verticesCP `hasNoType` ''Graph
 
 -- connects
 connectsC :: Build (Graph a) -> Graph a
@@ -108,51 +102,32 @@ isSubgraphOfC x y = isSubgraphOf (buildg x) (buildg y)
 inspect $ 'isSubgraphOfC `hasNoType` ''Graph
 
 -- clique
-cliqueC :: Build a -> Graph a
-cliqueC xs = clique (build xs)
+cliqueCP :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Build a -> b
+cliqueCP e v o c xs = foldg e v o c (clique (build xs))
 
-inspect $ 'cliqueC `hasNoType` ''[]
-
-cliqueP :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [a] -> b
-cliqueP e v o c xs = foldg e v o c (clique xs)
-
-inspect $ 'cliqueP `hasNoType` ''Graph
+inspect $ 'cliqueCP `hasNoType` ''[]
+inspect $ 'cliqueCP `hasNoType` ''Graph
 
 -- edges
-edgesC :: Build (a,a) -> Graph a
-edgesC xs = edges (build xs)
+edgesCP :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Build (a,a) -> b
+edgesCP e v o c xs = foldg e v o c (edges (build xs))
 
-inspect $ 'edgesC `hasNoType` ''[]
-
-edgesP :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [(a,a)] -> b
-edgesP e v o c xs = foldg e v o c (edges xs)
-
-inspect $ 'edgesP `hasNoType` ''Graph
+inspect $ 'edgesCP `hasNoType` ''[]
+inspect $ 'edgesCP `hasNoType` ''Graph
 
 -- star
-starC :: a -> Build a -> Graph a
-starC x xs = star x (build xs)
+starCP :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> a -> Build a -> b
+starCP e v o c x xs = foldg e v o c (star x (build xs))
 
-inspect $ 'starC `hasNoType` ''[]
-
-starP :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> a -> [a] -> b
-starP e v o c x xs = foldg e v o c (star x xs)
-
-inspect $ 'starP `hasNoType` ''Graph
+inspect $ 'starCP `hasNoType` ''[]
+inspect $ 'starCP `hasNoType` ''Graph
 
 -- fmap
-fmapC, fmapCR :: (a -> b) -> Buildg a -> Graph b
-fmapC  f g = fmap f (buildg g)
-fmapCR f g = g Empty (Vertex . f) Overlay Connect
+fmapCP ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> (c -> a) -> Buildg c -> b
+fmapCP  e v o c f g = foldg e v o c (fmap f (buildg g))
 
-inspect $ 'fmapC === 'fmapCR
-
-fmapP, fmapPR ::
-  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> (c -> a) -> Graph c -> b
-fmapP  e v o c f g = foldg e v o c (fmap f g)
-fmapPR e v o c f g = foldg e (v . f) o c g
-
-inspect $ 'fmapP === 'fmapPR
+inspect $ 'fmapCP `hasNoType` ''Graph
 
 -- bind
 bindC, bindCR :: (a -> Graph b) -> Buildg a -> Graph b
@@ -189,27 +164,21 @@ eqC x y = buildg x == buildg y
 
 inspect $ 'eqC `hasNoType` ''Graph
 
-eqT, eqTR :: Graph Int -> Graph Int -> Bool
-eqT  x y = x == y
-eqTR x y =
-  foldg AIM.empty AIM.vertex AIM.overlay AIM.connect x == foldg AIM.empty AIM.vertex AIM.overlay AIM.connect y
+eqT :: Graph Int -> Graph Int -> Bool
+eqT x y = x == y
 
-inspect $ 'eqT === 'eqTR
+inspect $ 'eqT `hasNoType` ''AM.AdjacencyMap
 
 -- ord
 ordC :: Ord a => Buildg a -> Buildg a -> Ordering
-ordC  x y = compare (buildg x) (buildg y)
+ordC x y = compare (buildg x) (buildg y)
 
 inspect $ 'ordC `hasNoType` ''Graph
 
-ordT, ordTR :: Graph Int -> Graph Int -> Ordering
-ordT  x y = compare x y
-ordTR x y =
-  compare
-    (foldg AIM.empty AIM.vertex AIM.overlay AIM.connect x)
-    (foldg AIM.empty AIM.vertex AIM.overlay AIM.connect y)
+ordT :: Graph Int -> Graph Int -> Ordering
+ordT x y = compare x y
 
-inspect $ 'ordT === 'ordTR
+inspect $ 'ordT  `hasNoType` ''AM.AdjacencyMap
 
 -- isEmpty
 isEmptyC :: Buildg a -> Bool
@@ -235,12 +204,10 @@ vertexCountC g = vertexCount (buildg g)
 
 inspect $ 'vertexSetC `hasNoType` ''Graph
 
-vertexCountT, vertexCountTR :: Graph Int -> Int
-vertexCountT  g = vertexCount g
-vertexCountTR g =
-  IntSet.size (foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union g)
+vertexCountT :: Graph Int -> Int
+vertexCountT g = vertexCount g
 
-inspect $ 'vertexCountT === 'vertexCountTR
+inspect $ 'vertexCountT  `hasNoType` ''Set.Set
 
 -- edgeCount
 edgeCountC :: Ord a => Buildg a -> Int
@@ -248,12 +215,10 @@ edgeCountC g = edgeCount (buildg g)
 
 inspect $ 'edgeCountC `hasNoType` ''Graph
 
-edgeCountT, edgeCountTR :: Graph Int -> Int
-edgeCountT  g = edgeCount g
-edgeCountTR g =
-  AIM.edgeCount (foldg AIM.empty AIM.vertex AIM.overlay AIM.connect g)
+edgeCountT :: Graph Int -> Int
+edgeCountT g = edgeCount g
 
-inspect $ 'edgeCountT === 'edgeCountTR
+inspect $ 'edgeCountT `hasNoType` ''Set.Set
 
 -- vertexList
 vertexListC :: Ord a => Buildg a -> [a]
@@ -261,11 +226,10 @@ vertexListC g = vertexList (buildg g)
 
 inspect $ 'vertexListC `hasNoType` ''Graph
 
-vertexListT, vertexListTR :: Graph Int -> [Int]
-vertexListT  g = vertexList g
-vertexListTR g = IntSet.toAscList (foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union g)
+vertexListT :: Graph Int -> [Int]
+vertexListT g = vertexList g
 
-inspect $ 'vertexListT === 'vertexListTR
+inspect $ 'vertexListT `hasNoType` ''Set.Set
 
 -- edgeSet
 edgeSetC :: Ord a => Buildg a -> Set.Set (a,a)
@@ -273,11 +237,10 @@ edgeSetC g = edgeSet (buildg g)
 
 inspect $ 'edgeSetC `hasNoType` ''Graph
 
-edgeSetT, edgeSetTR :: Graph Int -> Set.Set (Int,Int)
-edgeSetT  g = edgeSet g
-edgeSetTR g = AIM.edgeSet (foldg AIM.empty AIM.vertex AIM.overlay AIM.connect g)
+edgeSetT :: Graph Int -> Set.Set (Int,Int)
+edgeSetT g = edgeSet g
 
-inspect $ 'edgeSetT === 'edgeSetTR
+inspect $ 'vertexListT `hasNoType` ''AM.AdjacencyMap
 
 -- edgeList
 edgeListC :: Ord a => Buildg a -> [(a,a)]
@@ -285,12 +248,10 @@ edgeListC g = edgeList (buildg g)
 
 inspect $ 'edgeListC `hasNoType` ''Graph
 
-edgeListT, edgeListTR :: Graph Int -> [(Int,Int)]
-edgeListT  g = edgeList g
-edgeListTR g =
-  AIM.edgeList (foldg AIM.empty AIM.vertex AIM.overlay AIM.connect g)
+edgeListT :: Graph Int -> [(Int,Int)]
+edgeListT g = edgeList g
 
-inspect $ 'edgeListT === 'edgeListTR
+inspect $ 'edgeListT `hasNoType` ''AM.AdjacencyMap
 
 -- hasVertex
 hasVertexC :: Eq a => a -> Buildg a -> Bool
@@ -323,82 +284,42 @@ circuitP e v o c xs = foldg e v o c (circuit xs)
 inspect $ 'circuitP `hasNoType` ''Graph
 
 -- biclique
-bicliqueC :: Build a -> Build a -> Graph a
-bicliqueC xs ys = biclique (build xs) (build ys)
+bicliqueCP :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Build a -> Build a -> b
+bicliqueCP e v o c xs ys = foldg e v o c (biclique (build xs) (build ys))
 
-inspect $ 'bicliqueC `hasNoType` ''[]
-
-bicliqueP :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> [a] -> [a] -> b
-bicliqueP e v o c xs ys = foldg e v o c (biclique xs ys)
-
-inspect $ 'bicliqueP `hasNoType` ''Graph
+inspect $ 'bicliqueCP `hasNoType` ''[]
+inspect $ 'bicliqueCP `hasNoType` ''Graph
 
 -- replaceVertex
-replaceVertexC, replaceVertexCR :: Eq a => a -> a -> Buildg a -> Graph a
-replaceVertexC  u v g = replaceVertex u v (buildg g)
-replaceVertexCR u v g =
-  g Empty (\w -> Vertex (if w == u then v else w)) Overlay Connect
+replaceVertexCP :: Eq a => a -> a ->
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Buildg a -> b
+replaceVertexCP u v e v' o c g =
+  foldg e v' o c (replaceVertex u v (buildg g))
 
-inspect $ 'replaceVertexC === 'replaceVertexCR
-
-replaceVertexP, replaceVertexPR :: Eq a => a -> a ->
-  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
-replaceVertexP  u v e v' o c g =
-  foldg e v' o c (replaceVertex u v g)
-replaceVertexPR u v e v' o c g =
-  foldg e (\w -> v' (if w == u then v else w)) o c g
-
-inspect $ 'replaceVertexP === 'replaceVertexPR
+inspect $ 'replaceVertexCP `hasNoType` ''Graph
 
 -- mergeVertices
-mergeVerticesC, mergeVerticesCR :: (a -> Bool) -> a -> Buildg a -> Graph a
-mergeVerticesC  p v g = mergeVertices p v (buildg g)
-mergeVerticesCR p v g =
-  g Empty (\w -> Vertex (if p w then v else w)) Overlay Connect
+mergeVerticesCP :: (a -> Bool) -> a ->
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Buildg a -> b
+mergeVerticesCP p v e v' o c g =
+  foldg e v' o c (mergeVertices p v (buildg g))
 
-inspect $ 'mergeVerticesC === 'mergeVerticesCR
-
-mergeVerticesP, mergeVerticesPR :: (a -> Bool) -> a ->
-  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
-mergeVerticesP  p v e v' o c g =
-  foldg e v' o c (mergeVertices p v g)
-mergeVerticesPR p v e v' o c g =
-  foldg e (\w -> v' (if p w then v else w)) o c g
-
-inspect $ 'mergeVerticesP === 'mergeVerticesPR
+inspect $ 'mergeVerticesCP `hasNoType` ''Graph
 
 -- splitVertex
--- Good consumption if lists is guaranteed by `vertices`
-splitVertexC, splitVertexCR :: Eq a => a -> [a] -> Buildg a -> Graph a
-splitVertexC  x us g = splitVertex x us (buildg g)
-splitVertexCR x us g =
-  let gus = vertices us in
-  g Empty (\w -> if w == x then gus else Vertex w) Overlay Connect
+splitVertexCP :: Eq a => a -> Build a ->
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Buildg a -> b
+splitVertexCP x us e v o c g = foldg e v o c (splitVertex x (build us) (buildg g))
 
-inspect $ 'splitVertexC === 'splitVertexCR
-
-splitVertexP, splitVertexPR :: Eq a => a -> [a] ->
-  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
-splitVertexP  x us e v o c g = foldg e v o c (splitVertex x us g)
-splitVertexPR x us e v o c g =
-  let gus = foldg e v o c (vertices us) in
-  foldg e (\w -> if w == x then gus else v w) o c g
-
-inspect $ 'splitVertexP === 'splitVertexPR
+inspect $ 'splitVertexCP `hasNoType` ''[]
+inspect $ 'splitVertexCP `hasNoType` ''Graph
 
 -- transpose
-transposeC, transposeCR :: Buildg a -> Graph a
-transposeC  g = transpose (buildg g)
-transposeCR g = g Empty Vertex Overlay (flip Connect)
+transposeCP ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Buildg a -> b
+transposeCP e v o c g = foldg e v o c (transpose (buildg g))
 
-inspect $ 'transposeC === 'transposeCR
-
-transposeP, transposePR ::
-  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Graph a -> b
-transposeP  e v o c g = foldg e v o c (transpose g)
-transposePR e v o c g = foldg e v o (flip c) g
-
-inspect $ 'transposeP === 'transposePR
+inspect $ 'transposeCP `hasNoType` ''Graph
 
 -- simplify
 simple :: Eq g => (g -> g -> g) -> g -> g -> g
@@ -430,17 +351,8 @@ composeCR x y = overlays
 inspect $ 'composeC === 'composeCR
 
 -- induce
-induceC, induceCR :: (a -> Bool) -> Buildg a -> Graph a
-induceC  p g = induce p (buildg g)
-induceCR p g =
-  g Empty (\v -> if p v then Vertex v else Empty) Overlay Connect
+induceCP ::
+  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> (a -> Bool) -> Buildg a -> b
+induceCP e v o c p g = foldg e v o c (induce p (buildg g))
 
-inspect $ 'induceC === 'induceCR
-
-induceP, inducePR ::
-  b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> (a -> Bool) -> Graph a -> b
-induceP  e v o c p g = foldg e v o c (induce p g)
-inducePR e v o c p g =
-  foldg e (\v' -> if p v' then v v' else e) o c g
-
-inspect $ 'induceP === 'inducePR
+inspect $ 'induceCP `hasNoType` ''Graph
