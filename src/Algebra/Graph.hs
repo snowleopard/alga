@@ -1360,7 +1360,7 @@ composeR = (.)
 "composeR/composeR" forall c f g.
     composeR (composeR c f) g = composeR c (f . g)
 
--- Rewrite identity (which can appear in the inlining of 'buildg') to a much efficient one.
+-- Rewrite identity (which can appear in the inlining of 'buildg') to a more efficient one.
 "foldg/id"
     foldg Empty Vertex Overlay Connect = id
  #-}
