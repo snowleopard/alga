@@ -251,7 +251,7 @@ eqR x y = toAdjacencyMap x == toAdjacencyMap y
 
 -- Like 'eqR' but specialised for graphs with vertices of type 'Int'.
 eqIntR :: Graph Int -> Graph Int -> Bool
-eqIntR = \x y -> toAdjacencyIntMap x == toAdjacencyIntMap y
+eqIntR x y = toAdjacencyIntMap x == toAdjacencyIntMap y
 {-# INLINE eqIntR #-}
 
 -- TODO: Find a more efficient comparison.
@@ -263,7 +263,7 @@ ordR x y = compare (toAdjacencyMap x) (toAdjacencyMap y)
 
 -- Like 'ordR' but specialised for graphs with vertices of type 'Int'.
 ordIntR :: Graph Int -> Graph Int -> Ordering
-ordIntR = \x y -> compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
+ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 {-# INLINE ordIntR #-}
 
 -- | `<*>` is a good consumer of its first agument and producer.
