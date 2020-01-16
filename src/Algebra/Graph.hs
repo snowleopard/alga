@@ -1221,7 +1221,7 @@ simple op x y
 -- quadratic, i.e. /m = O(m1 * m2)/, but the algebraic representation requires
 -- only /O(m1 + m2)/ operations to list them.
 --
--- Good consumer of both arguments.
+-- Good consumer of both arguments and good producer.
 --
 -- @
 -- compose 'empty'            x                == 'empty'
@@ -1237,11 +1237,12 @@ simple op x y
 -- 'size' (compose x y)                        <= 'edgeCount' x + 'edgeCount' y + 1
 -- @
 compose :: Ord a => Graph a -> Graph a -> Graph a
-compose x y = overlays
-    [ biclique xs ys
-    | v <- Set.toList (AM.vertexSet mx `Set.union` AM.vertexSet my)
-    , let xs = Set.toList (AM.postSet v mx), not (null xs)
-    , let ys = Set.toList (AM.postSet v my), not (null ys) ]
+compose x y = buildg $ \e v o c -> fromMaybe e $
+  foldr1Safe o
+    [ foldg e v o c (biclique xs ys)
+    | ve <- Set.toList (AM.vertexSet mx `Set.union` AM.vertexSet my)
+    , let xs = Set.toList (AM.postSet ve mx), not (null xs)
+    , let ys = Set.toList (AM.postSet ve my), not (null ys) ]
   where
     mx = toAdjacencyMap (transpose x)
     my = toAdjacencyMap y

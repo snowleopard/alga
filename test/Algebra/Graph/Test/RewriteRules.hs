@@ -337,18 +337,10 @@ simplifyCR g = g Empty Vertex (simple Overlay) (simple Connect)
 inspect $ 'simplifyC === 'simplifyCR
 
 -- compose
-composeC, composeCR :: Ord a => Buildg a -> Buildg a -> Graph a
-composeC  x y = compose (buildg x) (buildg y)
-composeCR x y = overlays
-    [ biclique xs ys
-    | v <- Set.toList (AM.vertexSet mx `Set.union` AM.vertexSet my)
-    , let xs = Set.toList (AM.postSet v mx), not (null xs)
-    , let ys = Set.toList (AM.postSet v my), not (null ys) ]
-  where
-    mx = x AM.empty AM.vertex AM.overlay (flip AM.connect)
-    my = y AM.empty AM.vertex AM.overlay AM.connect
+composeCP :: Ord a => b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> Buildg a -> Buildg a -> b
+composeCP e v o c x y = foldg e v o c $ compose (buildg x) (buildg y)
 
-inspect $ 'composeC === 'composeCR
+inspect $ 'composeCP `hasNoType` ''Graph
 
 -- induce
 induceCP ::
