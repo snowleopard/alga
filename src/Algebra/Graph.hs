@@ -374,6 +374,9 @@ connect :: Graph a -> Graph a -> Graph a
 connect = Connect
 {-# INLINE connect #-}
 
+-- TODO: Simplifiy the definition to `overlays . map vertex` while presreving
+-- goodness properties (which is not trivial since `overlays` is only a good
+-- consumer of lists and not of lists of graphs).
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
@@ -796,6 +799,8 @@ toAdjacencyIntMap :: Graph Int -> AIM.AdjacencyIntMap
 toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 {-# INLINE toAdjacencyIntMap #-}
 
+-- TODO: Make `path` a good consumer of lists, that is, express it with `foldr`.
+-- This is not straightforward if we want to preserve efficiency.
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
@@ -816,6 +821,8 @@ path xs = buildg $ \e v o c ->
     (_:ys) -> foldg e v o c $ edges (zip xs ys)
 {-# INLINE path #-}
 
+-- TODO: Make `circuit` a good consumer of lists, that is, express it with `foldr`.
+-- This is not straightforward if we want to preserve efficiency.
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
