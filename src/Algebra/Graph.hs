@@ -375,7 +375,7 @@ connect = Connect
 {-# INLINE connect #-}
 
 -- TODO: Simplifiy the definition to `overlays . map vertex` while presreving
--- goodness properties (which is not trivial since `overlays` is only a good
+-- goodness properties (which is not trivial since overlays is only a good
 -- consumer of lists and not of lists of graphs).
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -799,7 +799,7 @@ toAdjacencyIntMap :: Graph Int -> AIM.AdjacencyIntMap
 toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 {-# INLINE toAdjacencyIntMap #-}
 
--- TODO: Make `path` a good consumer of lists, that is, express it with `foldr`.
+-- TODO: Make path a good consumer of lists, that is, express it with foldr.
 -- This is not straightforward if we want to preserve efficiency.
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -821,7 +821,7 @@ path xs = buildg $ \e v o c ->
     (_:ys) -> foldg e v o c $ edges (zip xs ys)
 {-# INLINE path #-}
 
--- TODO: Make `circuit` a good consumer of lists, that is, express it with `foldr`.
+-- TODO: Make circuit a good consumer of lists, that is, express it with foldr.
 -- This is not straightforward if we want to preserve efficiency.
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -1174,6 +1174,8 @@ induceJust g = buildg $ \e v o c -> fromMaybe e $
     k f (Just x) (Just y) = Just (f x y)
 {-# INLINE induceJust #-}
 
+-- NB: This is not a good producer since it requires an Eq instance on the
+-- produced structure.
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given expression according to the laws of the algebra.
 -- The function does not compute the simplest possible expression,
