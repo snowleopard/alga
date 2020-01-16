@@ -482,6 +482,25 @@ foldg e v o c = go
     foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
  #-}
 
+-- | Build a graph given an interpretation of the four graph construction primitives 'empty',
+-- 'vertex', 'overlay' and 'connect', in this order. See examples for further clarification.
+--
+-- Functions expressed with 'buildg' are good producers.
+--
+-- @
+-- buildg f                                                   == f 'empty' 'vertex' 'overlay' 'connect'
+-- buildg (\\e _ _ _ -> e)                                     == 'empty'
+-- buildg (\\_ v _ _ -> v x)                                   == 'vertex' x
+-- buildg (\\e v o c -> o ('foldg' e v o c x) ('foldg' e v o c y)) == 'overlay' x y
+-- buildg (\\e v o c -> c ('foldg' e v o c x) ('foldg' e v o c y)) == 'connect' x y
+-- buildg (\\e v o _ -> 'foldr' o e ('map' v xs))                  == 'vertices' xs
+-- buildg (\\e v o c -> 'foldg' e v o ('flip' c) g)                == 'transpose' g
+-- 'foldg' e v o c (buildg f)                                   == f e v o c
+-- @
+buildg :: (forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b) -> Graph a
+buildg f = f Empty Vertex Overlay Connect
+{-# INLINE [1] buildg #-}
+
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
@@ -1326,25 +1345,6 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
 
 * The "composeR/composeR" rule optimises compositions of multiple composeR's.
 -}
-
--- | Build a graph given an interpretation of the four graph construction primitives 'empty',
--- 'vertex', 'overlay' and 'connect', in this order. See examples for further clarification.
---
--- Functions expressed with 'buildg' are good producers.
---
--- @
--- buildg f                                                   == f 'empty' 'vertex' 'overlay' 'connect'
--- buildg (\\e _ _ _ -> e)                                     == 'empty'
--- buildg (\\_ v _ _ -> v x)                                   == 'vertex' x
--- buildg (\\e v o c -> o ('foldg' e v o c x) ('foldg' e v o c y)) == 'overlay' x y
--- buildg (\\e v o c -> c ('foldg' e v o c x) ('foldg' e v o c y)) == 'connect' x y
--- buildg (\\e v o _ -> 'foldr' o e ('map' v xs))                  == 'vertices' xs
--- buildg (\\e v o c -> 'foldg' e v o ('flip' c) g)                == 'transpose' g
--- 'foldg' e v o c (buildg f)                                   == f e v o c
--- @
-buildg :: (forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b) -> Graph a
-buildg f = f Empty Vertex Overlay Connect
-{-# INLINE [1] buildg #-}
 
 composeR :: (b -> c) -> (a -> b) -> a -> c
 composeR = (.)
