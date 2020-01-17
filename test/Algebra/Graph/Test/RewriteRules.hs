@@ -355,3 +355,9 @@ induceJustCP ::
 induceJustCP e v o c g = foldg e v o c (induceJust (buildg g))
 
 inspect $ 'induceJustCP `hasNoType` ''Graph
+
+-- context
+contextC :: (a -> Bool) -> Buildg a -> Maybe (Context a)
+contextC p g = context p (buildg g)
+
+inspect $ 'contextC `hasNoType` ''Graph

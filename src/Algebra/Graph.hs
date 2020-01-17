@@ -1392,6 +1392,8 @@ data Context a = Context { inputs :: [a], outputs :: [a] }
 -- | Extract the 'Context' of a subgraph specified by a given predicate. Returns
 -- @Nothing@ if the specified subgraph is empty.
 --
+-- Good consumer.
+--
 -- @
 -- context ('const' False) x                   == Nothing
 -- context (== 1)        ('edge' 1 2)          == Just ('Context' [   ] [2  ])
@@ -1404,3 +1406,4 @@ context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
             | otherwise = Nothing
   where
     f = focus p g
+{-# INLINE context #-}
