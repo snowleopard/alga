@@ -1,3 +1,4 @@
+cabal-version: 2.2
 name:          algebraic-graphs
 version:       0.5
 synopsis:      A library for algebraic graph construction and transformation
@@ -10,7 +11,6 @@ copyright:     Andrey Mokhov, 2016-2019
 homepage:      https://github.com/snowleopard/alga
 category:      Algebra, Algorithms, Data Structures, Graphs
 build-type:    Simple
-cabal-version: 1.18
 tested-with:   GHC == 8.0.2,
                GHC == 8.2.2,
                GHC == 8.4.4,
@@ -63,7 +63,36 @@ source-repository head
     type:     git
     location: https://github.com/snowleopard/alga.git
 
+common common-settings
+    build-depends:      array        >= 0.4     && < 0.6,
+                        base         >= 4.7     && < 5,
+                        containers   >= 0.5.5.1 && < 0.8,
+                        deepseq      >= 1.3.0.1 && < 1.5,
+                        mtl          >= 2.1     && < 2.3,
+                        transformers >= 0.4     && < 0.6
+    default-language:   Haskell2010
+    default-extensions: FlexibleContexts
+                        FlexibleInstances
+                        GeneralizedNewtypeDeriving
+                        ScopedTypeVariables
+                        TupleSections
+                        TypeApplications
+                        TypeFamilies
+    other-extensions:   CPP
+                        DeriveFunctor
+                        OverloadedStrings
+                        RankNTypes
+                        RecordWildCards
+    GHC-options:        -Wall
+                        -Wcompat
+                        -Wincomplete-record-updates
+                        -Wincomplete-uni-patterns
+                        -Wredundant-constraints
+                        -fno-warn-name-shadowing
+                        -fspec-constr
+
 library
+    import:             common-settings
     hs-source-dirs:     src
     exposed-modules:    Algebra.Graph,
                         Algebra.Graph.Undirected,
@@ -92,33 +121,9 @@ library
                         Algebra.Graph.Relation.Transitive,
                         Algebra.Graph.ToGraph,
                         Data.Graph.Typed
-    build-depends:      array        >= 0.4     && < 0.6,
-                        base         >= 4.7     && < 5,
-                        containers   >= 0.5.5.1 && < 0.8,
-                        deepseq      >= 1.3.0.1 && < 1.5,
-                        mtl          >= 2.1     && < 2.3,
-                        transformers >= 0.4     && < 0.6
-    default-language:   Haskell2010
-    default-extensions: FlexibleContexts
-                        FlexibleInstances
-                        GeneralizedNewtypeDeriving
-                        ScopedTypeVariables
-                        TupleSections
-                        TypeApplications
-                        TypeFamilies
-    other-extensions:   CPP
-                        DeriveFunctor
-                        OverloadedStrings
-                        RecordWildCards
-    GHC-options:        -Wall
-                        -Wcompat
-                        -Wincomplete-record-updates
-                        -Wincomplete-uni-patterns
-                        -Wredundant-constraints
-                        -fno-warn-name-shadowing
-                        -fspec-constr
 
 test-suite test-alga
+    import:             common-settings
     hs-source-dirs:     test
     type:               exitcode-stdio-1.0
     main-is:            Main.hs
@@ -144,31 +149,11 @@ test-suite test-alga
                         Algebra.Graph.Test.RewriteRules,
                         Data.Graph.Test.Typed
     build-depends:      algebraic-graphs,
-                        array              >= 0.4     && < 0.6,
-                        base               >= 4.7     && < 5,
-                        containers         >= 0.5.5.1 && < 0.8,
                         extra              >= 1.4     && < 2,
                         inspection-testing >= 0.4.2.2 && < 0.5,
                         QuickCheck         >= 2.10    && < 2.14
-
-    default-language:   Haskell2010
-    GHC-options:        -Wall
-                        -Wcompat
-                        -Wincomplete-record-updates
-                        -Wincomplete-uni-patterns
-                        -Wredundant-constraints
-                        -fno-warn-name-shadowing
-                        -fspec-constr
-    default-extensions: FlexibleContexts
-                        FlexibleInstances
-                        GeneralizedNewtypeDeriving
-                        ScopedTypeVariables
-                        TupleSections
-                        TypeApplications
-                        TypeFamilies
     other-extensions:   ConstrainedClassMethods
                         ConstraintKinds
-                        CPP
                         MultiParamTypeClasses
-                        RankNTypes
+                        TemplateHaskell
                         ViewPatterns
