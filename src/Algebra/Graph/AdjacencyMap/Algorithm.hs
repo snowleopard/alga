@@ -34,8 +34,6 @@ import Data.Either
 import Data.List.NonEmpty (NonEmpty(..),(<|))
 import Data.Maybe
 import Data.Tree
-import GHC.Exts (toList,fromList)
-import Data.Semigroup ((<>))
 
 import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Internal
@@ -336,7 +334,7 @@ data StateSCC a
         , pathStack     :: [a]
         , preorders     :: Map.Map a Int
         , components    :: Map.Map a Int
-        , innerGraphs   :: IntMap.IntMap (List (AdjacencyMap a))
+        , innerGraphs   :: IntMap.IntMap (AdjacencyMap a)
         , innerEdges    :: [(Int,(a,a))]
         , outerEdges    :: [(a,a)]
         } deriving (Show)
@@ -385,15 +383,16 @@ gabowSCC g =
 
     insertComponent v = modify'
       (\(SCC pre scc bnd pth pres sccs gs es_i es_o) ->
-         let gs' = IntMap.insert scc g_i gs
-             sccs' = List.foldl' (\sccs x -> Map.insert x scc sccs) sccs curr
+         let -- _ is v, which is guaranteed to be in the stack
+             (curr,_:pth') = span (/=v) pth
+             (es,es_i') = span ((>=p_v).fst) es_i
+             g_i | null es = vertex v
+                 | otherwise = edges (snd <$> es)
+             p_v = fst $ head bnd
              scc' = scc + 1
              bnd' = tail bnd
-             p_v = fst $ head bnd
-             g_i = fromList (uncurry edge.snd <$> es) <> fromList (vertex <$> curr)
-             (es,es_i') = span ((>=p_v).fst) es_i
-             pth' = tail $ dropWhile (/=v) pth
-             curr = v:takeWhile(/=v) pth
+             sccs' = List.foldl' (\sccs x -> Map.insert x scc sccs) sccs (v:curr)
+             gs' = IntMap.insert scc g_i gs 
           in SCC pre scc' bnd' pth' pres sccs' gs' es_i' es_o)
 
     inedge uv = modify'
@@ -412,10 +411,10 @@ condense :: Ord a => AdjacencyMap a -> StateSCC a -> AdjacencyMap (NonEmpty.Adja
 condense g (SCC _ n _ _ _ assignment inner _ outer)
   | n == 1 = vertex $ convert g
   | otherwise = gmap (inner' IntMap.!) outer'
-  where inner' = convert . overlays . toList <$> inner
-        outer' = overlays $ es ++ vs
-        vs = vertex <$> [0..n-1]
-        es = [ edge (sccid x) (sccid y) | (x,y) <- outer ]
+  where inner' = convert <$> inner
+        outer' = es `overlay` vs
+        vs = vertices [0..n-1]
+        es = edges [ (sccid x, sccid y) | (x,y) <- outer ]
         sccid v = assignment Map.! v
         convert = fromJust . NonEmpty.toNonEmpty
 
