@@ -383,8 +383,7 @@ gabowSCC g =
 
     insertComponent v = modify'
       (\(SCC pre scc bnd pth pres sccs gs es_i es_o) ->
-         let -- _ is v, which is guaranteed to be in the stack
-             (curr,_:pth') = span (/=v) pth
+         let (curr,_v:pth') = span (/=v) pth
              (es,es_i') = span ((>=p_v).fst) es_i
              g_i | null es = vertex v
                  | otherwise = edges (snd <$> es)
