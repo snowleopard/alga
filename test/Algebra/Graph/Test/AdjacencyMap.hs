@@ -23,6 +23,7 @@ import Algebra.Graph.Test.API (toIntAPI, adjacencyMapAPI)
 import Algebra.Graph.Test.Generic
 
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
+import qualified Data.Graph.Typed                    as KL
 
 tPoly :: Testsuite AdjacencyMap Ord
 tPoly = ("AdjacencyMap.", adjacencyMapAPI)
@@ -66,6 +67,9 @@ testAdjacencyMap = do
     test "scc (vertex x)          == vertex (NonEmpty.vertex x)" $ \(x :: Int) ->
           scc (vertex x)          == vertex (NonEmpty.vertex x)
 
+    test "scc (vertices xs)       == vertices (map NonEmpty.vertex xs)" $ \(xs :: [Int]) ->
+          scc (vertices xs)       == vertices (Prelude.map NonEmpty.vertex xs)
+
     test "scc (edge 1 1)          == vertex (NonEmpty.edge 1 1)" $
           scc (edge 1 1 :: AI)    == vertex (NonEmpty.edge 1 1)
 
@@ -85,3 +89,6 @@ testAdjacencyMap = do
 
     test "isAcyclic x     == (scc x == gmap NonEmpty.vertex x)" $ \(x :: AI) ->
           isAcyclic x     == (scc x == gmap NonEmpty.vertex x)
+
+    test "scc g == KL.scc g" $ \(g :: AI) ->
+          scc g == KL.scc g

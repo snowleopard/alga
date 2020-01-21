@@ -24,13 +24,15 @@ module Algebra.Graph.Internal (
     maybeF,
 
     -- * Utilities
-    setProduct, setProductWith
+    setProduct, setProductWith, forEach, forEachInt
     ) where
 
 import Data.Foldable
 import Data.Semigroup
+import Data.IntSet (IntSet)
 import Data.Set (Set)
 
+import qualified Data.IntSet as IntSet
 import qualified Data.Set as Set
 import qualified GHC.Exts as Exts
 
@@ -128,3 +130,11 @@ setProduct x y = Set.fromDistinctAscList [ (a, b) | a <- Set.toAscList x, b <- S
 -- resulting pair.
 setProductWith :: Ord c => (a -> b -> c) -> Set a -> Set b -> Set c
 setProductWith f x y = Set.fromList [ f a b | a <- Set.toAscList x, b <- Set.toAscList y ]
+
+-- | Perform an applicative action for each member of a Set.
+forEach :: Applicative f => Set a -> (a -> f b) -> f ()
+forEach s f = Set.foldr (\a u -> f a *> u) (pure ()) s
+
+-- | Perform an applicative action for each member of an IntSet.
+forEachInt :: Applicative f => IntSet -> (Int -> f a) -> f ()
+forEachInt s f = IntSet.foldr (\a u -> f a *> u) (pure ()) s
