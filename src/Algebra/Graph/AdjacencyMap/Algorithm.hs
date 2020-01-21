@@ -309,7 +309,7 @@ isAcyclic = isRight . topSort
 -- Details about the implementation can be found at
 -- <https://github.com/jitwit/alga-notes/blob/master/gabow.org gabow-notes>.
 --
--- Complexity: /O((n+m)log n+?)/ time and /O(n+m)/ space.
+-- Complexity: /O((n+m)*log n)/ time and /O(n+m)/ space.
 --
 -- @
 -- scc 'empty'               == 'empty'
