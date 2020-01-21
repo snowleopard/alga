@@ -39,9 +39,9 @@ import Algebra.Graph.AdjacencyMap
 import Algebra.Graph.Internal
 
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
+import qualified Data.Array                          as Array
 import qualified Data.List                           as List
 import qualified Data.Map.Strict                     as Map
-import qualified Data.IntMap.Strict                  as IntMap
 import qualified Data.Set                            as Set
 
 -- | Compute the /breadth-first search/ forest of a graph, such that
@@ -306,9 +306,10 @@ isAcyclic = isRight . topSort
 -- graphs are non-empty, and are therefore of type
 -- "Algebra.Graph.NonEmpty.AdjacencyMap".
 --
--- Notes about the implementation can be found at
--- <https://github.com/jitwit/alga-notes/blob/master/gabow.org
--- https://github.com/jitwit/alga-notes/blob/master/gabow.org>
+-- Details about the implementation can be found at
+-- <https://github.com/jitwit/alga-notes/blob/master/gabow.org gabow-notes>.
+--
+-- Complexity: /O((n+m)log n+?)/ time and /O(n+m)/ space.
 --
 -- @
 -- scc 'empty'               == 'empty'
@@ -325,7 +326,7 @@ isAcyclic = isRight . topSort
 -- @
 scc :: Ord a => AdjacencyMap a -> AdjacencyMap (NonEmpty.AdjacencyMap a)
 scc g = condense g $ execState (gabowSCC g) initialState where
-  initialState = SCC 0 0 [] [] Map.empty Map.empty IntMap.empty [] []
+  initialState = SCC 0 0 [] [] Map.empty Map.empty [] [] []
 
 data StateSCC a
   = SCC { preorder      :: {-# unpack #-} !Int
@@ -334,7 +335,7 @@ data StateSCC a
         , pathStack     :: [a]
         , preorders     :: Map.Map a Int
         , components    :: Map.Map a Int
-        , innerGraphs   :: IntMap.IntMap (AdjacencyMap a)
+        , innerGraphs   :: [AdjacencyMap a]
         , innerEdges    :: [(Int,(a,a))]
         , outerEdges    :: [(a,a)]
         } deriving (Show)
@@ -391,7 +392,7 @@ gabowSCC g =
              scc' = scc + 1
              bnd' = tail bnd
              sccs' = List.foldl' (\sccs x -> Map.insert x scc sccs) sccs (v:curr)
-             gs' = IntMap.insert scc g_i gs 
+             gs' = g_i:gs
           in SCC pre scc' bnd' pth' pres sccs' gs' es_i' es_o)
 
     inedge uv = modify'
@@ -409,8 +410,8 @@ gabowSCC g =
 condense :: Ord a => AdjacencyMap a -> StateSCC a -> AdjacencyMap (NonEmpty.AdjacencyMap a)
 condense g (SCC _ n _ _ _ assignment inner _ outer)
   | n == 1 = vertex $ convert g
-  | otherwise = gmap (inner' IntMap.!) outer'
-  where inner' = convert <$> inner
+  | otherwise = gmap (\c -> inner' Array.! (n-1-c)) outer'
+  where inner' = Array.listArray (0,n-1) (convert <$> inner)
         outer' = es `overlay` vs
         vs = vertices [0..n-1]
         es = edges [ (sccid x, sccid y) | (x,y) <- outer ]
