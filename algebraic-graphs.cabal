@@ -114,6 +114,7 @@ library
                         Algebra.Graph.Labelled.Example.Network,
                         Algebra.Graph.NonEmpty,
                         Algebra.Graph.NonEmpty.AdjacencyMap,
+                        Algebra.Graph.NonEmpty.AdjacencyIntMap,
                         Algebra.Graph.Relation,
                         Algebra.Graph.Relation.Preorder,
                         Algebra.Graph.Relation.Reflexive,
