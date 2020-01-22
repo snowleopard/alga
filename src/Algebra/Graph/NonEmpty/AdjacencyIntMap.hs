@@ -35,7 +35,7 @@ module Algebra.Graph.NonEmpty.AdjacencyIntMap (
 
     -- * Graph properties
     hasVertex, hasEdge, vertexCount, edgeCount, vertexList1, edgeList,
-    vertexSet, edgeSet, preSet, postSet,
+    vertexSet, edgeSet, preIntSet, postIntSet,
 
     -- * Standard families of graphs
     path1, circuit1, clique1, biclique1, star, stars1, tree,
@@ -427,8 +427,8 @@ edgeSet = coerce AIM.edgeSet
 -- preSet 1 ('edge' 1 2) == Set.'Set.empty'
 -- preSet y ('edge' x y) == Set.'Set.fromList' [x]
 -- @
-preSet :: Int -> AdjacencyIntMap -> IntSet
-preSet = coerce AIM.preIntSet
+preIntSet :: Int -> AdjacencyIntMap -> IntSet
+preIntSet = coerce AIM.preIntSet
 
 -- | The /postset/ of a vertex is the set of its /direct successors/.
 -- Complexity: /O(log(n))/ time and /O(1)/ memory.
@@ -438,8 +438,8 @@ preSet = coerce AIM.preIntSet
 -- postSet x ('edge' x y) == Set.'Set.fromList' [y]
 -- postSet 2 ('edge' 1 2) == Set.'Set.empty'
 -- @
-postSet :: Int -> AdjacencyIntMap -> IntSet
-postSet = coerce AIM.postIntSet
+postIntSet :: Int -> AdjacencyIntMap -> IntSet
+postIntSet = coerce AIM.postIntSet
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.

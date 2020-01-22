@@ -24,21 +24,22 @@ import Algebra.Graph
 import Algebra.Graph.Export
 import Algebra.Graph.Label
 
-import qualified Algebra.Graph.Undirected             as UG
-import qualified Algebra.Graph.Acyclic.AdjacencyMap   as AAM
-import qualified Algebra.Graph.AdjacencyIntMap        as AIM
-import qualified Algebra.Graph.AdjacencyMap           as AM
-import qualified Algebra.Graph.Bipartite.AdjacencyMap as BAM
-import qualified Algebra.Graph.NonEmpty.AdjacencyMap  as NAM
-import qualified Algebra.Graph.Class                  as C
-import qualified Algebra.Graph.Labelled               as LG
-import qualified Algebra.Graph.Labelled.AdjacencyMap  as LAM
-import qualified Algebra.Graph.NonEmpty               as NonEmpty
-import qualified Algebra.Graph.Relation               as Relation
-import qualified Algebra.Graph.Relation.Preorder      as Preorder
-import qualified Algebra.Graph.Relation.Reflexive     as Reflexive
-import qualified Algebra.Graph.Relation.Symmetric     as Symmetric
-import qualified Algebra.Graph.Relation.Transitive    as Transitive
+import qualified Algebra.Graph.Undirected               as UG
+import qualified Algebra.Graph.Acyclic.AdjacencyMap     as AAM
+import qualified Algebra.Graph.AdjacencyIntMap          as AIM
+import qualified Algebra.Graph.AdjacencyMap             as AM
+import qualified Algebra.Graph.Bipartite.AdjacencyMap   as BAM
+import qualified Algebra.Graph.NonEmpty.AdjacencyIntMap as NAIM
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap    as NAM
+import qualified Algebra.Graph.Class                    as C
+import qualified Algebra.Graph.Labelled                 as LG
+import qualified Algebra.Graph.Labelled.AdjacencyMap    as LAM
+import qualified Algebra.Graph.NonEmpty                 as NonEmpty
+import qualified Algebra.Graph.Relation                 as Relation
+import qualified Algebra.Graph.Relation.Preorder        as Preorder
+import qualified Algebra.Graph.Relation.Reflexive       as Reflexive
+import qualified Algebra.Graph.Relation.Symmetric       as Symmetric
+import qualified Algebra.Graph.Relation.Transitive      as Transitive
 
 -- | Generate an arbitrary 'C.Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
@@ -179,6 +180,30 @@ instance Arbitrary AIM.AdjacencyIntMap where
       where
          shrinkVertices = [ AIM.removeVertex x g | x <- AIM.vertexList g ]
          shrinkEdges    = [ AIM.removeEdge x y g | (x, y) <- AIM.edgeList g ]
+
+arbitraryNonEmptyAdjacencyIntMap :: Gen NAIM.AdjacencyIntMap
+arbitraryNonEmptyAdjacencyIntMap = NAIM.stars1 <$> nonEmpty
+  where
+    nonEmpty = do
+        xs <- arbitrary
+        case xs of
+            [] -> do
+                x <- arbitrary
+                return ((x, []) :| []) -- There must be at least one vertex
+            (x:xs) -> return (x :| xs)
+
+instance Arbitrary NAIM.AdjacencyIntMap where
+    arbitrary = arbitraryNonEmptyAdjacencyIntMap
+
+    shrink g = shrinkVertices ++ shrinkEdges
+      where
+         shrinkVertices =
+           let vertices = toList $ NAIM.vertexList1 g
+           in catMaybes [ NAIM.removeVertex1 v g | v <- vertices ]
+
+         shrinkEdges =
+           let edges = NAIM.edgeList g
+           in  [ NAIM.removeEdge v w g | (v, w) <- edges ]
 
 -- | Generate an arbitrary labelled 'LAM.AdjacencyMap'. It is guaranteed
 -- that the resulting adjacency map is 'consistent'.
