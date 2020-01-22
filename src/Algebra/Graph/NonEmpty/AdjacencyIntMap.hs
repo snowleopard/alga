@@ -11,17 +11,17 @@
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines the data type 'AdjacencyMap' for graphs that are known
+-- This module defines the data type 'AdjacencyIntMap' for graphs that are known
 -- to be non-empty at compile time. To avoid name clashes with
--- "Algebra.Graph.AdjacencyMap", this module can be imported qualified:
+-- "Algebra.Graph.AdjacencyIntMap", this module can be imported qualified:
 --
 -- @
--- import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
+-- import qualified Algebra.Graph.NonEmpty.AdjacencyIntMap as NonEmpty
 -- @
 --
 -- The naming convention generally follows that of "Data.List.NonEmpty": we use
 -- suffix @1@ to indicate the functions whose interface must be changed compared
--- to "Algebra.Graph.AdjacencyMap", e.g. 'vertices1'.
+-- to "Algebra.Graph.AdjacencyIntMap", e.g. 'vertices1'.
 -----------------------------------------------------------------------------
 module Algebra.Graph.NonEmpty.AdjacencyIntMap (
     -- * Data structure
@@ -65,7 +65,7 @@ import GHC.Generics
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Data.IntSet                   as IntSet
 
-{-| The 'AdjacencyMap' data type represents a graph by a map of vertices to
+{-| The 'AdjacencyIntMap' data type represents a graph by a map of vertices to
 their adjacency sets. We define a 'Num' instance as a convenient notation for
 working with graphs:
 
@@ -87,11 +87,11 @@ laws.
 
 The 'Show' instance is defined using basic graph construction primitives:
 
-@show (1         :: AdjacencyMap Int) == "vertex 1"
-show (1 + 2     :: AdjacencyMap Int) == "vertices1 [1,2]"
-show (1 * 2     :: AdjacencyMap Int) == "edge 1 2"
-show (1 * 2 * 3 :: AdjacencyMap Int) == "edges1 [(1,2),(1,3),(2,3)]"
-show (1 * 2 + 3 :: AdjacencyMap Int) == "overlay (vertex 3) (edge 1 2)"@
+@show (1         :: AdjacencyIntMap) == "vertex 1"
+show (1 + 2     :: AdjacencyIntMap) == "vertices1 [1,2]"
+show (1 * 2     :: AdjacencyIntMap) == "edge 1 2"
+show (1 * 2 * 3 :: AdjacencyIntMap) == "edges1 [(1,2),(1,3),(2,3)]"
+show (1 * 2 + 3 :: AdjacencyIntMap) == "overlay (vertex 3) (edge 1 2)"@
 
 The 'Eq' instance satisfies the following laws of algebraic graphs:
 
@@ -151,19 +151,19 @@ x + y <= x * y@
 newtype AdjacencyIntMap = NAIM { am :: AIM.AdjacencyIntMap }
     deriving (Eq, Generic, NFData, Ord)
 
--- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap' for
+-- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyIntMap' for
 -- more details.
 instance Num AdjacencyIntMap where
     fromInteger = vertex . fromInteger
     (+)         = overlay
     (*)         = connect
-    signum      = error "NonEmpty.AdjacencyMap.signum cannot be implemented."
+    signum      = error "NonEmpty.AdjacencyIntMap.signum cannot be implemented."
     abs         = id
     negate      = id
 
 instance Show AdjacencyIntMap where
     showsPrec p nam
-        | null vs    = error "NonEmpty.AdjacencyMap.Show: Graph is empty"
+        | null vs    = error "NonEmpty.AdjacencyIntMap.Show: Graph is empty"
         | null es    = showParen (p > 10) $ vshow vs
         | vs == used = showParen (p > 10) $ eshow es
         | otherwise  = showParen (p > 10) $
@@ -185,19 +185,19 @@ unsafeNonEmpty = fromMaybe (error msg) . nonEmpty
   where
     msg = "Algebra.Graph.AdjacencyIntMap.unsafeNonEmpty: Graph is empty"
 
--- | Convert a possibly empty 'AIM.AdjacencyMap' into NonEmpty.'AdjacencyMap'.
+-- | Convert a possibly empty 'AIM.AdjacencyIntMap' into NonEmpty.'AdjacencyIntMap'.
 -- Returns 'Nothing' if the argument is 'AIM.empty'.
 -- Complexity: /O(1)/ time, memory and size.
 --
 -- @
--- toNonEmpty 'AM.empty'          == 'Nothing'
+-- toNonEmpty 'AIM.empty'          == 'Nothing'
 -- toNonEmpty . 'fromNonEmpty' == 'Just'
 -- @
 toNonEmpty :: AIM.AdjacencyIntMap -> Maybe AdjacencyIntMap
 toNonEmpty x | AIM.isEmpty x = Nothing
              | otherwise    = Just (NAIM x)
 
--- | Convert a NonEmpty.'AdjacencyMap' into an 'AM.AdjacencyMap'. The resulting
+-- | Convert a NonEmpty.'AdjacencyIntMap' into an 'AIM.AdjacencyIntMap'. The resulting
 -- graph is guaranteed to be non-empty.
 -- Complexity: /O(1)/ time, memory and size.
 --
@@ -212,9 +212,9 @@ fromNonEmpty = am
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'AdjacencyMap.hasVertex' x (vertex x) == True
--- 'AdjacencyMap.vertexCount' (vertex x) == 1
--- 'AdjacencyMap.edgeCount'   (vertex x) == 0
+-- 'AdjacencyIntMap.hasVertex' x (vertex x) == True
+-- 'AdjacencyIntMap.vertexCount' (vertex x) == 1
+-- 'AdjacencyIntMap.edgeCount'   (vertex x) == 0
 -- @
 vertex :: Int -> AdjacencyIntMap
 vertex = coerce AIM.vertex
@@ -353,7 +353,7 @@ hasEdge :: Int -> Int -> AdjacencyIntMap -> Bool
 hasEdge = coerce AIM.hasEdge
 
 -- | The number of vertices in a graph.
--- Complexity: /O(1)/ time.
+-- Complexity: /O(n)/ time.
 --
 -- @
 -- vertexCount ('vertex' x)        ==  1
@@ -364,7 +364,7 @@ vertexCount :: AdjacencyIntMap -> Int
 vertexCount = coerce AIM.vertexCount
 
 -- | The number of edges in a graph.
--- Complexity: /O(n)/ time.
+-- Complexity: /O(n+m)/ time.
 --
 -- @
 -- edgeCount ('vertex' x) == 0
@@ -537,7 +537,7 @@ tree = coerce AIM.tree
 -- removeVertex1 1 ('edge' 1 2)          == Just ('vertex' 2)
 -- removeVertex1 x 'Control.Monad.>=>' removeVertex1 x == removeVertex1 x
 -- @
-removeVertex1 :: Int -> AdjacencyIntMap -> Maybe (AdjacencyIntMap)
+removeVertex1 :: Int -> AdjacencyIntMap -> Maybe AdjacencyIntMap
 removeVertex1 = fmap toNonEmpty . coerce AIM.removeVertex
 
 -- | Remove an edge from a given graph.
@@ -553,7 +553,7 @@ removeEdge :: Int -> Int -> AdjacencyIntMap -> AdjacencyIntMap
 removeEdge = coerce AIM.removeEdge
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
--- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
+-- given 'AdjacencyIntMap'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O((n + m) * log(n))/ time.
 --
 -- @
@@ -604,7 +604,7 @@ transpose = coerce AIM.transpose
 
 -- | Transform a graph by applying a function to each of its vertices. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
--- 'AdjacencyMap'.
+-- 'AdjacencyIntMap'.
 -- Complexity: /O((n + m) * log(n))/ time.
 --
 -- @
