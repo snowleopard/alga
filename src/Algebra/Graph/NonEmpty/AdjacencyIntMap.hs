@@ -41,7 +41,7 @@ module Algebra.Graph.NonEmpty.AdjacencyIntMap (
     path1, circuit1, clique1, biclique1, star, stars1, tree,
 
     -- * Graph transformation
-    removeVertex1, removeEdge, replaceVertex, mergeVertices, transpose, -- gmap,
+    removeVertex1, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
     induce1, -- induceJust1,
 
     -- * Graph closure
@@ -613,8 +613,8 @@ transpose = coerce AIM.transpose
 -- gmap id           == id
 -- gmap f . gmap g   == gmap (f . g)
 -- @
--- gmap :: (Ord a, Ord b) => (a -> b) -> AdjacencyIntMap -> AdjacencyIntMap
--- gmap = coerce AIM.gmap
+gmap :: (Int -> Int) -> AdjacencyIntMap -> AdjacencyIntMap
+gmap = coerce AIM.gmap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.

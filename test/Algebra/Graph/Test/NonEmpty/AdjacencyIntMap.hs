@@ -519,19 +519,19 @@ testNonEmptyAdjacencyIntMap = do
     test "edgeList . transpose  == sort . map swap . edgeList" $ \(x :: G) ->
          (edgeList . transpose) x == (sort . map swap . edgeList) x
 
---    putStrLn $ "\n============ NonEmpty.AdjacencyMap.gmap ============"
---    test "gmap f (vertex x) == vertex (f x)" $ \(apply -> f) (x :: Int) ->
---          gmap f (vertex x) == vertex (f x :: Int)
---
---    test "gmap f (edge x y) == edge (f x) (f y)" $ \(apply -> f) (x :: Int) y ->
---          gmap f (edge x y) == edge (f x) (f y :: Int)
---
---    test "gmap id           == id" $ \(x :: G) ->
---          gmap id x         == x
---
---    test "gmap f . gmap g   == gmap (f . g)" $ \(apply -> f) (apply -> g) (x :: G) ->
---         (gmap f . gmap g) x == (gmap (f . (g :: Int -> Int)) x :: G)
---
+    putStrLn $ "\n============ NonEmpty.AdjacencyIntMap.gmap ============"
+    test "gmap f (vertex x) == vertex (f x)" $ \(apply -> f) (x :: Int) ->
+          gmap f (vertex x) == vertex (f x :: Int)
+
+    test "gmap f (edge x y) == edge (f x) (f y)" $ \(apply -> f) (x :: Int) y ->
+          gmap f (edge x y) == edge (f x) (f y :: Int)
+
+    test "gmap id           == id" $ \(x :: G) ->
+          gmap id x         == x
+
+    test "gmap f . gmap g   == gmap (f . g)" $ \(apply -> f) (apply -> g) (x :: G) ->
+         (gmap f . gmap g) x == (gmap (f . (g :: Int -> Int)) x :: G)
+
     putStrLn $ "\n============ NonEmpty.AdjacencyIntMap.induce1 ============"
     test "induce1 (const True ) x == Just x" $ \(x :: G) ->
           induce1 (const True ) x == Just x
