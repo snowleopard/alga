@@ -29,19 +29,7 @@ import qualified Data.List.NonEmpty                     as NonEmpty
 import qualified Data.Set                               as Set
 import qualified Data.IntSet                            as IntSet
 
-sizeLimit :: Testable prop => prop -> Property
-sizeLimit = mapSize (min 10)
-
 type G = NonEmpty.AdjacencyIntMap
-
-axioms :: G -> G -> G -> Property
-axioms x y z = conjoin
-    [       x + y == y + x                      // "Overlay commutativity"
-    , x + (y + z) == (x + y) + z                // "Overlay associativity"
-    , x * (y * z) == (x * y) * z                // "Connect associativity"
-    , x * (y + z) == x * y + x * z              // "Left distributivity"
-    , (x + y) * z == x * z + y * z              // "Right distributivity"
-    ,   x * y * z == x * y + x * z + y * z      // "Decomposition" ]
 
 theorems :: G -> G -> Property
 theorems x y = conjoin
@@ -50,6 +38,16 @@ theorems x y = conjoin
     ,         x * x == x * x * x                // "Connect saturation"
     ,             x <= x + y                    // "Overlay order"
     ,         x + y <= x * y                    // "Overlay-connect order" ]
+
+-- TODO: factor these out as nonEmptyAxioms to Algebra.Graph.Test
+axioms :: G -> G -> G -> Property
+axioms x y z = conjoin
+    [       x + y == y + x                      // "Overlay commutativity"
+    , x + (y + z) == (x + y) + z                // "Overlay associativity"
+    , x * (y * z) == (x * y) * z                // "Connect associativity"
+    , x * (y + z) == x * y + x * z              // "Left distributivity"
+    , (x + y) * z == x * z + y * z              // "Right distributivity"
+    ,   x * y * z == x * y + x * z + y * z      // "Decomposition" ]
 
 testNonEmptyAdjacencyIntMap :: IO ()
 testNonEmptyAdjacencyIntMap = do
@@ -212,9 +210,9 @@ testNonEmptyAdjacencyIntMap = do
         let xs = NonEmpty.fromList (getNonEmpty xs')
         in (vertexCount . vertices1) xs == (NonEmpty.length . NonEmpty.nub) xs
 
-    test "vertexSet   . vertices1 == IntSet.fromList . toList" $ \(xs' :: NonEmptyList Int) ->
+    test "vertexIntSet   . vertices1 == IntSet.fromList . toList" $ \(xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
-        in (vertexSet   . vertices1) xs == (IntSet.fromList . NonEmpty.toList) xs
+        in (vertexIntSet   . vertices1) xs == (IntSet.fromList . NonEmpty.toList) xs
 
     putStrLn $ "\n============ NonEmpty.AdjacencyIntMap.edges1 ============"
     test "edges1 [(x,y)]     == edge x y" $ \(x :: Int) y ->
@@ -319,17 +317,17 @@ testNonEmptyAdjacencyIntMap = do
     test "edgeList . transpose    == sort . map swap . edgeList" $ \(x :: G) ->
          (edgeList . transpose) x == (sort . map swap . edgeList) x
 
-    putStrLn $ "\n============ NonEmpty.AdjacencyIntMap.vertexSet ============"
-    test "vertexSet . vertex    == IntSet.singleton" $ \(x :: Int) ->
-         (vertexSet . vertex) x == IntSet.singleton x
+    putStrLn $ "\n============ NonEmpty.AdjacencyIntMap.vertexIntSet ============"
+    test "vertexIntSet . vertex    == IntSet.singleton" $ \(x :: Int) ->
+         (vertexIntSet . vertex) x == IntSet.singleton x
 
-    test "vertexSet . vertices1 == IntSet.fromList . toList" $ \(xs' :: NonEmptyList Int) ->
+    test "vertexIntSet . vertices1 == IntSet.fromList . toList" $ \(xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
-        in (vertexSet . vertices1) xs == (IntSet.fromList . NonEmpty.toList) xs
+        in (vertexIntSet . vertices1) xs == (IntSet.fromList . NonEmpty.toList) xs
 
-    test "vertexSet . clique1   == IntSet.fromList . toList" $ \(xs' :: NonEmptyList Int) ->
+    test "vertexIntSet . clique1   == IntSet.fromList . toList" $ \(xs' :: NonEmptyList Int) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
-        in (vertexSet . clique1) xs == (IntSet.fromList . NonEmpty.toList) xs
+        in (vertexIntSet . clique1) xs == (IntSet.fromList . NonEmpty.toList) xs
 
     putStrLn $ "\n============ NonEmpty.AdjacencyIntMap.edgeSet ============"
     test "edgeSet (vertex x) == Set.empty" $ \(x :: Int) ->
@@ -545,19 +543,6 @@ testNonEmptyAdjacencyIntMap = do
     test "induce1 p >=> induce1 q == induce1 (\\x -> p x && q x)" $ \(apply -> p) (apply -> q) (y :: G) ->
          (induce1 p >=> induce1 q) y == induce1 (\x -> p x && q x) y
 
---    putStrLn $ "\n============ NonEmpty.AdjacencyMap.induceJust1 ============"
---    test "induceJust1 (vertex Nothing)                               == Nothing" $
---          induceJust1 (vertex (Nothing :: Maybe Int))                == Nothing
---
---    test "induceJust1 (edge (Just x) Nothing)                        == Just (vertex x)" $ \(x :: G) ->
---          induceJust1 (edge (Just x) Nothing)                        == Just (vertex x)
---
---    test "induceJust1 . gmap Just                                    == Just" $ \(x :: G) ->
---         (induceJust1 . gmap Just) x                                 == Just x
---
---    test "induceJust1 . gmap (\\x -> if p x then Just x else Nothing) == induce1 p" $ \(x :: G) (apply -> p) ->
---         (induceJust1 . gmap (\x -> if p x then Just x else Nothing)) x == induce1 p x
-
     putStrLn $ "\n============ NonEmpty.AdjacencyIntMap.closure ============"
     test "closure (vertex x)      == edge x x" $ \(x :: Int) ->
           closure (vertex x)      == edge x x
@@ -572,19 +557,18 @@ testNonEmptyAdjacencyIntMap = do
         let ys = NonEmpty.fromList (nubOrd $ getNonEmpty xs)
         in closure (path1 $ ys) == reflexiveClosure (clique1 $ ys)
 
-    test "closure                 == reflexiveClosure . transitiveClosure" $ sizeLimit $ \(x :: G) ->
+    test "closure                 == reflexiveClosure . transitiveClosure" $ size10 $ \(x :: G) ->
           closure x               == (reflexiveClosure . transitiveClosure) x
 
-    test "closure                 == transitiveClosure . reflexiveClosure" $ sizeLimit $ \(x :: G) ->
+    test "closure                 == transitiveClosure . reflexiveClosure" $ size10 $ \(x :: G) ->
           closure x               == (transitiveClosure . reflexiveClosure) x
 
-    test "closure . closure       == closure" $ sizeLimit $ \(x :: G) ->
+    test "closure . closure       == closure" $ size10 $ \(x :: G) ->
          (closure . closure) x    == closure x
 
 -- TODO: fix ToVertex G and IntSet type inference issue, couldn't match ToVertex AIM with Int...
---    test "postIntSet x (closure y)   == IntSet.fromList (reachable x y)" $ sizeLimit $ \x y ->
+--    test "postIntSet x (closure y)   == IntSet.fromList (reachable x y)" $ size10 $ \x y ->
 --          postIntSet x (closure y)   == IntSet.fromList (reachable x y)
-
     putStrLn $ "\n============ NonEmpty.AdjacencyIntMap.reflexiveClosure ============"
     test "reflexiveClosure (vertex x)         == edge x x" $ \(x :: Int) ->
           reflexiveClosure (vertex x)         == edge x x
@@ -622,5 +606,5 @@ testNonEmptyAdjacencyIntMap = do
         let ys = NonEmpty.fromList (nubOrd $ getNonEmpty xs)
         in transitiveClosure (path1 ys) == clique1 ys
 
-    test "transitiveClosure . transitiveClosure == transitiveClosure" $ sizeLimit $ \(x :: G) ->
+    test "transitiveClosure . transitiveClosure == transitiveClosure" $ size10 $ \(x :: G) ->
          (transitiveClosure . transitiveClosure) x == transitiveClosure x

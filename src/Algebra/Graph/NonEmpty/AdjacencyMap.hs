@@ -61,6 +61,8 @@ import Data.Set (Set)
 import Data.Tree
 import GHC.Generics
 
+import Algebra.Graph.Internal
+
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.Set                   as Set
 
@@ -178,12 +180,6 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
         eshow xs       = showString "edges1 "    . showsPrec 11 xs
         used           = Set.toAscList $ Set.fromList $ uncurry (++) $ unzip es
 
--- Unsafe creation of a NonEmpty list.
-unsafeNonEmpty :: [a] -> NonEmpty a
-unsafeNonEmpty = fromMaybe (error msg) . nonEmpty
-  where
-    msg = "Algebra.Graph.AdjacencyMap.unsafeNonEmpty: Graph is empty"
-
 -- | Convert a possibly empty 'AM.AdjacencyMap' into NonEmpty.'AdjacencyMap'.
 -- Returns 'Nothing' if the argument is 'AM.empty'.
 -- Complexity: /O(1)/ time, memory and size.
@@ -211,9 +207,9 @@ fromNonEmpty = am
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'AdjacencyMap.hasVertex' x (vertex x) == True
--- 'AdjacencyMap.vertexCount' (vertex x) == 1
--- 'AdjacencyMap.edgeCount'   (vertex x) == 0
+-- 'hasVertex' x (vertex x) == True
+-- 'vertexCount' (vertex x) == 1
+-- 'edgeCount'   (vertex x) == 0
 -- @
 vertex :: a -> AdjacencyMap a
 vertex = coerce AM.vertex

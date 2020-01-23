@@ -35,14 +35,14 @@ module Algebra.Graph.NonEmpty.AdjacencyIntMap (
 
     -- * Graph properties
     hasVertex, hasEdge, vertexCount, edgeCount, vertexList1, edgeList,
-    vertexSet, edgeSet, preIntSet, postIntSet,
+    vertexIntSet, edgeSet, preIntSet, postIntSet,
 
     -- * Standard families of graphs
     path1, circuit1, clique1, biclique1, star, stars1, tree,
 
     -- * Graph transformation
     removeVertex1, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
-    induce1, -- induceJust1,
+    induce1,
 
     -- * Graph closure
     closure, reflexiveClosure, symmetricClosure, transitiveClosure,
@@ -61,6 +61,8 @@ import Data.IntSet (IntSet)
 import Data.Set (Set)
 import Data.Tree
 import GHC.Generics
+
+import Algebra.Graph.Internal
 
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Data.IntSet                   as IntSet
@@ -179,12 +181,6 @@ instance Show AdjacencyIntMap where
         eshow xs       = showString "edges1 "    . showsPrec 11 xs
         used           = IntSet.toAscList $ IntSet.fromList $ uncurry (++) $ unzip es
 
--- Unsafe creation of a NonEmpty list.
-unsafeNonEmpty :: [Int] -> NonEmpty Int
-unsafeNonEmpty = fromMaybe (error msg) . nonEmpty
-  where
-    msg = "Algebra.Graph.AdjacencyIntMap.unsafeNonEmpty: Graph is empty"
-
 -- | Convert a possibly empty 'AIM.AdjacencyIntMap' into NonEmpty.'AdjacencyIntMap'.
 -- Returns 'Nothing' if the argument is 'AIM.empty'.
 -- Complexity: /O(1)/ time, memory and size.
@@ -212,9 +208,9 @@ fromNonEmpty = am
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'AdjacencyIntMap.hasVertex' x (vertex x) == True
--- 'AdjacencyIntMap.vertexCount' (vertex x) == 1
--- 'AdjacencyIntMap.edgeCount'   (vertex x) == 0
+-- 'hasVertex' x (vertex x) == True
+-- 'vertexCount' (vertex x) == 1
+-- 'edgeCount'   (vertex x) == 0
 -- @
 vertex :: Int -> AdjacencyIntMap
 vertex = coerce AIM.vertex
@@ -276,10 +272,10 @@ edge = coerce AIM.edge
 -- of the given list.
 --
 -- @
--- vertices1 [x]           == 'vertex' x
--- 'hasVertex' x . vertices1 == 'elem' x
--- 'vertexCount' . vertices1 == 'length' . 'Data.List.NonEmpty.nub'
--- 'vertexSet'   . vertices1 == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
+-- vertices1 [x]              == 'vertex' x
+-- 'hasVertex' x . vertices1    == 'elem' x
+-- 'vertexCount' . vertices1    == 'length' . 'Data.List.NonEmpty.nub'
+-- 'vertexIntSet'   . vertices1 == IntSet.'IntSet.fromList' . 'Data.List.NonEmpty.toList'
 -- @
 vertices1 :: NonEmpty Int -> AdjacencyIntMap
 vertices1 = coerce AIM.vertices . toList
@@ -401,12 +397,12 @@ edgeList = coerce AIM.edgeList
 -- Complexity: /O(n)/ time and memory.
 --
 -- @
--- vertexSet . 'vertex'    == Set.'Set.singleton'
--- vertexSet . 'vertices1' == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
--- vertexSet . 'clique1'   == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
+-- vertexIntSet . 'vertex'    == IntSet.'IntSet.singleton'
+-- vertexIntSet . 'vertices1' == IntSet.'IntSet.fromList' . 'Data.List.NonEmpty.toList'
+-- vertexIntSet . 'clique1'   == IntSet.'IntSet.fromList' . 'Data.List.NonEmpty.toList'
 -- @
-vertexSet :: AdjacencyIntMap -> IntSet
-vertexSet = coerce AIM.vertexIntSet
+vertexIntSet :: AdjacencyIntMap -> IntSet
+vertexIntSet = coerce AIM.vertexIntSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
@@ -423,9 +419,9 @@ edgeSet = coerce AIM.edgeSet
 -- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
 --
 -- @
--- preSet x ('vertex' x) == Set.'Set.empty'
--- preSet 1 ('edge' 1 2) == Set.'Set.empty'
--- preSet y ('edge' x y) == Set.'Set.fromList' [x]
+-- preIntSet x ('vertex' x) == IntSet.'IntSet.empty'
+-- preIntSet 1 ('edge' 1 2) == IntSet.'IntSet.empty'
+-- preIntSet y ('edge' x y) == IntSet.'IntSet.fromList' [x]
 -- @
 preIntSet :: Int -> AdjacencyIntMap -> IntSet
 preIntSet = coerce AIM.preIntSet
@@ -434,9 +430,9 @@ preIntSet = coerce AIM.preIntSet
 -- Complexity: /O(log(n))/ time and /O(1)/ memory.
 --
 -- @
--- postSet x ('vertex' x) == Set.'Set.empty'
--- postSet x ('edge' x y) == Set.'Set.fromList' [y]
--- postSet 2 ('edge' 1 2) == Set.'Set.empty'
+-- postIntSet x ('vertex' x) == IntSet.'IntSet.empty'
+-- postIntSet x ('edge' x y) == IntSet.'IntSet.fromList' [y]
+-- postIntSet 2 ('edge' 1 2) == IntSet.'IntSet.empty'
 -- @
 postIntSet :: Int -> AdjacencyIntMap -> IntSet
 postIntSet = coerce AIM.postIntSet
@@ -648,14 +644,14 @@ induce1 = fmap toNonEmpty . coerce AIM.induce
 -- Complexity: /O(n * m * log(n)^2)/ time.
 --
 -- @
--- closure ('vertex' x)       == 'edge' x x
--- closure ('edge' x x)       == 'edge' x x
--- closure ('edge' x y)       == 'edges1' [(x,x), (x,y), (y,y)]
--- closure ('path1' $ 'Data.List.NonEmpty.nub' xs) == 'reflexiveClosure' ('clique1' $ 'Data.List.NonEmpty.nub' xs)
--- closure                  == 'reflexiveClosure' . 'transitiveClosure'
--- closure                  == 'transitiveClosure' . 'reflexiveClosure'
--- closure . closure        == closure
--- 'postSet' x (closure y)    == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
+-- closure ('vertex' x)          == 'edge' x x
+-- closure ('edge' x x)          == 'edge' x x
+-- closure ('edge' x y)          == 'edges1' [(x,x), (x,y), (y,y)]
+-- closure ('path1' $ 'Data.List.NonEmpty.nub' xs)    == 'reflexiveClosure' ('clique1' $ 'Data.List.NonEmpty.nub' xs)
+-- closure                     == 'reflexiveClosure' . 'transitiveClosure'
+-- closure                     == 'transitiveClosure' . 'reflexiveClosure'
+-- closure . closure           == closure
+-- 'postIntSet' x (closure y)    == IntSet.'IntSet.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
 -- @
 closure :: AdjacencyIntMap -> AdjacencyIntMap
 closure = coerce AIM.closure

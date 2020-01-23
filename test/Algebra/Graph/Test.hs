@@ -15,8 +15,8 @@ module Algebra.Graph.Test (
     module Test.QuickCheck,
     module Test.QuickCheck.Function,
 
-    GraphTestsuite, (//), axioms, theorems, undirectedAxioms, reflexiveAxioms,
-    transitiveAxioms, preorderAxioms, size10, test
+    GraphTestsuite, (//), axioms, theorems, preorderAxioms, reflexiveAxioms,
+    transitiveAxioms, undirectedAxioms, size10, test
     ) where
 
 import Data.List (sort)

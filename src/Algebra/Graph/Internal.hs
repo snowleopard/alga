@@ -24,17 +24,19 @@ module Algebra.Graph.Internal (
     maybeF,
 
     -- * Utilities
-    setProduct, setProductWith, forEach, forEachInt
+    forEach, forEachInt, setProduct, setProductWith, unsafeNonEmpty
     ) where
 
 import Data.Foldable
+import Data.Maybe
 import Data.Semigroup
 import Data.IntSet (IntSet)
 import Data.Set (Set)
 
-import qualified Data.IntSet as IntSet
-import qualified Data.Set as Set
-import qualified GHC.Exts as Exts
+import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.IntSet        as IntSet
+import qualified Data.Set           as Set
+import qualified GHC.Exts           as Exts
 
 -- | An abstract list data type with /O(1)/ time concatenation (the current
 -- implementation uses difference lists). Here @a@ is the type of list elements.
@@ -138,3 +140,10 @@ forEach s f = Set.foldr (\a u -> f a *> u) (pure ()) s
 -- | Perform an applicative action for each member of an IntSet.
 forEachInt :: Applicative f => IntSet -> (Int -> f a) -> f ()
 forEachInt s f = IntSet.foldr (\a u -> f a *> u) (pure ()) s
+
+-- | Unsafe creation of a NonEmpty list.
+unsafeNonEmpty :: [a] -> NonEmpty.NonEmpty a
+unsafeNonEmpty = fromMaybe (error msg) . NonEmpty.nonEmpty
+  where
+    msg = "unsafeNonEmpty: Graph is empty"
+
