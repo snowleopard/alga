@@ -221,10 +221,11 @@ edgeCountT g = edgeCount g
 inspect $ 'edgeCountT `hasNoType` ''Set.Set
 
 -- vertexList
-vertexListC :: Ord a => Buildg a -> [a]
-vertexListC g = vertexList (buildg g)
+vertexListCR :: Ord a => (a -> b -> b) -> b -> Buildg a -> b
+vertexListCR k c g = foldr k c (vertexList (buildg g))
 
-inspect $ 'vertexListC `hasNoType` ''Graph
+inspect $ 'vertexListCR `hasNoType` ''Graph
+inspect $ 'vertexListCR `hasNoType` ''[]
 
 vertexListT :: Graph Int -> [Int]
 vertexListT g = vertexList g

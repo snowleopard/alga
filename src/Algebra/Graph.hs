@@ -689,7 +689,7 @@ edgeCountIntR = AIM.edgeCount . toAdjacencyIntMap
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
 --
--- Good consumer.
+-- Good consumer and producer.
 --
 -- @
 -- vertexList 'empty'      == []
