@@ -441,6 +441,7 @@ vertexList = Map.keys . adjacencyMap
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList (AM m) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
+{-# INLINE edgeList #-}
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.

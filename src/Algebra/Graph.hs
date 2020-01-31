@@ -710,7 +710,7 @@ vertexIntListR = IntSet.toList . vertexIntSetR
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
 -- edges /m/ of a graph can be quadratic with respect to the expression size /s/.
 --
--- Good consumer.
+-- Good consumer and producer.
 --
 -- @
 -- edgeList 'empty'          == []
