@@ -689,7 +689,7 @@ edgeCountIntR = AIM.edgeCount . toAdjacencyIntMap
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
 --
--- Good consumer.
+-- Good consumer of graphs and producer of lists.
 --
 -- @
 -- vertexList 'empty'      == []
@@ -710,7 +710,7 @@ vertexIntListR = IntSet.toList . vertexIntSetR
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
 -- edges /m/ of a graph can be quadratic with respect to the expression size /s/.
 --
--- Good consumer.
+-- Good consumer of graphs and producer of lists.
 --
 -- @
 -- edgeList 'empty'          == []

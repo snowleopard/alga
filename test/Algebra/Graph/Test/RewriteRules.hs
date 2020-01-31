@@ -221,10 +221,11 @@ edgeCountT g = edgeCount g
 inspect $ 'edgeCountT `hasNoType` ''Set.Set
 
 -- vertexList
-vertexListC :: Ord a => Buildg a -> [a]
-vertexListC g = vertexList (buildg g)
+vertexListCP :: Ord a => (a -> b -> b) -> b -> Buildg a -> b
+vertexListCP k c g = foldr k c (vertexList (buildg g))
 
-inspect $ 'vertexListC `hasNoType` ''Graph
+inspect $ 'vertexListCP `hasNoType` ''Graph
+inspect $ 'vertexListCP `hasNoType` ''[]
 
 vertexListT :: Graph Int -> [Int]
 vertexListT g = vertexList g
@@ -243,10 +244,11 @@ edgeSetT g = edgeSet g
 inspect $ 'vertexListT `hasNoType` ''AM.AdjacencyMap
 
 -- edgeList
-edgeListC :: Ord a => Buildg a -> [(a,a)]
-edgeListC g = edgeList (buildg g)
+edgeListCP :: Ord a => ((a,a) -> b -> b) -> b -> Buildg a -> b
+edgeListCP k c g = foldr k c (edgeList (buildg g))
 
-inspect $ 'edgeListC `hasNoType` ''Graph
+inspect $ 'edgeListCP `hasNoType` ''Graph
+inspect $ 'edgeListCP `hasNoType` ''[]
 
 edgeListT :: Graph Int -> [(Int,Int)]
 edgeListT g = edgeList g
