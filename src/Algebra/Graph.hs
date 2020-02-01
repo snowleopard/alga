@@ -550,7 +550,7 @@ _               === _               = False
 
 infix 4 ===
 
--- | Check if a graph is empty. A convenient alias for 'null'.
+-- | Check if a graph is empty.
 -- Complexity: /O(s)/ time.
 --
 -- Good consumer.

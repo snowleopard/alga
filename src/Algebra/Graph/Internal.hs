@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Internal
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -24,9 +24,11 @@ module Algebra.Graph.Internal (
     maybeF,
 
     -- * Utilities
-    setProduct, setProductWith, forEach, forEachInt
+    setProduct, setProductWith, forEach, forEachInt, coerce00, coerce10,
+    coerce20, coerce01, coerce11, coerce21
     ) where
 
+import Data.Coerce
 import Data.Foldable
 import Data.Semigroup
 import Data.IntSet (IntSet)
@@ -138,3 +140,32 @@ forEach s f = Set.foldr (\a u -> f a *> u) (pure ()) s
 -- | Perform an applicative action for each member of an IntSet.
 forEachInt :: Applicative f => IntSet -> (Int -> f a) -> f ()
 forEachInt s f = IntSet.foldr (\a u -> f a *> u) (pure ()) s
+
+-- TODO: Get rid of this boilerplate.
+
+-- | Help GHC with type inference when direct use of 'coerce' does not compile.
+coerce00 :: Coercible f g => f x -> g x
+coerce00 = coerce
+
+-- | Help GHC with type inference when direct use of 'coerce' does not compile.
+coerce10 :: (Coercible a b, Coercible f g) => (a -> f x) -> (b -> g x)
+coerce10 = coerce
+
+-- | Help GHC with type inference when direct use of 'coerce' does not compile.
+coerce20 :: (Coercible a b, Coercible c d, Coercible f g)
+         => (a -> c -> f x) -> (b -> d -> g x)
+coerce20 = coerce
+
+-- | Help GHC with type inference when direct use of 'coerce' does not compile.
+coerce01 :: (Coercible a b, Coercible f g) => (f x -> a) -> (g x -> b)
+coerce01 = coerce
+
+-- | Help GHC with type inference when direct use of 'coerce' does not compile.
+coerce11 :: (Coercible a b, Coercible c d, Coercible f g)
+         => (a -> f x -> c) -> (b -> g x -> d)
+coerce11 = coerce
+
+-- | Help GHC with type inference when direct use of 'coerce' does not compile.
+coerce21 :: (Coercible a b, Coercible c d, Coercible p q, Coercible f g)
+         => (a -> c -> f x -> p) -> (b -> d -> g x -> q)
+coerce21 = coerce

@@ -332,8 +332,7 @@ undirectedGraphAPI = API
     , transpose                  = id
     , gmap                       = fmap
     , induce                     = UG.induce
-    , induceJust                 = UG.induceJust
-    , consistent                 = UG.consistent }
+    , induceJust                 = UG.induceJust }
 
 -- | The API of 'AIM.AdjacencyIntMap'.
 adjacencyIntMapAPI :: API (Mono AIM.AdjacencyIntMap) ((~) Int)

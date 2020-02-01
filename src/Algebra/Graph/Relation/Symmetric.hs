@@ -350,7 +350,7 @@ vertexCount = coerce R.vertexCount
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: Ord a => Relation a -> Int
-edgeCount = length . edgeList
+edgeCount = Set.size . edgeSet
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.

@@ -289,7 +289,7 @@ edges = overlays . map (\(e, x, y) -> edge e x y)
 overlays :: Monoid e => [Graph e a] -> Graph e a
 overlays = foldr overlay empty
 
--- | Check if a graph is empty. A convenient alias for 'null'.
+-- | Check if a graph is empty.
 -- Complexity: /O(s)/ time.
 --
 -- @
