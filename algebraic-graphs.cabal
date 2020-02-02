@@ -56,6 +56,7 @@ description:
     <https://github.com/snowleopard/alga/issues discussions on the library API>.
 
 extra-doc-files:
+    AUTHORS.md
     CHANGES.md
     README.md
 
@@ -101,7 +102,7 @@ library
                         Algebra.Graph.AdjacencyIntMap.Algorithm,
                         Algebra.Graph.AdjacencyMap,
                         Algebra.Graph.AdjacencyMap.Algorithm,
-                        Algebra.Graph.Bipartite.AdjacencyMap,
+                        Algebra.Graph.Bipartite.Undirected.AdjacencyMap,
                         Algebra.Graph.Class,
                         Algebra.Graph.Export,
                         Algebra.Graph.Export.Dot,
@@ -133,7 +134,7 @@ test-suite test-alga
                         Algebra.Graph.Test.AdjacencyIntMap,
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,
-                        Algebra.Graph.Test.Bipartite.AdjacencyMap,
+                        Algebra.Graph.Test.Bipartite.Undirected.AdjacencyMap,
                         Algebra.Graph.Test.Export,
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,

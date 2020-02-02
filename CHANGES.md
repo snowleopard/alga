@@ -2,9 +2,14 @@
 
 ## 0.5
 
-* #172, #245: Stop supporting GHC 7.8.4 and GHC 7.10.3.
+* #217, #224, #227, #234, #235: Add new BFS, DFS, topological sort, and SCC
+                                algorithms for adjacency maps.
+* #228, #247, #254: Improve algebraic graph fusion.
+* #207, #218, #255: Add `Bipartite.Undirected.AdjacencyMap`.
+* #220, #237, #255: Add `Algebra.Graph.Undirected`.
 * #203, #215, #223: Add `Acyclic.AdjacencyMap`.
 * #202, #209, #211: Add `induceJust` and `induceJust1`.
+* #172, #245: Stop supporting GHC 7.8.4 and GHC 7.10.3.
 * #208: Add `fromNonEmpty` to `NonEmpty.AdjacencyMap`.
 * #208: Add `fromAdjacencyMap` to `AdjacencyIntMap`.
 * #208: Drop `Internal` modules for `AdjacencyIntMap`, `AdjacencyMap`,

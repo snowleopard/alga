@@ -240,7 +240,7 @@ toNonEmpty = G.foldg Nothing (Just . Vertex) (go Overlay) (go Connect)
 -- Complexity: /O(1)/ time, memory and size.
 --
 -- @
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- 'size'        (vertex x) == 1
@@ -335,6 +335,7 @@ vertices1 = overlays1 . fmap vertex
 --
 -- @
 -- edges1 [(x,y)]     == 'edge' x y
+-- edges1             == 'overlays1' . 'fmap' ('uncurry' 'edge')
 -- 'edgeCount' . edges1 == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
 -- @
 edges1 :: NonEmpty (a, a) -> Graph a
@@ -442,8 +443,7 @@ size = foldg1 (const 1) (+) (+)
 -- Complexity: /O(s)/ time.
 --
 -- @
--- hasVertex x ('vertex' x) == True
--- hasVertex 1 ('vertex' 2) == False
+-- hasVertex x ('vertex' y) == (x == y)
 -- @
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex v = foldg1 (==v) (||) (||)
