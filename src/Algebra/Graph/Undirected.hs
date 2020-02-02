@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric, RankNTypes #-}
+{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Undirected
@@ -15,6 +15,13 @@
 -- graphs satisfy all laws of the 'Algebra.Graph.Class.Undirected' type class,
 -- including the commutativity of 'connect'.
 --
+-- To avoid name clashes with "Algebra.Graph", this module can be imported
+-- qualified:
+--
+-- @
+-- import qualified Algebra.Graph.Undirected as Undirected
+-- @
+
 -----------------------------------------------------------------------------
 module Algebra.Graph.Undirected (
     -- * Algebraic data type for graphs
