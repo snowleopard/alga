@@ -84,8 +84,8 @@ testAcyclicAdjacencyMap = do
     test "isEmpty     (vertex x) == False" $ \(x :: Int) ->
           isEmpty     (vertex x) == False
 
-    test "hasVertex x (vertex x) == True" $ \(x :: Int) ->
-          hasVertex x (vertex x) == True
+    test "hasVertex x (vertex y) == (x == y)" $ \(x :: Int) y ->
+          hasVertex x (vertex y) == (x == y)
 
     test "vertexCount (vertex x) == 1" $ \(x :: Int) ->
           vertexCount (vertex x) == 1
@@ -164,11 +164,8 @@ testAcyclicAdjacencyMap = do
     test "hasVertex x empty               == False" $ \(x :: Int) ->
           hasVertex x empty               == False
 
-    test "hasVertex x (vertex x)          == True" $ \(x :: Int) ->
-          hasVertex x (vertex x)          == True
-
-    test "hasVertex 1 (vertex 2)          == False" $
-          hasVertex 1 (vertex 2 :: AAI)   == False
+    test "hasVertex x (vertex y)          == (x == y)" $ \(x :: Int) y ->
+          hasVertex x (vertex y)          == (x == y)
 
     test "hasVertex x . removeVertex x    == const False" $ \(x :: Int) y ->
          (hasVertex x . removeVertex x) y == const False y

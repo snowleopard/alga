@@ -156,7 +156,7 @@ empty = Empty
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'Algebra.Graph.ToGraph.vertexCount' (vertex x) == 1
 -- 'Algebra.Graph.ToGraph.edgeCount'   (vertex x) == 0
 -- @
@@ -322,8 +322,7 @@ size = foldg 1 (const 1) (const (+))
 --
 -- @
 -- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x ('vertex' y)       == (x == y)
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Eq a => a -> Graph e a -> Bool

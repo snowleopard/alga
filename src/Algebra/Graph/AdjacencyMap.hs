@@ -220,7 +220,7 @@ empty = AM Map.empty
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- @
@@ -304,6 +304,7 @@ vertices = AM . Map.fromList . map (\x -> (x, Set.empty))
 -- @
 -- edges []          == 'empty'
 -- edges [(x,y)]     == 'edge' x y
+-- edges             == 'overlays' . 'map' ('uncurry' 'edge')
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
@@ -371,8 +372,7 @@ isEmpty = Map.null . adjacencyMap
 --
 -- @
 -- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x ('vertex' y)       == (x == y)
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Ord a => a -> AdjacencyMap a -> Bool

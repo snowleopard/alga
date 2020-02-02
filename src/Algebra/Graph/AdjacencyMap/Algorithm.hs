@@ -19,10 +19,10 @@ module Algebra.Graph.AdjacencyMap.Algorithm (
     -- * Algorithms
     bfsForest, bfs, dfsForest, dfsForestFrom, dfs, reachable,
     topSort, isAcyclic, scc,
-    
+
     -- * Correctness properties
     isDfsForestOf, isTopSortOf,
-    
+
     -- * Type synonyms
     Cycle
     ) where
@@ -50,7 +50,7 @@ import qualified Data.Set                            as Set
 --   argument vertices that will be the roots of the resulting
 --   forest. Duplicates in the list will have their first occurrence
 --   expanded and subsequent ones ignored. Argument vertices not in
---   the graph are also ignored. 
+--   the graph are also ignored.
 --
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O((L+m)*log n)/ time and /O(n)/ space.
@@ -69,7 +69,7 @@ import qualified Data.Set                            as Set
 --                                             , Node { rootLabel = 4
 --                                                    , subForest = [] }]
 -- 'forest' (bfsForest [3] ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [3,2,1] + 'path' [3,4,5]
--- 
+--
 -- @
 bfsForest :: Ord a => [a] -> AdjacencyMap a -> Forest a
 bfsForest vs g = evalState (explore [ v | v <- vs, hasVertex v g ]) Set.empty where
@@ -88,7 +88,7 @@ bfsForest vs g = evalState (explore [ v | v <- vs, hasVertex v g ]) Set.empty wh
 --
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O((L+m)*log n)/ time and /O(n)/ space.
--- 
+--
 -- @
 -- bfs vs 'empty'                                         == []
 -- bfs [] g                                             == []
@@ -141,10 +141,10 @@ dfsForest g = dfsForestFrom' (vertexList g) g
 --   resulting forest does not necessarily span the whole graph, as
 --   some vertices may be unreachable. Any of the given vertices which
 --   are not in the graph are ignored.
--- 
+--
 --   Let /L/ be the number of seed vertices. Complexity: /O((L+m)*log n)/
 --   time and /O(n)/ space.
--- 
+--
 -- @
 -- dfsForestFrom vs 'empty'                           == []
 -- 'forest' (dfsForestFrom [1]   $ 'edge' 1 1)          == 'vertex' 1
@@ -171,7 +171,7 @@ dfsForestFrom' :: Ord a => [a] -> AdjacencyMap a -> Forest a
 dfsForestFrom' vs g = evalState (explore vs) Set.empty where
   explore (v:vs) = discovered v >>= \case
     True -> (:) <$> walk v <*> explore vs
-    False -> explore vs 
+    False -> explore vs
   explore [] = return []
   walk v = Node v <$> explore (adjacent v)
   adjacent v = Set.toList (postSet v g)
@@ -205,7 +205,7 @@ dfs vs = dfsForestFrom vs >=> flatten
 -- | Compute the list of vertices that are /reachable/ from a given
 --   source vertex in a graph. The vertices in the resulting list
 --   appear in /depth-first order/.
--- 
+--
 --   Complexity: /O(m*log n)/ time and /O(n)/ space.
 --
 -- @
@@ -222,7 +222,7 @@ dfs vs = dfsForestFrom vs >=> flatten
 reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = dfs [x]
 
-type Cycle = NonEmpty 
+type Cycle = NonEmpty
 data NodeState = Entered | Exited
 data S a = S { parent :: Map.Map a a
              , entry  :: Map.Map a NodeState
@@ -289,7 +289,7 @@ topSort g = runContT (evalStateT (topSort' g) initialState) id where
   initialState = S Map.empty Map.empty []
 
 -- | Check if a given graph is /acyclic/.
--- 
+--
 --   Complexity: /O((n+m)*log n)/ time and /O(n)/ space.
 --
 -- @
@@ -384,7 +384,8 @@ gabowSCC g =
 
     insertComponent v = modify'
       (\(SCC pre scc bnd pth pres sccs gs es_i es_o) ->
-         let (curr,_v:pth') = span (/=v) pth
+         let (curr,v_pth') = span (/=v) pth
+             pth' = tail v_pth' -- Here we know that v_pth' starts with v
              (es,es_i') = span ((>=p_v).fst) es_i
              g_i | null es = vertex v
                  | otherwise = edges (snd <$> es)

@@ -211,9 +211,9 @@ fromNonEmpty = am
 -- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'AdjacencyMap.hasVertex' x (vertex x) == True
--- 'AdjacencyMap.vertexCount' (vertex x) == 1
--- 'AdjacencyMap.edgeCount'   (vertex x) == 0
+-- 'hasVertex' x (vertex y) == (x == y)
+-- 'vertexCount' (vertex x) == 1
+-- 'edgeCount'   (vertex x) == 0
 -- @
 vertex :: a -> AdjacencyMap a
 vertex = coerce AM.vertex
@@ -289,6 +289,7 @@ vertices1 = coerce AM.vertices . toList
 --
 -- @
 -- edges1 [(x,y)]     == 'edge' x y
+-- edges1             == 'overlays1' . 'fmap' ('uncurry' 'edge')
 -- 'edgeCount' . edges1 == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
 -- @
 edges1 :: Ord a => NonEmpty (a, a) -> AdjacencyMap a
@@ -333,8 +334,7 @@ isSubgraphOf = coerce AM.isSubgraphOf
 -- Complexity: /O(log(n))/ time.
 --
 -- @
--- hasVertex x ('vertex' x) == True
--- hasVertex 1 ('vertex' 2) == False
+-- hasVertex x ('vertex' y) == (x == y)
 -- @
 hasVertex :: Ord a => a -> AdjacencyMap a -> Bool
 hasVertex = coerce AM.hasVertex
