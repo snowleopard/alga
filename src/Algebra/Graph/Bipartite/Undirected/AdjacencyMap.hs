@@ -740,8 +740,7 @@ data List a b = Nil | Cons a (List b a)
 instance IsList (List a a) where
     type Item (List a a) = a
 
-    fromList []     = Nil
-    fromList (x:xt) = Cons x (fromList xt)
+    fromList = foldr Cons Nil
 
     toList Nil         = []
     toList (Cons x xt) = x:(toList xt)
@@ -754,8 +753,7 @@ instance IsList (List a a) where
 -- fromListEven [(1, "a"), (2, "b")] == 'Cons' 1 ('Cons' "a" ('Cons' 2 ('Cons' "b" 'Nil')))
 -- @
 fromListEven :: [(a, b)] -> List a b
-fromListEven []          = Nil
-fromListEven ((x, y):xt) = Cons x (Cons y (fromListEven xt))
+fromListEven = foldr (\(x,y) -> Cons x . Cons y) Nil
 
 -- | Construct a 'List' of odd length from the first element and a list of
 -- pairs.
@@ -769,7 +767,7 @@ fromListOdd :: a -> [(b, a)] -> List a b
 fromListOdd x = Cons x . fromListEven
 
 -- | The /path/ on a list of vertices of even length.
--- Complexity: /O(L log(L))/ time, where /L/ is the length of the given list.
+-- Complexity: /O(L * log(L))/ time, where /L/ is the length of the given list.
 --
 -- @
 -- path 'Nil'                            == 'empty'
@@ -781,13 +779,15 @@ fromListOdd x = Cons x . fromListEven
 path :: (Ord a, Ord b) => List a b -> AdjacencyMap a b
 path Nil                        = empty
 path (Cons x Nil)               = leftVertex x
-path xs@(Cons _ xt@(Cons _ xr)) = edges $ zip (odds xs) (odds xt) ++
-                                          zip (odds xr) (odds xt)
+path xs@(Cons _ xt@(Cons _ xr)) = edges $ zip (odds xs) oxt ++
+                                          zip (odds xr) oxt
     where
         odds :: forall a b. List a b -> [a]
         odds Nil                  = []
         odds (Cons x Nil)         = [x]
         odds (Cons x (Cons _ xt)) = x:odds xt
+
+        oxt = odds xt
 
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
@@ -821,7 +821,7 @@ biclique xs ys = BAM (Map.fromSet (const sys) sxs) (Map.fromSet (const sxs) sys)
     sys = Set.fromList ys
 
 -- | The /star/ formed by a center vertex connected to a list of leaves.
--- Complexity: /O(L log(L))/ time, where /L/ is the length of the given list.
+-- Complexity: /O(L * log(L))/ time, where /L/ is the length of the given list.
 --
 -- @
 -- star x []     == 'leftVertex' x
@@ -835,7 +835,7 @@ star x ys = overlay (leftVertex x) (edges [ (x, y) | y <- ys ])
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
 -- 'leftAdjacencyList'.
--- Complexity: /O(L log(L))/ time, where /L/ is the total size of the input.
+-- Complexity: /O(L * log(L))/ time, where /L/ is the total size of the input.
 --
 -- @
 -- stars []                      == 'empty'
