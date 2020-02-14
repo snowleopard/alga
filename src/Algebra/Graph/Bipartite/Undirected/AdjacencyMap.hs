@@ -43,7 +43,7 @@ module Algebra.Graph.Bipartite.Undirected.AdjacencyMap (
     -- * Standard families of graphs
     path, circuit, biclique, star, stars, mesh,
 
-    -- * Graph transformations
+    -- * Graph composition
     box, boxWith,
 
     -- * Algorithms
@@ -691,7 +691,7 @@ edgeSet :: (Ord a, Ord b) => AdjacencyMap a b -> Set (a, b)
 edgeSet = Set.fromAscList . edgeList
 
 -- | The sorted /adjacency list/ of the left part of the graph.
--- Complexity: /O(n + m)/ time and /O(n)/ memory.
+-- Complexity: /O(n + m)/ time and memory.
 --
 -- @
 -- leftAdjacencyList 'empty'            == []
@@ -704,7 +704,7 @@ leftAdjacencyList :: AdjacencyMap a b -> [(a, [b])]
 leftAdjacencyList (BAM lr _) = [ (v, Set.toAscList us) | (v, us) <- Map.toAscList lr ]
 
 -- | The sorted /adjacency list/ of the right part of the graph.
--- Complexity: /O(n + m)/ time and /O(n)/ memory.
+-- Complexity: /O(n + m)/ time and memory.
 --
 -- @
 -- rightAdjacencyList 'empty'            == []
