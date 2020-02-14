@@ -41,7 +41,7 @@ module Algebra.Graph.Bipartite.Undirected.AdjacencyMap (
     List(..), fromListEven, fromListOdd,
 
     -- * Standard families of graphs
-    circuit, biclique,
+    path, circuit, biclique, star, stars, mesh,
 
     -- * Graph transformations
     box, boxWith,
@@ -57,11 +57,12 @@ import Control.Monad
 import Control.Monad.Trans.Maybe
 import Control.Monad.State
 import Data.Either
-import Data.Foldable
+import Data.Foldable (asum)
 import Data.List
 import Data.Map.Strict (Map)
 import Data.Maybe
 import Data.Set (Set)
+import GHC.Exts (IsList(..))
 import GHC.Generics
 
 import qualified Algebra.Graph.AdjacencyMap as AM

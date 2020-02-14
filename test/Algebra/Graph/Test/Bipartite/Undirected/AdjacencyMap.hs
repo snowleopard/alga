@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
@@ -21,6 +22,7 @@ import Data.Either.Extra
 import Data.List
 import Data.Map.Strict (Map)
 import Data.Set (Set)
+import GHC.Exts (fromList)
 
 import qualified Algebra.Graph.AdjacencyMap                      as AM
 import qualified Algebra.Graph.Bipartite.Undirected.AdjacencyMap as B
@@ -653,11 +655,11 @@ testBipartiteUndirectedAdjacencyMap = do
 
     putStrLn "\n============ Show (Bipartite.AdjacencyMap.List a a) ============"
     test "show Nil                              == \"Nil\"" $
-        show (Nil :: List Int Int)                               == "Nil"
+        Prelude.show (Nil :: List Int Int)                               == "Nil"
     test "show ([1, 2, 3] :: List Int Int)      == \"Cons 1 (Cons 2 (Cons 3 Nil))\"" $
-        show ([1, 2, 3] :: List Int Int)                         == "Cons 1 (Cons 2 (Cons 3 Nil))"
+        Prelude.show ([1, 2, 3] :: List Int Int)                         == "Cons 1 (Cons 2 (Cons 3 Nil))"
     test "show (Cons 1 (Cons \"a\" (Cons 3 Nil))) == \"Cons 1 (Cons \\\"a\\\" (Cons 3 Nil))" $
-        show (Cons 1 (Cons "a" (Cons 3 Nil)) :: List Int String) == "Cons 1 (Cons \"a\" (Cons 3 Nil))"
+        Prelude.show (Cons 1 (Cons "a" (Cons 3 Nil)) :: List Int String) == "Cons 1 (Cons \"a\" (Cons 3 Nil))"
 
     putStrLn "\n============ Bipartite.AdjacencyMap.fromListEven ============"
     test "fromListEven []                       == Nil" $
@@ -717,27 +719,24 @@ testBipartiteUndirectedAdjacencyMap = do
 
     putStrLn "\n============ Bipartite.AdjacencyMap.mesh ============"
     test "mesh xs []             == empty" $ \(xs :: [Int]) ->
-        mesh xs []             == (empty :: BAIIII)
+        mesh xs []             == (B.empty :: AdjacencyMap (Int, Int) (Int, Int))
     test "mesh [] ys             == empty" $ \(ys :: [Int]) ->
-        mesh [] ys             == (empty :: BAIIII)
+        mesh [] ys             == (B.empty :: AdjacencyMap (Int, Int) (Int, Int))
     test "mesh [x] [y]           == leftVertex (x, y)" $ \(x :: Int) (y :: Int) ->
-        mesh [x] [y]           == (leftVertex (x, y) :: BAIIII)
+        mesh [x] [y]           == B.leftVertex (x, y)
     test "mesh [1, 2] ['a', 'b'] == biclique [(1, 'a'), (2, 'b')] [(1, 'b'), (2, 'a')]" $
-        mesh [1, 2] ['a', 'b'] == (biclique [(1, 'a'), (2, 'b')] [(1, 'b'), (2, 'a')] :: BAICIC)
+        mesh [1, 2] ['a', 'b'] == (B.biclique [(1, 'a'), (2, 'b')] [(1, 'b'), (2, 'a')] :: AdjacencyMap (Int, Char) (Int, Char))
     test "mesh [1, 1] ['a', 'b'] == biclique [(1, 'a'), (1, 'b')] [(1, 'a'), (1, 'b')]" $
-        mesh [1, 1] ['a', 'b'] == (biclique [(1, 'a'), (1, 'b')] [(1, 'a'), (1, 'b')] :: BAICIC)
+        mesh [1, 1] ['a', 'b'] == (B.biclique [(1, 'a'), (1, 'b')] [(1, 'a'), (1, 'b')] :: AdjacencyMap (Int, Char) (Int, Char))
     test "mesh xs ys             == box (path (fromList xs)) (path (fromList ys))" $ \(xs :: [Int]) (ys :: [Int]) ->
         mesh xs ys             == box (path $ fromList xs) (path $ fromList ys)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.box ============"
     test "box (path [0,1]) (path ['a','b']) == edges [((0,'a'),(0,'b')),((0,'a'),(1,'a')),((1,'b'),(0,'b')),((1,'b'),(1,'a'))]" $
-        box (path [0,1]) (path ['a','b']) == (edges [((0,'a'),(0,'b')),((0,'a'),(1,'a')),((1,'b'),(0,'b')),((1,'b'),(1,'a'))] :: BAICIC)
+        box (path [0,1]) (path ['a','b']) == (B.edges [((0,'a'),(0,'b')),((0,'a'),(1,'a')),((1,'b'),(0,'b')),((1,'b'),(1,'a'))] :: AdjacencyMap (Int, Char) (Int, Char))
     test "box x (overlay y z) == overlay (box x y) (box x z)" $ size10 $ \(x :: BAII) (y :: BAII) (z :: BAII) ->
         box x (overlay y z) == overlay (box x y) (box x z)
     test "vertexCount (box x y) <= vertexCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
-        vertexCount (box x y) <= vertexCount x * vertexCount y
+        B.vertexCount (box x y) <= vertexCount x * vertexCount y
     test "edgeCount (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
-        edgeCount (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
-
-boxc :: (Ord a, Ord b) => AdjacencyMap a a -> AdjacencyMap b b -> AdjacencyMap (a, b) (a, b)
-boxc = box (,) (,) (,) (,)
+        B.edgeCount (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
