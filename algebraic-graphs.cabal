@@ -1,13 +1,13 @@
 cabal-version: 2.2
 name:          algebraic-graphs
-version:       0.5
+version:       0.6
 synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
 author:        Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard
 maintainer:    Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard,
                Alexandre Moine <alexandre@moine.me>, github: @nobrakal
-copyright:     Andrey Mokhov, 2016-2019
+copyright:     Andrey Mokhov, 2016-2020
 homepage:      https://github.com/snowleopard/alga
 category:      Algebra, Algorithms, Data Structures, Graphs
 build-type:    Simple
