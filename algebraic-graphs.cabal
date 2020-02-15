@@ -72,18 +72,23 @@ common common-settings
                         mtl          >= 2.1     && < 2.3,
                         transformers >= 0.4     && < 0.6
     default-language:   Haskell2010
-    default-extensions: FlexibleContexts
+    default-extensions: ConstraintKinds
+                        DeriveFunctor
+                        DeriveGeneric
+                        FlexibleContexts
                         FlexibleInstances
+                        GADTs
                         GeneralizedNewtypeDeriving
+                        MultiParamTypeClasses
+                        RankNTypes
                         ScopedTypeVariables
                         TupleSections
                         TypeApplications
                         TypeFamilies
     other-extensions:   CPP
-                        DeriveFunctor
                         OverloadedStrings
-                        RankNTypes
                         RecordWildCards
+                        ViewPatterns
     GHC-options:        -Wall
                         -Wcompat
                         -Wincomplete-record-updates
@@ -154,7 +159,4 @@ test-suite test-alga
                         inspection-testing >= 0.4.2.2 && < 0.5,
                         QuickCheck         >= 2.10    && < 2.14
     other-extensions:   ConstrainedClassMethods
-                        ConstraintKinds
-                        MultiParamTypeClasses
                         TemplateHaskell
-                        ViewPatterns

@@ -1,9 +1,9 @@
-{-# LANGUAGE ConstraintKinds, GADTs, RankNTypes, RecordWildCards #-}
+{-# LANGUAGE ConstraintKinds, RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-missing-fields #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.API
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental

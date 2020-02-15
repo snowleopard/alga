@@ -1,8 +1,7 @@
-{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyMap
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -467,7 +466,7 @@ edgeSet :: Eq a => AdjacencyMap a -> Set (a, a)
 edgeSet = Set.fromAscList . edgeList
 
 -- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
+-- Complexity: /O(n + m)/ time and memory.
 --
 -- @
 -- adjacencyList 'empty'          == []
@@ -797,7 +796,7 @@ compose x y = fromAdjacencySets
     vs = vertexSet x `Set.union` vertexSet y
 
 -- | Compute the /Cartesian product/ of graphs.
--- Complexity: /O(n * m * log(n)^2)/ time.
+-- Complexity: /O((n + m) * log(n))/ time and O(n + m) memory.
 --
 -- @
 -- box ('path' [0,1]) ('path' "ab") == 'edges' [ ((0,\'a\'), (0,\'b\'))
@@ -806,10 +805,10 @@ compose x y = fromAdjacencySets
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
 --
--- Up to an isomorphism between the resulting vertex types, this operation
+-- Up to the isomorphism between the resulting vertex types, this operation
 -- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
 -- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@.
+-- stands for equality up to the isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x
