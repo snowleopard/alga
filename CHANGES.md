@@ -1,5 +1,9 @@
 # Change log
 
+## 0.6
+
+* #226: Expand the API of `Bipartite.Undirected.AdjacencyMap`.
+
 ## 0.5
 
 * #217, #224, #227, #234, #235: Add new BFS, DFS, topological sort, and SCC
