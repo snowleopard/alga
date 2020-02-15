@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Undirected
@@ -561,7 +560,7 @@ edgeSet = R.edgeSet . toRelation
 {-# INLINE [1] edgeSet #-}
 
 -- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
+-- Complexity: /O(n + m)/ time and memory.
 --
 -- @
 -- adjacencyList 'empty'          == []

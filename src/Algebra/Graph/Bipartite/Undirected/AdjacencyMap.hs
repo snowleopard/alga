@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 ----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Bipartite.Undirected.AdjacencyMap
@@ -37,11 +36,9 @@ module Algebra.Graph.Bipartite.Undirected.AdjacencyMap (
     vertexList, edgeList, leftVertexSet, rightVertexSet, vertexSet, edgeSet,
     leftAdjacencyList, rightAdjacencyList,
 
-    -- * Alternating lists
-    List(..), fromListEven, fromListOdd,
 
     -- * Standard families of graphs
-    path, circuit, biclique, star, stars, mesh,
+    List (..), evenList, oddList, path, circuit, biclique, star, stars, mesh,
 
     -- * Graph composition
     box, boxWith,
@@ -696,47 +693,38 @@ edgeSet = Set.fromAscList . edgeList
 -- @
 -- leftAdjacencyList 'empty'            == []
 -- leftAdjacencyList ('vertices' [] xs) == []
--- leftAdjacencyList ('vertices' xs []) == [ (x, []) | x <- nub ('sort' xs) ]
+-- leftAdjacencyList ('vertices' xs []) == [(x, []) | x <- 'nub' ('sort' xs)]
 -- leftAdjacencyList ('edge' x y)       == [(x, [y])]
 -- leftAdjacencyList ('star' x ys)      == [(x, 'nub' ('sort' ys))]
 -- @
 leftAdjacencyList :: AdjacencyMap a b -> [(a, [b])]
-leftAdjacencyList (BAM lr _) = [ (v, Set.toAscList us) | (v, us) <- Map.toAscList lr ]
+leftAdjacencyList (BAM lr _) = fmap Set.toAscList <$> Map.toAscList lr
 
 -- | The sorted /adjacency list/ of the right part of the graph.
 -- Complexity: /O(n + m)/ time and memory.
 --
 -- @
 -- rightAdjacencyList 'empty'            == []
--- rightAdjacencyList ('vertices' [] xs) == [ (x, []) | x <- 'nub' ('sort' xs) ]
+-- rightAdjacencyList ('vertices' [] xs) == [(x, []) | x <- 'nub' ('sort' xs)]
 -- rightAdjacencyList ('vertices' xs []) == []
 -- rightAdjacencyList ('edge' x y)       == [(y, [x])]
--- rightAdjacencyList ('star' x ys)      == [ (y, [x])  | y <- 'nub' ('sort' ys) ]
+-- rightAdjacencyList ('star' x ys)      == [(y, [x])  | y <- 'nub' ('sort' ys)]
 -- @
 rightAdjacencyList :: AdjacencyMap a b -> [(b, [a])]
-rightAdjacencyList (BAM _ rl) = [ (v, Set.toAscList us) | (v, us) <- Map.toAscList rl ]
+rightAdjacencyList (BAM _ rl) = fmap Set.toAscList <$> Map.toAscList rl
 
--- | A list of alternating values of two types. The first type argument denotes
--- the type of the head.
+-- | A list of values of two alternating types. The first type argument denotes
+-- the type of the value at the head.
 --
--- With @OverloadedLists@ extension it is possible to use standard list
--- notation to make a 'List' of two coincidential types, e.g.
--- 
+-- With the @OverloadedLists@ extension it is possible to use the standard list
+-- notation to construct a 'List' where the two types coincide, for example:
+--
 -- @
 -- [1, 2, 3, 4, 5] :: List Int Int
 -- @
 --
--- This property is heavily used in the examples below.
---
--- The 'Show' instance is defined using the list constructors.
---
--- @
--- 'show' 'Nil'                              == \"Nil\"
--- 'show' ([1, 2, 3] :: List Int Int)      == \"Cons 1 (Cons 2 (Cons 3 Nil))\"
--- 'show' (Cons 1 (Cons \"a\" (Cons 3 Nil))) == \"Cons 1 (Cons \\"a\\" (Cons 3 Nil))\"
--- @
-data List a b = Nil | Cons a (List b a)
-     deriving (Eq, Show, Generic)
+-- We make use of this shorthand notation in the examples below.
+data List a b = Nil | Cons a (List b a) deriving (Eq, Generic, Ord, Show)
 
 instance IsList (List a a) where
     type Item (List a a) = a
@@ -744,59 +732,56 @@ instance IsList (List a a) where
     fromList = foldr Cons Nil
 
     toList Nil         = []
-    toList (Cons x xt) = x:(toList xt)
+    toList (Cons a as) = a : toList as
 
 -- | Construct a 'List' of even length from a list of pairs.
 --
 -- @
--- fromListEven []                   == 'Nil'
--- fromListEven [(1, 2), (3, 4)]     == [1, 2, 3, 4] :: 'List' Int Int
--- fromListEven [(1, "a"), (2, "b")] == 'Cons' 1 ('Cons' "a" ('Cons' 2 ('Cons' "b" 'Nil')))
+-- evenList []                   == 'Nil'
+-- evenList [(1, 2), (3, 4)]     == [1, 2, 3, 4] :: 'List' Int Int
+-- evenList [(1, "a"), (2, "b")] == 'Cons' 1 ('Cons' "a" ('Cons' 2 ('Cons' "b" 'Nil')))
 -- @
-fromListEven :: [(a, b)] -> List a b
-fromListEven = foldr (\(x,y) -> Cons x . Cons y) Nil
+evenList :: [(a, b)] -> List a b
+evenList = foldr (\(a, b) -> Cons a . Cons b) Nil
 
--- | Construct a 'List' of odd length from the first element and a list of
--- pairs.
+-- | Construct a 'List' of odd length given the first element and a list of pairs.
 --
 -- @
--- fromListOdd 1 []                   == 'Cons' 1 'Nil'
--- fromListOdd 1 [(2, 3), (4, 5)]     == [1, 2, 3, 4, 5] :: 'List' Int Int
--- fromListOdd 1 [("a", 2), ("b", 3)] == 'Cons' 1 ('Cons' "a" ('Cons' 2 ('Cons' "b" ('Cons' 3 'Nil'))))
+-- oddList 1 []                   == 'Cons' 1 'Nil'
+-- oddList 1 [(2, 3), (4, 5)]     == [1, 2, 3, 4, 5] :: 'List' Int Int
+-- oddList 1 [("a", 2), ("b", 3)] == 'Cons' 1 ('Cons' "a" ('Cons' 2 ('Cons' "b" ('Cons' 3 'Nil'))))
 -- @
-fromListOdd :: a -> [(b, a)] -> List a b
-fromListOdd x = Cons x . fromListEven
+oddList :: a -> [(b, a)] -> List a b
+oddList a = Cons a . evenList
 
--- | The /path/ on a list of vertices of even length.
+-- | The /path/ on a 'List' of vertices.
 -- Complexity: /O(L * log(L))/ time, where /L/ is the length of the given list.
 --
 -- @
--- path 'Nil'                            == 'empty'
--- path ('Cons' x 'Nil')                   == 'leftVertex' x
--- path ('Cons' x ('Cons' y 'Nil'))          == 'edge' x y
--- path ([1, 2, 1, 3] :: 'List' Int Int) == 'star' 1 [2, 3]
--- path ([1, 2, 3, 1] :: 'List' Int Int) == 'edges' [(1, 2), (3, 2), (3, 1)]
+-- path 'Nil'                   == 'empty'
+-- path ('Cons' x 'Nil')          == 'leftVertex' x
+-- path ('Cons' x ('Cons' y 'Nil')) == 'edge' x y
+-- path [1, 2, 3, 4, 5]       == 'edges' [(1,2), (3,2), (3,4), (5,4)]
 -- @
 path :: (Ord a, Ord b) => List a b -> AdjacencyMap a b
-path Nil                        = empty
-path (Cons x Nil)               = leftVertex x
-path xs@(Cons _ xt@(Cons _ xr)) = edges $ zip (odds xs) oxt ++
-                                          zip (odds xr) oxt
-    where
-        odds :: forall a b. List a b -> [a]
-        odds Nil                  = []
-        odds (Cons x Nil)         = [x]
-        odds (Cons x (Cons _ xt)) = x:odds xt
+path Nil          = empty
+path (Cons a Nil) = leftVertex a
+path abs          = edges (zip as bs ++ zip (drop 1 as) bs)
+  where
+    (as, bs) = split abs
 
-        oxt = odds xt
+    split :: List a b -> ([a], [b])
+    split xs = case xs of
+        Nil                 -> ([], [])
+        Cons a Nil          -> ([a], [])
+        Cons a (Cons b abs) -> (a : as, b : bs) where (as, bs) = split abs
 
--- | The /circuit/ on a list of vertices.
--- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
+-- | The /circuit/ on a list of pairs of vertices.
+-- Complexity: O(L * log(L)) time, where L is the length of the given list.
 --
 -- @
 -- circuit []                    == 'empty'
 -- circuit [(x,y)]               == 'edge' x y
--- circuit [(1,2), (3,4)]        == 'biclique' [1,3] [2,4]
 -- circuit [(1,2), (3,4), (5,6)] == 'edges' [(1,2), (3,2), (3,4), (5,4), (5,6), (1,6)]
 -- circuit . 'reverse'             == 'swap' . circuit . 'map' Data.Tuple.'Data.Tuple.swap'
 -- @
@@ -825,17 +810,15 @@ biclique xs ys = BAM (Map.fromSet (const sys) sxs) (Map.fromSet (const sxs) sys)
 -- Complexity: /O(L * log(L))/ time, where /L/ is the length of the given list.
 --
 -- @
--- star x []     == 'leftVertex' x
--- star x [y]    == 'edge' x y
--- star x [x]    == 'edge' x x
--- star x [y, z] == 'edges' [(x, y), (x, z)]
--- star x ys     == 'connect' ('leftVertex' x) ('vertices' [] ys)
+-- star x []    == 'leftVertex' x
+-- star x [y]   == 'edge' x y
+-- star x [y,z] == 'edges' [(x,y), (x,z)]
+-- star x ys    == 'connect' ('leftVertex' x) ('vertices' [] ys)
 -- @
 star :: (Ord a, Ord b) => a -> [b] -> AdjacencyMap a b
-star x ys = overlay (leftVertex x) (edges [ (x, y) | y <- ys ])
+star x ys = connect (leftVertex x) (vertices [] ys)
 
--- | The /stars/ formed by overlaying a list of 'star's. An inverse of
--- 'leftAdjacencyList'.
+-- | The /stars/ formed by overlaying a list of 'star's.
 -- Complexity: /O(L * log(L))/ time, where /L/ is the total size of the input.
 --
 -- @
@@ -850,35 +833,32 @@ stars :: (Ord a, Ord b) => [(a, [b])] -> AdjacencyMap a b
 stars = overlays . map (uncurry star)
 
 -- | Construct a /mesh/ graph from two lists of vertices.
--- Complexity: /O(L1 * L2 + L1 log(L1) + L2 log(L2))/ time, where /L1/ and
--- /L2/ are the lengths of the given lists.
--- 
+-- Complexity: /O(L1 * L2 * log(L1 * L2))/ time, where /L1/ and /L2/ are the
+-- lengths of the given lists.
+--
 -- @
--- mesh xs []             == 'empty'
--- mesh [] ys             == 'empty'
--- mesh [x] [y]           == 'leftVertex' (x, y)
--- mesh [1, 2] [\'a\', \'b\'] == 'biclique' [(1, \'a\'), (2, \'b\')] [(1, \'b\'), (2, \'a\')]
--- mesh [1, 1] [\'a\', \'b\'] == 'biclique' [(1, \'a\'), (1, \'b\')] [(1, \'a\'), (1, \'b\')]
+-- mesh xs []           == 'empty'
+-- mesh [] ys           == 'empty'
+-- mesh [x] [y]         == 'leftVertex' (x,y)
+-- mesh [1,1] [\'a\',\'b\'] == 'biclique' [(1,\'a\'), (1,\'b\')] [(1,\'a\'), (1,\'b\')]
+-- mesh [1,2] [\'a\',\'b\'] == 'biclique' [(1,\'a\'), (2,\'b\')] [(1,\'b\'), (2,\'a\')]
 -- @
 mesh :: (Ord a, Ord b) => [a] -> [b] -> AdjacencyMap (a, b) (a, b)
-mesh xs ys = box (path (fromList xs)) (path (fromList ys))
+mesh xs ys = box (path $ fromList xs) (path $ fromList ys)
 
 -- | Compute the /Cartesian product/ of bipartite graphs.
--- Complexity: /O(s1 * s2 * log(s1 * s2))/ time and /O(s1 * s2)/ memory, where
--- /s1/ and /s2/ are the sizes of the given graphs.
---
--- There's also a shorthand 'box' for @boxWith (,) (,) (,) (,)@.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
 -- @
 -- 'box' ('path' [0,1]) ('path' [\'a\',\'b\']) == 'edges' [ ((0,\'a\'), (0,\'b\'))
---                                                    , ((0,\'a\'), (1,\'a\'))
---                                                    , ((0,\'b\'), (1,\'b\'))
---                                                    , ((1,\'a\'), (1,\'b\')) ]
+--                                            , ((0,\'a\'), (1,\'a\'))
+--                                            , ((1,\'b\'), (0,\'b\'))
+--                                            , ((1,\'b\'), (1,\'a\')) ]
 -- @
--- Up to an isomorphism between the resulting vertex types, this operation
+-- Up to the isomorphism between the resulting vertex types, this operation
 -- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
 -- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@
+-- stands for equality up to the isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x
@@ -889,43 +869,31 @@ mesh xs ys = box (path (fromList xs)) (path (fromList ys))
 -- 'vertexCount' (box x y) == 'vertexCount' x * 'vertexCount' y
 -- 'edgeCount'   (box x y) == 'vertexCount' x * 'edgeCount' y + 'edgeCount' x * 'vertexCount' y
 -- @
-box :: (Ord a, Ord b) =>
-       AdjacencyMap a a -> AdjacencyMap b b -> AdjacencyMap (a, b) (a, b)
+box :: (Ord a, Ord b) => AdjacencyMap a a -> AdjacencyMap b b -> AdjacencyMap (a, b) (a, b)
 box = boxWith (,) (,) (,) (,)
 
--- | Compute the /Cartesian product/ of bipartite graphs. The vertices are
--- combined using given combinators.
--- Complexity: /O(s1 * s2 * log(s1 * s2))/ time and /O(s1 * s2)/ memory, where
--- /s1/ and /s2/ are the sizes of the given graphs.
+-- | Compute the generalised /Cartesian product/ of bipartite graphs. The
+-- resulting vertices are obtained using the given combinators.
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
 --
--- See 'box' for more examples.
+-- See 'box' for some examples.
 --
 -- @
--- box = boxWith (,) (,) (,) (,)
+-- box == boxWith (,) (,) (,) (,)
 -- @
-boxWith :: (Ord a, Ord b, Ord c, Ord d, Ord e, Ord f) =>
-           (a -> c -> e) -> (b -> d -> e) -> (a -> d -> f) -> (b -> c -> f) ->
-           AdjacencyMap a b -> AdjacencyMap c d -> AdjacencyMap e f
-boxWith ac bd ad bc g h = toBipartite gbox
-    where
-        -- amg :: AM.AdjacencyMap (Either a b)
-        amg = fromBipartite g
+boxWith :: (Ord a, Ord b, Ord c, Ord d, Ord e, Ord f)
+        => (a -> c -> e) -> (b -> d -> e) -> (a -> d -> f) -> (b -> c -> f)
+        -> AdjacencyMap a b -> AdjacencyMap c d -> AdjacencyMap e f
+boxWith ac bd ad bc x y = toBipartite (AM.gmap combine ambox)
+  where
+    -- ambox :: AM.AdjacencyMap (Either a b, Either c d)
+    ambox = AM.box (fromBipartite x) (fromBipartite y)
 
-        -- amh :: AM.AdjacencyMap (Either c d)
-        amh = fromBipartite h
-
-        -- ambox :: AM.AdjacencyMap (Either a b, Either c d)
-        ambox = AM.box amg amh
-
-        -- mapper :: (Either a b, Either c d) -> Either e f
-        mapper (Left  x, Left  y) = Left  (ac x y)
-        mapper (Left  x, Right y) = Right (ad x y)
-        mapper (Right x, Left  y) = Right (bc x y)
-        mapper (Right x, Right y) = Left  (bd x y)
-
-        -- gbox :: AM.AdjacencyMap (Either e f)
-        gbox = AM.gmap mapper ambox
-
+    -- combine :: (Either a b, Either c d) -> Either e f
+    combine (Left  a, Left  c) = Left  (ac a c)
+    combine (Left  a, Right d) = Right (ad a d)
+    combine (Right b, Left  c) = Right (bc b c)
+    combine (Right b, Right d) = Left  (bd b d)
 
 data Part = LeftPart | RightPart deriving (Show, Eq)
 
@@ -1009,9 +977,10 @@ detectParts x = case runState (runMaybeT dfs) Map.empty of
                          inVertex LeftPart v
 
     -- inVertex :: Part -> a -> PartMonad a
-    inVertex p v = ((:) v) <$> do modify (Map.insert v p)
-                                  let q = otherPart p
-                                  asum [ onEdge q u | u <- Set.toAscList (AM.postSet v g) ]
+    inVertex p v = ((:) v) <$> do
+        modify (Map.insert v p)
+        let q = otherPart p
+        asum [ onEdge q u | u <- Set.toAscList (AM.postSet v g) ]
 
     {-# INLINE onEdge #-}
     -- onEdge :: Part -> a -> PartMonad a

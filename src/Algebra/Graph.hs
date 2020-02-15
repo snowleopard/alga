@@ -1,8 +1,7 @@
-{-# LANGUAGE DeriveGeneric, RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -771,7 +770,7 @@ edgeIntSetR = AIM.edgeSet . toAdjacencyIntMap
 {-# INLINE edgeIntSetR #-}
 
 -- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
+-- Complexity: /O(n + m)/ time and memory.
 --
 -- Good consumer.
 --
@@ -1259,10 +1258,10 @@ compose x y = buildg $ \e v o c -> fromMaybe e $
 --                                       , ((0,\'b\'), (1,\'b\'))
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
--- Up to an isomorphism between the resulting vertex types, this operation
+-- Up to the isomorphism between the resulting vertex types, this operation
 -- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
 -- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@.
+-- stands for equality up to the isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x

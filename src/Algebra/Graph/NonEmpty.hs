@@ -1,8 +1,7 @@
-{-# LANGUAGE DeriveFunctor #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.NonEmpty
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -899,9 +898,9 @@ simple op x y
 --                                               , ((0,\'b\'), (1,\'b\'))
 --                                               , ((1,\'a\'), (1,\'b\')) ]
 -- @
--- Up to an isomorphism between the resulting vertex types, this operation
+-- Up to the isomorphism between the resulting vertex types, this operation
 -- is /commutative/, /associative/, /distributes/ over 'overlay', and has
--- singleton graphs as /identities/. Below @~~@ stands for the equality up to an
+-- singleton graphs as /identities/. Below @~~@ stands for equality up to the
 -- isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @
