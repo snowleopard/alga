@@ -46,6 +46,7 @@ import Data.Maybe
 import Data.Map (Map)
 import Data.Monoid (Sum (..))
 import Data.Set (Set, (\\))
+import Data.String
 import GHC.Generics
 
 import Algebra.Graph.Label
@@ -108,6 +109,9 @@ instance (Eq e, Dioid e, Num a, Ord a) => Num (AdjacencyMap e a) where
     signum      = const empty
     abs         = id
     negate      = id
+
+instance IsString a => IsString (AdjacencyMap e a) where
+    fromString = vertex . fromString
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.

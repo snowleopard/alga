@@ -57,6 +57,7 @@ import Data.List ((\\))
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty, toList, reverse)
 import Data.Maybe
 import Data.Set (Set)
+import Data.String
 import Data.Tree
 import GHC.Generics
 
@@ -147,7 +148,7 @@ with 'overlay' and
 x + y <= x * y@
 -}
 newtype AdjacencyMap a = NAM { am :: AM.AdjacencyMap a }
-    deriving (Eq, Generic, NFData, Ord)
+    deriving (Eq, Generic, IsString, NFData, Ord)
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap' for
 -- more details.

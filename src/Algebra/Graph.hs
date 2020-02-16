@@ -56,6 +56,7 @@ import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Semigroup ((<>))
+import Data.String
 import Data.Tree
 import GHC.Generics
 
@@ -232,6 +233,9 @@ instance Num a => Num (Graph a) where
     signum      = const Empty
     abs         = id
     negate      = id
+
+instance IsString a => IsString (Graph a) where
+    fromString = Vertex . fromString
 
 -- | `==` is a good consumer of both arguments.
 instance Ord a => Eq (Graph a) where
