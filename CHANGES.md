@@ -2,6 +2,7 @@
 
 ## 0.6
 
+* #257: Add `IsString` instances.
 * #226: Expand the API of `Bipartite.Undirected.AdjacencyMap`.
 
 ## 0.5
