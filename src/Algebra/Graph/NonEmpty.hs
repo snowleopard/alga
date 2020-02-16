@@ -56,6 +56,7 @@ import Control.DeepSeq
 import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup ((<>))
+import Data.String
 
 import Algebra.Graph.Internal
 
@@ -182,6 +183,9 @@ instance Num a => Num (Graph a) where
     signum      = error "NonEmpty.Graph.signum cannot be implemented."
     abs         = id
     negate      = id
+
+instance IsString a => IsString (Graph a) where
+    fromString = Vertex . fromString
 
 instance Ord a => Eq (Graph a) where
     (==) = eq

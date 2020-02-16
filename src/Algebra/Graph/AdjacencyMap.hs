@@ -54,6 +54,7 @@ import Data.List ((\\))
 import Data.Map.Strict (Map)
 import Data.Monoid
 import Data.Set (Set)
+import Data.String
 import Data.Tree
 import GHC.Generics
 
@@ -197,6 +198,9 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
     signum      = const empty
     abs         = id
     negate      = id
+
+instance IsString a => IsString (AdjacencyMap a) where
+    fromString = vertex . fromString
 
 instance NFData a => NFData (AdjacencyMap a) where
     rnf (AM a) = rnf a

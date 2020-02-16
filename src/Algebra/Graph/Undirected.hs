@@ -57,6 +57,7 @@ import Data.List
 import GHC.Generics
 import Data.Set (Set)
 import Data.Tree (Tree, Forest)
+import Data.String
 
 import qualified Algebra.Graph                    as G
 import qualified Algebra.Graph.Relation.Symmetric as R
@@ -173,7 +174,8 @@ x     <= x + y
 x + y <= x * y@
 -}
 newtype Graph a = UG (G.Graph a)
-    deriving (Alternative, Applicative, Functor, Generic, Monad, MonadPlus, NFData)
+    deriving ( Alternative, Applicative, Functor, Generic, IsString, Monad
+             , MonadPlus, NFData )
 
 instance (Show a, Ord a) => Show (Graph a) where
     show = show . toRelation

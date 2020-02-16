@@ -44,6 +44,7 @@ module Algebra.Graph.Relation.Symmetric (
 import Control.DeepSeq
 import Data.Coerce
 import Data.Set (Set)
+import Data.String
 import Data.Tree
 
 import qualified Data.Set as Set
@@ -105,7 +106,7 @@ newtype Relation a = SR {
     -- 'R.edgeCount'   . fromSymmetric <= (*2) . 'edgeCount'
     -- @
     fromSymmetric :: R.Relation a
-    } deriving (Eq, NFData)
+    } deriving (Eq, IsString, NFData)
 
 instance (Ord a, Show a) => Show (Relation a) where
     show = show . toRelation

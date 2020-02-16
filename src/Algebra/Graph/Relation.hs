@@ -44,6 +44,7 @@ module Algebra.Graph.Relation (
 
 import Control.DeepSeq
 import Data.Set (Set, union)
+import Data.String
 import Data.Tree
 import Data.Tuple
 
@@ -189,6 +190,9 @@ instance (Ord a, Num a) => Num (Relation a) where
     signum      = const empty
     abs         = id
     negate      = id
+
+instance IsString a => IsString (Relation a) where
+    fromString = vertex . fromString
 
 -- | Construct the /empty graph/.
 -- Complexity: /O(1)/ time and memory.

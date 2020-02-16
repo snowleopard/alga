@@ -44,6 +44,7 @@ module Algebra.Graph.Labelled (
 
 import Data.Bifunctor
 import Data.Monoid
+import Data.String
 import Control.DeepSeq
 import GHC.Generics
 
@@ -80,8 +81,11 @@ instance (Ord a, Num a, Dioid e) => Num (Graph e a) where
     abs         = id
     negate      = id
 
+instance IsString a => IsString (Graph e a) where
+    fromString = Vertex . fromString
+
 instance Bifunctor Graph where
-  bimap f g = foldg Empty (Vertex . g) (Connect . f)
+    bimap f g = foldg Empty (Vertex . g) (Connect . f)
 
 instance (NFData e, NFData a) => NFData (Graph e a) where
     rnf Empty           = ()
