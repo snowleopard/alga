@@ -490,8 +490,9 @@ foldg e v o c = go
     foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
  #-}
 
--- | Build a graph given an interpretation of the four graph construction primitives 'empty',
--- 'vertex', 'overlay' and 'connect', in this order. See examples for further clarification.
+-- | Build a graph given an interpretation of the four graph construction
+-- primitives 'empty', 'vertex', 'overlay' and 'connect', in this order. See
+-- examples for further clarification.
 --
 -- Functions expressed with 'buildg' are good producers.
 --
@@ -505,7 +506,7 @@ foldg e v o c = go
 -- buildg (\\e v o c -> 'foldg' e v o ('flip' c) g)                == 'transpose' g
 -- 'foldg' e v o c (buildg f)                                   == f e v o c
 -- @
-buildg :: (forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b) -> Graph a
+buildg :: (forall r. r -> (a -> r) -> (r -> r -> r) -> (r -> r -> r) -> r) -> Graph a
 buildg f = f Empty Vertex Overlay Connect
 {-# INLINE [1] buildg #-}
 
