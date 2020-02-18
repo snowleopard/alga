@@ -19,7 +19,7 @@ module Algebra.Graph.Labelled (
     edges, overlays,
 
     -- * Graph folding
-    foldg,
+    foldg, buildg,
 
     -- * Relations on graphs
     isSubgraphOf,
@@ -125,6 +125,22 @@ foldg e v c = go
     go Empty           = e
     go (Vertex    x  ) = v x
     go (Connect e x y) = c e (go x) (go y)
+
+-- | Build a graph given an interpretation of the three graph construction
+-- primitives 'empty', 'vertex' and 'connect', in this order. See examples for
+-- further clarification.
+--
+-- @
+-- buildg f                                               == f 'empty' 'vertex' 'connect'
+-- buildg (\\e _ _ -> e)                                   == 'empty'
+-- buildg (\\_ v _ -> v x)                                 == 'vertex' x
+-- buildg (\\e v c -> c l ('foldg' e v c x) ('foldg' e v c y)) == 'connect' l x y
+-- buildg (\\e v c -> 'foldr' (c 'zero') e ('map' v xs))         == 'vertices' xs
+-- buildg (\\e v c -> 'foldg' e v ('flip' . c) g)              == 'transpose' g
+-- 'foldg' e v c (buildg f)                                 == f e v c
+-- @
+buildg :: (forall r. r -> (a -> r) -> (e -> r -> r -> r) -> r) -> Graph e a
+buildg f = f Empty Vertex Connect
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
