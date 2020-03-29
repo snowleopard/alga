@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:          algebraic-graphs
-version:       0.6
+version:       0.6.1
 synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
@@ -157,6 +157,6 @@ test-suite test-alga
     build-depends:      algebraic-graphs,
                         extra              >= 1.4     && < 2,
                         inspection-testing >= 0.4.2.2 && < 0.5,
-                        QuickCheck         >= 2.10    && < 2.14
+                        QuickCheck         >= 2.14    && < 2.15
     other-extensions:   ConstrainedClassMethods
                         TemplateHaskell
