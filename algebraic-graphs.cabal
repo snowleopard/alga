@@ -157,6 +157,6 @@ test-suite test-alga
     build-depends:      algebraic-graphs,
                         extra              >= 1.4     && < 2,
                         inspection-testing >= 0.4.2.2 && < 0.5,
-                        QuickCheck         >= 2.14    && < 2.15
+                        QuickCheck         >= 2.10    && < 2.15
     other-extensions:   ConstrainedClassMethods
                         TemplateHaskell
