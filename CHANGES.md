@@ -1,5 +1,9 @@
 # Change log
 
+## 0.6.1
+
+* #259: Allow newer QuickCheck.
+
 ## 0.6
 
 * #257: Add `IsString` instances.
