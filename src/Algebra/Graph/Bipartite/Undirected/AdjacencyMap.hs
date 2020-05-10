@@ -230,7 +230,6 @@ instance (Ord a, Ord b, Show a, Show b) => Show (AdjacencyMap a b) where
         used  = map Left lused ++ map Right rused
 
 -- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty' empty           == True
@@ -243,7 +242,6 @@ empty = BAM Map.empty Map.empty
 
 -- | Construct the bipartite graph comprising /a single isolated vertex/ in
 -- the left part.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'leftAdjacencyMap' (leftVertex x)  == Map.'Map.singleton' x Set.'Set.empty'
@@ -257,7 +255,6 @@ leftVertex x = BAM (Map.singleton x Set.empty) Map.empty
 
 -- | Construct the bipartite graph comprising /a single isolated vertex/ in
 -- the right part.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'leftAdjacencyMap' (rightVertex x)  == Map.'Map.empty'
@@ -270,7 +267,6 @@ rightVertex :: b -> AdjacencyMap a b
 rightVertex y = BAM Map.empty (Map.singleton y Set.empty)
 
 -- | Construct the bipartite graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- vertex . Left  == 'leftVertex'
@@ -281,7 +277,6 @@ vertex (Left x)  = leftVertex x
 vertex (Right y) = rightVertex y
 
 -- | Construct the bipartite graph comprising /a single edge/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- edge x y                     == 'connect' ('leftVertex' x) ('rightVertex' y)

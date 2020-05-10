@@ -121,7 +121,6 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
         vshow xs       = showString "vertices " . showsPrec 11 xs
 
 -- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -133,7 +132,6 @@ empty :: AdjacencyMap a
 empty = coerce AM.empty
 
 -- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
@@ -379,8 +377,7 @@ transpose = coerce AM.transpose
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
--- be evaluated.
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes constant time.
 --
 -- @
 -- induce ('const' True ) x      == x

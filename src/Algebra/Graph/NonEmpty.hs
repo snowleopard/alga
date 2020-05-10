@@ -240,7 +240,6 @@ toNonEmpty = G.foldg Nothing (Just . Vertex) (go Overlay) (go Connect)
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'hasVertex' x (vertex y) == (x == y)
@@ -253,7 +252,6 @@ vertex = Vertex
 {-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- edge x y               == 'connect' ('vertex' x) ('vertex' y)
@@ -375,8 +373,8 @@ concatg1 combine (x :| xs) = maybe x (combine x) $ foldr1Safe combine xs
 -- | Generalised graph folding: recursively collapse a 'Graph' by
 -- applying the provided functions to the leaves and internal nodes of the
 -- expression. The order of arguments is: vertex, overlay and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+-- Complexity: /O(s)/ applications of the given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since 'const' and '+' have constant costs.
 --
 -- @
 -- foldg1 'vertex'    'overlay' 'connect'        == id
@@ -775,7 +773,7 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -831,7 +829,7 @@ transpose = foldg1 vertex overlay (flip connect)
 -- vertices that do not satisfy a given predicate. Returns @Nothing@ if the
 -- resulting graph is empty.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- induce1 ('const' True ) x == Just x

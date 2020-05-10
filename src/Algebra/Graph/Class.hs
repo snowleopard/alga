@@ -281,7 +281,6 @@ instance (Transitive g, Transitive h, Transitive i) => Transitive (g, h, i)
 instance (Preorder   g, Preorder   h, Preorder   i) => Preorder   (g, h, i)
 
 -- | Construct the graph comprising a single edge.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- edge x y == 'connect' ('vertex' x) ('vertex' y)

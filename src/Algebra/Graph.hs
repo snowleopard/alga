@@ -293,7 +293,6 @@ instance MonadPlus Graph where
     mplus = Overlay
 
 -- | Construct the /empty graph/. An alias for the constructor 'Empty'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -308,7 +307,6 @@ empty = Empty
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
@@ -322,7 +320,6 @@ vertex = Vertex
 {-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- edge x y               == 'connect' ('vertex' x) ('vertex' y)
@@ -458,8 +455,8 @@ combineR e o f = fromMaybe e . foldr1Safe o . map f
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
 -- The order of arguments is: empty, vertex, overlay and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+-- Complexity: /O(s)/ applications of the given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since 'const' and '+' have constant costs.
 --
 -- Good consumer.
 --
@@ -1083,7 +1080,7 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- Good consumer and producer.
 --
@@ -1138,7 +1135,7 @@ transpose g = buildg $ \e v o c -> foldg e v o (flip c) g
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- Good consumer and producer.
 --

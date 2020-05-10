@@ -195,7 +195,6 @@ instance IsString a => IsString (Relation a) where
     fromString = vertex . fromString
 
 -- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -207,7 +206,6 @@ empty :: Relation a
 empty = Relation Set.empty Set.empty
 
 -- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
@@ -217,6 +215,18 @@ empty = Relation Set.empty Set.empty
 -- @
 vertex :: a -> Relation a
 vertex x = Relation (Set.singleton x) Set.empty
+
+-- | Construct the graph comprising /a single edge/.
+--
+-- @
+-- edge x y               == 'connect' ('vertex' x) ('vertex' y)
+-- 'hasEdge' x y (edge x y) == True
+-- 'edgeCount'   (edge x y) == 1
+-- 'vertexCount' (edge 1 1) == 1
+-- 'vertexCount' (edge 1 2) == 2
+-- @
+edge :: Ord a => a -> a -> Relation a
+edge x y = Relation (Set.fromList [x, y]) (Set.singleton (x, y))
 
 -- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
@@ -256,19 +266,6 @@ overlay x y = Relation (domain x `union` domain y) (relation x `union` relation 
 connect :: Ord a => Relation a -> Relation a -> Relation a
 connect x y = Relation (domain x `union` domain y)
     (relation x `union` relation y `union` (domain x `setProduct` domain y))
-
--- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory and size.
---
--- @
--- edge x y               == 'connect' ('vertex' x) ('vertex' y)
--- 'hasEdge' x y (edge x y) == True
--- 'edgeCount'   (edge x y) == 1
--- 'vertexCount' (edge 1 1) == 1
--- 'vertexCount' (edge 1 2) == 2
--- @
-edge :: Ord a => a -> a -> Relation a
-edge x y = Relation (Set.fromList [x, y]) (Set.singleton (x, y))
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -656,7 +653,7 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -697,8 +694,7 @@ gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) 
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
--- be evaluated.
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes constant time.
 --
 -- @
 -- induce ('const' True ) x      == x

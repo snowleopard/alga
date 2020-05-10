@@ -231,7 +231,6 @@ fromUndirected :: Ord a => Graph a -> G.Graph a
 fromUndirected = toGraph . toRelation
 
 -- | Construct the /empty graph/.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -245,7 +244,6 @@ empty = coerce00 G.empty
 {-# INLINE empty #-}
 
 -- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
@@ -259,7 +257,6 @@ vertex = coerce10 G.vertex
 {-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- edge x y               == 'connect' ('vertex' x) ('vertex' y)
@@ -380,8 +377,8 @@ connects = coerce10 G.connects
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
 -- The order of arguments is: empty, vertex, overlay and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+-- Complexity: /O(s)/ applications of the given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since 'const' and '+' have constant costs.
 --
 -- @
 -- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
@@ -755,7 +752,7 @@ replaceVertex = coerce21 G.replaceVertex
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -771,7 +768,7 @@ mergeVertices = coerce21 G.mergeVertices
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- induce ('const' True ) x      == x

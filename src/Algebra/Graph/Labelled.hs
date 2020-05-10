@@ -108,8 +108,8 @@ fromAdjacencyMap = overlays . map go . Map.toList . AM.adjacencyMap
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
 -- The order of arguments is: empty, vertex and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+-- Complexity: /O(s)/ applications of the given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since 'const' and '+' have constant costs.
 --
 -- @
 -- foldg 'empty'     'vertex'        'connect'             == 'id'
@@ -158,7 +158,6 @@ isSubgraphOf :: (Eq e, Monoid e, Ord a) => Graph e a -> Graph e a -> Bool
 isSubgraphOf x y = overlay x y == y
 
 -- | Construct the /empty graph/. An alias for the constructor 'Empty'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -171,7 +170,6 @@ empty = Empty
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
@@ -183,7 +181,6 @@ vertex :: a -> Graph e a
 vertex = Vertex
 
 -- | Construct the graph comprising /a single labelled edge/.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- edge e    x y              == 'connect' e ('vertex' x) ('vertex' y)
@@ -513,7 +510,7 @@ emap f = foldg Empty Vertex (Connect . f)
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- induce ('const' True ) x      == x

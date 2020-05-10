@@ -208,7 +208,6 @@ fromNonEmpty :: AdjacencyMap a -> AM.AdjacencyMap a
 fromNonEmpty = am
 
 -- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'hasVertex' x (vertex y) == (x == y)
@@ -218,6 +217,18 @@ fromNonEmpty = am
 vertex :: a -> AdjacencyMap a
 vertex = coerce AM.vertex
 {-# NOINLINE [1] vertex #-}
+
+-- | Construct the graph comprising /a single edge/.
+--
+-- @
+-- edge x y               == 'connect' ('vertex' x) ('vertex' y)
+-- 'hasEdge' x y (edge x y) == True
+-- 'edgeCount'   (edge x y) == 1
+-- 'vertexCount' (edge 1 1) == 1
+-- 'vertexCount' (edge 1 2) == 2
+-- @
+edge :: Ord a => a -> a -> AdjacencyMap a
+edge = coerce AM.edge
 
 -- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
@@ -256,19 +267,6 @@ overlay = coerce AM.overlay
 connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
 connect = coerce AM.connect
 {-# NOINLINE [1] connect #-}
-
--- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory.
---
--- @
--- edge x y               == 'connect' ('vertex' x) ('vertex' y)
--- 'hasEdge' x y (edge x y) == True
--- 'edgeCount'   (edge x y) == 1
--- 'vertexCount' (edge 1 1) == 1
--- 'vertexCount' (edge 1 2) == 2
--- @
-edge :: Ord a => a -> a -> AdjacencyMap a
-edge = coerce AM.edge
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -565,7 +563,7 @@ replaceVertex = coerce AM.replaceVertex
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -617,8 +615,7 @@ gmap = coerce AM.gmap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(m)/ time, assuming that the predicate takes /O(1)/ to
--- be evaluated.
+-- Complexity: /O(m)/ time, assuming that the predicate takes constant time.
 --
 -- @
 -- induce1 ('const' True ) x == Just x
