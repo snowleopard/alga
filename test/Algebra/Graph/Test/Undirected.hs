@@ -36,7 +36,6 @@ testUndirected = do
     putStrLn "\n============ Graph.Undirected ============"
     test "Axioms of undirected graphs" $ size10 $ undirectedAxioms @ G
 
-    testConsistent    t
     testSymmetricShow t
 
     putStrLn $ "\n============ Graph.Undirected.toUndirected ============"

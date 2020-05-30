@@ -1,8 +1,8 @@
-{-# LANGUAGE RecordWildCards, GADTs, ViewPatterns #-}
+{-# LANGUAGE RecordWildCards, ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Generic
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -289,8 +289,8 @@ testVertex (prefix, API{..}) = do
     test "isEmpty     (vertex x) == False" $ \x ->
           isEmpty     (vertex x) == False
 
-    test "hasVertex x (vertex x) == True" $ \x ->
-          hasVertex x (vertex x) == True
+    test "hasVertex x (vertex y) == (x == y)" $ \x y ->
+          hasVertex x (vertex y) == (x == y)
 
     test "vertexCount (vertex x) == 1" $ \x ->
           vertexCount (vertex x) == 1
@@ -462,6 +462,9 @@ testEdges (prefix, API{..}) = do
 
     test "edges [(x,y)]     == edge x y" $ \x y ->
           edges [(x,y)]     == edge x y
+
+    test "edges             == overlays . map (uncurry edge)" $ \xs ->
+          edges xs          == (overlays . map (uncurry edge)) xs
 
     test "edgeCount . edges == length . nub" $ \xs ->
          (edgeCount . edges) xs == (length . nubOrd) xs
@@ -870,11 +873,8 @@ testHasVertex (prefix, API{..}) = do
     test "hasVertex x empty            == False" $ \x ->
           hasVertex x empty            == False
 
-    test "hasVertex x (vertex x)       == True" $ \x ->
-          hasVertex x (vertex x)       == True
-
-    test "hasVertex 1 (vertex 2)       == False" $
-          hasVertex 1 (vertex 2)       == False
+    test "hasVertex x (vertex y)       == (x == y)" $ \x y ->
+          hasVertex x (vertex y)       == (x == y)
 
     test "hasVertex x . removeVertex x == const False" $ \x y ->
          (hasVertex x . removeVertex x) y == const False y
@@ -895,8 +895,9 @@ testHasEdge (prefix, API{..}) = do
          (hasEdge x y . removeEdge x y) z == const False z
 
     test "hasEdge x y                  == elem (x,y) . edgeList" $ \x y z -> do
-        (u, v) <- elements ((x, y) : edgeList z)
-        return $ hasEdge u v z == elem (u, v) (edgeList z)
+        let es = edgeList z
+        (x, y) <- elements ((x, y) : es)
+        return $ hasEdge x y z == elem (x, y) es
 
 testSymmetricHasEdge :: TestsuiteInt g -> IO ()
 testSymmetricHasEdge (prefix, API{..}) = do

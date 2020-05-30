@@ -1,8 +1,7 @@
-{-# LANGUAGE DeriveGeneric, RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -57,6 +56,7 @@ import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.Semigroup ((<>))
+import Data.String
 import Data.Tree
 import GHC.Generics
 
@@ -234,6 +234,9 @@ instance Num a => Num (Graph a) where
     abs         = id
     negate      = id
 
+instance IsString a => IsString (Graph a) where
+    fromString = Vertex . fromString
+
 -- | `==` is a good consumer of both arguments.
 instance Ord a => Eq (Graph a) where
     (==) = eqR
@@ -290,7 +293,6 @@ instance MonadPlus Graph where
     mplus = Overlay
 
 -- | Construct the /empty graph/. An alias for the constructor 'Empty'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -305,11 +307,10 @@ empty = Empty
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- 'size'        (vertex x) == 1
@@ -319,7 +320,6 @@ vertex = Vertex
 {-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- edge x y               == 'connect' ('vertex' x) ('vertex' y)
@@ -404,6 +404,7 @@ vertices xs = buildg $ \e v o _ -> combineR e o v xs
 -- @
 -- edges []          == 'empty'
 -- edges [(x,y)]     == 'edge' x y
+-- edges             == 'overlays' . 'map' ('uncurry' 'edge')
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- @
 edges :: [(a, a)] -> Graph a
@@ -454,8 +455,8 @@ combineR e o f = fromMaybe e . foldr1Safe o . map f
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
 -- The order of arguments is: empty, vertex, overlay and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+-- Complexity: /O(s)/ applications of the given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since 'const' and '+' have constant costs.
 --
 -- Good consumer.
 --
@@ -486,8 +487,9 @@ foldg e v o c = go
     foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
  #-}
 
--- | Build a graph given an interpretation of the four graph construction primitives 'empty',
--- 'vertex', 'overlay' and 'connect', in this order. See examples for further clarification.
+-- | Build a graph given an interpretation of the four graph construction
+-- primitives 'empty', 'vertex', 'overlay' and 'connect', in this order. See
+-- examples for further clarification.
 --
 -- Functions expressed with 'buildg' are good producers.
 --
@@ -501,7 +503,7 @@ foldg e v o c = go
 -- buildg (\\e v o c -> 'foldg' e v o ('flip' c) g)                == 'transpose' g
 -- 'foldg' e v o c (buildg f)                                   == f e v o c
 -- @
-buildg :: (forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b) -> Graph a
+buildg :: (forall r. r -> (a -> r) -> (r -> r -> r) -> (r -> r -> r) -> r) -> Graph a
 buildg f = f Empty Vertex Overlay Connect
 {-# INLINE [1] buildg #-}
 
@@ -550,7 +552,7 @@ _               === _               = False
 
 infix 4 ===
 
--- | Check if a graph is empty. A convenient alias for 'null'.
+-- | Check if a graph is empty.
 -- Complexity: /O(s)/ time.
 --
 -- Good consumer.
@@ -591,8 +593,7 @@ size = foldg 1 (const 1) (+) (+)
 --
 -- @
 -- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x ('vertex' y)       == (x == y)
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Eq a => a -> Graph a -> Bool
@@ -689,7 +690,7 @@ edgeCountIntR = AIM.edgeCount . toAdjacencyIntMap
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
 --
--- Good consumer.
+-- Good consumer of graphs and producer of lists.
 --
 -- @
 -- vertexList 'empty'      == []
@@ -710,7 +711,7 @@ vertexIntListR = IntSet.toList . vertexIntSetR
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
 -- edges /m/ of a graph can be quadratic with respect to the expression size /s/.
 --
--- Good consumer.
+-- Good consumer of graphs and producer of lists.
 --
 -- @
 -- edgeList 'empty'          == []
@@ -771,7 +772,7 @@ edgeIntSetR = AIM.edgeSet . toAdjacencyIntMap
 {-# INLINE edgeIntSetR #-}
 
 -- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
+-- Complexity: /O(n + m)/ time and memory.
 --
 -- Good consumer.
 --
@@ -1079,7 +1080,7 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- Good consumer and producer.
 --
@@ -1134,7 +1135,7 @@ transpose g = buildg $ \e v o c -> foldg e v o (flip c) g
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- Good consumer and producer.
 --
@@ -1259,10 +1260,10 @@ compose x y = buildg $ \e v o c -> fromMaybe e $
 --                                       , ((0,\'b\'), (1,\'b\'))
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
--- Up to an isomorphism between the resulting vertex types, this operation
+-- Up to the isomorphism between the resulting vertex types, this operation
 -- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
 -- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@.
+-- stands for equality up to the isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x

@@ -1,13 +1,13 @@
 cabal-version: 2.2
 name:          algebraic-graphs
-version:       0.5
+version:       0.6.1
 synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
 author:        Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard
 maintainer:    Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard,
                Alexandre Moine <alexandre@moine.me>, github: @nobrakal
-copyright:     Andrey Mokhov, 2016-2019
+copyright:     Andrey Mokhov, 2016-2020
 homepage:      https://github.com/snowleopard/alga
 category:      Algebra, Algorithms, Data Structures, Graphs
 build-type:    Simple
@@ -56,6 +56,7 @@ description:
     <https://github.com/snowleopard/alga/issues discussions on the library API>.
 
 extra-doc-files:
+    AUTHORS.md
     CHANGES.md
     README.md
 
@@ -71,18 +72,23 @@ common common-settings
                         mtl          >= 2.1     && < 2.3,
                         transformers >= 0.4     && < 0.6
     default-language:   Haskell2010
-    default-extensions: FlexibleContexts
+    default-extensions: ConstraintKinds
+                        DeriveFunctor
+                        DeriveGeneric
+                        FlexibleContexts
                         FlexibleInstances
+                        GADTs
                         GeneralizedNewtypeDeriving
+                        MultiParamTypeClasses
+                        RankNTypes
                         ScopedTypeVariables
                         TupleSections
                         TypeApplications
                         TypeFamilies
     other-extensions:   CPP
-                        DeriveFunctor
                         OverloadedStrings
-                        RankNTypes
                         RecordWildCards
+                        ViewPatterns
     GHC-options:        -Wall
                         -Wcompat
                         -Wincomplete-record-updates
@@ -101,7 +107,7 @@ library
                         Algebra.Graph.AdjacencyIntMap.Algorithm,
                         Algebra.Graph.AdjacencyMap,
                         Algebra.Graph.AdjacencyMap.Algorithm,
-                        Algebra.Graph.Bipartite.AdjacencyMap,
+                        Algebra.Graph.Bipartite.Undirected.AdjacencyMap,
                         Algebra.Graph.Class,
                         Algebra.Graph.Export,
                         Algebra.Graph.Export.Dot,
@@ -134,7 +140,7 @@ test-suite test-alga
                         Algebra.Graph.Test.AdjacencyIntMap,
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,
-                        Algebra.Graph.Test.Bipartite.AdjacencyMap,
+                        Algebra.Graph.Test.Bipartite.Undirected.AdjacencyMap,
                         Algebra.Graph.Test.Export,
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
@@ -153,9 +159,6 @@ test-suite test-alga
     build-depends:      algebraic-graphs,
                         extra              >= 1.4     && < 2,
                         inspection-testing >= 0.4.2.2 && < 0.5,
-                        QuickCheck         >= 2.10    && < 2.14
+                        QuickCheck         >= 2.10    && < 2.15
     other-extensions:   ConstrainedClassMethods
-                        ConstraintKinds
-                        MultiParamTypeClasses
                         TemplateHaskell
-                        ViewPatterns

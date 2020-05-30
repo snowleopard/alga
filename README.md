@@ -84,5 +84,8 @@ The development of the library has been documented in the series of blog posts:
 
 ## Algebraic graphs in other languages
 
-See draft implementations in [Agda](http://github.com/algebraic-graphs/agda)
-and [Scala](http://github.com/algebraic-graphs/scala).
+Algebraic graphs were implemented in a few other languages, including
+[Agda](http://github.com/algebraic-graphs/agda),
+[F#](https://github.com/algebraic-graphs/fsharp),
+[Scala](http://github.com/algebraic-graphs/scala) and
+[TypeScript](https://github.com/algebraic-graphs/typescript).

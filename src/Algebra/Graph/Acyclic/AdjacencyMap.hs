@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Acyclic.AdjacencyMap
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -121,7 +121,6 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
         vshow xs       = showString "vertices " . showsPrec 11 xs
 
 -- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -133,11 +132,10 @@ empty :: AdjacencyMap a
 empty = coerce AM.empty
 
 -- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- @
@@ -216,8 +214,7 @@ isEmpty = coerce AM.isEmpty
 --
 -- @
 -- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x ('vertex' y)       == (x == y)
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Ord a => a -> AdjacencyMap a -> Bool
@@ -284,7 +281,7 @@ edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList = coerce AM.edgeList
 
 -- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
+-- Complexity: /O(n + m)/ time and memory.
 --
 -- @
 -- adjacencyList 'empty'            == []
@@ -380,8 +377,7 @@ transpose = coerce AM.transpose
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
--- be evaluated.
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes constant time.
 --
 -- @
 -- induce ('const' True ) x      == x
@@ -405,19 +401,19 @@ induceJust :: Ord a => AdjacencyMap (Maybe a) -> AdjacencyMap a
 induceJust = coerce AM.induceJust
 
 -- | Compute the /Cartesian product/ of graphs.
--- Complexity: /O(n * m * log(n)^2)/ time.
+-- Complexity: /O((n + m) * log(n))/ time and O(n + m) memory.
 --
 -- @
--- 'edgeList' (box (shrink $ 1 * 2) (shrink $ 10 * 20)) == [ ((1,10), (1,20))
+-- 'edgeList' (box ('shrink' $ 1 * 2) ('shrink' $ 10 * 20)) == [ ((1,10), (1,20))
 --                                                       , ((1,10), (2,10))
 --                                                       , ((1,20), (2,20))
 --                                                       , ((2,10), (2,20)) ]
 -- @
 --
--- Up to an isomorphism between the resulting vertex types, this operation
+-- Up to the isomorphism between the resulting vertex types, this operation
 -- is /commutative/ and /associative/, has singleton graphs as /identities/ and
--- 'empty' as the /annihilating zero/. Below @~~@ stands for the equality up to
--- an isomorphism, e.g. @(x, ()) ~~ x@.
+-- 'empty' as the /annihilating zero/. Below @~~@ stands for equality up to
+-- the isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x
@@ -504,10 +500,9 @@ toAcyclicOrd = AAM . filterEdges (<)
 -- TODO: Add time complexity
 -- TODO: Change Arbitrary instance of Acyclic and Labelled Acyclic graph
 -- | Construct an acyclic graph from a given adjacency map using 'scc'.
--- If the graph is acyclic in nature, the same graph is returned as an acyclic graph.
--- If the graph is cyclic, then a representative for every strongly connected
--- component in its condensation graph is chosen an these representatives are
--- used to build an acyclic graph.
+-- If the graph is acyclic, it is returned as is. If the graph is cyclic, then a
+-- representative for every strongly connected component in its condensation
+-- graph is chosen and these representatives are used to build an acyclic graph.
 --
 -- @
 -- shrink . 'AM.vertex'      == 'vertex'

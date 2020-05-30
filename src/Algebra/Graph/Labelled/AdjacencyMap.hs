@@ -1,8 +1,7 @@
-{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled.AdjacencyMap
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -47,6 +46,7 @@ import Data.Maybe
 import Data.Map (Map)
 import Data.Monoid (Sum (..))
 import Data.Set (Set, (\\))
+import Data.String
 import GHC.Generics
 
 import Algebra.Graph.Label
@@ -110,8 +110,10 @@ instance (Eq e, Dioid e, Num a, Ord a) => Num (AdjacencyMap e a) where
     abs         = id
     negate      = id
 
+instance IsString a => IsString (AdjacencyMap e a) where
+    fromString = vertex . fromString
+
 -- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -123,11 +125,10 @@ empty :: AdjacencyMap e a
 empty = AM Map.empty
 
 -- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- @
@@ -135,7 +136,6 @@ vertex :: a -> AdjacencyMap e a
 vertex x = AM $ Map.singleton x Map.empty
 
 -- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory.
 --
 -- @
 -- edge e    x y              == 'connect' e ('vertex' x) ('vertex' y)
@@ -323,8 +323,7 @@ isEmpty = Map.null . adjacencyMap
 --
 -- @
 -- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x ('vertex' y)       == (x == y)
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Ord a => a -> AdjacencyMap e a -> Bool
@@ -585,8 +584,7 @@ emap h = AM . trimZeroes . Map.map (Map.map h) . adjacencyMap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
--- be evaluated.
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes constant time.
 --
 -- @
 -- induce ('const' True ) x      == x

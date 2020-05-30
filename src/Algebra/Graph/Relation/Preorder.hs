@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Relation.Preorder
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -14,8 +14,9 @@ module Algebra.Graph.Relation.Preorder (
     PreorderRelation, fromRelation, toRelation
     ) where
 
-import Control.DeepSeq
 import Algebra.Graph.Relation
+import Control.DeepSeq
+import Data.String
 
 import qualified Algebra.Graph.Class as C
 
@@ -41,7 +42,7 @@ show (1 * 2         :: PreorderRelation Int) == "edges [(1,1),(1,2),(2,2)]"
 show (1 * 2 + 2 * 3 :: PreorderRelation Int) == "edges [(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)]"@
 -}
 newtype PreorderRelation a = PreorderRelation { fromPreorder :: Relation a }
-    deriving (Num, NFData)
+    deriving (IsString, NFData, Num)
 
 instance (Ord a, Show a) => Show (PreorderRelation a) where
     show = show . toRelation

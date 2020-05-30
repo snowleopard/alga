@@ -1,8 +1,7 @@
-{-# LANGUAGE DeriveFunctor #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.NonEmpty
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -54,9 +53,11 @@ module Algebra.Graph.NonEmpty (
     ) where
 
 import Control.DeepSeq
+import Control.Monad
 import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup ((<>))
+import Data.String
 
 import Algebra.Graph.Internal
 
@@ -184,6 +185,9 @@ instance Num a => Num (Graph a) where
     abs         = id
     negate      = id
 
+instance IsString a => IsString (Graph a) where
+    fromString = Vertex . fromString
+
 instance Ord a => Eq (Graph a) where
     (==) = eq
 
@@ -237,10 +241,9 @@ toNonEmpty = G.foldg Nothing (Just . Vertex) (go Overlay) (go Connect)
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- 'size'        (vertex x) == 1
@@ -250,7 +253,6 @@ vertex = Vertex
 {-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- edge x y               == 'connect' ('vertex' x) ('vertex' y)
@@ -335,6 +337,7 @@ vertices1 = overlays1 . fmap vertex
 --
 -- @
 -- edges1 [(x,y)]     == 'edge' x y
+-- edges1             == 'overlays1' . 'fmap' ('uncurry' 'edge')
 -- 'edgeCount' . edges1 == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
 -- @
 edges1 :: NonEmpty (a, a) -> Graph a
@@ -371,8 +374,8 @@ concatg1 combine (x :| xs) = maybe x (combine x) $ foldr1Safe combine xs
 -- | Generalised graph folding: recursively collapse a 'Graph' by
 -- applying the provided functions to the leaves and internal nodes of the
 -- expression. The order of arguments is: vertex, overlay and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+-- Complexity: /O(s)/ applications of the given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since 'const' and '+' have constant costs.
 --
 -- @
 -- foldg1 'vertex'    'overlay' 'connect'        == id
@@ -442,8 +445,7 @@ size = foldg1 (const 1) (+) (+)
 -- Complexity: /O(s)/ time.
 --
 -- @
--- hasVertex x ('vertex' x) == True
--- hasVertex 1 ('vertex' 2) == False
+-- hasVertex x ('vertex' y) == (x == y)
 -- @
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex v = foldg1 (==v) (||) (||)
@@ -772,7 +774,7 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -828,7 +830,7 @@ transpose = foldg1 vertex overlay (flip connect)
 -- vertices that do not satisfy a given predicate. Returns @Nothing@ if the
 -- resulting graph is empty.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- induce1 ('const' True ) x == Just x
@@ -899,9 +901,9 @@ simple op x y
 --                                               , ((0,\'b\'), (1,\'b\'))
 --                                               , ((1,\'a\'), (1,\'b\')) ]
 -- @
--- Up to an isomorphism between the resulting vertex types, this operation
+-- Up to the isomorphism between the resulting vertex types, this operation
 -- is /commutative/, /associative/, /distributes/ over 'overlay', and has
--- singleton graphs as /identities/. Below @~~@ stands for the equality up to an
+-- singleton graphs as /identities/. Below @~~@ stands for equality up to the
 -- isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @

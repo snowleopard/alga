@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Relation.Transitive
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -14,8 +14,9 @@ module Algebra.Graph.Relation.Transitive (
     TransitiveRelation, fromRelation, toRelation
     ) where
 
-import Control.DeepSeq
 import Algebra.Graph.Relation
+import Control.DeepSeq
+import Data.String
 
 import qualified Algebra.Graph.Class as C
 
@@ -36,7 +37,7 @@ The 'Show' instance produces transitively closed expressions:
 show (1 * 2 + 2 * 3 :: TransitiveRelation Int) == "edges [(1,2),(1,3),(2,3)]"@
 -}
 newtype TransitiveRelation a = TransitiveRelation { fromTransitive :: Relation a }
-    deriving (Num, NFData)
+    deriving (IsString, NFData, Num)
 
 instance Ord a => Eq (TransitiveRelation a) where
     x == y = toRelation x == toRelation y

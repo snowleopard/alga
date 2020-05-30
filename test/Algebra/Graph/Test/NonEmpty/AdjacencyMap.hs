@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.NonEmpty.AdjacencyMap
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -124,8 +124,8 @@ testNonEmptyAdjacencyMap = do
          (AM.isEmpty . fromNonEmpty) x == const False x
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.vertex ============"
-    test "hasVertex x (vertex x) == True" $ \(x :: Int) ->
-          hasVertex x (vertex x) == True
+    test "hasVertex x (vertex y) == (x == y)" $ \(x :: Int) y ->
+          hasVertex x (vertex y) == (x == y)
 
     test "vertexCount (vertex x) == 1" $ \(x :: Int) ->
           vertexCount (vertex x) == 1
@@ -219,6 +219,10 @@ testNonEmptyAdjacencyMap = do
     test "edges1 [(x,y)]     == edge x y" $ \(x :: Int) y ->
           edges1 [(x,y)]     == edge x y
 
+    test "edges1             == overlays1 . fmap (uncurry edge)" $ \(xs' :: NonEmptyList (Int, Int)) ->
+        let xs = NonEmpty.fromList (getNonEmpty xs')
+        in edges1 xs         == (overlays1 . fmap (uncurry edge)) xs
+
     test "edgeCount . edges1 == length . nub" $ \(xs' :: NonEmptyList (Int, Int)) ->
         let xs = NonEmpty.fromList (getNonEmpty xs')
         in (edgeCount . edges1) xs == (NonEmpty.length . NonEmpty.nub) xs
@@ -253,11 +257,8 @@ testNonEmptyAdjacencyMap = do
         in isSubgraphOf x y                        ==> x <= y
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.hasVertex ============"
-    test "hasVertex x (vertex x) == True" $ \(x :: Int) ->
-          hasVertex x (vertex x) == True
-
-    test "hasVertex 1 (vertex 2) == False" $
-          hasVertex 1 (vertex 2 :: G) == False
+    test "hasVertex x (vertex y) == (x == y)" $ \(x :: Int) y ->
+          hasVertex x (vertex y) == (x == y)
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.hasEdge ============"
     test "hasEdge x y (vertex z)       == False" $ \(x :: Int) y z ->

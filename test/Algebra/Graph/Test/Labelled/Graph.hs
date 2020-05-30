@@ -40,25 +40,6 @@ type LAD = Graph D   Int
 
 testLabelledGraph :: IO ()
 testLabelledGraph = do
-    putStrLn "\n============ Labelled.Graph.foldg ============"
-    test "foldg empty     vertex        connect             == id" $ \(x :: LAS) ->
-          foldg empty     vertex        connect x           == id x
-
-    test "foldg empty     vertex        (fmap flip connect) == transpose" $ \(x :: LAS) ->
-          foldg empty     vertex        (fmap flip connect) x == transpose x
-
-    test "foldg 1         (const 1)     (const (+))         == size" $ \(x :: LAS) ->
-          foldg 1         (const 1)     (const (+)) x       == size x
-
-    test "foldg True      (const False) (const (&&))        == isEmpty" $ \(x :: LAS) ->
-          foldg True      (const False) (const (&&)) x      == isEmpty x
-
-    test "foldg False     (== x)        (const (||))        == hasVertex x" $ \x (y :: LAS) ->
-          foldg False     (== x)        (const (||)) y      == hasVertex x y
-
-    test "foldg Set.empty Set.singleton (const Set.union)   == vertexSet" $ \(x :: LAS) ->
-          foldg Set.empty Set.singleton (const Set.union) x == vertexSet x
-
     testEmpty  t
     testVertex t
 
@@ -139,6 +120,41 @@ testLabelledGraph = do
 
     testOverlays t
 
+    putStrLn "\n============ Labelled.Graph.foldg ============"
+    test "foldg empty     vertex        connect             == id" $ \(x :: LAS) ->
+          foldg empty     vertex        connect x           == id x
+
+    test "foldg empty     vertex        (fmap flip connect) == transpose" $ \(x :: LAS) ->
+          foldg empty     vertex        (fmap flip connect) x == transpose x
+
+    test "foldg 1         (const 1)     (const (+))         == size" $ \(x :: LAS) ->
+          foldg 1         (const 1)     (const (+)) x       == size x
+
+    test "foldg True      (const False) (const (&&))        == isEmpty" $ \(x :: LAS) ->
+          foldg True      (const False) (const (&&)) x      == isEmpty x
+
+    test "foldg False     (== x)        (const (||))        == hasVertex x" $ \x (y :: LAS) ->
+          foldg False     (== x)        (const (||)) y      == hasVertex x y
+
+    test "foldg Set.empty Set.singleton (const Set.union)   == vertexSet" $ \(x :: LAS) ->
+          foldg Set.empty Set.singleton (const Set.union) x == vertexSet x
+
+    putStrLn "\n============ Labelled.Graph.buildg ============"
+    test "buildg (\\e _ _ -> e)                                   == empty" $
+          buildg ( \e _ _ -> e)                                   == (empty :: LAS)
+
+    test "buildg (\\_ v _ -> v x)                                 == vertex x" $ \x ->
+          buildg ( \_ v _ -> v x)                                 == (vertex x :: LAS)
+
+    test "buildg (\\e v c -> c l (foldg e v c x) (foldg e v c y)) == connect l x y" $ \l (x :: LAS) y ->
+          buildg ( \e v c -> c l (foldg e v c x) (foldg e v c y)) == connect l x y
+
+    test "buildg (\\e v c -> foldr (c zero) e (map v xs))         == vertices xs" $ \xs ->
+          buildg ( \e v c -> foldr (c zero) e (map v xs))         == (vertices xs :: LAS)
+
+    test "buildg (\\e v c -> foldg e v (flip c) g)                == transpose g" $ \(g :: LAS) ->
+          buildg ( \e v c -> foldg e v (flip . c) g)              == transpose g
+
     putStrLn "\n============ Labelled.Graph.isSubgraphOf ============"
     test "isSubgraphOf empty      x     ==  True" $ \(x :: LAS) ->
           isSubgraphOf empty      x     ==  True
@@ -166,6 +182,7 @@ testLabelledGraph = do
     test "isEmpty (removeEdge x y $ edge e x y) == False" $ \(e :: S) (x :: Int) y ->
           isEmpty (removeEdge x y $ edge e x y) == False
 
+    testSize t
     testHasVertex t
 
     putStrLn "\n============ Labelled.Graph.hasEdge ============"

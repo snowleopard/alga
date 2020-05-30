@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Arbitrary
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -24,22 +24,22 @@ import Algebra.Graph
 import Algebra.Graph.Export
 import Algebra.Graph.Label
 
-import qualified Algebra.Graph.Undirected               as UG
-import qualified Algebra.Graph.Acyclic.AdjacencyMap     as AAM
-import qualified Algebra.Graph.AdjacencyIntMap          as AIM
-import qualified Algebra.Graph.AdjacencyMap             as AM
-import qualified Algebra.Graph.Bipartite.AdjacencyMap   as BAM
-import qualified Algebra.Graph.NonEmpty.AdjacencyIntMap as NAIM
-import qualified Algebra.Graph.NonEmpty.AdjacencyMap    as NAM
-import qualified Algebra.Graph.Class                    as C
-import qualified Algebra.Graph.Labelled                 as LG
-import qualified Algebra.Graph.Labelled.AdjacencyMap    as LAM
-import qualified Algebra.Graph.NonEmpty                 as NonEmpty
-import qualified Algebra.Graph.Relation                 as Relation
-import qualified Algebra.Graph.Relation.Preorder        as Preorder
-import qualified Algebra.Graph.Relation.Reflexive       as Reflexive
-import qualified Algebra.Graph.Relation.Symmetric       as Symmetric
-import qualified Algebra.Graph.Relation.Transitive      as Transitive
+import qualified Algebra.Graph.Undirected                        as UG
+import qualified Algebra.Graph.Acyclic.AdjacencyMap              as AAM
+import qualified Algebra.Graph.AdjacencyIntMap                   as AIM
+import qualified Algebra.Graph.AdjacencyMap                      as AM
+import qualified Algebra.Graph.Bipartite.Undirected.AdjacencyMap as BAM
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap             as NAM
+import qualified Algebra.Graph.NonEmpty.AdjacencyIntMap          as NAIM
+import qualified Algebra.Graph.Class                             as C
+import qualified Algebra.Graph.Labelled                          as LG
+import qualified Algebra.Graph.Labelled.AdjacencyMap             as LAM
+import qualified Algebra.Graph.NonEmpty                          as NonEmpty
+import qualified Algebra.Graph.Relation                          as Relation
+import qualified Algebra.Graph.Relation.Preorder                 as Preorder
+import qualified Algebra.Graph.Relation.Reflexive                as Reflexive
+import qualified Algebra.Graph.Relation.Symmetric                as Symmetric
+import qualified Algebra.Graph.Relation.Transitive               as Transitive
 
 -- | Generate an arbitrary 'C.Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
@@ -282,3 +282,13 @@ instance (Arbitrary o, Arbitrary a) => Arbitrary (Optimum o a) where
 instance (Arbitrary a, Arbitrary b, Ord a, Ord b) => Arbitrary (BAM.AdjacencyMap a b) where
     arbitrary = BAM.toBipartite <$> arbitrary
     shrink = map BAM.toBipartite . shrink . BAM.fromBipartite
+
+instance (Arbitrary a, Arbitrary b) => Arbitrary (BAM.List a b) where
+    arbitrary = sized go
+      where
+        go 0 = return BAM.Nil
+        go 1 = do h <- arbitrary
+                  return $ BAM.Cons h BAM.Nil
+        go n = do f <- arbitrary
+                  s <- arbitrary
+                  (BAM.Cons f . BAM.Cons s) <$> go (n - 2)

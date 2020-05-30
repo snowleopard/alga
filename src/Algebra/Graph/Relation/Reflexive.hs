@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Relation.Reflexive
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -14,8 +14,9 @@ module Algebra.Graph.Relation.Reflexive (
     ReflexiveRelation, fromRelation, toRelation
     ) where
 
-import Control.DeepSeq
 import Algebra.Graph.Relation
+import Control.DeepSeq
+import Data.String
 
 import qualified Algebra.Graph.Class as C
 
@@ -31,7 +32,7 @@ The 'Show' instance produces reflexively closed expressions:
 show (1 * 2 :: ReflexiveRelation Int) == "edges [(1,1),(1,2),(2,2)]"@
 -}
 newtype ReflexiveRelation a = ReflexiveRelation { fromReflexive :: Relation a }
-    deriving (Num, NFData)
+    deriving (IsString, NFData, Num)
 
 instance Ord a => Eq (ReflexiveRelation a) where
     x == y = toRelation x == toRelation y

@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Labelled.AdjacencyMap
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -42,7 +42,7 @@ type LAD = AdjacencyMap D   Int
 
 testLabelledAdjacencyMap :: IO ()
 testLabelledAdjacencyMap = do
-    putStrLn "\n============ Labelled.AdjacencyMap.Internal.consistent ============"
+    putStrLn "\n============ Labelled.AdjacencyMap.consistent ============"
     test "arbitraryLabelledAdjacencyMap" $ \x -> consistent (x           :: LAS)
     test "empty" $                      consistent (empty                :: LAS)
     test "vertex" $ \x               -> consistent (vertex x             :: LAS)

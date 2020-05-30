@@ -1,8 +1,7 @@
-{-# LANGUAGE DeriveFunctor, DeriveGeneric, FlexibleInstances #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2020
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -20,7 +19,7 @@ module Algebra.Graph.Labelled (
     edges, overlays,
 
     -- * Graph folding
-    foldg,
+    foldg, buildg,
 
     -- * Relations on graphs
     isSubgraphOf,
@@ -45,6 +44,7 @@ module Algebra.Graph.Labelled (
 
 import Data.Bifunctor
 import Data.Monoid
+import Data.String
 import Control.DeepSeq
 import GHC.Generics
 
@@ -81,8 +81,11 @@ instance (Ord a, Num a, Dioid e) => Num (Graph e a) where
     abs         = id
     negate      = id
 
+instance IsString a => IsString (Graph e a) where
+    fromString = Vertex . fromString
+
 instance Bifunctor Graph where
-  bimap f g = foldg Empty (Vertex . g) (Connect . f)
+    bimap f g = foldg Empty (Vertex . g) (Connect . f)
 
 instance (NFData e, NFData a) => NFData (Graph e a) where
     rnf Empty           = ()
@@ -105,8 +108,8 @@ fromAdjacencyMap = overlays . map go . Map.toList . AM.adjacencyMap
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
 -- The order of arguments is: empty, vertex and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+-- Complexity: /O(s)/ applications of the given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since 'const' and '+' have constant costs.
 --
 -- @
 -- foldg 'empty'     'vertex'        'connect'             == 'id'
@@ -122,6 +125,22 @@ foldg e v c = go
     go Empty           = e
     go (Vertex    x  ) = v x
     go (Connect e x y) = c e (go x) (go y)
+
+-- | Build a graph given an interpretation of the three graph construction
+-- primitives 'empty', 'vertex' and 'connect', in this order. See examples for
+-- further clarification.
+--
+-- @
+-- buildg f                                               == f 'empty' 'vertex' 'connect'
+-- buildg (\\e _ _ -> e)                                   == 'empty'
+-- buildg (\\_ v _ -> v x)                                 == 'vertex' x
+-- buildg (\\e v c -> c l ('foldg' e v c x) ('foldg' e v c y)) == 'connect' l x y
+-- buildg (\\e v c -> 'foldr' (c 'zero') e ('map' v xs))         == 'vertices' xs
+-- buildg (\\e v c -> 'foldg' e v ('flip' . c) g)              == 'transpose' g
+-- 'foldg' e v c (buildg f)                                 == f e v c
+-- @
+buildg :: (forall r. r -> (a -> r) -> (e -> r -> r -> r) -> r) -> Graph e a
+buildg f = f Empty Vertex Connect
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -139,7 +158,6 @@ isSubgraphOf :: (Eq e, Monoid e, Ord a) => Graph e a -> Graph e a -> Bool
 isSubgraphOf x y = overlay x y == y
 
 -- | Construct the /empty graph/. An alias for the constructor 'Empty'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -152,11 +170,10 @@ empty = Empty
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'Algebra.Graph.ToGraph.vertexCount' (vertex x) == 1
 -- 'Algebra.Graph.ToGraph.edgeCount'   (vertex x) == 0
 -- @
@@ -164,7 +181,6 @@ vertex :: a -> Graph e a
 vertex = Vertex
 
 -- | Construct the graph comprising /a single labelled edge/.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- edge e    x y              == 'connect' e ('vertex' x) ('vertex' y)
@@ -289,7 +305,7 @@ edges = overlays . map (\(e, x, y) -> edge e x y)
 overlays :: Monoid e => [Graph e a] -> Graph e a
 overlays = foldr overlay empty
 
--- | Check if a graph is empty. A convenient alias for 'null'.
+-- | Check if a graph is empty.
 -- Complexity: /O(s)/ time.
 --
 -- @
@@ -322,8 +338,7 @@ size = foldg 1 (const 1) (const (+))
 --
 -- @
 -- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x ('vertex' y)       == (x == y)
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Eq a => a -> Graph e a -> Bool
@@ -495,7 +510,7 @@ emap f = foldg Empty Vertex (Connect . f)
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- induce ('const' True ) x      == x
