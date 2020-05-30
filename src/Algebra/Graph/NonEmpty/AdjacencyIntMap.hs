@@ -55,14 +55,11 @@ import Prelude hiding (reverse)
 import Control.DeepSeq
 import Data.Coerce
 import Data.List ((\\))
-import Data.List.NonEmpty (NonEmpty (..), nonEmpty, toList, reverse)
-import Data.Maybe
+import Data.List.NonEmpty (NonEmpty (..), toList, reverse, fromList)
 import Data.IntSet (IntSet)
 import Data.Set (Set)
 import Data.Tree
 import GHC.Generics
-
-import Algebra.Graph.Internal
 
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Data.IntSet                   as IntSet
@@ -378,7 +375,7 @@ edgeCount = coerce AIM.edgeCount
 -- vertexList1 . 'vertices1' == 'Data.List.NonEmpty.nub' . 'Data.List.NonEmpty.sort'
 -- @
 vertexList1 :: AdjacencyIntMap -> NonEmpty Int
-vertexList1 = unsafeNonEmpty . coerce AIM.vertexList
+vertexList1 = fromList . coerce AIM.vertexList
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
