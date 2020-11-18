@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 -----------------------------------------------------------------------------
 -- |
@@ -217,6 +218,7 @@ instance (Arbitrary a, Arbitrary e, Monoid e) => Arbitrary (LG.Graph e a) where
     shrink (LG.Connect e x y) = [LG.Empty, x, y, LG.Connect mempty x y]
                              ++ [LG.Connect e x' y' | (x', y') <- shrink (x, y) ]
 
+#if !MIN_VERSION_QuickCheck(2,14,2)
 instance Arbitrary a => Arbitrary (Tree a) where
     arbitrary = sized go
       where
@@ -231,6 +233,7 @@ instance Arbitrary a => Arbitrary (Tree a) where
             return $ Node root children
 
     shrink (Node r fs) = [Node r fs' | fs' <- shrink fs]
+#endif
 
 -- TODO: Implement a custom shrink method.
 instance Arbitrary s => Arbitrary (Doc s) where
