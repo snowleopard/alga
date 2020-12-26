@@ -9,14 +9,10 @@ maintainer:    Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard,
                Alexandre Moine <alexandre@moine.me>, github: @nobrakal
 copyright:     Andrey Mokhov, 2016-2020
 homepage:      https://github.com/snowleopard/alga
+bug-reports:   https://github.com/snowleopard/alga/issues
 category:      Algebra, Algorithms, Data Structures, Graphs
 build-type:    Simple
-tested-with:   GHC == 8.0.2,
-               GHC == 8.2.2,
-               GHC == 8.4.4,
-               GHC == 8.6.5,
-               GHC == 8.8.1
-stability:     experimental
+tested-with:   GHC==8.10, GHC==8.8, GHC==8.6, GHC==8.4, GHC==8.2, GHC==8.0
 description:
     <https://github.com/snowleopard/alga Alga> is a library for algebraic construction and
     manipulation of graphs in Haskell. See <https://github.com/snowleopard/alga-paper this paper>
@@ -89,7 +85,7 @@ common common-settings
                         OverloadedStrings
                         RecordWildCards
                         ViewPatterns
-    GHC-options:        -Wall
+    ghc-options:        -Wall
                         -Wcompat
                         -Wincomplete-record-updates
                         -Wincomplete-uni-patterns
