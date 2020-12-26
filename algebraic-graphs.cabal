@@ -91,6 +91,7 @@ common common-settings
                         -Wincomplete-uni-patterns
                         -Wredundant-constraints
                         -fno-warn-name-shadowing
+                        -fno-warn-unused-imports
                         -fspec-constr
 
 library
