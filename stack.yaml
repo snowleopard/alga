@@ -1,1 +1,2 @@
-resolver: lts-14.20
+resolver: nightly-2020-11-28
+
