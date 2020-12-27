@@ -340,7 +340,7 @@ hasVertex x = Map.member x . adjacencyMap
 -- hasEdge x y                  == 'not' . 'null' . 'filter' (\\(_,ex,ey) -> ex == x && ey == y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> AdjacencyMap e a -> Bool
-hasEdge x y (AM m) = fromMaybe False (Map.member y <$> Map.lookup x m)
+hasEdge x y (AM m) = maybe False (Map.member y) (Map.lookup x m)
 
 -- | Extract the label of a specified edge in a graph.
 -- Complexity: /O(log(n))/ time.

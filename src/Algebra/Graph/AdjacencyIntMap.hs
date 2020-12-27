@@ -305,7 +305,7 @@ connect (AM x) (AM y) = AM $ IntMap.unionsWith IntSet.union
 -- 'vertexIntSet' . vertices == IntSet.'IntSet.fromList'
 -- @
 vertices :: [Int] -> AdjacencyIntMap
-vertices = AM . IntMap.fromList . map (\x -> (x, IntSet.empty))
+vertices = AM . IntMap.fromList . map (, IntSet.empty)
 {-# NOINLINE [1] vertices #-}
 
 -- | Construct the graph from a list of edges.
@@ -820,7 +820,7 @@ closure = reflexiveClosure . transitiveClosure
 -- reflexiveClosure . reflexiveClosure == reflexiveClosure
 -- @
 reflexiveClosure :: AdjacencyIntMap -> AdjacencyIntMap
-reflexiveClosure (AM m) = AM $ IntMap.mapWithKey (\k -> IntSet.insert k) m
+reflexiveClosure (AM m) = AM $ IntMap.mapWithKey IntSet.insert m
 
 -- | Compute the /symmetric closure/ of a graph by overlaying it with its own
 -- transpose.

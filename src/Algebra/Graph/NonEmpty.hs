@@ -676,27 +676,16 @@ tree (Tree.Node x f) = overlays1 $ star x (map Tree.rootLabel f) :| map tree f
 --                                    , ((3,\'a\'),(3,\'b\')) ]
 -- @
 mesh1 :: NonEmpty a -> NonEmpty b -> Graph (a, b)
-mesh1 xx@(x:|xs) yy@(y:|ys) =
-  case NonEmpty.nonEmpty ipxs of
-    Nothing ->
-      case NonEmpty.nonEmpty ipys of
-        Nothing    -> vertex (x,y)
-        Just ipys' ->
-          stars1 $ fmap (\(y1,y2) -> ((x,y1), [(x,y2)]) ) ipys'
-    Just ipxs' ->
-      case NonEmpty.nonEmpty ipys of
-        Nothing ->
-          stars1 $ fmap (\(x1,x2) -> ((x1,y), [(x2,y)]) ) ipxs'
-        Just ipys' ->
-          stars1 $
-            appendNonEmpty (fmap (\((a1,a2),(b1,b2)) -> ((a1, b1), [(a1, b2), (a2, b1)])) $ liftM2 (,) ipxs' ipys') $
-              [ ((lx,y1), [(lx,y2)]) | (y1,y2) <- ipys]
-           ++ [ ((x1,ly), [(x2,ly)]) | (x1,x2) <- ipxs]
-  where
-    lx = last xs
-    ly = last ys
-    ipxs = NonEmpty.init (pairs1 xx)
-    ipys = NonEmpty.init (pairs1 yy)
+mesh1 (x :| []) ys        = (x, ) <$> path1 ys
+mesh1 xs        (y :| []) = (, y) <$> path1 xs
+mesh1 xs@(x1 :| x2 : xt) ys@(y1 :| y2 : yt) =
+    let star i j o = (vertex i `overlay` vertex j) `connect` vertex o
+        innerStars = overlays1 $ do
+                (x1, x2) <- NonEmpty.zip xs (x2 :| xt)
+                (y1, y2) <- NonEmpty.zip ys (y2 :| yt)
+                return $ star (x1, y2) (x2, y1) (x2, y2)
+    in
+    ((x1, ) <$> path1 ys) `overlay` ((, y1) <$> path1 xs) `overlay` innerStars
 
 -- | Construct a /torus graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -711,16 +700,18 @@ mesh1 xx@(x:|xs) yy@(y:|ys) =
 --                                   , ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus1 :: NonEmpty a -> NonEmpty b -> Graph (a, b)
-torus1 xs ys = stars1 $ fmap (\((a1,a2),(b1,b2)) -> ((a1, b1), [(a1, b2), (a2, b1)]))
-    $ liftM2 (,) (pairs1 xs) (pairs1 ys)
-
--- Auxiliary function for 'mesh1' and 'torus1'
-pairs1 :: NonEmpty a -> NonEmpty (a, a)
-pairs1 as@(x:|xs) = NonEmpty.zip as $ maybe (x :| []) (`appendNonEmpty` [x]) $ NonEmpty.nonEmpty xs
-
--- Append a list to a non-empty one
-appendNonEmpty :: NonEmpty a -> [a] -> NonEmpty a
-appendNonEmpty (w:|ws) zs = w :| (ws++zs)
+torus1 xs ys = stars1 $ do
+    (x1, x2) <- pairs1 xs
+    (y1, y2) <- pairs1 ys
+    return ((x1, y1), [(x1, y2), (x2, y1)])
+  where
+    -- Turn a non-empty list into a cycle and return pairs of neighbours
+    pairs1 :: NonEmpty a -> NonEmpty (a, a)
+    pairs1 as@(x :| xs) = NonEmpty.zip as $
+        maybe (x :| []) (`append1` [x]) (NonEmpty.nonEmpty xs)
+    -- Append a list to a non-empty one
+    append1 :: NonEmpty a -> [a] -> NonEmpty a
+    append1 (x :| xs) ys = x :| (xs ++ ys)
 
 -- | Remove a vertex from a given graph. Returns @Nothing@ if the resulting
 -- graph is empty.

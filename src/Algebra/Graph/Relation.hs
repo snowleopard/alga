@@ -43,6 +43,7 @@ module Algebra.Graph.Relation (
     ) where
 
 import Control.DeepSeq
+import Data.Bifunctor
 import Data.Set (Set, union)
 import Data.String
 import Data.Tree
@@ -179,7 +180,7 @@ instance Ord a => Ord (Relation a) where
         , compare (edgeSet     x) (edgeSet      y) ]
 
 instance NFData a => NFData (Relation a) where
-    rnf (Relation d r) = rnf d `seq` rnf r `seq` ()
+    rnf (Relation d r) = rnf d `seq` rnf r
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'Relation' for
 -- more details.
@@ -458,7 +459,7 @@ adjacencyList :: Eq a => Relation a -> [(a, [a])]
 adjacencyList r = go (Set.toAscList $ domain r) (Set.toAscList $ relation r)
   where
     go [] _      = []
-    go vs []     = map ((,[])) vs
+    go vs []     = map (, []) vs
     go (x:vs) es = let (ys, zs) = span ((==x) . fst) es in (x, map snd ys) : go vs zs
 
 -- | The /preset/ of an element @x@ is the set of elements that are related to
@@ -690,7 +691,7 @@ transpose (Relation d r) = Relation d (Set.map swap r)
 -- gmap f . gmap g   == gmap (f . g)
 -- @
 gmap :: Ord b => (a -> b) -> Relation a -> Relation b
-gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) r)
+gmap f (Relation d r) = Relation (Set.map f d) (Set.map (bimap f f) r)
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -722,7 +723,7 @@ induceJust :: Ord a => Relation (Maybe a) -> Relation a
 induceJust (Relation d r) = Relation (catMaybesSet d) (catMaybesSet2 r)
   where
     catMaybesSet         = Set.mapMonotonic Maybe.fromJust . Set.delete Nothing
-    catMaybesSet2        = Set.mapMonotonic (\(x, y) -> (Maybe.fromJust x, Maybe.fromJust y))
+    catMaybesSet2        = Set.mapMonotonic (bimap Maybe.fromJust Maybe.fromJust)
                          . Set.filter p
     p (Nothing, _)       = False
     p (_,       Nothing) = False

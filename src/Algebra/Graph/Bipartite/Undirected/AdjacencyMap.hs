@@ -55,7 +55,7 @@ import Control.Monad.Trans.Maybe
 import Control.Monad.State
 import Data.Either
 import Data.Foldable (asum)
-import Data.List
+import Data.List ((\\), sort)
 import Data.Map.Strict (Map)
 import Data.Maybe
 import Data.Set (Set)
@@ -972,7 +972,7 @@ detectParts x = case runState (runMaybeT dfs) Map.empty of
                          inVertex LeftPart v
 
     -- inVertex :: Part -> a -> PartMonad a
-    inVertex p v = ((:) v) <$> do
+    inVertex p v = (v :) <$> do
         modify (Map.insert v p)
         let q = otherPart p
         asum [ onEdge q u | u <- Set.toAscList (AM.postSet v g) ]

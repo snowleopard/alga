@@ -21,7 +21,7 @@ module Algebra.Graph.Export.Dot (
     export, exportAsIs, exportViaShow
     ) where
 
-import Data.List hiding (unlines)
+import Data.List (map, null, intersperse)
 import Data.Monoid
 import Data.String hiding (unlines)
 import Prelude hiding (unlines)
@@ -62,7 +62,7 @@ data Style a s = Style
 -- | Default style for exporting graphs. All style settings are empty except for
 -- 'vertexName', which is provided as the only argument.
 defaultStyle :: Monoid s => (a -> s) -> Style a s
-defaultStyle v = Style mempty [] [] [] [] v (\_ -> []) (\_ _ -> [])
+defaultStyle v = Style mempty [] [] [] [] v (const []) (\_ _ -> [])
 
 -- | Default style for exporting graphs whose vertices are 'Show'-able. All
 -- style settings are empty except for 'vertexName', which is computed from

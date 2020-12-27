@@ -279,7 +279,7 @@ overlay (AM x) (AM y) = AM $ Map.unionWith Set.union x y
 -- 'edgeCount'   (connect 1 2) == 1
 -- @
 connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-connect (AM x) (AM y) = AM $ Map.unionsWith Set.union $
+connect (AM x) (AM y) = AM $ Map.unionsWith Set.union
     [ x, y, Map.fromSet (const $ Map.keysSet y) (Map.keysSet x) ]
 {-# NOINLINE [1] connect #-}
 
@@ -295,7 +295,7 @@ connect (AM x) (AM y) = AM $ Map.unionsWith Set.union $
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: Ord a => [a] -> AdjacencyMap a
-vertices = AM . Map.fromList . map (\x -> (x, Set.empty))
+vertices = AM . Map.fromList . map (, Set.empty)
 {-# NOINLINE [1] vertices #-}
 
 -- | Construct the graph from a list of edges.
@@ -859,7 +859,7 @@ closure = reflexiveClosure . transitiveClosure
 -- reflexiveClosure . reflexiveClosure == reflexiveClosure
 -- @
 reflexiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
-reflexiveClosure (AM m) = AM $ Map.mapWithKey (\k -> Set.insert k) m
+reflexiveClosure (AM m) = AM $ Map.mapWithKey Set.insert m
 
 -- | Compute the /symmetric closure/ of a graph by overlaying it with its own
 -- transpose.

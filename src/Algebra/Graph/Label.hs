@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Label
