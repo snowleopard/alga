@@ -53,7 +53,7 @@ import Control.Applicative (Alternative)
 import Control.DeepSeq
 import Control.Monad
 import Data.Coerce
-import Data.List
+import Data.List (tails)
 import GHC.Generics
 import Data.Set (Set)
 import Data.Tree (Tree, Forest)

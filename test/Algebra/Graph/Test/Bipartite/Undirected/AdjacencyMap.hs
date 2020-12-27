@@ -18,7 +18,7 @@ import Algebra.Graph.Bipartite.Undirected.AdjacencyMap
 import Algebra.Graph.Test
 import Data.Either
 import Data.Either.Extra
-import Data.List
+import Data.List (nub, sort)
 import Data.Map.Strict (Map)
 import Data.Set (Set)
 

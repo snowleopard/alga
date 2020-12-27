@@ -13,10 +13,12 @@ module Algebra.Graph.Test.Generic where
 
 import Control.Monad (when)
 import Data.Either
-import Data.List as List
+import Data.List (nub, sort)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Tree
 import Data.Tuple
+
+import qualified Data.List as List
 
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API
