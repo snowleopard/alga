@@ -23,7 +23,7 @@ module Algebra.Graph.AdjacencyIntMap.Algorithm (
     -- * Algorithms
     bfsForest, bfs, dfsForest, dfsForestFrom, dfs, reachable,
     topSort, isAcyclic,
-    
+
     -- * Correctness properties
     isDfsForestOf, isTopSortOf,
 
@@ -50,7 +50,7 @@ import qualified Data.IntSet        as IntSet
 --   argument vertices that will be the roots of the resulting
 --   forest. Duplicates in the list will have their first occurrence
 --   expanded and subsequent ones ignored. Argument vertices not in
---   the graph are also ignored. 
+--   the graph are also ignored.
 --
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O((L+m)*min(n,W))/ time and /O(n)/ space.
@@ -69,7 +69,7 @@ import qualified Data.IntSet        as IntSet
 --                                             , Node { rootLabel = 4
 --                                                    , subForest = [] }]
 -- 'forest' (bfsForest [3] ('circuit' [1..5] + 'circuit' [5,4..1])) == 'path' [3,2,1] + 'path' [3,4,5]
--- 
+--
 -- @
 bfsForest :: [Int] -> AdjacencyIntMap -> Forest Int
 bfsForest vs g = evalState (explore [ v | v <- vs, hasVertex v g ]) IntSet.empty where
@@ -88,7 +88,7 @@ bfsForest vs g = evalState (explore [ v | v <- vs, hasVertex v g ]) IntSet.empty
 --
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O((L+m)*min(n,W))/ time and /O(n)/ space.
--- 
+--
 -- @
 -- bfs vs 'empty'                                         == []
 -- bfs [] g                                             == []
@@ -141,7 +141,7 @@ dfsForest g = dfsForestFrom' (vertexList g) g
 --   resulting forest does not necessarily span the whole graph, as
 --   some vertices may be unreachable. Any of the given vertices which
 --   are not in the graph are ignored.
--- 
+--
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O((L+m)*min(n,W))/ time and /O(n)/ space.
 --
@@ -182,7 +182,7 @@ dfsForestFrom' vs g = evalState (explore vs) IntSet.empty where
 -- | Compute the vertices visited by /depth-first search/ in a graph
 --   from the given vertices. Adjacent vertices are explored in
 --   increasing order with respect to their 'Ord' instance.
--- 
+--
 --   Let /L/ be the number of seed vertices. Complexity:
 --   /O((L+m)*min(n,W))/ time and /O(n)/ space.
 --
@@ -207,7 +207,7 @@ dfs vs = dfsForestFrom vs >=> flatten
 --   appear in /depth-first order/.
 --
 --   Complexity: /O(m*min(n,W))/ time and /O(n)/ space.
--- 
+--
 -- @
 -- reachable x $ 'empty'                       == []
 -- reachable 1 $ 'vertex' 1                    == [1]
