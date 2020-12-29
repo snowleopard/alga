@@ -329,15 +329,15 @@ scc g = condense g $ execState (gabowSCC g) initialState where
   initialState = SCC 0 0 [] [] Map.empty Map.empty [] [] []
 
 data StateSCC a
-  = SCC { preorder      :: {-# unpack #-} !Int
-        , component     :: {-# unpack #-} !Int
+  = SCC { _preorder     :: {-# unpack #-} !Int
+        , _component    :: {-# unpack #-} !Int
         , boundaryStack :: [(Int,a)]
-        , pathStack     :: [a]
+        , _pathStack    :: [a]
         , preorders     :: Map.Map a Int
         , components    :: Map.Map a Int
-        , innerGraphs   :: [AdjacencyMap a]
-        , innerEdges    :: [(Int,(a,a))]
-        , outerEdges    :: [(a,a)]
+        , _innerGraphs  :: [AdjacencyMap a]
+        , _innerEdges   :: [(Int,(a,a))]
+        , _outerEdges   :: [(a,a)]
         } deriving (Show)
 
 gabowSCC :: Ord a => AdjacencyMap a -> State (StateSCC a) ()
