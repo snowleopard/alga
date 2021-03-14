@@ -36,7 +36,7 @@ type AI = AdjacencyMap Int
 testAdjacencyMap :: IO ()
 testAdjacencyMap = do
     putStrLn "\n============ AdjacencyMap ============"
-    test "Axioms of graphs" (axioms @ AI)
+    test "Axioms of graphs" (axioms @AI)
 
     testConsistent        t
     testShow              t

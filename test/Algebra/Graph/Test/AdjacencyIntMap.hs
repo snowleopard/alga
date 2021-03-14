@@ -26,7 +26,7 @@ t = ("AdjacencyIntMap.", adjacencyIntMapAPI)
 testAdjacencyIntMap :: IO ()
 testAdjacencyIntMap = do
     putStrLn "\n============ AdjacencyIntMap ============"
-    test "Axioms of graphs" (axioms @ AdjacencyIntMap)
+    test "Axioms of graphs" (axioms @AdjacencyIntMap)
 
     putStrLn $ "\n============ AdjacencyIntMap.fromAdjacencyMap ============"
     test "fromAdjacencyMap == stars . AdjacencyMap.adjacencyList" $ \x ->

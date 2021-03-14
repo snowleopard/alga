@@ -32,7 +32,7 @@ type SRI = Relation Int
 testSymmetricRelation :: IO ()
 testSymmetricRelation = do
     putStrLn "\n============ Symmetric.Relation ============"
-    test "Axioms of undirected graphs" $ size10 $ undirectedAxioms @ SRI
+    test "Axioms of undirected graphs" $ size10 $ undirectedAxioms @SRI
 
     testConsistent    t
     testSymmetricShow t
