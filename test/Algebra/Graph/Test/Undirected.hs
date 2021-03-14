@@ -34,7 +34,7 @@ type AGI = G.Graph Int
 testUndirected :: IO ()
 testUndirected = do
     putStrLn "\n============ Graph.Undirected ============"
-    test "Axioms of undirected graphs" $ size10 $ undirectedAxioms @ G
+    test "Axioms of undirected graphs" $ size10 $ undirectedAxioms @G
 
     testSymmetricShow t
 

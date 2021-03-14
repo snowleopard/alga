@@ -35,8 +35,8 @@ type G = Graph Int
 testGraph :: IO ()
 testGraph = do
     putStrLn "\n============ Graph ============"
-    test "Axioms of graphs"   (axioms   @ G)
-    test "Theorems of graphs" (theorems @ G)
+    test "Axioms of graphs"   (axioms   @G)
+    test "Theorems of graphs" (theorems @G)
 
     testBasicPrimitives t
     testIsSubgraphOf    t
