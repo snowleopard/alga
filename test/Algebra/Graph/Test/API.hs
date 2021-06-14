@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.API
--- Copyright  : (c) Andrey Mokhov 2016-2020
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
