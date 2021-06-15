@@ -971,7 +971,7 @@ mesh :: [a] -> [b] -> Graph (a, b)
 mesh []  _   = empty
 mesh _   []  = empty
 mesh [x] [y] = vertex (x, y)
-mesh xs  ys  = stars $ 
+mesh xs  ys  = stars $
        [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ix, (b1, b2) <- iy ]
     ++ [ ((lx, y1), [(lx, y2)]) | (y1, y2) <- iy ]
     ++ [ ((x1, ly), [(x2, ly)]) | (x1, x2) <- ix ]
