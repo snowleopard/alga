@@ -174,9 +174,10 @@ compatible with 'overlay' and 'connect' operations:
 x     <= x + y
 x + y <= x * y@
 
-Deforestation (fusion) is implemented for some functions in this module. This means
-that when a function tagged as a \"good producer\" is composed with a \"good consumer\",
-the intermediate structure will not be built.
+Deforestation (fusion) is implemented for some functions in this module. This
+means that when a function tagged as a \"good producer\" is composed with a
+function tagged as a \"good consumer\", the intermediate structure will not be
+built.
 -}
 data Graph a = Empty
              | Vertex a
@@ -197,12 +198,12 @@ These functions are annotated with carefully chosen GHC pragmas that control
 inlining, which would be impossible or unreliable if we used standard functions
 instead. For example, the function 'eqR' has the following annotations:
 
-    NOINLINE [1] eqR
-    RULES "eqIntR" eqR = eqIntR
+    INLINE [2] eqR
+    RULES "eqR/Int" eqR = eqIntR
 
-This tells GHC to rewrite 'eqR' to faster 'eqIntR' if possible (if the types
-match), and -- importantly -- not to inline 'eqR' too early, before the rewrite
-rule had a chance to fire.
+The above tells GHC to rewrite 'eqR' to faster 'eqIntR' if possible (if the
+types match), and -- importantly -- not to inline 'eqR' too early, before the
+rewrite rule had a chance to fire.
 
 We could have written the following rule instead:
 
@@ -245,7 +246,10 @@ instance Ord a => Eq (Graph a) where
 instance Ord a => Ord (Graph a) where
     compare = ordR
 
--- TODO: Find a more efficient equality check.
+-- TODO: Find a more efficient equality check. Note that assuming the Strong
+-- Exponential Time Hypothesis (SETH), it is impossible to compare two algebraic
+-- graphs in O(s^1.99), i.e. a quadratic algorithm is the best one can hope for.
+
 -- Check if two graphs are equal by converting them to their adjacency maps.
 eqR :: Ord a => Graph a -> Graph a -> Bool
 eqR x y = toAdjacencyMap x == toAdjacencyMap y
@@ -273,15 +277,13 @@ ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 -- | `<*>` is a good consumer of its first agument and producer.
 instance Applicative Graph where
     pure    = Vertex
-    f <*> x = buildg $ \e v o c ->
-      foldg e (\w -> foldg e (v . w) o c x) o c f
+    f <*> x = buildg $ \e v o c -> foldg e (\w -> foldg e (v . w) o c x) o c f
     {-# INLINE (<*>) #-}
 
 -- | `>>=` is a good consumer and producer.
 instance Monad Graph where
     return = pure
-    g >>= f  = buildg $ \e v o c ->
-      foldg e (composeR (foldg e v o c) f) o c g
+    g >>= f  = buildg $ \e v o c -> foldg e (composeR (foldg e v o c) f) o c g
     {-# INLINE (>>=) #-}
 
 instance Alternative Graph where
@@ -408,8 +410,7 @@ vertices xs = buildg $ \e v o _ -> combineR e o v xs
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- @
 edges :: [(a, a)] -> Graph a
-edges xs = buildg $ \e v o c ->
-  combineR e o (\e -> c (v (fst e)) (v (snd e))) xs
+edges xs = buildg $ \e v o c -> combineR e o (\(x, y) -> c (v x) (v y)) xs
 {-# INLINE edges #-}
 
 -- | Overlay a given list of graphs.
@@ -477,15 +478,20 @@ foldg e v o c = go
 {-# INLINE [0] foldg #-}
 
 {-# RULES
+
 "foldg/Empty"   forall e v o c.
     foldg e v o c Empty = e
+
 "foldg/Vertex"  forall e v o c x.
     foldg e v o c (Vertex x) = v x
+
 "foldg/Overlay" forall e v o c x y.
     foldg e v o c (Overlay x y) = o (foldg e v o c x) (foldg e v o c y)
+
 "foldg/Connect" forall e v o c x y.
     foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
- #-}
+
+#-}
 
 -- | Build a graph given an interpretation of the four graph construction
 -- primitives 'empty', 'vertex', 'overlay' and 'connect', in this order. See
@@ -602,12 +608,13 @@ hasVertex x = foldg False (==x) (||) (||)
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 
 {- Note [The implementation of hasEdge]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We fold a graph into a function of type Int -> Int where the Int stands for the
 number of vertices of the specified edge that have been matched so far. The edge
 belongs to the graph if we reach the number 2. Note that this algorithm can be
 generalised to algebraic graphs of higher dimensions, e.g. we can similarly find
-3-edges (triangles), 4-edges (tetrahedra) and k-edges in O(s) time.
+3-edges (triangles), 4-edges (tetrahedra), and k-edges in O(s) time.
 
 The four graph constructors are interpreted as follows:
 
@@ -619,6 +626,7 @@ The four graph constructors are interpreted as follows:
 Note that in the last two cases we can (and do) shortcircuit the computation as
 soon as the edge is fully matched in one of the subexpressions.
 -}
+
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
 --
@@ -801,7 +809,7 @@ toAdjacencyIntMap :: Graph Int -> AIM.AdjacencyIntMap
 toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 {-# INLINE toAdjacencyIntMap #-}
 
--- TODO: Make path a good consumer of lists, that is, express it with foldr.
+-- TODO: Make path a good consumer of lists, that is, express it with 'foldr'.
 -- This is not straightforward if we want to preserve efficiency.
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -816,14 +824,13 @@ toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 -- path . 'reverse' == 'transpose' . path
 -- @
 path :: [a] -> Graph a
-path xs = buildg $ \e v o c ->
-  case xs of
-    []     -> e
-    [x]    -> v x
-    (_:ys) -> foldg e v o c $ edges (zip xs ys)
+path xs = buildg $ \e v o c -> case xs of
+    []       -> e
+    [x]      -> v x
+    (_ : ys) -> foldg e v o c $ edges (zip xs ys)
 {-# INLINE path #-}
 
--- TODO: Make circuit a good consumer of lists, that is, express it with foldr.
+-- TODO: Make circuit a good consumer of lists, that is, express it with 'foldr'.
 -- This is not straightforward if we want to preserve efficiency.
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
@@ -838,10 +845,9 @@ path xs = buildg $ \e v o c ->
 -- circuit . 'reverse' == 'transpose' . circuit
 -- @
 circuit :: [a] -> Graph a
-circuit xs = buildg $ \e v o c ->
-  case xs of
-    [] -> e
-    (x:xs) -> foldg e v o c $ path $ [x] ++ xs ++ [x]
+circuit xs = buildg $ \e v o c -> case xs of
+    []       -> e
+    (x : xs) -> foldg e v o c $ path $ [x] ++ xs ++ [x]
 {-# INLINE circuit #-}
 
 -- | The /clique/ on a list of vertices.
@@ -876,11 +882,9 @@ clique xs = buildg $ \e v _ c -> combineR e c v xs
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: [a] -> [a] -> Graph a
-biclique xs ys = buildg $ \e v o c ->
-  case foldr1Safe o (map v xs) of
+biclique xs ys = buildg $ \e v o c -> case foldr1Safe o (map v xs) of
     Nothing -> foldg e v o c $ vertices ys
-    Just xs ->
-      case foldr1Safe o (map v ys) of
+    Just xs -> case foldr1Safe o (map v ys) of
         Nothing -> xs
         Just ys -> c xs ys
 {-# INLINE biclique #-}
@@ -898,10 +902,9 @@ biclique xs ys = buildg $ \e v o c ->
 -- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: a -> [a] -> Graph a
-star x ys = buildg $ \_ v o c ->
-  case foldr1Safe o (map v ys) of
+star x ys = buildg $ \_ v o c -> case foldr1Safe o (map v ys) of
     Nothing -> v x
-    Just vertices  -> c (v x) vertices
+    Just ys -> c (v x) ys
 {-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
@@ -921,8 +924,7 @@ star x ys = buildg $ \_ v o c ->
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
 stars :: [(a, [a])] -> Graph a
-stars xs = buildg $ \e v o c ->
-  combineR e o (foldg e v o c . uncurry star) xs
+stars xs = buildg $ \e v o c -> combineR e o (foldg e v o c . uncurry star) xs
 {-# INLINE stars #-}
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
@@ -969,14 +971,15 @@ mesh :: [a] -> [b] -> Graph (a, b)
 mesh []  _   = empty
 mesh _   []  = empty
 mesh [x] [y] = vertex (x, y)
-mesh xs  ys  = stars $  [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ipxs, (b1, b2) <- ipys ]
-                     ++ [ ((lx,y1), [(lx,y2)]) | (y1,y2) <- ipys]
-                     ++ [ ((x1,ly), [(x2,ly)]) | (x1,x2) <- ipxs]
+mesh xs  ys  = stars $ 
+       [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ix, (b1, b2) <- iy ]
+    ++ [ ((lx, y1), [(lx, y2)]) | (y1, y2) <- iy ]
+    ++ [ ((x1, ly), [(x2, ly)]) | (x1, x2) <- ix ]
   where
     lx = last xs
     ly = last ys
-    ipxs = init (pairs xs)
-    ipys = init (pairs ys)
+    ix = init (pairs xs)
+    iy = init (pairs ys)
 
 -- | Construct a /torus graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -991,7 +994,8 @@ mesh xs  ys  = stars $  [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ipxs, (
 --                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus :: [a] -> [b] -> Graph (a, b)
-torus xs ys = stars [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- pairs xs, (b1, b2) <- pairs ys ]
+torus xs ys = stars
+    [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- pairs xs, (b1, b2) <- pairs ys ]
 
 -- | Auxiliary function for 'mesh' and 'torus'
 pairs :: [a] -> [(a, a)]
@@ -1109,8 +1113,8 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 -- @
 splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
 splitVertex x us g = buildg $ \e v o c ->
-  let gus = foldg e v o c (vertices us) in
-  foldg e (\w -> if w == x then gus else v w) o c g
+    let split y = if x == y then foldg e v o c (vertices us) else v y in
+    foldg e split o c g
 {-# INLINE splitVertex #-}
 {-# SPECIALISE splitVertex :: Int -> [Int] -> Graph Int -> Graph Int #-}
 
@@ -1148,7 +1152,7 @@ transpose g = buildg $ \e v o c -> foldg e v o (flip c) g
 -- @
 induce :: (a -> Bool) -> Graph a -> Graph a
 induce p g = buildg $ \e v o c -> fromMaybe e $
-  foldg Nothing (\x -> if p x then Just (v x) else Nothing) (k o) (k c) g
+    foldg Nothing (\x -> if p x then Just (v x) else Nothing) (k o) (k c) g
   where
     k _ x        Nothing  = x -- Constant folding to get rid of Empty leaves
     k _ Nothing  y        = y
@@ -1169,7 +1173,7 @@ induce p g = buildg $ \e v o c -> fromMaybe e $
 -- @
 induceJust :: Graph (Maybe a) -> Graph a
 induceJust g = buildg $ \e v o c -> fromMaybe e $
-  foldg Nothing (fmap v) (k o) (k c) g
+    foldg Nothing (fmap v) (k o) (k c) g
   where
     k _ x        Nothing  = x -- Constant folding to get rid of Empty leaves
     k _ Nothing  y        = y
@@ -1343,39 +1347,41 @@ sparsifyKL n graph = KL.buildG (1, next - 1) ((n + 1, n + 2) : Exts.toList (res 
 The rules for foldg work very similarly to GHC's mapFB rules; see a note below
 this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
 
-* All concerned expressions are inlined to allow the compiler to apply the main
-  rule: "foldg/buildg".
-  This rule states that the composition of a good producer (expressed via buildg)
-  and a good consumer (expressed via foldg) can be fused to remove the construction
-  of the intermediate structure.
+* The expressions are first inlined to allow the compiler to apply the main rule
+  "foldg/buildg" that states that the composition of a good producer (expressed
+  via 'buildg') and a good consumer (expressed via 'foldg') can be fused to
+  avoid the construction of an intermediate structure.
 
 * If this inlining is made blindlessly, it can lead to unneeded operations. They
-  are optimized via the "foldg/id" rule.
+  are optimised via the "foldg/id" rule.
 
-* composeR is here to allow further optimization. As an high-order function, it
-  benefit from inlining in the final phase.
+* 'composeR' is here to allow further optimisation. As a high-order function, it
+  benefits from inlining in the final phase.
 
-* The "composeR/composeR" rule optimises compositions of multiple composeR's.
+* The "composeR/composeR" rule optimises compositions of 'composeR' chains.
 -}
 
 composeR :: (b -> c) -> (a -> b) -> a -> c
 composeR = (.)
 {-# INLINE [1] composeR #-}
 
--- Rewrite rules for fusion.
+-- Rewrite rules for algebraic graph fusion.
 {-# RULES
--- Fuse a foldg followed by a buildg.
+
+-- Fuse a 'foldg' followed by a 'buildg':
 "foldg/buildg" forall e v o c (g :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b).
     foldg e v o c (buildg g) = g e v o c
 
--- Fuse composeR's (from bind's definition).
+-- Fuse 'composeR' chains (see the definition of the bind operator).
 "composeR/composeR" forall c f g.
     composeR (composeR c f) g = composeR c (f . g)
 
--- Rewrite identity (which can appear in the inlining of 'buildg') to a more efficient one.
+-- Rewrite identity (which can appear in the inlining of 'buildg') to a more
+-- efficient one.
 "foldg/id"
     foldg Empty Vertex Overlay Connect = id
- #-}
+
+#-}
 
 -- 'Focus' on a specified subgraph.
 focus :: (a -> Bool) -> Graph a -> Focus a
