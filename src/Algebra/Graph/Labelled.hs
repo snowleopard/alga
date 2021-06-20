@@ -506,7 +506,6 @@ transpose = foldg empty vertex (fmap flip connect)
 emap :: (e -> f) -> Graph e a -> Graph f a
 emap f = foldg Empty Vertex (Connect . f)
 
--- TODO: Implement via 'induceJust' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
@@ -520,11 +519,7 @@ emap f = foldg Empty Vertex (Connect . f)
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: (a -> Bool) -> Graph e a -> Graph e a
-induce p = foldg Empty (\x -> if p x then Vertex x else Empty) c
-  where
-    c _ x     Empty = x -- Constant folding to get rid of Empty leaves
-    c _ Empty y     = y
-    c e x     y     = Connect e x y
+induce p = induceJust . fmap (\a -> if p a then Just a else Nothing)
 
 -- | Construct the /induced subgraph/ of a given graph by removing the vertices
 -- that are 'Nothing'.
