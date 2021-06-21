@@ -1135,7 +1135,6 @@ transpose :: Graph a -> Graph a
 transpose g = buildg $ \e v o c -> foldg e v o (flip c) g
 {-# INLINE transpose #-}
 
--- TODO: Implement via 'induceJust' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
@@ -1151,12 +1150,7 @@ transpose g = buildg $ \e v o c -> foldg e v o (flip c) g
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: (a -> Bool) -> Graph a -> Graph a
-induce p g = buildg $ \e v o c -> fromMaybe e $
-    foldg Nothing (\x -> if p x then Just (v x) else Nothing) (k o) (k c) g
-  where
-    k _ x        Nothing  = x -- Constant folding to get rid of Empty leaves
-    k _ Nothing  y        = y
-    k f (Just x) (Just y) = Just (f x y)
+induce p = induceJust . fmap (\a -> if p a then Just a else Nothing)
 {-# INLINE induce #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the vertices

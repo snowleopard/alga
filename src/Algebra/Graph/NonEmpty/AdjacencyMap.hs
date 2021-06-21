@@ -637,7 +637,7 @@ induce1 = fmap toNonEmpty . coerce AM.induce
 -- induceJust1 . 'gmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce1' p
 -- @
 induceJust1 :: Ord a => AdjacencyMap (Maybe a) -> Maybe (AdjacencyMap a)
-induceJust1 m = toNonEmpty (AM.induceJust (coerce m))
+induceJust1 = toNonEmpty . AM.induceJust . coerce
 
 -- | Compute the /reflexive and transitive closure/ of a graph.
 -- Complexity: /O(n * m * log(n)^2)/ time.

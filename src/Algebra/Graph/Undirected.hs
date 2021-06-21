@@ -764,7 +764,6 @@ mergeVertices :: (a -> Bool) -> a -> Graph a -> Graph a
 mergeVertices = coerce21 G.mergeVertices
 {-# INLINE mergeVertices #-}
 
--- TODO: Implement via 'induceJust' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
