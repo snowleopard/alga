@@ -404,7 +404,7 @@ hasEdge u v (AM m) = case IntMap.lookup u m of
     Just vs -> IntSet.member v vs
 
 -- | The number of vertices in a graph.
--- Complexity: /O(1)/ time.
+-- Complexity: /O(n)/ time.
 --
 -- @
 -- vertexCount 'empty'             ==  0
@@ -416,7 +416,7 @@ vertexCount :: AdjacencyIntMap -> Int
 vertexCount = IntMap.size . adjacencyIntMap
 
 -- | The number of edges in a graph.
--- Complexity: /O(n)/ time.
+-- Complexity: /O(n+m)/ time.
 --
 -- @
 -- edgeCount 'empty'      == 0

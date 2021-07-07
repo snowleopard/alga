@@ -8,6 +8,7 @@ import Algebra.Graph.Test.Internal
 import Algebra.Graph.Test.Label
 import Algebra.Graph.Test.Labelled.AdjacencyMap
 import Algebra.Graph.Test.Labelled.Graph
+import Algebra.Graph.Test.NonEmpty.AdjacencyIntMap
 import Algebra.Graph.Test.NonEmpty.AdjacencyMap
 import Algebra.Graph.Test.NonEmpty.Graph
 import Algebra.Graph.Test.Relation
@@ -39,6 +40,7 @@ main = do
     go "Label"                             testLabel
     go "Labelled.AdjacencyMap"             testLabelledAdjacencyMap
     go "Labelled.Graph"                    testLabelledGraph
+    go "NonEmpty.AdjacencyIntMap"          testNonEmptyAdjacencyIntMap
     go "NonEmpty.AdjacencyMap"             testNonEmptyAdjacencyMap
     go "NonEmpty.Graph"                    testNonEmptyGraph
     go "Relation"                          testRelation

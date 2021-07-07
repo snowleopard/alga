@@ -55,7 +55,19 @@ instance Show g => Show (Mono g a) where
 toIntAPI :: API g Ord -> API g ((~) Int)
 toIntAPI API{..} = API{..}
 
--- TODO: Add missing API entries for Acyclic, NonEmpty and Symmetric graphs.
+-- TODO: Add missing API entries for Acyclic, NonEmpty and Symmetric
+--       graphs. Here is a blueprint initially discussed in
+--       https://github.com/snowleopard/alga/pull/250 (adding nonempty
+--       aims):
+--       1. Extend data API g c with new fields that correspond to
+--       missing methods (most of them end with the suffix 1).
+--       2. Add tests for missing methods to Test.Generic or
+--       Test.Generic.NonEmpty -- whichever turns out to be
+--       clearer/more convenient.
+--       3. Consider/decide whether or not ToGraph are useful or needed
+--       4. Tests for non-empty modules would need to import API,
+--       Generic and perhaps also Generic.NonEmpty (if it turns out to
+--       be convenient).
 -- | The complete graph API dictionary. A graph data type, such as 'G.Graph',
 -- typically implements only a part of the whole API.
 data API g c where

@@ -1,7 +1,8 @@
+{-# LANGUAGE DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.NonEmpty.AdjacencyMap
--- Copyright  : (c) Andrey Mokhov 2016-2021
+-- Module     : Algebra.Graph.NonEmpty.AdjacencyIntMap
+-- Copyright  : (c) Andrey Mokhov 2016-2019
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -10,21 +11,21 @@
 -- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for the
 -- motivation behind the library, the underlying theory, and implementation details.
 --
--- This module defines the data type 'AdjacencyMap' for graphs that are known
+-- This module defines the data type 'AdjacencyIntMap' for graphs that are known
 -- to be non-empty at compile time. To avoid name clashes with
--- "Algebra.Graph.AdjacencyMap", this module can be imported qualified:
+-- "Algebra.Graph.AdjacencyIntMap", this module can be imported qualified:
 --
 -- @
--- import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
+-- import qualified Algebra.Graph.NonEmpty.AdjacencyIntMap as NonEmpty
 -- @
 --
 -- The naming convention generally follows that of "Data.List.NonEmpty": we use
 -- suffix @1@ to indicate the functions whose interface must be changed compared
--- to "Algebra.Graph.AdjacencyMap", e.g. 'vertices1'.
+-- to "Algebra.Graph.AdjacencyIntMap", e.g. 'vertices1'.
 -----------------------------------------------------------------------------
-module Algebra.Graph.NonEmpty.AdjacencyMap (
+module Algebra.Graph.NonEmpty.AdjacencyIntMap (
     -- * Data structure
-    AdjacencyMap, toNonEmpty, fromNonEmpty,
+    AdjacencyIntMap, toNonEmpty, fromNonEmpty,
 
     -- * Basic graph construction primitives
     vertex, edge, overlay, connect, vertices1, edges1, overlays1, connects1,
@@ -34,14 +35,14 @@ module Algebra.Graph.NonEmpty.AdjacencyMap (
 
     -- * Graph properties
     hasVertex, hasEdge, vertexCount, edgeCount, vertexList1, edgeList,
-    vertexSet, edgeSet, preSet, postSet,
+    vertexIntSet, edgeSet, preIntSet, postIntSet,
 
     -- * Standard families of graphs
     path1, circuit1, clique1, biclique1, star, stars1, tree,
 
     -- * Graph transformation
     removeVertex1, removeEdge, replaceVertex, mergeVertices, transpose, gmap,
-    induce1, induceJust1,
+    induce1,
 
     -- * Graph closure
     closure, reflexiveClosure, symmetricClosure, transitiveClosure,
@@ -55,15 +56,15 @@ import Control.DeepSeq
 import Data.Coerce
 import Data.List ((\\))
 import Data.List.NonEmpty (NonEmpty (..), toList, reverse, fromList)
+import Data.IntSet (IntSet)
 import Data.Set (Set)
-import Data.String
 import Data.Tree
 import GHC.Generics
 
-import qualified Algebra.Graph.AdjacencyMap as AM
-import qualified Data.Set                   as Set
+import qualified Algebra.Graph.AdjacencyIntMap as AIM
+import qualified Data.IntSet                   as IntSet
 
-{-| The 'AdjacencyMap' data type represents a graph by a map of vertices to
+{-| The 'AdjacencyIntMap' data type represents a graph by a map of vertices to
 their adjacency sets. We define a 'Num' instance as a convenient notation for
 working with graphs:
 
@@ -85,11 +86,11 @@ laws.
 
 The 'Show' instance is defined using basic graph construction primitives:
 
-@show (1         :: AdjacencyMap Int) == "vertex 1"
-show (1 + 2     :: AdjacencyMap Int) == "vertices1 [1,2]"
-show (1 * 2     :: AdjacencyMap Int) == "edge 1 2"
-show (1 * 2 * 3 :: AdjacencyMap Int) == "edges1 [(1,2),(1,3),(2,3)]"
-show (1 * 2 + 3 :: AdjacencyMap Int) == "overlay (vertex 3) (edge 1 2)"@
+@show (1         :: AdjacencyIntMap) == "vertex 1"
+show (1 + 2     :: AdjacencyIntMap) == "vertices1 [1,2]"
+show (1 * 2     :: AdjacencyIntMap) == "edge 1 2"
+show (1 * 2 * 3 :: AdjacencyIntMap) == "edges1 [(1,2),(1,3),(2,3)]"
+show (1 * 2 + 3 :: AdjacencyIntMap) == "overlay (vertex 3) (edge 1 2)"@
 
 The 'Eq' instance satisfies the following laws of algebraic graphs:
 
@@ -146,22 +147,22 @@ with 'overlay' and
 @x     <= x + y
 x + y <= x * y@
 -}
-newtype AdjacencyMap a = NAM { am :: AM.AdjacencyMap a }
-    deriving (Eq, Generic, IsString, NFData, Ord)
+newtype AdjacencyIntMap = NAIM { am :: AIM.AdjacencyIntMap }
+    deriving (Eq, Generic, NFData, Ord)
 
--- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyMap' for
+-- | __Note:__ this does not satisfy the usual ring laws; see 'AdjacencyIntMap' for
 -- more details.
-instance (Ord a, Num a) => Num (AdjacencyMap a) where
+instance Num AdjacencyIntMap where
     fromInteger = vertex . fromInteger
     (+)         = overlay
     (*)         = connect
-    signum      = error "NonEmpty.AdjacencyMap.signum cannot be implemented."
+    signum      = error "NonEmpty.AdjacencyIntMap.signum cannot be implemented."
     abs         = id
     negate      = id
 
-instance (Ord a, Show a) => Show (AdjacencyMap a) where
+instance Show AdjacencyIntMap where
     showsPrec p nam
-        | null vs    = error "NonEmpty.AdjacencyMap.Show: Graph is empty"
+        | null vs    = error "NonEmpty.AdjacencyIntMap.Show: Graph is empty"
         | null es    = showParen (p > 10) $ vshow vs
         | vs == used = showParen (p > 10) $ eshow es
         | otherwise  = showParen (p > 10) $
@@ -175,21 +176,21 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
         eshow [(x, y)] = showString "edge "      . showsPrec 11 x .
                          showString " "          . showsPrec 11 y
         eshow xs       = showString "edges1 "    . showsPrec 11 xs
-        used           = Set.toAscList $ Set.fromList $ uncurry (++) $ unzip es
+        used           = IntSet.toAscList $ IntSet.fromList $ uncurry (++) $ unzip es
 
--- | Convert a possibly empty 'AM.AdjacencyMap' into NonEmpty.'AdjacencyMap'.
--- Returns 'Nothing' if the argument is 'AM.empty'.
+-- | Convert a possibly empty 'AIM.AdjacencyIntMap' into NonEmpty.'AdjacencyIntMap'.
+-- Returns 'Nothing' if the argument is 'AIM.empty'.
 -- Complexity: /O(1)/ time, memory and size.
 --
 -- @
--- toNonEmpty 'AM.empty'          == 'Nothing'
+-- toNonEmpty 'AIM.empty'          == 'Nothing'
 -- toNonEmpty . 'fromNonEmpty' == 'Just'
 -- @
-toNonEmpty :: AM.AdjacencyMap a -> Maybe (AdjacencyMap a)
-toNonEmpty x | AM.isEmpty x = Nothing
-             | otherwise    = Just (NAM x)
+toNonEmpty :: AIM.AdjacencyIntMap -> Maybe AdjacencyIntMap
+toNonEmpty x | AIM.isEmpty x = Nothing
+             | otherwise    = Just (NAIM x)
 
--- | Convert a NonEmpty.'AdjacencyMap' into an 'AM.AdjacencyMap'. The resulting
+-- | Convert a NonEmpty.'AdjacencyIntMap' into an 'AIM.AdjacencyIntMap'. The resulting
 -- graph is guaranteed to be non-empty.
 -- Complexity: /O(1)/ time, memory and size.
 --
@@ -197,31 +198,20 @@ toNonEmpty x | AM.isEmpty x = Nothing
 -- 'isEmpty' . fromNonEmpty    == 'const' 'False'
 -- 'toNonEmpty' . fromNonEmpty == 'Just'
 -- @
-fromNonEmpty :: AdjacencyMap a -> AM.AdjacencyMap a
+fromNonEmpty :: AdjacencyIntMap -> AIM.AdjacencyIntMap
 fromNonEmpty = am
 
 -- | Construct the graph comprising /a single isolated vertex/.
+-- Complexity: /O(1)/ time and memory.
 --
 -- @
--- 'hasVertex' x (vertex y) == (x == y)
+-- 'hasVertex' x (vertex x) == True
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- @
-vertex :: a -> AdjacencyMap a
-vertex = coerce AM.vertex
+vertex :: Int -> AdjacencyIntMap
+vertex = coerce AIM.vertex
 {-# NOINLINE [1] vertex #-}
-
--- | Construct the graph comprising /a single edge/.
---
--- @
--- edge x y               == 'connect' ('vertex' x) ('vertex' y)
--- 'hasEdge' x y (edge x y) == True
--- 'edgeCount'   (edge x y) == 1
--- 'vertexCount' (edge 1 1) == 1
--- 'vertexCount' (edge 1 2) == 2
--- @
-edge :: Ord a => a -> a -> AdjacencyMap a
-edge = coerce AM.edge
 
 -- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
@@ -236,8 +226,8 @@ edge = coerce AM.edge
 -- 'vertexCount' (overlay 1 2) == 2
 -- 'edgeCount'   (overlay 1 2) == 0
 -- @
-overlay :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-overlay = coerce AM.overlay
+overlay :: AdjacencyIntMap -> AdjacencyIntMap -> AdjacencyIntMap
+overlay = coerce AIM.overlay
 {-# NOINLINE [1] overlay #-}
 
 -- | /Connect/ two graphs. This is an associative operation with the identity
@@ -257,22 +247,35 @@ overlay = coerce AM.overlay
 -- 'vertexCount' (connect 1 2) == 2
 -- 'edgeCount'   (connect 1 2) == 1
 -- @
-connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-connect = coerce AM.connect
+connect :: AdjacencyIntMap -> AdjacencyIntMap -> AdjacencyIntMap
+connect = coerce AIM.connect
 {-# NOINLINE [1] connect #-}
+
+-- | Construct the graph comprising /a single edge/.
+-- Complexity: /O(1)/ time, memory.
+--
+-- @
+-- edge x y               == 'connect' ('vertex' x) ('vertex' y)
+-- 'hasEdge' x y (edge x y) == True
+-- 'edgeCount'   (edge x y) == 1
+-- 'vertexCount' (edge 1 1) == 1
+-- 'vertexCount' (edge 1 2) == 2
+-- @
+edge :: Int -> Int -> AdjacencyIntMap
+edge = coerce AIM.edge
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
 -- of the given list.
 --
 -- @
--- vertices1 [x]           == 'vertex' x
--- 'hasVertex' x . vertices1 == 'elem' x
--- 'vertexCount' . vertices1 == 'length' . 'Data.List.NonEmpty.nub'
--- 'vertexSet'   . vertices1 == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
+-- vertices1 [x]              == 'vertex' x
+-- 'hasVertex' x . vertices1    == 'elem' x
+-- 'vertexCount' . vertices1    == 'length' . 'Data.List.NonEmpty.nub'
+-- 'vertexIntSet'   . vertices1 == IntSet.'IntSet.fromList' . 'Data.List.NonEmpty.toList'
 -- @
-vertices1 :: Ord a => NonEmpty a -> AdjacencyMap a
-vertices1 = coerce AM.vertices . toList
+vertices1 :: NonEmpty Int -> AdjacencyIntMap
+vertices1 = coerce AIM.vertices . toList
 {-# NOINLINE [1] vertices1 #-}
 
 -- | Construct the graph from a list of edges.
@@ -280,11 +283,10 @@ vertices1 = coerce AM.vertices . toList
 --
 -- @
 -- edges1 [(x,y)]     == 'edge' x y
--- edges1             == 'overlays1' . 'fmap' ('uncurry' 'edge')
 -- 'edgeCount' . edges1 == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
 -- @
-edges1 :: Ord a => NonEmpty (a, a) -> AdjacencyMap a
-edges1 = coerce AM.edges . toList
+edges1 :: NonEmpty (Int, Int) -> AdjacencyIntMap
+edges1 = coerce AIM.edges . toList
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -293,8 +295,8 @@ edges1 = coerce AM.edges . toList
 -- overlays1 [x]   == x
 -- overlays1 [x,y] == 'overlay' x y
 -- @
-overlays1 :: Ord a => NonEmpty (AdjacencyMap a) -> AdjacencyMap a
-overlays1 = coerce AM.overlays . toList
+overlays1 :: NonEmpty (AdjacencyIntMap) -> AdjacencyIntMap
+overlays1 = coerce AIM.overlays . toList
 {-# NOINLINE overlays1 #-}
 
 -- | Connect a given list of graphs.
@@ -304,8 +306,8 @@ overlays1 = coerce AM.overlays . toList
 -- connects1 [x]   == x
 -- connects1 [x,y] == 'connect' x y
 -- @
-connects1 :: Ord a => NonEmpty (AdjacencyMap a) -> AdjacencyMap a
-connects1 = coerce AM.connects . toList
+connects1 :: NonEmpty AdjacencyIntMap -> AdjacencyIntMap
+connects1 = coerce AIM.connects . toList
 {-# NOINLINE connects1 #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
@@ -318,17 +320,18 @@ connects1 = coerce AM.connects . toList
 -- isSubgraphOf ('path1' xs)    ('circuit1' xs) ==  True
 -- isSubgraphOf x y                         ==> x <= y
 -- @
-isSubgraphOf :: Ord a => AdjacencyMap a -> AdjacencyMap a -> Bool
-isSubgraphOf = coerce AM.isSubgraphOf
+isSubgraphOf :: AdjacencyIntMap -> AdjacencyIntMap -> Bool
+isSubgraphOf = coerce AIM.isSubgraphOf
 
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(log(n))/ time.
 --
 -- @
--- hasVertex x ('vertex' y) == (x == y)
+-- hasVertex x ('vertex' x) == True
+-- hasVertex 1 ('vertex' 2) == False
 -- @
-hasVertex :: Ord a => a -> AdjacencyMap a -> Bool
-hasVertex = coerce AM.hasVertex
+hasVertex :: Int -> AdjacencyIntMap -> Bool
+hasVertex = coerce AIM.hasVertex
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(log(n))/ time.
@@ -339,30 +342,30 @@ hasVertex = coerce AM.hasVertex
 -- hasEdge x y . 'removeEdge' x y == 'const' False
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
-hasEdge :: Ord a => a -> a -> AdjacencyMap a -> Bool
-hasEdge = coerce AM.hasEdge
+hasEdge :: Int -> Int -> AdjacencyIntMap -> Bool
+hasEdge = coerce AIM.hasEdge
 
 -- | The number of vertices in a graph.
--- Complexity: /O(1)/ time.
+-- Complexity: /O(n)/ time.
 --
 -- @
 -- vertexCount ('vertex' x)        ==  1
 -- vertexCount                   ==  'length' . 'vertexList'
 -- vertexCount x \< vertexCount y ==> x \< y
 -- @
-vertexCount :: AdjacencyMap a -> Int
-vertexCount = coerce AM.vertexCount
+vertexCount :: AdjacencyIntMap -> Int
+vertexCount = coerce AIM.vertexCount
 
 -- | The number of edges in a graph.
--- Complexity: /O(n)/ time.
+-- Complexity: /O(n+m)/ time.
 --
 -- @
 -- edgeCount ('vertex' x) == 0
 -- edgeCount ('edge' x y) == 1
 -- edgeCount            == 'length' . 'edgeList'
 -- @
-edgeCount :: AdjacencyMap a -> Int
-edgeCount = coerce AM.edgeCount
+edgeCount :: AdjacencyIntMap -> Int
+edgeCount = coerce AIM.edgeCount
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -371,8 +374,8 @@ edgeCount = coerce AM.edgeCount
 -- vertexList1 ('vertex' x)  == [x]
 -- vertexList1 . 'vertices1' == 'Data.List.NonEmpty.nub' . 'Data.List.NonEmpty.sort'
 -- @
-vertexList1 :: AdjacencyMap a -> NonEmpty a
-vertexList1 = fromList . coerce AM.vertexList
+vertexList1 :: AdjacencyIntMap -> NonEmpty Int
+vertexList1 = fromList . coerce AIM.vertexList
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(n + m)/ time and /O(m)/ memory.
@@ -384,19 +387,19 @@ vertexList1 = fromList . coerce AM.vertexList
 -- edgeList . 'edges'        == 'Data.List.NonEmpty.nub' . 'Data.List.sort'
 -- edgeList . 'transpose'    == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . edgeList
 -- @
-edgeList :: AdjacencyMap a -> [(a, a)]
-edgeList = coerce AM.edgeList
+edgeList :: AdjacencyIntMap -> [(Int, Int)]
+edgeList = coerce AIM.edgeList
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
 --
 -- @
--- vertexSet . 'vertex'    == Set.'Set.singleton'
--- vertexSet . 'vertices1' == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
--- vertexSet . 'clique1'   == Set.'Set.fromList' . 'Data.List.NonEmpty.toList'
+-- vertexIntSet . 'vertex'    == IntSet.'IntSet.singleton'
+-- vertexIntSet . 'vertices1' == IntSet.'IntSet.fromList' . 'Data.List.NonEmpty.toList'
+-- vertexIntSet . 'clique1'   == IntSet.'IntSet.fromList' . 'Data.List.NonEmpty.toList'
 -- @
-vertexSet :: AdjacencyMap a -> Set a
-vertexSet = coerce AM.vertexSet
+vertexIntSet :: AdjacencyIntMap -> IntSet
+vertexIntSet = coerce AIM.vertexIntSet
 
 -- | The set of edges of a given graph.
 -- Complexity: /O((n + m) * log(m))/ time and /O(m)/ memory.
@@ -406,30 +409,30 @@ vertexSet = coerce AM.vertexSet
 -- edgeSet ('edge' x y) == Set.'Set.singleton' (x,y)
 -- edgeSet . 'edges'    == Set.'Set.fromList'
 -- @
-edgeSet :: Ord a => AdjacencyMap a -> Set (a, a)
-edgeSet = coerce AM.edgeSet
+edgeSet :: AdjacencyIntMap -> Set (Int, Int)
+edgeSet = coerce AIM.edgeSet
 
 -- | The /preset/ of an element @x@ is the set of its /direct predecessors/.
 -- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
 --
 -- @
--- preSet x ('vertex' x) == Set.'Set.empty'
--- preSet 1 ('edge' 1 2) == Set.'Set.empty'
--- preSet y ('edge' x y) == Set.'Set.fromList' [x]
+-- preIntSet x ('vertex' x) == IntSet.'IntSet.empty'
+-- preIntSet 1 ('edge' 1 2) == IntSet.'IntSet.empty'
+-- preIntSet y ('edge' x y) == IntSet.'IntSet.fromList' [x]
 -- @
-preSet :: Ord a => a -> AdjacencyMap a -> Set.Set a
-preSet = coerce AM.preSet
+preIntSet :: Int -> AdjacencyIntMap -> IntSet
+preIntSet = coerce AIM.preIntSet
 
 -- | The /postset/ of a vertex is the set of its /direct successors/.
 -- Complexity: /O(log(n))/ time and /O(1)/ memory.
 --
 -- @
--- postSet x ('vertex' x) == Set.'Set.empty'
--- postSet x ('edge' x y) == Set.'Set.fromList' [y]
--- postSet 2 ('edge' 1 2) == Set.'Set.empty'
+-- postIntSet x ('vertex' x) == IntSet.'IntSet.empty'
+-- postIntSet x ('edge' x y) == IntSet.'IntSet.fromList' [y]
+-- postIntSet 2 ('edge' 1 2) == IntSet.'IntSet.empty'
 -- @
-postSet :: Ord a => a -> AdjacencyMap a -> Set a
-postSet = coerce AM.postSet
+postIntSet :: Int -> AdjacencyIntMap -> IntSet
+postIntSet = coerce AIM.postIntSet
 
 -- | The /path/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -439,8 +442,8 @@ postSet = coerce AM.postSet
 -- path1 [x,y]     == 'edge' x y
 -- path1 . 'Data.List.NonEmpty.reverse' == 'transpose' . path1
 -- @
-path1 :: Ord a => NonEmpty a -> AdjacencyMap a
-path1 = coerce AM.path . toList
+path1 :: NonEmpty Int -> AdjacencyIntMap
+path1 = coerce AIM.path . toList
 
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -450,8 +453,8 @@ path1 = coerce AM.path . toList
 -- circuit1 [x,y]     == 'edges1' [(x,y), (y,x)]
 -- circuit1 . 'Data.List.NonEmpty.reverse' == 'transpose' . circuit1
 -- @
-circuit1 :: Ord a => NonEmpty a -> AdjacencyMap a
-circuit1 = coerce AM.circuit . toList
+circuit1 :: NonEmpty Int -> AdjacencyIntMap
+circuit1 = coerce AIM.circuit . toList
 
 -- | The /clique/ on a list of vertices.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -463,8 +466,8 @@ circuit1 = coerce AM.circuit . toList
 -- clique1 (xs '<>' ys) == 'connect' (clique1 xs) (clique1 ys)
 -- clique1 . 'Data.List.NonEmpty.reverse'  == 'transpose' . clique1
 -- @
-clique1 :: Ord a => NonEmpty a -> AdjacencyMap a
-clique1 = coerce AM.clique . toList
+clique1 :: NonEmpty Int -> AdjacencyIntMap
+clique1 = coerce AIM.clique . toList
 {-# NOINLINE [1] clique1 #-}
 
 -- | The /biclique/ on two lists of vertices.
@@ -474,8 +477,8 @@ clique1 = coerce AM.clique . toList
 -- biclique1 [x1,x2] [y1,y2] == 'edges1' [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
 -- biclique1 xs      ys      == 'connect' ('vertices1' xs) ('vertices1' ys)
 -- @
-biclique1 :: Ord a => NonEmpty a -> NonEmpty a -> AdjacencyMap a
-biclique1 xs ys = coerce AM.biclique (toList xs) (toList ys)
+biclique1 :: NonEmpty Int -> NonEmpty Int -> AdjacencyIntMap
+biclique1 xs ys = coerce AIM.biclique (toList xs) (toList ys)
 
 -- TODO: Optimise.
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
@@ -486,8 +489,8 @@ biclique1 xs ys = coerce AM.biclique (toList xs) (toList ys)
 -- star x [y]   == 'edge' x y
 -- star x [y,z] == 'edges1' [(x,y), (x,z)]
 -- @
-star :: Ord a => a -> [a] -> AdjacencyMap a
-star = coerce AM.star
+star :: Int -> [Int] -> AdjacencyIntMap
+star = coerce AIM.star
 {-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
@@ -502,8 +505,8 @@ star = coerce AM.star
 -- stars1                          == 'overlays1' . 'fmap' ('uncurry' 'star')
 -- 'overlay' (stars1 xs) (stars1 ys) == stars1 (xs '<>' ys)
 -- @
-stars1 :: Ord a => NonEmpty (a, [a]) -> AdjacencyMap a
-stars1 = coerce AM.stars . toList
+stars1 :: NonEmpty (Int, [Int]) -> AdjacencyIntMap
+stars1 = coerce AIM.stars . toList
 
 -- | The /tree graph/ constructed from a given 'Tree' data structure.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -514,8 +517,8 @@ stars1 = coerce AM.stars . toList
 -- tree (Node x [Node y [], Node z []])                     == 'star' x [y,z]
 -- tree (Node 1 [Node 2 [], Node 3 [Node 4 [], Node 5 []]]) == 'edges1' [(1,2), (1,3), (3,4), (3,5)]
 -- @
-tree :: Ord a => Tree a -> AdjacencyMap a
-tree = coerce AM.tree
+tree :: Tree Int -> AdjacencyIntMap
+tree = coerce AIM.tree
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(n*log(n))/ time.
@@ -527,8 +530,8 @@ tree = coerce AM.tree
 -- removeVertex1 1 ('edge' 1 2)          == Just ('vertex' 2)
 -- removeVertex1 x 'Control.Monad.>=>' removeVertex1 x == removeVertex1 x
 -- @
-removeVertex1 :: Ord a => a -> AdjacencyMap a -> Maybe (AdjacencyMap a)
-removeVertex1 = fmap toNonEmpty . coerce AM.removeVertex
+removeVertex1 :: Int -> AdjacencyIntMap -> Maybe AdjacencyIntMap
+removeVertex1 = fmap toNonEmpty . coerce AIM.removeVertex
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(log(n))/ time.
@@ -539,11 +542,11 @@ removeVertex1 = fmap toNonEmpty . coerce AM.removeVertex
 -- removeEdge 1 1 (1 * 1 * 2 * 2)  == 1 * 2 * 2
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
-removeEdge :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
-removeEdge = coerce AM.removeEdge
+removeEdge :: Int -> Int -> AdjacencyIntMap -> AdjacencyIntMap
+removeEdge = coerce AIM.removeEdge
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
--- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
+-- given 'AdjacencyIntMap'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O((n + m) * log(n))/ time.
 --
 -- @
@@ -551,12 +554,12 @@ removeEdge = coerce AM.removeEdge
 -- replaceVertex x y ('vertex' x) == 'vertex' y
 -- replaceVertex x y            == 'mergeVertices' (== x) y
 -- @
-replaceVertex :: Ord a => a -> a -> AdjacencyMap a -> AdjacencyMap a
-replaceVertex = coerce AM.replaceVertex
+replaceVertex :: Int -> Int -> AdjacencyIntMap -> AdjacencyIntMap
+replaceVertex = coerce AIM.replaceVertex
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
--- constant time.
+-- /O(1)/ to be evaluated.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -564,8 +567,8 @@ replaceVertex = coerce AM.replaceVertex
 -- mergeVertices 'even' 1 (0 * 2)     == 1 * 1
 -- mergeVertices 'odd'  1 (3 + 4 * 5) == 4 * 1
 -- @
-mergeVertices :: Ord a => (a -> Bool) -> a -> AdjacencyMap a -> AdjacencyMap a
-mergeVertices = coerce AM.mergeVertices
+mergeVertices :: (Int -> Bool) -> Int -> AdjacencyIntMap -> AdjacencyIntMap
+mergeVertices = coerce AIM.mergeVertices
 
 -- | Transpose a given graph.
 -- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
@@ -576,8 +579,8 @@ mergeVertices = coerce AM.mergeVertices
 -- transpose . transpose == id
 -- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
-transpose :: Ord a => AdjacencyMap a -> AdjacencyMap a
-transpose = coerce AM.transpose
+transpose :: AdjacencyIntMap -> AdjacencyIntMap
+transpose = coerce AIM.transpose
 {-# NOINLINE [1] transpose #-}
 
 {-# RULES
@@ -594,7 +597,7 @@ transpose = coerce AM.transpose
 
 -- | Transform a graph by applying a function to each of its vertices. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
--- 'AdjacencyMap'.
+-- 'AdjacencyIntMap'.
 -- Complexity: /O((n + m) * log(n))/ time.
 --
 -- @
@@ -603,12 +606,13 @@ transpose = coerce AM.transpose
 -- gmap id           == id
 -- gmap f . gmap g   == gmap (f . g)
 -- @
-gmap :: (Ord a, Ord b) => (a -> b) -> AdjacencyMap a -> AdjacencyMap b
-gmap = coerce AM.gmap
+gmap :: (Int -> Int) -> AdjacencyIntMap -> AdjacencyIntMap
+gmap = coerce AIM.gmap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(m)/ time, assuming that the predicate takes constant time.
+-- Complexity: /O(m)/ time, assuming that the predicate takes /O(1)/ to
+-- be evaluated.
 --
 -- @
 -- induce1 ('const' True ) x == Just x
@@ -616,8 +620,8 @@ gmap = coerce AM.gmap
 -- induce1 (/= x)          == 'removeVertex1' x
 -- induce1 p 'Control.Monad.>=>' induce1 q == induce1 (\\x -> p x && q x)
 -- @
-induce1 :: (a -> Bool) -> AdjacencyMap a -> Maybe (AdjacencyMap a)
-induce1 = fmap toNonEmpty . coerce AM.induce
+induce1 :: (Int -> Bool) -> AdjacencyIntMap -> Maybe (AdjacencyIntMap)
+induce1 = fmap toNonEmpty . coerce AIM.induce
 
 -- | Construct the /induced subgraph/ of a given graph by removing the vertices
 -- that are 'Nothing'. Returns 'Nothing' if the resulting graph is empty.
@@ -629,24 +633,25 @@ induce1 = fmap toNonEmpty . coerce AM.induce
 -- induceJust1 . 'gmap' 'Just'                                    == 'Just'
 -- induceJust1 . 'gmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce1' p
 -- @
-induceJust1 :: Ord a => AdjacencyMap (Maybe a) -> Maybe (AdjacencyMap a)
-induceJust1 = toNonEmpty . AM.induceJust . coerce
+-- TODO: double check there's no analogue for AIMs
+-- induceJust1 :: Ord a => AdjacencyIntMap (Maybe a) -> Maybe (AdjacencyIntMap)
+-- induceJust1 m = toNonEmpty (AIM.induceJust (coerce m))
 
 -- | Compute the /reflexive and transitive closure/ of a graph.
 -- Complexity: /O(n * m * log(n)^2)/ time.
 --
 -- @
--- closure ('vertex' x)       == 'edge' x x
--- closure ('edge' x x)       == 'edge' x x
--- closure ('edge' x y)       == 'edges1' [(x,x), (x,y), (y,y)]
--- closure ('path1' $ 'Data.List.NonEmpty.nub' xs) == 'reflexiveClosure' ('clique1' $ 'Data.List.NonEmpty.nub' xs)
--- closure                  == 'reflexiveClosure' . 'transitiveClosure'
--- closure                  == 'transitiveClosure' . 'reflexiveClosure'
--- closure . closure        == closure
--- 'postSet' x (closure y)    == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
+-- closure ('vertex' x)          == 'edge' x x
+-- closure ('edge' x x)          == 'edge' x x
+-- closure ('edge' x y)          == 'edges1' [(x,x), (x,y), (y,y)]
+-- closure ('path1' $ 'Data.List.NonEmpty.nub' xs)    == 'reflexiveClosure' ('clique1' $ 'Data.List.NonEmpty.nub' xs)
+-- closure                     == 'reflexiveClosure' . 'transitiveClosure'
+-- closure                     == 'transitiveClosure' . 'reflexiveClosure'
+-- closure . closure           == closure
+-- 'postIntSet' x (closure y)    == IntSet.'IntSet.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
 -- @
-closure :: Ord a => AdjacencyMap a -> AdjacencyMap a
-closure = coerce AM.closure
+closure :: AdjacencyIntMap -> AdjacencyIntMap
+closure = coerce AIM.closure
 
 -- | Compute the /reflexive closure/ of a graph by adding a self-loop to every
 -- vertex.
@@ -658,8 +663,8 @@ closure = coerce AM.closure
 -- reflexiveClosure ('edge' x y)         == 'edges1' [(x,x), (x,y), (y,y)]
 -- reflexiveClosure . reflexiveClosure == reflexiveClosure
 -- @
-reflexiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
-reflexiveClosure = coerce AM.reflexiveClosure
+reflexiveClosure :: AdjacencyIntMap -> AdjacencyIntMap
+reflexiveClosure = coerce AIM.reflexiveClosure
 
 -- | Compute the /symmetric closure/ of a graph by overlaying it with its own
 -- transpose.
@@ -671,8 +676,8 @@ reflexiveClosure = coerce AM.reflexiveClosure
 -- symmetricClosure x                  == 'overlay' x ('transpose' x)
 -- symmetricClosure . symmetricClosure == symmetricClosure
 -- @
-symmetricClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
-symmetricClosure = coerce AM.symmetricClosure
+symmetricClosure :: AdjacencyIntMap -> AdjacencyIntMap
+symmetricClosure = coerce AIM.symmetricClosure
 
 -- | Compute the /transitive closure/ of a graph.
 -- Complexity: /O(n * m * log(n)^2)/ time.
@@ -683,8 +688,8 @@ symmetricClosure = coerce AM.symmetricClosure
 -- transitiveClosure ('path1' $ 'Data.List.NonEmpty.nub' xs)    == 'clique1' ('Data.List.NonEmpty.nub' xs)
 -- transitiveClosure . transitiveClosure == transitiveClosure
 -- @
-transitiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
-transitiveClosure = coerce AM.transitiveClosure
+transitiveClosure :: AdjacencyIntMap -> AdjacencyIntMap
+transitiveClosure = coerce AIM.transitiveClosure
 
 -- TODO: Add tests.
 -- | Check that the internal graph representation is consistent, i.e. that all
@@ -700,5 +705,5 @@ transitiveClosure = coerce AM.transitiveClosure
 -- consistent ('edges' xs)    == True
 -- consistent ('stars' xs)    == True
 -- @
-consistent :: Ord a => AdjacencyMap a -> Bool
-consistent (NAM x) = AM.consistent x && not (AM.isEmpty x)
+consistent :: AdjacencyIntMap -> Bool
+consistent (NAIM x) = AIM.consistent x && not (AIM.isEmpty x)
