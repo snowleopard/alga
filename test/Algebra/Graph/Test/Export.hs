@@ -125,7 +125,8 @@ testExport = do
             , ED.defaultEdgeAttributes   = mempty
             , ED.vertexName              = \x   -> "v" ++ show x
             , ED.vertexAttributes        = \x   -> ["color" := "blue"   | odd x      ]
-            , ED.edgeAttributes          = \x y -> ["style" := "dashed" | odd (x * y)] }
+            , ED.edgeAttributes          = \x y -> ["style" := "dashed" | odd (x * y)]
+            , ED.attributeQuoting        = ED.DoubleQuotes }
     test "export style (1 * 2 + 3 * 4 * 5 :: Graph Int)" $
         (ED.export style (1 * 2 + 3 * 4 * 5 :: Graph Int) :: String) ==
             unlines [ "digraph Example"
@@ -142,6 +143,27 @@ testExport = do
                     , "  \"v1\" -> \"v2\""
                     , "  \"v3\" -> \"v4\""
                     , "  \"v3\" -> \"v5\" [style=\"dashed\"]"
+                    , "  \"v4\" -> \"v5\""
+                    , "}" ]
+
+    putStrLn "\n=========== Export.Dot.attributeQuoting ============"
+    let style' = style { ED.attributeQuoting = ED.NoQuotes }
+    test "export style' (1 * 2 + 3 * 4 * 5 :: Graph Int)" $
+        (ED.export style' (1 * 2 + 3 * 4 * 5 :: Graph Int) :: String) ==
+            unlines [ "digraph Example"
+                    , "{"
+                    , "  // This is an example"
+                    , ""
+                    , "  graph [label=Example labelloc=top]"
+                    , "  node [shape=circle]"
+                    , "  \"v1\" [color=blue]"
+                    , "  \"v2\""
+                    , "  \"v3\" [color=blue]"
+                    , "  \"v4\""
+                    , "  \"v5\" [color=blue]"
+                    , "  \"v1\" -> \"v2\""
+                    , "  \"v3\" -> \"v4\""
+                    , "  \"v3\" -> \"v5\" [style=dashed]"
                     , "  \"v4\" -> \"v5\""
                     , "}" ]
 
