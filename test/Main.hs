@@ -13,7 +13,7 @@ import Algebra.Graph.Test.NonEmpty.Graph
 import Algebra.Graph.Test.Relation
 import Algebra.Graph.Test.Relation.SymmetricRelation
 import Algebra.Graph.Test.Bipartite.Undirected.AdjacencyMap
-import Algebra.Graph.Test.Bipartite.AdjacencyMap.Algorithm
+import Algebra.Graph.Test.Bipartite.Undirected.AdjacencyMap.Algorithm
 import Algebra.Graph.Test.Undirected
 import Data.Graph.Test.Typed
 
@@ -35,7 +35,7 @@ main = do
     go "AdjacencyIntMap"                             testAdjacencyIntMap
     go "AdjacencyMap"                                testAdjacencyMap
     go "Bipartite.Undirected.AdjacencyMap"           testBipartiteUndirectedAdjacencyMap
-    go "Bipartite.Undirected.AdjacencyMap.Algorithm" testBipartiteAdjacencyMapAlgorithm
+    go "Bipartite.Undirected.AdjacencyMap.Algorithm" testBipartiteUndirectedAdjacencyMapAlgorithm
     go "Export"                                      testExport
     go "Graph"                                       testGraph
     go "Internal"                                    testInternal

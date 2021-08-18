@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module Algebra.Graph.Bipartite.AdjacencyMap.Algorithm (
+module Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm (
     -- * Maximum matchings
     Matching, pairOfLeft, pairOfRight, matching, swapMatching, matchingSize,
     consistentMatching, VertexCover, IndependentSet, maxMatching,

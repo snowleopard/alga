@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedLists #-}
 
-module Algebra.Graph.Test.Bipartite.AdjacencyMap.Algorithm (
+module Algebra.Graph.Test.Bipartite.Undirected.AdjacencyMap.Algorithm (
     -- * Testsuite
-    testBipartiteAdjacencyMapAlgorithm
+    testBipartiteUndirectedAdjacencyMapAlgorithm
     ) where
 
 import Algebra.Graph.Test
 
 import Algebra.Graph.Bipartite.Undirected.AdjacencyMap
-import Algebra.Graph.Bipartite.AdjacencyMap.Algorithm
+import Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 
@@ -28,8 +28,8 @@ type MII  = Matching Int Int
 type MIS  = Matching Int String
 type LII  = List Int Int
 
-testBipartiteAdjacencyMapAlgorithm :: IO ()
-testBipartiteAdjacencyMapAlgorithm = do
+testBipartiteUndirectedAdjacencyMapAlgorithm :: IO ()
+testBipartiteUndirectedAdjacencyMapAlgorithm = do
     putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.detectParts ============"
     test "detectParts empty                                       == Right empty" $
         detectParts (AM.empty :: AI)                               == Right empty
