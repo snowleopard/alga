@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.NonEmpty
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -54,9 +54,11 @@ module Algebra.Graph.NonEmpty (
     ) where
 
 import Control.DeepSeq
+import Control.Monad
 import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup ((<>))
+import Data.String
 
 import Algebra.Graph.Internal
 
@@ -184,6 +186,9 @@ instance Num a => Num (Graph a) where
     abs         = id
     negate      = id
 
+instance IsString a => IsString (Graph a) where
+    fromString = Vertex . fromString
+
 instance Ord a => Eq (Graph a) where
     (==) = eq
 
@@ -237,10 +242,9 @@ toNonEmpty = G.foldg Nothing (Just . Vertex) (go Overlay) (go Connect)
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- 'size'        (vertex x) == 1
@@ -250,7 +254,6 @@ vertex = Vertex
 {-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- edge x y               == 'connect' ('vertex' x) ('vertex' y)
@@ -335,6 +338,7 @@ vertices1 = overlays1 . fmap vertex
 --
 -- @
 -- edges1 [(x,y)]     == 'edge' x y
+-- edges1             == 'overlays1' . 'fmap' ('uncurry' 'edge')
 -- 'edgeCount' . edges1 == 'Data.List.NonEmpty.length' . 'Data.List.NonEmpty.nub'
 -- @
 edges1 :: NonEmpty (a, a) -> Graph a
@@ -371,8 +375,8 @@ concatg1 combine (x :| xs) = maybe x (combine x) $ foldr1Safe combine xs
 -- | Generalised graph folding: recursively collapse a 'Graph' by
 -- applying the provided functions to the leaves and internal nodes of the
 -- expression. The order of arguments is: vertex, overlay and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+-- Complexity: /O(s)/ applications of the given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since 'const' and '+' have constant costs.
 --
 -- @
 -- foldg1 'vertex'    'overlay' 'connect'        == id
@@ -442,14 +446,13 @@ size = foldg1 (const 1) (+) (+)
 -- Complexity: /O(s)/ time.
 --
 -- @
--- hasVertex x ('vertex' x) == True
--- hasVertex 1 ('vertex' 2) == False
+-- hasVertex x ('vertex' y) == (x == y)
 -- @
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex v = foldg1 (==v) (||) (||)
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
 
--- TODO: Reduce code duplication with 'Algebra.Graph.hasEdge'.
+-- See the Note [The implementation of hasEdge] in "Algebra.Graph".
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
 --
@@ -460,17 +463,15 @@ hasVertex v = foldg1 (==v) (||) (||)
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = hit g == Edge
+hasEdge s t g = foldg1 v o c g 0 == 2
   where
-    hit (Vertex x   ) = if x == s then Tail else Miss
-    hit (Overlay x y) = case hit x of
-        Miss -> hit y
-        Tail -> max Tail (hit y)
-        Edge -> Edge
-    hit (Connect x y) = case hit x of
-        Miss -> hit y
-        Tail -> if hasVertex t y then Edge else Tail
-        Edge -> Edge
+    v x 0   = if x == s then 1 else 0
+    v x _   = if x == t then 2 else 1
+    o x y a = case x a of
+        0 -> y a
+        1 -> if y a == 2 then 2 else 1
+        _ -> 2 :: Int
+    c x y a = case x a of { 2 -> 2; res -> y res }
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
@@ -676,27 +677,16 @@ tree (Tree.Node x f) = overlays1 $ star x (map Tree.rootLabel f) :| map tree f
 --                                    , ((3,\'a\'),(3,\'b\')) ]
 -- @
 mesh1 :: NonEmpty a -> NonEmpty b -> Graph (a, b)
-mesh1 xx@(x:|xs) yy@(y:|ys) =
-  case NonEmpty.nonEmpty ipxs of
-    Nothing ->
-      case NonEmpty.nonEmpty ipys of
-        Nothing    -> vertex (x,y)
-        Just ipys' ->
-          stars1 $ fmap (\(y1,y2) -> ((x,y1), [(x,y2)]) ) ipys'
-    Just ipxs' ->
-      case NonEmpty.nonEmpty ipys of
-        Nothing ->
-          stars1 $ fmap (\(x1,x2) -> ((x1,y), [(x2,y)]) ) ipxs'
-        Just ipys' ->
-          stars1 $
-            appendNonEmpty (fmap (\((a1,a2),(b1,b2)) -> ((a1, b1), [(a1, b2), (a2, b1)])) $ liftM2 (,) ipxs' ipys') $
-              [ ((lx,y1), [(lx,y2)]) | (y1,y2) <- ipys]
-           ++ [ ((x1,ly), [(x2,ly)]) | (x1,x2) <- ipxs]
-  where
-    lx = last xs
-    ly = last ys
-    ipxs = NonEmpty.init (pairs1 xx)
-    ipys = NonEmpty.init (pairs1 yy)
+mesh1 (x :| []) ys        = (x, ) <$> path1 ys
+mesh1 xs        (y :| []) = (, y) <$> path1 xs
+mesh1 xs@(x1 :| x2 : xt) ys@(y1 :| y2 : yt) =
+    let star i j o = (vertex i `overlay` vertex j) `connect` vertex o
+        innerStars = overlays1 $ do
+                (x1, x2) <- NonEmpty.zip xs (x2 :| xt)
+                (y1, y2) <- NonEmpty.zip ys (y2 :| yt)
+                return $ star (x1, y2) (x2, y1) (x2, y2)
+    in
+    ((x1, ) <$> path1 ys) `overlay` ((, y1) <$> path1 xs) `overlay` innerStars
 
 -- | Construct a /torus graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -711,16 +701,18 @@ mesh1 xx@(x:|xs) yy@(y:|ys) =
 --                                   , ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus1 :: NonEmpty a -> NonEmpty b -> Graph (a, b)
-torus1 xs ys = stars1 $ fmap (\((a1,a2),(b1,b2)) -> ((a1, b1), [(a1, b2), (a2, b1)]))
-    $ liftM2 (,) (pairs1 xs) (pairs1 ys)
-
--- Auxiliary function for 'mesh1' and 'torus1'
-pairs1 :: NonEmpty a -> NonEmpty (a, a)
-pairs1 as@(x:|xs) = NonEmpty.zip as $ maybe (x :| []) (`appendNonEmpty` [x]) $ NonEmpty.nonEmpty xs
-
--- Append a list to a non-empty one
-appendNonEmpty :: NonEmpty a -> [a] -> NonEmpty a
-appendNonEmpty (w:|ws) zs = w :| (ws++zs)
+torus1 xs ys = stars1 $ do
+    (x1, x2) <- pairs1 xs
+    (y1, y2) <- pairs1 ys
+    return ((x1, y1), [(x1, y2), (x2, y1)])
+  where
+    -- Turn a non-empty list into a cycle and return pairs of neighbours
+    pairs1 :: NonEmpty a -> NonEmpty (a, a)
+    pairs1 as@(x :| xs) = NonEmpty.zip as $
+        maybe (x :| []) (`append1` [x]) (NonEmpty.nonEmpty xs)
+    -- Append a list to a non-empty one
+    append1 :: NonEmpty a -> [a] -> NonEmpty a
+    append1 (x :| xs) ys = x :| (xs ++ ys)
 
 -- | Remove a vertex from a given graph. Returns @Nothing@ if the resulting
 -- graph is empty.
@@ -774,7 +766,7 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -825,12 +817,11 @@ transpose = foldg1 vertex overlay (flip connect)
 "transpose/clique1"   forall xs. transpose (clique1 xs) = clique1 (NonEmpty.reverse xs)
  #-}
 
--- TODO: Implement via 'induceJust1' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate. Returns @Nothing@ if the
 -- resulting graph is empty.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- induce1 ('const' True ) x == Just x
@@ -839,12 +830,7 @@ transpose = foldg1 vertex overlay (flip connect)
 -- induce1 p '>=>' induce1 q == induce1 (\\x -> p x && q x)
 -- @
 induce1 :: (a -> Bool) -> Graph a -> Maybe (Graph a)
-induce1 p = foldg1
-    (\x -> if p x then Just (Vertex x) else Nothing) (k Overlay) (k Connect)
-  where
-    k _ Nothing  a        = a
-    k _ a        Nothing  = a
-    k f (Just a) (Just b) = Just (f a b)
+induce1 p = induceJust1 . fmap (\a -> if p a then Just a else Nothing)
 
 -- | Construct the /induced subgraph/ of a given graph by removing the vertices
 -- that are 'Nothing'. Returns 'Nothing' if the resulting graph is empty.
@@ -901,9 +887,9 @@ simple op x y
 --                                               , ((0,\'b\'), (1,\'b\'))
 --                                               , ((1,\'a\'), (1,\'b\')) ]
 -- @
--- Up to an isomorphism between the resulting vertex types, this operation
+-- Up to the isomorphism between the resulting vertex types, this operation
 -- is /commutative/, /associative/, /distributes/ over 'overlay', and has
--- singleton graphs as /identities/. Below @~~@ stands for the equality up to an
+-- singleton graphs as /identities/. Below @~~@ stands for equality up to the
 -- isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @

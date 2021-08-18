@@ -1,7 +1,8 @@
+{-# LANGUAGE TypeApplications #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Relation
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -34,7 +35,7 @@ type RI = Relation Int
 testRelation :: IO ()
 testRelation = do
     putStrLn "\n============ Relation ============"
-    test "Axioms of graphs" $ size10 (axioms :: GraphTestsuite RI)
+    test "Axioms of graphs" $ size10 $ axioms @RI
 
     testConsistent      t
     testShow            t
@@ -47,19 +48,19 @@ testRelation = do
     testInduceJust      tPoly
 
     putStrLn "\n============ ReflexiveRelation ============"
-    test "Axioms of reflexive graphs" $ size10
-        (reflexiveAxioms :: GraphTestsuite (ReflexiveRelation Int))
+    test "Axioms of reflexive graphs" $ size10 $
+        reflexiveAxioms @(ReflexiveRelation Int)
 
     putStrLn "\n============ TransitiveRelation ============"
-    test "Axioms of transitive graphs" $ size10
-        (transitiveAxioms :: GraphTestsuite (TransitiveRelation Int))
+    test "Axioms of transitive graphs" $ size10 $
+        transitiveAxioms @(TransitiveRelation Int)
 
     test "path xs == (clique xs :: TransitiveRelation Int)" $ size10 $ \xs ->
           C.path xs == (C.clique xs :: TransitiveRelation Int)
 
     putStrLn "\n============ PreorderRelation ============"
-    test "Axioms of preorder graphs" $ size10
-        (preorderAxioms :: GraphTestsuite (PreorderRelation Int))
+    test "Axioms of preorder graphs" $ size10 $
+        preorderAxioms @(PreorderRelation Int)
 
     test "path xs == (clique xs :: PreorderRelation Int)" $ size10 $ \xs ->
           C.path xs == (C.clique xs :: PreorderRelation Int)

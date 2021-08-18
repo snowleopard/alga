@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyIntMap
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -217,7 +217,6 @@ fromAdjacencyMap = AM
                  . AM.adjacencyMap
 
 -- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -230,11 +229,10 @@ empty = AM IntMap.empty
 {-# NOINLINE [1] empty #-}
 
 -- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- @
@@ -243,7 +241,6 @@ vertex x = AM $ IntMap.singleton x IntSet.empty
 {-# NOINLINE [1] vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory.
 --
 -- @
 -- edge x y               == 'connect' ('vertex' x) ('vertex' y)
@@ -309,7 +306,7 @@ connect (AM x) (AM y) = AM $ IntMap.unionsWith IntSet.union
 -- 'vertexIntSet' . vertices == IntSet.'IntSet.fromList'
 -- @
 vertices :: [Int] -> AdjacencyIntMap
-vertices = AM . IntMap.fromList . map (\x -> (x, IntSet.empty))
+vertices = AM . IntMap.fromList . map (, IntSet.empty)
 {-# NOINLINE [1] vertices #-}
 
 -- | Construct the graph from a list of edges.
@@ -318,6 +315,7 @@ vertices = AM . IntMap.fromList . map (\x -> (x, IntSet.empty))
 -- @
 -- edges []          == 'empty'
 -- edges [(x,y)]     == 'edge' x y
+-- edges             == 'overlays' . 'map' ('uncurry' 'edge')
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
@@ -385,8 +383,7 @@ isEmpty = IntMap.null . adjacencyIntMap
 --
 -- @
 -- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x ('vertex' y)       == (x == y)
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Int -> AdjacencyIntMap -> Bool
@@ -455,6 +452,7 @@ vertexList = IntMap.keys . adjacencyIntMap
 -- @
 edgeList :: AdjacencyIntMap -> [(Int, Int)]
 edgeList (AM m) = [ (x, y) | (x, ys) <- IntMap.toAscList m, y <- IntSet.toAscList ys ]
+{-# INLINE edgeList #-}
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -481,7 +479,7 @@ edgeSet :: AdjacencyIntMap -> Set (Int, Int)
 edgeSet = Set.fromAscList . edgeList
 
 -- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
+-- Complexity: /O(n + m)/ time and memory.
 --
 -- @
 -- adjacencyList 'empty'          == []
@@ -696,7 +694,7 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -754,8 +752,7 @@ gmap f = AM . IntMap.map (IntSet.map f) . IntMap.mapKeysWith IntSet.union f . ad
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
--- be evaluated.
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes constant time.
 --
 -- @
 -- induce ('const' True ) x      == x
@@ -824,7 +821,7 @@ closure = reflexiveClosure . transitiveClosure
 -- reflexiveClosure . reflexiveClosure == reflexiveClosure
 -- @
 reflexiveClosure :: AdjacencyIntMap -> AdjacencyIntMap
-reflexiveClosure (AM m) = AM $ IntMap.mapWithKey (\k -> IntSet.insert k) m
+reflexiveClosure (AM m) = AM $ IntMap.mapWithKey IntSet.insert m
 
 -- | Compute the /symmetric closure/ of a graph by overlaying it with its own
 -- transpose.

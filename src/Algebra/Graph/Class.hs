@@ -51,6 +51,7 @@ import Data.Tree
 import Algebra.Graph.Label (Dioid, one)
 
 import qualified Algebra.Graph                       as G
+import qualified Algebra.Graph.Undirected            as UG
 import qualified Algebra.Graph.AdjacencyMap          as AM
 import qualified Algebra.Graph.Labelled              as LG
 import qualified Algebra.Graph.Labelled.AdjacencyMap as LAM
@@ -123,6 +124,15 @@ instance Graph (G.Graph a) where
     vertex  = G.vertex
     overlay = G.overlay
     connect = G.connect
+
+instance Graph (UG.Graph a) where
+    type Vertex (UG.Graph a) = a
+    empty = UG.empty
+    vertex = UG.vertex
+    overlay = UG.overlay
+    connect = UG.connect
+
+instance Undirected (UG.Graph a)
 
 instance Ord a => Graph (AM.AdjacencyMap a) where
     type Vertex (AM.AdjacencyMap a) = a
@@ -271,7 +281,6 @@ instance (Transitive g, Transitive h, Transitive i) => Transitive (g, h, i)
 instance (Preorder   g, Preorder   h, Preorder   i) => Preorder   (g, h, i)
 
 -- | Construct the graph comprising a single edge.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- edge x y == 'connect' ('vertex' x) ('vertex' y)

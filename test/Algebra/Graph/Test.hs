@@ -1,9 +1,8 @@
-{-# LANGUAGE CPP, RankNTypes #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE TypeApplications, RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -17,7 +16,7 @@ module Algebra.Graph.Test (
     module Test.QuickCheck.Function,
 
     GraphTestsuite, (//), axioms, theorems, undirectedAxioms, reflexiveAxioms,
-    transitiveAxioms, preorderAxioms, test,
+    transitiveAxioms, preorderAxioms, size10, test
     ) where
 
 import Data.List (sort)
@@ -26,23 +25,13 @@ import Prelude hiding ((+), (*))
 import System.Exit (exitFailure)
 import Test.QuickCheck hiding ((===))
 import Test.QuickCheck.Function
-import Test.QuickCheck.Test (isSuccess)
 
 import Algebra.Graph.Class
 import Algebra.Graph.Test.Arbitrary ()
 
-#if !MIN_VERSION_base(4,9,0)
-import Data.Monoid (Sum (..))
-import Control.Applicative (liftA2)
-import Data.Coerce
-
-instance Monoid a => Monoid (IO a) where
-    mempty  = pure mempty
-    mappend = liftA2 mappend
-
-instance Functor Sum where
-    fmap = coerce
-#endif
+-- | Test a property only on small (at most size 10) inputs.
+size10 :: Testable prop => prop -> Property
+size10 = mapSize (min 10)
 
 test :: Testable a => String -> a -> IO ()
 test str p = do
@@ -67,50 +56,48 @@ infixl 1 //
 infixl 6 +
 infixl 7 *
 
-type GraphTestsuite g = g -> g -> g -> Property
+type GraphTestsuite g = (Ord g, Graph g) => g -> g -> g -> Property
 
-axioms :: (Eq g, Graph g) => GraphTestsuite g
+axioms :: GraphTestsuite g
 axioms x y z = conjoin
-    [       x + y == y + x                      // "Overlay commutativity"
-    , x + (y + z) == (x + y) + z                // "Overlay associativity"
-    ,   empty * x == x                          // "Left connect identity"
-    ,   x * empty == x                          // "Right connect identity"
-    , x * (y * z) == (x * y) * z                // "Connect associativity"
-    , x * (y + z) == x * y + x * z              // "Left distributivity"
-    , (x + y) * z == x * z + y * z              // "Right distributivity"
-    ,   x * y * z == x * y + x * z + y * z      // "Decomposition" ]
+    [       x + y == y + x                 // "Overlay commutativity"
+    , x + (y + z) == (x + y) + z           // "Overlay associativity"
+    ,   empty * x == x                     // "Left connect identity"
+    ,   x * empty == x                     // "Right connect identity"
+    , x * (y * z) == (x * y) * z           // "Connect associativity"
+    , x * (y + z) == x * y + x * z         // "Left distributivity"
+    , (x + y) * z == x * z + y * z         // "Right distributivity"
+    ,   x * y * z == x * y + x * z + y * z // "Decomposition" ]
 
-theorems :: (Ord g, Graph g) => GraphTestsuite g
+theorems :: GraphTestsuite g
 theorems x y z = conjoin
-    [     x + empty == x                        // "Overlay identity"
-    ,         x + x == x                        // "Overlay idempotence"
-    , x + y + x * y == x * y                    // "Absorption"
+    [     x + empty == x                     // "Overlay identity"
+    ,         x + x == x                     // "Overlay idempotence"
+    , x + y + x * y == x * y                 // "Absorption"
     ,     x * y * z == x * y + x * z + y * z
-                     + x + y + z + empty        // "Full decomposition"
-    ,         x * x == x * x * x                // "Connect saturation"
-    ,         empty <= x                        // "Lower bound"
-    ,             x <= x + y                    // "Overlay order"
-    ,         x + y <= x * y                    // "Overlay-connect order" ]
+                     + x + y + z + empty     // "Full decomposition"
+    ,         x * x == x * x * x             // "Connect saturation"
+    ,         empty <= x                     // "Lower bound"
+    ,             x <= x + y                 // "Overlay order"
+    ,         x + y <= x * y                 // "Overlay-connect order" ]
 
-undirectedAxioms :: (Eq g, Graph g) => GraphTestsuite g
+undirectedAxioms :: GraphTestsuite g
 undirectedAxioms x y z = conjoin
     [ axioms x y z
-    , x * y == y * x                            // "Connect commutativity" ]
+    , x * y == y * x // "Connect commutativity" ]
 
-reflexiveAxioms :: (Eq g, Graph g, Arbitrary (Vertex g), Show (Vertex g)) => GraphTestsuite g
+reflexiveAxioms :: forall g. (Arbitrary (Vertex g), Show (Vertex g)) => GraphTestsuite g
 reflexiveAxioms x y z = conjoin
     [ axioms x y z
-    , forAll arbitrary (\v -> vertex v `asTypeOf` x == vertex v * vertex v)
-                                                // "Vertex self-loop" ]
+    , forAll arbitrary (\v -> vertex @g v == vertex v * vertex v) // "Vertex self-loop" ]
 
-transitiveAxioms :: (Eq g, Graph g) => GraphTestsuite g
+transitiveAxioms :: GraphTestsuite g
 transitiveAxioms x y z = conjoin
     [ axioms x y z
-    , y == empty || x * y * z == x * y + y * z  // "Closure" ]
+    , y == empty || x * y * z == x * y + y * z // "Closure" ]
 
-preorderAxioms :: (Eq g, Graph g, Arbitrary (Vertex g), Show (Vertex g)) => GraphTestsuite g
+preorderAxioms :: forall g. (Arbitrary (Vertex g), Show (Vertex g)) => GraphTestsuite g
 preorderAxioms x y z = conjoin
     [ axioms x y z
-    , forAll arbitrary (\v -> vertex v `asTypeOf` x == vertex v * vertex v)
-                                                // "Vertex self-loop"
-    , y == empty || x * y * z == x * y + y * z  // "Closure" ]
+    , forAll arbitrary (\v -> vertex @g v == vertex v * vertex v) // "Vertex self-loop"
+    , y == empty || x * y * z == x * y + y * z                    // "Closure" ]

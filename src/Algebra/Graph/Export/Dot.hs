@@ -15,13 +15,13 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Export.Dot (
     -- * Graph attributes and style
-    Attribute (..), Style (..), defaultStyle, defaultStyleViaShow,
+    Attribute (..), Quoting (..), Style (..), defaultStyle, defaultStyleViaShow,
 
     -- * Export functions
     export, exportAsIs, exportViaShow
     ) where
 
-import Data.List hiding (unlines)
+import Data.List (map, null, intersperse)
 import Data.Monoid
 import Data.String hiding (unlines)
 import Prelude hiding (unlines)
@@ -33,6 +33,9 @@ import qualified Algebra.Graph.Export as E
 -- | An attribute is just a key-value pair, for example @"shape" := "box"@.
 -- Attributes are used to specify the style of graph elements during export.
 data Attribute s = (:=) s s
+
+-- | Used to determine whether to use double-quotes around attribute values.
+data Quoting = DoubleQuotes | NoQuotes
 
 -- | The record 'Style' @a@ @s@ specifies the style to use when exporting a
 -- graph in the DOT format. Here @a@ is the type of the graph vertices, and @s@
@@ -57,12 +60,14 @@ data Style a s = Style
     -- ^ Attributes of a specific vertex.
     , edgeAttributes   :: a -> a -> [Attribute s]
     -- ^ Attributes of a specific edge.
+    , attributeQuoting :: Quoting
+    -- ^ What style of quoting to apply to attributes.
     }
 
 -- | Default style for exporting graphs. All style settings are empty except for
 -- 'vertexName', which is provided as the only argument.
 defaultStyle :: Monoid s => (a -> s) -> Style a s
-defaultStyle v = Style mempty [] [] [] [] v (\_ -> []) (\_ _ -> [])
+defaultStyle v = Style mempty [] [] [] [] v (const []) (\_ _ -> []) DoubleQuotes
 
 -- | Default style for exporting graphs whose vertices are 'Show'-able. All
 -- style settings are empty except for 'vertexName', which is computed from
@@ -88,7 +93,8 @@ defaultStyleViaShow = defaultStyle (fromString . show)
 --     , 'defaultEdgeAttributes'   = 'mempty'
 --     , 'vertexName'              = \\x   -> "v" ++ 'show' x
 --     , 'vertexAttributes'        = \\x   -> ["color" := "blue"   | 'odd' x      ]
---     , 'edgeAttributes'          = \\x y -> ["style" := "dashed" | 'odd' (x * y)] }
+--     , 'edgeAttributes'          = \\x y -> ["style" := "dashed" | 'odd' (x * y)]
+--     , 'attributeQuoting'        = 'DoubleQuotes' }
 --
 -- > putStrLn $ export style (1 * 2 + 3 * 4 * 5 :: 'Graph' Int)
 --
@@ -113,7 +119,7 @@ export :: (IsString s, Monoid s, Ord a, ToGraph g, ToVertex g ~ a) => Style a s 
 export Style {..} g = render $ header <> body <> "}\n"
   where
     header    = "digraph" <+> literal graphName <> "\n{\n"
-    with x as = if null as then mempty else line (x <+> attributes as)
+    with x as = if null as then mempty else line (x <+> attributes attributeQuoting as)
     line s    = indent 2 s <> "\n"
     body      = unlines (map literal preamble)
              <> ("graph" `with` graphAttributes)
@@ -121,17 +127,20 @@ export Style {..} g = render $ header <> body <> "}\n"
              <> ("edge"  `with` defaultEdgeAttributes)
              <> E.export vDoc eDoc g
     label     = doubleQuotes . literal . vertexName
-    vDoc x    = line $ label x <+>                      attributes (vertexAttributes x)
-    eDoc x y  = line $ label x <> " -> " <> label y <+> attributes (edgeAttributes x y)
+    vDoc x    = line $ label x <+>                      attributes attributeQuoting (vertexAttributes x)
+    eDoc x y  = line $ label x <> " -> " <> label y <+> attributes attributeQuoting (edgeAttributes x y)
 
--- | A list of attributes formatted as a DOT document.
--- Example: @attributes ["label" := "A label", "shape" := "box"]@
+-- | A quoting type and list of attributes formatted as a DOT document.
+-- Example: @attributes DoubleQuotes ["label" := "A label", "shape" := "box"]@
 -- corresponds to document: @ [label="A label" shape="box"]@.
-attributes :: IsString s => [Attribute s] -> Doc s
-attributes [] = mempty
-attributes as = brackets . mconcat . intersperse " " $ map dot as
+attributes :: IsString s => Quoting -> [Attribute s] -> Doc s
+attributes _ [] = mempty
+attributes q as = brackets . mconcat . intersperse " " $ map dot as
   where
-    dot (k := v) = literal k <> "=" <> doubleQuotes (literal v)
+    dot (k := v) = literal k <> "=" <> quoting (literal v)
+    quoting = case q of
+        DoubleQuotes -> doubleQuotes
+        NoQuotes     -> id
 
 -- | Export a graph whose vertices are represented simply by their names.
 --

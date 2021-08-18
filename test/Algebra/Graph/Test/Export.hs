@@ -1,8 +1,8 @@
-{-# LANGUAGE CPP, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Export
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -14,14 +14,11 @@ module Algebra.Graph.Test.Export (
     testExport
     ) where
 
-#if !MIN_VERSION_base(4,11,0)
-import Data.Semigroup
-#endif
-
 import Algebra.Graph (Graph, circuit)
 import Algebra.Graph.Export hiding (unlines)
 import Algebra.Graph.Export.Dot (Attribute (..))
 import Algebra.Graph.Test
+import Data.Semigroup ((<>))
 
 import qualified Algebra.Graph.Export     as E
 import qualified Algebra.Graph.Export.Dot as ED
@@ -128,7 +125,8 @@ testExport = do
             , ED.defaultEdgeAttributes   = mempty
             , ED.vertexName              = \x   -> "v" ++ show x
             , ED.vertexAttributes        = \x   -> ["color" := "blue"   | odd x      ]
-            , ED.edgeAttributes          = \x y -> ["style" := "dashed" | odd (x * y)] }
+            , ED.edgeAttributes          = \x y -> ["style" := "dashed" | odd (x * y)]
+            , ED.attributeQuoting        = ED.DoubleQuotes }
     test "export style (1 * 2 + 3 * 4 * 5 :: Graph Int)" $
         (ED.export style (1 * 2 + 3 * 4 * 5 :: Graph Int) :: String) ==
             unlines [ "digraph Example"
@@ -145,6 +143,27 @@ testExport = do
                     , "  \"v1\" -> \"v2\""
                     , "  \"v3\" -> \"v4\""
                     , "  \"v3\" -> \"v5\" [style=\"dashed\"]"
+                    , "  \"v4\" -> \"v5\""
+                    , "}" ]
+
+    putStrLn "\n=========== Export.Dot.attributeQuoting ============"
+    let style' = style { ED.attributeQuoting = ED.NoQuotes }
+    test "export style' (1 * 2 + 3 * 4 * 5 :: Graph Int)" $
+        (ED.export style' (1 * 2 + 3 * 4 * 5 :: Graph Int) :: String) ==
+            unlines [ "digraph Example"
+                    , "{"
+                    , "  // This is an example"
+                    , ""
+                    , "  graph [label=Example labelloc=top]"
+                    , "  node [shape=circle]"
+                    , "  \"v1\" [color=blue]"
+                    , "  \"v2\""
+                    , "  \"v3\" [color=blue]"
+                    , "  \"v4\""
+                    , "  \"v5\" [color=blue]"
+                    , "  \"v1\" -> \"v2\""
+                    , "  \"v3\" -> \"v4\""
+                    , "  \"v3\" -> \"v5\" [style=dashed]"
                     , "  \"v4\" -> \"v5\""
                     , "}" ]
 

@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Relation.Symmetric
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -44,6 +44,7 @@ module Algebra.Graph.Relation.Symmetric (
 import Control.DeepSeq
 import Data.Coerce
 import Data.Set (Set)
+import Data.String
 import Data.Tree
 
 import qualified Data.Set as Set
@@ -105,7 +106,7 @@ newtype Relation a = SR {
     -- 'R.edgeCount'   . fromSymmetric <= (*2) . 'edgeCount'
     -- @
     fromSymmetric :: R.Relation a
-    } deriving (Eq, NFData)
+    } deriving (Eq, IsString, NFData)
 
 instance (Ord a, Show a) => Show (Relation a) where
     show = show . toRelation
@@ -143,7 +144,6 @@ toSymmetric :: Ord a => R.Relation a -> Relation a
 toSymmetric = SR . R.symmetricClosure
 
 -- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -155,16 +155,29 @@ empty :: Relation a
 empty = coerce R.empty
 
 -- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- @
 vertex :: a -> Relation a
 vertex = coerce R.vertex
+
+-- | Construct the graph comprising /a single edge/.
+--
+-- @
+-- edge x y               == 'connect' ('vertex' x) ('vertex' y)
+-- edge x y               == 'edge' y x
+-- edge x y               == 'edges' [(x,y), (y,x)]
+-- 'hasEdge' x y (edge x y) == True
+-- 'edgeCount'   (edge x y) == 1
+-- 'vertexCount' (edge 1 1) == 1
+-- 'vertexCount' (edge 1 2) == 2
+-- @
+edge :: Ord a => a -> a -> Relation a
+edge x y = SR $ R.edges [(x,y), (y,x)]
 
 -- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
@@ -204,21 +217,6 @@ overlay = coerce R.overlay
 -- @
 connect :: Ord a => Relation a -> Relation a -> Relation a
 connect x y = coerce R.connect x y `overlay` biclique (vertexList y) (vertexList x)
-
--- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory and size.
---
--- @
--- edge x y               == 'connect' ('vertex' x) ('vertex' y)
--- edge x y               == 'edge' y x
--- edge x y               == 'edges' [(x,y), (y,x)]
--- 'hasEdge' x y (edge x y) == True
--- 'edgeCount'   (edge x y) == 1
--- 'vertexCount' (edge 1 1) == 1
--- 'vertexCount' (edge 1 2) == 2
--- @
-edge :: Ord a => a -> a -> Relation a
-edge x y = SR $ R.edges [(x,y), (y,x)]
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -307,8 +305,7 @@ isEmpty = coerce R.isEmpty
 --
 -- @
 -- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x ('vertex' y)       == (x == y)
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Ord a => a -> Relation a -> Bool
@@ -350,7 +347,7 @@ vertexCount = coerce R.vertexCount
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: Ord a => Relation a -> Int
-edgeCount = length . edgeList
+edgeCount = Set.size . edgeSet
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -407,7 +404,7 @@ edgeSet :: Ord a => Relation a -> Set (a, a)
 edgeSet = Set.filter (uncurry (<=)) . R.edgeSet . fromSymmetric
 
 -- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
+-- Complexity: /O(n + m)/ time and memory.
 --
 -- @
 -- adjacencyList 'empty'          == []
@@ -567,7 +564,7 @@ replaceVertex = coerce R.replaceVertex
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -595,8 +592,7 @@ gmap = coerce R.gmap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
--- be evaluated.
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes constant time.
 --
 -- @
 -- induce ('const' True ) x      == x

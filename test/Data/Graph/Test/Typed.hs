@@ -19,7 +19,7 @@ import Algebra.Graph.Test
 import Data.Array (array)
 import Data.Graph.Typed
 import Data.Tree
-import Data.List
+import Data.List (nub, sort)
 
 import qualified Data.Graph  as KL
 import qualified Data.IntSet as IntSet

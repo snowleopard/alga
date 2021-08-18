@@ -1,7 +1,8 @@
+{-# LANGUAGE TypeApplications #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.AdjacencyIntMap
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -26,7 +27,7 @@ t = ("AdjacencyIntMap.", adjacencyIntMapAPI)
 testAdjacencyIntMap :: IO ()
 testAdjacencyIntMap = do
     putStrLn "\n============ AdjacencyIntMap ============"
-    test "Axioms of graphs" (axioms :: GraphTestsuite AdjacencyIntMap)
+    test "Axioms of graphs" (axioms @AdjacencyIntMap)
 
     putStrLn $ "\n============ AdjacencyIntMap.fromAdjacencyMap ============"
     test "fromAdjacencyMap == stars . AdjacencyMap.adjacencyList" $ \x ->
@@ -42,7 +43,6 @@ testAdjacencyIntMap = do
     testTransformations      t
     testRelational           t
     testBfsForest            t
-    testBfsForestFrom        t
     testBfs                  t
     testDfsForest            t
     testDfsForestFrom        t

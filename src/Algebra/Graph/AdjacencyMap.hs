@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyMap
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -55,6 +55,7 @@ import Data.List ((\\))
 import Data.Map.Strict (Map)
 import Data.Monoid
 import Data.Set (Set)
+import Data.String
 import Data.Tree
 import GHC.Generics
 
@@ -199,11 +200,13 @@ instance (Ord a, Num a) => Num (AdjacencyMap a) where
     abs         = id
     negate      = id
 
+instance IsString a => IsString (AdjacencyMap a) where
+    fromString = vertex . fromString
+
 instance NFData a => NFData (AdjacencyMap a) where
     rnf (AM a) = rnf a
 
 -- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -216,11 +219,10 @@ empty = AM Map.empty
 {-# NOINLINE [1] empty #-}
 
 -- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- @
@@ -229,7 +231,6 @@ vertex x = AM $ Map.singleton x Set.empty
 {-# NOINLINE [1] vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory.
 --
 -- @
 -- edge x y               == 'connect' ('vertex' x) ('vertex' y)
@@ -279,7 +280,7 @@ overlay (AM x) (AM y) = AM $ Map.unionWith Set.union x y
 -- 'edgeCount'   (connect 1 2) == 1
 -- @
 connect :: Ord a => AdjacencyMap a -> AdjacencyMap a -> AdjacencyMap a
-connect (AM x) (AM y) = AM $ Map.unionsWith Set.union $
+connect (AM x) (AM y) = AM $ Map.unionsWith Set.union
     [ x, y, Map.fromSet (const $ Map.keysSet y) (Map.keysSet x) ]
 {-# NOINLINE [1] connect #-}
 
@@ -295,7 +296,7 @@ connect (AM x) (AM y) = AM $ Map.unionsWith Set.union $
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: Ord a => [a] -> AdjacencyMap a
-vertices = AM . Map.fromList . map (\x -> (x, Set.empty))
+vertices = AM . Map.fromList . map (, Set.empty)
 {-# NOINLINE [1] vertices #-}
 
 -- | Construct the graph from a list of edges.
@@ -304,6 +305,7 @@ vertices = AM . Map.fromList . map (\x -> (x, Set.empty))
 -- @
 -- edges []          == 'empty'
 -- edges [(x,y)]     == 'edge' x y
+-- edges             == 'overlays' . 'map' ('uncurry' 'edge')
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- 'edgeList' . edges  == 'Data.List.nub' . 'Data.List.sort'
 -- @
@@ -371,8 +373,7 @@ isEmpty = Map.null . adjacencyMap
 --
 -- @
 -- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x ('vertex' y)       == (x == y)
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Ord a => a -> AdjacencyMap a -> Bool
@@ -441,6 +442,7 @@ vertexList = Map.keys . adjacencyMap
 -- @
 edgeList :: AdjacencyMap a -> [(a, a)]
 edgeList (AM m) = [ (x, y) | (x, ys) <- Map.toAscList m, y <- Set.toAscList ys ]
+{-# INLINE edgeList #-}
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -466,7 +468,7 @@ edgeSet :: Eq a => AdjacencyMap a -> Set (a, a)
 edgeSet = Set.fromAscList . edgeList
 
 -- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
+-- Complexity: /O(n + m)/ time and memory.
 --
 -- @
 -- adjacencyList 'empty'          == []
@@ -680,7 +682,7 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -738,8 +740,7 @@ gmap f = AM . Map.map (Set.map f) . Map.mapKeysWith Set.union f . adjacencyMap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
--- be evaluated.
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes constant time.
 --
 -- @
 -- induce ('const' True ) x      == x
@@ -796,7 +797,7 @@ compose x y = fromAdjacencySets
     vs = vertexSet x `Set.union` vertexSet y
 
 -- | Compute the /Cartesian product/ of graphs.
--- Complexity: /O(n * m * log(n)^2)/ time.
+-- Complexity: /O((n + m) * log(n))/ time and O(n + m) memory.
 --
 -- @
 -- box ('path' [0,1]) ('path' "ab") == 'edges' [ ((0,\'a\'), (0,\'b\'))
@@ -805,10 +806,10 @@ compose x y = fromAdjacencySets
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
 --
--- Up to an isomorphism between the resulting vertex types, this operation
+-- Up to the isomorphism between the resulting vertex types, this operation
 -- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
 -- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@.
+-- stands for equality up to the isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x
@@ -859,7 +860,7 @@ closure = reflexiveClosure . transitiveClosure
 -- reflexiveClosure . reflexiveClosure == reflexiveClosure
 -- @
 reflexiveClosure :: Ord a => AdjacencyMap a -> AdjacencyMap a
-reflexiveClosure (AM m) = AM $ Map.mapWithKey (\k -> Set.insert k) m
+reflexiveClosure (AM m) = AM $ Map.mapWithKey Set.insert m
 
 -- | Compute the /symmetric closure/ of a graph by overlaying it with its own
 -- transpose.

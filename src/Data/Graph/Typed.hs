@@ -19,16 +19,21 @@ module Data.Graph.Typed (
     GraphKL(..), fromAdjacencyMap, fromAdjacencyIntMap,
 
     -- * Basic algorithms
-    dfsForest, dfsForestFrom, dfs, topSort
+    dfsForest, dfsForestFrom, dfs, topSort, scc
     ) where
 
 import Data.Tree
 import Data.Maybe
+import Data.Foldable
 
 import qualified Data.Graph as KL
 
-import qualified Algebra.Graph.AdjacencyMap    as AM
-import qualified Algebra.Graph.AdjacencyIntMap as AIM
+import qualified Algebra.Graph.AdjacencyMap          as AM
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
+import qualified Algebra.Graph.AdjacencyIntMap       as AIM
+
+import qualified Data.Map.Strict                     as Map
+import qualified Data.Set                            as Set
 
 -- | 'GraphKL' encapsulates King-Launchbury graphs, which are implemented in
 -- the "Data.Graph" module of the @containers@ library.
@@ -181,3 +186,17 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- @
 topSort :: GraphKL a -> [a]
 topSort (GraphKL g r _) = map r (KL.topSort g)
+
+scc :: Ord a => AM.AdjacencyMap a -> AM.AdjacencyMap (NonEmpty.AdjacencyMap a)
+scc m = AM.gmap (component Map.!) $ removeSelfLoops $ AM.gmap (leader Map.!) m
+  where
+    GraphKL g decode _ = fromAdjacencyMap m
+    sccs      = map toList (KL.scc g)
+    leader    = Map.fromList [ (decode y, x)      | x:xs <- sccs, y <- x:xs ]
+    component = Map.fromList [ (x, expand (x:xs)) | x:xs <- sccs ]
+    expand xs = fromJust $ NonEmpty.toNonEmpty $ AM.induce (`Set.member` s) m
+      where
+        s = Set.fromList (map decode xs)
+
+removeSelfLoops :: Ord a => AM.AdjacencyMap a -> AM.AdjacencyMap a
+removeSelfLoops m = foldr (\x -> AM.removeEdge x x) m (AM.vertexList m)

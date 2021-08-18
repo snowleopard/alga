@@ -176,7 +176,6 @@ The class of /preorder graphs/ that are both reflexive and transitive.
 class (Reflexive g, Transitive g) => Preorder g
 
 -- | Construct the graph comprising a single edge.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- edge x y               == 'connect' ('vertex' x) ('vertex' y)
@@ -464,7 +463,7 @@ deBruijn len alphabet = skeleton >>= expand
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- induce ('const' True ) x      == x
@@ -503,7 +502,7 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- mergeVertices ('const' False) x    == id

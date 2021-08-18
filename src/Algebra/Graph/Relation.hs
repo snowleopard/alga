@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Relation
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -43,7 +43,9 @@ module Algebra.Graph.Relation (
     ) where
 
 import Control.DeepSeq
+import Data.Bifunctor
 import Data.Set (Set, union)
+import Data.String
 import Data.Tree
 import Data.Tuple
 
@@ -178,7 +180,7 @@ instance Ord a => Ord (Relation a) where
         , compare (edgeSet     x) (edgeSet      y) ]
 
 instance NFData a => NFData (Relation a) where
-    rnf (Relation d r) = rnf d `seq` rnf r `seq` ()
+    rnf (Relation d r) = rnf d `seq` rnf r
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'Relation' for
 -- more details.
@@ -190,8 +192,10 @@ instance (Ord a, Num a) => Num (Relation a) where
     abs         = id
     negate      = id
 
+instance IsString a => IsString (Relation a) where
+    fromString = vertex . fromString
+
 -- | Construct the /empty graph/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -203,16 +207,27 @@ empty :: Relation a
 empty = Relation Set.empty Set.empty
 
 -- | Construct the graph comprising /a single isolated vertex/.
--- Complexity: /O(1)/ time and memory.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- @
 vertex :: a -> Relation a
 vertex x = Relation (Set.singleton x) Set.empty
+
+-- | Construct the graph comprising /a single edge/.
+--
+-- @
+-- edge x y               == 'connect' ('vertex' x) ('vertex' y)
+-- 'hasEdge' x y (edge x y) == True
+-- 'edgeCount'   (edge x y) == 1
+-- 'vertexCount' (edge 1 1) == 1
+-- 'vertexCount' (edge 1 2) == 2
+-- @
+edge :: Ord a => a -> a -> Relation a
+edge x y = Relation (Set.fromList [x, y]) (Set.singleton (x, y))
 
 -- | /Overlay/ two graphs. This is a commutative, associative and idempotent
 -- operation with the identity 'empty'.
@@ -253,19 +268,6 @@ connect :: Ord a => Relation a -> Relation a -> Relation a
 connect x y = Relation (domain x `union` domain y)
     (relation x `union` relation y `union` (domain x `setProduct` domain y))
 
--- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory and size.
---
--- @
--- edge x y               == 'connect' ('vertex' x) ('vertex' y)
--- 'hasEdge' x y (edge x y) == True
--- 'edgeCount'   (edge x y) == 1
--- 'vertexCount' (edge 1 1) == 1
--- 'vertexCount' (edge 1 2) == 2
--- @
-edge :: Ord a => a -> a -> Relation a
-edge x y = Relation (Set.fromList [x, y]) (Set.singleton (x, y))
-
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
 -- of the given list.
@@ -286,6 +288,7 @@ vertices xs = Relation (Set.fromList xs) Set.empty
 -- @
 -- edges []          == 'empty'
 -- edges [(x,y)]     == 'edge' x y
+-- edges             == 'overlays' . 'map' ('uncurry' 'edge')
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- @
 edges :: Ord a => [(a, a)] -> Relation a
@@ -351,8 +354,7 @@ isEmpty = null . domain
 --
 -- @
 -- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x ('vertex' y)       == (x == y)
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Ord a => a -> Relation a -> Bool
@@ -444,7 +446,7 @@ edgeSet :: Relation a -> Set.Set (a, a)
 edgeSet = relation
 
 -- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
+-- Complexity: /O(n + m)/ time and memory.
 --
 -- @
 -- adjacencyList 'empty'          == []
@@ -457,7 +459,7 @@ adjacencyList :: Eq a => Relation a -> [(a, [a])]
 adjacencyList r = go (Set.toAscList $ domain r) (Set.toAscList $ relation r)
   where
     go [] _      = []
-    go vs []     = map ((,[])) vs
+    go vs []     = map (, []) vs
     go (x:vs) es = let (ys, zs) = span ((==x) . fst) es in (x, map snd ys) : go vs zs
 
 -- | The /preset/ of an element @x@ is the set of elements that are related to
@@ -652,7 +654,7 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O((n + m) * log(n))/ time, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -689,12 +691,11 @@ transpose (Relation d r) = Relation d (Set.map swap r)
 -- gmap f . gmap g   == gmap (f . g)
 -- @
 gmap :: Ord b => (a -> b) -> Relation a -> Relation b
-gmap f (Relation d r) = Relation (Set.map f d) (Set.map (\(x, y) -> (f x, f y)) r)
+gmap f (Relation d r) = Relation (Set.map f d) (Set.map (bimap f f) r)
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
--- Complexity: /O(n + m)/ time, assuming that the predicate takes /O(1)/ to
--- be evaluated.
+-- Complexity: /O(n + m)/ time, assuming that the predicate takes constant time.
 --
 -- @
 -- induce ('const' True ) x      == x
@@ -722,7 +723,7 @@ induceJust :: Ord a => Relation (Maybe a) -> Relation a
 induceJust (Relation d r) = Relation (catMaybesSet d) (catMaybesSet2 r)
   where
     catMaybesSet         = Set.mapMonotonic Maybe.fromJust . Set.delete Nothing
-    catMaybesSet2        = Set.mapMonotonic (\(x, y) -> (Maybe.fromJust x, Maybe.fromJust y))
+    catMaybesSet2        = Set.mapMonotonic (bimap Maybe.fromJust Maybe.fromJust)
                          . Set.filter p
     p (Nothing, _)       = False
     p (_,       Nothing) = False

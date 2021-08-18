@@ -7,9 +7,8 @@ module Algebra.Graph.Test.Bipartite.AdjacencyMap.Algorithm (
 
 import Algebra.Graph.Test
 
-import Algebra.Graph.Bipartite.AdjacencyMap
+import Algebra.Graph.Bipartite.Undirected.AdjacencyMap
 import Algebra.Graph.Bipartite.AdjacencyMap.Algorithm
-import Algebra.Graph.Test.Generic (size10)
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 

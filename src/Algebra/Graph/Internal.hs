@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Internal
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -20,28 +20,32 @@ module Algebra.Graph.Internal (
     List (..),
 
     -- * Graph traversal
-    Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, Hit (..),
-    foldr1Safe, maybeF,
+    Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, foldr1Safe,
+    maybeF,
 
     -- * Utilities
-    setProduct, setProductWith
+    setProduct, setProductWith, forEach, forEachInt, coerce00, coerce10,
+    coerce20, coerce01, coerce11, coerce21
     ) where
 
+import Data.Coerce
 import Data.Foldable
 import Data.Semigroup
+import Data.IntSet (IntSet)
 import Data.Set (Set)
 
+import qualified Data.IntSet as IntSet
 import qualified Data.Set as Set
 import qualified GHC.Exts as Exts
 
 -- | An abstract list data type with /O(1)/ time concatenation (the current
 -- implementation uses difference lists). Here @a@ is the type of list elements.
 -- 'List' @a@ is a 'Monoid': 'mempty' corresponds to the empty list and two lists
--- can be concatenated with 'mappend' (or operator 'Data.Monoid.<>'). Singleton
+-- can be concatenated with 'mappend' (or operator 'Data.Semigroup.<>'). Singleton
 -- lists can be constructed using the function 'pure' from the 'Applicative'
 -- instance. 'List' @a@ is also an instance of 'IsList', therefore you can use
 -- list literals, e.g. @[1,4]@ @::@ 'List' @Int@ is the same as 'pure' @1@
--- 'Data.Monoid.<>' 'pure' @4@; note that this requires the @OverloadedLists@
+-- 'Data.Semigroup.<>' 'pure' @4@; note that this requires the @OverloadedLists@
 -- GHC extension. To extract plain Haskell lists you can use the 'toList'
 -- function from the 'Foldable' instance.
 newtype List a = List (Endo [a]) deriving (Monoid, Semigroup)
@@ -105,21 +109,10 @@ connectFoci x y = Focus (ok x || ok y) (xs <> is y) (os x <> ys) (vs x <> vs y)
     xs = if ok y then vs x else is x
     ys = if ok x then vs y else os y
 
--- | An auxiliary data type for 'hasEdge': when searching for an edge, we can hit
--- its 'Tail', i.e. the source vertex, the whole 'Edge', or 'Miss' it entirely.
-data Hit = Miss | Tail | Edge deriving (Eq, Ord)
-
 -- | A safe version of 'foldr1'.
 foldr1Safe :: (a -> a -> a) -> [a] -> Maybe a
 foldr1Safe f = foldr (maybeF f) Nothing
-{-# INLINE [0] foldr1Safe #-}
-
--- | Tragetting 'map' directly
-{-# RULES
-"foldr1Safe/build"
-  forall k f lst.
-  foldr1Safe k (map f lst) = foldr (maybeF k . f) Nothing lst
- #-}
+{-# INLINE foldr1Safe #-}
 
 -- | Auxiliary function that try to apply a function to a base case and a 'Maybe'
 -- value and return 'Just' the result or 'Just' the base case.
@@ -139,3 +132,40 @@ setProduct x y = Set.fromDistinctAscList [ (a, b) | a <- Set.toAscList x, b <- S
 -- resulting pair.
 setProductWith :: Ord c => (a -> b -> c) -> Set a -> Set b -> Set c
 setProductWith f x y = Set.fromList [ f a b | a <- Set.toAscList x, b <- Set.toAscList y ]
+
+-- | Perform an applicative action for each member of a Set.
+forEach :: Applicative f => Set a -> (a -> f b) -> f ()
+forEach s f = Set.foldr (\a u -> f a *> u) (pure ()) s
+
+-- | Perform an applicative action for each member of an IntSet.
+forEachInt :: Applicative f => IntSet -> (Int -> f a) -> f ()
+forEachInt s f = IntSet.foldr (\a u -> f a *> u) (pure ()) s
+
+-- TODO: Get rid of this boilerplate.
+
+-- | Help GHC with type inference when direct use of 'coerce' does not compile.
+coerce00 :: Coercible f g => f x -> g x
+coerce00 = coerce
+
+-- | Help GHC with type inference when direct use of 'coerce' does not compile.
+coerce10 :: (Coercible a b, Coercible f g) => (a -> f x) -> (b -> g x)
+coerce10 = coerce
+
+-- | Help GHC with type inference when direct use of 'coerce' does not compile.
+coerce20 :: (Coercible a b, Coercible c d, Coercible f g)
+         => (a -> c -> f x) -> (b -> d -> g x)
+coerce20 = coerce
+
+-- | Help GHC with type inference when direct use of 'coerce' does not compile.
+coerce01 :: (Coercible a b, Coercible f g) => (f x -> a) -> (g x -> b)
+coerce01 = coerce
+
+-- | Help GHC with type inference when direct use of 'coerce' does not compile.
+coerce11 :: (Coercible a b, Coercible c d, Coercible f g)
+         => (a -> f x -> c) -> (b -> g x -> d)
+coerce11 = coerce
+
+-- | Help GHC with type inference when direct use of 'coerce' does not compile.
+coerce21 :: (Coercible a b, Coercible c d, Coercible p q, Coercible f g)
+         => (a -> c -> f x -> p) -> (b -> d -> g x -> q)
+coerce21 = coerce

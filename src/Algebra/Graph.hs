@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph
--- Copyright  : (c) Andrey Mokhov 2016-2019
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -26,7 +26,7 @@ module Algebra.Graph (
     empty, vertex, edge, overlay, connect, vertices, edges, overlays, connects,
 
     -- * Graph folding
-    foldg,
+    foldg, buildg,
 
     -- * Relations on graphs
     isSubgraphOf, (===),
@@ -55,8 +55,9 @@ import Control.DeepSeq
 import Control.Monad (MonadPlus (..))
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
-import Data.Maybe (fromMaybe, maybe)
+import Data.Maybe (fromMaybe)
 import Data.Semigroup ((<>))
+import Data.String
 import Data.Tree
 import GHC.Generics
 
@@ -173,6 +174,11 @@ compatible with 'overlay' and 'connect' operations:
 @'empty' <= x
 x     <= x + y
 x + y <= x * y@
+
+Deforestation (fusion) is implemented for some functions in this module. This
+means that when a function tagged as a \"good producer\" is composed with a
+function tagged as a \"good consumer\", the intermediate structure will not be
+built.
 -}
 data Graph a = Empty
              | Vertex a
@@ -193,12 +199,12 @@ These functions are annotated with carefully chosen GHC pragmas that control
 inlining, which would be impossible or unreliable if we used standard functions
 instead. For example, the function 'eqR' has the following annotations:
 
-    NOINLINE [1] eqR
-    RULES "eqIntR" eqR = eqIntR
+    INLINE [2] eqR
+    RULES "eqR/Int" eqR = eqIntR
 
-This tells GHC to rewrite 'eqR' to faster 'eqIntR' if possible (if the types
-match), and -- importantly -- not to inline 'eqR' too early, before the rewrite
-rule had a chance to fire.
+The above tells GHC to rewrite 'eqR' to faster 'eqIntR' if possible (if the
+types match), and -- importantly -- not to inline 'eqR' too early, before the
+rewrite rule had a chance to fire.
 
 We could have written the following rule instead:
 
@@ -209,12 +215,10 @@ not under our control. We therefore choose the safe and more explicit path of
 creating our own intermediate functions for guiding rewrite rules when needed.
 -}
 
+-- | 'fmap' is a good consumer and producer.
 instance Functor Graph where
-    fmap = fmapR
-
-fmapR :: (a -> b) -> Graph a -> Graph b
-fmapR f g = bindR g (vertex . f)
-{-# INLINE fmapR #-}
+    fmap f g = g >>= (vertex . f)
+    {-# INLINE fmap #-}
 
 instance NFData a => NFData (Graph a) where
     rnf Empty         = ()
@@ -232,49 +236,56 @@ instance Num a => Num (Graph a) where
     abs         = id
     negate      = id
 
+instance IsString a => IsString (Graph a) where
+    fromString = Vertex . fromString
+
+-- | `==` is a good consumer of both arguments.
 instance Ord a => Eq (Graph a) where
     (==) = eqR
 
+-- | 'compare' is a good consumer of both arguments.
 instance Ord a => Ord (Graph a) where
     compare = ordR
 
--- TODO: Find a more efficient equality check.
+-- TODO: Find a more efficient equality check. Note that assuming the Strong
+-- Exponential Time Hypothesis (SETH), it is impossible to compare two algebraic
+-- graphs in O(s^1.99), i.e. a quadratic algorithm is the best one can hope for.
+
 -- Check if two graphs are equal by converting them to their adjacency maps.
 eqR :: Ord a => Graph a -> Graph a -> Bool
 eqR x y = toAdjacencyMap x == toAdjacencyMap y
-{-# NOINLINE [1] eqR #-}
+{-# INLINE [2] eqR #-}
 {-# RULES "eqR/Int" eqR = eqIntR #-}
 
 -- Like 'eqR' but specialised for graphs with vertices of type 'Int'.
 eqIntR :: Graph Int -> Graph Int -> Bool
 eqIntR x y = toAdjacencyIntMap x == toAdjacencyIntMap y
+{-# INLINE eqIntR #-}
 
 -- TODO: Find a more efficient comparison.
 -- Compare two graphs by converting them to their adjacency maps.
 ordR :: Ord a => Graph a -> Graph a -> Ordering
 ordR x y = compare (toAdjacencyMap x) (toAdjacencyMap y)
-{-# NOINLINE [1] ordR #-}
+{-# INLINE [2] ordR #-}
 {-# RULES "ordR/Int" ordR = ordIntR #-}
 
 -- Like 'ordR' but specialised for graphs with vertices of type 'Int'.
 ordIntR :: Graph Int -> Graph Int -> Ordering
 ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
+{-# INLINE ordIntR #-}
 
+-- TODO: It should be a good consumer of its second argument too.
+-- | `<*>` is a good consumer of its first agument and producer.
 instance Applicative Graph where
-    pure  = Vertex
-    (<*>) = apR
+    pure    = Vertex
+    f <*> x = buildg $ \e v o c -> foldg e (\w -> foldg e (v . w) o c x) o c f
+    {-# INLINE (<*>) #-}
 
-apR :: Graph (a -> b) -> Graph a -> Graph b
-apR f x = bindR f (<$> x)
-{-# INLINE apR #-}
-
+-- | `>>=` is a good consumer and producer.
 instance Monad Graph where
     return = pure
-    (>>=)  = bindR
-
-bindR :: Graph a -> (a -> Graph b) -> Graph b
-bindR g f = foldg Empty f Overlay Connect g
-{-# INLINE [0] bindR #-}
+    g >>= f  = buildg $ \e v o c -> foldg e (composeR (foldg e v o c) f) o c g
+    {-# INLINE (>>=) #-}
 
 instance Alternative Graph where
     empty = Empty
@@ -285,7 +296,6 @@ instance MonadPlus Graph where
     mplus = Overlay
 
 -- | Construct the /empty graph/. An alias for the constructor 'Empty'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'isEmpty'     empty == True
@@ -300,11 +310,10 @@ empty = Empty
 
 -- | Construct the graph comprising /a single isolated vertex/. An alias for the
 -- constructor 'Vertex'.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- 'isEmpty'     (vertex x) == False
--- 'hasVertex' x (vertex x) == True
+-- 'hasVertex' x (vertex y) == (x == y)
 -- 'vertexCount' (vertex x) == 1
 -- 'edgeCount'   (vertex x) == 0
 -- 'size'        (vertex x) == 1
@@ -314,7 +323,6 @@ vertex = Vertex
 {-# INLINE vertex #-}
 
 -- | Construct the graph comprising /a single edge/.
--- Complexity: /O(1)/ time, memory and size.
 --
 -- @
 -- edge x y               == 'connect' ('vertex' x) ('vertex' y)
@@ -325,6 +333,7 @@ vertex = Vertex
 -- @
 edge :: a -> a -> Graph a
 edge x y = connect (vertex x) (vertex y)
+{-# INLINE edge #-}
 
 -- | /Overlay/ two graphs. An alias for the constructor 'Overlay'. This is a
 -- commutative, associative and idempotent operation with the identity 'empty'.
@@ -369,9 +378,14 @@ connect :: Graph a -> Graph a -> Graph a
 connect = Connect
 {-# INLINE connect #-}
 
+-- TODO: Simplifiy the definition to `overlays . map vertex` while presreving
+-- goodness properties (which is not trivial since overlays is only a good
+-- consumer of lists and not of lists of graphs).
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
+--
+-- Good consumer of lists and producer of graphs.
 --
 -- @
 -- vertices []            == 'empty'
@@ -381,24 +395,30 @@ connect = Connect
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: [a] -> Graph a
-vertices = overlays . map vertex
+vertices xs = buildg $ \e v o _ -> combineR e o v xs
 {-# INLINE vertices #-}
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
 --
+-- Good consumer of lists and producer of graphs.
+--
 -- @
 -- edges []          == 'empty'
 -- edges [(x,y)]     == 'edge' x y
+-- edges             == 'overlays' . 'map' ('uncurry' 'edge')
 -- 'edgeCount' . edges == 'length' . 'Data.List.nub'
 -- @
 edges :: [(a, a)] -> Graph a
-edges = overlays . map (uncurry edge)
+edges xs = buildg $ \e v o c -> combineR e o (\(x, y) -> c (v x) (v y)) xs
+{-# INLINE edges #-}
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
 -- of the given list, and /S/ is the sum of sizes of the graphs in the list.
+--
+-- Good consumer of lists and producer of graphs.
 --
 -- @
 -- overlays []        == 'empty'
@@ -408,12 +428,14 @@ edges = overlays . map (uncurry edge)
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: [Graph a] -> Graph a
-overlays = fromMaybe empty . foldr1Safe overlay
-{-# INLINE [1] overlays #-}
+overlays xs = buildg $ \e v o c -> combineR e o (foldg e v o c) xs
+{-# INLINE overlays #-}
 
 -- | Connect a given list of graphs.
 -- Complexity: /O(L)/ time and memory, and /O(S)/ size, where /L/ is the length
 -- of the given list, and /S/ is the sum of sizes of the graphs in the list.
+--
+-- Good consumer of lists and producer of graphs.
 --
 -- @
 -- connects []        == 'empty'
@@ -423,14 +445,22 @@ overlays = fromMaybe empty . foldr1Safe overlay
 -- 'isEmpty' . connects == 'all' 'isEmpty'
 -- @
 connects :: [Graph a] -> Graph a
-connects = fromMaybe empty . foldr1Safe connect
-{-# INLINE [1] connects #-}
+connects xs = buildg $ \e v o c -> combineR e c (foldg e v o c) xs
+{-# INLINE connects #-}
+
+-- Safe version of foldr with a map (the composition is optimized)
+-- This is a good consumer of lists.
+combineR :: c -> (c -> c -> c) -> (a -> c) -> [a] -> c
+combineR e o f = fromMaybe e . foldr1Safe o . map f
+{-# INLINE combineR #-}
 
 -- | Generalised 'Graph' folding: recursively collapse a 'Graph' by applying
 -- the provided functions to the leaves and internal nodes of the expression.
 -- The order of arguments is: empty, vertex, overlay and connect.
--- Complexity: /O(s)/ applications of given functions. As an example, the
--- complexity of 'size' is /O(s)/, since all functions have cost /O(1)/.
+-- Complexity: /O(s)/ applications of the given functions. As an example, the
+-- complexity of 'size' is /O(s)/, since 'const' and '+' have constant costs.
+--
+-- Good consumer.
 --
 -- @
 -- foldg 'empty' 'vertex'        'overlay' 'connect'        == id
@@ -449,25 +479,47 @@ foldg e v o c = go
 {-# INLINE [0] foldg #-}
 
 {-# RULES
+
 "foldg/Empty"   forall e v o c.
     foldg e v o c Empty = e
+
 "foldg/Vertex"  forall e v o c x.
     foldg e v o c (Vertex x) = v x
+
 "foldg/Overlay" forall e v o c x y.
     foldg e v o c (Overlay x y) = o (foldg e v o c x) (foldg e v o c y)
+
 "foldg/Connect" forall e v o c x y.
     foldg e v o c (Connect x y) = c (foldg e v o c x) (foldg e v o c y)
 
-"foldg/overlays" forall e v o c xs.
-    foldg e v o c (overlays xs) = fromMaybe e (foldr (maybeF o . foldg e v o c) Nothing xs)
-"foldg/connects" forall e v o c xs.
-    foldg e v o c (connects xs) = fromMaybe e (foldr (maybeF c . foldg e v o c) Nothing xs)
- #-}
+#-}
+
+-- | Build a graph given an interpretation of the four graph construction
+-- primitives 'empty', 'vertex', 'overlay' and 'connect', in this order. See
+-- examples for further clarification.
+--
+-- Functions expressed with 'buildg' are good producers.
+--
+-- @
+-- buildg f                                                   == f 'empty' 'vertex' 'overlay' 'connect'
+-- buildg (\\e _ _ _ -> e)                                     == 'empty'
+-- buildg (\\_ v _ _ -> v x)                                   == 'vertex' x
+-- buildg (\\e v o c -> o ('foldg' e v o c x) ('foldg' e v o c y)) == 'overlay' x y
+-- buildg (\\e v o c -> c ('foldg' e v o c x) ('foldg' e v o c y)) == 'connect' x y
+-- buildg (\\e v o _ -> 'foldr' o e ('map' v xs))                  == 'vertices' xs
+-- buildg (\\e v o c -> 'foldg' e v o ('flip' c) g)                == 'transpose' g
+-- 'foldg' e v o c (buildg f)                                   == f e v o c
+-- @
+buildg :: (forall r. r -> (a -> r) -> (r -> r -> r) -> (r -> r -> r) -> r) -> Graph a
+buildg f = f Empty Vertex Overlay Connect
+{-# INLINE [1] buildg #-}
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
 -- graph can be quadratic with respect to the expression size /s/.
+--
+-- Good consumer of both arguments.
 --
 -- @
 -- isSubgraphOf 'empty'         x             ==  True
@@ -479,12 +531,13 @@ foldg e v o c = go
 -- @
 isSubgraphOf :: Ord a => Graph a -> Graph a -> Bool
 isSubgraphOf x y = AM.isSubgraphOf (toAdjacencyMap x) (toAdjacencyMap y)
-{-# NOINLINE [1] isSubgraphOf #-}
+{-# INLINE [2] isSubgraphOf #-}
 {-# RULES "isSubgraphOf/Int" isSubgraphOf = isSubgraphOfIntR #-}
 
 -- Like 'isSubgraphOf' but specialised for graphs with vertices of type 'Int'.
 isSubgraphOfIntR :: Graph Int -> Graph Int -> Bool
 isSubgraphOfIntR x y = AIM.isSubgraphOf (toAdjacencyIntMap x) (toAdjacencyIntMap y)
+{-# INLINE isSubgraphOfIntR #-}
 
 -- | Structural equality on graph expressions.
 -- Complexity: /O(s)/ time.
@@ -506,8 +559,10 @@ _               === _               = False
 
 infix 4 ===
 
--- | Check if a graph is empty. A convenient alias for 'null'.
+-- | Check if a graph is empty.
 -- Complexity: /O(s)/ time.
+--
+-- Good consumer.
 --
 -- @
 -- isEmpty 'empty'                       == True
@@ -518,10 +573,13 @@ infix 4 ===
 -- @
 isEmpty :: Graph a -> Bool
 isEmpty = foldg True (const False) (&&) (&&)
+{-# INLINE isEmpty #-}
 
 -- | The /size/ of a graph, i.e. the number of leaves of the expression
 -- including 'empty' leaves.
 -- Complexity: /O(s)/ time.
+--
+-- Good consumer.
 --
 -- @
 -- size 'empty'         == 1
@@ -533,22 +591,47 @@ isEmpty = foldg True (const False) (&&) (&&)
 -- @
 size :: Graph a -> Int
 size = foldg 1 (const 1) (+) (+)
+{-# INLINE size #-}
 
 -- | Check if a graph contains a given vertex.
 -- Complexity: /O(s)/ time.
 --
+-- Good consumer.
+--
 -- @
 -- hasVertex x 'empty'            == False
--- hasVertex x ('vertex' x)       == True
--- hasVertex 1 ('vertex' 2)       == False
+-- hasVertex x ('vertex' y)       == (x == y)
 -- hasVertex x . 'removeVertex' x == 'const' False
 -- @
 hasVertex :: Eq a => a -> Graph a -> Bool
 hasVertex x = foldg False (==x) (||) (||)
+{-# INLINE hasVertex #-}
 {-# SPECIALISE hasVertex :: Int -> Graph Int -> Bool #-}
+
+{- Note [The implementation of hasEdge]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We fold a graph into a function of type Int -> Int where the Int stands for the
+number of vertices of the specified edge that have been matched so far. The edge
+belongs to the graph if we reach the number 2. Note that this algorithm can be
+generalised to algebraic graphs of higher dimensions, e.g. we can similarly find
+3-edges (triangles), 4-edges (tetrahedra), and k-edges in O(s) time.
+
+The four graph constructors are interpreted as follows:
+
+  * Empty       : the matching number is unchanged;
+  * Vertex x    : if x matches the next vertex, the number is incremented;
+  * Overlay x y : pick the best match in the two subexpressions;
+  * Connect x y : match the subexpressions one after another.
+
+Note that in the last two cases we can (and do) shortcircuit the computation as
+soon as the edge is fully matched in one of the subexpressions.
+-}
 
 -- | Check if a graph contains a given edge.
 -- Complexity: /O(s)/ time.
+--
+-- Good consumer.
 --
 -- @
 -- hasEdge x y 'empty'            == False
@@ -558,22 +641,22 @@ hasVertex x = foldg False (==x) (||) (||)
 -- hasEdge x y                  == 'elem' (x,y) . 'edgeList'
 -- @
 hasEdge :: Eq a => a -> a -> Graph a -> Bool
-hasEdge s t g = hit g == Edge
+hasEdge s t g = foldg id v o c g 0 == 2
   where
-    hit Empty         = Miss
-    hit (Vertex x   ) = if x == s then Tail else Miss
-    hit (Overlay x y) = case hit x of
-        Miss -> hit y
-        Tail -> max Tail (hit y)
-        Edge -> Edge
-    hit (Connect x y) = case hit x of
-        Miss -> hit y
-        Tail -> if hasVertex t y then Edge else Tail
-        Edge -> Edge
+    v x 0   = if x == s then 1 else 0
+    v x _   = if x == t then 2 else 1
+    o x y a = case x a of
+        0 -> y a
+        1 -> if y a == 2 then 2 else 1
+        _ -> 2 :: Int
+    c x y a = case x a of { 2 -> 2; res -> y res }
+{-# INLINE hasEdge #-}
 {-# SPECIALISE hasEdge :: Int -> Int -> Graph Int -> Bool #-}
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(s * log(n))/ time.
+--
+-- Good consumer.
 --
 -- @
 -- vertexCount 'empty'             ==  0
@@ -583,16 +666,19 @@ hasEdge s t g = hit g == Edge
 -- @
 vertexCount :: Ord a => Graph a -> Int
 vertexCount = Set.size . vertexSet
-{-# INLINE [1] vertexCount #-}
+{-# INLINE [2] vertexCount #-}
 {-# RULES "vertexCount/Int" vertexCount = vertexIntCountR #-}
 
 -- Like 'vertexCount' but specialised for graphs with vertices of type 'Int'.
 vertexIntCountR :: Graph Int -> Int
 vertexIntCountR = IntSet.size . vertexIntSetR
+{-# INLINE vertexIntCountR #-}
 
 -- | The number of edges in a graph.
 -- Complexity: /O(s + m * log(m))/ time. Note that the number of edges /m/ of a
 -- graph can be quadratic with respect to the expression size /s/.
+--
+-- Good consumer.
 --
 -- @
 -- edgeCount 'empty'      == 0
@@ -602,15 +688,18 @@ vertexIntCountR = IntSet.size . vertexIntSetR
 -- @
 edgeCount :: Ord a => Graph a -> Int
 edgeCount = AM.edgeCount . toAdjacencyMap
-{-# INLINE [1] edgeCount #-}
+{-# INLINE [2] edgeCount #-}
 {-# RULES "edgeCount/Int" edgeCount = edgeCountIntR #-}
 
 -- Like 'edgeCount' but specialised for graphs with vertices of type 'Int'.
 edgeCountIntR :: Graph Int -> Int
 edgeCountIntR = AIM.edgeCount . toAdjacencyIntMap
+{-# INLINE edgeCountIntR #-}
 
 -- | The sorted list of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
+--
+-- Good consumer of graphs and producer of lists.
 --
 -- @
 -- vertexList 'empty'      == []
@@ -619,16 +708,19 @@ edgeCountIntR = AIM.edgeCount . toAdjacencyIntMap
 -- @
 vertexList :: Ord a => Graph a -> [a]
 vertexList = Set.toAscList . vertexSet
-{-# INLINE [1] vertexList #-}
+{-# INLINE [2] vertexList #-}
 {-# RULES "vertexList/Int" vertexList = vertexIntListR #-}
 
 -- Like 'vertexList' but specialised for graphs with vertices of type 'Int'.
 vertexIntListR :: Graph Int -> [Int]
 vertexIntListR = IntSet.toList . vertexIntSetR
+{-# INLINE vertexIntListR #-}
 
 -- | The sorted list of edges of a graph.
 -- Complexity: /O(s + m * log(m))/ time and /O(m)/ memory. Note that the number of
 -- edges /m/ of a graph can be quadratic with respect to the expression size /s/.
+--
+-- Good consumer of graphs and producer of lists.
 --
 -- @
 -- edgeList 'empty'          == []
@@ -640,15 +732,18 @@ vertexIntListR = IntSet.toList . vertexIntSetR
 -- @
 edgeList :: Ord a => Graph a -> [(a, a)]
 edgeList = AM.edgeList . toAdjacencyMap
-{-# INLINE [1] edgeList #-}
+{-# INLINE [2] edgeList #-}
 {-# RULES "edgeList/Int" edgeList = edgeIntListR #-}
 
 -- Like 'edgeList' but specialised for graphs with vertices of type 'Int'.
 edgeIntListR :: Graph Int -> [(Int, Int)]
 edgeIntListR = AIM.edgeList . toAdjacencyIntMap
+{-# INLINE edgeIntListR #-}
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(s * log(n))/ time and /O(n)/ memory.
+--
+-- Good consumer.
 --
 -- @
 -- vertexSet 'empty'      == Set.'Set.empty'
@@ -657,13 +752,17 @@ edgeIntListR = AIM.edgeList . toAdjacencyIntMap
 -- @
 vertexSet :: Ord a => Graph a -> Set.Set a
 vertexSet = foldg Set.empty Set.singleton Set.union Set.union
+{-# INLINE vertexSet #-}
 
 -- Like 'vertexSet' but specialised for graphs with vertices of type 'Int'.
 vertexIntSetR :: Graph Int -> IntSet.IntSet
 vertexIntSetR = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
+{-# INLINE vertexIntSetR #-}
 
 -- | The set of edges of a given graph.
 -- Complexity: /O(s * log(m))/ time and /O(m)/ memory.
+--
+-- Good consumer.
 --
 -- @
 -- edgeSet 'empty'      == Set.'Set.empty'
@@ -673,15 +772,18 @@ vertexIntSetR = foldg IntSet.empty IntSet.singleton IntSet.union IntSet.union
 -- @
 edgeSet :: Ord a => Graph a -> Set.Set (a, a)
 edgeSet = AM.edgeSet . toAdjacencyMap
-{-# INLINE [1] edgeSet #-}
+{-# INLINE [2] edgeSet #-}
 {-# RULES "edgeSet/Int" edgeSet = edgeIntSetR #-}
 
 -- Like 'edgeSet' but specialised for graphs with vertices of type 'Int'.
 edgeIntSetR :: Graph Int -> Set.Set (Int,Int)
 edgeIntSetR = AIM.edgeSet . toAdjacencyIntMap
+{-# INLINE edgeIntSetR #-}
 
 -- | The sorted /adjacency list/ of a graph.
--- Complexity: /O(n + m)/ time and /O(m)/ memory.
+-- Complexity: /O(n + m)/ time and memory.
+--
+-- Good consumer.
 --
 -- @
 -- adjacencyList 'empty'          == []
@@ -692,6 +794,7 @@ edgeIntSetR = AIM.edgeSet . toAdjacencyIntMap
 -- @
 adjacencyList :: Ord a => Graph a -> [(a, [a])]
 adjacencyList = AM.adjacencyList . toAdjacencyMap
+{-# INLINE adjacencyList #-}
 {-# SPECIALISE adjacencyList :: Graph Int -> [(Int, [Int])] #-}
 
 -- TODO: This is a very inefficient implementation. Find a way to construct an
@@ -700,14 +803,20 @@ adjacencyList = AM.adjacencyList . toAdjacencyMap
 -- Convert a graph to 'AM.AdjacencyMap'.
 toAdjacencyMap :: Ord a => Graph a -> AM.AdjacencyMap a
 toAdjacencyMap = foldg AM.empty AM.vertex AM.overlay AM.connect
+{-# INLINE toAdjacencyMap #-}
 
 -- Like @toAdjacencyMap@ but specialised for graphs with vertices of type 'Int'.
 toAdjacencyIntMap :: Graph Int -> AIM.AdjacencyIntMap
 toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
+{-# INLINE toAdjacencyIntMap #-}
 
+-- TODO: Make path a good consumer of lists, that is, express it with 'foldr'.
+-- This is not straightforward if we want to preserve efficiency.
 -- | The /path/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
+--
+-- Good producer.
 --
 -- @
 -- path []        == 'empty'
@@ -716,13 +825,19 @@ toAdjacencyIntMap = foldg AIM.empty AIM.vertex AIM.overlay AIM.connect
 -- path . 'reverse' == 'transpose' . path
 -- @
 path :: [a] -> Graph a
-path xs = case xs of []     -> empty
-                     [x]    -> vertex x
-                     (_:ys) -> edges (zip xs ys)
+path xs = buildg $ \e v o c -> case xs of
+    []       -> e
+    [x]      -> v x
+    (_ : ys) -> foldg e v o c $ edges (zip xs ys)
+{-# INLINE path #-}
 
+-- TODO: Make circuit a good consumer of lists, that is, express it with 'foldr'.
+-- This is not straightforward if we want to preserve efficiency.
 -- | The /circuit/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
+--
+-- Good producer.
 --
 -- @
 -- circuit []        == 'empty'
@@ -731,12 +846,16 @@ path xs = case xs of []     -> empty
 -- circuit . 'reverse' == 'transpose' . circuit
 -- @
 circuit :: [a] -> Graph a
-circuit []     = empty
-circuit (x:xs) = path $ [x] ++ xs ++ [x]
+circuit xs = buildg $ \e v o c -> case xs of
+    []       -> e
+    (x : xs) -> foldg e v o c $ path $ [x] ++ xs ++ [x]
+{-# INLINE circuit #-}
 
 -- | The /clique/ on a list of vertices.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
+--
+-- Good consumer of lists and producer of graphs.
 --
 -- @
 -- clique []         == 'empty'
@@ -747,12 +866,14 @@ circuit (x:xs) = path $ [x] ++ xs ++ [x]
 -- clique . 'reverse'  == 'transpose' . clique
 -- @
 clique :: [a] -> Graph a
-clique = connects . map vertex
-{-# INLINE [1] clique #-}
+clique xs = buildg $ \e v _ c -> combineR e c v xs
+{-# INLINE clique #-}
 
 -- | The /biclique/ on two lists of vertices.
 -- Complexity: /O(L1 + L2)/ time, memory and size, where /L1/ and /L2/ are the
 -- lengths of the given lists.
+--
+-- Good consumer of both arguments and producer of graphs.
 --
 -- @
 -- biclique []      []      == 'empty'
@@ -762,13 +883,18 @@ clique = connects . map vertex
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: [a] -> [a] -> Graph a
-biclique xs [] = vertices xs
-biclique [] ys = vertices ys
-biclique xs ys = connect (vertices xs) (vertices ys)
+biclique xs ys = buildg $ \e v o c -> case foldr1Safe o (map v xs) of
+    Nothing -> foldg e v o c $ vertices ys
+    Just xs -> case foldr1Safe o (map v ys) of
+        Nothing -> xs
+        Just ys -> c xs ys
+{-# INLINE biclique #-}
 
 -- | The /star/ formed by a centre vertex connected to a list of leaves.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the length of the
 -- given list.
+--
+-- Good consumer of lists and good producer of graphs.
 --
 -- @
 -- star x []    == 'vertex' x
@@ -777,14 +903,17 @@ biclique xs ys = connect (vertices xs) (vertices ys)
 -- star x ys    == 'connect' ('vertex' x) ('vertices' ys)
 -- @
 star :: a -> [a] -> Graph a
-star x [] = vertex x
-star x ys = connect (vertex x) (vertices ys)
+star x ys = buildg $ \_ v o c -> case foldr1Safe o (map v ys) of
+    Nothing -> v x
+    Just ys -> c (v x) ys
 {-# INLINE star #-}
 
 -- | The /stars/ formed by overlaying a list of 'star's. An inverse of
 -- 'adjacencyList'.
 -- Complexity: /O(L)/ time, memory and size, where /L/ is the total size of the
 -- input.
+--
+-- Good consumer of lists and producer of graphs.
 --
 -- @
 -- stars []                      == 'empty'
@@ -796,7 +925,7 @@ star x ys = connect (vertex x) (vertices ys)
 -- 'overlay' (stars xs) (stars ys) == stars (xs ++ ys)
 -- @
 stars :: [(a, [a])] -> Graph a
-stars = overlays . map (uncurry star)
+stars xs = buildg $ \e v o c -> combineR e o (foldg e v o c . uncurry star) xs
 {-# INLINE stars #-}
 
 -- | The /tree graph/ constructed from a given 'Tree.Tree' data structure.
@@ -843,14 +972,15 @@ mesh :: [a] -> [b] -> Graph (a, b)
 mesh []  _   = empty
 mesh _   []  = empty
 mesh [x] [y] = vertex (x, y)
-mesh xs  ys  = stars $  [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ipxs, (b1, b2) <- ipys ]
-                     ++ [ ((lx,y1), [(lx,y2)]) | (y1,y2) <- ipys]
-                     ++ [ ((x1,ly), [(x2,ly)]) | (x1,x2) <- ipxs]
+mesh xs  ys  = stars $
+       [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ix, (b1, b2) <- iy ]
+    ++ [ ((lx, y1), [(lx, y2)]) | (y1, y2) <- iy ]
+    ++ [ ((x1, ly), [(x2, ly)]) | (x1, x2) <- ix ]
   where
     lx = last xs
     ly = last ys
-    ipxs = init (pairs xs)
-    ipys = init (pairs ys)
+    ix = init (pairs xs)
+    iy = init (pairs ys)
 
 -- | Construct a /torus graph/ from two lists of vertices.
 -- Complexity: /O(L1 * L2)/ time, memory and size, where /L1/ and /L2/ are the
@@ -865,7 +995,8 @@ mesh xs  ys  = stars $  [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- ipxs, (
 --                           , ((2,\'a\'),(1,\'a\')), ((2,\'a\'),(2,\'b\')), ((2,\'b\'),(1,\'b\')), ((2,\'b\'),(2,\'a\')) ]
 -- @
 torus :: [a] -> [b] -> Graph (a, b)
-torus xs ys = stars [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- pairs xs, (b1, b2) <- pairs ys ]
+torus xs ys = stars
+    [ ((a1, b1), [(a1, b2), (a2, b1)]) | (a1, a2) <- pairs xs, (b1, b2) <- pairs ys ]
 
 -- | Auxiliary function for 'mesh' and 'torus'
 pairs :: [a] -> [(a, a)]
@@ -898,6 +1029,8 @@ deBruijn len alphabet = skeleton >>= expand
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(s)/ time, memory and size.
+--
+-- Good consumer and producer.
 --
 -- @
 -- removeVertex x ('vertex' x)       == 'empty'
@@ -938,6 +1071,8 @@ filterContext s i o g = maybe g go $ context (==s) g
 -- given 'Graph'. If @y@ already exists, @x@ and @y@ will be merged.
 -- Complexity: /O(s)/ time, memory and size.
 --
+-- Good consumer and producer.
+--
 -- @
 -- replaceVertex x x            == id
 -- replaceVertex x y ('vertex' x) == 'vertex' y
@@ -945,11 +1080,14 @@ filterContext s i o g = maybe g go $ context (==s) g
 -- @
 replaceVertex :: Eq a => a -> a -> Graph a -> Graph a
 replaceVertex u v = fmap $ \w -> if w == u then v else w
+{-# INLINE replaceVertex #-}
 {-# SPECIALISE replaceVertex :: Int -> Int -> Graph Int -> Graph Int #-}
 
 -- | Merge vertices satisfying a given predicate into a given vertex.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
+--
+-- Good consumer and producer.
 --
 -- @
 -- mergeVertices ('const' False) x    == id
@@ -959,11 +1097,14 @@ replaceVertex u v = fmap $ \w -> if w == u then v else w
 -- @
 mergeVertices :: (a -> Bool) -> a -> Graph a -> Graph a
 mergeVertices p v = fmap $ \w -> if p w then v else w
+{-# INLINE mergeVertices #-}
 
 -- | Split a vertex into a list of vertices with the same connectivity.
 -- Complexity: /O(s + k * L)/ time, memory and size, where /k/ is the number of
 -- occurrences of the vertex in the expression and /L/ is the length of the
 -- given list.
+--
+-- Good consumer of lists and producer of graphs.
 --
 -- @
 -- splitVertex x []                  == 'removeVertex' x
@@ -972,11 +1113,16 @@ mergeVertices p v = fmap $ \w -> if p w then v else w
 -- splitVertex 1 [0,1] $ 1 * (2 + 3) == (0 + 1) * (2 + 3)
 -- @
 splitVertex :: Eq a => a -> [a] -> Graph a -> Graph a
-splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
+splitVertex x us g = buildg $ \e v o c ->
+    let split y = if x == y then foldg e v o c (vertices us) else v y in
+    foldg e split o c g
+{-# INLINE splitVertex #-}
 {-# SPECIALISE splitVertex :: Int -> [Int] -> Graph Int -> Graph Int #-}
 
 -- | Transpose a given graph.
 -- Complexity: /O(s)/ time, memory and size.
+--
+-- Good consumer and producer.
 --
 -- @
 -- transpose 'empty'       == 'empty'
@@ -987,14 +1133,15 @@ splitVertex v us g = g >>= \w -> if w == v then vertices us else vertex w
 -- 'edgeList' . transpose  == 'Data.List.sort' . 'map' 'Data.Tuple.swap' . 'edgeList'
 -- @
 transpose :: Graph a -> Graph a
-transpose = foldg Empty Vertex Overlay (flip Connect)
+transpose g = buildg $ \e v o c -> foldg e v o (flip c) g
 {-# INLINE transpose #-}
 
--- TODO: Implement via 'induceJust' to reduce code duplication.
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
 -- Complexity: /O(s)/ time, memory and size, assuming that the predicate takes
--- /O(1)/ to be evaluated.
+-- constant time.
+--
+-- Good consumer and producer.
 --
 -- @
 -- induce ('const' True ) x      == x
@@ -1004,16 +1151,14 @@ transpose = foldg Empty Vertex Overlay (flip Connect)
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: (a -> Bool) -> Graph a -> Graph a
-induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Connect)
-  where
-    k _ x     Empty = x -- Constant folding to get rid of Empty leaves
-    k _ Empty y     = y
-    k f x     y     = f x y
-{-# INLINE [1] induce #-}
+induce p = induceJust . fmap (\a -> if p a then Just a else Nothing)
+{-# INLINE induce #-}
 
 -- | Construct the /induced subgraph/ of a given graph by removing the vertices
 -- that are 'Nothing'.
 -- Complexity: /O(s)/ time, memory and size.
+--
+-- Good consumer and producer.
 --
 -- @
 -- induceJust ('vertex' 'Nothing')                               == 'empty'
@@ -1022,19 +1167,24 @@ induce p = foldg Empty (\x -> if p x then Vertex x else Empty) (k Overlay) (k Co
 -- induceJust . 'fmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce' p
 -- @
 induceJust :: Graph (Maybe a) -> Graph a
-induceJust = foldg Empty (maybe Empty Vertex) (k Overlay) (k Connect)
+induceJust g = buildg $ \e v o c -> fromMaybe e $
+    foldg Nothing (fmap v) (k o) (k c) g
   where
-    k _ x     Empty = x -- Constant folding to get rid of Empty leaves
-    k _ Empty y     = y
-    k f x     y     = f x y
-{-# INLINE [1] induceJust #-}
+    k _ x        Nothing  = x -- Constant folding to get rid of Empty leaves
+    k _ Nothing  y        = y
+    k f (Just x) (Just y) = Just (f x y)
+{-# INLINE induceJust #-}
 
+-- NB: This is not a good producer since it requires an Eq instance on the
+-- produced structure.
 -- | Simplify a graph expression. Semantically, this is the identity function,
 -- but it simplifies a given expression according to the laws of the algebra.
 -- The function does not compute the simplest possible expression,
 -- but uses heuristics to obtain useful simplifications in reasonable time.
 -- Complexity: the function performs /O(s)/ graph comparisons. It is guaranteed
 -- that the size of the result does not exceed the size of the given expression.
+--
+-- Good consumer.
 --
 -- @
 -- simplify              == id
@@ -1047,6 +1197,7 @@ induceJust = foldg Empty (maybe Empty Vertex) (k Overlay) (k Connect)
 -- @
 simplify :: Ord a => Graph a -> Graph a
 simplify = foldg Empty Vertex (simple Overlay) (simple Connect)
+{-# INLINE simplify #-}
 {-# SPECIALISE simplify :: Graph Int -> Graph Int #-}
 
 simple :: Eq g => (g -> g -> g) -> g -> g -> g
@@ -1071,6 +1222,8 @@ simple op x y
 -- quadratic, i.e. /m = O(m1 * m2)/, but the algebraic representation requires
 -- only /O(m1 + m2)/ operations to list them.
 --
+-- Good consumer of both arguments and good producer.
+--
 -- @
 -- compose 'empty'            x                == 'empty'
 -- compose x                'empty'            == 'empty'
@@ -1085,14 +1238,16 @@ simple op x y
 -- 'size' (compose x y)                        <= 'edgeCount' x + 'edgeCount' y + 1
 -- @
 compose :: Ord a => Graph a -> Graph a -> Graph a
-compose x y = overlays
-    [ biclique xs ys
-    | v <- Set.toList (AM.vertexSet mx `Set.union` AM.vertexSet my)
-    , let xs = Set.toList (AM.postSet v mx), not (null xs)
-    , let ys = Set.toList (AM.postSet v my), not (null ys) ]
+compose x y = buildg $ \e v o c -> fromMaybe e $
+  foldr1Safe o
+    [ foldg e v o c (biclique xs ys)
+    | ve <- Set.toList (AM.vertexSet mx `Set.union` AM.vertexSet my)
+    , let xs = Set.toList (AM.postSet ve mx), not (null xs)
+    , let ys = Set.toList (AM.postSet ve my), not (null ys) ]
   where
     mx = toAdjacencyMap (transpose x)
     my = toAdjacencyMap y
+{-# INLINE compose #-}
 
 -- | Compute the /Cartesian product/ of graphs.
 -- Complexity: /O(s1 * s2)/ time, memory and size, where /s1/ and /s2/ are the
@@ -1104,10 +1259,10 @@ compose x y = overlays
 --                                       , ((0,\'b\'), (1,\'b\'))
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
--- Up to an isomorphism between the resulting vertex types, this operation
+-- Up to the isomorphism between the resulting vertex types, this operation
 -- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
 -- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for the equality up to an isomorphism, e.g. @(x, ()) ~~ x@.
+-- stands for equality up to the isomorphism, e.g. @(x, ()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x
@@ -1187,81 +1342,46 @@ sparsifyKL n graph = KL.buildG (1, next - 1) ((n + 1, n + 2) : Exts.toList (res 
 The rules for foldg work very similarly to GHC's mapFB rules; see a note below
 this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
 
-* Up to (but not including) phase 1, we use the "buildR/f" rule to rewrite all
-  saturated applications of f into its buildR/foldg form, hoping for fusion to
-  happen (through the "foldg/buildR" rule).
+* The expressions are first inlined to allow the compiler to apply the main rule
+  "foldg/buildg" that states that the composition of a good producer (expressed
+  via 'buildg') and a good consumer (expressed via 'foldg') can be fused to
+  avoid the construction of an intermediate structure.
 
-  In phases 1 and 0, we switch off these rules, inline buildR, and switch on the
-  "graph/f" rule, which rewrites "foldg/f" back into plain functions if needed.
+* If this inlining is made blindlessly, it can lead to unneeded operations. They
+  are optimised via the "foldg/id" rule.
 
-  It's important that these two rules aren't both active at once (along with
-  build's unfolding) else we'd get an infinite loop in the rules. Hence the
-  activation control below.
+* 'composeR' is here to allow further optimisation. As a high-order function, it
+  benefits from inlining in the final phase.
 
-* composeR and matchR are here to remember the original function after applying
-  a "buildR/f" rule. These functions are higher-order functions and therefore
-  benefit from inlining in the final phase.
-
-* The "bindR/bindR" rule optimises compositions of multiple bindR's.
+* The "composeR/composeR" rule optimises compositions of 'composeR' chains.
 -}
-
-type Foldg a = forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b
-
-buildR :: Foldg a -> Graph a
-buildR g = g Empty Vertex Overlay Connect
-{-# INLINE [1] buildR #-}
 
 composeR :: (b -> c) -> (a -> b) -> a -> c
 composeR = (.)
-{-# INLINE [0] composeR #-}
+{-# INLINE [1] composeR #-}
 
-matchR :: b -> (a -> b) -> (a -> Bool) -> a -> b
-matchR e v p = \x -> if p x then v x else e
-{-# INLINE [0] matchR #-}
-
--- These rules transform functions into their buildR equivalents.
+-- Rewrite rules for algebraic graph fusion.
 {-# RULES
-"buildR/bindR" forall f g.
-    bindR g f = buildR (\e v o c -> foldg e (composeR (foldg e v o c) f) o c g)
 
-"buildR/induce" [~1] forall p g.
-    induce p g = buildR (\e v o c -> foldg e (matchR e v p) o c g)
+-- Fuse a 'foldg' followed by a 'buildg':
+"foldg/buildg" forall e v o c (g :: forall b. b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b).
+    foldg e v o c (buildg g) = g e v o c
 
-"buildR/foldg(fc)" [~1] forall (f :: forall b. (b -> b -> b) -> (b -> b -> b)) g.
-    foldg Empty Vertex Overlay (f Connect) g = buildR (\e v o c -> foldg e v o (f c) g)
+-- Fuse 'composeR' chains (see the definition of the bind operator).
+"composeR/composeR" forall c f g.
+    composeR (composeR c f) g = composeR c (f . g)
 
-"buildR/foldg(fo)" [~1] forall (f :: forall b. (b -> b -> b) -> (b -> b -> b)) g.
-    foldg Empty Vertex (f Overlay) Connect g = buildR (\e v o c -> foldg e v (f o) c g)
-
-"buildR/foldg(fo)(hc)" [~1] forall (f :: forall b. (b -> b -> b) -> (b -> b -> b)) (h :: forall b. (b -> b -> b) -> (b -> b -> b)) g.
-    foldg Empty Vertex (f Overlay) (h Connect) g = buildR (\e v o c -> foldg e v (f o) (h c) g)
- #-}
-
--- Rewrite rules for fusion.
-{-# RULES
--- Fuse a foldg followed by a buildR
-"foldg/buildR" forall e v o c (g :: Foldg a).
-    foldg e v o c (buildR g) = g e v o c
-
--- Fuse composeR's. This occurs when two adjacent 'bindR' were rewritted into
--- their buildR form.
-"bindR/bindR" forall c f g.
-    composeR (composeR c f) g = composeR c (f.g)
-
--- Rewrite identity (which can appear in the rewriting of bindR) to a much efficient one
+-- Rewrite identity (which can appear in the inlining of 'buildg') to a more
+-- efficient one.
 "foldg/id"
     foldg Empty Vertex Overlay Connect = id
- #-}
 
--- Eliminate remaining rewrite-only functions.
-{-# RULES
-"graph/induce" [1] forall f.
-    foldg Empty (matchR Empty Vertex f) Overlay Connect = induce f
- #-}
+#-}
 
 -- 'Focus' on a specified subgraph.
 focus :: (a -> Bool) -> Graph a -> Focus a
 focus f = foldg emptyFocus (vertexFocus f) overlayFoci connectFoci
+{-# INLINE focus #-}
 
 -- | The 'Context' of a subgraph comprises its 'inputs' and 'outputs', i.e. all
 -- the vertices that are connected to the subgraph's vertices. Note that inputs
@@ -1273,6 +1393,8 @@ data Context a = Context { inputs :: [a], outputs :: [a] }
 
 -- | Extract the 'Context' of a subgraph specified by a given predicate. Returns
 -- @Nothing@ if the specified subgraph is empty.
+--
+-- Good consumer.
 --
 -- @
 -- context ('const' False) x                   == Nothing
@@ -1286,3 +1408,4 @@ context p g | ok f      = Just $ Context (toList $ is f) (toList $ os f)
             | otherwise = Nothing
   where
     f = focus p g
+{-# INLINE context #-}
