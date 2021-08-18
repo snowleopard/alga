@@ -1,22 +1,18 @@
+cabal-version: 2.2
 name:          algebraic-graphs
-version:       0.5
+version:       0.6.1
 synopsis:      A library for algebraic graph construction and transformation
 license:       MIT
 license-file:  LICENSE
 author:        Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard
 maintainer:    Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard,
                Alexandre Moine <alexandre@moine.me>, github: @nobrakal
-copyright:     Andrey Mokhov, 2016-2019
+copyright:     Andrey Mokhov, 2016-2021
 homepage:      https://github.com/snowleopard/alga
+bug-reports:   https://github.com/snowleopard/alga/issues
 category:      Algebra, Algorithms, Data Structures, Graphs
 build-type:    Simple
-cabal-version: 1.18
-tested-with:   GHC == 7.10.3,
-               GHC == 8.0.2,
-               GHC == 8.2.2,
-               GHC == 8.4.3,
-               GHC == 8.6.4
-stability:     experimental
+tested-with:   GHC==9.0, GHC==8.10, GHC==8.8, GHC==8.6, GHC==8.4, GHC==8.2, GHC==8.0
 description:
     <https://github.com/snowleopard/alga Alga> is a library for algebraic construction and
     manipulation of graphs in Haskell. See <https://github.com/snowleopard/alga-paper this paper>
@@ -56,6 +52,7 @@ description:
     <https://github.com/snowleopard/alga/issues discussions on the library API>.
 
 extra-doc-files:
+    AUTHORS.md
     CHANGES.md
     README.md
 
@@ -63,7 +60,42 @@ source-repository head
     type:     git
     location: https://github.com/snowleopard/alga.git
 
+common common-settings
+    build-depends:      array        >= 0.4     && < 0.6,
+                        base         >= 4.7     && < 5,
+                        containers   >= 0.5.5.1 && < 0.8,
+                        deepseq      >= 1.3.0.1 && < 1.5,
+                        mtl          >= 2.1     && < 2.3,
+                        transformers >= 0.4     && < 0.6
+    default-language:   Haskell2010
+    default-extensions: ConstraintKinds
+                        DeriveFunctor
+                        DeriveGeneric
+                        FlexibleContexts
+                        FlexibleInstances
+                        GADTs
+                        GeneralizedNewtypeDeriving
+                        MultiParamTypeClasses
+                        RankNTypes
+                        ScopedTypeVariables
+                        TupleSections
+                        TypeApplications
+                        TypeFamilies
+    other-extensions:   CPP
+                        OverloadedStrings
+                        RecordWildCards
+                        ViewPatterns
+    ghc-options:        -Wall
+                        -Wcompat
+                        -Wincomplete-record-updates
+                        -Wincomplete-uni-patterns
+                        -Wredundant-constraints
+                        -fno-warn-name-shadowing
+                        -fno-warn-unused-imports
+                        -fspec-constr
+
 library
+    import:             common-settings
     hs-source-dirs:     src
     exposed-modules:    Algebra.Graph,
                         Algebra.Graph.Undirected,
@@ -93,35 +125,9 @@ library
                         Algebra.Graph.Relation.Transitive,
                         Algebra.Graph.ToGraph,
                         Data.Graph.Typed
-    build-depends:      array        >= 0.4     && < 0.6,
-                        base         >= 4.7     && < 5,
-                        containers   >= 0.5.5.1 && < 0.8,
-                        deepseq      >= 1.3.0.1 && < 1.5,
-                        mtl          >= 2.1     && < 2.3,
-                        transformers >= 0.4     && < 0.6
-    if !impl(ghc >= 8.0)
-        build-depends:  semigroups  >= 0.18.2  && < 0.18.4
-    default-language:   Haskell2010
-    default-extensions: FlexibleContexts
-                        FlexibleInstances
-                        GeneralizedNewtypeDeriving
-                        ScopedTypeVariables
-                        TupleSections
-                        TypeFamilies
-    other-extensions:   CPP
-                        DeriveFunctor
-                        OverloadedStrings
-                        RecordWildCards
-    GHC-options:        -Wall
-                        -fno-warn-name-shadowing
-                        -fspec-constr
-    if impl(ghc >= 8.0)
-        GHC-options:    -Wcompat
-                        -Wincomplete-record-updates
-                        -Wincomplete-uni-patterns
-                        -Wredundant-constraints
 
 test-suite test-alga
+    import:             common-settings
     hs-source-dirs:     test
     type:               exitcode-stdio-1.0
     main-is:            Main.hs
@@ -131,12 +137,12 @@ test-suite test-alga
                         Algebra.Graph.Test.AdjacencyIntMap,
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,
-                        Algebra.Graph.Test.Undirected,
                         Algebra.Graph.Test.Bipartite.Undirected.AdjacencyMap,
                         Algebra.Graph.Test.Bipartite.Undirected.AdjacencyMap.Algorithm,
                         Algebra.Graph.Test.Export,
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
+                        Algebra.Graph.Test.Undirected,
                         Algebra.Graph.Test.Internal,
                         Algebra.Graph.Test.Label,
                         Algebra.Graph.Test.Labelled.AdjacencyMap,
@@ -145,38 +151,11 @@ test-suite test-alga
                         Algebra.Graph.Test.NonEmpty.Graph,
                         Algebra.Graph.Test.Relation,
                         Algebra.Graph.Test.Relation.SymmetricRelation,
+                        Algebra.Graph.Test.RewriteRules,
                         Data.Graph.Test.Typed
-    if impl(ghc >= 8.0.2)
-        other-modules:  Algebra.Graph.Test.RewriteRules
     build-depends:      algebraic-graphs,
-                        array        >= 0.4     && < 0.6,
-                        base         >= 4.7     && < 5,
-                        containers   >= 0.5.5.1 && < 0.8,
-                        extra        >= 1.4     && < 2,
-                        QuickCheck   >= 2.10    && < 2.14
-    if !impl(ghc >= 8.0)
-        build-depends:  semigroups   >= 0.18.2  && < 0.18.4
-    if impl(ghc >= 8.0.2)
-        build-depends:  inspection-testing >= 0.4 && < 0.4.2
-
-    default-language:   Haskell2010
-    GHC-options:        -Wall
-                        -fno-warn-name-shadowing
-                        -fspec-constr
-    if impl(ghc >= 8.0)
-        GHC-options:    -Wcompat
-                        -Wincomplete-record-updates
-                        -Wincomplete-uni-patterns
-                        -Wredundant-constraints
-    default-extensions: FlexibleContexts
-                        FlexibleInstances
-                        GeneralizedNewtypeDeriving
-                        ScopedTypeVariables
-                        TupleSections
-                        TypeFamilies
+                        extra              >= 1.4     && < 2,
+                        inspection-testing >= 0.4.2.2 && < 0.5,
+                        QuickCheck         >= 2.10    && < 2.15
     other-extensions:   ConstrainedClassMethods
-                        ConstraintKinds
-                        CPP
-                        MultiParamTypeClasses
-                        RankNTypes
-                        ViewPatterns
+                        TemplateHaskell
