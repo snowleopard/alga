@@ -5,11 +5,9 @@
 # This file contains a template configuration file, which is typically
 # placed as .hlint.yaml in the root of your project
 
-
 # Specify additional command line arguments
 #
 # - arguments: [--color, --cpp-simple, -XQuasiQuotes]
-
 
 # Control which extensions/flags/modules/functions can be used
 #
@@ -27,7 +25,6 @@
 #
 # - functions:
 #   - {name: unsafePerformIO, within: []} # unsafePerformIO can only appear in no modules
-
 
 # Add custom hints for this project
 #
@@ -52,15 +49,14 @@
 # Generalise map to fmap, ++ to <>
 # - group: {name: generalise, enabled: true}
 
-
 # Ignore some builtin hints
-# - ignore: {name: Use let}
+- ignore:
+    name: Use if
+    within: Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm
 # - ignore: {name: Use const, within: SpecialModule} # Only within certain modules
-
 
 # Define some custom infix operators
 # - fixity: infixr 3 ~^#^~
-
 
 # To generate a suitable file for HLint do:
 # $ hlint --default > .hlint.yaml

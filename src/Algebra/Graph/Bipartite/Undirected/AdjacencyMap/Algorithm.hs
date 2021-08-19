@@ -69,7 +69,7 @@ data Matching a b = Matching {
 } deriving Generic
 
 instance (Show a, Show b) => Show (Matching a b) where
-    showsPrec _ m = showString "matching " . (showList $ Map.toAscList $ pairOfLeft m)
+    showsPrec _ m = showString "matching " . showList (Map.toAscList $ pairOfLeft m)
 
 instance (Eq a, Eq b) => Eq (Matching a b) where
     (==) m n = (==) (pairOfLeft m) (pairOfLeft n)
@@ -325,8 +325,8 @@ type AugPathMonad a b = MaybeT (State (Set.Set a, Set.Set b)) (List a b)
 augmentingPath :: forall a b. (Ord a, Ord b, Show a, Show b) =>
                   Matching a b -> AdjacencyMap a b -> Either (VertexCover a b) (List a b)
 augmentingPath m g = case runState (runMaybeT dfs) (leftVertexSet g, Set.empty) of
-                          (Nothing, (s, t)) -> Left $ (map Left  (Set.toAscList s)) ++
-                                                      (map Right (Set.toAscList t))
+                          (Nothing, (s, t)) -> Left $ map Left  (Set.toAscList s) ++
+                                                      map Right (Set.toAscList t)
                           (Just l,  _)      -> Right l
     where
         inVertex :: a -> AugPathMonad a b
@@ -336,11 +336,11 @@ augmentingPath m g = case runState (runMaybeT dfs) (leftVertexSet g, Set.empty) 
                         asum [ onEdge u v | v <- neighbours u ]
 
         onEdge :: a -> b -> AugPathMonad a b
-        onEdge u v = (add u v) <$> do (s, t) <- get
-                                      put (s, Set.insert v t)
-                                      case v `Map.lookup` pairOfRight m of
-                                           Just w  -> inVertex w
-                                           Nothing -> return Nil
+        onEdge u v = add u v <$> do (s, t) <- get
+                                    put (s, Set.insert v t)
+                                    case v `Map.lookup` pairOfRight m of
+                                         Just w  -> inVertex w
+                                         Nothing -> return Nil
 
         add :: a -> b -> List a b -> List a b
         add u v = Cons u . Cons v

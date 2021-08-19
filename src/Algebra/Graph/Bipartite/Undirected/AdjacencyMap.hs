@@ -493,7 +493,7 @@ fromBipartiteWith f g (BAM lr rl) = AM.fromAdjacencySets $
 -- fromGraph (Algebra.Graph.'Algebra.Graph.edge' (Left 1) (Left 2))    == 'empty'
 -- @
 fromGraph :: (Ord a, Ord b) => G.Graph (Either a b) -> AdjacencyMap a b
-fromGraph = toBipartite . (G.foldg AM.empty AM.vertex AM.overlay AM.connect)
+fromGraph = toBipartite . G.foldg AM.empty AM.vertex AM.overlay AM.connect
 
 -- | Check if a graph is empty.
 -- Complecity: /O(1)/ time.
