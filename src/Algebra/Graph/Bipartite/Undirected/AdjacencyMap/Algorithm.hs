@@ -26,19 +26,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
 import qualified Data.Sequence   as Seq
 
-data Part = LeftPart | RightPart
-    deriving (Show, Eq)
-
-otherPart :: Part -> Part
-otherPart LeftPart  = RightPart
-otherPart RightPart = LeftPart
-
-type PartMap a = Map.Map a Part
-type PartMonad a = MaybeT (State (PartMap a)) [a]
-
-neighbours :: Ord a => a -> AM.AdjacencyMap a -> [a]
-neighbours v = Set.toAscList . AM.postSet v
-
 -- | A /matching/ of vertices of two parts.
 --
 -- The 'Show' instance is defined using the 'matching' function. The edges in
@@ -176,7 +163,7 @@ data HKState s a b = HKS {
 -- 'matchingSize' (maxMatching ('star' x (y:ys)))               == 1
 -- 'matchingSize' (maxMatching ('biclique' xs ys))              == 'min' ('length' ('nub' xs)) ('length' ('nub' ys))
 -- @
-maxMatching :: forall a b. (Ord a, Ord b, Show a, Show b) => AdjacencyMap a b -> Matching a b
+maxMatching :: forall a b. (Ord a, Ord b) => AdjacencyMap a b -> Matching a b
 maxMatching g = runST $ do dist <- newSTRef Map.empty
                            m    <- newSTRef (Matching Map.empty Map.empty)
                            q    <- newSTRef Seq.empty
@@ -258,10 +245,8 @@ maxMatching g = runST $ do dist <- newSTRef Map.empty
         runHK :: HKState s a b -> ST s ()
         runHK state = do writeSTRef (distance state) Map.empty
                          run <- bfs state
-                         dist <- readSTRef (distance state)
                          when run $ do writeSTRef (visited state) Set.empty
                                        dfs state
-                                       m <- readSTRef (curMatching state)
                                        runHK state
 
         neighbours :: a -> [b]
@@ -279,7 +264,7 @@ maxMatching g = runST $ do dist <- newSTRef Map.empty
 -- 'length' (minVertexCover ('biclique' xs ys)) == 'min' ('length' ('nub' xs)) ('length' ('nub' ys))
 -- 'length' . minVertexCover                  == 'matchingSize' . 'maxMatching'
 -- @
-minVertexCover :: (Ord a, Ord b, Show a, Show b) => AdjacencyMap a b -> VertexCover a b
+minVertexCover :: (Ord a, Ord b) => AdjacencyMap a b -> VertexCover a b
 minVertexCover g = fromLeft [] (augmentingPath (maxMatching g) g)
     where
         fromLeft :: a -> Either a b -> a
@@ -299,7 +284,7 @@ minVertexCover g = fromLeft [] (augmentingPath (maxMatching g) g)
 -- 'length' (maxIndependentSet ('biclique' xs ys)) == 'max' ('length' ('nub' xs)) ('length' ('nub' ys))
 -- 'length' (maxIndependentSet x)                == vertexCount x - length (minVertexCover x)
 -- @
-maxIndependentSet :: (Ord a, Ord b, Show a, Show b) => AdjacencyMap a b -> IndependentSet a b
+maxIndependentSet :: (Ord a, Ord b) => AdjacencyMap a b -> IndependentSet a b
 maxIndependentSet g = Set.toAscList (vertexSet g `Set.difference` vc)
     where
         vc = Set.fromAscList (minVertexCover g)
@@ -322,7 +307,7 @@ type AugPathMonad a b = MaybeT (State (Set.Set a, Set.Set b)) (List a b)
 -- augmentingPath ('matching' [(3,2)]) ('path' [1,2,3,4]) == Right [1,2,3,4]
 -- isLeft (augmentingPath ('maxMatching' x) x)          == True
 -- @
-augmentingPath :: forall a b. (Ord a, Ord b, Show a, Show b) =>
+augmentingPath :: forall a b. (Ord a, Ord b) =>
                   Matching a b -> AdjacencyMap a b -> Either (VertexCover a b) (List a b)
 augmentingPath m g = case runState (runMaybeT dfs) (leftVertexSet g, Set.empty) of
                           (Nothing, (s, t)) -> Left $ map Left  (Set.toAscList s) ++
