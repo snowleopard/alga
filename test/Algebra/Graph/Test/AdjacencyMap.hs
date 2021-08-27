@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeApplications, OverloadedLists #-}
+{-# LANGUAGE OverloadedLists #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.AdjacencyMap

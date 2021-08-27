@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 ----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Bipartite.Undirected.AdjacencyMap

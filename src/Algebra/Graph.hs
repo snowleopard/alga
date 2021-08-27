@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric, RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph

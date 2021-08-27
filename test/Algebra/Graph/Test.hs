@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeApplications, RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test

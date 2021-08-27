@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeApplications, OverloadedLists, ViewPatterns #-}
+{-# LANGUAGE OverloadedLists, ViewPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Bipartite.Undirected.AdjacencyMap

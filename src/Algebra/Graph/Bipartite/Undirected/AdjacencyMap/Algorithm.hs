@@ -1,5 +1,4 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm (
     -- * Maximum matchings

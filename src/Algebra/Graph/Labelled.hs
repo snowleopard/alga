@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveFunctor, DeriveGeneric, RankNTypes #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled

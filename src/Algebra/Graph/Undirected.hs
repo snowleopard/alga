@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveFunctor, DeriveGeneric #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Undirected
