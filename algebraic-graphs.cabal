@@ -138,7 +138,6 @@ test-suite test-alga
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,
                         Algebra.Graph.Test.Bipartite.Undirected.AdjacencyMap,
-                        Algebra.Graph.Test.Bipartite.Undirected.AdjacencyMap.Algorithm,
                         Algebra.Graph.Test.Export,
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
