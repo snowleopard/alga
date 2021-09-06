@@ -274,7 +274,7 @@ ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 {-# INLINE ordIntR #-}
 
 -- TODO: It should be a good consumer of its second argument too.
--- | `<*>` is a good consumer of its first agument and producer.
+-- | `<*>` is a good consumer of its first argument and producer.
 instance Applicative Graph where
     pure    = Vertex
     f <*> x = buildg $ \e v o c -> foldg e (\w -> foldg e (v . w) o c x) o c f
@@ -377,7 +377,7 @@ connect :: Graph a -> Graph a -> Graph a
 connect = Connect
 {-# INLINE connect #-}
 
--- TODO: Simplifiy the definition to `overlays . map vertex` while presreving
+-- TODO: Simplify the definition to `overlays . map vertex` while preserving
 -- goodness properties (which is not trivial since overlays is only a good
 -- consumer of lists and not of lists of graphs).
 -- | Construct the graph comprising a given list of isolated vertices.
@@ -623,7 +623,7 @@ The four graph constructors are interpreted as follows:
   * Overlay x y : pick the best match in the two subexpressions;
   * Connect x y : match the subexpressions one after another.
 
-Note that in the last two cases we can (and do) shortcircuit the computation as
+Note that in the last two cases we can (and do) short-circuit the computation as
 soon as the edge is fully matched in one of the subexpressions.
 -}
 
@@ -1346,8 +1346,8 @@ this line: http://hackage.haskell.org/package/base/docs/src/GHC.Base.html#mapFB.
   via 'buildg') and a good consumer (expressed via 'foldg') can be fused to
   avoid the construction of an intermediate structure.
 
-* If this inlining is made blindlessly, it can lead to unneeded operations. They
-  are optimised via the "foldg/id" rule.
+* If this inlining is made blindly, it can lead to unneeded operations. They are
+  optimised via the "foldg/id" rule.
 
 * 'composeR' is here to allow further optimisation. As a high-order function, it
   benefits from inlining in the final phase.
