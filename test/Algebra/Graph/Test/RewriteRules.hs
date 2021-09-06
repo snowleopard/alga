@@ -26,13 +26,14 @@ import Test.Inspection
 type Build  a = forall b. (a -> b -> b) -> b -> b
 type Buildg a = forall b. b -> (a -> b) -> (b -> b ->b ) -> (b -> b-> b) -> b
 
--- Naming convention
---- We use:
---- * the suffix "R" to indicate the desired outcome of rewrite rules.
---- * the suffix "C" when testing the "good consumer" property.
---- * the suffix "P" when testing the "good producer" property.
---- * the suffix "I" when testing inlining.
---- * the suffix "T" when testing specialisation for a type
+{- We suffix various values using the following convention:
+
+   * "R": the desired outcome of a rewrite rule
+   * "C": the "good consumer" property
+   * "P": the "good producer" property
+   * "I": inlining
+   * "T": specialisation for a type
+-}
 
 -- 'foldg'
 emptyI, emptyIR :: b -> (a -> b) -> (b -> b -> b) -> (b -> b -> b) -> b

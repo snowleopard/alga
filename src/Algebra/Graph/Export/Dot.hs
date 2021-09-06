@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Export.Dot
--- Copyright  : (c) Andrey Mokhov 2016-2018
+-- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
@@ -34,15 +34,18 @@ import qualified Algebra.Graph.Export as E
 -- Attributes are used to specify the style of graph elements during export.
 data Attribute s = (:=) s s
 
--- | Used to determine whether to use double-quotes around attribute values.
+-- TODO: Do we need other quoting styles, for example, 'SingleQuotes'?
+-- TODO: Shall we use 'Quoting' for vertex names too?
+-- | The style of quoting used when exporting attributes; 'DoubleQuotes' is the
+-- default.
 data Quoting = DoubleQuotes | NoQuotes
 
 -- | The record 'Style' @a@ @s@ specifies the style to use when exporting a
 -- graph in the DOT format. Here @a@ is the type of the graph vertices, and @s@
 -- is the type of string to represent the resulting DOT document (e.g. String,
--- Text, etc.). Most fields can be empty. The only field that has no obvious
--- default value is 'vertexName', which holds a function of type @a -> s@ to
--- compute vertex names. See the example for the function 'export'.
+-- Text, etc.). The only field that has no obvious default value is
+-- 'vertexName', which holds a function of type @a -> s@ to compute vertex
+-- names. See the function 'export' for an example.
 data Style a s = Style
     { graphName :: s
     -- ^ Name of the graph.
@@ -61,17 +64,17 @@ data Style a s = Style
     , edgeAttributes   :: a -> a -> [Attribute s]
     -- ^ Attributes of a specific edge.
     , attributeQuoting :: Quoting
-    -- ^ What style of quoting to apply to attributes.
+    -- ^ The quoting style used for attributes.
     }
 
--- | Default style for exporting graphs. All style settings are empty except for
--- 'vertexName', which is provided as the only argument.
+-- | Default style for exporting graphs. The 'vertexName' field is provided as
+-- the only argument; the other fields are set to trivial defaults.
 defaultStyle :: Monoid s => (a -> s) -> Style a s
 defaultStyle v = Style mempty [] [] [] [] v (const []) (\_ _ -> []) DoubleQuotes
 
--- | Default style for exporting graphs whose vertices are 'Show'-able. All
--- style settings are empty except for 'vertexName', which is computed from
--- 'show'.
+-- | Default style for exporting graphs with 'Show'-able vertices. The
+-- 'vertexName' field is computed using 'show'; the other fields are set to
+-- trivial defaults.
 --
 -- @
 -- defaultStyleViaShow = 'defaultStyle' ('fromString' . 'show')
@@ -130,15 +133,15 @@ export Style {..} g = render $ header <> body <> "}\n"
     vDoc x    = line $ label x <+>                      attributes attributeQuoting (vertexAttributes x)
     eDoc x y  = line $ label x <> " -> " <> label y <+> attributes attributeQuoting (edgeAttributes x y)
 
--- | A quoting type and list of attributes formatted as a DOT document.
+-- | Export a list of attributes using a specified quoting style.
 -- Example: @attributes DoubleQuotes ["label" := "A label", "shape" := "box"]@
--- corresponds to document: @ [label="A label" shape="box"]@.
+-- corresponds to document: @[label="A label" shape="box"]@.
 attributes :: IsString s => Quoting -> [Attribute s] -> Doc s
 attributes _ [] = mempty
 attributes q as = brackets . mconcat . intersperse " " $ map dot as
   where
-    dot (k := v) = literal k <> "=" <> quoting (literal v)
-    quoting = case q of
+    dot (k := v) = literal k <> "=" <> quote (literal v)
+    quote = case q of
         DoubleQuotes -> doubleQuotes
         NoQuotes     -> id
 
