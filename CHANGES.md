@@ -2,7 +2,7 @@
 
 ## 0.7
 
-* #273: Add quoting style to `Export.Dot`.
+* #273: Add attribute quoting style to `Export.Dot`.
 * #259: Allow newer QuickCheck.
 
 ## 0.6

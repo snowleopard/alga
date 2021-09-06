@@ -80,7 +80,7 @@ instance Monad List where
     return  = pure
     x >>= f = Exts.fromList (toList x >>= toList . f)
 
--- | The /focus/ of a graph expression is a flattened represenentation of the
+-- | The /focus/ of a graph expression is a flattened representation of the
 -- subgraph under focus, its context, as well as the list of all encountered
 -- vertices. See 'Algebra.Graph.removeEdge' for a use-case example.
 data Focus a = Focus
