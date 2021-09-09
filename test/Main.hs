@@ -12,6 +12,7 @@ import Algebra.Graph.Test.NonEmpty.AdjacencyMap
 import Algebra.Graph.Test.NonEmpty.Graph
 import Algebra.Graph.Test.Relation
 import Algebra.Graph.Test.Relation.SymmetricRelation
+import Algebra.Graph.Test.Bipartite.Undirected.AdjacencyMap
 import Algebra.Graph.Test.Undirected
 import Data.Graph.Test.Typed
 
@@ -29,19 +30,20 @@ main :: IO ()
 main = do
     selected <- getArgs
     let go current = when (null selected || current `elem` selected)
-    go "Acyclic.AdjacencyMap"              testAcyclicAdjacencyMap
-    go "AdjacencyIntMap"                   testAdjacencyIntMap
-    go "AdjacencyMap"                      testAdjacencyMap
-    go "Bipartite.Undirected.AdjacencyMap" testBipartiteUndirectedAdjacencyMap
-    go "Export"                            testExport
-    go "Graph"                             testGraph
-    go "Internal"                          testInternal
-    go "Label"                             testLabel
-    go "Labelled.AdjacencyMap"             testLabelledAdjacencyMap
-    go "Labelled.Graph"                    testLabelledGraph
-    go "NonEmpty.AdjacencyMap"             testNonEmptyAdjacencyMap
-    go "NonEmpty.Graph"                    testNonEmptyGraph
-    go "Relation"                          testRelation
-    go "Symmetric.Relation"                testSymmetricRelation
-    go "Typed"                             testTyped
-    go "Undirected"                        testUndirected
+    go "Acyclic.AdjacencyMap"                        testAcyclicAdjacencyMap
+    go "AdjacencyIntMap"                             testAdjacencyIntMap
+    go "AdjacencyMap"                                testAdjacencyMap
+    go "Bipartite.Undirected.AdjacencyMap"           testBipartiteUndirectedAdjacencyMap
+    go "Bipartite.Undirected.AdjacencyMap.Algorithm" testBipartiteUndirectedAdjacencyMapAlgorithm
+    go "Export"                                      testExport
+    go "Graph"                                       testGraph
+    go "Internal"                                    testInternal
+    go "Label"                                       testLabel
+    go "Labelled.AdjacencyMap"                       testLabelledAdjacencyMap
+    go "Labelled.Graph"                              testLabelledGraph
+    go "NonEmpty.AdjacencyMap"                       testNonEmptyAdjacencyMap
+    go "NonEmpty.Graph"                              testNonEmptyGraph
+    go "Relation"                                    testRelation
+    go "Symmetric.Relation"                          testSymmetricRelation
+    go "Typed"                                       testTyped
+    go "Undirected"                                  testUndirected

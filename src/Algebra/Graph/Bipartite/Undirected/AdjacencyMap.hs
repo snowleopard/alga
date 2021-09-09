@@ -28,7 +28,7 @@ module Algebra.Graph.Bipartite.Undirected.AdjacencyMap (
     edges, overlays, connects, swap,
 
     -- * Conversion functions
-    toBipartite, toBipartiteWith, fromBipartite, fromBipartiteWith,
+    toBipartite, toBipartiteWith, fromBipartite, fromBipartiteWith, fromGraph,
 
     -- * Graph properties
     isEmpty, hasLeftVertex, hasRightVertex, hasVertex, hasEdge, leftVertexCount,
@@ -62,6 +62,7 @@ import Data.Set (Set)
 import GHC.Exts (IsList(..))
 import GHC.Generics
 
+import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
 
 import qualified Data.Map.Strict as Map
@@ -478,6 +479,20 @@ fromBipartiteWith :: Ord c => (a -> c) -> (b -> c) -> AdjacencyMap a b -> AM.Adj
 fromBipartiteWith f g (BAM lr rl) = AM.fromAdjacencySets $
     [ (f x, Set.map g ys) | (x, ys) <- Map.toAscList lr ] ++
     [ (g y, Set.map f xs) | (y, xs) <- Map.toAscList rl ]
+
+-- | Construct a bipartite 'AdjacencyMap' from a 'Algebra.Graph.Graph' with
+-- given part identifiers, adding all needed edges to make the graph undirected
+-- and removing all edges inside one part.
+-- Complexity: /O(m log n)/.
+--
+-- @
+-- fromGraph (Algebra.Graph.'Algebra.Graph.empty')                     == 'empty'
+-- fromGraph (Algebra.Graph.'Algebra.Graph.edge' (Left 1) (Right 1))   == 'edge' 1 1
+-- fromGraph (Algebra.Graph.'Algebra.Graph.edge' (Left 1) (Right "a")) == 'edge' 1 "a"
+-- fromGraph (Algebra.Graph.'Algebra.Graph.edge' (Left 1) (Left 2))    == 'empty'
+-- @
+fromGraph :: (Ord a, Ord b) => G.Graph (Either a b) -> AdjacencyMap a b
+fromGraph = toBipartite . G.foldg AM.empty AM.vertex AM.overlay AM.connect
 
 -- | Check if a graph is empty.
 -- Complecity: /O(1)/ time.

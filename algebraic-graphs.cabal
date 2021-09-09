@@ -105,6 +105,7 @@ library
                         Algebra.Graph.AdjacencyMap,
                         Algebra.Graph.AdjacencyMap.Algorithm,
                         Algebra.Graph.Bipartite.Undirected.AdjacencyMap,
+                        Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm,
                         Algebra.Graph.Class,
                         Algebra.Graph.Export,
                         Algebra.Graph.Export.Dot,
