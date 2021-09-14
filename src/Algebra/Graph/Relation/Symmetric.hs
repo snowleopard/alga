@@ -130,6 +130,12 @@ instance (Ord a, Num a) => Num (Relation a) where
     abs         = id
     negate      = id
 
+instance Ord a => Semigroup (Relation a) where
+    (<>) = overlay
+
+instance Ord a => Monoid (Relation a) where
+    mempty = empty
+
 -- | Construct a symmetric relation from a given "Algebra.Graph.Relation".
 -- Complexity: /O(m*log(m))/ time.
 --

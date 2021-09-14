@@ -294,6 +294,12 @@ instance MonadPlus Graph where
     mzero = Empty
     mplus = Overlay
 
+instance Semigroup (Graph a) where
+    (<>) = overlay
+
+instance Monoid (Graph a) where
+    mempty = empty
+
 -- | Construct the /empty graph/. An alias for the constructor 'Empty'.
 --
 -- @

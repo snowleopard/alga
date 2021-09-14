@@ -195,6 +195,12 @@ instance (Ord a, Num a) => Num (Relation a) where
 instance IsString a => IsString (Relation a) where
     fromString = vertex . fromString
 
+instance Ord a => Semigroup (Relation a) where
+    (<>) = overlay
+
+instance Ord a => Monoid (Relation a) where
+    mempty = empty
+
 -- | Construct the /empty graph/.
 --
 -- @

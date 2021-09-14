@@ -92,6 +92,12 @@ instance (NFData e, NFData a) => NFData (Graph e a) where
     rnf (Vertex  x    ) = rnf x
     rnf (Connect e x y) = e `seq` rnf x `seq` rnf y
 
+instance Monoid e => Semigroup (Graph e a) where
+    (<>) = overlay
+
+instance Monoid e => Monoid (Graph e a) where
+    mempty = empty
+
 -- TODO: This is a very inefficient implementation. Find a way to construct an
 -- adjacency map directly, without building intermediate representations for all
 -- subgraphs.

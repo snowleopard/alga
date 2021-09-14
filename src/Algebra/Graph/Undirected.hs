@@ -196,6 +196,12 @@ instance Ord a => Eq (Graph a) where
 instance Ord a => Ord (Graph a) where
     compare = ordR
 
+instance Semigroup (Graph a) where
+    (<>) = overlay
+
+instance Monoid (Graph a) where
+    mempty = empty
+
 -- TODO: Find a more efficient equality check.
 -- Check if two graphs are equal by converting them to symmetric relations.
 eqR :: Ord a => Graph a -> Graph a -> Bool

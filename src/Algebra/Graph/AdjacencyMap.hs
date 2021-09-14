@@ -205,6 +205,12 @@ instance IsString a => IsString (AdjacencyMap a) where
 instance NFData a => NFData (AdjacencyMap a) where
     rnf (AM a) = rnf a
 
+instance Ord a => Semigroup (AdjacencyMap a) where
+    (<>) = overlay
+
+instance Ord a => Monoid (AdjacencyMap a) where
+    mempty = empty
+
 -- | Construct the /empty graph/.
 --
 -- @

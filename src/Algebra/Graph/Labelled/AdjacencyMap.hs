@@ -113,6 +113,12 @@ instance (Eq e, Dioid e, Num a, Ord a) => Num (AdjacencyMap e a) where
 instance IsString a => IsString (AdjacencyMap e a) where
     fromString = vertex . fromString
 
+instance (Ord a, Eq e, Monoid e) => Semigroup (AdjacencyMap e a) where
+    (<>) = overlay
+
+instance (Ord a, Eq e, Monoid e) => Monoid (AdjacencyMap e a) where
+    mempty = empty
+
 -- | Construct the /empty graph/.
 --
 -- @
