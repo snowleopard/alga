@@ -20,7 +20,7 @@ import Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm
 import Algebra.Graph.Test
 import Data.Bifunctor (bimap)
 import Data.Either
-import Data.Either.Extra hiding (fromEither)
+import Data.Either.Extra
 import Data.List (nub, sort)
 import Data.Map.Strict (Map)
 import Data.Set (Set)
@@ -35,9 +35,8 @@ type AI   = AM.AdjacencyMap Int
 type AII  = AM.AdjacencyMap (Either Int Int)
 type BAII = AdjacencyMap Int Int
 type MII  = Matching Int Int
-type MIS  = Matching Int String
+type MIC  = Matching Int Char
 type LII  = List Int Int
-
 
 testBipartiteUndirectedAdjacencyMap :: IO ()
 testBipartiteUndirectedAdjacencyMap = do
@@ -380,8 +379,8 @@ testBipartiteUndirectedAdjacencyMap = do
           toBipartite (AM.edge (Right x) (Left y)) == edge y x
     test "toBipartite (edge (Right x) (Right y)) == vertices [] [x,y]" $ \x y ->
           toBipartite (AM.edge (Right x) (Right y)) == vertices [] [x,y]
-    test "toBipartite (clique xs)                == uncurry biclique (partitionEithers xs)" $ \xs ->
-          toBipartite (AM.clique xs)             == uncurry biclique (partitionEithers xs)
+    test "toBipartite . clique                      == uncurry biclique . partitionEithers" $ \xs ->
+         (toBipartite . AM.clique) xs               == (uncurry biclique . partitionEithers) xs
 
     putStrLn "\n============ Bipartite.Undirected.AdjacencyMap.toBipartiteWith ============"
     test "toBipartiteWith f empty == empty" $ \(apply -> f) ->
@@ -794,150 +793,146 @@ testBipartiteUndirectedAdjacencyMapAlgorithm = do
     test "fromEither (bimap (((==) 1) . ((flip mod) 2) . length) (const True) (detectParts x)) == True" $ \(x :: AI) ->
         fromEither (bimap (((==) 1) . ((flip mod) 2) . length) (const True) (detectParts x))
 
-    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.pairOfLeft ============"
-    test "pairOfLeft (matching [])                == Map.empty" $
-        pairOfLeft (matching [] :: MII)                == Map.empty
-    test "pairOfLeft (matching [(3,\"a\"),(1,\"b\")]) == Map.fromList [(3,\"a\"),(1,\"b\")]" $
-        pairOfLeft (matching [(3,"a"),(1,"b")] :: MIS) == Map.fromList [(3,"a"),(1,"b")]
-
-    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.pairOfRight ============"
-    test "pairOfRight (matching [])                == Map.empty" $
-        pairOfRight (matching [] :: MII)                == Map.empty
-    test "pairOfRight (matching [(3,\"a\"),(1,\"b\")]) == Map.fromList [(\"a\",3),(\"b\",1)]" $
-        pairOfRight (matching [(3,"a"),(1,"b")] :: MIS) == Map.fromList [("a",3),("b",1)]
-
-    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.matching ============"
-    test "matching [(1,\"a\"),(1,\"b\")]                 == matching [(1,\"b\")]" $
-        matching [(1,"a"),(1,"b")]                 == (matching [(1,"b")] :: MIS)
-    test "matching [(1,\"a\"),(1,\"b\"),(2,\"b\"),(2,\"a\")] == matching [(2,\"a\")]" $
-        matching [(1,"a"),(1,"b"),(2,"b"),(2,"a")] == (matching [(2,"a")] :: MIS)
-
-    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.swapMatching ============"
-    test "swapMatching (matching [])                == matching []" $
-        swapMatching (matching [] :: MII)                == matching []
-    test "swapMatching (matching [(3,\"a\"),(1,\"b\")]) == matching [(\"a\",3),(\"b\",1)]" $
-        swapMatching (matching [(3,"a"),(1,"b")] :: MIS) == matching [("a",3),("b",1)]
-    test "swapMatching (matching xs)                == matching (map swap xs)" $ \(xs :: [(Int, Int)]) ->
-        swapMatching (matching xs)                       == matching (map Data.Tuple.swap xs)
-
-    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.matchingSize ============"
-    test "matchingSize (matching [])                    == 0" $
-        matchingSize (matching [] :: MII)                == 0
-    test "matchingSize (matching [(3,\"a\"),(1,\"b\")]) == 2" $
-        matchingSize (matching [(3,"a"),(1,"b")] :: MIS) == 2
-    test "matchingSize (matching [(1,\"a\"),(1,\"b\")]) == 1" $
-        matchingSize (matching [(1,"a"),(1,"b")] :: MIS) == 1
-    test "matchingSize (matching xs)                    <= length xs" $ \(xs :: [(Int, Int)]) ->
-        matchingSize (matching xs)                       <= length xs
-    test "matchingSize x                                == Map.size (pairOfLeft x)" $ \(x :: MII) ->
-        matchingSize x                                   == Map.size (pairOfLeft x)
-
-    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.consistentMatching ============"
-    test "consistentMatching (matching xs) == True" $ \(xs :: [(Int,Int)]) ->
-        consistentMatching (matching xs)
-
-    putStrLn "\n============ Show (Bipartite.AdjacencyMap.Algorithm.Matching) ============"
+    putStrLn "\n============ Show (Bipartite.AdjacencyMap.Algorithm.Matching a b) ============"
     test "show (matching [])                == \"matching []\"" $
-        show (matching [] :: MII)                == "matching []"
-    test "show (matching [(3,\"a\"),(1,\"b\")]) == \"matching [(1,\\\"b\\\",(3,\\\"a\\\")]\"" $
-        show (matching [(3,"a"),(1,"b")] :: MIS) == "matching [(1,\"b\"),(3,\"a\")]"
+          show (matching [] :: MII)         ==  "matching []"
+    test "show (matching [(2,'a'),(1,'b')]) == \"matching [(1,'b'),(2,'a')]\"" $
+          show (matching [(2,'a'),(1,'b')] :: MIC) == "matching [(1,'b'),(2,'a')]"
 
-    putStrLn "\n============ Eq (Bipartite.AdjacencyMap.Algorithm.Matching) ============"
-    test "(x == y) == ((pairOfLeft x == pairOfLeft y) && (pairOfRight x == pairOfRight y))" $ \(x :: Matching Int Int) (y :: Matching Int Int) ->
+    putStrLn "\n============ Eq (Bipartite.AdjacencyMap.Algorithm.Matching a b) ============"
+    test "(x == y) == ((pairOfLeft x == pairOfLeft y) && (pairOfRight x == pairOfRight y))" $ \(x :: MII) (y :: MII) ->
         (x == y) == ((pairOfLeft x == pairOfLeft y) && (pairOfRight x == pairOfRight y))
 
+    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.pairOfLeft ============"
+    test "pairOfLeft (matching [])                 == Map.empty" $
+          pairOfLeft (matching [] :: MII)          == Map.empty
+    test "pairOfLeft (matching [(2,'a'), (1,'b')]) == Map.fromList [(2,'a'), (1,'b')]" $
+          pairOfLeft (matching [(2,'a'), (1,'b')] :: MIC) == Map.fromList [(2,'a'), (1,'b')]
+    test "Map.size . pairOfLeft                    == Map.size . pairOfRight" $ \(x :: MII) ->
+         (Map.size . pairOfLeft) x                 ==(Map.size . pairOfRight) x
+
+    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.pairOfRight ============"
+    test "pairOfRight (matching [])                 == Map.empty" $
+          pairOfRight (matching [] :: MII)          == Map.empty
+    test "pairOfRight (matching [(2,'a'), (1,'b')]) == Map.fromList [('a',2), ('b',1)]" $
+          pairOfRight (matching [(2,'a'), (1,'b')] :: MIC) == Map.fromList [('a',2), ('b',1)]
+    test "Map.size . pairOfRight                    == Map.size . pairOfLeft" $ \(x :: MII) ->
+         (Map.size . pairOfRight) x                 ==(Map.size . pairOfLeft) x
+
+    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.matching ============"
+    test "matching [(1,'a'), (1,'b')]                   == matching [(1,'b')]" $
+          matching [(1,'a'), (1,'b')]                   == (matching [(1,'b')] :: MIC)
+    test "matching [(1,'a'), (1,'b'), (2,'b'), (2,'a')] == matching [(2,'a')]" $
+          matching [(1,'a'), (1,'b'), (2,'b'), (2,'a')] == (matching [(2,'a')] :: MIC)
+
+    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.isMatchingOf ============"
+    test "isMatchingOf (matching []) x               == True" $ \(x :: BAII) ->
+          isMatchingOf (matching []) x               == True
+    test "isMatchingOf (matching xs) empty           == null xs" $ \(xs :: [(Int, Int)]) ->
+          isMatchingOf (matching xs) empty           == null xs
+    test "isMatchingOf (matching [(x,y)]) (edge x y) == True" $ \(x :: Int) (y :: Int) ->
+          isMatchingOf (matching [(x,y)]) (edge x y) == True
+    test "isMatchingOf (matching [(1,2)]) (edge 2 1) == False" $
+          isMatchingOf (matching [(1,2)]) (edge 2 1 :: BAII) == False
+
+    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.matchingSize ============"
+    test "matchingSize (matching [])                 == 0" $
+          matchingSize (matching [] :: MII)          == 0
+    test "matchingSize (matching [(2,'a'), (1,'b')]) == 2" $
+          matchingSize (matching [(2,'a'), (1,'b')] :: MIC) == 2
+    test "matchingSize (matching [(1,'a'), (1,'b')]) == 1" $
+          matchingSize (matching [(1,'a'), (1,'b')] :: MIC) == 1
+    test "matchingSize (matching xs)                 <= length xs" $ \(xs :: [(Int, Int)]) ->
+          matchingSize (matching xs)                 <= length xs
+    test "matchingSize x                             == Map.size . pairOfLeft" $ \(x :: MII) ->
+          matchingSize x                             ==(Map.size . pairOfLeft) x
+
     putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.maxMatching ============"
-    test "maxMatching empty                                        == matching []" $
-        maxMatching (empty :: BAII)                                      == matching []
-    test "maxMatching (vertices xs ys)                             == matching []" $ \(xs :: [Int]) (ys :: [Int]) ->
-        maxMatching (vertices xs ys)                                     == matching []
-    test "maxMatching (path [1,2,3,4])                             == matching [(1,2),(3,4)]" $
-        maxMatching (path ([1,2,3,4] :: LII))                            == matching [(1,2),(3,4)]
-    test "matchingSize (maxMatching (circuit [(1,2),(3,4),(5,6)])) == 3" $
-        matchingSize (maxMatching (circuit [(1,2),(3,4),(5,6)] :: BAII)) == 3
-    test "matchingSize (maxMatching (star x (y:ys)))               == 1" $ \(x :: Int) (y :: Int) (ys :: [Int]) ->
-        matchingSize (maxMatching (star x (y:ys)))                       == 1
-    test "matchingSize (maxMatching (biclique xs ys))              == min (length (nub xs)) (length (nub ys))" $ \(xs :: [Int]) (ys :: [Int]) ->
-        matchingSize (maxMatching (biclique xs ys))                      == min (length (nub xs)) (length (nub ys))
-    test "consistentMatching (maxMatching x)                       == True" $ \(x :: BAII) ->
-        consistentMatching (maxMatching x)                               == True
-    test "Set.fromAscList (Map.toAscList (pairOfLeft (maxMatching x))) `Set.isSubsetOf` edgeSet x == True" $ \(x :: BAII) ->
-        Set.fromAscList (Map.toAscList (pairOfLeft (maxMatching x))) `Set.isSubsetOf` edgeSet x == True
+    test "maxMatching empty                                          == matching []" $
+          maxMatching (empty :: BAII)                                == matching []
+    test "maxMatching (vertices xs ys)                               == matching []" $ \(xs :: [Int]) (ys :: [Int]) ->
+          maxMatching (vertices xs ys)                               == matching []
+    test "maxMatching (path [1,2,3,4])                               == matching [(1,2), (3,4)]" $
+          maxMatching (path ([1,2,3,4] :: LII))                      == matching [(1,2), (3,4)]
+    test "matchingSize (maxMatching (circuit [(1,2), (3,4), (5,6)])) == 3" $
+          matchingSize (maxMatching (circuit [(1,2), (3,4), (5,6)] :: BAII)) == 3
+    test "matchingSize (maxMatching (star x (y:ys)))                 == 1" $ \(x :: Int) (y :: Int) (ys :: [Int]) ->
+          matchingSize (maxMatching (star x (y:ys)))                 == 1
+    test "matchingSize (maxMatching (biclique xs ys))                == min (length (nub xs)) (length (nub ys))" $ \(xs :: [Int]) (ys :: [Int]) ->
+          matchingSize (maxMatching (biclique xs ys))                == min (length (nub xs)) (length (nub ys))
+    test "isMatchingOf (maxMatching x) x                             == True" $ \(x :: BAII) ->
+          isMatchingOf (maxMatching x) x                             == True
+
+    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.isVertexCoverOf ============"
+    test "isVertexCoverOf (xs             , ys             ) empty          == Set.null xs && Set.null ys" $ \(xs :: Set Int) (ys :: Set Int) ->
+          isVertexCoverOf (xs             , ys             ) empty          ==(Set.null xs && Set.null ys)
+    test "isVertexCoverOf (xs             , ys             ) (leftVertex x) == Set.isSubsetOf xs (Set.singleton x) && Set.null ys" $ \(x :: Int) (xs :: Set Int) (ys :: Set Int) ->
+          isVertexCoverOf (xs             , ys             ) (leftVertex x) ==(Set.isSubsetOf xs (Set.singleton x) && Set.null ys)
+    test "isVertexCoverOf (Set.empty      , Set.empty      ) (edge x y)     == False" $ \(x :: Int) (y :: Int) ->
+          isVertexCoverOf (Set.empty      , Set.empty      ) (edge x y)     == False
+    test "isVertexCoverOf (Set.singleton x, ys             ) (edge x y)     == Set.isSubsetOf ys (Set.singleton y)" $ \(x :: Int) (y :: Int) (ys :: Set Int) ->
+          isVertexCoverOf (Set.singleton x, ys             ) (edge x y)     == Set.isSubsetOf ys (Set.singleton y)
+    test "isVertexCoverOf (xs             , Set.singleton y) (edge x y)     == Set.isSubsetOf xs (Set.singleton x)" $ \(x :: Int) (y :: Int) (xs :: Set Int) ->
+          isVertexCoverOf (xs             , Set.singleton y) (edge x y)     == Set.isSubsetOf xs (Set.singleton x)
 
     putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.minVertexCover ============"
-    test "minVertexCover empty                                  == []" $
-        minVertexCover (empty :: BAII)                                == []
-    test "minVertexCover (vertices xs ys)                       == []" $ \(xs :: [Int]) (ys :: [Int]) ->
-        minVertexCover (vertices xs ys)                               == []
-    test "minVertexCover (path [1,2,3])                         == [Right 2]" $
-        minVertexCover (path ([1,2,3] :: LII))                        == [Right 2]
-    test "minVertexCover (star x (y:(y+1):ys))                  == [Left x]" $ \(x :: Int) (y :: Int) (ys :: [Int]) ->
-        minVertexCover (star x (y:(y+1):ys))                          == [Left x]
-    test "length (minVertexCover (circuit [(1,2),(3,4),(5,6)])) == 3" $
-        length (minVertexCover (circuit [(1,2),(3,4),(5,6)] :: BAII)) == 3
-    test "length (minVertexCover (biclique xs ys))              == min (length (nub xs)) (length (nub ys))" $ size10 $ \(xs :: [Int]) (ys :: [Int]) ->
-        length (minVertexCover (biclique xs ys))                      == min (length (nub xs)) (length (nub ys))
-    test "length (minVertexCover x)                             == matchingSize (maxMatching x)" $ \(x :: BAII) ->
-        length (minVertexCover x)                                     == matchingSize (maxMatching x)
-    test "isStrictlySorted (minVertexCover x)                   == True" $ \(x :: BAII) ->
-        isStrictlySorted (minVertexCover x)
-    test "Set.fromAscList (minVertexCover x) `Set.isSubsetOf` vertexSet x == True" $ \(x :: BAII) ->
-        Set.fromAscList (minVertexCover x) `Set.isSubsetOf` vertexSet x
-    test "isVertexCover (minVertexCover x) x                    == True" $ \(x :: BAII) ->
-        isVertexCover (minVertexCover x) x
+    test "minVertexCover empty                              == (Set.empty, Set.empty)" $
+          minVertexCover (empty :: BAII)                    == (Set.empty, Set.empty)
+    test "minVertexCover (vertices xs ys)                   == (Set.empty, Set.empty)" $ \(xs :: [Int]) (ys :: [Int]) ->
+          minVertexCover (vertices xs ys)                   == (Set.empty, Set.empty)
+    test "minVertexCover (path [1,2,3])                     == (Set.empty, Set.singleton 2)" $
+          minVertexCover (path [1,2,3] :: BAII)             == (Set.empty, Set.singleton 2)
+    test "minVertexCover (star x (1:2:ys))                  == (Set.singleton x, Set.empty)" $ \(x :: Int) (ys :: [Int]) ->
+          minVertexCover (star x (1:2:ys) :: BAII)          == (Set.singleton x, Set.empty)
+    test "vertexCoverSize (minVertexCover (biclique xs ys)) == min (length (nub xs)) (length (nub ys))" $ size10 $ \(xs :: [Int]) (ys :: [Int]) ->
+          vertexCoverSize (minVertexCover (biclique xs ys)) == min (length (nub xs)) (length (nub ys))
+    test "vertexCoverSize . minVertexCover                  == matchingSize . maxMatching" $ \(x :: BAII) ->
+         (vertexCoverSize . minVertexCover) x               ==(matchingSize . maxMatching) x
+    test "isVertexCoverOf (minVertexCover x) x              == True" $ \(x :: BAII) ->
+          isVertexCoverOf (minVertexCover x) x              == True
+
+    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.isIndependentSetOf ============"
+    test "isIndependentSetOf (xs             , ys             ) empty          == Set.null xs && Set.null ys" $ \(xs :: Set Int) (ys :: Set Int) ->
+          isIndependentSetOf (xs             , ys             ) empty          ==(Set.null xs && Set.null ys)
+    test "isIndependentSetOf (xs             , ys             ) (leftVertex x) == Set.isSubsetOf xs (Set.singleton x) && Set.null ys" $ \(x :: Int) (xs :: Set Int) (ys :: Set Int) ->
+          isIndependentSetOf (xs             , ys             ) (leftVertex x) ==(Set.isSubsetOf xs (Set.singleton x) && Set.null ys)
+    test "isIndependentSetOf (Set.empty      , Set.empty      ) (edge x y)     == True" $ \(x :: Int) (y :: Int) ->
+          isIndependentSetOf (Set.empty      , Set.empty      ) (edge x y)     == True
+    test "isIndependentSetOf (Set.singleton x, ys             ) (edge x y)     == Set.null ys" $ \(x :: Int) (y :: Int) (ys :: Set Int) ->
+          isIndependentSetOf (Set.singleton x, ys             ) (edge x y)     == Set.null ys
+    test "isIndependentSetOf (xs             , Set.singleton y) (edge x y)     == Set.null xs" $ \(x :: Int) (y :: Int) (xs :: Set Int) ->
+          isIndependentSetOf (xs             , Set.singleton y) (edge x y)     == Set.null xs
 
     putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.maxIndependentSet ============"
-    test "maxIndependentSet empty                                  == []" $
-        maxIndependentSet (empty :: BAII)                                == []
-    test "maxIndependentSet (vertices xs ys)                       == [ Left  x | x <- nub (sort xs) ] ++ [ Right y | y <- nub (sort ys) ]" $ \(xs :: [Int]) (ys :: [Int]) ->
-        maxIndependentSet (vertices xs ys)                               == [ Left  x | x <- nub (sort xs) ] ++ [ Right y | y <- nub (sort ys) ]
-    test "maxIndependentSet (path [1,2,3])                         == [Left 1,Left 3]" $
-        maxIndependentSet (path ([1,2,3] :: LII))                        == [Left 1, Left 3]
-    test "maxIndependentSet (star x (y:(y+1):ys))                  == [ Right w | w <- nub (sort (y:(y+1):ys)) ]" $ \(x :: Int) (y :: Int) (ys :: [Int]) ->
-        maxIndependentSet (star x (y:(y+1):ys))                          == [ Right w | w <- nub (sort (y:(y+1):ys)) ]
-    test "length (maxIndependentSet (circuit [(1,2),(3,4),(5,6)])) == 3" $
-        length (maxIndependentSet (circuit [(1,2),(3,4),(5,6)] :: BAII)) == 3
-    test "length (maxIndependentSet (biclique xs ys))              == max (length (nub xs)) (length (nub ys))" $ \(xs :: [Int]) (ys :: [Int]) ->
-        length (maxIndependentSet (biclique xs ys))                      == max (length (nub xs)) (length (nub ys))
-    test "length (maxIndependentSet x)                             == vertexCount x - length (minVertexCover x)" $ \(x :: BAII) ->
-        length (maxIndependentSet x)                                     == vertexCount x - length (minVertexCover x)
-    test "isStrictlySorted (maxIndependentSet x)                   == True" $ \(x :: BAII) ->
-        isStrictlySorted (maxIndependentSet x)
-    test "Set.fromAscList (maxIndependentSet x) `Set.isSubsetOf` vertexSet x == True" $ \(x :: BAII) ->
-        Set.fromAscList (maxIndependentSet x) `Set.isSubsetOf` vertexSet x
-    test "isIndependentSet (maxIndependentSet x) x                 == True" $ \(x :: BAII) ->
-        isIndependentSet (maxIndependentSet x) x
+    test "maxIndependentSet empty                                  == (Set.empty, Set.empty)" $
+          maxIndependentSet (empty :: BAII)                        == (Set.empty, Set.empty)
+    test "maxIndependentSet (vertices xs ys)                       == (Set.fromList xs, Set.fromList ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
+          maxIndependentSet (vertices xs ys)                       == (Set.fromList xs, Set.fromList ys)
+    test "maxIndependentSet (path [1,2,3])                         == (Set.fromList [1,3], Set.empty)" $
+          maxIndependentSet (path [1,2,3] :: BAII)                 == (Set.fromList [1,3], Set.empty)
+    test "maxIndependentSet (star x (1:2:ys))                     == (Set.empty, Set.fromList (1:2:ys))" $ \(x :: Int) (ys :: [Int]) ->
+          maxIndependentSet (star x (1:2:ys))                     == (Set.empty, Set.fromList (1:2:ys))
+    test "independentSetSize (maxIndependentSet (biclique xs ys)) == max (length (nub xs)) (length (nub ys))" $ \(xs :: [Int]) (ys :: [Int]) ->
+          independentSetSize (maxIndependentSet (biclique xs ys)) == max (length (nub xs)) (length (nub ys))
+    test "independentSetSize (maxIndependentSet x)                == vertexCount x - vertexCoverSize (minVertexCover x)" $ \(x :: BAII) ->
+          independentSetSize (maxIndependentSet x)                == vertexCount x - vertexCoverSize (minVertexCover x)
+    test "isIndependentSetOf (maxIndependentSet x) x              == True" $ \(x :: BAII) ->
+          isIndependentSetOf (maxIndependentSet x) x              == True
 
     putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.augmentingPath ============"
-    test "augmentingPath (matching [])      empty            == Left []" $
-        augmentingPath (matching [])      (empty :: BAII)           == Left []
+    test "augmentingPath (matching [])      empty            == Left (Set.empty, Set.empty)" $
+          augmentingPath (matching [])     (empty :: BAII)   == Left (Set.empty, Set.empty)
     test "augmentingPath (matching [])      (edge 1 2)       == Right [1,2]" $
-        augmentingPath (matching [])      (edge 1 2)                == Right ([1,2] :: LII)
-    test "augmentingPath (matching [(1,2)]) (path [1,2,3])   == Left [Right 2]" $
-        augmentingPath (matching [(1,2)]) (path ([1,2,3] :: LII))   == Left [Right 2]
+          augmentingPath (matching [])      (edge 1 2)       == Right ([1,2] :: LII)
+    test "augmentingPath (matching [(1,2)]) (path [1,2,3])   == Left (Set.empty, Set.singleton 2)" $
+          augmentingPath (matching [(1,2)]) (path [1,2,3] :: BAII) == Left (Set.empty, Set.singleton 2)
     test "augmentingPath (matching [(3,2)]) (path [1,2,3,4]) == Right [1,2,3,4]" $
-        augmentingPath (matching [(3,2)]) (path ([1,2,3,4] :: LII)) == Right [1,2,3,4]
+          augmentingPath (matching [(3,2)]) (path [1,2,3,4]) == Right ([1,2,3,4] :: LII)
     test "isLeft (augmentingPath (maxMatching x) x)          == True" $ \(x :: BAII) ->
-        isLeft (augmentingPath (maxMatching x) x)                   == True
+          isLeft (augmentingPath (maxMatching x) x)          == True
 
-
-isStrictlySorted :: Ord a => [a] -> Bool
-isStrictlySorted xs = and $ zipWith (<) xs $ tail xs
-
-fromEither :: Either a a -> a
-fromEither (Left  x) = x
-fromEither (Right y) = y
-
-isVertexCover :: (Ord a, Ord b) => VertexCover a b -> AdjacencyMap a b -> Bool
-isVertexCover xs g = let vc = Set.fromList xs
-                      in and $ do (v, u) <- edgeList g
-                                  let leftIn  = Left  v `Set.member` vc
-                                  let rightIn = Right u `Set.member` vc
-                                  return (leftIn || rightIn)
-
-isIndependentSet :: (Ord a, Ord b) => VertexCover a b -> AdjacencyMap a b -> Bool
-isIndependentSet xs g = let is = Set.fromList xs
-                         in and $ do (v, u) <- edgeList g
-                                     let leftIn  = Left  v `Set.member` is
-                                     let rightIn = Right u `Set.member` is
-                                     return (not (leftIn && rightIn))
+    putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.consistentMatching ============"
+    test "consistentMatching (matching xs)   == True" $ \(xs :: [(Int,Int)]) ->
+          consistentMatching (matching xs)   == True
+    test "consistentMatching (maxMatching x) == True" $ \(x :: BAII) ->
+          consistentMatching (maxMatching x) == True

@@ -1,10 +1,33 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
+{-# LANGUAGE LambdaCase #-}
+----------------------------------------------------------------------------
+-- |
+-- Module     : Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm
+-- Copyright  : (c) Andrey Mokhov 2016-2021
+-- License    : MIT (see the file LICENSE)
+-- Maintainer : andrey.mokhov@gmail.com
+-- Stability  : experimental
+--
+-- __Alga__ is a library for algebraic construction and manipulation of graphs
+-- in Haskell. See <https://github.com/snowleopard/alga-paper this paper> for
+-- the motivation behind the library, the underlying theory, and
+-- implementation details.
+--
+-- This module provides algorithms for finding a /maximum matching/,
+-- a /minimum vertex cover/ and a /maximum independent set/ in bipartite graphs.
+----------------------------------------------------------------------------
 module Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm (
-    -- * Maximum matchings
-    Matching, pairOfLeft, pairOfRight, matching, swapMatching, matchingSize,
-    consistentMatching, VertexCover, IndependentSet, maxMatching,
-    minVertexCover, maxIndependentSet, augmentingPath,
+    -- * Matchings
+    Matching, pairOfLeft, pairOfRight, matching, isMatchingOf, matchingSize,
+    maxMatching,
+
+    -- * Vertex covers
+    VertexCover, isVertexCoverOf, vertexCoverSize, minVertexCover,
+
+    -- * Independent sets
+    IndependentSet, isIndependentSetOf, independentSetSize, maxIndependentSet,
+
+    -- * Miscellaneous
+    augmentingPath, consistentMatching
     ) where
 
 import Algebra.Graph.Bipartite.Undirected.AdjacencyMap
@@ -13,7 +36,9 @@ import Control.Monad             (guard, when)
 import Control.Monad.Trans.Maybe (MaybeT(..))
 import Control.Monad.State       (MonadState(..), State, runState, modify)
 import Control.Monad.ST          (ST, runST)
-import Data.Foldable             (asum)
+import Data.Either               (fromLeft)
+import Data.Foldable             (asum, foldl')
+import Data.Functor              (($>))
 import Data.List                 (sort)
 import Data.Maybe                (fromJust)
 import Data.STRef                (STRef, newSTRef, readSTRef, writeSTRef, modifySTRef)
@@ -25,312 +50,378 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
 import qualified Data.Sequence   as Seq
 
--- | A /matching/ of vertices of two parts.
+import Data.Map.Strict (Map)
+import Data.Set        (Set)
+import Data.Sequence   (Seq, ViewL (..), (|>))
+
+-- | A /matching/ is a set of pairwise non-adjacent edges between the two parts
+-- of a bipartite graph.
 --
--- The 'Show' instance is defined using the 'matching' function. The edges in
--- the argument are shown in ascending order of left vertices.
+-- The 'Show' instance is defined using the 'matching' function, with the edges
+-- listed in the ascending order of left vertices.
 --
 -- @
--- show ('matching' [])                   == "matching []"
--- show ('matching' [(3, "a"), (1, "b")]) == "matching [(1,\\"b\\"),(3,\\"a\\")]"
+-- show ('matching' [])                 == "matching []"
+-- show ('matching' [(2,\'a\'), (1,\'b\')]) == "matching [(1,\'b\'),(2,\'a\')]"
 -- @
 data Matching a b = Matching {
-    -- | Map of covered vertices of the left part into their neighbours.
-    -- Complexity: /O(1)/.
+    -- | The map of vertices covered by the matching in the left part to their
+    -- neighbours in the right part.
+    -- Complexity: /O(1)/ time.
     --
     -- @
-    -- pairOfLeft ('matching' [])                   == Map.'Data.Map.Strict.empty'
-    -- pairOfLeft ('matching' [(3, "a"), (1, "b")]) == Map.'Data.Map.Strict.fromList' [(3, "a"), (1, "b")]
+    -- pairOfLeft ('matching' [])                 == Map.'Data.Map.Strict.empty'
+    -- pairOfLeft ('matching' [(2,\'a\'), (1,\'b\')]) == Map.'Data.Map.Strict.fromList' [(1,\'b\'), (2,\'a\')]
+    -- Map.'Map.size' . pairOfLeft                    == Map.'Map.size' . pairOfRight
     -- @
-    pairOfLeft  :: Map.Map a b,
+    pairOfLeft  :: Map a b,
 
-    -- | Map of covered vertices of the right part into their neighbours.
+    -- | The map of vertices covered by the matching in the right part to their
+    -- neighbours in the left part.
     -- Complexity: /O(1)/.
     --
     -- @
-    -- pairOfRight ('matching' [])                  == Map.'Data.Map.Strict.empty'
-    -- pairOfRight ('matching' [(3, "a"), (1, "b")] == Map.'Data.Map.Strict.fromList' [("a", 3), ("b", 1)]
+    -- pairOfRight ('matching' [])                 == Map.'Data.Map.Strict.empty'
+    -- pairOfRight ('matching' [(2,\'a\'), (1,\'b\')]) == Map.'Data.Map.Strict.fromList' [(\'a\',2), (\'b\',1)]
+    -- Map.'Map.size' . pairOfRight                    == Map.'Map.size' . pairOfLeft
     -- @
-    pairOfRight :: Map.Map b a
+    pairOfRight :: Map b a
 } deriving Generic
 
 instance (Show a, Show b) => Show (Matching a b) where
     showsPrec _ m = showString "matching " . showList (Map.toAscList $ pairOfLeft m)
 
 instance (Eq a, Eq b) => Eq (Matching a b) where
-    (==) m n = (==) (pairOfLeft m) (pairOfLeft n)
+    x == y = pairOfLeft x == pairOfLeft y
+
+instance (Ord a, Ord b) => Ord (Matching a b) where
+    compare x y = compare (pairOfLeft x) (pairOfLeft y)
 
 addEdgeUnsafe :: (Ord a, Ord b) => a -> b -> Matching a b -> Matching a b
-addEdgeUnsafe u v (Matching lr rl) = Matching (Map.insert u v lr) (Map.insert v u rl)
+addEdgeUnsafe a b (Matching ab ba) = Matching (Map.insert a b ab) (Map.insert b a ba)
 
 addEdge :: (Ord a, Ord b) => a -> b -> Matching a b -> Matching a b
-addEdge u v (Matching lr rl) = addEdgeUnsafe u v (Matching lr' rl')
+addEdge a b (Matching ab ba) = addEdgeUnsafe a b (Matching ab' ba')
     where
-        lr' = case v `Map.lookup` rl of
-                   Nothing -> Map.delete u lr
-                   Just w  -> Map.delete u (Map.delete w lr)
-        rl' = case u `Map.lookup` lr of
-                   Nothing -> Map.delete v rl
-                   Just w  -> Map.delete v (Map.delete w rl)
+        ab' = case b `Map.lookup` ba of
+                  Nothing -> Map.delete a ab
+                  Just a' -> Map.delete a (Map.delete a' ab)
+        ba' = case a `Map.lookup` ab of
+                  Nothing -> Map.delete b ba
+                  Just b' -> Map.delete b (Map.delete b' ba)
 
 leftCovered :: Ord a => a -> Matching a b -> Bool
-leftCovered v = Map.member v . pairOfLeft
+leftCovered a = Map.member a . pairOfLeft
 
--- | Construct a matching from given list of edges.
--- Complexity: /O(L log(L))/, where /L/ is the length of the given list.
+-- | Construct a 'Matching' from a list of edges.
+-- Complexity: /O(L * log(L))/ time, where /L/ is the length of the given list.
 --
--- Edges that appear on the list closer to the end of the list overwrite
--- previous edges. That is, if two edges from the list share a vertex, one
--- that appears closer to the beginning is ignored.
+-- Edges that appear closer to the end of the list supersede all previous edges.
+-- That is, if two edges from the list share a vertex, the one that appears
+-- closer to the beginning is ignored.
 --
 -- @
--- 'pairOfLeft'  (matching [])                  == Map.'Data.Map.Strict.empty'
--- 'pairOfRight' (matching [])                  == Map.'Data.Map.Strict.empty'
--- 'pairOfLeft'  (matching [(3,"a"),(1,"b")])   == Map.'Data.Map.Strict.fromList' [(3,"a"),(1,"b")]
--- 'pairOfLeft'  (matching [(1,"a"),(1,"b")])   == Map.'Data.Map.Strict.singleton' 1 "b"
--- matching [(1,"a"),(1,"b"),(2,"b"),(2,"a")] == matching [(2,"a")]
+-- 'pairOfLeft'  (matching [])                     == Map.'Data.Map.Strict.empty'
+-- 'pairOfRight' (matching [])                     == Map.'Data.Map.Strict.empty'
+-- 'pairOfLeft'  (matching [(2,\'a\'), (1,\'b\')])     == Map.'Data.Map.Strict.fromList' [(2,\'a\'), (1,\'b\')]
+-- 'pairOfLeft'  (matching [(1,\'a\'), (1,\'b\')])     == Map.'Data.Map.Strict.singleton' 1 \'b\'
+-- matching [(1,\'a\'), (1,\'b\'), (2,\'b\'), (2,\'a\')] == matching [(2,\'a\')]
 -- @
 matching :: (Ord a, Ord b) => [(a, b)] -> Matching a b
-matching = foldl (flip (uncurry addEdge)) (Matching Map.empty Map.empty)
+matching = foldl' (flip (uncurry addEdge)) (Matching Map.empty Map.empty)
 
--- | Swap parts of the vertices in the matching.
--- Complexity: /O(1)/.
+-- | Check if a given 'Matching' is a valid /matching/ of a bipartite graph.
+-- Complexity: /O(S * log(n))/, where /S/ is the size of the matching.
 --
 -- @
--- swapMatching ('matching' [])                == 'matching' []
--- swapMatching ('matching' [(3,"a"),(1,"b")]) == 'matching' [("a",3),("b",1)]
--- swapMatching . 'matching'                   == 'matching' . map 'Data.Tuple.swap'
+-- isMatchingOf ('matching' []) x               == True
+-- isMatchingOf ('matching' xs) 'empty'           == 'null' xs
+-- isMatchingOf ('matching' [(x,y)]) ('edge' x y) == True
+-- isMatchingOf ('matching' [(1,2)]) ('edge' 2 1) == False
 -- @
-swapMatching :: Matching a b -> Matching b a
-swapMatching (Matching lr rl) = Matching rl lr
+isMatchingOf :: (Ord a, Ord b) => Matching a b -> AdjacencyMap a b -> Bool
+isMatchingOf m@(Matching ab _) g = consistentMatching m
+    && and [ hasEdge a b g | (a, b) <- Map.toList ab ]
 
--- | Compute the number of edges in matching.
--- Complexity: /O(1)/.
+-- | The number of edges in a matching.
+-- Complexity: /O(1)/ time.
 --
 -- @
--- matchingSize ('matching' [])                == 0
--- matchingSize ('matching' [(3,"a"),(1,"b")]) == 2
--- matchingSize ('matching' [(1,"a"),(1,"b")]) == 1
--- matchingSize ('matching' xs)                <= 'length' xs
--- matchingSize                              == Map.'Data.Map.Strict.size' . 'pairOfLeft'
+-- matchingSize ('matching' [])                 == 0
+-- matchingSize ('matching' [(2,\'a\'), (1,\'b\')]) == 2
+-- matchingSize ('matching' [(1,\'a\'), (1,\'b\')]) == 1
+-- matchingSize ('matching' xs)                 <= 'length' xs
+-- matchingSize                               == Map.'Data.Map.Strict.size' . 'pairOfLeft'
 -- @
 matchingSize :: Matching a b -> Int
 matchingSize = Map.size . pairOfLeft
 
--- | Check if the internal matching representation of matching is consistent,
--- i.e. that every edge that is present in 'pairOfLeft' is present in
--- 'pairOfRight'.
--- Complexity: /O(S log(S))/, where /S/ is the size of the matching.
---
--- @
--- consistent (matching xs) == True
--- @
-consistentMatching :: (Ord a, Ord b) => Matching a b -> Bool
-consistentMatching (Matching lr rl) = lrl == sort rll
-    where
-        lrl = Map.toAscList lr
-        rll = [ (v, u) | (u, v) <- Map.toAscList rl ]
-
--- | A /vertex cover/ in a bipartite graph, represented by list of vertices.
---
--- Vertex cover is such subset of vertices that every edge is incident to some
--- vertex from it.
-type VertexCover a b = [Either a b] -- TODO: Maybe set?
-
--- | An /independent set/ in a bipartite graph, represented by list of vertices.
---
--- A subset of vertices is independent if it contains no pair of adjacent
--- vertices.
-type IndependentSet a b = [Either a b] -- TODO: Maybe set?
-
-data HKState s a b = HKS {
-    distance    :: STRef s (Map.Map a Int),
-    curMatching :: STRef s (Matching a b),
-    queue       :: STRef s (Seq.Seq a),
-    visited     :: STRef s (Set.Set a)
-}
-
--- | Find a /maximum mathcing/ in bipartite graph. A matching is maximum if it
--- has maximum possible size.
--- Complexity: /O(m sqrt(n) log(n))/
+-- | Find a /maximum matching/ in a bipartite graph. A matching is maximum if it
+-- has the largest possible size.
+-- Complexity: /O(m * sqrt(n) * log(n))/ time.
 --
 -- @
 -- maxMatching 'empty'                                          == 'matching' []
 -- maxMatching ('vertices' xs ys)                               == 'matching' []
--- maxMatching ('path' [1,2,3,4])                               == 'matching' [(1,2),(3,4)]
--- 'matchingSize' (maxMatching ('circuit' [(1,2),(3,4),(5,6)])) == 3
--- 'matchingSize' (maxMatching ('star' x (y:ys)))               == 1
--- 'matchingSize' (maxMatching ('biclique' xs ys))              == 'min' ('length' ('nub' xs)) ('length' ('nub' ys))
+-- maxMatching ('path' [1,2,3,4])                               == 'matching' [(1,2), (3,4)]
+-- 'matchingSize' (maxMatching ('circuit' [(1,2), (3,4), (5,6)])) == 3
+-- 'matchingSize' (maxMatching ('star' x (y:ys)))                 == 1
+-- 'matchingSize' (maxMatching ('biclique' xs ys))                == 'min' ('length' ('Data.List.nub' xs)) ('length' ('Data.List.nub' ys))
+-- 'isMatchingOf' (maxMatching x) x                             == True
 -- @
-maxMatching :: forall a b. (Ord a, Ord b) => AdjacencyMap a b -> Matching a b
-maxMatching g = runST $ do dist <- newSTRef Map.empty
-                           m    <- newSTRef (Matching Map.empty Map.empty)
-                           q    <- newSTRef Seq.empty
-                           vis  <- newSTRef Set.empty
-                           let state = HKS dist m q vis
-                           runHK state
-                           readSTRef m
-    where
-        dequeue :: HKState s a b -> ST s (Maybe a)
-        dequeue state = do q <- readSTRef (queue state)
-                           case Seq.viewl q of
-                                a Seq.:< q' -> do writeSTRef (queue state) q'
-                                                  return (Just a)
-                                Seq.EmptyL  -> return Nothing
+maxMatching :: (Ord a, Ord b) => AdjacencyMap a b -> Matching a b
+maxMatching graph = runST (maxMatchingHK graph)
 
-        enqueue :: HKState s a b -> Int -> a -> ST s ()
-        enqueue state d v = do modifySTRef (distance state) (Map.insert v d)
-                               modifySTRef (queue state)    (Seq.|> v)
+-- TODO: Should we use a more efficient data structure for the queue?
+-- TODO: We could try speeding this up by representing vertices with 'Int's.
+-- The state maintained by the Hopcroft-Karp algorithm implemented below
+data HKState s a b = HKState
+    { distance    :: STRef s (Map a Int)
+    , curMatching :: STRef s (Matching a b)
+    , queue       :: STRef s (Seq a)
+    , visited     :: STRef s (Set a) }
 
-        checkEnqueue :: HKState s a b -> Int -> a -> ST s ()
-        checkEnqueue state d v = do dist <- readSTRef (distance state)
-                                    let action = enqueue state d v
-                                    when (v `Map.notMember` dist) action
+-- See https://en.wikipedia.org/wiki/Hopcroft-Karp_algorithm
+maxMatchingHK :: forall a b s. (Ord a, Ord b) => AdjacencyMap a b -> ST s (Matching a b)
+maxMatchingHK g = do
+    distance    <- newSTRef Map.empty
+    curMatching <- newSTRef (Matching Map.empty Map.empty)
+    queue       <- newSTRef Seq.empty
+    visited     <- newSTRef Set.empty
+    runHK (HKState distance curMatching queue visited)
+    readSTRef curMatching
+  where
+    runHK :: HKState s a b -> ST s ()
+    runHK state = do writeSTRef (distance state) Map.empty
+                     foundAugmentingPath <- bfs state
+                     when foundAugmentingPath $ do
+                         writeSTRef (visited state) Set.empty
+                         dfs state
+                         runHK state
 
-        bfsEdge :: HKState s a b -> Int -> b -> ST s Bool
-        bfsEdge state d u = do m <- readSTRef (curMatching state)
-                               case u `Map.lookup` pairOfRight m of
-                                    Just v  -> False <$ checkEnqueue state d v
-                                    Nothing -> return True
+    currentlyUncovered :: HKState s a b -> ST s [a]
+    currentlyUncovered state = do
+        m <- readSTRef (curMatching state)
+        return [ v | v <- leftVertexList g, not (leftCovered v m) ]
 
-        bfsVertex :: HKState s a b -> a -> ST s Bool
-        bfsVertex state v = do dist <- readSTRef (distance state)
-                               let d = fromJust (v `Map.lookup` dist) + 1
-                               or <$> mapM (bfsEdge state d) (neighbours v)
 
-        bfsLoop :: HKState s a b -> ST s Bool
-        bfsLoop state = do mv <- dequeue state
-                           case mv of
-                                Just v  -> do p <- bfsVertex state v
-                                              q <- bfsLoop state
-                                              return (p || q)
-                                Nothing -> return False
+    bfs :: HKState s a b -> ST s Bool
+    bfs state = do
+        uncovered <- currentlyUncovered state
+        mapM_ (enqueue state 1) uncovered
+        bfsLoop state
 
-        bfs :: HKState s a b -> ST s Bool
-        bfs state = do m <- readSTRef (curMatching state)
-                       let uncovered = [ v | v <- leftVertexList g
-                                           , not (leftCovered v m) ]
-                       mapM_ (enqueue state 1) uncovered
-                       bfsLoop state
+    enqueue :: HKState s a b -> Int -> a -> ST s ()
+    enqueue state d v = do modifySTRef (distance state) (Map.insert v d)
+                           modifySTRef (queue    state) (|> v)
 
-        dfsEdges :: HKState s a b -> Int -> a -> [b] -> ST s Bool
-        dfsEdges _     _ _ []     = return False
-        dfsEdges state d v (u:us) = do m <- readSTRef (curMatching state)
-                                       case u `Map.lookup` pairOfRight m of
-                                            Nothing -> True <$ addEdge state v u
-                                            Just w  -> do z <- dfsVertex state d w
-                                                          case z of
-                                                               True  -> True <$ addEdge state v u
-                                                               False -> dfsEdges state d v us
+    dequeue :: HKState s a b -> ST s (Maybe a)
+    dequeue state = do q <- readSTRef (queue state)
+                       case Seq.viewl q of
+                           a :< q -> writeSTRef (queue state) q $> Just a
+                           EmptyL -> return Nothing
 
-        dfsVertex :: HKState s a b -> Int -> a -> ST s Bool
-        dfsVertex state d v = do dist <- readSTRef (distance state)
-                                 vis  <- readSTRef (visited state)
-                                 let dv = fromJust (v `Map.lookup` dist)
-                                 case (d + 1 == dv) && (v `Set.notMember` vis) of
-                                      False -> return False
-                                      True  -> do modifySTRef (visited state) (Set.insert v)
-                                                  dfsEdges state dv v (neighbours v)
+    bfsLoop :: HKState s a b -> ST s Bool
+    bfsLoop state = dequeue state >>= \case
+                        Just v  -> do p <- bfsVertex state v
+                                      q <- bfsLoop state
+                                      return (p || q)
+                        Nothing -> return False
 
-        addEdge :: HKState s a b -> a -> b -> ST s ()
-        addEdge state v u = modifySTRef (curMatching state) (addEdgeUnsafe v u)
+    bfsVertex :: HKState s a b -> a -> ST s Bool
+    bfsVertex state v = do dist <- readSTRef (distance state)
+                           let d = fromJust (v `Map.lookup` dist) + 1
+                           or <$> mapM (bfsEdge state d) (neighbours v)
 
-        dfs :: HKState s a b -> ST s ()
-        dfs state = do m <- readSTRef (curMatching state)
-                       let uncovered = [ v | v <- leftVertexList g
-                                           , not (leftCovered v m) ]
-                       mapM_ (dfsVertex state 0) uncovered
+    checkEnqueue :: HKState s a b -> Int -> a -> ST s ()
+    checkEnqueue state d v = do dist <- readSTRef (distance state)
+                                when (v `Map.notMember` dist) (enqueue state d v)
 
-        runHK :: HKState s a b -> ST s ()
-        runHK state = do writeSTRef (distance state) Map.empty
-                         run <- bfs state
-                         when run $ do writeSTRef (visited state) Set.empty
-                                       dfs state
-                                       runHK state
+    bfsEdge :: HKState s a b -> Int -> b -> ST s Bool
+    bfsEdge state d u = do m <- readSTRef (curMatching state)
+                           case u `Map.lookup` pairOfRight m of
+                               Just v  -> checkEnqueue state d v $> False
+                               Nothing -> return True
 
-        neighbours :: a -> [b]
-        neighbours v = Set.toAscList $ fromJust $ Map.lookup v $ leftAdjacencyMap g
+    dfs :: HKState s a b -> ST s ()
+    dfs state = currentlyUncovered state >>= mapM_ (dfsVertex state 0)
 
--- | Find a /vertex cover/ of minimum possible size in bipartite graph.
--- Vertices in the returned list are sorted and unique.
--- Complexity: /O(m sqrt(n) log(n))/
+    dfsVertex :: HKState s a b -> Int -> a -> ST s Bool
+    dfsVertex state d v = do dist <- readSTRef (distance state)
+                             vis  <- readSTRef (visited state)
+                             let dv = fromJust (v `Map.lookup` dist)
+                             case (d + 1 == dv) && (v `Set.notMember` vis) of
+                                 False -> return False
+                                 True  -> do modifySTRef (visited state) (Set.insert v)
+                                             dfsEdges state dv v (neighbours v)
+
+    dfsEdges :: HKState s a b -> Int -> a -> [b] -> ST s Bool
+    dfsEdges _     _ _ []     = return False
+    dfsEdges state d a (b:bs) = do m <- readSTRef (curMatching state)
+                                   case b `Map.lookup` pairOfRight m of
+                                       Nothing -> addEdge state a b $> True
+                                       Just w  -> dfsVertex state d w >>= \case
+                                            True  -> addEdge state a b $> True
+                                            False -> dfsEdges state d a bs
+
+    addEdge :: HKState s a b -> a -> b -> ST s ()
+    addEdge state a b = modifySTRef (curMatching state) (addEdgeUnsafe a b)
+
+    neighbours :: a -> [b]
+    neighbours a = Set.toAscList $ fromJust $ Map.lookup a $ leftAdjacencyMap g
+
+-- | A /vertex cover/ of a bipartite graph.
+--
+-- A /vertex cover/ is a subset of vertices such that every edge is incident to
+-- some vertex in the subset. We represent vertex covers by storing two sets of
+-- vertices, one for each part. An equivalent representation, which is slightly
+-- less memory efficient, is @Set@ @(Either@ @a@ @b)@.
+type VertexCover a b = (Set a, Set b)
+
+-- | Check if a given pair of sets is a /vertex cover/ of a bipartite graph.
+-- Complexity: /O(m * log(n))/.
 --
 -- @
--- minVertexCover 'empty'                     == []
--- minVertexCover ('vertices' xs ys)          == []
--- minVertexCover ('path' [1,2,3])            == [Right 2]
--- minVertexCover ('star' x (y:ys))           == [Left x]
--- 'length' (minVertexCover ('biclique' xs ys)) == 'min' ('length' ('nub' xs)) ('length' ('nub' ys))
--- 'length' . minVertexCover                  == 'matchingSize' . 'maxMatching'
+-- isVertexCoverOf (xs             , ys             ) 'empty'          == Set.'Set.null' xs && Set.'Set.null' ys
+-- isVertexCoverOf (xs             , ys             ) ('leftVertex' x) == Set.'Set.isSubsetOf' xs (Set.'Set.singleton' x) && Set.'Set.null' ys
+-- isVertexCoverOf (Set.'Set.empty'      , Set.'Set.empty'      ) ('edge' x y)     == False
+-- isVertexCoverOf (Set.'Set.singleton' x, ys             ) ('edge' x y)     == Set.'Set.isSubsetOf' ys (Set.'Set.singleton' y)
+-- isVertexCoverOf (xs             , Set.'Set.singleton' y) ('edge' x y)     == Set.'Set.isSubsetOf' xs (Set.'Set.singleton' x)
+-- @
+isVertexCoverOf :: (Ord a, Ord b) => (Set a, Set b) -> AdjacencyMap a b -> Bool
+isVertexCoverOf (as, bs) g = as `Set.isSubsetOf` leftVertexSet g
+    && bs `Set.isSubsetOf` rightVertexSet g
+    && and [ a `Set.member` as || b `Set.member` bs | (a, b) <- edgeList g ]
+
+-- | The number of vertices in a vertex cover.
+-- Complexity: /O(1)/ time.
+vertexCoverSize :: VertexCover a b -> Int
+vertexCoverSize (as, bs) = Set.size as + Set.size bs
+
+-- | Find a /minimum vertex cover/ in a bipartite graph. A vertex cover is
+-- minimum if it has the smallest possible size.
+-- Complexity: /O(m * sqrt(n) * log(n))/.
+--
+-- @
+-- minVertexCover 'empty'                              == (Set.'Set.empty', Set.'Set.empty')
+-- minVertexCover ('vertices' xs ys)                   == (Set.'Set.empty', Set.'Set.empty')
+-- minVertexCover ('path' [1,2,3])                     == (Set.'Set.empty', Set.'Set.singleton' 2)
+-- minVertexCover ('star' x (1:2:ys))                  == (Set.'Set.singleton' x, Set.'Set.empty')
+-- 'vertexCoverSize' (minVertexCover ('biclique' xs ys)) == 'min' ('length' ('Data.List.nub' xs)) ('length' ('Data.List.nub' ys))
+-- 'vertexCoverSize' . minVertexCover                  == 'matchingSize' . 'maxMatching'
+-- 'isVertexCoverOf' (minVertexCover x) x              == True
 -- @
 minVertexCover :: (Ord a, Ord b) => AdjacencyMap a b -> VertexCover a b
-minVertexCover g = fromLeft [] (augmentingPath (maxMatching g) g)
-    where
-        fromLeft :: a -> Either a b -> a
-        fromLeft _ (Left  x) = x
-        fromLeft x (Right _) = x
+minVertexCover g = fromLeft panic $ augmentingPath (maxMatching g) g
+  where
+    panic = error "minVertexCover: internal error (found augmenting path)"
 
--- | Find an /independent set/ of maximum possible size in bipartite graph.
--- Vertices in the returned list are sorted and unique.
--- Complexity: /O(m sqrt(n) log(n))/
+-- | An /independent set/ of a bipartite graph.
+--
+-- An /independent set/ is a subset of vertices such that no two of them are
+-- adjacent. We represent independent sets by storing two sets of vertices, one
+-- for each part. An equivalent representation, which is slightly less memory
+-- efficient, is @Set@ @(Either@ @a@ @b)@.
+type IndependentSet a b = (Set a, Set b)
+
+-- | Check if a given pair of sets is an /independent set/ of a bipartite graph.
+-- Complexity: /O(m * log(n))/.
 --
 -- @
--- maxIndependentSet 'empty'                     == []
--- maxIndependentSet ('vertices' xs ys)          == [ Left  x | x <- 'Data.List.nub' ('Data.List.sort' xs) ]
---                                             ++ [ Right y | y <- 'Data.List.nub' ('Data.List.sort' ys) ]
--- maxIndependentSet ('path' [1,2,3])            == [Left 1,Left 3]
--- maxIndependentSet ('star' x (y:z:ys))         == [ Right w | w <- y:z:ys ]
--- 'length' (maxIndependentSet ('biclique' xs ys)) == 'max' ('length' ('nub' xs)) ('length' ('nub' ys))
--- 'length' (maxIndependentSet x)                == vertexCount x - length (minVertexCover x)
+-- isIndependentSetOf (xs             , ys             ) 'empty'          == Set.'Set.null' xs && Set.'Set.null' ys
+-- isIndependentSetOf (xs             , ys             ) ('leftVertex' x) == Set.'Set.isSubsetOf' xs (Set.'Set.singleton' x) && Set.'Set.null' ys
+-- isIndependentSetOf (Set.'Set.empty'      , Set.'Set.empty'      ) ('edge' x y)     == True
+-- isIndependentSetOf (Set.'Set.singleton' x, ys             ) ('edge' x y)     == Set.'Set.null' ys
+-- isIndependentSetOf (xs             , Set.'Set.singleton' y) ('edge' x y)     == Set.'Set.null' xs
+-- @
+isIndependentSetOf :: (Ord a, Ord b) => (Set a, Set b) -> AdjacencyMap a b -> Bool
+isIndependentSetOf (as, bs) g = as `Set.isSubsetOf` leftVertexSet g
+    && bs `Set.isSubsetOf` rightVertexSet g
+    && and [ not (a `Set.member` as && b `Set.member` bs) | (a, b) <- edgeList g ]
+
+-- | The number of vertices in an independent set.
+-- Complexity: /O(1)/ time.
+independentSetSize :: IndependentSet a b -> Int
+independentSetSize (as, bs) = Set.size as + Set.size bs
+
+-- | Find a /maximum independent set/ in a bipartite graph. An independent set
+-- is maximum if it has the largest possible size.
+-- Complexity: /O(m * sqrt(n) * log(n))/.
+--
+-- @
+-- maxIndependentSet 'empty'                                 == (Set.'Set.empty', Set.'Set.empty')
+-- maxIndependentSet ('vertices' xs ys)                      == (Set.'Set.fromList' xs, Set.'Set.fromList' ys)
+-- maxIndependentSet ('path' [1,2,3])                        == (Set.'Set.fromList' [1,3], Set.'Set.empty')
+-- maxIndependentSet ('star' x (1:2:ys))                     == (Set.'Set.empty', Set.'Set.fromList' (1:2:ys))
+-- 'independentSetSize' (maxIndependentSet ('biclique' xs ys)) == 'max' ('length' ('Data.List.nub' xs)) ('length' ('Data.List.nub' ys))
+-- 'independentSetSize' (maxIndependentSet x)                == 'vertexCount' x - 'vertexCoverSize' ('minVertexCover' x)
+-- 'isIndependentSetOf' (maxIndependentSet x) x              == True
 -- @
 maxIndependentSet :: (Ord a, Ord b) => AdjacencyMap a b -> IndependentSet a b
-maxIndependentSet g = Set.toAscList (vertexSet g `Set.difference` vc)
-    where
-        vc = Set.fromAscList (minVertexCover g)
+maxIndependentSet g =
+    (leftVertexSet g `Set.difference` as, rightVertexSet g `Set.difference` bs)
+  where
+    (as, bs) = minVertexCover g
 
-type AugPathMonad a b = MaybeT (State (Set.Set a, Set.Set b)) (List a b)
-
--- | Given a matching in a graph, find either a /vertex cover/ of the same size
--- or an /augmeting path/ with respect to the given matching.
--- Complexity: /O((m + n) log(n))/
+-- | Given a matching in a bipartite graph, find either a /vertex cover/ of the
+-- same size or an /augmenting path/ with respect to the matching, thereby
+-- demonstrating that the matching is not maximum.
+-- Complexity: /O((m + n) * log(n))/.
 --
--- A path is /alternating/ with respect to a matching if its edges from the
--- matching are alternating with edges not from the matching. An alternating
--- path is augmenting if it starts and ends in vertices that are uncovered by
--- the matching.
+-- An /alternating path/ is a path whose edges belong alternately to the
+-- matching and not to the matching. An /augmenting path/ is an alternating path
+-- that starts from and ends on the vertices that are not covered by the
+-- matching. A matching is maximum if and only if there is no augmenting path
+-- with respect to it.
 --
 -- @
--- augmentingPath ('matching' [])      'empty'            == Left []
+-- augmentingPath ('matching' [])      'empty'            == Left (Set.'Set.empty', Set.'Set.empty')
 -- augmentingPath ('matching' [])      ('edge' 1 2)       == Right [1,2]
--- augmentingPath ('matching' [(1,2)]) ('path' [1,2,3])   == Left [Right 2]
+-- augmentingPath ('matching' [(1,2)]) ('path' [1,2,3])   == Left (Set.'Set.empty', Set.'Set.singleton' 2)
 -- augmentingPath ('matching' [(3,2)]) ('path' [1,2,3,4]) == Right [1,2,3,4]
 -- isLeft (augmentingPath ('maxMatching' x) x)          == True
 -- @
-augmentingPath :: forall a b. (Ord a, Ord b) =>
-                  Matching a b -> AdjacencyMap a b -> Either (VertexCover a b) (List a b)
-augmentingPath m g = case runState (runMaybeT dfs) (leftVertexSet g, Set.empty) of
-                          (Nothing, (s, t)) -> Left $ map Left  (Set.toAscList s) ++
-                                                      map Right (Set.toAscList t)
-                          (Just l,  _)      -> Right l
-    where
-        inVertex :: a -> AugPathMonad a b
-        inVertex u = do (s, t) <- get
-                        guard (u `Set.member` s)
-                        put (Set.delete u s, t)
-                        asum [ onEdge u v | v <- neighbours u ]
+augmentingPath :: (Ord a, Ord b) => Matching a b -> AdjacencyMap a b -> Either (VertexCover a b) (List a b)
+augmentingPath = augmentingPathImpl
 
-        onEdge :: a -> b -> AugPathMonad a b
-        onEdge u v = add u v <$> do (s, t) <- get
-                                    put (s, Set.insert v t)
-                                    case v `Map.lookup` pairOfRight m of
-                                         Just w  -> inVertex w
-                                         Nothing -> return Nil
+type AugPathMonad a b = MaybeT (State (VertexCover a b)) (List a b)
 
-        add :: a -> b -> List a b -> List a b
-        add u v = Cons u . Cons v
+-- The implementation is in a separate function to avoid the "forall" in docs.
+augmentingPathImpl :: forall a b. (Ord a, Ord b) => Matching a b -> AdjacencyMap a b -> Either (VertexCover a b) (List a b)
+augmentingPathImpl m g = case runState (runMaybeT dfs) (leftVertexSet g, Set.empty) of
+    (Nothing  , cover) -> Left cover
+    (Just path, _    ) -> Right path
+  where
+    dfs :: AugPathMonad a b
+    dfs = asum [ inVertex v | v <- leftVertexList g, not (leftCovered v m) ]
 
-        dfs :: AugPathMonad a b
-        dfs = asum [ inVertex v | v <- leftVertexList g, not (leftCovered v m) ]
+    inVertex :: a -> AugPathMonad a b
+    inVertex a = do (as, bs) <- get
+                    guard (a `Set.member` as)
+                    put (Set.delete a as, bs)
+                    asum [ onEdge a b | b <- neighbours a ]
 
-        neighbours :: a -> [b]
-        neighbours v = Set.toAscList $ fromJust $ Map.lookup v $ leftAdjacencyMap g
+    onEdge :: a -> b -> AugPathMonad a b
+    onEdge a b = addEdge a b <$> do (as, bs) <- get
+                                    put (as, Set.insert b bs)
+                                    case b `Map.lookup` pairOfRight m of
+                                        Just a  -> inVertex a
+                                        Nothing -> return Nil
+
+    addEdge :: a -> b -> List a b -> List a b
+    addEdge a b = Cons a . Cons b
+
+    neighbours :: a -> [b]
+    neighbours a = Set.toAscList $ fromJust $ Map.lookup a $ leftAdjacencyMap g
+
+-- | Check if the internal representation of a matching is consistent, i.e. that
+-- every edge that is present in 'pairOfLeft' is also present in 'pairOfRight'.
+-- Complexity: /O(S * log(S))/, where /S/ is the size of the matching.
+--
+-- @
+-- consistentMatching ('matching' xs)   == True
+-- consistentMatching ('maxMatching' x) == True
+-- @
+consistentMatching :: (Ord a, Ord b) => Matching a b -> Bool
+consistentMatching (Matching ab ba) =
+    Map.toAscList ab == sort [ (a, b) | (b, a) <- Map.toAscList ba ]
