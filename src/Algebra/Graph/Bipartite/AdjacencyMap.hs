@@ -1,6 +1,6 @@
 ----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Bipartite.Undirected.AdjacencyMap
+-- Module     : Algebra.Graph.Bipartite.AdjacencyMap
 -- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -16,10 +16,10 @@
 -- "Algebra.Graph.AdjacencyMap", this module can be imported qualified:
 --
 -- @
--- import qualified Algebra.Graph.Bipartite.Undirected.AdjacencyMap as Bipartite
+-- import qualified Algebra.Graph.Bipartite.AdjacencyMap as Bipartite
 -- @
 ----------------------------------------------------------------------------
-module Algebra.Graph.Bipartite.Undirected.AdjacencyMap (
+module Algebra.Graph.Bipartite.AdjacencyMap (
     -- * Data structure
     AdjacencyMap, leftAdjacencyMap, rightAdjacencyMap,
 

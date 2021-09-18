@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 ----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm
+-- Module     : Algebra.Graph.Bipartite.AdjacencyMap.Algorithm
 -- Copyright  : (c) Andrey Mokhov 2016-2021
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -15,7 +15,7 @@
 -- This module provides algorithms for finding a /maximum matching/,
 -- a /minimum vertex cover/ and a /maximum independent set/ in bipartite graphs.
 ----------------------------------------------------------------------------
-module Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm (
+module Algebra.Graph.Bipartite.AdjacencyMap.Algorithm (
     -- * Matchings
     Matching, pairOfLeft, pairOfRight, matching, isMatchingOf, matchingSize,
     maxMatching,
@@ -30,7 +30,7 @@ module Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm (
     augmentingPath, consistentMatching
     ) where
 
-import Algebra.Graph.Bipartite.Undirected.AdjacencyMap
+import Algebra.Graph.Bipartite.AdjacencyMap
 
 import Control.Monad             (guard, when)
 import Control.Monad.Trans.Maybe (MaybeT(..))
