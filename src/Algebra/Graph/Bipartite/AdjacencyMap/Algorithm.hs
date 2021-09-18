@@ -12,10 +12,12 @@
 -- the motivation behind the library, the underlying theory, and
 -- implementation details.
 --
--- This module provides algorithms for finding a /maximum matching/,
--- a /minimum vertex cover/ and a /maximum independent set/ in bipartite graphs.
+-- This module provides several basic algorithms on undirected bipartite graphs.
 ----------------------------------------------------------------------------
 module Algebra.Graph.Bipartite.AdjacencyMap.Algorithm (
+    -- * Bipartiteness test
+    OddCycle, detectParts,
+
     -- * Matchings
     Matching, pairOfLeft, pairOfRight, matching, isMatchingOf, matchingSize,
     maxMatching,
@@ -53,6 +55,105 @@ import qualified Data.Sequence   as Seq
 import Data.Map.Strict (Map)
 import Data.Set        (Set)
 import Data.Sequence   (Seq, ViewL (..), (|>))
+
+-- TODO: Make this representation type-safe
+-- | A cycle of odd length. For example, @[1,2,3]@ represents the cycle
+-- @1@ @->@ @2@ @->@ @3@ @->@ @1@.
+type OddCycle a = [a]
+
+data Part = LeftPart | RightPart deriving (Show, Eq)
+
+otherPart :: Part -> Part
+otherPart LeftPart  = RightPart
+otherPart RightPart = LeftPart
+
+-- | Test the bipartiteness of a given "Algebra.Graph.AdjacencyMap". In case of
+-- success, return an 'AdjacencyMap' with the same set of edges and each vertex
+-- marked with the part it belongs to. In case of failure, return any cycle of
+-- odd length in the graph.
+--
+-- The returned partition is lexicographically smallest, assuming that vertices
+-- of the left part precede all the vertices of the right part.
+--
+-- The returned cycle is optimal in the following sense: there exists a path
+-- that is either empty or ends in a vertex adjacent to the first vertex in the
+-- cycle, such that all vertices in @path@ @++@ @cycle@ are distinct and
+-- @path@ @++@ @cycle@ is lexicographically smallest among all such pairs of
+-- paths and cycles.
+--
+-- /Note/: since 'AdjacencyMap' represents /undirected/ bipartite graphs, all
+-- edges in the input graph are treated as undirected. See the examples and the
+-- correctness property for a clarification.
+--
+-- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
+--
+-- @
+-- detectParts 'Algebra.Graph.AdjacencyMap.empty'                                       == Right 'empty'
+-- detectParts ('Algebra.Graph.AdjacencyMap.vertex' x)                                  == Right ('leftVertex' x)
+-- detectParts ('Algebra.Graph.AdjacencyMap.edge' x x)                                  == Left [x]
+-- detectParts ('Algebra.Graph.AdjacencyMap.edge' 1 2)                                  == Right ('edge' 1 2)
+-- detectParts (1 * (2 + 3))                               == Right ('edges' [(1,2), (1,3)])
+-- detectParts (1 * 2 * 3)                                 == Left [1, 2, 3]
+-- detectParts ((1 + 3) * (2 + 4) + 6 * 5)                 == Right ('swap' (1 + 3) * (2 + 4) + 'swap' 5 * 6)
+-- detectParts ((1 * 3 * 4) + 2 * (1 + 2))                 == Left [2]
+-- detectParts ('Algebra.Graph.AdjacencyMap.clique' [1..10])                            == Left [1, 2, 3]
+-- detectParts ('Algebra.Graph.AdjacencyMap.circuit' [1..10])                           == Right ('circuit' [(x, x + 1) | x <- [1,3,5,7,9]])
+-- detectParts ('Algebra.Graph.AdjacencyMap.circuit' [1..11])                           == Left [1..11]
+-- detectParts ('Algebra.Graph.AdjacencyMap.biclique' [] xs)                            == Right ('vertices' xs [])
+-- detectParts ('Algebra.Graph.AdjacencyMap.biclique' ('map' Left (x:xs)) ('map' Right ys)) == Right ('biclique' ('map' Left (x:xs)) ('map' Right ys))
+-- 'isRight' (detectParts ('Algebra.Graph.AdjacencyMap.star' x ys))                       == 'notElem' x ys
+-- 'isRight' (detectParts ('fromBipartite' ('toBipartite' x)))   == True
+-- @
+--
+-- The correctness of 'detectParts' can be expressed by the following property:
+--
+-- @
+-- let undirected = 'Algebra.Graph.AdjacencyMap.symmetricClosure' input in
+-- case detectParts input of
+--     Left cycle -> 'mod' (length cycle) 2 == 1 && 'Algebra.Graph.AdjacencyMap.isSubgraphOf' ('Algebra.Graph.AdjacencyMap.circuit' cycle) undirected
+--     Right result -> 'Algebra.Graph.AdjacencyMap.gmap' 'Data.Either.Extra.fromEither' ('fromBipartite' result) == undirected
+-- @
+detectParts :: Ord a => AM.AdjacencyMap a -> Either (OddCycle a) (AdjacencyMap a a)
+detectParts x = case runState (runMaybeT dfs) Map.empty of
+    (Nothing, partMap) -> Right $ toBipartiteWith (toEither partMap) g
+    (Just c , _      ) -> Left  $ oddCycle c
+  where
+    -- g :: AM.AdjacencyMap a
+    g = AM.symmetricClosure x
+
+    -- type PartMap a = Map a Part
+    -- type PartMonad a = MaybeT (State (PartMap a)) [a]
+    -- dfs :: PartMonad a
+    dfs = asum [ processVertex v | v <- AM.vertexList g ]
+
+    -- processVertex :: a -> PartMonad a
+    processVertex v = do partMap <- get
+                         guard (Map.notMember v partMap)
+                         inVertex LeftPart v
+
+    -- inVertex :: Part -> a -> PartMonad a
+    inVertex vertexPart v = (v :) <$> do
+        modify (Map.insert v vertexPart)
+        let otherVertexPart = otherPart vertexPart
+        asum [ onEdge otherVertexPart u | u <- Set.toAscList (AM.postSet v g) ]
+
+    {-# INLINE onEdge #-}
+    -- onEdge :: Part -> a -> PartMonad a
+    onEdge vertexPart v = do partMap <- get
+                             case Map.lookup v partMap of
+                                 Nothing   -> inVertex vertexPart v
+                                 Just part -> do guard (vertexPart /= part)
+                                                 return [v] -- found a cycle!
+
+    -- toEither :: PartMap a -> a -> Either a a
+    toEither partMap v = case fromJust (Map.lookup v partMap) of
+                             LeftPart  -> Left  v
+                             RightPart -> Right v
+
+    -- oddCycle :: [a] -> [a]
+    oddCycle pathToCycle = init $ dropWhile (/= lastVertex) pathToCycle
+      where
+        lastVertex = last pathToCycle
 
 -- | A /matching/ is a set of pairwise non-adjacent edges between the two parts
 -- of a bipartite graph.

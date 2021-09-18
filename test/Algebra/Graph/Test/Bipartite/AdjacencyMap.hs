@@ -100,23 +100,77 @@ testBipartiteAdjacencyMap = do
         stars :: [(Int, [Int])] -> BAII
         stars = B.stars
 
-    putStrLn "\n============ Bipartite.AdjacencyMap.consistent ============"
-    test "consistent empty            == True" $
-          consistent empty            == True
-    test "consistent (vertex x)       == True" $ \x ->
-          consistent (vertex x)       == True
-    test "consistent (edge x y)       == True" $ \x y ->
-          consistent (edge x y)       == True
-    test "consistent (edges x)        == True" $ \x ->
-          consistent (edges x)        == True
-    test "consistent (toBipartite x)  == True" $ \x ->
-          consistent (toBipartite x)  == True
-    test "consistent (swap x)         == True" $ \x ->
-          consistent (swap x)         == True
-    test "consistent (biclique xs ys) == True" $ \xs ys ->
-          consistent (biclique xs ys) == True
-    test "consistent (circuit xs)     == True" $ \xs ->
-          consistent (circuit xs)     == True
+    putStrLn "\n============ Bipartite.AdjacencyMap.Num ============"
+    test "0                     == rightVertex 0" $
+          0                     == rightVertex 0
+    test "swap 1                == leftVertex 1" $
+          swap 1                == leftVertex 1
+    test "swap 1 + 2            == vertices [1] [2]" $
+          swap 1 + 2            == vertices [1] [2]
+    test "swap 1 * 2            == edge 1 2" $
+          swap 1 * 2            == edge 1 2
+    test "swap 1 + 2 * swap 3   == overlay (leftVertex 1) (edge 3 2)" $
+          swap 1 + 2 * swap 3   == overlay (leftVertex 1) (edge 3 2)
+    test "swap 1 * (2 + swap 3) == connect (leftVertex 1) (vertices [3] [2])" $
+          swap 1 * (2 + swap 3) == connect (leftVertex 1) (vertices [3] [2])
+
+    putStrLn "\n============ Bipartite.AdjacencyMap.Show ============"
+    test "show empty                 == \"empty\"" $
+          show empty                 == "empty"
+    test "show 1                     == \"rightVertex 1\"" $
+          show 1                     == "rightVertex 1"
+    test "show (swap 2)              == \"leftVertex 2\"" $
+          show (swap 2)              == "leftVertex 2"
+    test "show 1 + 2                 == \"vertices [] [1,2]\"" $
+          show (1 + 2)               == "vertices [] [1,2]"
+    test "show (swap (1 + 2))        == \"vertices [1,2] []\"" $
+          show (swap (1 + 2))        == "vertices [1,2] []"
+    test "show (swap 1 * 2)          == \"edge 1 2\"" $
+          show (swap 1 * 2)          == "edge 1 2"
+    test "show (swap 1 * 2 * swap 3) == \"edges [(1,2),(3,2)]\"" $
+          show (swap 1 * 2 * swap 3) == "edges [(1,2),(3,2)]"
+    test "show (swap 1 * 2 + swap 3) == \"overlay (leftVertex 3) (edge 1 2)\"" $
+          show (swap 1 * 2 + swap 3) == "overlay (leftVertex 3) (edge 1 2)"
+
+    putStrLn "\n============ Bipartite.AdjacencyMap.Eq ============"
+    test "(x == y) == (leftAdjacencyMap x == leftAdjacencyMap y && rightAdjacencyMap x == rightAdjacencyMap y)" $ \(x :: BAII) (y :: BAII) ->
+          (x == y) == (leftAdjacencyMap x == leftAdjacencyMap y && rightAdjacencyMap x == rightAdjacencyMap y)
+
+    putStrLn ""
+    test "        x + y == y + x" $ \(x :: BAII) y ->
+                  x + y == y + x
+    test "  x + (y + z) == (x + y) + z" $ \(x :: BAII) y z ->
+            x + (y + z) == (x + y) + z
+    test "    x * empty == x" $ \(x :: BAII) ->
+              x * empty == x
+    test "    empty * x == x" $ \(x :: BAII) ->
+              empty * x == x
+    test "        x * y == y * x" $ \(x :: BAII) y ->
+                  x * y == y * x
+    test "  x * (y * z) == (x * y) * z" $ size10 $ \(x :: BAII) y z ->
+            x * (y * z) == (x * y) * z
+    test "  x * (y + z) == x * y + x * z" $ size10 $ \(x :: BAII) y z ->
+            x * (y + z) == x * (y + z)
+    test "  (x + y) * z == x * z + y * z" $ size10 $ \(x :: BAII) y z ->
+            (x + y) * z == x * z + y * z
+    test "    x * y * z == x * y + x * z + y * z" $ size10 $ \(x :: BAII) y z ->
+              x * y * z == x * y + x * z + y * z
+    test "    x + empty == x" $ \(x :: BAII) ->
+              x + empty == x
+    test "    empty + x == x" $ \(x :: BAII) ->
+              empty + x == x
+    test "        x + x == x" $ \(x :: BAII) ->
+                  x + x == x
+    test "x * y + x + y == x * y" $ \(x :: BAII) (y :: BAII) ->
+          x * y + x + y == x * y
+    test "    x * x * x == x * x" $ size10 $ \(x :: BAII) ->
+              x * x * x == x * x
+
+    putStrLn ""
+    test " leftVertex x * leftVertex y  ==  leftVertex x + leftVertex y " $ \(x :: Int) y ->
+           leftVertex x * leftVertex y  ==  leftVertex x + leftVertex y
+    test "rightVertex x * rightVertex y == rightVertex x + rightVertex y" $ \(x :: Int) y ->
+          rightVertex x * rightVertex y == rightVertex x + rightVertex y
 
     putStrLn "\n============ Bipartite.AdjacencyMap.leftAdjacencyMap ============"
     test "leftAdjacencyMap empty           == Map.empty" $
@@ -137,78 +191,6 @@ testBipartiteAdjacencyMap = do
           rightAdjacencyMap (rightVertex x) == Map.singleton x Set.empty
     test "rightAdjacencyMap (edge x y)      == Map.singleton y (Set.singleton x)" $ \x y ->
           rightAdjacencyMap (edge x y)      == Map.singleton y (Set.singleton x)
-
-    putStrLn "\n============ Bipartite.AdjacencyMap.Num ============"
-    test "0                     == rightVertex 0" $
-          0                     == rightVertex 0
-    test "swap 1                == leftVertex 1" $
-          swap 1                == leftVertex 1
-    test "swap 1 + 2            == vertices [1] [2]" $
-          swap 1 + 2            == vertices [1] [2]
-    test "swap 1 * 2            == edge 1 2" $
-          swap 1 * 2            == edge 1 2
-    test "swap 1 + 2 * swap 3   == overlay (leftVertex 1) (edge 3 2)" $
-          swap 1 + 2 * swap 3   == overlay (leftVertex 1) (edge 3 2)
-    test "swap 1 * (2 + swap 3) == connect (leftVertex 1) (vertices [3] [2])" $
-          swap 1 * (2 + swap 3) == connect (leftVertex 1) (vertices [3] [2])
-
-    putStrLn "\n============ Bipartite.AdjacencyMap.Eq ============"
-    test "(x == y) == (leftAdjacencyMap x == leftAdjacencyMap y && rightAdjacencyMap x == rightAdjacencyMap y)" $ \(x :: BAII) (y :: BAII) ->
-          (x == y) == (leftAdjacencyMap x == leftAdjacencyMap y && rightAdjacencyMap x == rightAdjacencyMap y)
-
-    putStrLn ""
-    test "      x + y == y + x" $ \(x :: BAII) y ->
-                x + y == y + x
-    test "x + (y + z) == (x + y) + z" $ \(x :: BAII) y z ->
-          x + (y + z) == (x + y) + z
-    test "  x * empty == x" $ \(x :: BAII) ->
-            x * empty == x
-    test "  empty * x == x" $ \(x :: BAII) ->
-            empty * x == x
-    test "      x * y == y * x" $ \(x :: BAII) y ->
-                x * y == y * x
-    test "x * (y * z) == (x * y) * z" $ size10 $ \(x :: BAII) y z ->
-          x * (y * z) == (x * y) * z
-    test "x * (y + z) == x * y + x * z" $ size10 $ \(x :: BAII) y z ->
-          x * (y + z) == x * (y + z)
-    test "(x + y) * z == x * z + y * z" $ size10 $ \(x :: BAII) y z ->
-          (x + y) * z == x * z + y * z
-    test "  x * y * z == x * y + x * z + y * z" $ size10 $ \(x :: BAII) y z ->
-            x * y * z == x * y + x * z + y * z
-    test "  x + empty == x" $ \(x :: BAII) ->
-            x + empty == x
-    test "  empty + x == x" $ \(x :: BAII) ->
-            empty + x == x
-    test "      x + x == x" $ \(x :: BAII) ->
-                x + x == x
-    test "x * y + x + y == x * y" $ \(x :: BAII) (y :: BAII) ->
-          x * y + x + y == x * y
-    test "    x * x * x == x * x" $ size10 $ \(x :: BAII) ->
-              x * x * x == x * x
-
-    putStrLn ""
-    test " leftVertex x * leftVertex y  ==  leftVertex x + leftVertex y " $ \(x :: Int) y ->
-           leftVertex x * leftVertex y  ==  leftVertex x + leftVertex y
-    test "rightVertex x * rightVertex y == rightVertex x + rightVertex y" $ \(x :: Int) y ->
-          rightVertex x * rightVertex y == rightVertex x + rightVertex y
-
-    putStrLn "\n============ Bipartite.AdjacencyMap.Show ============"
-    test "show empty                 == \"empty\"" $
-          show empty                 == "empty"
-    test "show 1                     == \"rightVertex 1\"" $
-          show 1                     == "rightVertex 1"
-    test "show (swap 2)              == \"leftVertex 2\"" $
-          show (swap 2)              == "leftVertex 2"
-    test "show 1 + 2                 == \"vertices [] [1,2]\"" $
-          show (1 + 2)               == "vertices [] [1,2]"
-    test "show (swap (1 + 2))        == \"vertices [1,2] []\"" $
-          show (swap (1 + 2))        == "vertices [1,2] []"
-    test "show (swap 1 * 2)          == \"edge 1 2\"" $
-          show (swap 1 * 2)          == "edge 1 2"
-    test "show (swap 1 * 2 * swap 3) == \"edges [(1,2),(3,2)]\"" $
-          show (swap 1 * 2 * swap 3) == "edges [(1,2),(3,2)]"
-    test "show (swap 1 * 2 + swap 3) == \"overlay (leftVertex 3) (edge 1 2)\"" $
-          show (swap 1 * 2 + swap 3) == "overlay (leftVertex 3) (edge 1 2)"
 
     putStrLn "\n============ Bipartite.AdjacencyMap.empty ============"
     test "isEmpty empty           == True" $
@@ -245,10 +227,10 @@ testBipartiteAdjacencyMap = do
           hasEdge x y (rightVertex z)       == False
 
     putStrLn "\n============ Bipartite.AdjacencyMap.vertex ============"
-    test "vertex (Left x)  == leftVertex x" $ \x ->
-          vertex (Left x)  == leftVertex x
-    test "vertex (Right x) == rightVertex x" $ \x ->
-          vertex (Right x) == rightVertex x
+    test "vertex . Left  == leftVertex" $ \x ->
+         (vertex . Left) x == leftVertex x
+    test "vertex . Right == rightVertex" $ \x ->
+         (vertex . Right) x == rightVertex x
 
     putStrLn "\n============ Bipartite.AdjacencyMap.edge ============"
     test "edge x y                     == connect (leftVertex x) (rightVertex y)" $ \x y ->
@@ -379,8 +361,10 @@ testBipartiteAdjacencyMap = do
           toBipartite (AM.edge (Right x) (Left y)) == edge y x
     test "toBipartite (edge (Right x) (Right y)) == vertices [] [x,y]" $ \x y ->
           toBipartite (AM.edge (Right x) (Right y)) == vertices [] [x,y]
-    test "toBipartite . clique                      == uncurry biclique . partitionEithers" $ \xs ->
-         (toBipartite . AM.clique) xs               == (uncurry biclique . partitionEithers) xs
+    test "toBipartite . clique                   == uncurry biclique . partitionEithers" $ \xs ->
+         (toBipartite . AM.clique) xs            == (uncurry biclique . partitionEithers) xs
+    test "toBipartite . fromBipartite            == id" $ \x ->
+         (toBipartite . fromBipartite) x         == x
 
     putStrLn "\n============ Bipartite.AdjacencyMap.toBipartiteWith ============"
     test "toBipartiteWith f empty == empty" $ \(apply -> f) ->
@@ -401,15 +385,13 @@ testBipartiteAdjacencyMap = do
           fromBipartite (leftVertex x) == AM.vertex (Left x)
     test "fromBipartite (edge x y)     == edges [(Left x, Right y), (Right y, Left x)]" $ \x y ->
           fromBipartite (edge x y)     == AM.edges [(Left x, Right y), (Right y, Left x)]
-    test "toBipartite . fromBipartite  == id" $ \x ->
-         (toBipartite . fromBipartite) x == x
 
     putStrLn "\n============ Bipartite.AdjacencyMap.fromBipartiteWith ============"
     test "fromBipartiteWith Left Right             == fromBipartite" $ \x ->
           fromBipartiteWith Left Right x           == fromBipartite x
     test "fromBipartiteWith id id (vertices xs ys) == vertices (xs ++ ys)" $ \xs ys ->
           fromBipartiteWith id id (vertices xs ys) == AM.vertices (xs ++ ys)
-    test "fromBipartiteWith id id . edges          == edges" $ \xs ->
+    test "fromBipartiteWith id id . edges          == symmetricClosure . edges" $ \xs ->
          (fromBipartiteWith id id . edges) xs      == (AM.symmetricClosure . AM.edges) xs
 
     putStrLn "\n============ Bipartite.AdjacencyMap.isEmpty ============"
@@ -585,7 +567,7 @@ testBipartiteAdjacencyMap = do
           leftAdjacencyList empty            == []
     test "leftAdjacencyList (vertices [] xs) == []" $ \xs ->
           leftAdjacencyList (vertices [] xs) == []
-    test "rightAdjacencyList (vertices xs []) == []" $ \xs ->
+    test "leftAdjacencyList (vertices xs []) == []" $ \xs ->
           leftAdjacencyList (vertices xs []) == [(x, []) | x <- nubOrd (sort xs)]
     test "leftAdjacencyList (edge x y)       == [(x, [y])]" $ \x y ->
           leftAdjacencyList (edge x y)       == [(x, [y])]
@@ -605,20 +587,20 @@ testBipartiteAdjacencyMap = do
           rightAdjacencyList (star x ys)      == [(y, [x])  | y <- nubOrd (sort ys)]
 
     putStrLn "\n============ Bipartite.AdjacencyMap.evenList ============"
-    test "evenList []                   == Nil" $
-          evenList []                   == Nil @Int @Int
-    test "evenList [(1, 2), (3, 4)]     == [1, 2, 3, 4] :: List Int Int" $
-          evenList [(1, 2), (3, 4)]     == ([1, 2, 3, 4] :: List Int Int)
-    test "evenList [(1, \"a\"), (2, \"b\")] == Cons 1 (Cons \"a\" (Cons 2 (Cons \"b\" Nil)))" $
-          evenList [(1, "a"), (2 :: Int, "b")] == Cons 1 (Cons "a" (Cons 2 (Cons "b" Nil)))
+    test "evenList []                 == Nil" $
+          evenList []                 == Nil @Int @Int
+    test "evenList [(1,2), (3,4)]     == [1, 2, 3, 4] :: List Int Int" $
+          evenList [(1,2), (3,4)]     == ([1, 2, 3, 4] :: List Int Int)
+    test "evenList [(1,'a'), (2,'b')] == Cons 1 (Cons 'a' (Cons 2 (Cons 'b' Nil)))" $
+          evenList [(1,'a'), (2 :: Int,'b')] == Cons 1 (Cons 'a' (Cons 2 (Cons 'b' Nil)))
 
     putStrLn "\n============ Bipartite.AdjacencyMap.oddList ============"
-    test "oddList 1 []                   == Cons 1 Nil" $
-          oddList 1 []                   == Cons 1 (Nil @Int @Int)
-    test "oddList 1 [(2, 3), (4, 5)]     == [1, 2, 3, 4, 5] :: List Int Int" $
-          oddList 1 [(2, 3), (4, 5)]     == ([1, 2, 3, 4, 5] :: List Int Int)
-    test "oddList 1 [(\"a\", 2), (\"b\", 3)] == Cons 1 (Cons \"a\" (Cons 2 (Cons \"b\" (Cons 3 Nil))))" $
-          oddList 1 [("a", 2), ("b", 3 :: Int)] == Cons 1 (Cons "a" (Cons 2 (Cons "b" (Cons 3 Nil))))
+    test "oddList 1 []                 == Cons 1 Nil" $
+          oddList 1 []                 == Cons 1 (Nil @Int @Int)
+    test "oddList 1 [(2,3), (4,5)]     == [1, 2, 3, 4, 5] :: List Int Int" $
+          oddList 1 [(2,3), (4,5)]     == ([1, 2, 3, 4, 5] :: List Int Int)
+    test "oddList 1 [('a',2), ('b',3)] == Cons 1 (Cons 'a' (Cons 2 (Cons 'b' (Cons 3 Nil))))" $
+          oddList 1 [('a',2), ('b',3 :: Int)] == Cons 1 (Cons 'a' (Cons 2 (Cons 'b' (Cons 3 Nil))))
 
     putStrLn "\n============ Bipartite.AdjacencyMap.path ============"
     test "path Nil                   == empty" $
@@ -669,8 +651,8 @@ testBipartiteAdjacencyMap = do
           stars [(x, [y])]              == edge x y
     test "stars [(x, ys)]               == star x ys" $ \x ys ->
           stars [(x, ys)]               == star x ys
-    test "star x [y,z] == edges [(x,y), (x,z)]" $ \x y z ->
-          star x [y,z] == edges [(x,y), (x,z)]
+    test "star x [y,z]                  == edges [(x,y), (x,z)]" $ \x y z ->
+          star x [y,z]                  == edges [(x,y), (x,z)]
     test "stars                         == overlays . map (uncurry star)" $ \xs ->
           stars xs                      == (overlays . map (uncurry star)) xs
     test "overlay (stars xs) (stars ys) == stars (xs ++ ys)" $ \xs ys ->
@@ -693,55 +675,35 @@ testBipartiteAdjacencyMap = do
           box (path [0,1]) (path ['a','b']) == B.edges @(Int,Char) [((0,'a'), (0,'b')), ((0,'a'), (1,'a')), ((1,'b'), (0,'b')), ((1,'b'), (1,'a'))]
 
     -- TODO: Add missing tests.
-    test "box x (overlay y z) == overlay (box x y) (box x z)" $ size10 $ \(x :: BAII) (y :: BAII) (z :: BAII) ->
-          box x (overlay y z) == overlay (box x y) (box x z)
+    putStrLn ""
+    test "box x (overlay y z)   == overlay (box x y) (box x z)" $ size10 $ \(x :: BAII) (y :: BAII) (z :: BAII) ->
+          box x (overlay y z)   == overlay (box x y) (box x z)
     test "vertexCount (box x y) <= vertexCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
         B.vertexCount (box x y) <= vertexCount x * vertexCount y
-    test "edgeCount (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
-        B.edgeCount (box x y) <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
+    test "edgeCount (box x y)   <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
+        B.edgeCount (box x y)   <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
 
     putStrLn ""
     test "box == boxWith (,) (,) (,) (,)" $ size10 $ \(x :: BAII) (y :: BAII) ->
           box x y == boxWith (,) (,) (,) (,) x y
 
-    putStrLn "\n============ Bipartite.AdjacencyMap.detectParts ============"
-    test "detectParts empty                                       == Right empty" $
-          detectParts AM.empty                                    == Right empty
-    test "detectParts (vertex x)                                  == Right (leftVertex x)" $ \x ->
-          detectParts (AM.vertex x)                               == Right (leftVertex x)
-    test "detectParts (edge x x)                                  == Left [x]" $ \x ->
-          detectParts (AM.edge x x :: AI)                         == Left [x]
-    test "detectParts (edge 1 2)                                  == Right (edge 1 2)" $
-          detectParts (AM.edge 1 2)                               == Right (edge 1 2)
-    test "detectParts (1 * (2 + 3))                               == Right (edges [(1,2), (1,3)])" $
-          detectParts (1 * (2 + 3))                               == Right (edges [(1,2), (1,3)])
-    test "detectParts (1 * 2 * 3)                                 == Left [1, 2, 3]" $
-          detectParts (1 * 2 * 3 :: AI)                           == Left [1, 2, 3]
-    test "detectParts ((1 + 3) * (2 + 4) + 6 * 5)                 == Right (swap (1 + 3) * (2 + 4) + swap 5 * 6)" $
-          detectParts ((1 + 3) * (2 + 4) + 6 * 5)                 == Right (swap (1 + 3) * (2 + 4) + swap 5 * 6)
-    test "detectParts ((1 * 3 * 4) + 2 * (1 + 2))                 == Left [2]" $
-          detectParts ((1 * 3 * 4) + 2 * (1 + 2) :: AI)           == Left [2]
-    test "detectParts (clique [1..10])                            == Left [1, 2, 3]" $
-          detectParts (AM.clique [1..10] :: AI)                   == Left [1, 2, 3]
-    test "detectParts (circuit [1..11])                           == Left [1..11]" $
-          detectParts (AM.circuit [1..11] :: AI)                  == Left [1..11]
-    test "detectParts (circuit [1..10])                           == Right (circuit [(x, x + 1) | x <- [1,3,5,7,9]])" $
-          detectParts (AM.circuit [1..10] :: AI)                  == Right (circuit [(x, x + 1) | x <- [1,3,5,7,9]])
-    test "detectParts (biclique [] xs)                            == Right (vertices xs [])" $ \xs ->
-          detectParts (AM.biclique [] xs)                         == Right (vertices xs [])
-    test "detectParts (biclique (map Left (x:xs)) (map Right ys)) == Right (biclique (map Left (x:xs)) (map Right ys))" $ \(x :: Int) xs (ys :: [Int]) ->
-          detectParts (AM.biclique (map Left (x:xs)) (map Right ys)) == Right (B.biclique (map Left (x:xs)) (map Right ys))
-    test "isRight (detectParts (star x ys))                       == notElem x ys" $ \(x :: Int) ys ->
-          isRight (detectParts (AM.star x ys))                    == notElem x ys
-    test "isRight (detectParts (fromBipartite x))                 == True" $ \x ->
-          isRight (detectParts (fromBipartite x))                 == True
-
-    putStrLn ""
-    test "Correctness of detectParts" $ \input ->
-        let undirected = AM.symmetricClosure input in
-        case detectParts input of
-            Left cycle -> mod (length cycle) 2 == 1 && AM.isSubgraphOf (AM.circuit cycle) undirected
-            Right bipartite -> AM.gmap fromEither (fromBipartite bipartite) == undirected
+    putStrLn "\n============ Bipartite.AdjacencyMap.consistent ============"
+    test "consistent empty            == True" $
+          consistent empty            == True
+    test "consistent (vertex x)       == True" $ \x ->
+          consistent (vertex x)       == True
+    test "consistent (edge x y)       == True" $ \x y ->
+          consistent (edge x y)       == True
+    test "consistent (edges x)        == True" $ \x ->
+          consistent (edges x)        == True
+    test "consistent (toBipartite x)  == True" $ \x ->
+          consistent (toBipartite x)  == True
+    test "consistent (swap x)         == True" $ \x ->
+          consistent (swap x)         == True
+    test "consistent (circuit xs)     == True" $ \xs ->
+          consistent (circuit xs)     == True
+    test "consistent (biclique xs ys) == True" $ \xs ys ->
+          consistent (biclique xs ys) == True
 
 testBipartiteAdjacencyMapAlgorithm :: IO ()
 testBipartiteAdjacencyMapAlgorithm = do

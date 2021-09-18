@@ -30,13 +30,19 @@ description:
     .
     The library also provides conventional graph data structures, such as
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-AdjacencyMap.html Algebra.Graph.AdjacencyMap>
-    along with its various flavours: adjacency maps specialised to graphs with
-    vertices of type 'Int'
+    along with its various flavours:
+    .
+    * adjacency maps specialised to graphs with vertices of type 'Int'
     (<http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-AdjacencyIntMap.html Algebra.Graph.AdjacencyIntMap>),
-    non-empty adjacency maps
+    * non-empty adjacency maps
     (<http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-NonEmpty-AdjacencyMap.html Algebra.Graph.NonEmpty.AdjacencyMap>),
-    and adjacency maps with edge labels
-    (<http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Labelled-AdjacencyMap.html Algebra.Graph.Labelled.AdjacencyMap>).
+    * adjacency maps for undirected bipartite graphs
+    (<http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Bipartite-AdjacencyMap.html Algebra.Graph.Bipartite.AdjacencyMap>),
+    * adjacency maps with edge labels
+    (<http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Labelled-AdjacencyMap.html Algebra.Graph.Labelled.AdjacencyMap>),
+    * acyclic adjacency maps
+    (<http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-Acyclic-AdjacencyMap.html Algebra.Graph.Acyclic.AdjacencyMap>),
+    .
     A large part of the API of algebraic graphs and adjacency maps is available
     through the 'Foldable'-like type class
     <http://hackage.haskell.org/package/algebraic-graphs/docs/Algebra-Graph-ToGraph.html Algebra.Graph.ToGraph>.
