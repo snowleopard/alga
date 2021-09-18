@@ -26,7 +26,6 @@ module Algebra.Graph.Export (
     ) where
 
 import Data.Foldable (fold)
-import Data.Semigroup
 import Data.String hiding (unlines)
 import Prelude hiding (unlines)
 

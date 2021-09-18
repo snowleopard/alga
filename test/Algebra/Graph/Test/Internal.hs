@@ -16,7 +16,6 @@ module Algebra.Graph.Test.Internal (
 
 import Algebra.Graph.Internal
 import Algebra.Graph.Test
-import Data.Semigroup ((<>))
 
 testInternal :: IO ()
 testInternal = do
