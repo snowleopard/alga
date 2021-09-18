@@ -14,7 +14,7 @@ module Algebra.Graph.Test.Labelled.AdjacencyMap (
     testLabelledAdjacencyMap
     ) where
 
-import Data.Monoid
+import Data.Monoid (Any, Sum (..))
 
 import Algebra.Graph.Label
 import Algebra.Graph.Labelled.AdjacencyMap

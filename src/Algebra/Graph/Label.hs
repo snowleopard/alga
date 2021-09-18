@@ -33,7 +33,7 @@ import Control.Monad
 import Data.Coerce
 import Data.Maybe
 import Data.Monoid (Any (..), Monoid (..), Sum (..))
-import Data.Semigroup (Max (..), Min (..), Semigroup (..))
+import Data.Semigroup (Max (..), Min (..))
 import Data.Set (Set)
 import GHC.Exts (IsList (..))
 

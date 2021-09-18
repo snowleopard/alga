@@ -55,7 +55,6 @@ import Control.Monad (MonadPlus (..))
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
-import Data.Semigroup ((<>))
 import Data.String
 import Data.Tree
 import GHC.Generics

@@ -56,7 +56,6 @@ import Control.DeepSeq
 import Control.Monad
 import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Semigroup ((<>))
 import Data.String
 
 import Algebra.Graph.Internal

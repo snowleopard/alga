@@ -29,8 +29,8 @@ module Algebra.Graph.Internal (
 
 import Data.Coerce
 import Data.Foldable
-import Data.Semigroup
 import Data.IntSet (IntSet)
+import Data.Semigroup (Endo (..))
 import Data.Set (Set)
 
 import qualified Data.IntSet as IntSet
