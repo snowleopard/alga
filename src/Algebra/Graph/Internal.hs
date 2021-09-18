@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Internal
@@ -122,11 +121,7 @@ maybeF f x = Just . maybe x (f x)
 
 -- | Compute the Cartesian product of two sets.
 setProduct :: Set a -> Set b -> Set (a, b)
-#if MIN_VERSION_containers(0,5,11)
 setProduct = Set.cartesianProduct
-#else
-setProduct x y = Set.fromDistinctAscList [ (a, b) | a <- Set.toAscList x, b <- Set.toAscList y ]
-#endif
 
 -- | Compute the Cartesian product of two sets, applying a function to each
 -- resulting pair.
