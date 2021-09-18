@@ -12,7 +12,7 @@ homepage:      https://github.com/snowleopard/alga
 bug-reports:   https://github.com/snowleopard/alga/issues
 category:      Algebra, Algorithms, Data Structures, Graphs
 build-type:    Simple
-tested-with:   GHC==9.0, GHC==8.10, GHC==8.8, GHC==8.6, GHC==8.4, GHC==8.2, GHC==8.0
+tested-with:   GHC==9.0, GHC==8.10, GHC==8.8, GHC==8.6, GHC==8.4
 description:
     <https://github.com/snowleopard/alga Alga> is a library for algebraic construction and
     manipulation of graphs in Haskell. See <https://github.com/snowleopard/alga-paper this paper>
