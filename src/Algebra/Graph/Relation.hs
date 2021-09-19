@@ -268,7 +268,7 @@ overlay x y = Relation (domain x `union` domain y) (relation x `union` relation 
 -- @
 connect :: Ord a => Relation a -> Relation a -> Relation a
 connect x y = Relation (domain x `union` domain y)
-    (relation x `union` relation y `union` (domain x `setProduct` domain y))
+    (relation x `union` relation y `union` (domain x `Set.cartesianProduct` domain y))
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -550,7 +550,7 @@ clique xs = Relation (Set.fromList xs) (fst $ go xs)
 -- biclique xs      ys      == 'connect' ('vertices' xs) ('vertices' ys)
 -- @
 biclique :: Ord a => [a] -> [a] -> Relation a
-biclique xs ys = Relation (x `Set.union` y) (x `setProduct` y)
+biclique xs ys = Relation (x `Set.union` y) (x `Set.cartesianProduct` y)
   where
     x = Set.fromList xs
     y = Set.fromList ys
@@ -755,8 +755,8 @@ induceJust (Relation d r) = Relation (catMaybesSet d) (catMaybesSet2 r)
 compose :: Ord a => Relation a -> Relation a -> Relation a
 compose x y = Relation (referredToVertexSet r) r
   where
-    d = domain x `Set.union` domain y
-    r = Set.unions [ preSet v x `setProduct` postSet v y | v <- Set.toAscList d ]
+    vs = Set.toAscList (domain x `Set.union` domain y)
+    r  = Set.unions [ preSet v x `Set.cartesianProduct` postSet v y | v <- vs ]
 
 -- | Compute the /reflexive and transitive closure/ of a graph.
 -- Complexity: /O(n * m * log(n) * log(m))/ time.
