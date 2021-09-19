@@ -324,6 +324,7 @@ connect = coerce20 G.connect
 -- @
 -- vertices []            == 'empty'
 -- vertices [x]           == 'vertex' x
+-- vertices               == 'overlays' . map 'vertex'
 -- 'hasVertex' x . vertices == 'elem' x
 -- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
 -- 'vertexSet'   . vertices == Set . 'Set.fromList'

@@ -346,6 +346,7 @@ connect (BAM ab1 ba1) (BAM ab2 ba2) = BAM ab ba
 -- vertices [] []                    == 'empty'
 -- vertices [x] []                   == 'leftVertex' x
 -- vertices [] [x]                   == 'rightVertex' x
+-- vertices xs ys                    == 'overlays' ('map' 'leftVertex' xs ++ 'map' 'rightVertex' ys)
 -- 'hasLeftVertex'  x (vertices xs ys) == 'elem' x xs
 -- 'hasRightVertex' y (vertices xs ys) == 'elem' y ys
 -- @

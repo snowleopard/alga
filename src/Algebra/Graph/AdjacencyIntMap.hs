@@ -302,6 +302,7 @@ connect (AM x) (AM y) = AM $ IntMap.unionsWith IntSet.union
 -- @
 -- vertices []             == 'empty'
 -- vertices [x]            == 'vertex' x
+-- vertices                == 'overlays' . map 'vertex'
 -- 'hasVertex' x  . vertices == 'elem' x
 -- 'vertexCount'  . vertices == 'length' . 'Data.List.nub'
 -- 'vertexIntSet' . vertices == IntSet.'IntSet.fromList'

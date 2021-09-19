@@ -275,7 +275,7 @@ ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 {-# INLINE ordIntR #-}
 
 -- TODO: It should be a good consumer of its second argument too.
--- | `<*>` is a good consumer of its first argument and producer.
+-- | `<*>` is a good consumer of its first argument and a good producer.
 instance Applicative Graph where
     pure    = Vertex
     f <*> x = buildg $ \e v o c -> foldg e (\w -> foldg e (v . w) o c x) o c f
@@ -390,6 +390,7 @@ connect = Connect
 -- @
 -- vertices []            == 'empty'
 -- vertices [x]           == 'vertex' x
+-- vertices               == 'overlays' . map 'vertex'
 -- 'hasVertex' x . vertices == 'elem' x
 -- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
 -- 'vertexSet'   . vertices == Set.'Set.fromList'

@@ -272,6 +272,7 @@ connect = Connect
 -- @
 -- vertices []            == 'empty'
 -- vertices [x]           == 'vertex' x
+-- vertices               == 'overlays' . map 'vertex'
 -- 'hasVertex' x . vertices == 'elem' x
 -- 'Algebra.Graph.ToGraph.vertexCount' . vertices == 'length' . 'Data.List.nub'
 -- 'Algebra.Graph.ToGraph.vertexSet'   . vertices == Set.'Set.fromList'
