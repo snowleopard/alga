@@ -1257,10 +1257,10 @@ compose x y = buildg $ \e v o c -> fromMaybe e $
 --                                       , ((0,\'b\'), (1,\'b\'))
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
--- Up to the isomorphism between the resulting vertex types, this operation
--- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
+-- Up to isomorphism between the resulting vertex types, this operation is
+-- /commutative/, /associative/, /distributes/ over 'overlay', has singleton
 -- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for equality up to the isomorphism, e.g. @(x, ()) ~~ x@.
+-- stands for equality up to an isomorphism, e.g. @(x,@ @()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x

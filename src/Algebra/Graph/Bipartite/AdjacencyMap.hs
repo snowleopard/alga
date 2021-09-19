@@ -43,6 +43,9 @@ module Algebra.Graph.Bipartite.AdjacencyMap (
     -- * Standard families of graphs
     List (..), evenList, oddList, path, circuit, biclique, star, stars, mesh,
 
+    -- * Graph transformation
+    removeLeftVertex, removeRightVertex, removeEdge, bimap,
+
     -- * Graph composition
     box, boxWith,
 
@@ -823,6 +826,61 @@ star x ys = connect (leftVertex x) (vertices [] ys)
 stars :: (Ord a, Ord b) => [(a, [b])] -> AdjacencyMap a b
 stars = overlays . map (uncurry star)
 
+-- | Remove a vertex from the left part of a given graph.
+-- Complexity: /O(r * log(l))/ time.
+--
+-- @
+-- removeLeftVertex x ('leftVertex' x)       == 'empty'
+-- removeLeftVertex 1 ('leftVertex' 2)       == 'leftVertex' 2
+-- removeLeftVertex x ('rightVertex' y)      == 'rightVertex' y
+-- removeLeftVertex x ('edge' x y)           == 'rightVertex' y
+-- removeLeftVertex x . removeLeftVertex x == removeLeftVertex x
+-- @
+removeLeftVertex :: Ord a => a -> AdjacencyMap a b -> AdjacencyMap a b
+removeLeftVertex a (BAM ab ba) = BAM (Map.delete a ab) (Map.map (Set.delete a) ba)
+
+-- | Remove a vertex from the right part of a given graph.
+-- Complexity: /O(l * log(r))/ time.
+--
+-- @
+-- removeRightVertex x ('rightVertex' x)       == 'empty'
+-- removeRightVertex 1 ('rightVertex' 2)       == 'rightVertex' 2
+-- removeRightVertex x ('leftVertex' y)        == 'leftVertex' y
+-- removeRightVertex y ('edge' x y)            == 'leftVertex' x
+-- removeRightVertex x . removeRightVertex x == removeRightVertex x
+-- @
+removeRightVertex :: Ord b => b -> AdjacencyMap a b -> AdjacencyMap a b
+removeRightVertex b (BAM ab ba) = BAM (Map.map (Set.delete b) ab) (Map.delete b ba)
+
+-- | Remove an edge from a given graph.
+-- Complexity: /O(log(l) + log(r))/ time.
+--
+-- @
+-- removeEdge x y ('edge' x y)            == 'vertices' [x] [y]
+-- removeEdge x y . removeEdge x y      == removeEdge x y
+-- removeEdge x y . 'removeLeftVertex' x  == 'removeLeftVertex' x
+-- removeEdge x y . 'removeRightVertex' y == 'removeRightVertex' y
+-- @
+removeEdge :: (Ord a, Ord b) => a -> b -> AdjacencyMap a b -> AdjacencyMap a b
+removeEdge a b (BAM ab ba) =
+    BAM (Map.adjust (Set.delete b) a ab) (Map.adjust (Set.delete a) b ba)
+
+-- | Transform a graph by applying given functions to the vertices of each part.
+-- Complexity: /O((n + m) * log(n))/ time.
+--
+-- @
+-- bimap f g 'empty'           == 'empty'
+-- bimap f g . 'vertex'        == 'vertex' . Data.Bifunctor.'Data.Bifunctor.bimap' f g
+-- bimap f g ('edge' x y)      == 'edge' (f x) (g y)
+-- bimap 'id' 'id'               == 'id'
+-- bimap f1 g1 . bimap f2 g2 == bimap (f1 . f2) (g1 . g2)
+-- @
+bimap :: (Ord a, Ord b, Ord c, Ord d) => (a -> c) -> (b -> d) -> AdjacencyMap a b -> AdjacencyMap c d
+bimap f g (BAM ab ba) = BAM cd dc
+  where
+    cd = Map.map (Set.map g) $ Map.mapKeysWith Set.union f ab
+    dc = Map.map (Set.map f) $ Map.mapKeysWith Set.union g ba
+
 -- TODO: Add torus?
 -- | Construct a /mesh/ graph from two lists of vertices.
 -- Complexity: /O(L1 * L2 * log(L1 * L2))/ time, where /L1/ and /L2/ are the
@@ -847,19 +905,21 @@ mesh as bs = box (path $ fromList as) (path $ fromList bs)
 --                                            , ((1,\'b\'), (0,\'b\'))
 --                                            , ((1,\'b\'), (1,\'a\')) ]
 -- @
--- Up to the isomorphism between the resulting vertex types, this operation
--- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
--- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for equality up to the isomorphism, e.g. @(x, ()) ~~ x@.
+-- Up to isomorphism between the resulting vertex types, this operation is
+-- /commutative/, /associative/, /distributes/ over 'overlay', has singleton
+-- graphs as /identities/ and /swapping identities/, and 'empty' as the
+-- /annihilating zero/. Below @~~@ stands for equality up to an isomorphism,
+-- e.g. @(x,@ @()) ~~ x@.
 --
 -- @
--- box x y               ~~ box y x
--- box x (box y z)       ~~ box (box x y) z
--- box x ('overlay' y z)   == 'overlay' (box x y) (box x z)
--- box x ('vertex' ())     ~~ x
--- box x 'empty'           ~~ 'empty'
--- 'vertexCount' (box x y) == 'vertexCount' x * 'vertexCount' y
--- 'edgeCount'   (box x y) == 'vertexCount' x * 'edgeCount' y + 'edgeCount' x * 'vertexCount' y
+-- box x y                ~~ box y x
+-- box x (box y z)        ~~ box (box x y) z
+-- box x ('overlay' y z)    == 'overlay' (box x y) (box x z)
+-- box x ('leftVertex' ())  ~~ x
+-- box x ('rightVertex' ()) ~~ 'swap' x
+-- box x 'empty'            ~~ 'empty'
+-- 'vertexCount' (box x y)  == 'vertexCount' x * 'vertexCount' y
+-- 'edgeCount'   (box x y)  == 'vertexCount' x * 'edgeCount' y + 'edgeCount' x * 'vertexCount' y
 -- @
 box :: (Ord a, Ord b) => AdjacencyMap a a -> AdjacencyMap b b -> AdjacencyMap (a, b) (a, b)
 box = boxWith (,) (,) (,) (,)

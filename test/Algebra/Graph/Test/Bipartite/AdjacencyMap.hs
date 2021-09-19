@@ -18,7 +18,6 @@ module Algebra.Graph.Test.Bipartite.AdjacencyMap (
 import Algebra.Graph.Bipartite.AdjacencyMap
 import Algebra.Graph.Bipartite.AdjacencyMap.Algorithm
 import Algebra.Graph.Test
-import Data.Bifunctor (bimap)
 import Data.Either
 import Data.Either.Extra
 import Data.List (nub, sort)
@@ -27,9 +26,11 @@ import Data.Set (Set)
 
 import qualified Algebra.Graph.AdjacencyMap           as AM
 import qualified Algebra.Graph.Bipartite.AdjacencyMap as B
+import qualified Data.Bifunctor                       as Bifunctor
 import qualified Data.Map.Strict                      as Map
 import qualified Data.Set                             as Set
 import qualified Data.Tuple
+import qualified Algebra.Graph.Bipartite.AdjacencyMap as B
 
 type AI   = AM.AdjacencyMap Int
 type AII  = AM.AdjacencyMap (Either Int Int)
@@ -99,6 +100,12 @@ testBipartiteAdjacencyMap = do
         star = B.star
         stars :: [(Int, [Int])] -> BAII
         stars = B.stars
+        removeLeftVertex :: Int -> BAII -> BAII
+        removeLeftVertex = B.removeLeftVertex
+        removeRightVertex :: Int -> BAII -> BAII
+        removeRightVertex = B.removeRightVertex
+        removeEdge :: Int -> Int -> BAII -> BAII
+        removeEdge = B.removeEdge
 
     putStrLn "\n============ Bipartite.AdjacencyMap.Num ============"
     test "0                     == rightVertex 0" $
@@ -167,9 +174,9 @@ testBipartiteAdjacencyMap = do
               x * x * x == x * x
 
     putStrLn ""
-    test " leftVertex x * leftVertex y  ==  leftVertex x + leftVertex y " $ \(x :: Int) y ->
+    test " leftVertex x * leftVertex y  ==  leftVertex x + leftVertex y " $ \x y ->
            leftVertex x * leftVertex y  ==  leftVertex x + leftVertex y
-    test "rightVertex x * rightVertex y == rightVertex x + rightVertex y" $ \(x :: Int) y ->
+    test "rightVertex x * rightVertex y == rightVertex x + rightVertex y" $ \x y ->
           rightVertex x * rightVertex y == rightVertex x + rightVertex y
 
     putStrLn "\n============ Bipartite.AdjacencyMap.leftAdjacencyMap ============"
@@ -598,9 +605,9 @@ testBipartiteAdjacencyMap = do
     test "oddList 1 []                 == Cons 1 Nil" $
           oddList 1 []                 == Cons 1 (Nil @Int @Int)
     test "oddList 1 [(2,3), (4,5)]     == [1, 2, 3, 4, 5] :: List Int Int" $
-          oddList 1 [(2,3), (4,5)]     == ([1, 2, 3, 4, 5] :: List Int Int)
+          oddList 1 [(2,3), (4,5)]     ==([1, 2, 3, 4, 5] :: List Int Int)
     test "oddList 1 [('a',2), ('b',3)] == Cons 1 (Cons 'a' (Cons 2 (Cons 'b' (Cons 3 Nil))))" $
-          oddList 1 [('a',2), ('b',3 :: Int)] == Cons 1 (Cons 'a' (Cons 2 (Cons 'b' (Cons 3 Nil))))
+          oddList 1 [('a',2), ('b',3)] == Cons 1 (Cons 'a' (Cons 2 (Cons 'b' (Cons @Int 3 Nil))))
 
     putStrLn "\n============ Bipartite.AdjacencyMap.path ============"
     test "path Nil                   == empty" $
@@ -670,18 +677,82 @@ testBipartiteAdjacencyMap = do
     test "mesh [1,2] ['a','b'] == biclique [(1,'a'), (2,'b')] [(1,'b'), (2,'a')]" $
           mesh [1,2] ['a','b'] == B.biclique @(Int,Char) [(1,'a'), (2,'b')] [(1,'b'), (2,'a')]
 
+    putStrLn "\n============ Bipartite.AdjacencyMap.removeLeftVertex ============"
+    test "removeLeftVertex x (leftVertex x)       == empty" $ \x ->
+          removeLeftVertex x (leftVertex x)       == empty
+    test "removeLeftVertex 1 (leftVertex 2)       == leftVertex 2" $
+          removeLeftVertex 1 (leftVertex 2)       ==(leftVertex 2 :: BAII)
+    test "removeLeftVertex x (rightVertex y)      == rightVertex y" $ \x y ->
+          removeLeftVertex x (rightVertex y)      == rightVertex y
+    test "removeLeftVertex x (edge x y)           == rightVertex y" $ \x y ->
+          removeLeftVertex x (edge x y)           == rightVertex y
+    test "removeLeftVertex x . removeLeftVertex x == removeLeftVertex x" $ \x (g :: BAII)->
+         (removeLeftVertex x . removeLeftVertex x) g == removeLeftVertex x g
+
+    putStrLn "\n============ Bipartite.AdjacencyMap.removeRightVertex ============"
+    test "removeRightVertex x (rightVertex x)       == empty" $ \x ->
+          removeRightVertex x (rightVertex x)       == empty
+    test "removeRightVertex 1 (rightVertex 2)       == rightVertex 2" $
+          removeRightVertex 1 (rightVertex 2)       ==(rightVertex 2 :: BAII)
+    test "removeRightVertex x (leftVertex y)        == leftVertex y" $ \x y ->
+          removeRightVertex x (leftVertex y)        == leftVertex y
+    test "removeRightVertex y (edge x y)            == leftVertex x" $ \x y ->
+          removeRightVertex y (edge x y)            == leftVertex x
+    test "removeRightVertex x . removeRightVertex x == removeRightVertex x" $ \x (y :: BAII)->
+         (removeRightVertex x . removeRightVertex x) y == removeRightVertex x y
+
+    putStrLn "\n============ Bipartite.AdjacencyMap.removeEdge ============"
+    test "removeEdge x y (edge x y)            == vertices [x] [y]" $ \x y ->
+          removeEdge x y (edge x y)            == vertices [x] [y]
+    test "removeEdge x y . removeEdge x y      == removeEdge x y" $ \x y z ->
+         (removeEdge x y . removeEdge x y) z   == removeEdge x y z
+    test "removeEdge x y . removeLeftVertex x  == removeLeftVertex x" $ \x y z ->
+         (removeEdge x y . removeLeftVertex x) z == removeLeftVertex x z
+    test "removeEdge x y . removeRightVertex y == removeRightVertex y" $ \x y z ->
+         (removeEdge x y . removeRightVertex y) z == removeRightVertex y z
+
+    putStrLn "\n============ Bipartite.AdjacencyMap.bimap ============"
+    test "bimap f g empty           == empty" $ \(apply -> f) (apply -> g) ->
+          bimap f g empty           == empty
+    test "bimap f g . vertex        == vertex . Data.Bifunctor.bimap f g" $ \(apply -> f) (apply -> g) x ->
+         (bimap f g . vertex) x     ==(vertex .      Bifunctor.bimap f g) x
+    test "bimap f g (edge x y)      == edge (f x) (g y)" $ \(apply -> f) (apply -> g) x y ->
+          bimap f g (edge x y)      == edge (f x) (g y)
+    test "bimap id id               == id" $ \(x :: BAII) ->
+          bimap id id x             == id x
+    test "bimap f1 g1 . bimap f2 g2 == bimap (f1 . f2) (g1 . g2)" $ \(apply -> f1 :: Int -> Int) (apply -> g1 :: Int -> Int) (apply -> f2 :: Int -> Int) (apply -> g2 :: Int -> Int) x ->
+         (bimap f1 g1 . bimap f2 g2) x == bimap (f1 . f2) (g1 . g2) x
+
     putStrLn "\n============ Bipartite.AdjacencyMap.box ============"
     test "box (path [0,1]) (path ['a','b']) == <correct result>" $
-          box (path [0,1]) (path ['a','b']) == B.edges @(Int,Char) [((0,'a'), (0,'b')), ((0,'a'), (1,'a')), ((1,'b'), (0,'b')), ((1,'b'), (1,'a'))]
+          box (path [0,1]) (path ['a','b']) == B.edges @(Int,Char) [ ((0,'a'), (0,'b'))
+                                                                   , ((0,'a'), (1,'a'))
+                                                                   , ((1,'b'), (0,'b'))
+                                                                   , ((1,'b'), (1,'a')) ]
+    let unit x = (x, ())
+        biunit = B.bimap unit unit
+        comm (x, y) = (y, x)
+        bicomm = B.bimap comm comm
+        assoc ((x, y), z) = (x, (y, z))
+        biassoc = B.bimap assoc assoc
 
-    -- TODO: Add missing tests.
     putStrLn ""
-    test "box x (overlay y z)   == overlay (box x y) (box x z)" $ size10 $ \(x :: BAII) (y :: BAII) (z :: BAII) ->
-          box x (overlay y z)   == overlay (box x y) (box x z)
-    test "vertexCount (box x y) <= vertexCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
-        B.vertexCount (box x y) <= vertexCount x * vertexCount y
-    test "edgeCount (box x y)   <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
-        B.edgeCount (box x y)   <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
+    test "box x y                ~~ box y x" $ size10 $ \(x :: BAII) (y :: BAII) ->
+          box x y                == bicomm (box y x)
+    test "box x (box y z)        ~~ box (box x y) z" $ size10 $ \(x :: BAII) (y :: BAII) (z :: BAII) ->
+          box x (box y z)        == biassoc (box (box x y) z)
+    test "box x (box y z)        ~~ box (box x y) z" $ mapSize (min 3) $ \(x :: BAII) (y :: BAII) (z :: BAII) ->
+          box x (box y z)        == biassoc (box (box x y) z)
+    test "box x (leftVertex ())  ~~ x" $ size10 $ \(x :: BAII) ->
+          box x (B.leftVertex ()) == biunit x
+    test "box x (rightVertex ()) ~~ swap x" $ size10 $ \(x :: BAII) ->
+          box x (B.rightVertex ()) == biunit (B.swap x)
+    test "box x empty            ~~ empty" $ size10 $ \(x :: BAII) ->
+          box x B.empty          == biunit empty
+    test "vertexCount (box x y)  <= vertexCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
+        B.vertexCount (box x y)  <= vertexCount x * vertexCount y
+    test "edgeCount (box x y)    <= vertexCount x * edgeCount y + edgeCount x * vertexCount y" $ size10 $ \(x :: BAII) (y :: BAII) ->
+        B.edgeCount (box x y)    <= vertexCount x * edgeCount y + edgeCount x * vertexCount y
 
     putStrLn ""
     test "box == boxWith (,) (,) (,) (,)" $ size10 $ \(x :: BAII) (y :: BAII) ->
@@ -709,51 +780,54 @@ testBipartiteAdjacencyMapAlgorithm :: IO ()
 testBipartiteAdjacencyMapAlgorithm = do
     putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.detectParts ============"
     test "detectParts empty                                       == Right empty" $
-        detectParts (AM.empty :: AI)                               == Right empty
+          detectParts (AM.empty :: AI)                            == Right empty
     test "detectParts (vertex 1)                                  == Right (leftVertex 1)" $
-        detectParts (AM.vertex 1 :: AI)                            == Right (leftVertex 1)
+          detectParts (AM.vertex 1 :: AI)                         == Right (leftVertex 1)
     test "detectParts (edge 1 1)                                  == Left [1]" $
-        detectParts (AM.edge 1 1 :: AI)                            == Left [1]
+          detectParts (AM.edge 1 1 :: AI)                         == Left [1]
     test "detectParts (edge 1 2)                                  == Right (edge 1 2)" $
-        detectParts (AM.edge 1 2 :: AI)                            == Right (edge 1 2)
+          detectParts (AM.edge 1 2 :: AI)                         == Right (edge 1 2)
     test "detectParts (edge 0 (-1))                               == Right (edge (-1) 0)" $
-        detectParts (AM.edge 0 (-1) :: AI)                         == Right (edge (-1) 0)
+          detectParts (AM.edge 0 (-1) :: AI)                      == Right (edge (-1) 0)
     test "detectParts (1 * (2 + 3))                               == Right (edges [(1, 2), (1, 3)])" $
-        detectParts (1 * (2 + 3) :: AI)                            == Right (edges [(1, 2), (1, 3)])
+          detectParts (1 * (2 + 3) :: AI)                         == Right (edges [(1, 2), (1, 3)])
     test "detectParts ((1 + 3) * (2 + 4) + 6 * 5)                 == Right (swap (1 + 3) * (2 + 4) + swap 5 * 6" $
-        detectParts ((1 + 3) * (2 + 4) + 6 * 5 :: AI)              == Right (swap (1 + 3) * (2 * 4) + swap 5 * 6)
+          detectParts ((1 + 3) * (2 + 4) + 6 * 5 :: AI)           == Right (swap (1 + 3) * (2 * 4) + swap 5 * 6)
     test "detectParts ((1 + 2) * (3 + 4) * (5 + 6))               == Left [1, 3, 2, 4, 5]" $
-        detectParts ((1 + 2) * (3 + 4) * (5 + 6) :: AI)            == Left [1, 3, 2, 4, 5]
+          detectParts ((1 + 2) * (3 + 4) * (5 + 6) :: AI)         == Left [1, 3, 2, 4, 5]
     test "detectParts ((1 + 2) * (3 + 4) + (3 + 4) * 5)           == Right (swap (1 + 2) * (3 + 4) + swap 5 * (3 + 4))" $
-        detectParts ((1 + 2) * (3 + 4) + (3 + 4) * 5 :: AI)        == Right (swap (1 + 2) * (3 + 4) + swap 5 * (3 + 4))
+          detectParts ((1 + 2) * (3 + 4) + (3 + 4) * 5 :: AI)     == Right (swap (1 + 2) * (3 + 4) + swap 5 * (3 + 4))
     test "detectParts (1 * 2 * 3)                                 == Left [2, 3, 1]" $
-        detectParts (1 * 2 * 3 :: AI)                              == Left [1, 2, 3]
+          detectParts (1 * 2 * 3 :: AI)                           == Left [1, 2, 3]
     test "detectParts ((1 * 3 * 4) + 2 * (1 + 2))                 == Left [2]" $
-        detectParts ((1 * 3 * 4) + 2 * (1 + 2) :: AI)              == Left [2]
+          detectParts ((1 * 3 * 4) + 2 * (1 + 2) :: AI)           == Left [2]
     test "detectParts (clique [1..10])                            == Left [1, 2, 3]" $
-        detectParts (AM.clique [1..10] :: AI)                      == Left [1, 2, 3]
+          detectParts (AM.clique [1..10] :: AI)                   == Left [1, 2, 3]
     test "detectParts (circuit [1..11])                           == Left [1..11]" $
-        detectParts (AM.circuit [1..11] :: AI)                     == Left [1..11]
+          detectParts (AM.circuit [1..11] :: AI)                  == Left [1..11]
     test "detectParts (circuit [1..10])                           == Right (circuit [(2 * x - 1, 2 * x) | x <- [1..5]])" $
-        detectParts (AM.circuit [1..10] :: AI)                     == Right (circuit [(2 * x - 1, 2 * x) | x <- [1..5]])
+          detectParts (AM.circuit [1..10] :: AI)                  == Right (circuit [(2 * x - 1, 2 * x) | x <- [1..5]])
     test "detectParts (biclique [] xs)                            == Right (vertices xs [])" $ \(xs :: [Int]) ->
-        detectParts (AM.biclique [] xs :: AI)                      == Right (vertices xs [])
+          detectParts (AM.biclique [] xs :: AI)                   == Right (vertices xs [])
     test "detectParts (biclique (map Left (x:xs)) (map Right ys)) == Right (biclique (map Left (x:xs)) (map Right ys))" $ \(x :: Int) (xs :: [Int]) (ys :: [Int]) ->
-        detectParts (AM.biclique (map Left (x:xs)) (map Right ys)) == Right (biclique (map Left (x:xs)) (map Right ys))
+          detectParts (AM.biclique (map Left (x:xs)) (map Right ys)) == Right (biclique (map Left (x:xs)) (map Right ys))
     test "isRight (detectParts (star x ys))                       == not (elem x ys)" $ \(x :: Int) (ys :: [Int]) ->
-        isRight (detectParts (AM.star x ys))                       == (not $ elem x ys)
+          isRight (detectParts (AM.star x ys))                    == (not $ elem x ys)
     test "isRight (detectParts (fromBipartite (toBipartite x)))   == True" $ \(x :: AII) ->
-        isRight (detectParts (fromBipartite (toBipartite x)))
+          isRight (detectParts (fromBipartite (toBipartite x)))   == True
+
+    -- TODO: Clean up these tests
+    putStrLn ""
     test "((all ((flip Set.member) $ edgeSet $ symmetricClosure x) . edgeSet) <$> detectParts x) /= Right False" $ \(x :: AI) ->
-        ((all ((flip Set.member) $ AM.edgeSet $ AM.symmetricClosure x) . edgeSet) <$> detectParts x) /= Right False
+          ((all ((flip Set.member) $ AM.edgeSet $ AM.symmetricClosure x) . edgeSet) <$> detectParts x) /= Right False
     test "(Set.map $ fromEither) <$> (vertexSet <$> (detectParts (fromBipartite (toBipartite x)))) == Right (vertexSet x)" $ \(x :: AII) ->
-        ((Set.map $ fromEither) <$> (vertexSet <$> (detectParts (fromBipartite (toBipartite x))))) == Right (AM.vertexSet x)
-    test "fromEither (bimap ((flip Set.isSubsetOf) (vertexSet x) . Set.fromList) (const True) (detectParts x)) == True" $ \(x :: AI) ->
-        fromEither (bimap ((flip Set.isSubsetOf) (AM.vertexSet x) . Set.fromList) (const True) (detectParts x))
-    test "fromEither (bimap ((flip Set.isSubsetOf) (edgeSet (symmetricClosure x)) . AM.edgeSet . circuit) (const True) (detectParts x)) == True" $ \(x :: AI) ->
-        fromEither (bimap ((flip Set.isSubsetOf) (AM.edgeSet (AM.symmetricClosure x)) . AM.edgeSet . AM.circuit) (const True) (detectParts x))
-    test "fromEither (bimap (((==) 1) . ((flip mod) 2) . length) (const True) (detectParts x)) == True" $ \(x :: AI) ->
-        fromEither (bimap (((==) 1) . ((flip mod) 2) . length) (const True) (detectParts x))
+         ((Set.map $ fromEither) <$> (vertexSet <$> (detectParts (fromBipartite (toBipartite x))))) == Right (AM.vertexSet x)
+    test "fromEither (Bifunctor.bimap ((flip Set.isSubsetOf) (vertexSet x) . Set.fromList) (const True) (detectParts x)) == True" $ \(x :: AI) ->
+          fromEither (Bifunctor.bimap ((flip Set.isSubsetOf) (AM.vertexSet x) . Set.fromList) (const True) (detectParts x))
+    test "fromEither (Bifunctor.bimap ((flip Set.isSubsetOf) (edgeSet (symmetricClosure x)) . AM.edgeSet . circuit) (const True) (detectParts x)) == True" $ \(x :: AI) ->
+          fromEither (Bifunctor.bimap ((flip Set.isSubsetOf) (AM.edgeSet (AM.symmetricClosure x)) . AM.edgeSet . AM.circuit) (const True) (detectParts x))
+    test "fromEither (Bifunctor.bimap (((==) 1) . ((flip mod) 2) . length) (const True) (detectParts x)) == True" $ \(x :: AI) ->
+          fromEither (Bifunctor.bimap (((==) 1) . ((flip mod) 2) . length) (const True) (detectParts x))
 
     putStrLn "\n============ Show (Bipartite.AdjacencyMap.Algorithm.Matching a b) ============"
     test "show (matching [])                == \"matching []\"" $
@@ -866,12 +940,12 @@ testBipartiteAdjacencyMapAlgorithm = do
           isIndependentSetOf (xs             , Set.singleton y) (edge x y)     == Set.null xs
 
     putStrLn "\n============ Bipartite.AdjacencyMap.Algorithm.maxIndependentSet ============"
-    test "maxIndependentSet empty                                  == (Set.empty, Set.empty)" $
-          maxIndependentSet (empty :: BAII)                        == (Set.empty, Set.empty)
-    test "maxIndependentSet (vertices xs ys)                       == (Set.fromList xs, Set.fromList ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
-          maxIndependentSet (vertices xs ys)                       == (Set.fromList xs, Set.fromList ys)
-    test "maxIndependentSet (path [1,2,3])                         == (Set.fromList [1,3], Set.empty)" $
-          maxIndependentSet (path [1,2,3] :: BAII)                 == (Set.fromList [1,3], Set.empty)
+    test "maxIndependentSet empty                                 == (Set.empty, Set.empty)" $
+          maxIndependentSet (empty :: BAII)                       == (Set.empty, Set.empty)
+    test "maxIndependentSet (vertices xs ys)                      == (Set.fromList xs, Set.fromList ys)" $ \(xs :: [Int]) (ys :: [Int]) ->
+          maxIndependentSet (vertices xs ys)                      == (Set.fromList xs, Set.fromList ys)
+    test "maxIndependentSet (path [1,2,3])                        == (Set.fromList [1,3], Set.empty)" $
+          maxIndependentSet (path [1,2,3] :: BAII)                == (Set.fromList [1,3], Set.empty)
     test "maxIndependentSet (star x (1:2:ys))                     == (Set.empty, Set.fromList (1:2:ys))" $ \(x :: Int) (ys :: [Int]) ->
           maxIndependentSet (star x (1:2:ys))                     == (Set.empty, Set.fromList (1:2:ys))
     test "independentSetSize (maxIndependentSet (biclique xs ys)) == max (length (nub xs)) (length (nub ys))" $ \(xs :: [Int]) (ys :: [Int]) ->

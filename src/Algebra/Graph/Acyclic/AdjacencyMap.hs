@@ -410,10 +410,10 @@ induceJust = coerce AM.induceJust
 --                                                       , ((2,10), (2,20)) ]
 -- @
 --
--- Up to the isomorphism between the resulting vertex types, this operation
--- is /commutative/ and /associative/, has singleton graphs as /identities/ and
+-- Up to isomorphism between the resulting vertex types, this operation is
+-- /commutative/ and /associative/, has singleton graphs as /identities/ and
 -- 'empty' as the /annihilating zero/. Below @~~@ stands for equality up to
--- the isomorphism, e.g. @(x, ()) ~~ x@.
+-- an isomorphism, e.g. @(x,@ @()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x
