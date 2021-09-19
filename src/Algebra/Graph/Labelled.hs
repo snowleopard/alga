@@ -48,7 +48,7 @@ import Data.String
 import Control.DeepSeq
 import GHC.Generics
 
-import Algebra.Graph.Internal (List (..))
+import Algebra.Graph.Internal (List)
 import Algebra.Graph.Label
 
 import qualified Algebra.Graph.Labelled.AdjacencyMap as AM
