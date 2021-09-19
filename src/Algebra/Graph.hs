@@ -74,11 +74,13 @@ import qualified GHC.Exts                      as Exts
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
 instance as a convenient notation for working with graphs:
 
-    > 0           == Vertex 0
-    > 1 + 2       == Overlay (Vertex 1) (Vertex 2)
-    > 1 * 2       == Connect (Vertex 1) (Vertex 2)
-    > 1 + 2 * 3   == Overlay (Vertex 1) (Connect (Vertex 2) (Vertex 3))
-    > 1 * (2 + 3) == Connect (Vertex 1) (Overlay (Vertex 2) (Vertex 3))
+@
+0           == 'vertex' 0
+1 + 2       == 'overlay' ('vertex' 1) ('vertex' 2)
+1 * 2       == 'connect' ('vertex' 1) ('vertex' 2)
+1 + 2 * 3   == 'overlay' ('vertex' 1) ('connect' ('vertex' 2) ('vertex' 3))
+1 * (2 + 3) == 'connect' ('vertex' 1) ('overlay' ('vertex' 2) ('vertex' 3))
+@
 
 __Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
 which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
