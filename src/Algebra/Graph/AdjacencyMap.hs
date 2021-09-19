@@ -11,9 +11,9 @@
 -- motivation behind the library, the underlying theory, and implementation details.
 --
 -- This module defines the 'AdjacencyMap' data type and associated functions.
--- See "Algebra.Graph.AdjacencyMap.Algorithm" for implementations of basic graph
--- algorithms. 'AdjacencyMap' is an instance of the 'C.Graph' type class, which
--- can be used for polymorphic graph construction and manipulation.
+-- See "Algebra.Graph.AdjacencyMap.Algorithm" for basic graph algorithms.
+-- 'AdjacencyMap' is an instance of the 'C.Graph' type class, which can be used
+-- for polymorphic graph construction and manipulation.
 -- "Algebra.Graph.AdjacencyIntMap" defines adjacency maps specialised to graphs
 -- with @Int@ vertices.
 -----------------------------------------------------------------------------
@@ -805,10 +805,10 @@ compose x y = fromAdjacencySets
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
 --
--- Up to the isomorphism between the resulting vertex types, this operation
--- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
+-- Up to isomorphism between the resulting vertex types, this operation is
+-- /commutative/, /associative/, /distributes/ over 'overlay', has singleton
 -- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for equality up to the isomorphism, e.g. @(x, ()) ~~ x@.
+-- stands for equality up to an isomorphism, e.g. @(x,@ @()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x
