@@ -3,6 +3,8 @@
 ## 0.7
 
 * #278: Stop supporting GHC 8.0 and GHC 8.2.
+* #274, #277: Expand the API and add algorithms for bipartite graphs, drop the
+              `Undirected` component in `Bipartite.Undirected.AdjacencyMap`.
 * #273: Add attribute quoting style to `Export.Dot`.
 * #259: Allow newer QuickCheck.
 
