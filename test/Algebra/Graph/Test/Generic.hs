@@ -447,6 +447,9 @@ testVertices (prefix, API{..}) = do
     test "vertices [x]           == vertex x" $ \x ->
           vertices [x]           == vertex x
 
+    test "vertices               == overlays . map vertex" $ \xs ->
+          vertices xs            ==(overlays . map vertex) xs
+
     test "hasVertex x . vertices == elem x" $ \x xs ->
          (hasVertex x . vertices) xs == elem x xs
 

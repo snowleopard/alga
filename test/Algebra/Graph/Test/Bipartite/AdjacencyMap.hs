@@ -298,6 +298,8 @@ testBipartiteAdjacencyMap = do
           vertices [x] []                   == leftVertex x
     test "vertices [] [x]                   == rightVertex x" $ \x ->
           vertices [] [x]                   == rightVertex x
+    test "vertices xs ys                    == overlays (map leftVertex xs ++ map rightVertex ys)" $ \xs ys ->
+          vertices xs ys                    == overlays (map leftVertex xs ++ map rightVertex ys)
     test "hasLeftVertex  x (vertices xs ys) == elem x xs" $ \x xs ys ->
           hasLeftVertex  x (vertices xs ys) == elem x xs
     test "hasRightVertex y (vertices xs ys) == elem y ys" $ \y xs ys ->

@@ -65,11 +65,13 @@ import qualified Algebra.Graph.AdjacencyMap as AM
 their adjacency sets. We define a 'Num' instance as a convenient notation for
 working with graphs:
 
-    > 0           == vertex 0
-    > 1 + 2       == overlay (vertex 1) (vertex 2)
-    > 1 * 2       == connect (vertex 1) (vertex 2)
-    > 1 + 2 * 3   == overlay (vertex 1) (connect (vertex 2) (vertex 3))
-    > 1 * (2 + 3) == connect (vertex 1) (overlay (vertex 2) (vertex 3))
+@
+0           == 'vertex' 0
+1 + 2       == 'overlay' ('vertex' 1) ('vertex' 2)
+1 * 2       == 'connect' ('vertex' 1) ('vertex' 2)
+1 + 2 * 3   == 'overlay' ('vertex' 1) ('connect' ('vertex' 2) ('vertex' 3))
+1 * (2 + 3) == 'connect' ('vertex' 1) ('overlay' ('vertex' 2) ('vertex' 3))
+@
 
 __Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
 which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
@@ -300,6 +302,7 @@ connect (AM x) (AM y) = AM $ IntMap.unionsWith IntSet.union
 -- @
 -- vertices []             == 'empty'
 -- vertices [x]            == 'vertex' x
+-- vertices                == 'overlays' . map 'vertex'
 -- 'hasVertex' x  . vertices == 'elem' x
 -- 'vertexCount'  . vertices == 'length' . 'Data.List.nub'
 -- 'vertexIntSet' . vertices == IntSet.'IntSet.fromList'

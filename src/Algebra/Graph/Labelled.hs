@@ -48,7 +48,7 @@ import Data.String
 import Control.DeepSeq
 import GHC.Generics
 
-import Algebra.Graph.Internal (List (..))
+import Algebra.Graph.Internal (List)
 import Algebra.Graph.Label
 
 import qualified Algebra.Graph.Labelled.AdjacencyMap as AM
@@ -272,6 +272,7 @@ connect = Connect
 -- @
 -- vertices []            == 'empty'
 -- vertices [x]           == 'vertex' x
+-- vertices               == 'overlays' . map 'vertex'
 -- 'hasVertex' x . vertices == 'elem' x
 -- 'Algebra.Graph.ToGraph.vertexCount' . vertices == 'length' . 'Data.List.nub'
 -- 'Algebra.Graph.ToGraph.vertexSet'   . vertices == Set.'Set.fromList'
@@ -613,7 +614,7 @@ filterContext s i o g = maybe g go $ context (==s) g
                                   , edges [ (e, v, s) | (e, v) <- is, i v ]
                                   , edges [ (e, s, v) | (e, v) <- os, o v ] ]
 
--- The /focus/ of a graph expression is a flattened represenentation of the
+-- The /focus/ of a graph expression is a flattened representation of the
 -- subgraph under focus, its context, as well as the list of all encountered
 -- vertices. See 'removeEdge' for a use-case example.
 data Focus e a = Focus

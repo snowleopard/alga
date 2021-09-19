@@ -72,11 +72,13 @@ data type defined in "Algebra.Graph" is that the 'connect' operation is
 /commutative/. We define a 'Num' instance as a convenient notation for working
 with undirected graphs:
 
-    > 0           == vertex 0
-    > 1 + 2       == vertices [1,2]
-    > 1 * 2       == edge 1 2
-    > 1 + 2 * 3   == overlay (vertex 1) (edge 2 3)
-    > 1 * (2 + 3) == edges [(1,2),(1,3)]
+@
+0           == 'vertex' 0
+1 + 2       == 'overlay' ('vertex' 1) ('vertex' 2)
+1 * 2       == 'connect' ('vertex' 1) ('vertex' 2)
+1 + 2 * 3   == 'overlay' ('vertex' 1) ('connect' ('vertex' 2) ('vertex' 3))
+1 * (2 + 3) == 'connect' ('vertex' 1) ('overlay' ('vertex' 2) ('vertex' 3))
+@
 
 __Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
 which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
@@ -322,6 +324,7 @@ connect = coerce20 G.connect
 -- @
 -- vertices []            == 'empty'
 -- vertices [x]           == 'vertex' x
+-- vertices               == 'overlays' . map 'vertex'
 -- 'hasVertex' x . vertices == 'elem' x
 -- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
 -- 'vertexSet'   . vertices == Set . 'Set.fromList'

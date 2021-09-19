@@ -327,8 +327,7 @@ instance Ord a => Semigroup (Minimum a) where
     (<>) = min
 
 instance (Monoid a, Ord a) => Monoid (Minimum a) where
-    mempty  = noMinimum
-    mappend = (<>)
+    mempty = noMinimum
 
 instance (Monoid a, Ord a) => Semiring (Minimum a) where
     one   = pure mempty
@@ -354,14 +353,14 @@ instance IsList a => IsList (Minimum a) where
 -- 'zero'    = PowerSet Set.'Set.empty'
 -- 'one'     = PowerSet $ Set.'Set.singleton' 'mempty'
 -- x '<+>' y = PowerSet $ Set.'Set.union' (getPowerSet x) (getPowerSet y)
--- x '<.>' y = PowerSet $ 'setProductWith' 'mappend' (getPowerSet x) (getPowerSet y)
+-- x '<.>' y = PowerSet $ 'cartesianProductWith' 'mappend' (getPowerSet x) (getPowerSet y)
 -- @
 newtype PowerSet a = PowerSet { getPowerSet :: Set a }
     deriving (Eq, Monoid, Ord, Semigroup, Show)
 
 instance (Monoid a, Ord a) => Semiring (PowerSet a) where
     one                       = PowerSet (Set.singleton mempty)
-    PowerSet x <.> PowerSet y = PowerSet (setProductWith mappend x y)
+    PowerSet x <.> PowerSet y = PowerSet (cartesianProductWith mappend x y)
 
 instance (Monoid a, Ord a) => Dioid (PowerSet a) where
 
@@ -401,8 +400,7 @@ instance Semigroup (Label a) where
     x      <> y      = x :+: y
 
 instance Monoid (Label a) where
-    mempty  = Zero
-    mappend = (<>)
+    mempty = Zero
 
 instance Semiring (Label a) where
     one = One
@@ -457,8 +455,7 @@ instance (Eq o, Monoid a, Monoid o) => Semigroup (Optimum o a) where
 
 -- TODO: Add tests.
 instance (Eq o, Monoid a, Monoid o) => Monoid (Optimum o a) where
-    mempty  = Optimum mempty mempty
-    mappend = (<>)
+    mempty = Optimum mempty mempty
 
 -- TODO: Add tests.
 instance (Eq o, Semiring a, Semiring o) => Semiring (Optimum o a) where

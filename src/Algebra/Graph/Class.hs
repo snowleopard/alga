@@ -295,6 +295,7 @@ edge x y = connect (vertex x) (vertex y)
 -- @
 -- vertices []  == 'empty'
 -- vertices [x] == 'vertex' x
+-- vertices     == 'overlays' . map 'vertex'
 -- @
 vertices :: Graph g => [Vertex g] -> g
 vertices = overlays . map vertex

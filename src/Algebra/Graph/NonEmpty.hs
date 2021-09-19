@@ -77,11 +77,13 @@ graphs that can be empty.
 
 We define a 'Num' instance as a convenient notation for working with graphs:
 
-    > 0           == vertex 0
-    > 1 + 2       == overlay (vertex 1) (vertex 2)
-    > 1 * 2       == connect (vertex 1) (vertex 2)
-    > 1 + 2 * 3   == overlay (vertex 1) (connect (vertex 2) (vertex 3))
-    > 1 * (2 + 3) == connect (vertex 1) (overlay (vertex 2) (vertex 3))
+@
+0           == 'vertex' 0
+1 + 2       == 'overlay' ('vertex' 1) ('vertex' 2)
+1 * 2       == 'connect' ('vertex' 1) ('vertex' 2)
+1 + 2 * 3   == 'overlay' ('vertex' 1) ('connect' ('vertex' 2) ('vertex' 3))
+1 * (2 + 3) == 'connect' ('vertex' 1) ('overlay' ('vertex' 2) ('vertex' 3))
+@
 
 __Note:__ the 'signum' method of the type class 'Num' cannot be implemented and
 will throw an error. Furthermore, the 'Num' instance does not satisfy several
