@@ -203,6 +203,14 @@ instance Num AdjacencyIntMap where
 instance NFData AdjacencyIntMap where
     rnf (AM a) = rnf a
 
+-- | Defined via 'overlay'.
+instance Semigroup AdjacencyIntMap where
+    (<>) = overlay
+
+-- | Defined via 'overlay' and 'empty'.
+instance Monoid AdjacencyIntMap where
+    mempty = empty
+
 -- | Construct an 'AdjacencyIntMap' from an 'AM.AdjacencyMap' with vertices of
 -- type 'Int'.
 -- Complexity: /O(n + m)/ time and memory.

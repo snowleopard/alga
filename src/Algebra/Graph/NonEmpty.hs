@@ -195,6 +195,10 @@ instance Ord a => Eq (Graph a) where
 instance Ord a => Ord (Graph a) where
     compare = ord
 
+-- | Defined via 'overlay'.
+instance Semigroup (Graph a) where
+    (<>) = overlay
+
 -- TODO: Find a more efficient equality check.
 -- | Check if two graphs are equal by converting them to their adjacency maps.
 eq :: Ord a => Graph a -> Graph a -> Bool

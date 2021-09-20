@@ -180,6 +180,10 @@ instance (Ord a, Show a) => Show (AdjacencyMap a) where
         eshow xs       = showString "edges1 "    . showsPrec 11 xs
         used           = Set.toAscList $ Set.fromList $ uncurry (++) $ unzip es
 
+-- | Defined via 'overlay'.
+instance Ord a => Semigroup (AdjacencyMap a) where
+    (<>) = overlay
+
 -- Unsafe creation of a NonEmpty list.
 unsafeNonEmpty :: [a] -> NonEmpty a
 unsafeNonEmpty = fromMaybe (error msg) . nonEmpty

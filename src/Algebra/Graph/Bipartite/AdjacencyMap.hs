@@ -230,6 +230,14 @@ instance (Ord a, Ord b, Show a, Show b) => Show (AdjacencyMap a b) where
         eShow es       = showString "edges " . showsPrec 11 es
         veShow xs      = vShow (lefts xs) (rights xs)
 
+-- | Defined via 'overlay'.
+instance (Ord a, Ord b) => Semigroup (AdjacencyMap a b) where
+    (<>) = overlay
+
+-- | Defined via 'overlay' and 'empty'.
+instance (Ord a, Ord b) => Monoid (AdjacencyMap a b) where
+    mempty = empty
+
 -- | Construct the /empty graph/.
 --
 -- @
