@@ -2,6 +2,7 @@
 
 ## 0.7
 
+* #276: Add `Monoid` and `Semigroup` instances.
 * #278: Stop supporting GHC 8.0 and GHC 8.2.
 * #274, #277: Expand the API and add algorithms for bipartite graphs, drop the
               `Undirected` component in `Bipartite.Undirected.AdjacencyMap`.
