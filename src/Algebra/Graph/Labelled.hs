@@ -96,7 +96,7 @@ instance (NFData e, NFData a) => NFData (Graph e a) where
 instance Monoid e => Semigroup (Graph e a) where
     (<>) = overlay
 
--- | Defined via 'empty'.
+-- | Defined via 'overlay' and 'empty'.
 instance Monoid e => Monoid (Graph e a) where
     mempty = empty
 
