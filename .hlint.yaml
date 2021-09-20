@@ -52,7 +52,7 @@
 # Ignore some builtin hints
 - ignore:
     name: Use if
-    within: Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm
+    within: Algebra.Graph.Bipartite.AdjacencyMap.Algorithm
 # - ignore: {name: Use const, within: SpecialModule} # Only within certain modules
 
 # Define some custom infix operators

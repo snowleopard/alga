@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Internal
@@ -17,26 +16,26 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Internal (
     -- * Data structures
-    List (..),
+    List,
 
     -- * Graph traversal
     Focus (..), emptyFocus, vertexFocus, overlayFoci, connectFoci, foldr1Safe,
     maybeF,
 
     -- * Utilities
-    setProduct, setProductWith, forEach, forEachInt, coerce00, coerce10,
-    coerce20, coerce01, coerce11, coerce21
+    cartesianProductWith, forEach, coerce00, coerce10, coerce20, coerce01,
+    coerce11, coerce21
     ) where
 
 import Data.Coerce
 import Data.Foldable
-import Data.Semigroup
 import Data.IntSet (IntSet)
+import Data.Semigroup (Endo (..))
 import Data.Set (Set)
 
 import qualified Data.IntSet as IntSet
-import qualified Data.Set as Set
-import qualified GHC.Exts as Exts
+import qualified Data.Set    as Set
+import qualified GHC.Exts    as Exts
 
 -- | An abstract list data type with /O(1)/ time concatenation (the current
 -- implementation uses difference lists). Here @a@ is the type of list elements.
@@ -120,26 +119,16 @@ maybeF :: (a -> b -> a) -> a -> Maybe b -> Maybe a
 maybeF f x = Just . maybe x (f x)
 {-# INLINE maybeF #-}
 
--- | Compute the Cartesian product of two sets.
-setProduct :: Set a -> Set b -> Set (a, b)
-#if MIN_VERSION_containers(0,5,11)
-setProduct = Set.cartesianProduct
-#else
-setProduct x y = Set.fromDistinctAscList [ (a, b) | a <- Set.toAscList x, b <- Set.toAscList y ]
-#endif
-
+-- TODO: Can we implement this faster via 'Set.cartesianProduct'?
 -- | Compute the Cartesian product of two sets, applying a function to each
 -- resulting pair.
-setProductWith :: Ord c => (a -> b -> c) -> Set a -> Set b -> Set c
-setProductWith f x y = Set.fromList [ f a b | a <- Set.toAscList x, b <- Set.toAscList y ]
+cartesianProductWith :: Ord c => (a -> b -> c) -> Set a -> Set b -> Set c
+cartesianProductWith f x y =
+    Set.fromList [ f a b | a <- Set.toAscList x, b <- Set.toAscList y ]
 
--- | Perform an applicative action for each member of a Set.
+-- | Perform an applicative action for each element of a set.
 forEach :: Applicative f => Set a -> (a -> f b) -> f ()
 forEach s f = Set.foldr (\a u -> f a *> u) (pure ()) s
-
--- | Perform an applicative action for each member of an IntSet.
-forEachInt :: Applicative f => IntSet -> (Int -> f a) -> f ()
-forEachInt s f = IntSet.foldr (\a u -> f a *> u) (pure ()) s
 
 -- TODO: Get rid of this boilerplate.
 

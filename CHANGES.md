@@ -2,6 +2,9 @@
 
 ## 0.7
 
+* #278: Stop supporting GHC 8.0 and GHC 8.2.
+* #274, #277: Expand the API and add algorithms for bipartite graphs, drop the
+              `Undirected` component in `Bipartite.Undirected.AdjacencyMap`.
 * #273: Add attribute quoting style to `Export.Dot`.
 * #259: Allow newer QuickCheck.
 
@@ -19,7 +22,7 @@
 * #220, #237, #255: Add `Algebra.Graph.Undirected`.
 * #203, #215, #223: Add `Acyclic.AdjacencyMap`.
 * #202, #209, #211: Add `induceJust` and `induceJust1`.
-* #172, #245: Stop supporting GHC 7.8.4 and GHC 7.10.3.
+* #172, #245: Stop supporting GHC 7.8 and GHC 7.10.
 * #208: Add `fromNonEmpty` to `NonEmpty.AdjacencyMap`.
 * #208: Add `fromAdjacencyMap` to `AdjacencyIntMap`.
 * #208: Drop `Internal` modules for `AdjacencyIntMap`, `AdjacencyMap`,

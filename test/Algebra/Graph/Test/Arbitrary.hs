@@ -25,22 +25,22 @@ import Algebra.Graph
 import Algebra.Graph.Export
 import Algebra.Graph.Label
 
-import qualified Algebra.Graph.Undirected                                  as UG
-import qualified Algebra.Graph.Acyclic.AdjacencyMap                        as AAM
-import qualified Algebra.Graph.AdjacencyIntMap                             as AIM
-import qualified Algebra.Graph.AdjacencyMap                                as AM
-import qualified Algebra.Graph.Bipartite.Undirected.AdjacencyMap           as BAM
-import qualified Algebra.Graph.Bipartite.Undirected.AdjacencyMap.Algorithm as BAMA
-import qualified Algebra.Graph.NonEmpty.AdjacencyMap                       as NAM
-import qualified Algebra.Graph.Class                                       as C
-import qualified Algebra.Graph.Labelled                                    as LG
-import qualified Algebra.Graph.Labelled.AdjacencyMap                       as LAM
-import qualified Algebra.Graph.NonEmpty                                    as NonEmpty
-import qualified Algebra.Graph.Relation                                    as Relation
-import qualified Algebra.Graph.Relation.Preorder                           as Preorder
-import qualified Algebra.Graph.Relation.Reflexive                          as Reflexive
-import qualified Algebra.Graph.Relation.Symmetric                          as Symmetric
-import qualified Algebra.Graph.Relation.Transitive                         as Transitive
+import qualified Algebra.Graph.Undirected                       as UG
+import qualified Algebra.Graph.Acyclic.AdjacencyMap             as AAM
+import qualified Algebra.Graph.AdjacencyIntMap                  as AIM
+import qualified Algebra.Graph.AdjacencyMap                     as AM
+import qualified Algebra.Graph.Bipartite.AdjacencyMap           as BAM
+import qualified Algebra.Graph.Bipartite.AdjacencyMap.Algorithm as BAMA
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap            as NAM
+import qualified Algebra.Graph.Class                            as C
+import qualified Algebra.Graph.Labelled                         as LG
+import qualified Algebra.Graph.Labelled.AdjacencyMap            as LAM
+import qualified Algebra.Graph.NonEmpty                         as NonEmpty
+import qualified Algebra.Graph.Relation                         as Relation
+import qualified Algebra.Graph.Relation.Preorder                as Preorder
+import qualified Algebra.Graph.Relation.Reflexive               as Reflexive
+import qualified Algebra.Graph.Relation.Symmetric               as Symmetric
+import qualified Algebra.Graph.Relation.Transitive              as Transitive
 
 -- | Generate an arbitrary 'C.Graph' value of a specified size.
 arbitraryGraph :: (C.Graph g, Arbitrary (C.Vertex g)) => Gen g
@@ -218,23 +218,6 @@ instance (Arbitrary a, Arbitrary e, Monoid e) => Arbitrary (LG.Graph e a) where
     shrink (LG.Vertex      _) = [LG.Empty]
     shrink (LG.Connect e x y) = [LG.Empty, x, y, LG.Connect mempty x y]
                              ++ [LG.Connect e x' y' | (x', y') <- shrink (x, y) ]
-
-#if !MIN_VERSION_QuickCheck(2,14,2)
-instance Arbitrary a => Arbitrary (Tree a) where
-    arbitrary = sized go
-      where
-        go 0 = do
-            root <- arbitrary
-            return $ Node root []
-        go n = do
-            subTrees <- choose (0, n - 1)
-            let subSize = (n - 1) `div` subTrees
-            root     <- arbitrary
-            children <- replicateM subTrees (go subSize)
-            return $ Node root children
-
-    shrink (Node r fs) = [Node r fs' | fs' <- shrink fs]
-#endif
 
 -- TODO: Implement a custom shrink method.
 instance Arbitrary s => Arbitrary (Doc s) where

@@ -55,7 +55,6 @@ import Control.Monad (MonadPlus (..))
 import Control.Monad.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
-import Data.Semigroup ((<>))
 import Data.String
 import Data.Tree
 import GHC.Generics
@@ -75,11 +74,13 @@ import qualified GHC.Exts                      as Exts
 primitives 'empty', 'vertex', 'overlay' and 'connect'. We define a 'Num'
 instance as a convenient notation for working with graphs:
 
-    > 0           == Vertex 0
-    > 1 + 2       == Overlay (Vertex 1) (Vertex 2)
-    > 1 * 2       == Connect (Vertex 1) (Vertex 2)
-    > 1 + 2 * 3   == Overlay (Vertex 1) (Connect (Vertex 2) (Vertex 3))
-    > 1 * (2 + 3) == Connect (Vertex 1) (Overlay (Vertex 2) (Vertex 3))
+@
+0           == 'vertex' 0
+1 + 2       == 'overlay' ('vertex' 1) ('vertex' 2)
+1 * 2       == 'connect' ('vertex' 1) ('vertex' 2)
+1 + 2 * 3   == 'overlay' ('vertex' 1) ('connect' ('vertex' 2) ('vertex' 3))
+1 * (2 + 3) == 'connect' ('vertex' 1) ('overlay' ('vertex' 2) ('vertex' 3))
+@
 
 __Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
 which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
@@ -274,7 +275,7 @@ ordIntR x y = compare (toAdjacencyIntMap x) (toAdjacencyIntMap y)
 {-# INLINE ordIntR #-}
 
 -- TODO: It should be a good consumer of its second argument too.
--- | `<*>` is a good consumer of its first argument and producer.
+-- | `<*>` is a good consumer of its first argument and a good producer.
 instance Applicative Graph where
     pure    = Vertex
     f <*> x = buildg $ \e v o c -> foldg e (\w -> foldg e (v . w) o c x) o c f
@@ -397,6 +398,7 @@ connect = Connect
 -- @
 -- vertices []            == 'empty'
 -- vertices [x]           == 'vertex' x
+-- vertices               == 'overlays' . map 'vertex'
 -- 'hasVertex' x . vertices == 'elem' x
 -- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
@@ -1266,10 +1268,10 @@ compose x y = buildg $ \e v o c -> fromMaybe e $
 --                                       , ((0,\'b\'), (1,\'b\'))
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
--- Up to the isomorphism between the resulting vertex types, this operation
--- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
+-- Up to isomorphism between the resulting vertex types, this operation is
+-- /commutative/, /associative/, /distributes/ over 'overlay', has singleton
 -- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for equality up to the isomorphism, e.g. @(x, ()) ~~ x@.
+-- stands for equality up to an isomorphism, e.g. @(x,@ @()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x

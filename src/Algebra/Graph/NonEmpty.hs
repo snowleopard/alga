@@ -56,7 +56,6 @@ import Control.DeepSeq
 import Control.Monad
 import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Semigroup ((<>))
 import Data.String
 
 import Algebra.Graph.Internal
@@ -78,11 +77,13 @@ graphs that can be empty.
 
 We define a 'Num' instance as a convenient notation for working with graphs:
 
-    > 0           == vertex 0
-    > 1 + 2       == overlay (vertex 1) (vertex 2)
-    > 1 * 2       == connect (vertex 1) (vertex 2)
-    > 1 + 2 * 3   == overlay (vertex 1) (connect (vertex 2) (vertex 3))
-    > 1 * (2 + 3) == connect (vertex 1) (overlay (vertex 2) (vertex 3))
+@
+0           == 'vertex' 0
+1 + 2       == 'overlay' ('vertex' 1) ('vertex' 2)
+1 * 2       == 'connect' ('vertex' 1) ('vertex' 2)
+1 + 2 * 3   == 'overlay' ('vertex' 1) ('connect' ('vertex' 2) ('vertex' 3))
+1 * (2 + 3) == 'connect' ('vertex' 1) ('overlay' ('vertex' 2) ('vertex' 3))
+@
 
 __Note:__ the 'signum' method of the type class 'Num' cannot be implemented and
 will throw an error. Furthermore, the 'Num' instance does not satisfy several
@@ -890,10 +891,10 @@ simple op x y
 --                                               , ((0,\'b\'), (1,\'b\'))
 --                                               , ((1,\'a\'), (1,\'b\')) ]
 -- @
--- Up to the isomorphism between the resulting vertex types, this operation
--- is /commutative/, /associative/, /distributes/ over 'overlay', and has
--- singleton graphs as /identities/. Below @~~@ stands for equality up to the
--- isomorphism, e.g. @(x, ()) ~~ x@.
+-- Up to isomorphism between the resulting vertex types, this operation is
+-- /commutative/, /associative/, /distributes/ over 'overlay', and has
+-- singleton graphs as /identities/. Below @~~@ stands for equality up to an
+-- isomorphism, e.g. @(x,@ @()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x

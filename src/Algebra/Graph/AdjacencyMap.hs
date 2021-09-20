@@ -11,9 +11,9 @@
 -- motivation behind the library, the underlying theory, and implementation details.
 --
 -- This module defines the 'AdjacencyMap' data type and associated functions.
--- See "Algebra.Graph.AdjacencyMap.Algorithm" for implementations of basic graph
--- algorithms. 'AdjacencyMap' is an instance of the 'C.Graph' type class, which
--- can be used for polymorphic graph construction and manipulation.
+-- See "Algebra.Graph.AdjacencyMap.Algorithm" for basic graph algorithms.
+-- 'AdjacencyMap' is an instance of the 'C.Graph' type class, which can be used
+-- for polymorphic graph construction and manipulation.
 -- "Algebra.Graph.AdjacencyIntMap" defines adjacency maps specialised to graphs
 -- with @Int@ vertices.
 -----------------------------------------------------------------------------
@@ -66,11 +66,13 @@ import qualified Data.Set        as Set
 their adjacency sets. We define a 'Num' instance as a convenient notation for
 working with graphs:
 
-    > 0           == vertex 0
-    > 1 + 2       == overlay (vertex 1) (vertex 2)
-    > 1 * 2       == connect (vertex 1) (vertex 2)
-    > 1 + 2 * 3   == overlay (vertex 1) (connect (vertex 2) (vertex 3))
-    > 1 * (2 + 3) == connect (vertex 1) (overlay (vertex 2) (vertex 3))
+@
+0           == 'vertex' 0
+1 + 2       == 'overlay' ('vertex' 1) ('vertex' 2)
+1 * 2       == 'connect' ('vertex' 1) ('vertex' 2)
+1 + 2 * 3   == 'overlay' ('vertex' 1) ('connect' ('vertex' 2) ('vertex' 3))
+1 * (2 + 3) == 'connect' ('vertex' 1) ('overlay' ('vertex' 2) ('vertex' 3))
+@
 
 __Note:__ the 'Num' instance does not satisfy several "customary laws" of 'Num',
 which dictate that 'fromInteger' @0@ and 'fromInteger' @1@ should act as
@@ -298,6 +300,7 @@ connect (AM x) (AM y) = AM $ Map.unionsWith Set.union
 -- @
 -- vertices []            == 'empty'
 -- vertices [x]           == 'vertex' x
+-- vertices               == 'overlays' . map 'vertex'
 -- 'hasVertex' x . vertices == 'elem' x
 -- 'vertexCount' . vertices == 'length' . 'Data.List.nub'
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
@@ -813,10 +816,10 @@ compose x y = fromAdjacencySets
 --                                       , ((1,\'a\'), (1,\'b\')) ]
 -- @
 --
--- Up to the isomorphism between the resulting vertex types, this operation
--- is /commutative/, /associative/, /distributes/ over 'overlay', has singleton
+-- Up to isomorphism between the resulting vertex types, this operation is
+-- /commutative/, /associative/, /distributes/ over 'overlay', has singleton
 -- graphs as /identities/ and 'empty' as the /annihilating zero/. Below @~~@
--- stands for equality up to the isomorphism, e.g. @(x, ()) ~~ x@.
+-- stands for equality up to an isomorphism, e.g. @(x,@ @()) ~~ x@.
 --
 -- @
 -- box x y               ~~ box y x
