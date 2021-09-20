@@ -195,9 +195,11 @@ instance (Ord a, Num a) => Num (Relation a) where
 instance IsString a => IsString (Relation a) where
     fromString = vertex . fromString
 
+-- | Defined via 'overlay'.
 instance Ord a => Semigroup (Relation a) where
     (<>) = overlay
 
+-- | Defined via 'overlay' and 'empty'.
 instance Ord a => Monoid (Relation a) where
     mempty = empty
 

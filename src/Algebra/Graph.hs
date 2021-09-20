@@ -294,9 +294,11 @@ instance MonadPlus Graph where
     mzero = Empty
     mplus = Overlay
 
+-- | Defined via 'overlay'.
 instance Semigroup (Graph a) where
     (<>) = overlay
 
+-- | Defined via 'overlay' and 'empty'.
 instance Monoid (Graph a) where
     mempty = empty
 

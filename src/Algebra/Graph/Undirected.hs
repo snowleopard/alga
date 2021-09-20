@@ -196,9 +196,11 @@ instance Ord a => Eq (Graph a) where
 instance Ord a => Ord (Graph a) where
     compare = ordR
 
+-- | Defined via 'overlay'.
 instance Semigroup (Graph a) where
     (<>) = overlay
 
+-- | Defined via 'overlay' and 'empty'.
 instance Monoid (Graph a) where
     mempty = empty
 

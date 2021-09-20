@@ -205,9 +205,11 @@ instance IsString a => IsString (AdjacencyMap a) where
 instance NFData a => NFData (AdjacencyMap a) where
     rnf (AM a) = rnf a
 
+-- | Defined via 'overlay'.
 instance Ord a => Semigroup (AdjacencyMap a) where
     (<>) = overlay
 
+-- | Defined via 'overlay' and 'empty'.
 instance Ord a => Monoid (AdjacencyMap a) where
     mempty = empty
 

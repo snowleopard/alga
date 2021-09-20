@@ -194,6 +194,7 @@ instance Ord a => Eq (Graph a) where
 instance Ord a => Ord (Graph a) where
     compare = ord
 
+-- | Defined via 'overlay'.
 instance Semigroup (Graph a) where
     (<>) = overlay
 

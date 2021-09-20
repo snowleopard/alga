@@ -230,9 +230,11 @@ instance (Ord a, Ord b, Show a, Show b) => Show (AdjacencyMap a b) where
         rused = Set.toAscList $ Set.fromList    [ v | (_, v) <- edgeList bam ]
         used  = map Left lused ++ map Right rused
 
+-- | Defined via 'overlay'.
 instance (Ord a, Ord b) => Semigroup (AdjacencyMap a b) where
     (<>) = overlay
 
+-- | Defined via 'overlay' and 'empty'.
 instance (Ord a, Ord b) => Monoid (AdjacencyMap a b) where
     mempty = empty
 

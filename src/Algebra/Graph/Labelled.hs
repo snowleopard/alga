@@ -92,9 +92,11 @@ instance (NFData e, NFData a) => NFData (Graph e a) where
     rnf (Vertex  x    ) = rnf x
     rnf (Connect e x y) = e `seq` rnf x `seq` rnf y
 
+-- | Defined via 'overlay'.
 instance Monoid e => Semigroup (Graph e a) where
     (<>) = overlay
 
+-- | Defined via 'empty'.
 instance Monoid e => Monoid (Graph e a) where
     mempty = empty
 

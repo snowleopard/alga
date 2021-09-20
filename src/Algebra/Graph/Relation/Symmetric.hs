@@ -130,9 +130,11 @@ instance (Ord a, Num a) => Num (Relation a) where
     abs         = id
     negate      = id
 
+-- | Defined via 'overlay'.
 instance Ord a => Semigroup (Relation a) where
     (<>) = overlay
 
+-- | Defined via 'overlay' and 'empty'.
 instance Ord a => Monoid (Relation a) where
     mempty = empty
 
