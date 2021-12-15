@@ -1,6 +1,6 @@
 # Change log
 
-## 0.7
+## 0.6
 
 * #276: Add `Monoid` and `Semigroup` instances.
 * #278: Stop supporting GHC 8.0 and GHC 8.2.
@@ -8,9 +8,6 @@
               `Undirected` component in `Bipartite.Undirected.AdjacencyMap`.
 * #273: Add attribute quoting style to `Export.Dot`.
 * #259: Allow newer QuickCheck.
-
-## 0.6
-
 * #257: Add `IsString` instances.
 * #226: Expand the API of `Bipartite.Undirected.AdjacencyMap`.
 
