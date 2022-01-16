@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Data.Graph.Typed
--- Copyright  : (c) Anton Lorenzen, Andrey Mokhov 2016-2021
+-- Copyright  : (c) Anton Lorenzen, Andrey Mokhov 2016-2022
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : anfelor@posteo.de, andrey.mokhov@gmail.com
 -- Stability  : unstable
