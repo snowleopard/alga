@@ -113,6 +113,7 @@ library
                         Algebra.Graph.Bipartite.AdjacencyMap,
                         Algebra.Graph.Bipartite.AdjacencyMap.Algorithm,
                         Algebra.Graph.Class,
+                        Algebra.Graph.Example.Todo,
                         Algebra.Graph.Export,
                         Algebra.Graph.Export.Dot,
                         Algebra.Graph.HigherKinded.Class,
@@ -144,6 +145,7 @@ test-suite test-alga
                         Algebra.Graph.Test.AdjacencyMap,
                         Algebra.Graph.Test.Arbitrary,
                         Algebra.Graph.Test.Bipartite.AdjacencyMap,
+                        Algebra.Graph.Test.Example.Todo
                         Algebra.Graph.Test.Export,
                         Algebra.Graph.Test.Generic,
                         Algebra.Graph.Test.Graph,
