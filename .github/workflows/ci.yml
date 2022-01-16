@@ -36,4 +36,5 @@ jobs:
         restore-keys: ${{ runner.os }}-${{ matrix.ghc }}-
     - uses: snowleopard/neil@master
       with:
+        github-user: snowleopard
         hlint-arguments: src

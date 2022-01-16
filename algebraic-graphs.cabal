@@ -7,7 +7,7 @@ license-file:  LICENSE
 author:        Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard
 maintainer:    Andrey Mokhov <andrey.mokhov@gmail.com>, github: @snowleopard,
                Alexandre Moine <alexandre@moine.me>, github: @nobrakal
-copyright:     Andrey Mokhov, 2016-2021
+copyright:     Andrey Mokhov, 2016-2022
 homepage:      https://github.com/snowleopard/alga
 bug-reports:   https://github.com/snowleopard/alga/issues
 category:      Algebra, Algorithms, Data Structures, Graphs

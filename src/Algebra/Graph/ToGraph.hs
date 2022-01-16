@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.ToGraph
--- Copyright  : (c) Andrey Mokhov 2016-2021
+-- Copyright  : (c) Andrey Mokhov 2016-2022
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
