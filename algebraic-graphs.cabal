@@ -71,7 +71,6 @@ common common-settings
                         base         >= 4.11    && < 5,
                         containers   >= 0.5.5.1 && < 0.8,
                         deepseq      >= 1.3.0.1 && < 1.5,
-                        mtl          >= 2.1     && < 2.4,
                         transformers >= 0.4     && < 0.6
     default-language:   Haskell2010
     default-extensions: ConstraintKinds

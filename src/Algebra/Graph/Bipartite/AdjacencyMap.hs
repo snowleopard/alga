@@ -55,7 +55,7 @@ module Algebra.Graph.Bipartite.AdjacencyMap (
 
 import Control.Monad
 import Control.Monad.Trans.Maybe
-import Control.Monad.State
+import Control.Monad.Trans.State
 import Data.Either
 import Data.Foldable (asum)
 import Data.List ((\\), sort)

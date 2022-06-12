@@ -35,8 +35,9 @@ module Algebra.Graph.Bipartite.AdjacencyMap.Algorithm (
 import Algebra.Graph.Bipartite.AdjacencyMap
 
 import Control.Monad             (guard, when)
+import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Maybe (MaybeT(..))
-import Control.Monad.State       (MonadState(..), State, runState, modify)
+import Control.Monad.Trans.State (State, runState, get, put, modify)
 import Control.Monad.ST          (ST, runST)
 import Data.Either               (fromLeft)
 import Data.Foldable             (asum, foldl')
@@ -127,19 +128,19 @@ detectParts x = case runState (runMaybeT dfs) Map.empty of
     dfs = asum [ processVertex v | v <- AM.vertexList g ]
 
     -- processVertex :: a -> PartMonad a
-    processVertex v = do partMap <- get
+    processVertex v = do partMap <- lift get
                          guard (Map.notMember v partMap)
                          inVertex LeftPart v
 
     -- inVertex :: Part -> a -> PartMonad a
     inVertex vertexPart v = (v :) <$> do
-        modify (Map.insert v vertexPart)
+        lift $ modify (Map.insert v vertexPart)
         let otherVertexPart = otherPart vertexPart
         asum [ onEdge otherVertexPart u | u <- Set.toAscList (AM.postSet v g) ]
 
     {-# INLINE onEdge #-}
     -- onEdge :: Part -> a -> PartMonad a
-    onEdge vertexPart v = do partMap <- get
+    onEdge vertexPart v = do partMap <- lift get
                              case Map.lookup v partMap of
                                  Nothing   -> inVertex vertexPart v
                                  Just part -> do guard (vertexPart /= part)
@@ -497,14 +498,14 @@ augmentingPathImpl m g = case runState (runMaybeT dfs) (leftVertexSet g, Set.emp
     dfs = asum [ inVertex v | v <- leftVertexList g, not (leftCovered v m) ]
 
     inVertex :: a -> AugPathMonad a b
-    inVertex a = do (as, bs) <- get
+    inVertex a = do (as, bs) <- lift get
                     guard (a `Set.member` as)
-                    put (Set.delete a as, bs)
+                    lift $ put (Set.delete a as, bs)
                     asum [ onEdge a b | b <- neighbours a ]
 
     onEdge :: a -> b -> AugPathMonad a b
-    onEdge a b = addEdge a b <$> do (as, bs) <- get
-                                    put (as, Set.insert b bs)
+    onEdge a b = addEdge a b <$> do (as, bs) <- lift get
+                                    lift $ put (as, Set.insert b bs)
                                     case b `Map.lookup` pairOfRight m of
                                         Just a  -> inVertex a
                                         Nothing -> return Nil

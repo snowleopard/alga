@@ -1,5 +1,4 @@
-{-# language LambdaCase #-}
-
+{-# LANGUAGE LambdaCase #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyMap.Algorithm
@@ -28,10 +27,10 @@ module Algebra.Graph.AdjacencyMap.Algorithm (
     ) where
 
 import Control.Monad
-import Control.Monad.Cont
-import Control.Monad.State.Strict
+import Control.Monad.Trans.Cont
+import Control.Monad.Trans.State.Strict
 import Data.Either
-import Data.List.NonEmpty (NonEmpty(..),(<|))
+import Data.List.NonEmpty (NonEmpty(..), (<|))
 import Data.Maybe
 import Data.Tree
 
@@ -223,14 +222,14 @@ reachable :: Ord a => a -> AdjacencyMap a -> [a]
 reachable x = dfs [x]
 
 type Cycle = NonEmpty
+type Result a = Either (Cycle a) [a]
 data NodeState = Entered | Exited
 data S a = S { parent :: Map.Map a a
              , entry  :: Map.Map a NodeState
              , order  :: [a] }
 
-topSort' :: (Ord a, MonadState (S a) m, MonadCont m)
-         => AdjacencyMap a -> m (Either (Cycle a) [a])
-topSort' g = callCC $ \cyclic ->
+topSort' :: Ord a => AdjacencyMap a -> StateT (S a) (Cont (Result a)) (Result a)
+topSort' g = liftCallCC' callCC $ \cyclic ->
   do let vertices = map fst $ Map.toDescList $ adjacencyMap g
          adjacent = Set.toDescList . flip postSet g
          dfsRoot x = nodeState x >>= \case
@@ -285,8 +284,9 @@ topSort' g = callCC $ \cyclic ->
 -- topSort . 'vertices'                         == Right . 'nub' . 'sort'
 -- @
 topSort :: Ord a => AdjacencyMap a -> Either (Cycle a) [a]
-topSort g = runContT (evalStateT (topSort' g) initialState) id where
-  initialState = S Map.empty Map.empty []
+topSort g = runCont (evalStateT (topSort' g) initialState) id
+  where
+    initialState = S Map.empty Map.empty []
 
 -- | Check if a given graph is /acyclic/.
 --

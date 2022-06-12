@@ -1,5 +1,9 @@
 # Change log
 
+## 0.6.1
+
+* Drop dependency on `mtl`.
+
 ## 0.6
 
 * #276: Add `Monoid` and `Semigroup` instances.

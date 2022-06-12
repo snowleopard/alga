@@ -52,7 +52,7 @@ module Algebra.Graph (
 import Control.Applicative (Alternative)
 import Control.DeepSeq
 import Control.Monad (MonadPlus (..))
-import Control.Monad.State (runState, get, put)
+import Control.Monad.Trans.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.String

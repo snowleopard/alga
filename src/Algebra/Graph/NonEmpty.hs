@@ -54,7 +54,7 @@ module Algebra.Graph.NonEmpty (
 
 import Control.DeepSeq
 import Control.Monad
-import Control.Monad.State
+import Control.Monad.Trans.State
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.String
 

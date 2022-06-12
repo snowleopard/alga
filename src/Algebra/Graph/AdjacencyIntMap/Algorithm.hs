@@ -1,5 +1,4 @@
-{-# language LambdaCase #-}
-
+{-# LANGUAGE LambdaCase #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.AdjacencyIntMap.Algorithm
@@ -32,10 +31,10 @@ module Algebra.Graph.AdjacencyIntMap.Algorithm (
     ) where
 
 import Control.Monad
-import Control.Monad.Cont
-import Control.Monad.State.Strict
+import Control.Monad.Trans.Cont
+import Control.Monad.Trans.State.Strict
 import Data.Either
-import Data.List.NonEmpty (NonEmpty(..),(<|))
+import Data.List.NonEmpty (NonEmpty(..), (<|))
 import Data.Tree
 
 import Algebra.Graph.AdjacencyIntMap
@@ -223,14 +222,14 @@ reachable :: Int -> AdjacencyIntMap -> [Int]
 reachable x = dfs [x]
 
 type Cycle = NonEmpty
+type Result = Either (Cycle Int) [Int]
 data NodeState = Entered | Exited
 data S = S { parent :: IntMap.IntMap Int
            , entry  :: IntMap.IntMap NodeState
            , order  :: [Int] }
 
-topSort' :: (MonadState S m, MonadCont m)
-         => AdjacencyIntMap -> m (Either (Cycle Int) [Int])
-topSort' g = callCC $ \cyclic ->
+topSort' :: AdjacencyIntMap -> StateT S (Cont Result) Result
+topSort' g = liftCallCC' callCC $ \cyclic ->
   do let vertices = map fst $ IntMap.toDescList $ adjacencyIntMap g
          adjacent = IntSet.toDescList . flip postIntSet g
          dfsRoot x = nodeState x >>= \case
@@ -284,8 +283,9 @@ topSort' g = callCC $ \cyclic ->
 -- topSort . 'vertices'                         == Right . 'nub' . 'sort'
 -- @
 topSort :: AdjacencyIntMap -> Either (Cycle Int) [Int]
-topSort g = runContT (evalStateT (topSort' g) initialState) id where
-  initialState = S IntMap.empty IntMap.empty []
+topSort g = runCont (evalStateT (topSort' g) initialState) id
+  where
+    initialState = S IntMap.empty IntMap.empty []
 
 -- | Check if a given graph is /acyclic/.
 --
