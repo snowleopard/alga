@@ -1,6 +1,6 @@
 :set -Wall -fno-warn-name-shadowing -Wcompat
 :set -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
-:set -fwarn-unused-binds -fwarn-unused-imports -fwarn-orphans
+:set -Wunused-binds -Wunused-imports -Worphans
 
 :set -isrc
 :set -itest
