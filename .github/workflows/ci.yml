@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        ghc: ['9.2', '9.0', '8.10', '8.8', '8.6', '8.4']
+        ghc: ['9.4', '9.2', '9.0', '8.10', '8.8', '8.6', '8.4']
         include:
         - os: windows-latest
         - os: macOS-latest
