@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module     : Algebra.Graph.Test.Relation.SymmetricRelation
+-- Module     : Algebra.Graph.Test.Relation.Symmetric
 -- Copyright  : (c) Andrey Mokhov 2016-2022
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
@@ -8,7 +8,7 @@
 --
 -- Testsuite for "Algebra.Graph.Relation.Symmetric".
 -----------------------------------------------------------------------------
-module Algebra.Graph.Test.Relation.SymmetricRelation (
+module Algebra.Graph.Test.Relation.Symmetric (
     -- * Testsuite
     testSymmetricRelation
     ) where
