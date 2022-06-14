@@ -61,9 +61,9 @@ import GHC.Generics
 
 import Algebra.Graph.Internal
 
+import qualified Control.Applicative
 import qualified Algebra.Graph.AdjacencyMap    as AM
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
-import qualified Control.Applicative           as Ap
 import qualified Data.Graph                    as KL
 import qualified Data.IntSet                   as IntSet
 import qualified Data.Set                      as Set
@@ -283,8 +283,8 @@ instance Applicative Graph where
 
 -- | `>>=` is a good consumer and producer.
 instance Monad Graph where
-    return = pure
-    g >>= f  = buildg $ \e v o c -> foldg e (composeR (foldg e v o c) f) o c g
+    return  = pure
+    g >>= f = buildg $ \e v o c -> foldg e (composeR (foldg e v o c) f) o c g
     {-# INLINE (>>=) #-}
 
 instance Alternative Graph where

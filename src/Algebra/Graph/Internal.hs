@@ -23,8 +23,8 @@ module Algebra.Graph.Internal (
     maybeF,
 
     -- * Utilities
-    cartesianProductWith, forEach, coerce00, coerce10, coerce20, coerce01,
-    coerce11, coerce21
+    cartesianProductWith, coerce00, coerce10, coerce20, coerce01, coerce11,
+    coerce21
     ) where
 
 import Data.Coerce
@@ -113,8 +113,8 @@ foldr1Safe :: (a -> a -> a) -> [a] -> Maybe a
 foldr1Safe f = foldr (maybeF f) Nothing
 {-# INLINE foldr1Safe #-}
 
--- | Auxiliary function that try to apply a function to a base case and a 'Maybe'
--- value and return 'Just' the result or 'Just' the base case.
+-- | An auxiliary function that tries to apply a function to a base case and a
+-- 'Maybe' value and returns 'Just' the result or 'Just' the base case.
 maybeF :: (a -> b -> a) -> a -> Maybe b -> Maybe a
 maybeF f x = Just . maybe x (f x)
 {-# INLINE maybeF #-}
@@ -125,10 +125,6 @@ maybeF f x = Just . maybe x (f x)
 cartesianProductWith :: Ord c => (a -> b -> c) -> Set a -> Set b -> Set c
 cartesianProductWith f x y =
     Set.fromList [ f a b | a <- Set.toAscList x, b <- Set.toAscList y ]
-
--- | Perform an applicative action for each element of a set.
-forEach :: Applicative f => Set a -> (a -> f b) -> f ()
-forEach s f = Set.foldr (\a u -> f a *> u) (pure ()) s
 
 -- TODO: Get rid of this boilerplate.
 

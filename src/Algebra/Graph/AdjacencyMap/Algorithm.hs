@@ -29,6 +29,7 @@ module Algebra.Graph.AdjacencyMap.Algorithm (
 import Control.Monad
 import Control.Monad.Trans.Cont
 import Control.Monad.Trans.State.Strict
+import Data.Foldable (for_)
 import Data.Either
 import Data.List.NonEmpty (NonEmpty(..), (<|))
 import Data.Maybe
@@ -43,16 +44,15 @@ import qualified Data.List                           as List
 import qualified Data.Map.Strict                     as Map
 import qualified Data.Set                            as Set
 
--- | Compute the /breadth-first search/ forest of a graph, such that
---   adjacent vertices are explored in increasing order with respect
---   to their 'Ord' instance. The search is seeded by a list of
---   argument vertices that will be the roots of the resulting
---   forest. Duplicates in the list will have their first occurrence
---   expanded and subsequent ones ignored. Argument vertices not in
---   the graph are also ignored.
+-- | Compute the /breadth-first search/ forest of a graph, such that adjacent
+-- vertices are explored in increasing order according to their 'Ord' instance.
+-- The search is seeded by a list of vertices that will become the roots of the
+-- resulting forest. Duplicates in the list will have their first occurrence
+-- expanded and subsequent ones ignored. The seed vertices that do not belong to
+-- the graph are also ignored.
 --
---   Let /L/ be the number of seed vertices. Complexity:
---   /O((L+m)*log n)/ time and /O(n)/ space.
+-- Complexity: /O((L+m)*log n)/ time and /O(n)/ space, where /L/ is the number
+-- of seed vertices.
 --
 -- @
 -- 'forest' (bfsForest [1,2] $ 'edge' 1 2)      == 'vertices' [1,2]
@@ -79,14 +79,13 @@ bfsForest vs g = evalState (explore [ v | v <- vs, hasVertex v g ]) Set.empty wh
                     when new $ modify' (Set.insert v)
                     return new
 
--- | This is 'bfsForest' with the resulting forest converted to a
---   level structure. Adjacent vertices are explored in increasing
---   order with respect to their 'Ord' instance. Flattening the result
---   via @'concat' . 'bfs' vs@ gives an enumeration of vertices
---   reachable from @vs@ in breadth first order.
+-- | A version of 'bfsForest' where the resulting forest is converted to a level
+-- structure. Adjacent vertices are explored in the increasing order according
+-- to their 'Ord' instance. Flattening the result via @'concat'@ @.@ @'bfs'@ @vs@
+-- gives an enumeration of vertices reachable from @vs@ in the BFS order.
 --
---   Let /L/ be the number of seed vertices. Complexity:
---   /O((L+m)*log n)/ time and /O(n)/ space.
+-- Complexity: /O((L+m)*min(n,W))/ time and /O(n)/ space, where /L/ is the
+-- number of seed vertices.
 --
 -- @
 -- bfs vs 'empty'                                         == []
@@ -107,11 +106,10 @@ bfsForest vs g = evalState (explore [ v | v <- vs, hasVertex v g ]) Set.empty wh
 bfs :: Ord a => [a] -> AdjacencyMap a -> [[a]]
 bfs vs = map concat . List.transpose . map levels . bfsForest vs
 
--- | Compute the /depth-first search/ forest of a graph, where
---   adjacent vertices are expanded in increasing order with respect
---   to their 'Ord' instance.
+-- | Compute the /depth-first search/ forest of a graph, where adjacent vertices
+-- are explored in the increasing order according to their 'Ord' instance.
 --
---   Complexity: /O((n+m)*log n)/ time and /O(n)/ space.
+-- Complexity: /O((n+m)*min(n,W))/ time and /O(n)/ space.
 --
 -- @
 -- dfsForest 'empty'                       == []
@@ -134,15 +132,14 @@ bfs vs = map concat . List.transpose . map levels . bfsForest vs
 dfsForest :: Ord a => AdjacencyMap a -> Forest a
 dfsForest g = dfsForestFrom' (vertexList g) g
 
--- | Compute the /depth-first search/ forest of a graph from the given
---   vertices, where adjacent vertices are expanded in increasing
---   order with respect to their 'Ord' instance. Note that the
---   resulting forest does not necessarily span the whole graph, as
---   some vertices may be unreachable. Any of the given vertices which
---   are not in the graph are ignored.
+-- | Compute the /depth-first search/ forest of a graph starting from the given
+-- seed vertices, where adjacent vertices are explored in the increasing order
+-- according to their 'Ord' instance. Note that the resulting forest does not
+-- necessarily span the whole graph, as some vertices may be unreachable. The
+-- seed vertices which do not belong to the graph are ignored.
 --
---   Let /L/ be the number of seed vertices. Complexity: /O((L+m)*log n)/
---   time and /O(n)/ space.
+-- Complexity: /O((L+m)*log n)/ time and /O(n)/ space, where /L/ be the number
+-- of seed vertices.
 --
 -- @
 -- dfsForestFrom vs 'empty'                           == []
@@ -178,12 +175,12 @@ dfsForestFrom' vs g = evalState (explore vs) Set.empty where
                     when new $ modify' (Set.insert v)
                     return new
 
--- | Compute the vertices visited by /depth-first search/ in a graph
---   from the given vertices. Adjacent vertices are expanded in
---   increasing order with respect to their 'Ord' instance.
+-- | Return the list vertices visited by the /depth-first search/ in a graph,
+-- starting from the given seed vertices. Adjacent vertices are explored in the
+-- increasing order according to their 'Ord' instance.
 --
---   Let /L/ be the number of seed vertices. Complexity: /O((L+m)*log n)/
---   time and /O(n)/ space.
+-- Complexity: /O((L+m)*log n)/ time and /O(n)/ space, where /L/ is the number
+-- of seed vertices.
 --
 -- @
 -- dfs vs    $ 'empty'                    == []
@@ -201,11 +198,10 @@ dfsForestFrom' vs g = evalState (explore vs) Set.empty where
 dfs :: Ord a => [a] -> AdjacencyMap a -> [a]
 dfs vs = dfsForestFrom vs >=> flatten
 
--- | Compute the list of vertices that are /reachable/ from a given
---   source vertex in a graph. The vertices in the resulting list
---   appear in /depth-first order/.
+-- | Return the list of vertices that are /reachable/ from a given source vertex
+-- in a graph. The vertices in the resulting list appear in the /depth-first order/.
 --
---   Complexity: /O(m*log n)/ time and /O(n)/ space.
+-- Complexity: /O(m*log n)/ time and /O(n)/ space.
 --
 -- @
 -- reachable x $ 'empty'                       == []
@@ -257,18 +253,17 @@ topSort' g = liftCallCC' callCC $ \cyclic ->
         | head == curr = xs
         | otherwise = aux (parent Map.! curr <| xs)
 
--- | Compute a topological sort of a DAG or discover a cycle.
+-- | Compute a topological sort of a graph or discover a cycle.
 --
---   Vertices are expanded in decreasing order with respect to their
---   'Ord' instance. This gives the lexicographically smallest
---   topological ordering in the case of success. In the case of
---   failure, the cycle is characterized by being the
---   lexicographically smallest up to rotation with respect to @Ord
---   (Dual a)@ in the first connected component of the graph
---   containing a cycle, where the connected components are ordered by
---   their largest vertex with respect to @Ord a@.
+-- Vertices are explored in the decreasing order according to their 'Ord'
+-- instance. This gives the lexicographically smallest topological ordering in
+-- the case of success. In the case of failure, the cycle is characterized by
+-- being the lexicographically smallest up to rotation with respect to
+-- @Ord@ @(Dual@ @Int)@ in the first connected component of the graph containing
+-- a cycle, where the connected components are ordered by their largest vertex
+-- with respect to @Ord a@.
 --
---   Complexity: /O((n+m)*log n)/ time and /O(n)/ space.
+-- Complexity: /O((n+m)*min(n,W))/ time and /O(n)/ space.
 --
 -- @
 -- topSort (1 * 2 + 3 * 1)                    == Right [3,1,2]
@@ -343,7 +338,7 @@ data StateSCC a
 gabowSCC :: Ord a => AdjacencyMap a -> State (StateSCC a) ()
 gabowSCC g =
   do let dfs u = do p_u <- enter u
-                    forEach (postSet u g) $ \v -> do
+                    for_ (postSet u g) $ \v -> do
                       preorderId v >>= \case
                         Nothing  -> do
                           updated <- dfs v
