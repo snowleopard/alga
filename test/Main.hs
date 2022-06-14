@@ -12,7 +12,7 @@ import Algebra.Graph.Test.Labelled.Graph
 import Algebra.Graph.Test.NonEmpty.AdjacencyMap
 import Algebra.Graph.Test.NonEmpty.Graph
 import Algebra.Graph.Test.Relation
-import Algebra.Graph.Test.Relation.SymmetricRelation
+import Algebra.Graph.Test.Relation.Symmetric
 import Algebra.Graph.Test.Undirected
 import Data.Graph.Test.Typed
 

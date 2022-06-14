@@ -156,7 +156,7 @@ test-suite test-alga
                         Algebra.Graph.Test.NonEmpty.AdjacencyMap,
                         Algebra.Graph.Test.NonEmpty.Graph,
                         Algebra.Graph.Test.Relation,
-                        Algebra.Graph.Test.Relation.SymmetricRelation,
+                        Algebra.Graph.Test.Relation.Symmetric,
                         Algebra.Graph.Test.RewriteRules,
                         Data.Graph.Test.Typed
     build-depends:      algebraic-graphs,
