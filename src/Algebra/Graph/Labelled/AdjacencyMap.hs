@@ -124,6 +124,7 @@ instance (Ord a, Eq e, Monoid e) => Semigroup (AdjacencyMap e a) where
 instance (Ord a, Eq e, Monoid e) => Monoid (AdjacencyMap e a) where
     mempty = empty
 
+-- TODO: Add tests.
 -- | Defined via 'skeleton' and the 'T.ToGraph' instance of 'AM.AdjacencyMap'.
 instance (Eq e, Monoid e, Ord a) => T.ToGraph (AdjacencyMap e a) where
     type ToVertex (AdjacencyMap e a) = a

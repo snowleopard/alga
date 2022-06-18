@@ -103,6 +103,7 @@ instance Monoid e => Semigroup (Graph e a) where
 instance Monoid e => Monoid (Graph e a) where
     mempty = empty
 
+-- TODO: Add tests.
 instance (Eq e, Monoid e, Ord a) => T.ToGraph (Graph e a) where
     type ToVertex (Graph e a)  = a
     foldg e v o c              = foldg e v (\e -> if e == mempty then o else c)
