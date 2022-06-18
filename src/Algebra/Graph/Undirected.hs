@@ -88,7 +88,7 @@ working with algebraic graphs; we hope that in future Haskell's Prelude will
 provide a more fine-grained class hierarchy for algebraic structures, which we
 would be able to utilise without violating any laws.
 
-The 'Eq' instance is currently implemented using the 'R.Relation' as the
+The 'Eq' instance is currently implemented using the 'SR.Relation' as the
 /canonical graph representation/ and satisfies all axioms of algebraic graphs:
 
     * 'overlay' is commutative and associative:
@@ -144,7 +144,7 @@ Note that 'size' counts all leaves of the expression:
 'vertexCount' ('empty' + 'empty') == 0
 'size'        ('empty' + 'empty') == 2@
 
-Converting an undirected 'Graph' to the corresponding 'R.Relation' takes
+Converting an undirected 'Graph' to the corresponding 'SR.Relation' takes
 /O(s + m * log(m))/ time and /O(s + m)/ memory. This is also the complexity of
 the graph equality test, because it is currently implemented by converting graph
 expressions to canonical representations based on adjacency maps.
