@@ -13,8 +13,8 @@
 -- import qualified Algebra.Graph.Relation.Symmetric as Symmetric
 -- @
 --
--- 'Relation' is an instance of the 'Algebra.Graph.Class.Graph' type
--- class, which can be used for polymorphic graph construction and manipulation.
+-- 'Relation' is an instance of the 'Algebra.Graph.Class.Graph' type class,
+-- which can be used for polymorphic graph construction and manipulation.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.Symmetric (
     -- * Data structure
@@ -47,9 +47,14 @@ import Data.Set (Set)
 import Data.String
 import Data.Tree
 
-import qualified Data.Set as Set
+import qualified Data.IntSet as IntSet
+import qualified Data.Set    as Set
 
-import qualified Algebra.Graph.Relation as R
+import qualified Algebra.Graph                 as G
+import qualified Algebra.Graph.AdjacencyIntMap as AIM
+import qualified Algebra.Graph.AdjacencyMap    as AM
+import qualified Algebra.Graph.ToGraph         as T
+import qualified Algebra.Graph.Relation        as R
 
 {-| This data type represents a /symmetric binary relation/ over a set of
 elements of type @a@. Symmetric relations satisfy all laws of the
@@ -138,8 +143,28 @@ instance Ord a => Semigroup (Relation a) where
 instance Ord a => Monoid (Relation a) where
     mempty = empty
 
+-- | Defined via 'fromSymmetric' and the 'T.ToGraph' instance of 'R.Relation'.
+instance Ord a => T.ToGraph (Relation a) where
+    type ToVertex (Relation a) = a
+    toGraph                    = T.toGraph . fromSymmetric
+    isEmpty                    = isEmpty
+    hasVertex                  = hasVertex
+    hasEdge                    = hasEdge
+    vertexCount                = vertexCount
+    edgeCount                  = R.edgeCount . fromSymmetric
+    vertexList                 = vertexList
+    vertexSet                  = vertexSet
+    vertexIntSet               = IntSet.fromAscList . vertexList
+    edgeList                   = R.edgeList . fromSymmetric
+    edgeSet                    = R.relation . fromSymmetric
+    adjacencyList              = adjacencyList
+    toAdjacencyMap             = T.toAdjacencyMap . fromSymmetric
+    toAdjacencyIntMap          = T.toAdjacencyIntMap . fromSymmetric
+    toAdjacencyMapTranspose    = T.toAdjacencyMap    -- No need to transpose!
+    toAdjacencyIntMapTranspose = T.toAdjacencyIntMap -- No need to transpose!
+
 -- | Construct a symmetric relation from a given "Algebra.Graph.Relation".
--- Complexity: /O(m*log(m))/ time.
+-- Complexity: /O(m * log(m))/ time.
 --
 -- @
 -- toSymmetric ('Algebra.Graph.Relation.edge' 1 2)         == 'edge' 1 2

@@ -55,20 +55,21 @@ import Data.Map    (Map)
 import Data.Set    (Set)
 import Data.Tree
 
-import qualified Algebra.Graph                                as G
-import qualified Algebra.Graph.AdjacencyMap                   as AM
-import qualified Algebra.Graph.AdjacencyMap.Algorithm         as AM
-import qualified Algebra.Graph.Labelled                       as LG
-import qualified Algebra.Graph.Labelled.AdjacencyMap          as LAM
-import qualified Algebra.Graph.NonEmpty.AdjacencyMap          as NAM
-import qualified Algebra.Graph.AdjacencyIntMap                as AIM
-import qualified Algebra.Graph.AdjacencyIntMap.Algorithm      as AIM
-import qualified Algebra.Graph.Relation                       as R
-import qualified Algebra.Graph.Relation.Symmetric             as SR
-import qualified Data.IntMap                                  as IntMap
-import qualified Data.IntSet                                  as IntSet
-import qualified Data.Map                                     as Map
-import qualified Data.Set                                     as Set
+import qualified Data.IntMap as IntMap
+import qualified Data.IntSet as IntSet
+import qualified Data.Map    as Map
+import qualified Data.Set    as Set
+
+-- Ideally, we would define all instances in the modules where the corresponding
+-- data types are declared. However, that causes import cycles, so we define a
+-- few instances here.
+
+import qualified Algebra.Graph                           as G
+import qualified Algebra.Graph.AdjacencyMap              as AM
+import qualified Algebra.Graph.AdjacencyMap.Algorithm    as AM
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap     as NAM
+import qualified Algebra.Graph.AdjacencyIntMap           as AIM
+import qualified Algebra.Graph.AdjacencyIntMap.Algorithm as AIM
 
 -- | The 'ToGraph' type class captures data types that can be converted to
 -- algebraic graphs. Instances of this type class should satisfy the laws
@@ -329,6 +330,7 @@ class ToGraph t where
     isTopSortOf :: Ord (ToVertex t) => [ToVertex t] -> t -> Bool
     isTopSortOf vs = AM.isTopSortOf vs . toAdjacencyMap
 
+-- | See "Algebra.Graph".
 instance Ord a => ToGraph (G.Graph a) where
     type ToVertex (G.Graph a) = a
     toGraph = id
@@ -368,6 +370,7 @@ instance Ord a => ToGraph (AM.AdjacencyMap a) where
     isDfsForestOf              = AM.isDfsForestOf
     isTopSortOf                = AM.isTopSortOf
 
+-- | See "Algebra.Graph.AdjacencyIntMap".
 instance ToGraph AIM.AdjacencyIntMap where
     type ToVertex AIM.AdjacencyIntMap = Int
     toGraph                    = G.stars
@@ -400,42 +403,6 @@ instance ToGraph AIM.AdjacencyIntMap where
     isDfsForestOf              = AIM.isDfsForestOf
     isTopSortOf                = AIM.isTopSortOf
 
--- | See "Algebra.Graph.Labelled".
-instance (Eq e, Monoid e, Ord a) => ToGraph (LG.Graph e a) where
-    type ToVertex (LG.Graph e a) = a
-    foldg e v o c              = LG.foldg e v (\e -> if e == mempty then o else c)
-    vertexList                 = LG.vertexList
-    vertexSet                  = LG.vertexSet
-    toAdjacencyMap             = LAM.skeleton
-                               . LG.foldg LAM.empty LAM.vertex LAM.connect
-    toAdjacencyMapTranspose    = LAM.skeleton
-                               . LG.foldg LAM.empty LAM.vertex (fmap flip LAM.connect)
-    toAdjacencyIntMap          = toAdjacencyIntMap . toAdjacencyMap
-    toAdjacencyIntMapTranspose = toAdjacencyIntMapTranspose . toAdjacencyMapTranspose
-
--- | See "Algebra.Graph.Labelled.AdjacencyMap".
-instance (Eq e, Monoid e, Ord a) => ToGraph (LAM.AdjacencyMap e a) where
-    type ToVertex (LAM.AdjacencyMap e a) = a
-    toGraph                    = toGraph . LAM.skeleton
-    foldg e v o c              = foldg e v o c . LAM.skeleton
-    isEmpty                    = LAM.isEmpty
-    hasVertex                  = LAM.hasVertex
-    hasEdge                    = LAM.hasEdge
-    vertexCount                = LAM.vertexCount
-    edgeCount                  = LAM.edgeCount
-    vertexList                 = LAM.vertexList
-    vertexSet                  = LAM.vertexSet
-    vertexIntSet               = IntSet.fromAscList . LAM.vertexList
-    edgeList                   = edgeList . LAM.skeleton
-    edgeSet                    = edgeSet . LAM.skeleton
-    adjacencyList              = adjacencyList . LAM.skeleton
-    preSet                     = LAM.preSet
-    postSet                    = LAM.postSet
-    toAdjacencyMap             = LAM.skeleton
-    toAdjacencyIntMap          = toAdjacencyIntMap . LAM.skeleton
-    toAdjacencyMapTranspose    = toAdjacencyMapTranspose . LAM.skeleton
-    toAdjacencyIntMapTranspose = toAdjacencyIntMapTranspose . LAM.skeleton
-
 -- | See "Algebra.Graph.NonEmpty.AdjacencyMap".
 instance Ord a => ToGraph (NAM.AdjacencyMap a) where
     type ToVertex (NAM.AdjacencyMap a) = a
@@ -465,51 +432,6 @@ instance Ord a => ToGraph (NAM.AdjacencyMap a) where
     toAdjacencyIntMapTranspose = toAdjacencyIntMap . NAM.transpose
     isDfsForestOf f            = isDfsForestOf f . toAdjacencyMap
     isTopSortOf x              = isTopSortOf x . toAdjacencyMap
-
--- TODO: Get rid of "Relation.Internal" and move this instance to "Relation".
--- | See "Algebra.Graph.Relation".
-instance Ord a => ToGraph (R.Relation a) where
-    type ToVertex (R.Relation a) = a
-    toGraph r                  = G.vertices (Set.toList $ R.domain   r) `G.overlay`
-                                 G.edges    (Set.toList $ R.relation r)
-    isEmpty                    = R.isEmpty
-    hasVertex                  = R.hasVertex
-    hasEdge                    = R.hasEdge
-    vertexCount                = R.vertexCount
-    edgeCount                  = R.edgeCount
-    vertexList                 = R.vertexList
-    vertexSet                  = R.vertexSet
-    vertexIntSet               = IntSet.fromAscList . R.vertexList
-    edgeList                   = R.edgeList
-    edgeSet                    = R.edgeSet
-    adjacencyList              = R.adjacencyList
-    toAdjacencyMap             = AM.stars . R.adjacencyList
-    toAdjacencyIntMap          = AIM.stars . R.adjacencyList
-    toAdjacencyMapTranspose    = AM.transpose . toAdjacencyMap
-    toAdjacencyIntMapTranspose = AIM.transpose . toAdjacencyIntMap
-
--- TODO: This instance is probably wrong because of the way it treats edges.
--- Find out a better way to integrate undirected graphs into 'ToGraph'.
--- | See "Algebra.Graph.Symmetric.Relation". Warning: this instance is likely to
--- be modified or removed in future.
-instance Ord a => ToGraph (SR.Relation a) where
-    type ToVertex (SR.Relation a) = a
-    toGraph                    = toGraph . SR.fromSymmetric
-    isEmpty                    = SR.isEmpty
-    hasVertex                  = SR.hasVertex
-    hasEdge                    = SR.hasEdge
-    vertexCount                = SR.vertexCount
-    edgeCount                  = SR.edgeCount
-    vertexList                 = SR.vertexList
-    vertexSet                  = SR.vertexSet
-    vertexIntSet               = IntSet.fromAscList . SR.vertexList
-    edgeList                   = SR.edgeList
-    edgeSet                    = SR.edgeSet
-    adjacencyList              = SR.adjacencyList
-    toAdjacencyMap             = toAdjacencyMap . SR.fromSymmetric
-    toAdjacencyIntMap          = toAdjacencyIntMap . SR.fromSymmetric
-    toAdjacencyMapTranspose    = toAdjacencyMap
-    toAdjacencyIntMapTranspose = toAdjacencyIntMap
 
 -- | The /adjacency map/ of a graph: each vertex is associated with a set of its
 -- /direct successors/.
