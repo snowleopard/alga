@@ -60,7 +60,7 @@ import Data.Tree (Tree, Forest)
 import Data.String
 
 import qualified Algebra.Graph                    as G
-import qualified Algebra.Graph.Relation.Symmetric as R
+import qualified Algebra.Graph.Relation.Symmetric as SR
 import qualified Data.Set                         as Set
 
 -- TODO: Specialise the API for graphs with vertices of type 'Int'.
@@ -238,7 +238,7 @@ toUndirected = coerce
 -- 'Algebra.Graph.edgeCount' . fromUndirected    <= (*2) . 'edgeCount'
 -- @
 fromUndirected :: Ord a => Graph a -> G.Graph a
-fromUndirected = toGraph . toRelation
+fromUndirected = toGraph . SR.fromSymmetric . toRelation
 
 -- | Construct the /empty graph/.
 --
@@ -421,15 +421,15 @@ foldg = coerce G.foldg
 -- isSubgraphOf x y                         ==> x <= y
 -- @
 isSubgraphOf :: Ord a => Graph a -> Graph a -> Bool
-isSubgraphOf x y = R.isSubgraphOf (toRelation x) (toRelation y)
+isSubgraphOf x y = SR.isSubgraphOf (toRelation x) (toRelation y)
 {-# NOINLINE [1] isSubgraphOf #-}
 
 -- TODO: This is a very inefficient implementation. Find a way to construct a
 -- symmetric relation directly, without building intermediate representations
 -- for all subgraphs.
--- | Convert an undirected graph to a symmetric 'R.Relation'.
-toRelation :: Ord a => Graph a -> R.Relation a
-toRelation = foldg R.empty R.vertex R.overlay R.connect
+-- | Convert an undirected graph to a symmetric 'SR.Relation'.
+toRelation :: Ord a => Graph a -> SR.Relation a
+toRelation = foldg SR.empty SR.vertex SR.overlay SR.connect
 {-# INLINE toRelation #-}
 
 -- | Check if a graph is empty.
@@ -516,7 +516,7 @@ vertexCount = coerce01 G.vertexCount
 -- edgeCount            == 'length' . 'edgeList'
 -- @
 edgeCount :: Ord a => Graph a -> Int
-edgeCount = R.edgeCount . toRelation
+edgeCount = SR.edgeCount . toRelation
 {-# INLINE [1] edgeCount #-}
 
 -- | The sorted list of vertices of a given graph.
@@ -542,7 +542,7 @@ vertexList = coerce01 G.vertexList
 -- edgeList ('star' 2 [3,1]) == [(1,2), (2,3)]
 -- @
 edgeList :: Ord a => Graph a -> [(a, a)]
-edgeList = R.edgeList . toRelation
+edgeList = SR.edgeList . toRelation
 {-# INLINE [1] edgeList #-}
 
 -- | The set of vertices of a given graph.
@@ -566,7 +566,7 @@ vertexSet = coerce01 G.vertexSet
 -- edgeSet ('edge' x y) == Set.'Set.singleton' ('min' x y, 'max' x y)
 -- @
 edgeSet :: Ord a => Graph a -> Set (a, a)
-edgeSet = R.edgeSet . toRelation
+edgeSet = SR.edgeSet . toRelation
 {-# INLINE [1] edgeSet #-}
 
 -- | The sorted /adjacency list/ of a graph.
@@ -580,7 +580,7 @@ edgeSet = R.edgeSet . toRelation
 -- 'stars' . adjacencyList        == id
 -- @
 adjacencyList :: Ord a => Graph a -> [(a, [a])]
-adjacencyList = R.adjacencyList . toRelation
+adjacencyList = SR.adjacencyList . toRelation
 {-# INLINE adjacencyList #-}
 {-# SPECIALISE adjacencyList :: Graph Int -> [(Int, [Int])] #-}
 
@@ -593,7 +593,7 @@ adjacencyList = R.adjacencyList . toRelation
 -- neighbours y ('edge' x y) == Set.'Set.fromList' [x]
 -- @
 neighbours :: Ord a => a -> Graph a -> Set a
-neighbours x = R.neighbours x . toRelation
+neighbours x = SR.neighbours x . toRelation
 {-# INLINE neighbours #-}
 
 -- | The /path/ on a list of vertices.

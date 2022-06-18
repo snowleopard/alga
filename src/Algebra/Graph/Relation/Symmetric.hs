@@ -15,6 +15,9 @@
 --
 -- 'Relation' is an instance of the 'Algebra.Graph.Class.Graph' type
 -- class, which can be used for polymorphic graph construction and manipulation.
+--
+-- We do not provide a 'Algebra.Graph.ToGraph.ToGraph' instance. Instead, use
+-- the corresponding instance of the underlying relation via 'toSymmetric'.
 -----------------------------------------------------------------------------
 module Algebra.Graph.Relation.Symmetric (
     -- * Data structure
@@ -138,8 +141,7 @@ instance Ord a => Semigroup (Relation a) where
 instance Ord a => Monoid (Relation a) where
     mempty = empty
 
--- | Construct a symmetric relation from a given "Algebra.Graph.Relation".
--- Complexity: /O(m*log(m))/ time.
+-- Complexity: /O(m * log(m))/ time.
 --
 -- @
 -- toSymmetric ('Algebra.Graph.Relation.edge' 1 2)         == 'edge' 1 2

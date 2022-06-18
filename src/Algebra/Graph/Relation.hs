@@ -49,11 +49,17 @@ import Data.String
 import Data.Tree
 import Data.Tuple
 
-import qualified Data.Maybe as Maybe
-import qualified Data.Set   as Set
-import qualified Data.Tree  as Tree
+import qualified Data.IntSet as IntSet
+import qualified Data.Maybe  as Maybe
+import qualified Data.Set    as Set
+import qualified Data.Tree   as Tree
 
 import Algebra.Graph.Internal
+
+import qualified Algebra.Graph                 as G
+import qualified Algebra.Graph.AdjacencyIntMap as AIM
+import qualified Algebra.Graph.AdjacencyMap    as AM
+import qualified Algebra.Graph.ToGraph         as T
 
 {-| The 'Relation' data type represents a graph as a /binary relation/. We
 define a 'Num' instance as a convenient notation for working with graphs:
@@ -204,6 +210,26 @@ instance Ord a => Semigroup (Relation a) where
 -- | Defined via 'overlay' and 'empty'.
 instance Ord a => Monoid (Relation a) where
     mempty = empty
+
+instance Ord a => T.ToGraph (Relation a) where
+    type ToVertex (Relation a) = a
+    toGraph r                  = G.vertices (Set.toList $ domain   r) `G.overlay`
+                                 G.edges    (Set.toList $ relation r)
+    isEmpty                    = isEmpty
+    hasVertex                  = hasVertex
+    hasEdge                    = hasEdge
+    vertexCount                = vertexCount
+    edgeCount                  = edgeCount
+    vertexList                 = vertexList
+    vertexSet                  = vertexSet
+    vertexIntSet               = IntSet.fromAscList . vertexList
+    edgeList                   = edgeList
+    edgeSet                    = edgeSet
+    adjacencyList              = adjacencyList
+    toAdjacencyMap             = AM.stars . adjacencyList
+    toAdjacencyIntMap          = AIM.stars . adjacencyList
+    toAdjacencyMapTranspose    = AM.transpose . T.toAdjacencyMap
+    toAdjacencyIntMapTranspose = AIM.transpose . T.toAdjacencyIntMap
 
 -- | Construct the /empty graph/.
 --
