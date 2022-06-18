@@ -52,9 +52,12 @@ import Algebra.Graph.Internal (List)
 import Algebra.Graph.Label
 
 import qualified Algebra.Graph.Labelled.AdjacencyMap as AM
-import qualified Data.Set                            as Set
-import qualified Data.Map                            as Map
-import qualified GHC.Exts                            as Exts
+import qualified Algebra.Graph.ToGraph               as T
+
+import qualified Data.IntSet as IntSet
+import qualified Data.Set    as Set
+import qualified Data.Map    as Map
+import qualified GHC.Exts    as Exts
 
 -- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
 -- For example, 'Graph' @Bool@ @a@ is isomorphic to unlabelled graphs defined in
@@ -99,6 +102,16 @@ instance Monoid e => Semigroup (Graph e a) where
 -- | Defined via 'overlay' and 'empty'.
 instance Monoid e => Monoid (Graph e a) where
     mempty = empty
+
+instance (Eq e, Monoid e, Ord a) => T.ToGraph (Graph e a) where
+    type ToVertex (Graph e a)  = a
+    foldg e v o c              = foldg e v (\e -> if e == mempty then o else c)
+    vertexList                 = vertexList
+    vertexSet                  = vertexSet
+    toAdjacencyMap             = AM.skeleton . toAdjacencyMap
+    toAdjacencyMapTranspose    = T.toAdjacencyMap . transpose
+    toAdjacencyIntMap          = T.toAdjacencyIntMap . toAdjacencyMap
+    toAdjacencyIntMapTranspose = T.toAdjacencyIntMap . T.toAdjacencyMapTranspose
 
 -- TODO: This is a very inefficient implementation. Find a way to construct an
 -- adjacency map directly, without building intermediate representations for all

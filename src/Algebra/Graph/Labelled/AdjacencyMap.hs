@@ -52,8 +52,11 @@ import GHC.Generics
 import Algebra.Graph.Label
 
 import qualified Algebra.Graph.AdjacencyMap as AM
-import qualified Data.Map.Strict            as Map
-import qualified Data.Set                   as Set
+import qualified Algebra.Graph.ToGraph      as T
+
+import qualified Data.IntSet     as IntSet
+import qualified Data.Map.Strict as Map
+import qualified Data.Set        as Set
 
 -- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
 -- For example, 'AdjacencyMap' @Bool@ @a@ is isomorphic to unlabelled graphs
@@ -120,6 +123,29 @@ instance (Ord a, Eq e, Monoid e) => Semigroup (AdjacencyMap e a) where
 -- | Defined via 'overlay' and 'empty'.
 instance (Ord a, Eq e, Monoid e) => Monoid (AdjacencyMap e a) where
     mempty = empty
+
+-- | Defined via 'skeleton' and the 'T.ToGraph' instance of 'AM.AdjacencyMap'.
+instance (Eq e, Monoid e, Ord a) => T.ToGraph (AdjacencyMap e a) where
+    type ToVertex (AdjacencyMap e a) = a
+    toGraph                    = T.toGraph . skeleton
+    foldg e v o c              = T.foldg e v o c . skeleton
+    isEmpty                    = isEmpty
+    hasVertex                  = hasVertex
+    hasEdge                    = hasEdge
+    vertexCount                = vertexCount
+    edgeCount                  = edgeCount
+    vertexList                 = vertexList
+    vertexSet                  = vertexSet
+    vertexIntSet               = IntSet.fromAscList . vertexList
+    edgeList                   = T.edgeList . skeleton
+    edgeSet                    = T.edgeSet . skeleton
+    adjacencyList              = T.adjacencyList . skeleton
+    preSet                     = preSet
+    postSet                    = postSet
+    toAdjacencyMap             = skeleton
+    toAdjacencyIntMap          = T.toAdjacencyIntMap . skeleton
+    toAdjacencyMapTranspose    = T.toAdjacencyMapTranspose . skeleton
+    toAdjacencyIntMapTranspose = T.toAdjacencyIntMapTranspose . skeleton
 
 -- | Construct the /empty graph/.
 --
