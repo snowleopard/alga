@@ -55,16 +55,21 @@ import Data.Map    (Map)
 import Data.Set    (Set)
 import Data.Tree
 
-import qualified Algebra.Graph                                as G
-import qualified Algebra.Graph.AdjacencyMap                   as AM
-import qualified Algebra.Graph.AdjacencyMap.Algorithm         as AM
-import qualified Algebra.Graph.NonEmpty.AdjacencyMap          as NAM
-import qualified Algebra.Graph.AdjacencyIntMap                as AIM
-import qualified Algebra.Graph.AdjacencyIntMap.Algorithm      as AIM
-import qualified Data.IntMap                                  as IntMap
-import qualified Data.IntSet                                  as IntSet
-import qualified Data.Map                                     as Map
-import qualified Data.Set                                     as Set
+import qualified Data.IntMap as IntMap
+import qualified Data.IntSet as IntSet
+import qualified Data.Map    as Map
+import qualified Data.Set    as Set
+
+-- Ideally, we would define all instances in the modules where the corresponding
+-- data types are declared. However, that causes import cycles, so we define a
+-- few instances here.
+
+import qualified Algebra.Graph                           as G
+import qualified Algebra.Graph.AdjacencyMap              as AM
+import qualified Algebra.Graph.AdjacencyMap.Algorithm    as AM
+import qualified Algebra.Graph.NonEmpty.AdjacencyMap     as NAM
+import qualified Algebra.Graph.AdjacencyIntMap           as AIM
+import qualified Algebra.Graph.AdjacencyIntMap.Algorithm as AIM
 
 -- | The 'ToGraph' type class captures data types that can be converted to
 -- algebraic graphs. Instances of this type class should satisfy the laws
@@ -325,6 +330,7 @@ class ToGraph t where
     isTopSortOf :: Ord (ToVertex t) => [ToVertex t] -> t -> Bool
     isTopSortOf vs = AM.isTopSortOf vs . toAdjacencyMap
 
+-- | See "Algebra.Graph".
 instance Ord a => ToGraph (G.Graph a) where
     type ToVertex (G.Graph a) = a
     toGraph = id
