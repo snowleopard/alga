@@ -281,7 +281,7 @@ topSortImpl g = liftCallCC' callCC $ \cyclic ->
 -- topSort ('path' [5,4..1] + 'edge' 2 4)         == Left (4 ':|' [3,2])
 -- topSort ('circuit' [1..3])                   == Left (3 ':|' [1,2])
 -- topSort ('circuit' [1..3] + 'circuit' [3,2,1]) == Left (3 ':|' [2])
--- topSort (1 * 2 + 2 * 1 + 3 * 4 + 4 * 3)    == Left (1 ':|' [2])
+-- topSort (1 * 2 + (5 + 2) * 1 + 3 * 4 * 3)  == Left (1 ':|' [2])
 -- fmap ('flip' 'isTopSortOf' x) (topSort x)      /= Right False
 -- 'isRight' . topSort                          == 'isAcyclic'
 -- topSort . 'vertices'                         == Right . 'nub' . 'sort'

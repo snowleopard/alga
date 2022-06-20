@@ -1965,8 +1965,8 @@ testTopSort (prefix, API{..}) = do
     test "topSort (circuit [1..3] + circuit [3,2,1]) == Left (3 :| [2])" $
           topSort (circuit [1..3] + circuit [3,2,1]) == Left (3 :| [2])
 
-    test "topSort (1 * 2 + 2 * 1 + 3 * 4 + 4 * 3)    == Left (1 :| [2])" $
-          topSort (1 * 2 + 2 * 1 + 3 * 4 + 4 * 3)    == Left (1 :| [2])
+    test "topSort (1 * 2 + (5 + 2) * 1 + 3 * 4 * 3)  == Left (1 :| [2])" $
+          topSort (1 * 2 + (5 + 2) * 1 + 3 * 4 * 3)  == Left (1 :| [2])
 
     test "fmap (flip isTopSortOf x) (topSort x) /= Right False" $ \x ->
           fmap (flip isTopSortOf x) (topSort x) /= Right False
