@@ -814,7 +814,7 @@ compose x y = fromAdjacencyIntSets
 -- closure                  == 'reflexiveClosure' . 'transitiveClosure'
 -- closure                  == 'transitiveClosure' . 'reflexiveClosure'
 -- closure . closure        == closure
--- 'postIntSet' x (closure y) == IntSet.'IntSet.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
+-- 'postIntSet' x (closure y) == IntSet.'IntSet.fromList' ('Algebra.Graph.ToGraph.reachable' y x)
 -- @
 closure :: AdjacencyIntMap -> AdjacencyIntMap
 closure = reflexiveClosure . transitiveClosure

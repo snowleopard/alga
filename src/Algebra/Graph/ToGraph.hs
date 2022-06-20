@@ -237,29 +237,29 @@ class ToGraph t where
     -- necessarily span the whole graph, as some vertices may be unreachable.
     --
     -- @
-    -- dfsForestFrom vs == Algebra.Graph.AdjacencyMap.'AM.dfsForestFrom' vs . toAdjacencyMap
+    -- dfsForestFrom == Algebra.Graph.AdjacencyMap.'AM.dfsForestFrom' . toAdjacencyMap
     -- @
-    dfsForestFrom :: Ord (ToVertex t) => [ToVertex t] -> t -> Forest (ToVertex t)
-    dfsForestFrom vs = AM.dfsForestFrom vs . toAdjacencyMap
+    dfsForestFrom :: Ord (ToVertex t) => t -> [ToVertex t] -> Forest (ToVertex t)
+    dfsForestFrom = AM.dfsForestFrom . toAdjacencyMap
 
     -- | Compute the list of vertices visited by the /depth-first search/ in a
     -- graph, when searching from each of the given vertices in order.
     --
     -- @
-    -- dfs vs == Algebra.Graph.AdjacencyMap.'AM.dfs' vs . toAdjacencyMap
+    -- dfs == Algebra.Graph.AdjacencyMap.'AM.dfs' . toAdjacencyMap
     -- @
-    dfs :: Ord (ToVertex t) => [ToVertex t] -> t -> [ToVertex t]
-    dfs vs = AM.dfs vs . toAdjacencyMap
+    dfs :: Ord (ToVertex t) => t -> [ToVertex t] -> [ToVertex t]
+    dfs = AM.dfs . toAdjacencyMap
 
     -- | Compute the list of vertices that are /reachable/ from a given source
     -- vertex in a graph. The vertices in the resulting list appear in the
     -- /depth-first order/.
     --
     -- @
-    -- reachable x == Algebra.Graph.AdjacencyMap.'AM.reachable' x . toAdjacencyMap
+    -- reachable == Algebra.Graph.AdjacencyMap.'AM.reachable' . toAdjacencyMap
     -- @
-    reachable :: Ord (ToVertex t) => ToVertex t -> t -> [ToVertex t]
-    reachable x = AM.reachable x . toAdjacencyMap
+    reachable :: Ord (ToVertex t) => t -> ToVertex t -> [ToVertex t]
+    reachable = AM.reachable . toAdjacencyMap
 
     -- | Compute the /topological sort/ of a graph or a @AM.Cycle@ if the
     -- graph is cyclic.
@@ -421,9 +421,9 @@ instance Ord a => ToGraph (NAM.AdjacencyMap a) where
     preSet                     = NAM.preSet
     postSet                    = NAM.postSet
     dfsForest                  = dfsForest . toAdjacencyMap
-    dfsForestFrom xs           = dfsForestFrom xs . toAdjacencyMap
-    dfs xs                     = dfs xs . toAdjacencyMap
-    reachable x                = reachable x . toAdjacencyMap
+    dfsForestFrom              = dfsForestFrom . toAdjacencyMap
+    dfs                        = dfs . toAdjacencyMap
+    reachable                  = reachable . toAdjacencyMap
     topSort                    = topSort . toAdjacencyMap
     isAcyclic                  = isAcyclic . toAdjacencyMap
     toAdjacencyMap             = NAM.fromNonEmpty

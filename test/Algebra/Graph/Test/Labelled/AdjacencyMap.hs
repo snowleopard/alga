@@ -430,8 +430,8 @@ testLabelledAdjacencyMap = do
     test "closure . closure     == closure" $ size10 $ \x ->
          (closure . closure) x  == closure (x :: LAD)
 
-    test "postSet x (closure y) == Set.fromList (reachable x y)" $ size10 $ \(x :: Int) (y :: LAD) ->
-          postSet x (closure y) == Set.fromList (reachable x y)
+    test "postSet x (closure y) == Set.fromList (reachable y x)" $ size10 $ \(x :: Int) (y :: LAD) ->
+          postSet x (closure y) == Set.fromList (reachable y x)
 
     putStrLn "\n============ Labelled.AdjacencyMap.reflexiveClosure ============"
     test "reflexiveClosure empty              == empty" $

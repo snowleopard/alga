@@ -659,7 +659,7 @@ induceJust = AM . Map.map catMaybesMap . catMaybesMap . adjacencyMap
 -- closure               == 'reflexiveClosure' . 'transitiveClosure'
 -- closure               == 'transitiveClosure' . 'reflexiveClosure'
 -- closure . closure     == closure
--- 'postSet' x (closure y) == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
+-- 'postSet' x (closure y) == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' y x)
 -- @
 closure :: (Eq e, Ord a, StarSemiring e) => AdjacencyMap e a -> AdjacencyMap e a
 closure = goWarshallFloydKleene . reflexiveClosure

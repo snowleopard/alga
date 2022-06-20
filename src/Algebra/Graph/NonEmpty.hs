@@ -913,15 +913,15 @@ box x y = overlay (fx <*> y) (fy <*> x)
 
 -- | /Sparsify/ a graph by adding intermediate 'Left' @Int@ vertices between the
 -- original vertices (wrapping the latter in 'Right') such that the resulting
--- graph is /sparse/, i.e. contains only O(s) edges, but preserves the
+-- graph is /sparse/, i.e. contains only /O(s)/ edges, but preserves the
 -- reachability relation between the original vertices. Sparsification is useful
 -- when working with dense graphs, as it can reduce the number of edges from
--- O(n^2) down to O(n) by replacing cliques, bicliques and similar densely
+-- /O(n^2)/ down to /O(n)/ by replacing cliques, bicliques and similar densely
 -- connected structures by sparse subgraphs built out of intermediate vertices.
--- Complexity: O(s) time, memory and size.
+-- Complexity: /O(s)/ time, memory and size.
 --
 -- @
--- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x       == 'Data.List.sort' . 'Data.Either.rights' . 'Algebra.Graph.ToGraph.reachable' ('Data.Either.Right' x) . sparsify
+-- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x       == 'Data.List.sort' . 'Data.Either.rights' . 'Algebra.Graph.ToGraph.reachable' (sparsify x) . 'Data.Either.Right'
 -- 'vertexCount' (sparsify x) <= 'vertexCount' x + 'size' x + 1
 -- 'edgeCount'   (sparsify x) <= 3 * 'size' x
 -- 'size'        (sparsify x) <= 3 * 'size' x
@@ -950,7 +950,7 @@ sparsify graph = res
 -- contain a quadratic /O(s^2)/ number of edges.
 --
 -- @
--- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' k                 == 'Data.List.sort' . 'filter' (<= n) . 'flip' 'Data.Graph.reachable' k . sparsifyKL n
+-- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x                 == 'Data.List.sort' . 'filter' (<= n) . 'Data.Graph.reachable' (sparsifyKL n x)
 -- 'length' ('Data.Graph.vertices' $ sparsifyKL n x) <= 'vertexCount' x + 'size' x + 1
 -- 'length' ('Data.Graph.edges'    $ sparsifyKL n x) <= 3 * 'size' x
 -- @

@@ -853,7 +853,7 @@ box (AM x) (AM y) = overlay (AM $ Map.fromAscList xs) (AM $ Map.fromAscList ys)
 -- closure                 == 'reflexiveClosure' . 'transitiveClosure'
 -- closure                 == 'transitiveClosure' . 'reflexiveClosure'
 -- closure . closure       == closure
--- 'postSet' x (closure y)   == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
+-- 'postSet' x (closure y)   == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' y x)
 -- @
 closure :: Ord a => AdjacencyMap a -> AdjacencyMap a
 closure = reflexiveClosure . transitiveClosure

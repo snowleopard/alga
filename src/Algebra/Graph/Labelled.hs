@@ -572,7 +572,7 @@ induceJust = foldg Empty (maybe Empty Vertex) c
 -- closure               == 'reflexiveClosure' . 'transitiveClosure'
 -- closure               == 'transitiveClosure' . 'reflexiveClosure'
 -- closure . closure     == closure
--- 'Algebra.Graph.ToGraph.postSet' x (closure y) == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
+-- 'Algebra.Graph.ToGraph.postSet' x (closure y) == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' y x)
 -- @
 closure :: (Eq e, Ord a, StarSemiring e) => Graph e a -> Graph e a
 closure = fromAdjacencyMap . AM.closure . toAdjacencyMap

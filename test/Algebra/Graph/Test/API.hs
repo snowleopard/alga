@@ -97,12 +97,12 @@ data API g c where
         , adjacencyIntMap            :: g Int -> IntMap IntSet
         , adjacencyMapTranspose      :: forall a. c a => g a -> Map a (Set a)
         , adjacencyIntMapTranspose   :: g Int -> IntMap IntSet
-        , bfsForest                  :: forall a. c a => [a] -> g a -> Forest a
-        , bfs                        :: forall a. c a => [a] -> g a -> [[a]]
+        , bfsForest                  :: forall a. c a => g a -> [a] -> Forest a
+        , bfs                        :: forall a. c a => g a -> [a] -> [[a]]
         , dfsForest                  :: forall a. c a => g a -> Forest a
-        , dfsForestFrom              :: forall a. c a => [a] -> g a -> Forest a
-        , dfs                        :: forall a. c a => [a] -> g a -> [a]
-        , reachable                  :: forall a. c a => a -> g a -> [a]
+        , dfsForestFrom              :: forall a. c a => g a -> [a] -> Forest a
+        , dfs                        :: forall a. c a => g a -> [a] -> [a]
+        , reachable                  :: forall a. c a => g a -> a -> [a]
         , topSort                    :: forall a. c a => g a -> Either (NonEmpty a) [a]
         , isAcyclic                  :: forall a. c a => g a -> Bool
         , toAdjacencyMap             :: forall a. c a => g a -> AM.AdjacencyMap a
