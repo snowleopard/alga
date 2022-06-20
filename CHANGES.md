@@ -2,6 +2,7 @@
 
 ## 0.7
 
+* #294: Change the order of arguments of some graph algorithms.
 * #293: Fix the `ToGraph` instance of symmetric relations.
 
 ## 0.6.1
