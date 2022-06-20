@@ -132,7 +132,7 @@ library
                         Algebra.Graph.ToGraph,
                         Data.Graph.Typed
 
-test-suite test-alga
+test-suite main
     import:             common-settings
     hs-source-dirs:     test
     type:               exitcode-stdio-1.0
