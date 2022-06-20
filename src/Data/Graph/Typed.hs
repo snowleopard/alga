@@ -154,15 +154,16 @@ dfsForestFrom (GraphKL g r t) = fmap (fmap r) . KL.dfs g . mapMaybe t
 -- for greater clarity.
 --
 -- @
--- dfs % 'AM.edge' 1 1 $ [1]                     == [1]
--- dfs % 'AM.edge' 1 2 $ [0]                     == []
--- dfs % 'AM.edge' 1 2 $ [1]                     == [1,2]
--- dfs % 'AM.edge' 1 2 $ [2]                     == [2]
--- dfs % 'AM.edge' 1 2 $ [1,2]                   == [1,2]
--- dfs % 'AM.edge' 1 2 $ [2,1]                   == [2,1]
--- dfs % x        $ []                      == []
--- dfs % (3 * (1 + 4) * (1 + 5)) $ [1,4]    == [1,5,4]
--- 'AM.isSubgraphOf' ('AM.vertices' (dfs % x $ vs)) x == True
+-- dfs % 'AM.edge' 1 1 $ [1]   == [1]
+-- dfs % 'AM.edge' 1 2 $ [0]   == []
+-- dfs % 'AM.edge' 1 2 $ [1]   == [1,2]
+-- dfs % 'AM.edge' 1 2 $ [2]   == [2]
+-- dfs % 'AM.edge' 1 2 $ [1,2] == [1,2]
+-- dfs % 'AM.edge' 1 2 $ [2,1] == [2,1]
+-- dfs % x        $ []    == []
+--
+-- dfs % (3 * (1 + 4) * (1 + 5)) $ [1,4]     == [1,5,4]
+-- 'Data.List.and' [ 'AM.hasVertex' v x | v <- dfs % x $ vs ] == True
 -- @
 dfs :: GraphKL a -> [a] -> [a]
 dfs x = concatMap flatten . dfsForestFrom x

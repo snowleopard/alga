@@ -15,7 +15,7 @@ module Data.Graph.Test.Typed (
 
 import Algebra.Graph.Test
 import Algebra.Graph.AdjacencyMap ( forest, empty, vertex, edge, vertices
-                                  , isSubgraphOf, vertexList )
+                                  , isSubgraphOf, vertexList, hasVertex )
 
 import Data.Array (array)
 import Data.Graph.Typed
@@ -133,32 +133,33 @@ testTyped = do
                                                                     , subForest = [] }]
 
     putStrLn $ "\n============ Typed.dfs ============"
-    test "dfs % edge 1 1 $ [1]                     == [1]" $
-         (dfs % edge 1 1 $ [1])                    == [1]
+    test "dfs % edge 1 1 $ [1]   == [1]" $
+         (dfs % edge 1 1 $ [1])  == [1]
 
-    test "dfs % edge 1 2 $ [0]                     == []" $
-         (dfs % edge 1 2 $ [0])                    == []
+    test "dfs % edge 1 2 $ [0]   == []" $
+         (dfs % edge 1 2 $ [0])  == []
 
-    test "dfs % edge 1 2 $ [1]                     == [1,2]" $
-         (dfs % edge 1 2 $ [1])                     == [1,2]
+    test "dfs % edge 1 2 $ [1]   == [1,2]" $
+         (dfs % edge 1 2 $ [1])  == [1,2]
 
-    test "dfs % edge 1 2 $ [2]                     == [2]" $
-         (dfs % edge 1 2 $ [2])                    == [2]
+    test "dfs % edge 1 2 $ [2]   == [2]" $
+         (dfs % edge 1 2 $ [2])  == [2]
 
-    test "dfs % edge 1 2 $ [1,2]                   == [1,2]" $
-         (dfs % edge 1 2 $ [1,2])                  == [1,2]
+    test "dfs % edge 1 2 $ [1,2] == [1,2]" $
+         (dfs % edge 1 2 $ [1,2])== [1,2]
 
-    test "dfs % edge 1 2 $ [2,1]                   == [2,1]" $
-         (dfs % edge 1 2 $ [2,1])                  == [2,1]
+    test "dfs % edge 1 2 $ [2,1] == [2,1]" $
+         (dfs % edge 1 2 $ [2,1])== [2,1]
 
-    test "dfs % x        $ []                      == []" $ \x ->
-         (dfs % x        $ [])                     == []
+    test "dfs % x        $ []    == []" $ \x ->
+         (dfs % x        $ [])   == []
 
-    test "dfs % (3 * (1 + 4) * (1 + 5)) $ [1,4]    == [1,5,4]" $
-         (dfs % (3 * (1 + 4) * (1 + 5)) $ [1,4])   == [1,5,4]
+    putStrLn ""
+    test "dfs % (3 * (1 + 4) * (1 + 5)) $ [1,4]     == [1,5,4]" $
+         (dfs % (3 * (1 + 4) * (1 + 5)) $ [1,4])    == [1,5,4]
 
-    test "isSubgraphOf (vertices (dfs % x $ vs)) x == True" $ \x vs ->
-          isSubgraphOf (vertices (dfs % x $ vs)) x == True
+    test "and [ hasVertex v x | v <- dfs % x $ vs ] == True" $ \x vs ->
+          and [ hasVertex v x | v <- dfs % x $ vs ] == True
 
     putStrLn "\n============ Typed.topSort ============"
     test "topSort % (1 * 2 + 3 * 1) == [3,1,2]" $

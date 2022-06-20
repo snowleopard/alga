@@ -197,7 +197,7 @@ dfsForestFrom g vs = dfsForestFromImpl g [ v | v <- vs, hasVertex v g ]
 -- dfs ('edge' 1 2) [2,1] == [2,1]
 -- dfs x          []    == []
 --
--- 'isSubgraphOf' ('vertices' $ dfs x vs) x        == True
+-- 'Data.List.and' [ 'hasVertex' v x | v <- dfs x vs ]       == True
 -- dfs (3 * (1 + 4) * (1 + 5)) [1,4]           == [1,5,4]
 -- dfs ('circuit' [1..5] + 'circuit' [5,4..1]) [3] == [3,2,1,5,4]
 -- @
@@ -220,7 +220,7 @@ dfs x = concatMap flatten . dfsForestFrom x
 -- reachable ('circuit' [1..8]  ) 4 == [4..8] ++ [1..3]
 -- reachable ('clique'  [8,7..1]) 8 == [8] ++ [1..7]
 --
--- 'isSubgraphOf' ('vertices' $ reachable x y) x == True
+-- 'Data.List.and' [ 'hasVertex' v x | v <- reachable x y ] == True
 -- @
 reachable :: Ord a => AdjacencyMap a -> a -> [a]
 reachable x y = dfs x [y]
