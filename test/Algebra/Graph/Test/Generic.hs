@@ -1875,35 +1875,36 @@ testDfsForestFrom (prefix, API{..}) = do
 testDfs :: TestsuiteInt g -> IO ()
 testDfs (prefix, API{..}) = do
     putStrLn $ "\n============ " ++ prefix ++ "dfs ============"
-    test "dfs empty      vs                    == []" $ \vs ->
-          dfs empty      vs                    == []
+    test "dfs empty      vs    == []" $ \vs ->
+          dfs empty      vs    == []
 
-    test "dfs (edge 1 1) [1]                   == [1]" $
-          dfs (edge 1 1) [1]                   == [1]
+    test "dfs (edge 1 1) [1]   == [1]" $
+          dfs (edge 1 1) [1]   == [1]
 
-    test "dfs (edge 1 2) [0]                   == []" $
-          dfs (edge 1 2) [0]                   == []
+    test "dfs (edge 1 2) [0]   == []" $
+          dfs (edge 1 2) [0]   == []
 
-    test "dfs (edge 1 2) [1]                   == [1,2]" $
-          dfs (edge 1 2) [1]                   == [1,2]
+    test "dfs (edge 1 2) [1]   == [1,2]" $
+          dfs (edge 1 2) [1]   == [1,2]
 
-    test "dfs (edge 1 2) [2]                   == [2]" $
-          dfs (edge 1 2) [2]                   == [2]
+    test "dfs (edge 1 2) [2]   == [2]" $
+          dfs (edge 1 2) [2]   == [2]
 
-    test "dfs (edge 1 2) [1,2]                 == [1,2]" $
-          dfs (edge 1 2) [1,2]                 == [1,2]
+    test "dfs (edge 1 2) [1,2] == [1,2]" $
+          dfs (edge 1 2) [1,2] == [1,2]
 
-    test "dfs (edge 1 2) [2,1]                 == [2,1]" $
-          dfs (edge 1 2) [2,1]                 == [2,1]
+    test "dfs (edge 1 2) [2,1] == [2,1]" $
+          dfs (edge 1 2) [2,1] == [2,1]
 
-    test "dfs x          []                    == []" $ \x ->
-          dfs x          []                    == []
+    test "dfs x          []    == []" $ \x ->
+          dfs x          []    == []
 
-    test "isSubgraphOf (vertices $ dfs x vs) x == True" $ \x vs ->
-          isSubgraphOf (vertices $ dfs x vs) x == True
+    putStrLn ""
+    test "and [ hasVertex v x | v <- dfs x vs ]       == True" $ \x vs ->
+          and [ hasVertex v x | v <- dfs x vs ]       == True
 
-    test "dfs (3 * (1 + 4) * (1 + 5)) [1,4]    == [1,5,4]" $
-          dfs (3 * (1 + 4) * (1 + 5)) [1,4]    == [1,5,4]
+    test "dfs (3 * (1 + 4) * (1 + 5)) [1,4]           == [1,5,4]" $
+          dfs (3 * (1 + 4) * (1 + 5)) [1,4]           == [1,5,4]
 
     test "dfs (circuit [1..5] + circuit [5,4..1]) [3] == [3,2,1,5,4]" $
           dfs (circuit [1..5] + circuit [5,4..1]) [3] == [3,2,1,5,4]
@@ -1911,35 +1912,36 @@ testDfs (prefix, API{..}) = do
 testReachable :: TestsuiteInt g -> IO ()
 testReachable (prefix, API{..}) = do
     putStrLn $ "\n============ " ++ prefix ++ "dfs ============"
-    test "reachable empty              x            == []" $ \x ->
-          reachable empty              x            == []
+    test "reachable empty              x == []" $ \x ->
+          reachable empty              x == []
 
-    test "reachable (vertex 1)         1            == [1]" $
-          reachable (vertex 1)         1            == [1]
+    test "reachable (vertex 1)         1 == [1]" $
+          reachable (vertex 1)         1 == [1]
 
-    test "reachable (edge 1 1)         1            == [1]" $
-          reachable (edge 1 1)         1            == [1]
+    test "reachable (edge 1 1)         1 == [1]" $
+          reachable (edge 1 1)         1 == [1]
 
-    test "reachable (edge 1 2)         0            == []" $
-          reachable (edge 1 2)         0            == []
+    test "reachable (edge 1 2)         0 == []" $
+          reachable (edge 1 2)         0 == []
 
-    test "reachable (edge 1 2)         1            == [1,2]" $
-          reachable (edge 1 2)         1            == [1,2]
+    test "reachable (edge 1 2)         1 == [1,2]" $
+          reachable (edge 1 2)         1 == [1,2]
 
-    test "reachable (edge 1 2)         2            == [2]" $
-          reachable (edge 1 2)         2            == [2]
+    test "reachable (edge 1 2)         2 == [2]" $
+          reachable (edge 1 2)         2 == [2]
 
-    test "reachable (path    [1..8]  ) 4            == [4..8]" $
-          reachable (path    [1..8]  ) 4            == [4..8]
+    test "reachable (path    [1..8]  ) 4 == [4..8]" $
+          reachable (path    [1..8]  ) 4 == [4..8]
 
-    test "reachable (circuit [1..8]  ) 4            == [4..8] ++ [1..3]" $
-          reachable (circuit [1..8]  ) 4            == [4..8] ++ [1..3]
+    test "reachable (circuit [1..8]  ) 4 == [4..8] ++ [1..3]" $
+          reachable (circuit [1..8]  ) 4 == [4..8] ++ [1..3]
 
-    test "reachable (clique  [8,7..1]) 8            == [8] ++ [1..7]" $
-          reachable (clique  [8,7..1]) 8            == [8] ++ [1..7]
+    test "reachable (clique  [8,7..1]) 8 == [8] ++ [1..7]" $
+          reachable (clique  [8,7..1]) 8 == [8] ++ [1..7]
 
-    test "isSubgraphOf (vertices $ reachable x y) x == True" $ \x y ->
-          isSubgraphOf (vertices $ reachable x y) x == True
+    putStrLn ""
+    test "and [ hasVertex v x | v <- reachable x y ] == True" $ \x y ->
+          and [ hasVertex v x | v <- reachable x y ] == True
 
 testTopSort :: TestsuiteInt g -> IO ()
 testTopSort (prefix, API{..}) = do
