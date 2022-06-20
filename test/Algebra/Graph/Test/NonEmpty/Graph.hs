@@ -654,7 +654,7 @@ testNonEmptyGraph = do
           simplify (1 * 1 * 1) === (1 * 1 :: G)
 
     putStrLn "\n============ NonEmpty.Graph.sparsify ============"
-    test "sort . reachable x       == sort . rights . reachable (sparsify x) . Right" $ \x (y :: G) ->
+    test "sort . reachable x       == sort . rights . reachable (sparsify x) . Right" $ \(x :: G) y ->
          (sort . reachable x) y    ==(sort . rights . reachable (sparsify x) . Right) y
 
     test "vertexCount (sparsify x) <= vertexCount x + size x + 1" $ \(x :: G) ->
@@ -666,7 +666,7 @@ testNonEmptyGraph = do
     test "size        (sparsify x) <= 3 * size x" $ \(x :: G) ->
           size        (sparsify x) <= 3 * size x
 
-    putStrLn "\n============ NonEmpty.Graph.sparsify ============"
+    putStrLn "\n============ NonEmpty.Graph.sparsifyKL ============"
     test "sort . reachable x                 == sort . filter (<= n) . reachable (sparsifyKL n x)" $ \(Positive n) -> do
         let pairs = (,) <$> choose (1, n) <*> choose (1, n)
         es <- listOf pairs
