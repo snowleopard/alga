@@ -16,6 +16,7 @@
 -----------------------------------------------------------------------------
 module Algebra.Graph.Labelled.Example.Automaton where
 
+import Control.Arrow ((&&&))
 import Data.Map    (Map)
 import Data.Monoid (Any (..))
 
@@ -56,7 +57,9 @@ coffeeTeaAutomaton = overlays [ Choice  -<[Coffee, Tea]>- Payment
 -- | The map of 'State' reachability.
 --
 -- @
--- reachability = Map.'Map.fromList' $ map (\s -> (s, 'reachable' 'coffeeTeaAutomaton' s)) ['Choice' ..]
+-- reachability = Map.'Map.fromList' $ map ('id' '&&&' 'reachable' skeleton) ['Choice' ..]
+--   where
+--     skeleton = emap (Any . not . 'isZero') coffeeTeaAutomaton
 -- @
 --
 -- Or, when evaluated:
@@ -67,7 +70,7 @@ coffeeTeaAutomaton = overlays [ Choice  -<[Coffee, Tea]>- Payment
 --                             , ('Complete', ['Complete'                   ]) ]
 -- @
 reachability :: Map State [State]
-reachability = Map.fromList $ map (\s -> (s, reachable skeleton s)) [Choice ..]
+reachability = Map.fromList $ map (id &&& reachable skeleton) [Choice ..]
   where
     skeleton :: Graph Any State
     skeleton = emap (Any . not . isZero) coffeeTeaAutomaton
