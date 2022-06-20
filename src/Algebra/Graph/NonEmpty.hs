@@ -913,12 +913,12 @@ box x y = overlay (fx <*> y) (fy <*> x)
 
 -- | /Sparsify/ a graph by adding intermediate 'Left' @Int@ vertices between the
 -- original vertices (wrapping the latter in 'Right') such that the resulting
--- graph is /sparse/, i.e. contains only O(s) edges, but preserves the
+-- graph is /sparse/, i.e. contains only /O(s)/ edges, but preserves the
 -- reachability relation between the original vertices. Sparsification is useful
 -- when working with dense graphs, as it can reduce the number of edges from
--- O(n^2) down to O(n) by replacing cliques, bicliques and similar densely
+-- /O(n^2)/ down to /O(n)/ by replacing cliques, bicliques and similar densely
 -- connected structures by sparse subgraphs built out of intermediate vertices.
--- Complexity: O(s) time, memory and size.
+-- Complexity: /O(s)/ time, memory and size.
 --
 -- @
 -- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x       == 'Data.List.sort' . 'Data.Either.rights' . 'Algebra.Graph.ToGraph.reachable' (sparsify x) . 'Data.Either.Right'

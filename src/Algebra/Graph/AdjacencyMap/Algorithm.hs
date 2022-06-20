@@ -202,7 +202,7 @@ dfsForestFrom g vs = dfsForestFromImpl g [ v | v <- vs, hasVertex v g ]
 -- dfs ('circuit' [1..5] + 'circuit' [5,4..1]) [3] == [3,2,1,5,4]
 -- @
 dfs :: Ord a => AdjacencyMap a -> [a] -> [a]
-dfs vs = dfsForestFrom vs >=> flatten
+dfs x = concatMap flatten . dfsForestFrom x
 
 -- | Return the list of vertices /reachable/ from a source vertex in a graph.
 -- The vertices in the resulting list appear in the /depth-first search order/.

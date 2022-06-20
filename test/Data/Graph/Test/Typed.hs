@@ -13,9 +13,10 @@ module Data.Graph.Test.Typed (
     testTyped
     ) where
 
-import qualified Algebra.Graph.AdjacencyMap as AM
-import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import Algebra.Graph.Test
+import Algebra.Graph.AdjacencyMap ( forest, empty, vertex, edge, vertices
+                                  , isSubgraphOf, vertexList )
+
 import Data.Array (array)
 import Data.Graph.Typed
 import Data.Tree
@@ -24,11 +25,14 @@ import Data.List (nub, sort)
 import qualified Data.Graph  as KL
 import qualified Data.IntSet as IntSet
 
+import qualified Algebra.Graph.AdjacencyMap    as AM
+import qualified Algebra.Graph.AdjacencyIntMap as AIM
+
 type AI = AM.AdjacencyMap Int
 
 -- TODO: Improve the alignment in the testsuite to match the documentation.
 (%) :: (GraphKL Int -> a) -> AM.AdjacencyMap Int -> a
-a % g = a $ fromAdjacencyMap g
+f % x = f (fromAdjacencyMap x)
 
 testTyped :: IO ()
 testTyped = do
@@ -68,93 +72,93 @@ testTyped = do
 
     putStrLn $ "\n============ Typed.dfsForest ============"
     test "forest (dfsForest % edge 1 1)           == vertex 1" $
-          AM.forest (dfsForest % AM.edge 1 1)     == AM.vertex 1
+          forest (dfsForest % edge 1 1)           == vertex 1
 
     test "forest (dfsForest % edge 1 2)           == edge 1 2" $
-          AM.forest (dfsForest % AM.edge 1 2)     == AM.edge 1 2
+          forest (dfsForest % edge 1 2)           == edge 1 2
 
     test "forest (dfsForest % edge 2 1)           == vertices [1, 2]" $
-          AM.forest (dfsForest % AM.edge 2 1)     == AM.vertices [1, 2]
+          forest (dfsForest % edge 2 1)           == vertices [1, 2]
 
     test "isSubgraphOf (forest $ dfsForest % x) x == True" $ \x ->
-          AM.isSubgraphOf (AM.forest $ dfsForest % x) x == True
+          isSubgraphOf (forest $ dfsForest % x) x == True
 
     test "dfsForest % forest (dfsForest % x)      == dfsForest % x" $ \x ->
-          dfsForest % AM.forest (dfsForest % x)   == dfsForest % x
+          dfsForest % forest (dfsForest % x)      == dfsForest % x
 
     test "dfsForest % vertices vs                 == map (\\v -> Node v []) (nub $ sort vs)" $ \vs ->
-          dfsForest % AM.vertices vs              == map (\v -> Node v []) (nub $ sort vs)
+          dfsForest % vertices vs                 == map (\v -> Node v []) (nub $ sort vs)
 
     test "dfsForest % (3 * (1 + 4) * (1 + 5))     == <correct result>" $
           dfsForest % (3 * (1 + 4) * (1 + 5))     == [ Node { rootLabel = 1
-                                                   , subForest = [ Node { rootLabel = 5
-                                                                        , subForest = [] }]}
-                                                   , Node { rootLabel = 3
-                                                   , subForest = [ Node { rootLabel = 4
-                                                                        , subForest = [] }]}]
+                                                     , subForest = [ Node { rootLabel = 5
+                                                                          , subForest = [] }]}
+                                                     , Node { rootLabel = 3
+                                                     , subForest = [ Node { rootLabel = 4
+                                                                          , subForest = [] }]}]
 
     putStrLn $ "\n============ Typed.dfsForestFrom ============"
-    test "forest (dfsForestFrom [1]       % edge 1 1)     == vertex 1" $
-          AM.forest (dfsForestFrom [1]    % AM.edge 1 1)  == AM.vertex 1
+    test "forest $ (dfsForestFrom % edge 1 1) [1]         == vertex 1" $
+         (forest $ (dfsForestFrom % edge 1 1) [1])        == vertex 1
 
-    test "forest (dfsForestFrom [1]       % edge 1 2)     == edge 1 2" $
-          AM.forest (dfsForestFrom [1]    % AM.edge 1 2)  == AM.edge 1 2
+    test "forest $ (dfsForestFrom % edge 1 2) [0]         == empty" $
+         (forest $ (dfsForestFrom % edge 1 2) [0])        == empty
 
-    test "forest (dfsForestFrom [2]       % edge 1 2)     == vertex 2" $
-          AM.forest (dfsForestFrom [2]    % AM.edge 1 2)  == AM.vertex 2
+    test "forest $ (dfsForestFrom % edge 1 2) [1]         == edge 1 2" $
+         (forest $ (dfsForestFrom % edge 1 2) [1])        == edge 1 2
 
-    test "forest (dfsForestFrom [3]       % edge 1 2)     == empty" $
-          AM.forest (dfsForestFrom [3]    % AM.edge 1 2)  == AM.empty
+    test "forest $ (dfsForestFrom % edge 1 2) [2]         == vertex 2" $
+         (forest $ (dfsForestFrom % edge 1 2) [2])        == vertex 2
 
-    test "forest (dfsForestFrom [2, 1]    % edge 1 2)     == vertices [1, 2]" $
-          AM.forest (dfsForestFrom [2, 1] % AM.edge 1 2)  == AM.vertices [1, 2]
+    test "forest $ (dfsForestFrom % edge 1 2) [2,1]       == vertices [1,2]" $
+         (forest $ (dfsForestFrom % edge 1 2) [2,1])      == vertices [1,2]
 
-    test "isSubgraphOf (forest $ dfsForestFrom vs % x) x  == True" $ \vs x ->
-          AM.isSubgraphOf (AM.forest (dfsForestFrom vs % x)) x == True
+    test "isSubgraphOf (forest $ dfsForestFrom % x $ vs) x == True" $ \x vs ->
+          isSubgraphOf (forest $ dfsForestFrom % x $ vs) x == True
 
-    test "dfsForestFrom (vertexList x) % x                == dfsForest % x" $ \x ->
-          dfsForestFrom (AM.vertexList x) % x             == dfsForest % x
+    test "dfsForestFrom % x $ vertexList x                == dfsForest % x" $ \x ->
+         (dfsForestFrom % x $ vertexList x)               == dfsForest % x
 
-    test "dfsForestFrom vs           % (AM.vertices vs)   == map (\\v -> Node v []) (nub vs)" $ \vs ->
-          dfsForestFrom vs           %  AM.vertices vs    == map (\v -> Node v []) (nub vs)
+    test "dfsForestFrom % vertices vs $ vs                == map (\\v -> Node v []) (nub vs)" $ \vs ->
+         (dfsForestFrom % vertices vs $ vs)               == map (\v -> Node v []) (nub vs)
 
-    test "dfsForestFrom []           % x                  == []" $ \x ->
-          dfsForestFrom []           % x                  == []
+    test "dfsForestFrom % x $ []                          == []" $ \x ->
+         (dfsForestFrom % x $ [])                         == []
 
-    test "dfsForestFrom [1, 4] % 3 * (1 + 4) * (1 + 5)    == <correct result>" $
-          dfsForestFrom [1, 4] % (3 * (1 + 4) * (1 + 5))  == [ Node { rootLabel = 1
+    test "dfsForestFrom % (3 * (1 + 4) * (1 + 5)) $ [1,4] == <correct result>" $
+         (dfsForestFrom % (3 * (1 + 4) * (1 + 5)) $ [1,4])== [ Node { rootLabel = 1
                                                                     , subForest = [ Node { rootLabel = 5
                                                                                          , subForest = [] }]}
                                                              , Node { rootLabel = 4
                                                                     , subForest = [] }]
 
     putStrLn $ "\n============ Typed.dfs ============"
-    test "dfs [1]    % edge 1 1                  == [1]" $
-          dfs [1]    % AM.edge 1 1               == [1]
+    test "dfs % edge 1 1 $ [1]                     == [1]" $
+         (dfs % edge 1 1 $ [1])                    == [1]
 
-    test "dfs [1]    % edge 1 2                  == [1,2]" $
-          dfs [1]    % AM.edge 1 2               == [1,2]
+    test "dfs % edge 1 2 $ [0]                     == []" $
+         (dfs % edge 1 2 $ [0])                    == []
 
-    test "dfs [2]    % edge 1 2                  == [2]" $
-          dfs [2]    % AM.edge 1 2               == [2]
+    test "dfs % edge 1 2 $ [1]                     == [1,2]" $
+         (dfs % edge 1 2 $ [1])                     == [1,2]
 
-    test "dfs [3]    % edge 1 2                  == []" $
-          dfs [3]    % AM.edge 1 2               == []
+    test "dfs % edge 1 2 $ [2]                     == [2]" $
+         (dfs % edge 1 2 $ [2])                    == [2]
 
-    test "dfs [1, 2] % edge 1 2                  == [1, 2]" $
-          dfs [1, 2] % AM.edge 1 2               == [1, 2]
+    test "dfs % edge 1 2 $ [1,2]                   == [1,2]" $
+         (dfs % edge 1 2 $ [1,2])                  == [1,2]
 
-    test "dfs [2, 1] % edge 1 2                  == [2, 1]" $
-          dfs [2, 1] % AM.edge 1 2               == [2, 1]
+    test "dfs % edge 1 2 $ [2,1]                   == [2,1]" $
+         (dfs % edge 1 2 $ [2,1])                  == [2,1]
 
-    test "dfs []     % x                         == []" $ \x ->
-          dfs []     % x                         == []
+    test "dfs % x        $ []                      == []" $ \x ->
+         (dfs % x        $ [])                     == []
 
-    test "dfs [1, 4] % 3 * (1 + 4) * (1 + 5)     == [1,5,4]" $
-          dfs [1, 4] % (3 * (1 + 4) * (1 + 5))   == [1,5,4]
+    test "dfs % (3 * (1 + 4) * (1 + 5)) $ [1,4]    == [1,5,4]" $
+         (dfs % (3 * (1 + 4) * (1 + 5)) $ [1,4])   == [1,5,4]
 
-    test "isSubgraphOf (vertices $ dfs vs % x) x == True" $ \vs x ->
-          AM.isSubgraphOf (AM.vertices $ dfs vs % x) x == True
+    test "isSubgraphOf (vertices (dfs % x $ vs)) x == True" $ \x vs ->
+          isSubgraphOf (vertices (dfs % x $ vs)) x == True
 
     putStrLn "\n============ Typed.topSort ============"
     test "topSort % (1 * 2 + 3 * 1) == [3,1,2]" $

@@ -86,8 +86,8 @@ fromAdjacencyIntMap aim = GraphKL
 -- In the following examples we will use the helper function:
 --
 -- @
--- (%) :: (GraphKL Int -> a) -> 'AM.AdjacencyMap' Int -> a
--- a % g = a $ 'fromAdjacencyMap' g
+-- (%) :: Ord a => ('GraphKL' a -> b) -> 'AM.AdjacencyMap' a -> b
+-- f % x = f ('fromAdjacencyMap' x)
 -- @
 --
 -- for greater clarity.
@@ -95,11 +95,10 @@ fromAdjacencyIntMap aim = GraphKL
 -- @
 -- 'AM.forest' (dfsForest % 'AM.edge' 1 1)           == 'AM.vertex' 1
 -- 'AM.forest' (dfsForest % 'AM.edge' 1 2)           == 'AM.edge' 1 2
--- 'AM.forest' (dfsForest % 'AM.edge' 2 1)           == 'AM.vertices' [1, 2]
+-- 'AM.forest' (dfsForest % 'AM.edge' 2 1)           == 'AM.vertices' [1,2]
 -- 'AM.isSubgraphOf' ('AM.forest' $ dfsForest % x) x == True
 -- dfsForest % 'AM.forest' (dfsForest % x)      == dfsForest % x
 -- dfsForest % 'AM.vertices' vs                 == 'map' (\\v -> Node v []) ('Data.List.nub' $ 'Data.List.sort' vs)
--- 'AM.dfsForestFrom' ('AM.vertexList' x) % x        == dfsForest % x
 -- dfsForest % (3 * (1 + 4) * (1 + 5))     == [ Node { rootLabel = 1
 --                                                   , subForest = [ Node { rootLabel = 5
 --                                                                        , subForest = [] }]}
@@ -117,30 +116,30 @@ dfsForest (GraphKL g r _) = fmap (fmap r) (KL.dff g)
 -- In the following examples we will use the helper function:
 --
 -- @
--- (%) :: (GraphKL Int -> a) -> 'AM.AdjacencyMap' Int -> a
--- a % g = a $ 'fromAdjacencyMap' g
+-- (%) :: Ord a => ('GraphKL' a -> b) -> 'AM.AdjacencyMap' a -> b
+-- f % x = f ('fromAdjacencyMap' x)
 -- @
 --
 -- for greater clarity.
 --
 -- @
--- 'AM.forest' (dfsForestFrom [1]    % 'AM.edge' 1 1)       == 'AM.vertex' 1
--- 'AM.forest' (dfsForestFrom [1]    % 'AM.edge' 1 2)       == 'AM.edge' 1 2
--- 'AM.forest' (dfsForestFrom [2]    % 'AM.edge' 1 2)       == 'AM.vertex' 2
--- 'AM.forest' (dfsForestFrom [3]    % 'AM.edge' 1 2)       == 'AM.empty'
--- 'AM.forest' (dfsForestFrom [2, 1] % 'AM.edge' 1 2)       == 'AM.vertices' [1, 2]
--- 'AM.isSubgraphOf' ('AM.forest' $ dfsForestFrom vs % x) x == True
--- dfsForestFrom ('AM.vertexList' x) % x               == 'dfsForest' % x
--- dfsForestFrom vs               % 'AM.vertices' vs   == 'map' (\\v -> Node v []) ('Data.List.nub' vs)
--- dfsForestFrom []               % x             == []
--- dfsForestFrom [1, 4] % (3 * (1 + 4) * (1 + 5)) == [ Node { rootLabel = 1
---                                                          , subForest = [ Node { rootLabel = 5
---                                                                               , subForest = [] }
---                                                   , Node { rootLabel = 4
---                                                          , subForest = [] }]
+-- 'AM.forest' $ (dfsForestFrom % 'AM.edge' 1 1) [1]          == 'AM.vertex' 1
+-- 'AM.forest' $ (dfsForestFrom % 'AM.edge' 1 2) [0]          == 'AM.empty'
+-- 'AM.forest' $ (dfsForestFrom % 'AM.edge' 1 2) [1]          == 'AM.edge' 1 2
+-- 'AM.forest' $ (dfsForestFrom % 'AM.edge' 1 2) [2]          == 'AM.vertex' 2
+-- 'AM.forest' $ (dfsForestFrom % 'AM.edge' 1 2) [2,1]        == 'AM.vertices' [1,2]
+-- 'AM.isSubgraphOf' ('AM.forest' $ dfsForestFrom % x $ vs) x == True
+-- dfsForestFrom % x $ 'AM.vertexList' x                 == 'dfsForest' % x
+-- dfsForestFrom % 'AM.vertices' vs $ vs                 == 'map' (\\v -> Node v []) ('Data.List.nub' vs)
+-- dfsForestFrom % x $ []                           == []
+-- dfsForestFrom % (3 * (1 + 4) * (1 + 5)) $ [1,4]  == [ Node { rootLabel = 1
+--                                                            , subForest = [ Node { rootLabel = 5
+--                                                                                 , subForest = [] }
+--                                                     , Node { rootLabel = 4
+--                                                            , subForest = [] }]
 -- @
-dfsForestFrom :: [a] -> GraphKL a -> Forest a
-dfsForestFrom vs (GraphKL g r t) = fmap (fmap r) (KL.dfs g (mapMaybe t vs))
+dfsForestFrom :: GraphKL a -> [a] -> Forest a
+dfsForestFrom (GraphKL g r t) = fmap (fmap r) . KL.dfs g . mapMaybe t
 
 -- | Compute the list of vertices visited by the /depth-first search/ in a
 -- graph, when searching from each of the given vertices in order.
@@ -148,25 +147,25 @@ dfsForestFrom vs (GraphKL g r t) = fmap (fmap r) (KL.dfs g (mapMaybe t vs))
 -- In the following examples we will use the helper function:
 --
 -- @
--- (%) :: (GraphKL Int -> a) -> 'AM.AdjacencyMap' Int -> a
--- a % g = a $ 'fromAdjacencyMap' g
+-- (%) :: Ord a => ('GraphKL' a -> b) -> 'AM.AdjacencyMap' a -> b
+-- f % x = f ('fromAdjacencyMap' x)
 -- @
 --
 -- for greater clarity.
 --
 -- @
--- dfs [1]   % 'AM.edge' 1 1                 == [1]
--- dfs [1]   % 'AM.edge' 1 2                 == [1,2]
--- dfs [2]   % 'AM.edge' 1 2                 == [2]
--- dfs [3]   % 'AM.edge' 1 2                 == []
--- dfs [1,2] % 'AM.edge' 1 2                 == [1,2]
--- dfs [2,1] % 'AM.edge' 1 2                 == [2,1]
--- dfs []    % x                        == []
--- dfs [1,4] % (3 * (1 + 4) * (1 + 5))  == [1,5,4]
--- 'AM.isSubgraphOf' ('AM.vertices' $ dfs vs x) x == True
+-- dfs % 'AM.edge' 1 1 $ [1]                     == [1]
+-- dfs % 'AM.edge' 1 2 $ [0]                     == []
+-- dfs % 'AM.edge' 1 2 $ [1]                     == [1,2]
+-- dfs % 'AM.edge' 1 2 $ [2]                     == [2]
+-- dfs % 'AM.edge' 1 2 $ [1,2]                   == [1,2]
+-- dfs % 'AM.edge' 1 2 $ [2,1]                   == [2,1]
+-- dfs % x        $ []                      == []
+-- dfs % (3 * (1 + 4) * (1 + 5)) $ [1,4]    == [1,5,4]
+-- 'AM.isSubgraphOf' ('AM.vertices' (dfs % x $ vs)) x == True
 -- @
-dfs :: [a] -> GraphKL a -> [a]
-dfs vs = concatMap flatten . dfsForestFrom vs
+dfs :: GraphKL a -> [a] -> [a]
+dfs x = concatMap flatten . dfsForestFrom x
 
 -- | Compute the /topological sort/ of a graph. Note that this function returns
 -- a result even if the graph is cyclic.
@@ -174,8 +173,8 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 -- In the following examples we will use the helper function:
 --
 -- @
--- (%) :: (GraphKL Int -> a) -> 'AM.AdjacencyMap' Int -> a
--- a % g = a $ 'fromAdjacencyMap' g
+-- (%) :: Ord a => ('GraphKL' a -> b) -> 'AM.AdjacencyMap' a -> b
+-- f % x = f ('fromAdjacencyMap' x)
 -- @
 --
 -- for greater clarity.
@@ -187,6 +186,7 @@ dfs vs = concatMap flatten . dfsForestFrom vs
 topSort :: GraphKL a -> [a]
 topSort (GraphKL g r _) = map r (KL.topSort g)
 
+-- TODO: Add docs and tests.
 scc :: Ord a => AM.AdjacencyMap a -> AM.AdjacencyMap (NonEmpty.AdjacencyMap a)
 scc m = AM.gmap (component Map.!) $ removeSelfLoops $ AM.gmap (leader Map.!) m
   where
