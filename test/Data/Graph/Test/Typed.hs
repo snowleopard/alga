@@ -15,7 +15,7 @@ module Data.Graph.Test.Typed (
 
 import Algebra.Graph.Test
 import Algebra.Graph.AdjacencyMap ( forest, empty, vertex, edge, vertices
-                                  , isSubgraphOf, vertexList )
+                                  , isSubgraphOf, vertexList, hasVertex )
 
 import Data.Array (array)
 import Data.Graph.Typed
