@@ -656,7 +656,7 @@ induceJust1 = toNonEmpty . AM.induceJust . coerce
 -- closure                  == 'reflexiveClosure' . 'transitiveClosure'
 -- closure                  == 'transitiveClosure' . 'reflexiveClosure'
 -- closure . closure        == closure
--- 'postSet' x (closure y)    == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' x y)
+-- 'postSet' x (closure y)    == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' y x)
 -- @
 closure :: Ord a => AdjacencyMap a -> AdjacencyMap a
 closure = coerce AM.closure

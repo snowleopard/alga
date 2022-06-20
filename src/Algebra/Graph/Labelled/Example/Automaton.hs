@@ -42,10 +42,10 @@ data State = Choice   -- ^ Choosing what to order
 -- | An example automaton for ordering coffee or tea.
 --
 -- @
--- order = 'overlays' [ 'Choice'  '-<'['Coffee', 'Tea']'>-' 'Payment'
---                  , 'Choice'  '-<'['Cancel'     ]'>-' 'Complete'
---                  , 'Payment' '-<'['Cancel'     ]'>-' 'Choice'
---                  , 'Payment' '-<'['Pay'        ]'>-' 'Complete' ]
+-- coffeeTeaAutomaton = 'overlays' [ 'Choice'  '-<'['Coffee', 'Tea']'>-' 'Payment'
+--                               , 'Payment' '-<'['Pay'        ]'>-' 'Complete'
+--                               , 'Choice'  '-<'['Cancel'     ]'>-' 'Complete'
+--                               , 'Payment' '-<'['Cancel'     ]'>-' 'Choice' ]
 -- @
 coffeeTeaAutomaton :: Automaton Alphabet State
 coffeeTeaAutomaton = overlays [ Choice  -<[Coffee, Tea]>- Payment
@@ -56,7 +56,7 @@ coffeeTeaAutomaton = overlays [ Choice  -<[Coffee, Tea]>- Payment
 -- | The map of 'State' reachability.
 --
 -- @
--- reachability = Map.'Map.fromList' $ map (\s -> (s, 'reachable' s 'order')) ['Choice' ..]
+-- reachability = Map.'Map.fromList' $ map (\s -> (s, 'reachable' 'coffeeTeaAutomaton' s)) ['Choice' ..]
 -- @
 --
 -- Or, when evaluated:
@@ -67,7 +67,7 @@ coffeeTeaAutomaton = overlays [ Choice  -<[Coffee, Tea]>- Payment
 --                             , ('Complete', ['Complete'                   ]) ]
 -- @
 reachability :: Map State [State]
-reachability = Map.fromList $ map (\s -> (s, reachable s skeleton)) [Choice ..]
+reachability = Map.fromList $ map (\s -> (s, reachable skeleton s)) [Choice ..]
   where
     skeleton :: Graph Any State
     skeleton = emap (Any . not . isZero) coffeeTeaAutomaton

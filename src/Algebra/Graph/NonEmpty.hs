@@ -921,7 +921,7 @@ box x y = overlay (fx <*> y) (fy <*> x)
 -- Complexity: O(s) time, memory and size.
 --
 -- @
--- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x       == 'Data.List.sort' . 'Data.Either.rights' . 'Algebra.Graph.ToGraph.reachable' ('Data.Either.Right' x) . sparsify
+-- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x       == 'Data.List.sort' . 'Data.Either.rights' . 'Algebra.Graph.ToGraph.reachable' (sparsify x) . 'Data.Either.Right'
 -- 'vertexCount' (sparsify x) <= 'vertexCount' x + 'size' x + 1
 -- 'edgeCount'   (sparsify x) <= 3 * 'size' x
 -- 'size'        (sparsify x) <= 3 * 'size' x
@@ -950,7 +950,7 @@ sparsify graph = res
 -- contain a quadratic /O(s^2)/ number of edges.
 --
 -- @
--- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' k                 == 'Data.List.sort' . 'filter' (<= n) . 'flip' 'Data.Graph.reachable' k . sparsifyKL n
+-- 'Data.List.sort' . 'Algebra.Graph.ToGraph.reachable' x                 == 'Data.List.sort' . 'filter' (<= n) . 'Data.Graph.reachable' (sparsifyKL n x)
 -- 'length' ('Data.Graph.vertices' $ sparsifyKL n x) <= 'vertexCount' x + 'size' x + 1
 -- 'length' ('Data.Graph.edges'    $ sparsifyKL n x) <= 3 * 'size' x
 -- @

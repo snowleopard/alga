@@ -580,8 +580,8 @@ testNonEmptyAdjacencyMap = do
     test "closure . closure       == closure" $ sizeLimit $ \(x :: G) ->
          (closure . closure) x    == closure x
 
-    test "postSet x (closure y)   == Set.fromList (reachable x y)" $ sizeLimit $ \x (y :: G) ->
-          postSet x (closure y)   == Set.fromList (reachable x y)
+    test "postSet x (closure y)   == Set.fromList (reachable y x)" $ sizeLimit $ \x (y :: G) ->
+          postSet x (closure y)   == Set.fromList (reachable y x)
 
     putStrLn $ "\n============ NonEmpty.AdjacencyMap.reflexiveClosure ============"
     test "reflexiveClosure (vertex x)         == edge x x" $ \(x :: Int) ->

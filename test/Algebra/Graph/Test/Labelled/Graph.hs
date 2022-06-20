@@ -422,8 +422,8 @@ testLabelledGraph = do
     test "closure . closure     == closure" $ size10 $ \x ->
          (closure . closure) x  == closure (x :: LAD)
 
-    test "postSet x (closure y) == Set.fromList (reachable x y)" $ size10 $ \(x :: Int) (y :: LAD) ->
-          T.postSet x (closure y) == Set.fromList (T.reachable x y)
+    test "postSet x (closure y) == Set.fromList (reachable y x)" $ size10 $ \(x :: Int) (y :: LAD) ->
+          T.postSet x (closure y) == Set.fromList (T.reachable y x)
 
     putStrLn "\n============ Labelled.Graph.reflexiveClosure ============"
     test "reflexiveClosure empty              == empty" $

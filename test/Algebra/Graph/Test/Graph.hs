@@ -79,8 +79,8 @@ testGraph = do
     testBox         tPoly
 
     putStrLn "\n============ Graph.sparsify ============"
-    test "sort . reachable x       == sort . rights . reachable (Right x) . sparsify" $ \x (y :: G) ->
-         (sort . reachable x) y    == (sort . rights . reachable (Right x) . sparsify) y
+    test "sort . reachable x       == sort . rights . reachable (sparsify x) . Right" $ \(x :: G) y ->
+         (sort . reachable x) y    ==(sort . rights . reachable (sparsify x) . Right) y
 
     test "vertexCount (sparsify x) <= vertexCount x + size x + 1" $ \(x :: G) ->
           vertexCount (sparsify x) <= vertexCount x + size x + 1
@@ -92,12 +92,12 @@ testGraph = do
           size        (sparsify x) <= 3 * size x
 
     putStrLn "\n============ Graph.sparsifyKL ============"
-    test "sort . reachable k                 == sort . filter (<= n) . flip reachable k . sparsifyKL n" $ \(Positive n) -> do
+    test "sort . reachable x                 == sort . filter (<= n) . reachable (sparsifyKL n x)" $ \(Positive n) -> do
         let pairs = (,) <$> choose (1, n) <*> choose (1, n)
-        k  <- choose (1, n)
         es <- listOf pairs
         let x = vertices [1..n] `overlay` edges es
-        return $ (sort . reachable k) x == (sort . filter (<= n) . flip KL.reachable k . sparsifyKL n) x
+        y <- choose (1, n)
+        return $ (sort . reachable x) y == (sort . filter (<= n) . KL.reachable (sparsifyKL n x)) y
 
     test "length (vertices $ sparsifyKL n x) <= vertexCount x + size x + 1" $ \(Positive n) -> do
         let pairs = (,) <$> choose (1, n) <*> choose (1, n)
