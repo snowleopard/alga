@@ -1,6 +1,0 @@
-cradle:
-  stack:
-    - path: "./src"
-      component: "algebraic-graphs:lib"
-    - path: "./test"
-      component: "algebraic-graphs:test:main"
