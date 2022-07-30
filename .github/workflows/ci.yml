@@ -42,3 +42,8 @@ jobs:
       with:
         github-user: snowleopard
         hlint-arguments: src
+
+  hello-world:
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo 'Hello, world!'
