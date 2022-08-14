@@ -22,7 +22,7 @@ module Algebra.Graph.Label (
     NonNegative, finite, finiteWord, unsafeFinite, infinite, getFinite,
     Distance, distance, getDistance, Capacity, capacity, getCapacity,
     Count, count, getCount, PowerSet (..), Minimum, getMinimum, noMinimum,
-    Path, Label, isZero, RegularExpression,
+    Path, Label, symbol, symbols, isZero, RegularExpression,
 
     -- * Combining edge labels
     Optimum (..), ShortestPath, AllShortestPaths, CountShortestPaths, WidestPath
@@ -376,6 +376,14 @@ data Label a = Zero
 
 infixl 6 :+:
 infixl 7 :*:
+
+-- | Wrap a value into a 'Symbol' constructor
+symbol :: a -> Label a
+symbol = Symbol
+
+-- | Wrap a list of values into 'Symbol' constructors terminated by 'Zero'
+symbols :: Foldable t => t a -> Label a
+symbols = foldr ((<>) . Symbol) Zero
 
 instance IsList (Label a) where
     type Item (Label a) = a
