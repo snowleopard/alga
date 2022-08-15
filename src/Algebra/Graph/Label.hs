@@ -22,7 +22,7 @@ module Algebra.Graph.Label (
     NonNegative, finite, finiteWord, unsafeFinite, infinite, getFinite,
     Distance, distance, getDistance, Capacity, capacity, getCapacity,
     Count, count, getCount, PowerSet (..), Minimum, getMinimum, noMinimum,
-    Path, Label, isZero, RegularExpression,
+    Path, Label, symbol, symbols, isZero, RegularExpression,
 
     -- * Combining edge labels
     Optimum (..), ShortestPath, AllShortestPaths, CountShortestPaths, WidestPath
@@ -364,8 +364,8 @@ instance (Monoid a, Ord a) => Semiring (PowerSet a) where
 
 instance (Monoid a, Ord a) => Dioid (PowerSet a) where
 
--- | The type of /free labels/ over the underlying set of symbols @a@. This data
--- type is an instance of classes 'StarSemiring' and 'Dioid'.
+-- | The type of /free labels/ over the underlying set of symbols @a@. 'Label' values
+-- can be manipulated via its 'Semigroup', 'Monoid' and 'StarSemiring' class instances.
 data Label a = Zero
              | One
              | Symbol a
@@ -377,9 +377,17 @@ data Label a = Zero
 infixl 6 :+:
 infixl 7 :*:
 
+-- | Wrap a value into a 'Symbol' constructor
+symbol :: a -> Label a
+symbol = Symbol
+
+-- | Wrap a list of values into 'Symbol' constructors terminated by 'Zero'
+symbols :: Foldable t => t a -> Label a
+symbols = foldr ((<>) . Symbol) Zero
+
 instance IsList (Label a) where
     type Item (Label a) = a
-    fromList = foldr ((<>) . Symbol) Zero
+    fromList = symbols
     toList   = error "Label.toList cannot be given a reasonable definition"
 
 instance Show a => Show (Label a) where
