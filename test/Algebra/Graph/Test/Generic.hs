@@ -13,7 +13,7 @@ module Algebra.Graph.Test.Generic where
 
 import Control.Monad (when)
 import Data.Either
-import Data.List (nub, sort)
+import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Tree
 import Data.Tuple

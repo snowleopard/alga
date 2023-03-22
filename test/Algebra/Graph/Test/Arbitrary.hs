@@ -15,10 +15,8 @@ module Algebra.Graph.Test.Arbitrary (
     arbitraryGraph, arbitraryRelation, arbitraryAdjacencyMap,
     ) where
 
-import Control.Monad
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.Maybe (catMaybes)
-import Data.Tree
 import Test.QuickCheck
 
 import Algebra.Graph
