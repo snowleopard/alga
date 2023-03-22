@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Export
--- Copyright  : (c) Andrey Mokhov 2016-2022
+-- Copyright  : (c) Andrey Mokhov 2016-2023
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
