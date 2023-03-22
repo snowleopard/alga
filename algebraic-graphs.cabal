@@ -86,6 +86,7 @@ common common-settings
                         TupleSections
                         TypeApplications
                         TypeFamilies
+                        TypeOperators
     other-extensions:   CPP
                         OverloadedStrings
                         RecordWildCards
