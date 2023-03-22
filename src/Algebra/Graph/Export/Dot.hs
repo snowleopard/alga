@@ -21,7 +21,7 @@ module Algebra.Graph.Export.Dot (
     export, exportAsIs, exportViaShow
     ) where
 
-import Data.List (map, null, intersperse)
+import Data.List (intersperse)
 import Data.Monoid
 import Data.String hiding (unlines)
 import Prelude hiding (unlines)

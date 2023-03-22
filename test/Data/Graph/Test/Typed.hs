@@ -20,7 +20,7 @@ import Algebra.Graph.AdjacencyMap ( forest, empty, vertex, edge, vertices
 import Data.Array (array)
 import Data.Graph.Typed
 import Data.Tree
-import Data.List (nub, sort)
+import Data.List (nub)
 
 import qualified Data.Graph  as KL
 import qualified Data.IntSet as IntSet

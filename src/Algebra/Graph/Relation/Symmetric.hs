@@ -50,11 +50,8 @@ import Data.Tree
 import qualified Data.IntSet as IntSet
 import qualified Data.Set    as Set
 
-import qualified Algebra.Graph                 as G
-import qualified Algebra.Graph.AdjacencyIntMap as AIM
-import qualified Algebra.Graph.AdjacencyMap    as AM
-import qualified Algebra.Graph.ToGraph         as T
-import qualified Algebra.Graph.Relation        as R
+import qualified Algebra.Graph.ToGraph  as T
+import qualified Algebra.Graph.Relation as R
 
 {-| This data type represents a /symmetric binary relation/ over a set of
 elements of type @a@. Symmetric relations satisfy all laws of the

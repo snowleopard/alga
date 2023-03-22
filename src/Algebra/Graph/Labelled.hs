@@ -54,10 +54,9 @@ import Algebra.Graph.Label
 import qualified Algebra.Graph.Labelled.AdjacencyMap as AM
 import qualified Algebra.Graph.ToGraph               as T
 
-import qualified Data.IntSet as IntSet
-import qualified Data.Set    as Set
-import qualified Data.Map    as Map
-import qualified GHC.Exts    as Exts
+import qualified Data.Set as Set
+import qualified Data.Map as Map
+import qualified GHC.Exts as Exts
 
 -- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
 -- For example, 'Graph' @Bool@ @a@ is isomorphic to unlabelled graphs defined in

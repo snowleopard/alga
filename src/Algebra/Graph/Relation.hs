@@ -54,8 +54,6 @@ import qualified Data.Maybe  as Maybe
 import qualified Data.Set    as Set
 import qualified Data.Tree   as Tree
 
-import Algebra.Graph.Internal
-
 import qualified Algebra.Graph                 as G
 import qualified Algebra.Graph.AdjacencyIntMap as AIM
 import qualified Algebra.Graph.AdjacencyMap    as AM

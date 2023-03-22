@@ -20,7 +20,7 @@ import Algebra.Graph.Bipartite.AdjacencyMap.Algorithm
 import Algebra.Graph.Test
 import Data.Either
 import Data.Either.Extra
-import Data.List (nub, sort)
+import Data.List (nub)
 import Data.Map.Strict (Map)
 import Data.Set (Set)
 
@@ -30,7 +30,6 @@ import qualified Data.Bifunctor                       as Bifunctor
 import qualified Data.Map.Strict                      as Map
 import qualified Data.Set                             as Set
 import qualified Data.Tuple
-import qualified Algebra.Graph.Bipartite.AdjacencyMap as B
 
 type AI   = AM.AdjacencyMap Int
 type AII  = AM.AdjacencyMap (Either Int Int)

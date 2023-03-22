@@ -28,11 +28,10 @@ module Algebra.Graph.Label (
     Optimum (..), ShortestPath, AllShortestPaths, CountShortestPaths, WidestPath
     ) where
 
-import Control.Applicative
 import Control.Monad
 import Data.Coerce
 import Data.Maybe
-import Data.Monoid (Any (..), Monoid (..), Sum (..))
+import Data.Monoid (Any (..), Sum (..))
 import Data.Semigroup (Max (..), Min (..))
 import Data.Set (Set)
 import GHC.Exts (IsList (..))
@@ -285,11 +284,11 @@ fromExtended Infinite   = Nothing
 instance (Num a, Eq a) => Num (Extended a) where
     fromInteger = Finite . fromInteger
 
-    (+) = liftA2 (+)
+    (+) = liftM2 (+)
 
     Finite 0 * _ = Finite 0
     _ * Finite 0 = Finite 0
-    x * y = liftA2 (*) x y
+    x * y = liftM2 (*) x y
 
     negate = fmap negate
     signum = fmap signum
@@ -331,7 +330,7 @@ instance (Monoid a, Ord a) => Monoid (Minimum a) where
 
 instance (Monoid a, Ord a) => Semiring (Minimum a) where
     one   = pure mempty
-    (<.>) = liftA2 mappend
+    (<.>) = liftM2 mappend
 
 instance (Monoid a, Ord a) => Dioid (Minimum a)
 

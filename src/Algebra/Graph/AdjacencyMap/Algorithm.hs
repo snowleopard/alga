@@ -36,7 +36,6 @@ import Data.Maybe
 import Data.Tree
 
 import Algebra.Graph.AdjacencyMap
-import Algebra.Graph.Internal
 
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 import qualified Data.Array                          as Array

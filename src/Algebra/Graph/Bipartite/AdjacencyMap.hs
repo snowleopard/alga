@@ -53,19 +53,13 @@ module Algebra.Graph.Bipartite.AdjacencyMap (
     consistent
     ) where
 
-import Control.Monad
-import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.State
 import Data.Either
-import Data.Foldable (asum)
 import Data.List ((\\), sort)
 import Data.Map.Strict (Map)
-import Data.Maybe
 import Data.Set (Set)
 import GHC.Exts (IsList(..))
 import GHC.Generics
 
-import qualified Algebra.Graph              as G
 import qualified Algebra.Graph.AdjacencyMap as AM
 
 import qualified Data.Map.Strict as Map

@@ -29,13 +29,11 @@ module Algebra.Graph.Internal (
 
 import Data.Coerce
 import Data.Foldable
-import Data.IntSet (IntSet)
 import Data.Semigroup (Endo (..))
 import Data.Set (Set)
 
-import qualified Data.IntSet as IntSet
-import qualified Data.Set    as Set
-import qualified GHC.Exts    as Exts
+import qualified Data.Set as Set
+import qualified GHC.Exts as Exts
 
 -- | An abstract list data type with /O(1)/ time concatenation (the current
 -- implementation uses difference lists). Here @a@ is the type of list elements.
