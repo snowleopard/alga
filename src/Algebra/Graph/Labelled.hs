@@ -71,7 +71,7 @@ data Graph e a = Empty
 instance (Eq e, Monoid e, Ord a) => Eq (Graph e a) where
     x == y = toAdjacencyMap x == toAdjacencyMap y
 
-instance (Eq e, Monoid e, Ord a, Ord e) => Ord (Graph e a) where
+instance (Monoid e, Ord a, Ord e) => Ord (Graph e a) where
     compare x y = compare (toAdjacencyMap x) (toAdjacencyMap y)
 
 -- | __Note:__ this does not satisfy the usual ring laws; see 'Graph'
