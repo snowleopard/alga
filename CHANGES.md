@@ -1,5 +1,9 @@
 # Change log
 
+## 0.8
+
+* #303: Stop supporting GHC 8.4.
+
 ## 0.7
 
 * #294: Change the argument order of `bfs*`, `dfs*` and `reachable` algorithms.
