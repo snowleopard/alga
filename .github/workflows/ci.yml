@@ -21,6 +21,7 @@ jobs:
         allowfail: [false]
         include:
         - os: windows-latest
+          allowfail: false
         - os: macOS-latest
           allowfail: true
 
