@@ -1,6 +1,6 @@
 # Algebraic graphs
 
-[![Hackage version](https://img.shields.io/hackage/v/algebraic-graphs.svg?label=Hackage)](https://hackage.haskell.org/package/algebraic-graphs) [![Build status](https://img.shields.io/github/workflow/status/snowleopard/alga/ci/master.svg)](https://github.com/snowleopard/alga/actions)
+[![Hackage version](https://img.shields.io/hackage/v/algebraic-graphs.svg?label=Hackage)](https://hackage.haskell.org/package/algebraic-graphs) [![Build status](https://img.shields.io/github/actions/workflow/status/snowleopard/alga/ci.yml?branch=master)](https://github.com/snowleopard/alga/actions)
 
 **Alga** is a library for algebraic construction and manipulation of graphs in Haskell. See
 [this Haskell Symposium paper](https://github.com/snowleopard/alga-paper) and the
