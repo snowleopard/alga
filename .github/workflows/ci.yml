@@ -19,7 +19,8 @@ jobs:
         ghc: ['9.6.1', '9.4.4', '9.2.7', '9.0.2', '8.10.7', '8.8.4', '8.6.5']
         include:
         - os: windows-latest
-        - os: macOS-latest
+        # Testing on MacOS is disabled until GitHub actions support 'allow-failure'
+        # - os: macOS-latest
 
     steps:
     - run: git config --global core.autocrlf false
