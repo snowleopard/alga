@@ -80,7 +80,9 @@ defaultStyle v = Style mempty [] [] [] [] v (const []) (\_ _ -> []) DoubleQuotes
 -- defaultStyleViaShow = 'defaultStyle' ('fromString' . 'show')
 -- @
 defaultStyleViaShow :: (Show a, IsString s, Monoid s) => Style a s
-defaultStyleViaShow = defaultStyle (fromString . show)
+defaultStyleViaShow = defaultStyle (fromString . escape . show) where
+    escape [] = []
+    escape (x:xs) = if x == '"' then '\\':'"':(escape xs) else x:(escape xs)
 
 -- | Export a graph with a given style.
 --
