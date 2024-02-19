@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DerivingStrategies #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Labelled.AdjacencyMap
@@ -57,17 +60,51 @@ import qualified Algebra.Graph.ToGraph      as T
 import qualified Data.IntSet     as IntSet
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
+import Control.Monad (guard)
+
+
+data InsAndOuts e a = InsAndOuts
+  { iao_ins  :: Map a e
+  , iao_outs :: Map a e
+  }
+  deriving stock (Eq, Generic)
+  deriving anyclass (NFData)
+
+overIns :: (Map a e -> Map a e) -> InsAndOuts e a -> InsAndOuts e a
+overIns f (InsAndOuts i o) = InsAndOuts (f i) o
+
+overOuts :: (Map a e -> Map a e) -> InsAndOuts e a -> InsAndOuts e a
+overOuts f (InsAndOuts i o) = InsAndOuts i (f o)
+
+overBoth :: (Map a e -> Map b f) -> InsAndOuts e a -> InsAndOuts f b
+overBoth f (InsAndOuts i o) = InsAndOuts (f i) (f o)
+
+instance (Eq e, Monoid e, Ord a) => Semigroup (InsAndOuts e a) where
+  InsAndOuts i1 o1 <> InsAndOuts i2 o2 =
+    InsAndOuts (nonZeroUnion i1 i2) (nonZeroUnion o1 o2)
+
+instance (Eq e, Monoid e, Ord a) => Monoid (InsAndOuts e a) where
+  mempty = InsAndOuts mempty mempty
+
 
 -- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
 -- For example, 'AdjacencyMap' @Bool@ @a@ is isomorphic to unlabelled graphs
 -- defined in the top-level module "Algebra.Graph.AdjacencyMap", where @False@
 -- and @True@ denote the lack of and the existence of an unlabelled edge,
 -- respectively.
-newtype AdjacencyMap e a = AM {
+newtype AdjacencyMap e a = AM
+  {
     -- | The /adjacency map/ of an edge-labelled graph: each vertex is
     -- associated with a map from its direct successors to the corresponding
     -- edge labels.
-    adjacencyMap :: Map a (Map a e) } deriving (Eq, Generic, NFData)
+    adjacencyMap' :: Map a (InsAndOuts e a)
+  }
+  deriving stock Generic
+  deriving newtype (Eq, NFData)
+
+adjacencyMap :: AdjacencyMap e a -> Map a (Map a e)
+adjacencyMap (AM m) = Map.map iao_outs m
+
 
 instance (Ord a, Show a, Ord e, Show e) => Show (AdjacencyMap e a) where
     showsPrec p lam@(AM m)
@@ -168,7 +205,7 @@ empty = AM Map.empty
 -- 'edgeCount'   (vertex x) == 0
 -- @
 vertex :: a -> AdjacencyMap e a
-vertex x = AM $ Map.singleton x Map.empty
+vertex x = AM $ Map.singleton x $ InsAndOuts Map.empty Map.empty
 
 -- | Construct the graph comprising /a single edge/.
 --
@@ -183,8 +220,13 @@ vertex x = AM $ Map.singleton x Map.empty
 -- @
 edge :: (Eq e, Monoid e, Ord a) => e -> a -> a -> AdjacencyMap e a
 edge e x y | e == zero = vertices [x, y]
-           | x == y    = AM $ Map.singleton x (Map.singleton x e)
-           | otherwise = AM $ Map.fromList [(x, Map.singleton y e), (y, Map.empty)]
+           | x == y    =
+              let es = Map.singleton x e
+               in AM $ Map.singleton x $ InsAndOuts es es
+           | otherwise = AM $ Map.fromList
+              [ (x, InsAndOuts mempty $ Map.singleton y e)
+              , (y, InsAndOuts (Map.singleton x e) mempty)
+              ]
 
 -- | The left-hand part of a convenient ternary-ish operator @x-\<e\>-y@ for
 -- creating labelled edges.
@@ -238,15 +280,15 @@ infixl 5 >-
 -- 'edgeLabel' x z $ 'transitiveClosure' (overlay ('edge' e x y) ('edge' f   y z)) == e '<.>' f
 -- @
 overlay :: (Eq e, Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
-overlay (AM x) (AM y) = AM $ Map.unionWith nonZeroUnion x y
+overlay (AM x) (AM y) = AM $ Map.unionWith (<>) x y
 
 -- Union maps, removing zero elements from the result.
 nonZeroUnion :: (Eq e, Monoid e, Ord a) => Map a e -> Map a e -> Map a e
 nonZeroUnion x y = Map.filter (/= zero) $ Map.unionWith mappend x y
 
 -- Drop all edges with zero labels.
-trimZeroes :: (Eq e, Monoid e) => Map a (Map a e) -> Map a (Map a e)
-trimZeroes = Map.map (Map.filter (/= zero))
+trimZeroes :: (Eq e, Monoid e) => Map a (InsAndOuts e a) -> Map a (InsAndOuts e a)
+trimZeroes = Map.map (overBoth $ Map.filter (/= zero))
 
 -- | /Connect/ two graphs with edges labelled by a given label. When applied to
 -- the same labels, this is an associative operation with the identity 'empty',
@@ -267,10 +309,13 @@ trimZeroes = Map.map (Map.filter (/= zero))
 connect :: (Eq e, Monoid e, Ord a) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
 connect e (AM x) (AM y)
     | e == mempty = overlay (AM x) (AM y)
-    | otherwise   = AM $ Map.unionsWith nonZeroUnion $ x : y :
-        [ Map.fromSet (const targets) (Map.keysSet x) ]
+    | otherwise   = AM $ Map.unionsWith (<>) $ x : y :
+        [ Map.fromSet (const sources) (Map.keysSet y)
+        , Map.fromSet (const targets) (Map.keysSet x)
+        ]
   where
-    targets = Map.fromSet (const e) (Map.keysSet y)
+    sources = InsAndOuts (Map.fromSet (const e) (Map.keysSet x)) mempty
+    targets = InsAndOuts mempty (Map.fromSet (const e) (Map.keysSet y))
 
 -- | Construct the graph comprising a given list of isolated vertices.
 -- Complexity: /O(L * log(L))/ time and /O(L)/ memory, where /L/ is the length
@@ -285,7 +330,7 @@ connect e (AM x) (AM y)
 -- 'vertexSet'   . vertices == Set.'Set.fromList'
 -- @
 vertices :: Ord a => [a] -> AdjacencyMap e a
-vertices = AM . Map.fromList . map (, Map.empty)
+vertices = AM . Map.fromList . map (, InsAndOuts Map.empty Map.empty)
 
 -- | Construct the graph from a list of edges.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -296,7 +341,12 @@ vertices = AM . Map.fromList . map (, Map.empty)
 -- edges           == 'overlays' . 'map' (\\(e, x, y) -> 'edge' e x y)
 -- @
 edges :: (Eq e, Monoid e, Ord a) => [(e, a, a)] -> AdjacencyMap e a
-edges es = fromAdjacencyMaps [ (x, Map.singleton y e) | (e, x, y) <- es ]
+edges es = mconcat $ do
+  (e, src, dst) <- es
+  pure $ mconcat
+    [ AM $ trimZeroes $ Map.singleton src $ InsAndOuts mempty (Map.singleton dst e)
+    , AM $ trimZeroes $ Map.singleton dst $ InsAndOuts (Map.singleton src e) mempty
+    ]
 
 -- | Overlay a given list of graphs.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -309,7 +359,7 @@ edges es = fromAdjacencyMaps [ (x, Map.singleton y e) | (e, x, y) <- es ]
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
 overlays :: (Eq e, Monoid e, Ord a) => [AdjacencyMap e a] -> AdjacencyMap e a
-overlays = AM . Map.unionsWith nonZeroUnion . map adjacencyMap
+overlays = AM . Map.unionsWith (<>) . map adjacencyMap'
 
 -- | Construct a graph from a list of adjacency sets.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -320,11 +370,18 @@ overlays = AM . Map.unionsWith nonZeroUnion . map adjacencyMap
 -- fromAdjacencyMaps [(x, Map.'Map.singleton' y e)]            == if e == 'zero' then 'vertices' [x,y] else 'edge' e x y
 -- 'overlay' (fromAdjacencyMaps xs) (fromAdjacencyMaps ys) == fromAdjacencyMaps (xs '++' ys)
 -- @
-fromAdjacencyMaps :: (Eq e, Monoid e, Ord a) => [(a, Map a e)] -> AdjacencyMap e a
-fromAdjacencyMaps xs = AM $ trimZeroes $ Map.unionWith mappend vs es
-  where
-    vs = Map.fromSet (const Map.empty) . Set.unions $ map (Map.keysSet . snd) xs
-    es = Map.fromListWith (Map.unionWith mappend) xs
+fromAdjacencyMaps :: forall e a. (Eq e, Monoid e, Ord a) => [(a, Map a e)] -> AdjacencyMap e a
+fromAdjacencyMaps xs = mappend (vertices $ fmap fst xs) $ edges $ do
+  (src, outs) <- xs
+  (dst, e) <- Map.assocs outs
+  pure (e, src, dst)
+
+  -- where
+  --   vs :: Map a (InsAndOuts e a)
+  --   vs = Map.fromSet (const Map.empty) . Set.unions $ map (Map.keysSet . snd) xs
+
+  --   es :: Map a (InsAndOuts e a)
+  --   es = Map.fromListWith (Map.unionWith mappend) xs
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -337,7 +394,7 @@ fromAdjacencyMaps xs = AM $ trimZeroes $ Map.unionWith mappend vs es
 -- isSubgraphOf x y              ==> x <= y
 -- @
 isSubgraphOf :: (Eq e, Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
-isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy (Map.isSubmapOfBy le) x y
+isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy (Map.isSubmapOfBy le . iao_outs) x $ Map.map iao_outs y
   where
     le x y = mappend x y == y
 
@@ -376,7 +433,7 @@ hasVertex x = Map.member x . adjacencyMap
 -- hasEdge x y                  == 'not' . 'null' . 'filter' (\\(_,ex,ey) -> ex == x && ey == y) . 'edgeList'
 -- @
 hasEdge :: Ord a => a -> a -> AdjacencyMap e a -> Bool
-hasEdge x y (AM m) = maybe False (Map.member y) (Map.lookup x m)
+hasEdge x y (AM m) = maybe False (Map.member y . iao_outs) (Map.lookup x m)
 
 -- | Extract the label of a specified edge in a graph.
 -- Complexity: /O(log(n))/ time.
@@ -388,7 +445,7 @@ hasEdge x y (AM m) = maybe False (Map.member y) (Map.lookup x m)
 -- edgeLabel s t ('overlay' x y) == edgeLabel s t x <+> edgeLabel s t y
 -- @
 edgeLabel :: (Monoid e, Ord a) => a -> a -> AdjacencyMap e a -> e
-edgeLabel x y (AM m) = fromMaybe zero (Map.lookup x m >>= Map.lookup y)
+edgeLabel x y (AM m) = fromMaybe zero (Map.lookup x m >>= Map.lookup y . iao_outs)
 
 -- | The number of vertices in a graph.
 -- Complexity: /O(1)/ time.
@@ -436,7 +493,7 @@ vertexList = Map.keys . adjacencyMap
 -- @
 edgeList :: AdjacencyMap e a -> [(e, a, a)]
 edgeList (AM m) =
-    [ (e, x, y) | (x, ys) <- Map.toAscList m, (y, e) <- Map.toAscList ys ]
+    [ (e, x, y) | (x, ys) <- Map.toAscList m, (y, e) <- Map.toAscList $ iao_outs ys ]
 
 -- | The set of vertices of a given graph.
 -- Complexity: /O(n)/ time and memory.
@@ -461,7 +518,7 @@ edgeSet :: (Eq a, Eq e) => AdjacencyMap e a -> Set (e, a, a)
 edgeSet = Set.fromAscList . edgeList
 
 -- | The /preset/ of an element @x@ is the set of its /direct predecessors/.
--- Complexity: /O(n * log(n))/ time and /O(n)/ memory.
+-- Complexity: /O(log(n))/ time and /O(1)/ memory.
 --
 -- @
 -- preSet x 'empty'        == Set.'Set.empty'
@@ -470,8 +527,7 @@ edgeSet = Set.fromAscList . edgeList
 -- preSet y ('edge' e x y) == if e == 'zero' then Set.'Set.empty' else Set.'Set.fromList' [x]
 -- @
 preSet :: Ord a => a -> AdjacencyMap e a -> Set a
-preSet x (AM m) = Set.fromAscList
-    [ a | (a, es) <- Map.toAscList m, Map.member x es ]
+preSet x (AM m) = Map.keysSet . Map.findWithDefault Map.empty x $ Map.map iao_ins m
 
 -- | The /postset/ of a vertex is the set of its /direct successors/.
 -- Complexity: /O(log(n))/ time and /O(1)/ memory.
@@ -483,7 +539,7 @@ preSet x (AM m) = Set.fromAscList
 -- postSet 2 ('edge' e 1 2) == Set.'Set.empty'
 -- @
 postSet :: Ord a => a -> AdjacencyMap e a -> Set a
-postSet x = Map.keysSet . Map.findWithDefault Map.empty x . adjacencyMap
+postSet x (AM m) = Map.keysSet . Map.findWithDefault Map.empty x $ Map.map iao_outs m
 
 -- TODO: Optimise.
 -- | Convert a graph to the corresponding unlabelled 'AM.AdjacencyMap' by
@@ -494,7 +550,7 @@ postSet x = Map.keysSet . Map.findWithDefault Map.empty x . adjacencyMap
 -- 'hasEdge' x y == 'AM.hasEdge' x y . skeleton
 -- @
 skeleton :: Ord a => AdjacencyMap e a -> AM.AdjacencyMap a
-skeleton (AM m) = AM.fromAdjacencySets $ Map.toAscList $ Map.map Map.keysSet m
+skeleton = AM.fromAdjacencySets . Map.toAscList . Map.map Map.keysSet . adjacencyMap
 
 -- | Remove a vertex from a given graph.
 -- Complexity: /O(n*log(n))/ time.
@@ -507,7 +563,7 @@ skeleton (AM m) = AM.fromAdjacencySets $ Map.toAscList $ Map.map Map.keysSet m
 -- removeVertex x . removeVertex x == removeVertex x
 -- @
 removeVertex :: Ord a => a -> AdjacencyMap e a -> AdjacencyMap e a
-removeVertex x = AM . Map.map (Map.delete x) . Map.delete x . adjacencyMap
+removeVertex x = AM . Map.map (overBoth $ Map.delete x) . Map.delete x . adjacencyMap'
 
 -- | Remove an edge from a given graph.
 -- Complexity: /O(log(n))/ time.
@@ -520,7 +576,11 @@ removeVertex x = AM . Map.map (Map.delete x) . Map.delete x . adjacencyMap
 -- removeEdge 1 2 (1 * 1 * 2 * 2)  == 1 * 1 + 2 * 2
 -- @
 removeEdge :: Ord a => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
-removeEdge x y = AM . Map.adjust (Map.delete y) x . adjacencyMap
+removeEdge x y
+  = AM
+  . Map.adjust (overIns $ Map.delete x) y
+  . Map.adjust (overOuts $ Map.delete y) x
+  . adjacencyMap'
 
 -- | The function @'replaceVertex' x y@ replaces vertex @x@ with vertex @y@ in a
 -- given 'AdjacencyMap'. If @y@ already exists, @x@ and @y@ will be merged.
@@ -542,14 +602,25 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- replaceEdge e x y ('edge' f x y)      == 'edge' e x y
 -- 'edgeLabel' x y (replaceEdge e x y z) == e
 -- @
-replaceEdge :: (Eq e, Monoid e, Ord a) => e -> a -> a -> AdjacencyMap e a -> AdjacencyMap e a
+replaceEdge :: forall e a. (Eq e, Monoid e, Ord a) => e -> a -> a -> AdjacencyMap e a -> AdjacencyMap e a
 replaceEdge e x y
-    | e == zero  = AM . addY . Map.alter (Just . maybe Map.empty (Map.delete y)) x . adjacencyMap
-    | otherwise  = AM . addY . Map.alter replace x . adjacencyMap
+    | e == zero
+      = AM . addX . addY
+      . Map.alter (Just . maybe (InsAndOuts Map.empty Map.empty) (overOuts $ Map.delete y)) x
+      . Map.alter (Just . maybe (InsAndOuts Map.empty Map.empty) (overIns $ Map.delete x)) y
+      . adjacencyMap'
+    | otherwise  = AM . addX . addY . Map.alter replaceX y . Map.alter replaceY x . adjacencyMap'
   where
-    addY             = Map.alter (Just . fromMaybe Map.empty) y
-    replace (Just m) = Just $ Map.insert y e m
-    replace Nothing  = Just $ Map.singleton y e
+    addY :: Map a (InsAndOuts e a) -> Map a (InsAndOuts e a)
+    addY             = Map.alter (Just . fromMaybe (InsAndOuts Map.empty Map.empty)) y
+    addX :: Map a (InsAndOuts e a) -> Map a (InsAndOuts e a)
+    addX             = Map.alter (Just . fromMaybe (InsAndOuts Map.empty Map.empty)) x
+    replaceX :: Maybe (InsAndOuts e a) -> Maybe (InsAndOuts e a)
+    replaceX (Just (InsAndOuts ins outs)) = Just $ InsAndOuts (Map.insert x e ins) outs
+    replaceX Nothing  = Just $ InsAndOuts (Map.singleton x e) mempty
+    replaceY :: Maybe (InsAndOuts e a) -> Maybe (InsAndOuts e a)
+    replaceY (Just (InsAndOuts ins outs)) = Just $ InsAndOuts ins (Map.insert y e outs)
+    replaceY Nothing  = Just $ InsAndOuts mempty (Map.singleton y e)
 
 -- | Transpose a given graph.
 -- Complexity: /O(m * log(n))/ time, /O(n + m)/ memory.
@@ -560,13 +631,8 @@ replaceEdge e x y
 -- transpose ('edge' e x y) == 'edge' e y x
 -- transpose . transpose  == id
 -- @
-transpose :: (Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a
-transpose (AM m) = AM $ Map.foldrWithKey combine vs m
-  where
-    -- No need to use @nonZeroUnion@ here, since we do not add any new edges
-    combine v es = Map.unionWith (Map.unionWith mappend) $
-        Map.fromAscList [ (u, Map.singleton v e) | (u, e) <- Map.toAscList es ]
-    vs = Map.fromSet (const Map.empty) (Map.keysSet m)
+transpose :: AdjacencyMap e a -> AdjacencyMap e a
+transpose (AM m) = AM $ Map.map (\(InsAndOuts ins outs) -> InsAndOuts outs ins) m
 
 -- | Transform a graph by applying a function to each of its vertices. This is
 -- similar to @Functor@'s 'fmap' but can be used with non-fully-parametric
@@ -581,8 +647,8 @@ transpose (AM m) = AM $ Map.foldrWithKey combine vs m
 -- gmap f . gmap g     == gmap (f . g)
 -- @
 gmap :: (Eq e, Monoid e, Ord a, Ord b) => (a -> b) -> AdjacencyMap e a -> AdjacencyMap e b
-gmap f = AM . trimZeroes . Map.map (Map.mapKeysWith mappend f) .
-    Map.mapKeysWith (Map.unionWith mappend) f . adjacencyMap
+gmap f = AM . trimZeroes . Map.map (overBoth $ Map.mapKeysWith mappend f) .
+    Map.mapKeysWith (<>) f . adjacencyMap'
 
 -- | Transform a graph by applying a function @h@ to each of its edge labels.
 -- Complexity: /O((n + m) * log(n))/ time.
@@ -616,7 +682,7 @@ gmap f = AM . trimZeroes . Map.map (Map.mapKeysWith mappend f) .
 -- emap g . emap h        == emap (g . h)
 -- @
 emap :: (Eq f, Monoid f) => (e -> f) -> AdjacencyMap e a -> AdjacencyMap f a
-emap h = AM . trimZeroes . Map.map (Map.map h) . adjacencyMap
+emap h = AM . trimZeroes . Map.map (overBoth $ Map.map h) . adjacencyMap'
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -630,8 +696,8 @@ emap h = AM . trimZeroes . Map.map (Map.map h) . adjacencyMap
 -- 'isSubgraphOf' (induce p x) x == True
 -- @
 induce :: (a -> Bool) -> AdjacencyMap e a -> AdjacencyMap e a
-induce p = AM . Map.map (Map.filterWithKey (\k _ -> p k)) .
-    Map.filterWithKey (\k _ -> p k) . adjacencyMap
+induce p = AM . Map.map (overBoth $ Map.filterWithKey (\k _ -> p k)) .
+    Map.filterWithKey (\k _ -> p k) . adjacencyMap'
 
 -- | Construct the /induced subgraph/ of a given graph by removing the vertices
 -- that are 'Nothing'.
@@ -644,7 +710,7 @@ induce p = AM . Map.map (Map.filterWithKey (\k _ -> p k)) .
 -- induceJust . 'gmap' (\\x -> if p x then 'Just' x else 'Nothing') == 'induce' p
 -- @
 induceJust :: Ord a => AdjacencyMap e (Maybe a) -> AdjacencyMap e a
-induceJust = AM . Map.map catMaybesMap . catMaybesMap . adjacencyMap
+induceJust = AM . Map.map (overBoth catMaybesMap) . catMaybesMap . adjacencyMap'
   where
     catMaybesMap = Map.mapKeysMonotonic fromJust . Map.delete Nothing
 
@@ -662,7 +728,7 @@ induceJust = AM . Map.map catMaybesMap . catMaybesMap . adjacencyMap
 -- 'postSet' x (closure y) == Set.'Set.fromList' ('Algebra.Graph.ToGraph.reachable' y x)
 -- @
 closure :: (Eq e, Ord a, StarSemiring e) => AdjacencyMap e a -> AdjacencyMap e a
-closure = goWarshallFloydKleene . reflexiveClosure
+closure = error "not ported: closure" -- goWarshallFloydKleene . reflexiveClosure
 
 -- | Compute the /reflexive closure/ of a graph over the underlying semiring by
 -- adding a self-loop of weight 'one' to every vertex.
@@ -676,7 +742,7 @@ closure = goWarshallFloydKleene . reflexiveClosure
 -- reflexiveClosure . reflexiveClosure == reflexiveClosure
 -- @
 reflexiveClosure :: (Ord a, Semiring e) => AdjacencyMap e a -> AdjacencyMap e a
-reflexiveClosure (AM m) = AM $ Map.mapWithKey (\k -> Map.insertWith (<+>) k one) m
+reflexiveClosure (AM m) = AM $ Map.mapWithKey (\k -> overBoth $ Map.insertWith (<+>) k one) m
 
 -- | Compute the /symmetric closure/ of a graph by overlaying it with its own
 -- transpose.
@@ -703,29 +769,59 @@ symmetricClosure m = overlay m (transpose m)
 -- transitiveClosure . transitiveClosure == transitiveClosure
 -- @
 transitiveClosure :: (Eq e, Ord a, StarSemiring e) => AdjacencyMap e a -> AdjacencyMap e a
-transitiveClosure = goWarshallFloydKleene
+transitiveClosure = error "not ported: transitiveClosure" -- goWarshallFloydKleene
 
 -- The iterative part of the Warshall-Floyd-Kleene algorithm
-goWarshallFloydKleene :: (Eq e, Ord a, StarSemiring e) => AdjacencyMap e a -> AdjacencyMap e a
+goWarshallFloydKleene :: forall e a. (Eq e, Ord a, Monoid e, StarSemiring (InsAndOuts e a)) => AdjacencyMap e a -> AdjacencyMap e a
 goWarshallFloydKleene (AM m) = AM $ foldr update m vs
   where
+    vs :: [a]
     vs = Set.toAscList (Map.keysSet m)
-    update k cur = Map.fromAscList [ (i, go i (get i k <.> starkk)) | i <- vs ]
+
+    update :: a -> Map a (InsAndOuts e a) -> Map a (InsAndOuts e a)
+    update k cur = mconcat $ do
+        i <- vs
+        pure $ go i (get i k <.> starkk)
       where
-        get i j = edgeLabel i j (AM cur)
+        get :: a -> a -> InsAndOuts e a
+        get i j =
+          let label = edgeLabel i j (AM cur)
+           in InsAndOuts (Map.singleton i label) (Map.singleton j label)
+
+        starkk :: InsAndOuts e a
         starkk  = star (get k k)
-        go i ik = Map.fromAscList
-            [ (j, e) | j <- vs, let e = get i j <+> ik <.> get k j, e /= zero ]
+
+        go :: a -> InsAndOuts e a -> Map a (InsAndOuts e a)
+        go i ik = mconcat $ do
+          j <- vs
+          let e = get i j <+> ik <.> get k j
+          guard $ e /= zero
+          pure $ Map.singleton j e
+
+
+--           Map.fromAscList
+--             [ (j, e) | j <- vs, , e /= zero ]
+
 
 -- | Check that the internal graph representation is consistent, i.e. that all
 -- edges refer to existing vertices, and there are no 'zero'-labelled edges. It
 -- should be impossible to create an inconsistent adjacency map, and we use this
 -- function in testing.
 consistent :: (Ord a, Eq e, Monoid e) => AdjacencyMap e a -> Bool
-consistent (AM m) = referredToVertexSet m `Set.isSubsetOf` Map.keysSet m
-    && and [ e /= zero | (_, es) <- Map.toAscList m, (_, e) <- Map.toAscList es ]
+consistent (AM m) =
+  referredToVertexSet m `Set.isSubsetOf` Map.keysSet m
+    && and [ e /= zero
+           | (_, es) <- Map.toAscList m
+           , (_, e) <- Map.toAscList $ iao_outs es
+           ]
+    && and [ e /= zero
+           | (_, es) <- Map.toAscList m
+           , (_, e) <- Map.toAscList $ iao_ins es
+           ]
 
 -- The set of vertices that are referred to by the edges in an adjacency map
-referredToVertexSet :: Ord a => Map a (Map a e) -> Set a
-referredToVertexSet m = Set.fromList $ concat
-    [ [x, y] | (x, ys) <- Map.toAscList m, (y, _) <- Map.toAscList ys ]
+referredToVertexSet :: Ord a => Map a (InsAndOuts e a) -> Set a
+referredToVertexSet m = Set.fromList $ mconcat $ mconcat
+    [ [ [x, y] | (x, ys) <- Map.toAscList m, (y, _) <- Map.toAscList $ iao_outs ys ]
+    , [ [x, y] | (x, ys) <- Map.toAscList m, (y, _) <- Map.toAscList $ iao_ins ys ]
+    ]
