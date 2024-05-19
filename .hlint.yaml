@@ -50,10 +50,15 @@
 # - group: {name: generalise, enabled: true}
 
 # Ignore some builtin hints
+# - ignore: {name: Use const, within: SpecialModule} # Only within certain modules
+
 - ignore:
     name: Use if
     within: Algebra.Graph.Bipartite.AdjacencyMap.Algorithm
-# - ignore: {name: Use const, within: SpecialModule} # Only within certain modules
+
+- ignore:
+    name: Avoid NonEmpty.unzip
+    within: Algebra.Graph.NonEmpty.AdjacencyMap
 
 # Define some custom infix operators
 # - fixity: infixr 3 ~^#^~
