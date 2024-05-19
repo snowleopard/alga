@@ -2,8 +2,8 @@
 
 ## 0.8
 
-* #305: Support GHC 9.4 and GHC 9.6.
-* #303: Stop supporting GHC 8.4.
+* #305, #312: Support GHC 9.4, GHC 9.6 and GHC 9.8.
+* #303, #314: Stop supporting GHC 8.4, GHC 8.6 and GHC 8.8.
 
 ## 0.7
 
