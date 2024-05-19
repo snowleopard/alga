@@ -37,7 +37,7 @@ import Algebra.Graph.Internal
 -- implementation uses difference lists). Here @s@ is the type of abstract
 -- symbols or strings (text or binary). 'Doc' @s@ is a 'Monoid', therefore
 -- 'mempty' corresponds to the /empty document/ and two documents can be
--- concatenated with 'mappend' (or operator 'Data.Monoid.<>'). Documents
+-- concatenated with 'mappend' (or operator 'Data.Semigroup.<>'). Documents
 -- comprising a single symbol or string can be constructed using the function
 -- 'literal'. Alternatively, you can construct documents as string literals,
 -- e.g. simply as @"alga"@, by using the @OverloadedStrings@ GHC extension. To
@@ -91,7 +91,7 @@ isEmpty (Doc xs) = null xs
 -- constructed directly from string literals (see the second example below).
 --
 -- @
--- literal "Hello, " 'Data.Monoid.<>' literal "World!" == literal "Hello, World!"
+-- literal "Hello, " 'Data.Semigroup.<>' literal "World!" == literal "Hello, World!"
 -- literal "I am just a string literal"  == "I am just a string literal"
 -- 'render' . literal                      == 'id'
 -- @
@@ -101,8 +101,8 @@ literal = Doc . pure
 -- | Render the document as a single string. An inverse of the function 'literal'.
 --
 -- @
--- render ('literal' "al" 'Data.Monoid.<>' 'literal' "ga") :: ('IsString' s, 'Monoid' s) => s
--- render ('literal' "al" 'Data.Monoid.<>' 'literal' "ga") == "alga"
+-- render ('literal' "al" 'Data.Semigroup.<>' 'literal' "ga") :: ('IsString' s, 'Monoid' s) => s
+-- render ('literal' "al" 'Data.Semigroup.<>' 'literal' "ga") == "alga"
 -- render 'mempty'                         == 'mempty'
 -- render . 'literal'                      == 'id'
 -- @
