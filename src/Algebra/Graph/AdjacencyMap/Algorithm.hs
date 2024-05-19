@@ -380,23 +380,25 @@ gabowSCC g =
     -- called when exiting vertex v. if v is the bottom of a scc
     -- boundary, we add a new SCC, otherwise v is part of a larger scc
     -- being constructed and we continue.
-    exit v = do newComponent <- (v==).snd.head <$> gets boundaryStack
-                when newComponent $ insertComponent v
-                return newComponent
+    exit v = do boundaryStack <- gets boundaryStack
+                case boundaryStack of
+                    (p_top, top) : newBoundaryStack | v == top -> do
+                       insertComponent p_top top newBoundaryStack
+                       return True
 
-    insertComponent v = modify'
-      (\(SCC pre scc bnd pth pres sccs gs es_i es_o) ->
+                    _ -> return False
+
+    insertComponent p_v v newBoundaryStack = modify'
+      (\(SCC pre scc _oldBoundaryStack pth pres sccs gs es_i es_o) ->
          let (curr,v_pth') = span (/=v) pth
-             pth' = tail v_pth' -- Here we know that v_pth' starts with v
+             pth' = drop 1 v_pth' -- Here we know that v_pth' starts with v
              (es,es_i') = span ((>=p_v).fst) es_i
              g_i | null es = vertex v
                  | otherwise = edges (snd <$> es)
-             p_v = fst $ head bnd
              scc' = scc + 1
-             bnd' = tail bnd
              sccs' = List.foldl' (\sccs x -> Map.insert x scc sccs) sccs (v:curr)
              gs' = g_i:gs
-          in SCC pre scc' bnd' pth' pres sccs' gs' es_i' es_o)
+          in SCC pre scc' newBoundaryStack pth' pres sccs' gs' es_i' es_o)
 
     inedge uv = modify'
       (\(SCC pre scc bnd pth pres sccs gs es_i es_o) ->
