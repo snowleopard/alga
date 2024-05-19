@@ -71,7 +71,7 @@ Instances of this type class must satisfy the following semiring laws:
         > x <.> (y <+> z) == x <.> y <+> x <.> z
         > (x <+> y) <.> z == x <.> z <+> y <.> z
 -}
-class (Monoid a, Semigroup a) => Semiring a where
+class Monoid a => Semiring a where
     one   :: a
     (<.>) :: a -> a -> a
 
