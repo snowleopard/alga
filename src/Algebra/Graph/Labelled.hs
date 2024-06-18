@@ -118,7 +118,7 @@ instance (Eq e, Monoid e, Ord a) => T.ToGraph (Graph e a) where
 -- subgraphs.
 -- Extract the adjacency map of a graph.
 toAdjacencyMap :: (Eq e, Monoid e, Ord a) => Graph e a -> AM.AdjacencyMap e a
-toAdjacencyMap = foldg AM.empty AM.vertex AM.connect
+toAdjacencyMap = foldg AM.empty AM.vertex (\e x y -> AM.trimZeroes $ AM.connect e x y)
 
 -- Convert the adjacency map to a graph.
 fromAdjacencyMap :: Monoid e => AM.AdjacencyMap e a -> Graph e a

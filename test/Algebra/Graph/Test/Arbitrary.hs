@@ -181,10 +181,10 @@ instance Arbitrary AIM.AdjacencyIntMap where
 
 -- | Generate an arbitrary labelled 'LAM.AdjacencyMap'. It is guaranteed
 -- that the resulting adjacency map is 'consistent'.
-arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Gen (LAM.AdjacencyMap e a)
+arbitraryLabelledAdjacencyMap :: (Arbitrary a, Ord a, Semigroup e, Arbitrary e) => Gen (LAM.AdjacencyMap e a)
 arbitraryLabelledAdjacencyMap = LAM.fromAdjacencyMaps <$> arbitrary
 
-instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Arbitrary (LAM.AdjacencyMap e a) where
+instance (Arbitrary a, Ord a, Semigroup e, Arbitrary e) => Arbitrary (LAM.AdjacencyMap e a) where
     arbitrary = arbitraryLabelledAdjacencyMap
 
     shrink g = shrinkVertices ++ shrinkEdges
@@ -197,7 +197,7 @@ instance (Arbitrary a, Ord a, Eq e, Arbitrary e, Monoid e) => Arbitrary (LAM.Adj
            let edges = LAM.edgeList g
            in  [ LAM.removeEdge v w g | (_, v, w) <- edges ]
 
--- | Generate an arbitrary labelled 'LAM.Graph' value of a specified size.
+-- | Generate an arbitrary labelled 'LG.Graph' value of a specified size.
 arbitraryLabelledGraph :: (Arbitrary a, Arbitrary e) => Gen (LG.Graph e a)
 arbitraryLabelledGraph = sized expr
   where

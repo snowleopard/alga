@@ -32,7 +32,7 @@ module Algebra.Graph.Labelled.AdjacencyMap (
 
     -- * Graph transformation
     removeVertex, removeEdge, replaceVertex, replaceEdge, transpose, gmap,
-    emap, induce, induceJust,
+    emap, induce, induceJust, trimZeroes,
 
     -- * Relational operations
     closure, reflexiveClosure, symmetricClosure, transitiveClosure,
@@ -59,10 +59,8 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
 
 -- | Edge-labelled graphs, where the type variable @e@ stands for edge labels.
--- For example, 'AdjacencyMap' @Bool@ @a@ is isomorphic to unlabelled graphs
--- defined in the top-level module "Algebra.Graph.AdjacencyMap", where @False@
--- and @True@ denote the lack of and the existence of an unlabelled edge,
--- respectively.
+-- For example, 'AdjacencyMap' @()@ @a@ is isomorphic to unlabelled graphs
+-- defined in the top-level module "Algebra.Graph.AdjacencyMap".
 newtype AdjacencyMap e a = AM {
     -- | The /adjacency map/ of an edge-labelled graph: each vertex is
     -- associated with a map from its direct successors to the corresponding
@@ -90,7 +88,7 @@ instance (Ord a, Show a, Ord e, Show e) => Show (AdjacencyMap e a) where
                            showString " "      . showsPrec 11 y
             xs          -> showString "edges " . showsPrec 11 xs
 
-instance (Ord e, Monoid e, Ord a) => Ord (AdjacencyMap e a) where
+instance (Ord e, Semigroup e, Ord a) => Ord (AdjacencyMap e a) where
     compare x y = mconcat
         [ compare (vertexCount x) (vertexCount y)
         , compare (vertexSet   x) (vertexSet   y)
@@ -117,16 +115,16 @@ instance IsString a => IsString (AdjacencyMap e a) where
     fromString = vertex . fromString
 
 -- | Defined via 'overlay'.
-instance (Ord a, Eq e, Monoid e) => Semigroup (AdjacencyMap e a) where
+instance (Ord a, Semigroup e) => Semigroup (AdjacencyMap e a) where
     (<>) = overlay
 
 -- | Defined via 'overlay' and 'empty'.
-instance (Ord a, Eq e, Monoid e) => Monoid (AdjacencyMap e a) where
+instance (Ord a, Semigroup e) => Monoid (AdjacencyMap e a) where
     mempty = empty
 
 -- TODO: Add tests.
 -- | Defined via 'skeleton' and the 'T.ToGraph' instance of 'AM.AdjacencyMap'.
-instance (Eq e, Monoid e, Ord a) => T.ToGraph (AdjacencyMap e a) where
+instance (Ord a, Semigroup e) => T.ToGraph (AdjacencyMap e a) where
     type ToVertex (AdjacencyMap e a) = a
     toGraph                    = T.toGraph . skeleton
     foldg e v o c              = T.foldg e v o c . skeleton
@@ -174,16 +172,14 @@ vertex x = AM $ Map.singleton x Map.empty
 --
 -- @
 -- edge e    x y              == 'connect' e ('vertex' x) ('vertex' y)
--- edge 'zero' x y              == 'vertices' [x,y]
--- 'hasEdge'   x y (edge e x y) == (e /= 'zero')
+-- 'hasEdge'   x y (edge e x y) == True
 -- 'edgeLabel' x y (edge e x y) == e
--- 'edgeCount'     (edge e x y) == if e == 'zero' then 0 else 1
+-- 'edgeCount'     (edge e x y) == 1
 -- 'vertexCount'   (edge e 1 1) == 1
 -- 'vertexCount'   (edge e 1 2) == 2
 -- @
-edge :: (Eq e, Monoid e, Ord a) => e -> a -> a -> AdjacencyMap e a
-edge e x y | e == zero = vertices [x, y]
-           | x == y    = AM $ Map.singleton x (Map.singleton x e)
+edge :: (Ord a) => e -> a -> a -> AdjacencyMap e a
+edge e x y | x == y    = AM $ Map.singleton x (Map.singleton x e)
            | otherwise = AM $ Map.fromList [(x, Map.singleton y e), (y, Map.empty)]
 
 -- | The left-hand part of a convenient ternary-ish operator @x-\<e\>-y@ for
@@ -201,7 +197,7 @@ g -< e = (g, e)
 -- @
 -- x -\<e\>- y == 'edge' e x y
 -- @
-(>-) :: (Eq e, Monoid e, Ord a) => (a, e) -> a -> AdjacencyMap e a
+(>-) :: (Ord a) => (a, e) -> a -> AdjacencyMap e a
 (x, e) >- y = edge e x y
 
 infixl 5 -<
@@ -222,12 +218,11 @@ infixl 5 >-
 -- 'edgeCount'   (overlay 1 2) == 0
 -- @
 --
--- Note: 'overlay' composes edges in parallel using the operator '<+>' with
--- 'zero' acting as the identity:
+-- Note: 'overlay' composes edges in parallel using the operator '<>':
 --
 -- @
--- 'edgeLabel' x y $ overlay ('edge' e x y) ('edge' 'zero' x y) == e
--- 'edgeLabel' x y $ overlay ('edge' e x y) ('edge' f    x y) == e '<+>' f
+-- 'edgeLabel' x y $ overlay ('edge' e x y) empty == e
+-- 'edgeLabel' x y $ overlay ('edge' e x y) ('edge' f x y) == e '<>' f
 -- @
 --
 -- Furthermore, when applied to transitive graphs, 'overlay' composes edges in
@@ -237,16 +232,20 @@ infixl 5 >-
 -- 'edgeLabel' x z $ 'transitiveClosure' (overlay ('edge' e x y) ('edge' 'one' y z)) == e
 -- 'edgeLabel' x z $ 'transitiveClosure' (overlay ('edge' e x y) ('edge' f   y z)) == e '<.>' f
 -- @
-overlay :: (Eq e, Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
-overlay (AM x) (AM y) = AM $ Map.unionWith nonZeroUnion x y
+overlay :: (Semigroup e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
+overlay (AM x) (AM y) = AM $ Map.unionWith (Map.unionWith (<>)) x y
 
--- Union maps, removing zero elements from the result.
-nonZeroUnion :: (Eq e, Monoid e, Ord a) => Map a e -> Map a e -> Map a e
-nonZeroUnion x y = Map.filter (/= zero) $ Map.unionWith mappend x y
-
--- Drop all edges with zero labels.
-trimZeroes :: (Eq e, Monoid e) => Map a (Map a e) -> Map a (Map a e)
-trimZeroes = Map.map (Map.filter (/= zero))
+-- | An 'AdjacencyMap' represents the absense of an edge by excluding the edge
+-- from the underlying set of adjacencies.  This is both for performance reasons
+-- and also to allow edge types that are 'Semigroup' but /not/ 'Monoid' (that
+-- is, they have no 'zero' value).  For edge types that do have a 'zero' value,
+-- then for performance reasons, it is optimal to exclude all 'zero' edges.
+--
+-- 'trimZeros x' is behaviorally an identity function, but it should be used for
+-- performance reasons when a monoidal edge type is used and 'zero' edges may
+-- have slipped into the underlying representation.
+trimZeroes :: (Eq e, Monoid e) => AdjacencyMap e a -> AdjacencyMap e a
+trimZeroes (AM x) = AM $ Map.map (Map.filter (/= zero)) x
 
 -- | /Connect/ two graphs with edges labelled by a given label. When applied to
 -- the same labels, this is an associative operation with the identity 'empty',
@@ -262,12 +261,9 @@ trimZeroes = Map.map (Map.filter (/= zero))
 -- 'vertexCount' (connect e x y) <= 'vertexCount' x + 'vertexCount' y
 -- 'edgeCount'   (connect e x y) <= 'vertexCount' x * 'vertexCount' y + 'edgeCount' x + 'edgeCount' y
 -- 'vertexCount' (connect e 1 2) == 2
--- 'edgeCount'   (connect e 1 2) == if e == 'zero' then 0 else 1
 -- @
-connect :: (Eq e, Monoid e, Ord a) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
-connect e (AM x) (AM y)
-    | e == mempty = overlay (AM x) (AM y)
-    | otherwise   = AM $ Map.unionsWith nonZeroUnion $ x : y :
+connect :: (Semigroup e, Ord a) => e -> AdjacencyMap e a -> AdjacencyMap e a -> AdjacencyMap e a
+connect e (AM x) (AM y) = AM $ Map.unionsWith (Map.unionWith (<>)) $ x : y :
         [ Map.fromSet (const targets) (Map.keysSet x) ]
   where
     targets = Map.fromSet (const e) (Map.keysSet y)
@@ -295,7 +291,7 @@ vertices = AM . Map.fromList . map (, Map.empty)
 -- edges [(e,x,y)] == 'edge' e x y
 -- edges           == 'overlays' . 'map' (\\(e, x, y) -> 'edge' e x y)
 -- @
-edges :: (Eq e, Monoid e, Ord a) => [(e, a, a)] -> AdjacencyMap e a
+edges :: (Semigroup e, Ord a) => [(e, a, a)] -> AdjacencyMap e a
 edges es = fromAdjacencyMaps [ (x, Map.singleton y e) | (e, x, y) <- es ]
 
 -- | Overlay a given list of graphs.
@@ -308,8 +304,8 @@ edges es = fromAdjacencyMaps [ (x, Map.singleton y e) | (e, x, y) <- es ]
 -- overlays           == 'foldr' 'overlay' 'empty'
 -- 'isEmpty' . overlays == 'all' 'isEmpty'
 -- @
-overlays :: (Eq e, Monoid e, Ord a) => [AdjacencyMap e a] -> AdjacencyMap e a
-overlays = AM . Map.unionsWith nonZeroUnion . map adjacencyMap
+overlays :: (Semigroup e, Ord a) => [AdjacencyMap e a] -> AdjacencyMap e a
+overlays = AM . Map.unionsWith (Map.unionWith (<>)) . map adjacencyMap
 
 -- | Construct a graph from a list of adjacency sets.
 -- Complexity: /O((n + m) * log(n))/ time and /O(n + m)/ memory.
@@ -320,11 +316,11 @@ overlays = AM . Map.unionsWith nonZeroUnion . map adjacencyMap
 -- fromAdjacencyMaps [(x, Map.'Map.singleton' y e)]            == if e == 'zero' then 'vertices' [x,y] else 'edge' e x y
 -- 'overlay' (fromAdjacencyMaps xs) (fromAdjacencyMaps ys) == fromAdjacencyMaps (xs '++' ys)
 -- @
-fromAdjacencyMaps :: (Eq e, Monoid e, Ord a) => [(a, Map a e)] -> AdjacencyMap e a
-fromAdjacencyMaps xs = AM $ trimZeroes $ Map.unionWith mappend vs es
+fromAdjacencyMaps :: (Semigroup e, Ord a) => [(a, Map a e)] -> AdjacencyMap e a
+fromAdjacencyMaps xs = AM $ Map.unionWith mappend vs es
   where
     vs = Map.fromSet (const Map.empty) . Set.unions $ map (Map.keysSet . snd) xs
-    es = Map.fromListWith (Map.unionWith mappend) xs
+    es = Map.fromListWith (Map.unionWith (<>)) xs
 
 -- | The 'isSubgraphOf' function takes two graphs and returns 'True' if the
 -- first graph is a /subgraph/ of the second.
@@ -336,10 +332,10 @@ fromAdjacencyMaps xs = AM $ trimZeroes $ Map.unionWith mappend vs es
 -- isSubgraphOf ('vertex' x) 'empty' ==  False
 -- isSubgraphOf x y              ==> x <= y
 -- @
-isSubgraphOf :: (Eq e, Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
+isSubgraphOf :: (Semigroup e, Eq e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a -> Bool
 isSubgraphOf (AM x) (AM y) = Map.isSubmapOfBy (Map.isSubmapOfBy le) x y
   where
-    le x y = mappend x y == y
+    le x y = x <> y == y
 
 -- | Check if a graph is empty.
 -- Complexity: /O(1)/ time.
@@ -531,7 +527,7 @@ removeEdge x y = AM . Map.adjust (Map.delete y) x . adjacencyMap
 -- replaceVertex x y ('vertex' x) == 'vertex' y
 -- replaceVertex x y            == 'gmap' (\\v -> if v == x then y else v)
 -- @
-replaceVertex :: (Eq e, Monoid e, Ord a) => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
+replaceVertex :: (Semigroup e, Ord a) => a -> a -> AdjacencyMap e a -> AdjacencyMap e a
 replaceVertex u v = gmap $ \w -> if w == u then v else w
 
 -- | Replace an edge from a given graph. If it doesn't exist, it will be created.
@@ -542,10 +538,8 @@ replaceVertex u v = gmap $ \w -> if w == u then v else w
 -- replaceEdge e x y ('edge' f x y)      == 'edge' e x y
 -- 'edgeLabel' x y (replaceEdge e x y z) == e
 -- @
-replaceEdge :: (Eq e, Monoid e, Ord a) => e -> a -> a -> AdjacencyMap e a -> AdjacencyMap e a
-replaceEdge e x y
-    | e == zero  = AM . addY . Map.alter (Just . maybe Map.empty (Map.delete y)) x . adjacencyMap
-    | otherwise  = AM . addY . Map.alter replace x . adjacencyMap
+replaceEdge :: (Ord a) => e -> a -> a -> AdjacencyMap e a -> AdjacencyMap e a
+replaceEdge e x y = AM . addY . Map.alter replace x . adjacencyMap
   where
     addY             = Map.alter (Just . fromMaybe Map.empty) y
     replace (Just m) = Just $ Map.insert y e m
@@ -560,11 +554,11 @@ replaceEdge e x y
 -- transpose ('edge' e x y) == 'edge' e y x
 -- transpose . transpose  == id
 -- @
-transpose :: (Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a
+transpose :: (Semigroup e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a
 transpose (AM m) = AM $ Map.foldrWithKey combine vs m
   where
     -- No need to use @nonZeroUnion@ here, since we do not add any new edges
-    combine v es = Map.unionWith (Map.unionWith mappend) $
+    combine v es = Map.unionWith (Map.unionWith (<>)) $
         Map.fromAscList [ (u, Map.singleton v e) | (u, e) <- Map.toAscList es ]
     vs = Map.fromSet (const Map.empty) (Map.keysSet m)
 
@@ -580,9 +574,9 @@ transpose (AM m) = AM $ Map.foldrWithKey combine vs m
 -- gmap 'id'             == 'id'
 -- gmap f . gmap g     == gmap (f . g)
 -- @
-gmap :: (Eq e, Monoid e, Ord a, Ord b) => (a -> b) -> AdjacencyMap e a -> AdjacencyMap e b
-gmap f = AM . trimZeroes . Map.map (Map.mapKeysWith mappend f) .
-    Map.mapKeysWith (Map.unionWith mappend) f . adjacencyMap
+gmap :: (Semigroup e, Ord a, Ord b) => (a -> b) -> AdjacencyMap e a -> AdjacencyMap e b
+gmap f = AM . Map.map (Map.mapKeysWith (<>) f) .
+    Map.mapKeysWith (Map.unionWith (<>)) f . adjacencyMap
 
 -- | Transform a graph by applying a function @h@ to each of its edge labels.
 -- Complexity: /O((n + m) * log(n))/ time.
@@ -615,8 +609,8 @@ gmap f = AM . trimZeroes . Map.map (Map.mapKeysWith mappend f) .
 -- emap 'id'                == 'id'
 -- emap g . emap h        == emap (g . h)
 -- @
-emap :: (Eq f, Monoid f) => (e -> f) -> AdjacencyMap e a -> AdjacencyMap f a
-emap h = AM . trimZeroes . Map.map (Map.map h) . adjacencyMap
+emap :: (e -> f) -> AdjacencyMap e a -> AdjacencyMap f a
+emap h = AM . Map.map (Map.map h) . adjacencyMap
 
 -- | Construct the /induced subgraph/ of a given graph by removing the
 -- vertices that do not satisfy a given predicate.
@@ -689,7 +683,7 @@ reflexiveClosure (AM m) = AM $ Map.mapWithKey (\k -> Map.insertWith (<+>) k one)
 -- symmetricClosure x                  == 'overlay' x ('transpose' x)
 -- symmetricClosure . symmetricClosure == symmetricClosure
 -- @
-symmetricClosure :: (Eq e, Monoid e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a
+symmetricClosure :: (Semigroup e, Ord a) => AdjacencyMap e a -> AdjacencyMap e a
 symmetricClosure m = overlay m (transpose m)
 
 -- | Compute the /transitive closure/ of a graph over the underlying star
