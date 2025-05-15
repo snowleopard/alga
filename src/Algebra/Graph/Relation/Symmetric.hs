@@ -45,7 +45,7 @@ import Control.DeepSeq
 import Data.Coerce
 import Data.Set (Set)
 import Data.String
-import Data.Tree
+import Data.Tree (Forest, Tree)
 
 import qualified Data.IntSet as IntSet
 import qualified Data.Set    as Set

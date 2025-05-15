@@ -33,7 +33,7 @@ import Data.Foldable (for_)
 import Data.Either
 import Data.List.NonEmpty (NonEmpty(..), (<|))
 import Data.Maybe
-import Data.Tree
+import Data.Tree (Forest, Tree (..), flatten, levels, unfoldForestM_BF)
 
 import Algebra.Graph.AdjacencyMap
 
