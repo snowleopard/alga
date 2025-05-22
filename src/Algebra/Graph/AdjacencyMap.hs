@@ -55,7 +55,7 @@ import Data.Map.Strict (Map)
 import Data.Monoid
 import Data.Set (Set)
 import Data.String
-import Data.Tree
+import Data.Tree (Forest, Tree (..))
 import GHC.Generics
 
 import qualified Data.Map.Strict as Map
