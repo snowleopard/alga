@@ -18,10 +18,12 @@ import Data.Monoid (Any, Sum (..))
 
 import Algebra.Graph.Label
 import Algebra.Graph.Labelled.AdjacencyMap
+import Algebra.Graph.Labelled.AdjacencyMap.Algorithm
 import Algebra.Graph.Test
 import Algebra.Graph.Test.API (toIntAPI, labelledAdjacencyMapAPI)
 import Algebra.Graph.Test.Generic
 import Algebra.Graph.ToGraph (reachable)
+import Data.Map ((!))
 
 import qualified Algebra.Graph.AdjacencyMap as AM
 import qualified Data.Map                   as Map
@@ -35,10 +37,14 @@ t = fmap toIntAPI tPoly
 
 type S = Sum Int
 type D = Distance Int
+type C = Capacity Int
 
 type LAI = AdjacencyMap Any Int
 type LAS = AdjacencyMap S   Int
 type LAD = AdjacencyMap D   Int
+
+type LACD = AdjacencyMap D Char 
+type LACC = AdjacencyMap C Char 
 
 testLabelledAdjacencyMap :: IO ()
 testLabelledAdjacencyMap = do
@@ -477,3 +483,130 @@ testLabelledAdjacencyMap = do
 
     test "transitiveClosure . transitiveClosure == transitiveClosure" $ size10 $ \x ->
          (transitiveClosure . transitiveClosure) x == transitiveClosure (x :: LAD)
+
+    putStrLn "\n============ Labelled.AdjacencyMap.Algorithm.dijkstra ============"
+    test "[D] dijkstra (vertex 'a') 'a' == Map.fromList [('a', one)]" $
+          dijkstra (vertex 'a' :: LACD) 'a' == Map.fromList [('a', one)]
+
+    test "[D] dijkstra (vertex 'a') 'z' == Map.fromList [('a', zero)]" $
+          dijkstra (vertex 'a' :: LACD) 'z' == Map.fromList [('a', zero)]
+
+    test "[D] dijkstra (edge x 'a' 'b') 'a' == Map.fromList [('a', one), ('b', x)]" $ \x ->
+          dijkstra (edge x 'a' 'b' :: LACD) 'a' == Map.fromList [('a', one), ('b', x)]
+
+    test "[D] dijkstra (edge x 'a' 'b') 'z' == Map.fromList [('a', zero), ('b', zero)]" $ \x ->
+          dijkstra (edge x 'a' 'b' :: LACD) 'z' == Map.fromList [('a', zero), ('b', zero)]
+
+    test "[D] dijkstra (vertices ['a', 'b']) 'a' == Map.fromList [('a', one), ('b', zero)]" $
+          dijkstra (vertices ['a', 'b'] :: LACD) 'a' == Map.fromList [('a', one), ('b', zero)]
+
+    test "[D] dijkstra (vertices ['a', 'b']) 'z' == Map.fromList [('a', zero), ('b', zero)]" $
+          dijkstra (vertices ['a', 'b'] :: LACD) 'z' == Map.fromList [('a', zero), ('b', zero)]
+
+    test "[D] dijkstra (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'a' == Map.fromList [('a', one), ('b', 3), ('c', 5)]" $
+          dijkstra (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')] :: LACD) 'a' == Map.fromList [('a', one), ('b', 3), ('c', 4)]
+
+    test "[D] dijkstra (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'z' == Map.fromList [('a', zero), ('b', zero), ('c', zero)]" $
+          dijkstra (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')] :: LACD) 'z' == Map.fromList [('a', zero), ('b', zero), ('c', zero)]
+
+    test "[C] dijkstra (vertex 'a') 'a' == Map.fromList [('a', one)]" $
+          dijkstra (vertex 'a' :: LACC) 'a' == Map.fromList [('a', one)]
+
+    test "[C] dijkstra (vertex 'a') 'z' == Map.fromList [('a', zero)]" $
+          dijkstra (vertex 'a' :: LACC) 'z' == Map.fromList [('a', zero)]
+
+    test "[C] dijkstra (edge x 'a' 'b') 'a' == Map.fromList [('a', one), ('b', x)]" $ \x ->
+          dijkstra (edge x 'a' 'b' :: LACC) 'a' == Map.fromList [('a', one), ('b', x)]
+
+    test "[C] dijkstra (edge x 'a' 'b') 'z' == Map.fromList [('a', zero), ('b', zero)]" $ \x ->
+          dijkstra (edge x 'a' 'b' :: LACC) 'z' == Map.fromList [('a', zero), ('b', zero)]
+
+    test "[C] dijkstra (vertices ['a', 'b']) 'a' == Map.fromList [('a', one), ('b', zero)]" $
+          dijkstra (vertices ['a', 'b'] :: LACC) 'a' == Map.fromList [('a', one), ('b', zero)]
+
+    test "[C] dijkstra (vertices ['a', 'b']) 'z' == Map.fromList [('a', zero), ('b', zero)]" $
+          dijkstra (vertices ['a', 'b'] :: LACC) 'z' == Map.fromList [('a', zero), ('b', zero)]
+
+    test "[C] dijkstra (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'a' == Map.fromList [('a', one), ('b', 3), ('c', 5)]" $
+          dijkstra (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')] :: LACC) 'a' == Map.fromList [('a', one), ('b', 3), ('c', 5)]
+
+    test "[C] dijkstra (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'z' == Map.fromList [('a', zero), ('b', zero), ('c', zero)]" $
+          dijkstra (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')] :: LACC) 'z' == Map.fromList [('a', zero), ('b', zero), ('c', zero)]
+
+    putStrLn "\n============ Labelled.AdjacencyMap.Algorithm.bellmanFord ============"
+    test "[D] bellmanFord (vertex 'a') 'a' == Map.fromList [('a', one)]" $
+          bellmanFord (vertex 'a' :: LACD) 'a' == Map.fromList [('a', one)]
+
+    test "[D] bellmanFord (vertex 'a') 'z' == Map.fromList [('a', zero)]" $
+          bellmanFord (vertex 'a' :: LACD) 'z' == Map.fromList [('a', zero)]
+
+    test "[D] bellmanFord (edge x 'a' 'b') 'a' == Map.fromList [('a', one), ('b', x)]" $ \x ->
+          bellmanFord (edge x 'a' 'b' :: LACD) 'a' == Map.fromList [('a', one), ('b', x)]
+
+    test "[D] bellmanFord (edge x 'a' 'b') 'z' == Map.fromList [('a', zero), ('b', zero)]" $ \x ->
+          bellmanFord (edge x 'a' 'b' :: LACD) 'z' == Map.fromList [('a', zero), ('b', zero)]
+
+    test "[D] bellmanFord (vertices ['a', 'b']) 'a' == Map.fromList [('a', one), ('b', zero)]" $
+          bellmanFord (vertices ['a', 'b'] :: LACD) 'a' == Map.fromList [('a', one), ('b', zero)]
+
+    test "[D] bellmanFord (vertices ['a', 'b']) 'z' == Map.fromList [('a', zero), ('b', zero)]" $
+          bellmanFord (vertices ['a', 'b'] :: LACD) 'z' == Map.fromList [('a', zero), ('b', zero)]
+
+    test "[D] bellmanFord (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'a' == Map.fromList [('a', one), ('b', 3), ('c', 5)]" $
+          bellmanFord (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')] :: LACD) 'a' == Map.fromList [('a', one), ('b', 3), ('c', 4)]
+
+    test "[D] bellmanFord (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'z' == Map.fromList [('a', zero), ('b', zero), ('c', zero)]" $
+          bellmanFord (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')] :: LACD) 'z' == Map.fromList [('a', zero), ('b', zero), ('c', zero)]
+
+    test "[C] bellmanFord (vertex 'a') 'a' == Map.fromList [('a', one)]" $
+          bellmanFord (vertex 'a' :: LACC) 'a' == Map.fromList [('a', one)]
+
+    test "[C] bellmanFord (vertex 'a') 'z' == Map.fromList [('a', zero)]" $
+          bellmanFord (vertex 'a' :: LACC) 'z' == Map.fromList [('a', zero)]
+
+    test "[C] bellmanFord (edge x 'a' 'b') 'a' == Map.fromList [('a', one), ('b', x)]" $ \x ->
+          bellmanFord (edge x 'a' 'b' :: LACC) 'a' == Map.fromList [('a', one), ('b', x)]
+
+    test "[C] bellmanFord (edge x 'a' 'b') 'z' == Map.fromList [('a', zero), ('b', zero)]" $ \x ->
+          bellmanFord (edge x 'a' 'b' :: LACC) 'z' == Map.fromList [('a', zero), ('b', zero)]
+
+    test "[C] bellmanFord (vertices ['a', 'b']) 'a' == Map.fromList [('a', one), ('b', zero)]" $
+          bellmanFord (vertices ['a', 'b'] :: LACC) 'a' == Map.fromList [('a', one), ('b', zero)]
+
+    test "[C] bellmanFord (vertices ['a', 'b']) 'z' == Map.fromList [('a', zero), ('b', zero)]" $
+          bellmanFord (vertices ['a', 'b'] :: LACC) 'z' == Map.fromList [('a', zero), ('b', zero)]
+
+    test "[C] bellmanFord (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'a' == Map.fromList [('a', one), ('b', 3), ('c', 5)]" $
+          bellmanFord (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')] :: LACC) 'a' == Map.fromList [('a', one), ('b', 3), ('c', 5)]
+
+    test "[C] bellmanFord (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]) 'z' == Map.fromList [('a', zero), ('b', zero), ('c', zero)]" $
+          bellmanFord (edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')] :: LACC) 'z' == Map.fromList [('a', zero), ('b', zero), ('c', zero)]
+
+    putStrLn "\n============ Labelled.AdjacencyMap.Algorithm.floydWarshall ============"
+    -- XXX Arbitrary graph construction is rather costly hence not used.
+    -- XXX Improve floydWarshall test cases.
+    putStrLn "let g = edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')]" 
+
+    test "[D] forall vertex v in g. floydWarshall g ! v == 'dijkstra' g v" $ 
+        let mapF v = floydWarshall g ! v == dijkstra g v
+            g = edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')] :: LACD
+            in foldr ((&&) . mapF) True $ vertexList g
+
+    test "[C] forall vertex v in g. floydWarshall g ! v == 'dijkstra' g v" $ 
+        let mapF v = floydWarshall g ! v == dijkstra g v
+            g = edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')] :: LACC
+            in foldr ((&&) . mapF) True $ vertexList g
+
+    test "[D] forall vertex v in g. floydWarshall g ! v == 'dijkstra' g v" $ 
+        let mapF v = floydWarshall g ! v == bellmanFord g v
+            g = edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')] :: LACD
+            in foldr ((&&) . mapF) True $ vertexList g
+
+    test "[C] forall vertex v in g. floydWarshall g ! v == 'dijkstra' g v" $ 
+        let mapF v = floydWarshall g ! v == bellmanFord g v
+            g = edges [(5, 'a', 'c'), (3, 'a', 'b'), (1, 'b', 'c')] :: LACC
+            in foldr ((&&) . mapF) True $ vertexList g
+
+
+
+
