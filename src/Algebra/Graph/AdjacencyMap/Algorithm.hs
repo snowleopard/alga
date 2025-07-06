@@ -33,7 +33,7 @@ import Data.Foldable (for_)
 import Data.Either
 import Data.List.NonEmpty (NonEmpty(..), (<|))
 import Data.Maybe
-import Data.Tree
+import Data.Tree (Tree(..), Forest)
 
 import Algebra.Graph.AdjacencyMap
 
@@ -42,6 +42,7 @@ import qualified Data.Array                          as Array
 import qualified Data.List                           as List
 import qualified Data.Map.Strict                     as Map
 import qualified Data.Set                            as Set
+import qualified Data.Tree                           as Tree
 
 -- | Compute the /breadth-first search/ forest of a graph, such that adjacent
 -- vertices are explored in increasing order according to their 'Ord' instance.
@@ -75,7 +76,7 @@ import qualified Data.Set                            as Set
 bfsForest :: Ord a => AdjacencyMap a -> [a] -> Forest a
 bfsForest x vs = evalState (explore [ v | v <- vs, hasVertex v x ]) Set.empty
   where
-    explore = filterM discovered >=> unfoldForestM_BF walk
+    explore = filterM discovered >=> Tree.unfoldForestM_BF walk
     walk v = (v,) <$> adjacentM v
     adjacentM v = filterM discovered $ Set.toList (postSet v x)
     discovered v = do new <- gets (not . Set.member v)
@@ -108,7 +109,7 @@ bfsForest x vs = evalState (explore [ v | v <- vs, hasVertex v x ]) Set.empty
 -- 'map' 'concat' . 'List.transpose' . 'map' 'levels' . 'bfsForest' x    == bfs x
 -- @
 bfs :: Ord a => AdjacencyMap a -> [a] -> [[a]]
-bfs x = map concat . List.transpose . map levels . bfsForest x
+bfs x = map concat . List.transpose . map Tree.levels . bfsForest x
 
 dfsForestFromImpl :: Ord a => AdjacencyMap a -> [a] -> Forest a
 dfsForestFromImpl g vs = evalState (explore vs) Set.empty
@@ -201,7 +202,7 @@ dfsForestFrom g vs = dfsForestFromImpl g [ v | v <- vs, hasVertex v g ]
 -- dfs ('circuit' [1..5] + 'circuit' [5,4..1]) [3] == [3,2,1,5,4]
 -- @
 dfs :: Ord a => AdjacencyMap a -> [a] -> [a]
-dfs x = concatMap flatten . dfsForestFrom x
+dfs x = concatMap Tree.flatten . dfsForestFrom x
 
 -- | Return the list of vertices /reachable/ from a source vertex in a graph.
 -- The vertices in the resulting list appear in the /depth-first search order/.

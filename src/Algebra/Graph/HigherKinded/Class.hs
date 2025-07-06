@@ -54,7 +54,7 @@ module Algebra.Graph.HigherKinded.Class (
 
 import Control.Applicative (Alternative(empty, (<|>)))
 import Control.Monad (MonadPlus, mfilter)
-import Data.Tree
+import Data.Tree (Tree(..), Forest)
 
 import qualified Algebra.Graph as G
 

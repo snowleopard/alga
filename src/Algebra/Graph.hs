@@ -56,7 +56,7 @@ import Control.Monad.Trans.State (runState, get, put)
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.String
-import Data.Tree
+import Data.Tree (Tree(..), Forest)
 import GHC.Generics
 
 import Algebra.Graph.Internal

@@ -46,7 +46,7 @@ import Control.DeepSeq
 import Data.Bifunctor
 import Data.Set (Set, union)
 import Data.String
-import Data.Tree
+import Data.Tree (Tree(..), Forest)
 import Data.Tuple
 
 import qualified Data.IntSet as IntSet

@@ -55,12 +55,13 @@ import Data.Map.Strict (Map)
 import Data.Monoid
 import Data.Set (Set)
 import Data.String
-import Data.Tree
 import GHC.Generics
+import Data.Tree (Tree(..), Forest)
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe      as Maybe
 import qualified Data.Set        as Set
+import qualified Data.Tree       as Tree
 
 {-| The 'AdjacencyMap' data type represents a graph by a map of vertices to
 their adjacency sets. We define a 'Num' instance as a convenient notation for

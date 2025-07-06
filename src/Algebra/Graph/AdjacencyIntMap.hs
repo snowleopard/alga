@@ -51,7 +51,7 @@ import Data.IntSet (IntSet)
 import Data.List ((\\))
 import Data.Monoid (Sum (..))
 import Data.Set (Set)
-import Data.Tree
+import Data.Tree (Tree(..), Forest)
 import GHC.Generics
 
 import qualified Data.IntMap.Strict as IntMap
