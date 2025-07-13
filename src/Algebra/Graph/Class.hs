@@ -46,7 +46,7 @@ module Algebra.Graph.Class (
     path, circuit, clique, biclique, star, tree, forest
     ) where
 
-import Data.Tree
+import Data.Tree (Forest, Tree (..))
 
 import Algebra.Graph.Label (Dioid, one)
 
