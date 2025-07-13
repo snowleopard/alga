@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        ghc: ['9.8.2', '9.6.3', '9.4.7', '9.2.8', '9.0.2', '8.10.7']
+        ghc: ['9.12.2', '9.10.2', '9.8.4', '9.6.7', '9.4.8']
         include:
         - os: windows-latest
         # Testing on MacOS is disabled until GitHub actions support 'allow-failure'
