@@ -1,4 +1,4 @@
-resolver: nightly-2024-03-01 # ghc-9.8.1
+resolver: nightly-2025-03-01 # ghc-9.8.1
 
 ghc-options:
   '$everything': -haddock
