@@ -2,7 +2,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Algebra.Graph.Test.Bipartite.AdjacencyMap
--- Copyright  : (c) Andrey Mokhov 2016-2024
+-- Copyright  : (c) Andrey Mokhov 2016-2025
 -- License    : MIT (see the file LICENSE)
 -- Maintainer : andrey.mokhov@gmail.com
 -- Stability  : experimental
