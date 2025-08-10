@@ -34,6 +34,7 @@ module Algebra.Graph.Bipartite.AdjacencyMap.Algorithm (
 
 import Algebra.Graph.Bipartite.AdjacencyMap
 
+import Prelude            hiding (Foldable(..))
 import Control.Monad             (guard, when)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Maybe (MaybeT(..))
