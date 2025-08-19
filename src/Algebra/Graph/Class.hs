@@ -155,7 +155,7 @@ instance Dioid e => Graph (LG.Graph e a) where
     overlay = LG.overlay
     connect = LG.connect one
 
-instance (Dioid e, Eq e, Ord a) => Graph (LAM.AdjacencyMap e a) where
+instance (Dioid e, Ord a) => Graph (LAM.AdjacencyMap e a) where
     type Vertex (LAM.AdjacencyMap e a) = a
     empty   = LAM.empty
     vertex  = LAM.vertex
