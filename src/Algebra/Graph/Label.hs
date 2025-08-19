@@ -424,6 +424,23 @@ instance StarSemiring (Label a) where
     star (Star x) = star x
     star x        = Star x
 
+instance Applicative Label where
+    pure = Symbol
+    Zero       <*> _ = Zero
+    One        <*> _ = One
+    (Symbol x) <*> z = fmap x z
+    (x :+: y)  <*> z = (x <*> z) :+: (y <*> z)
+    (x :*: y)  <*> z = (x <*> z) :*: (y <*> z)
+    (Star x)   <*> z = Star (x <*> z)
+
+instance Monad Label where
+    Zero       >>= _ = Zero
+    One        >>= _ = One
+    (Symbol x) >>= f = f x
+    (x :+: y)  >>= f = (x >>= f) :+: (y >>= f)
+    (x :*: y)  >>= f = (x >>= f) :*: (y >>= f)
+    (Star x)   >>= f = Star (x >>= f)
+
 -- | Check if a 'Label' is 'zero'.
 isZero :: Label a -> Bool
 isZero Zero = True
